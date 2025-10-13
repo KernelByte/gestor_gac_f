@@ -6,54 +6,58 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 To start a local development server, run:
 
-```bash
-ng serve
+# GestorGacF
+
+Pequeña guía del repo — concisa y orientada a desarrolladores.
+
+Resumen
+--
+Proyecto Angular (20.x). Arquitectura por features; algunas features siguen un patrón Clean Architecture (domain/application/infrastructure/ui).
+
+Estructura clave
+--
+- `src/app/core/` — cross-cutting: auth, http, config, utils. Aquí viven los singletons globales.
+- `src/app/features/` — features aisladas, lazy-loaded y, cuando aplica, organizadas en domain/app/infra/ui.
+
+Comandos útiles
+--
+- Desarrollo (dev server):
+```powershell
+npm start
+# (equivalente) ng serve --proxy-config proxy.conf.json
+```
+- Build producción:
+```powershell
+npm run build
+```
+- Tests unitarios:
+```powershell
+npm test
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Configuración y providers
+--
+- El core exporta `CORE_PROVIDERS` (registrado en `app.config.ts`) que incluye interceptores HTTP y singletons como `AuthService` y `LoggerService`.
+- Las features deben evitar lógica cross-cutting; usar la API pública del core (guards, tokens, providers).
 
-## Code scaffolding
+Notas para desarrolladores
+--
+- Añadir una nueva feature: crear carpeta bajo `src/app/features/<feature>` y seguir el patrón domain/application/infrastructure/ui si necesitas separación de responsabilidades.
+- Para consumir la API: usar los adaptadores/ports del feature o el `AuthService` / `AuthGuard` del core cuando corresponda.
+- Mantén `core/` libre de dependencias a features.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Dónde mirar primero
+--
+- `src/app/core/` — inicio para cross-cutting y configuración global.
+- `src/app/features/secretario/publicadores/` — ejemplo de feature refactorizada con Clean Architecture.
 
-```bash
-ng generate component component-name
-```
+Contacto y contribución
+--
+Si trabajas en el repo, deja PRs pequeños y documenta los cambios de arquitectura en cada feature (`README.md` dentro de la feature si es relevante).
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Licencia
+--
+Proyecto privado / ver NOTICE para detalles de licencia.
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+----
+Breve y práctico: dime si quieres que añada un `README.md` dentro de `core/` o ejemplos de tests para la fachada (`facade.spec.ts`).
