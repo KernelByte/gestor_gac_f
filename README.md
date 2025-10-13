@@ -60,4 +60,3 @@ Licencia
 Proyecto privado / ver NOTICE para detalles de licencia.
 
 ----
-Breve y práctico: dime si quieres que añada un `README.md` dentro de `core/` o ejemplos de tests para la fachada (`facade.spec.ts`).
