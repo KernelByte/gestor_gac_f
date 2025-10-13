@@ -1,0 +1,79 @@
+<div class="min-h-screen bg-cover bg-center relative" style="background-image: url('/src/app/assets/images/fondo_app.jpg')">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+  <!-- Contenedor centrado -->
+  <div class="relative z-10 min-h-screen flex items-center justify-center p-6">
+    <!-- Tarjeta -->
+    <div class="w-full max-w-md bg-[#111827] bg-opacity-95 rounded-2xl shadow-2xl p-8 text-white">
+      <!-- Logo y título -->
+      <div class="flex items-center gap-4 mb-6">
+        <div class="w-11 h-11 rounded-lg flex items-center justify-center font-extrabold text-white bg-gradient-to-br from-blue-600 to-indigo-500">
+          G
+        </div>
+        <div>
+          <h1 class="text-xl font-semibold">Inicia sesión</h1>
+          <p class="text-sm text-slate-400 mt-1">Ingresa tu email y contraseña para continuar</p>
+        </div>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Correo electrónico</label>
+          <input
+            name="username"
+            type="text"
+            formControlName="username"
+            autocomplete="username"
+            class="w-full bg-slate-800 text-white placeholder:text-slate-400 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+            placeholder="name@email.com"
+          />
+          <div *ngIf="form.controls.username.touched && form.controls.username.invalid" class="text-xs text-rose-400 mt-1">
+            Usuario requerido
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Contraseña</label>
+          <input
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            class="w-full bg-slate-800 text-white placeholder:text-slate-400 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+            placeholder="••••••••"
+          />
+          <div *ngIf="form.controls.password.touched && form.controls.password.invalid" class="text-xs text-rose-400 mt-1">
+            Contraseña requerida
+          </div>
+        </div>
+
+        <!-- Extras: Remember / forgot -->
+        <div class="flex items-center justify-between text-sm text-slate-300">
+          <label class="inline-flex items-center gap-2">
+            <input type="checkbox" formControlName="remember" class="h-4 w-4 rounded border-slate-600 bg-slate-800" />
+            <span class="text-slate-300">Acuérdate de mí</span>
+          </label>
+          <a class="text-blue-400 hover:underline" href="#">¿Has olvidado tu contraseña?</a>
+        </div>
+
+        <!-- Botón -->
+        <div>
+          <button
+            type="submit"
+            class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[.997] transform-gpu text-white font-medium transition"
+            [disabled]="form.invalid || loading()"
+          >
+            Iniciar sesión
+          </button>
+          <div *ngIf="error()" class="mt-3 text-center text-xs text-rose-400">{{ error() }}</div>
+        </div>
+      </form>
+
+      <!-- Footer link -->
+      <div class="mt-6 text-center">
+        <a class="text-sm text-slate-400 hover:text-white" href="#">¿No tienes una cuenta?</a>
+      </div>
+    </div>
+  </div>
+</div>
