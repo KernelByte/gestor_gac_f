@@ -1,4 +1,4 @@
-import { inject, signal, effect } from '@angular/core';
+import { inject, signal, effect, Injectable } from '@angular/core';
 import { Publicador } from '../domain/models/publicador';
 import { PUBLICADOR_REPO } from './tokens';
 import type { PublicadorListParams } from '../domain/ports/publicador-repo';
@@ -11,13 +11,14 @@ export type VM = {
   params: PublicadorListParams;
 };
 
+@Injectable()
 export class PublicadoresFacade {
   private repo = inject(PUBLICADOR_REPO);
   vm = signal<VM>({ list: [], loading: false, error: null, params: { limit: 10, offset: 0 } });
 
   constructor() {
     // effect reservado si se necesita
-    effect(() => {});
+    effect(() => { });
   }
 
   async load(params?: PublicadorListParams) {

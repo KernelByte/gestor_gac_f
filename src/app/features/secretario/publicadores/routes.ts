@@ -3,7 +3,7 @@ import { PUBLICADORES_PROVIDERS } from './providers';
 
 export const PUBLICADORES_ROUTES: Routes = [
   {
-    path: '',
+    path: 'publicadores',
     loadComponent: () => import('./ui/pages/publicadores.page').then(m => m.PublicadoresPage),
     providers: [...PUBLICADORES_PROVIDERS]
   }

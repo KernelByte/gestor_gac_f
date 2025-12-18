@@ -16,6 +16,7 @@ export class LoginPage implements OnInit {
 
   loading = signal(false);
   error = signal<string | null>(null);
+  showPassword = signal(false);
 
   form = this.fb.nonNullable.group({
     username: ['', Validators.required],
