@@ -6,198 +6,283 @@ import { AuthStore } from '../../core/auth/auth.store';
    standalone: true,
    imports: [CommonModule],
    template: `
-    <div class="h-full flex flex-col gap-4 overflow-hidden animate-fadeIn">
+    <div class="h-full flex flex-col gap-6 overflow-y-auto overflow-x-hidden p-1 custom-scrollbar">
       
-      <!-- 1. Welcome Header Section -->
-      <div class="shrink-0 relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#6D28D9] to-[#4C1D95] px-8 py-16 text-white shadow-sm flex items-center justify-between">
+      <!-- 1. Compact Welcome Header (Taller now) -->
+      <div class="shrink-0 relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#6D28D9] to-[#4C1D95] px-8 py-10 text-white shadow-lg flex items-center justify-between">
         <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 16px 16px;"></div>
-        <div class="relative z-10">
-           <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Hola, {{ userName() }}! 👋</h1>
-           <p class="text-purple-100 text-sm sm:text-base font-medium opacity-90 mt-1">
-              Bienvenido a tu panel de gestión. Hoy es {{ currentDate() }}.
-           </p>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
+           <div>
+              <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Hola, {{ userName() }}! 👋</h1>
+              <p class="text-purple-100 text-sm sm:text-base font-medium opacity-90">
+                 Aquí tienes el resumen de actividad del {{ currentDate() }}.
+              </p>
+           </div>
         </div>
-        <div class="hidden sm:block p-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10 transform rotate-3">
-           <svg class="w-8 h-8 text-purple-100" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <div class="hidden sm:block p-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10 transform rotate-3 shadow-xl">
+           <svg class="w-8 h-8 text-purple-50" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
         </div>
       </div>
 
-      <!-- 2. Stats Cards Section (Fixed Height for consistency) -->
-      <div class="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Card 1 -->
-        <div class="h-32 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col justify-between hover:border-purple-100 transition-colors group">
-           <div class="flex justify-between items-start">
-              <div class="p-2 rounded-xl bg-purple-50 text-[#6D28D9] group-hover:scale-110 transition-transform">
+      <!-- 2. Optimized KPI Cards + Sparklines -->
+      <div class="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Publicadores (Purple) -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:border-purple-200 transition-all hover:shadow-md group h-36">
+           <div class="flex justify-between items-start mb-2">
+              <div class="p-2 rounded-xl bg-purple-50 text-[#6D28D9] group-hover:scale-105 transition-transform shadow-sm">
                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               </div>
-              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">+12%</span>
+              <div class="flex flex-col items-end">
+                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mb-1">+12%</span>
+                <span class="text-[10px] text-slate-400">vs mes ant.</span>
+              </div>
            </div>
            <div>
-              <h3 class="text-2xl font-black text-slate-800">156</h3>
-              <p class="text-xs font-bold text-slate-400">Publicadores</p>
+              <h3 class="text-2xl font-black text-slate-800 tracking-tight">156</h3>
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Publicadores</p>
+           </div>
+           <div class="mt-2 h-1 w-full bg-slate-50 rounded-full overflow-hidden flex items-end gap-0.5 opacity-50">
+                <div class="h-1/3 w-full bg-purple-200"></div>
+                <div class="h-1/2 w-full bg-purple-200"></div>
+                <div class="h-2/3 w-full bg-purple-300"></div>
+                <div class="h-1/2 w-full bg-purple-300"></div>
+                <div class="h-full w-full bg-purple-500"></div>
            </div>
         </div>
 
-        <!-- Card 2 -->
-        <div class="h-32 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col justify-between hover:border-orange-100 transition-colors group">
+        <!-- Informes (Orange) -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:border-orange-200 transition-all hover:shadow-md group h-36">
            <div class="flex justify-between items-start">
-              <div class="p-2 rounded-xl bg-orange-50 text-orange-500 group-hover:scale-110 transition-transform">
+              <div class="p-2 rounded-xl bg-orange-50 text-orange-500 group-hover:scale-105 transition-transform shadow-sm">
                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               </div>
-              <span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">Pend.</span>
-           </div>
-           <div>
-              <h3 class="text-2xl font-black text-slate-800">23</h3>
-              <p class="text-xs font-bold text-slate-400">Informes</p>
-           </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="h-32 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col justify-between hover:border-emerald-100 transition-colors group">
-           <div class="flex justify-between items-start">
-              <div class="p-2 rounded-xl bg-emerald-50 text-emerald-500 group-hover:scale-110 transition-transform">
-                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-              </div>
-              <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">8 Asig.</span>
-           </div>
-           <div>
-              <h3 class="text-2xl font-black text-slate-800">42</h3>
-              <p class="text-xs font-bold text-slate-400">Territorios</p>
-           </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="h-32 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col justify-between hover:border-blue-100 transition-colors group">
-           <div class="flex justify-between items-start">
-              <div class="p-2 rounded-xl bg-blue-50 text-blue-500 group-hover:scale-110 transition-transform">
-                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              </div>
-              <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Próx.</span>
-           </div>
-           <div>
-              <h3 class="text-2xl font-black text-slate-800">15</h3>
-              <p class="text-xs font-bold text-slate-400">Turnos</p>
-           </div>
-        </div>
-      </div>
-
-      <!-- 3. Bottom Section: Activity Feed (Left) & Quick Actions (Right) -->
-      <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
-         
-         <!-- Activity Feed -->
-         <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between shrink-0">
-               <h2 class="font-bold text-slate-800">Actividad Reciente</h2>
-               <button class="text-xs font-bold text-[#6D28D9] bg-purple-50 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors">Ver todo</button>
-            </div>
-            <div class="flex-1 overflow-y-auto p-5 relative custom-scrollbar">
-               <div class="absolute left-[41px] top-6 bottom-6 w-0.5 bg-slate-100 z-0"></div>
-               <div class="space-y-6 relative z-10">
-                  <!-- Activity items -->
-                  <div class="flex gap-4 group">
-                      <div class="w-10 h-10 rounded-xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center shrink-0">
-                         <svg class="w-5 h-5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      </div>
-                      <div class="flex-1">
-                         <div class="flex justify-between items-start">
-                            <h4 class="text-sm font-bold text-slate-800">Informe registrado</h4>
-                            <span class="text-[10px] text-slate-400 font-bold">Hace 2h</span>
-                         </div>
-                         <p class="text-xs text-slate-500 mt-0.5">María García entregó su informe.</p>
-                      </div>
-                  </div>
-                  
-                   <div class="flex gap-4 group">
-                      <div class="w-10 h-10 rounded-xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center shrink-0">
-                         <svg class="w-5 h-5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-                      </div>
-                      <div class="flex-1">
-                         <div class="flex justify-between items-start">
-                            <h4 class="text-sm font-bold text-slate-800">Publicador agregado</h4>
-                            <span class="text-[10px] text-slate-400 font-bold">Hace 5h</span>
-                         </div>
-                         <p class="text-xs text-slate-500 mt-0.5">Carlos Rodríguez añadido a grupo.</p>
-                      </div>
-                  </div>
-
-                   <div class="flex gap-4 group">
-                      <div class="w-10 h-10 rounded-xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center shrink-0">
-                         <svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-                      </div>
-                      <div class="flex-1">
-                         <div class="flex justify-between items-start">
-                            <h4 class="text-sm font-bold text-slate-800">Territorio asignado</h4>
-                            <span class="text-[10px] text-slate-400 font-bold">Ayer</span>
-                         </div>
-                         <p class="text-xs text-slate-500 mt-0.5">Territorio #15 a Juan Pérez.</p>
-                      </div>
-                  </div>
-                  
-                    <div class="flex gap-4 group">
-                      <div class="w-10 h-10 rounded-xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center shrink-0">
-                         <svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      </div>
-                      <div class="flex-1">
-                         <div class="flex justify-between items-start">
-                            <h4 class="text-sm font-bold text-slate-800">Turno programado</h4>
-                            <span class="text-[10px] text-slate-400 font-bold">Hace 2d</span>
-                         </div>
-                         <p class="text-xs text-slate-500 mt-0.5">Exh. Centro, Sáb. 10AM.</p>
-                      </div>
-                  </div>
-                   <div class="flex gap-4 group">
-                      <div class="w-10 h-10 rounded-xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center shrink-0">
-                         <svg class="w-5 h-5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      </div>
-                      <div class="flex-1">
-                         <div class="flex justify-between items-start">
-                            <h4 class="text-sm font-bold text-slate-800">Informe registrado</h4>
-                            <span class="text-[10px] text-slate-400 font-bold">Hace 3d</span>
-                         </div>
-                         <p class="text-xs text-slate-500 mt-0.5">Pedro Gomez entregó su informe.</p>
-                      </div>
-                  </div>
+              <div class="flex items-center gap-1.5 bg-red-50 px-2 py-1 rounded-lg border border-red-100">
+                    <span class="relative flex h-1.5 w-1.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                    </span>
+                    <span class="text-[10px] font-bold text-red-600 leading-none">2 Pendientes</span>
                </div>
-            </div>
-         </div>
+           </div>
+           
+           <div class="flex-1 flex flex-col justify-center">
+              <div class="flex items-baseline gap-1.5">
+                 <h3 class="text-2xl font-black text-slate-800 tracking-tight leading-none">23</h3>
+                 <span class="text-xs font-bold text-slate-400">/ 30</span>
+              </div>
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mt-0.5">Informes Rec.</p>
+           </div>
+           
+           <div class="w-full">
+               <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                  <div class="h-full bg-orange-400 rounded-full w-[76%] shadow-[0_0_8px_rgba(251,146,60,0.4)]"></div>
+               </div>
+           </div>
+        </div>
 
-         <!-- Quick Actions -->
-         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-50 flex items-center justify-between shrink-0">
-               <h2 class="font-bold text-slate-800">Acciones</h2>
-            </div>
-            <!-- Expanded Area for Buttons -->
-            <div class="flex-1 p-4 grid grid-cols-2 grid-rows-2 gap-4">
-               <button class="flex flex-col items-center justify-center text-center p-2 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md hover:border-purple-100 border border-transparent transition-all group h-full">
-                 <div class="w-12 h-12 rounded-xl bg-purple-100 text-[#6D28D9] flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                   <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                 </div>
-                 <span class="text-xs font-bold text-slate-600">Nuevo Publicador</span>
-               </button>
-               
-               <button class="flex flex-col items-center justify-center text-center p-2 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md hover:border-emerald-100 border border-transparent transition-all group h-full">
-                 <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                   <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                 </div>
-                 <span class="text-xs font-bold text-slate-600">Registrar Informe</span>
-               </button>
-               
-               <button class="flex flex-col items-center justify-center text-center p-2 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md hover:border-orange-100 border border-transparent transition-all group h-full">
-                 <div class="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                   <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-                 </div>
-                 <span class="text-xs font-bold text-slate-600">Asignar Territorio</span>
-               </button>
-               
-               <button class="flex flex-col items-center justify-center text-center p-2 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md hover:border-blue-100 border border-transparent transition-all group h-full">
-                 <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                   <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                 </div>
-                 <span class="text-xs font-bold text-slate-600">Programar Turno</span>
-               </button>
-            </div>
-         </div>
+        <!-- Territorios (Green) -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:border-emerald-200 transition-all hover:shadow-md group h-36">
+           <div class="flex justify-between items-start mb-2">
+              <div class="p-2 rounded-xl bg-emerald-50 text-emerald-500 group-hover:scale-105 transition-transform shadow-sm">
+                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <div class="text-right">
+                <span class="text-xs font-bold text-emerald-700 block">8 / 42</span>
+                <span class="text-[10px] text-slate-400">Asignados</span>
+              </div>
+           </div>
+           <div>
+               <h3 class="text-2xl font-black text-slate-800 tracking-tight">19%</h3>
+               <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Cobertura</p>
+           </div>
+           <div class="mt-2 text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg text-center truncate">
+               Terr. #14, #22, #05 activos
+           </div>
+        </div>
+
+        <!-- Turnos / Exhibidores (Blue) -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:border-blue-200 transition-all hover:shadow-md group h-36 relative overflow-hidden">
+           <div class="absolute right-0 top-0 w-16 h-16 bg-blue-50/50 rounded-bl-full -mr-4 -mt-4 z-0 pointer-events-none"></div>
+           <div class="flex justify-between items-start mb-2 relative z-10">
+              <div class="p-2 rounded-xl bg-blue-50 text-blue-500 group-hover:scale-105 transition-transform shadow-sm">
+                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Próx. 24h</span>
+           </div>
+           <div class="relative z-10 flex-1 flex flex-col justify-end">
+               <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Siguiente Turno</p>
+               <div class="bg-blue-50/50 border border-blue-100 rounded-lg p-2 flex items-center justify-between">
+                   <div class="flex flex-col">
+                       <span class="text-xs font-black text-slate-700">Mañana</span>
+                       <span class="text-[10px] text-blue-600 font-bold">10:00 AM</span>
+                   </div>
+                   <div class="w-6 h-6 rounded-full bg-blue-200 text-blue-700 text-[10px] flex items-center justify-center font-bold">
+                      JG
+                   </div>
+               </div>
+           </div>
+        </div>
       </div>
+
+      <!-- 3. New Visual Insights Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left Column: Charts & Activity (2 Cols) -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+            
+            <!-- Reports Performance Chart (NOW ORANGE matching Informes) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col">
+                <div class="flex justify-between items-end mb-4">
+                    <div>
+                       <h3 class="font-bold text-slate-800">Rendimiento</h3>
+                       <p class="text-xs text-slate-400">Informes últimos 6 meses</p>
+                    </div>
+                    <div class="text-right">
+                       <span class="text-lg font-black text-slate-800 block">142</span>
+                       <span class="text-[10px] text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded">Total Sem.</span>
+                    </div>
+                </div>
+                <!-- CSS Bar Chart (Orange Theme) -->
+                <div class="flex-1 flex items-end justify-between gap-2 h-32 border-b border-slate-100 pb-1">
+                    <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[40%] transition-all relative group cursor-pointer">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">40</div>
+                    </div>
+                    <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[65%] transition-all relative group cursor-pointer">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">65</div>
+                    </div>
+                    <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[45%] transition-all relative group cursor-pointer">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">45</div>
+                    </div>
+                     <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[80%] transition-all relative group cursor-pointer">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">80</div>
+                    </div>
+                     <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[60%] transition-all relative group cursor-pointer">
+                         <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">60</div>
+                    </div>
+                     <div class="w-full bg-orange-500 shadow-lg shadow-orange-200 rounded-t-lg h-[75%] transition-all relative group cursor-pointer">
+                         <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">75</div>
+                    </div>
+                </div>
+                <div class="flex justify-between mt-1 text-[10px] text-slate-400 font-medium">
+                    <span>Jul</span><span>Ago</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dic</span>
+                </div>
+            </div>
+
+            <!-- Enhanced Activity Feed (Color Corrected) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-50 flex items-center justify-between shrink-0 bg-slate-50/30">
+                   <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                       <svg class="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                       Actividad Reciente
+                   </h2>
+                   <button class="text-[11px] font-bold text-slate-500 hover:text-purple-600 transition-colors">Ver historial completo</button>
+                </div>
+                <div class="p-0">
+                   <!-- Item 1: Informe (Orange) -->
+                   <button class="w-full text-left p-4 hover:bg-slate-50 transition-colors border-b border-slate-50 flex gap-4 group">
+                       <div class="w-10 h-10 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                          <svg class="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                       </div>
+                       <div class="flex-1 min-w-0">
+                          <div class="flex justify-between items-baseline mb-0.5">
+                             <h4 class="text-sm font-bold text-slate-800 truncate">Informe Completado</h4>
+                             <span class="text-[10px] text-slate-400 font-medium">Hace 15m</span>
+                          </div>
+                          <p class="text-xs text-slate-500 truncate">Maria García entregó su informe mensual sin novedades.</p>
+                       </div>
+                   </button>
+
+                    <!-- Item 2: Territorio (Green) -->
+                   <button class="w-full text-left p-4 hover:bg-slate-50 transition-colors border-b border-slate-50 flex gap-4 group">
+                       <div class="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                          <svg class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                       </div>
+                       <div class="flex-1 min-w-0">
+                          <div class="flex justify-between items-baseline mb-0.5">
+                             <h4 class="text-sm font-bold text-slate-800 truncate">Territorio Entregado</h4>
+                             <span class="text-[10px] text-slate-400 font-medium">Hace 2h</span>
+                          </div>
+                          <p class="text-xs text-slate-500 truncate">El Territorio #09 fue completado por Juan Perez.</p>
+                       </div>
+                   </button>
+
+                    <!-- Item 3: Publicador (Purple) -->
+                   <button class="w-full text-left p-4 hover:bg-slate-50 transition-colors flex gap-4 group">
+                       <div class="w-10 h-10 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                          <svg class="w-4 h-4 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                       </div>
+                       <div class="flex-1 min-w-0">
+                          <div class="flex justify-between items-baseline mb-0.5">
+                             <h4 class="text-sm font-bold text-slate-800 truncate">Nuevo Publicador</h4>
+                             <span class="text-[10px] text-slate-400 font-medium">Ayer</span>
+                          </div>
+                          <p class="text-xs text-slate-500 truncate">Carlos Rodriguez se unió al Grupo 3.</p>
+                       </div>
+                   </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Quick Actions (1 Col) -->
+        <div class="flex flex-col gap-6">
+            
+            <!-- Quick Actions Grid (Color Corrected) -->
+             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col overflow-hidden h-full">
+                <div class="px-5 py-4 border-b border-slate-50">
+                   <h2 class="font-bold text-slate-800">Accesos Rápidos</h2>
+                </div>
+                <div class="p-4 grid grid-cols-1 gap-3">
+                   
+                   <!-- Publicadores (Purple) -->
+                   <button class="flex flex-row items-center gap-4 p-4 rounded-xl bg-purple-50 hover:bg-[#6D28D9] group hover:text-white border border-transparent transition-all duration-300">
+                     <span class="w-10 h-10 rounded-lg bg-white/60 flex items-center justify-center text-[#6D28D9] group-hover:bg-white/20 group-hover:text-white transition-colors">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                     </span>
+                     <div class="text-left">
+                        <span class="block text-sm font-bold">Nuevo Miembro</span>
+                        <span class="text-[10px] opacity-70">Añadir publicador</span>
+                     </div>
+                   </button>
+                   
+                   <!-- Informes (Orange) (Was Green) -->
+                   <button class="flex flex-row items-center gap-4 p-4 rounded-xl bg-orange-50 hover:bg-orange-500 group hover:text-white border border-transparent transition-all duration-300">
+                     <span class="w-10 h-10 rounded-lg bg-white/60 flex items-center justify-center text-orange-500 group-hover:bg-white/20 group-hover:text-white transition-colors">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                     </span>
+                     <div class="text-left">
+                        <span class="block text-sm font-bold">Informe</span>
+                        <span class="text-[10px] opacity-70">Registrar actividad</span>
+                     </div>
+                   </button>
+                   
+                   <!-- Territorios (Green) (Was Orange) -->
+                   <button class="flex flex-row items-center gap-4 p-4 rounded-xl bg-emerald-50 hover:bg-emerald-600 group hover:text-white border border-transparent transition-all duration-300">
+                     <span class="w-10 h-10 rounded-lg bg-white/60 flex items-center justify-center text-emerald-600 group-hover:bg-white/20 group-hover:text-white transition-colors">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+                     </span>
+                     <div class="text-left">
+                        <span class="block text-sm font-bold">Territorio</span>
+                        <span class="text-[10px] opacity-70">Asignar o devolver</span>
+                     </div>
+                   </button>
+                   
+                   <!-- Turnos (Blue) -->
+                   <button class="flex flex-row items-center gap-4 p-4 rounded-xl bg-blue-50 hover:bg-blue-600 group hover:text-white border border-transparent transition-all duration-300">
+                     <span class="w-10 h-10 rounded-lg bg-white/60 flex items-center justify-center text-blue-600 group-hover:bg-white/20 group-hover:text-white transition-colors">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                     </span>
+                     <div class="text-left">
+                        <span class="block text-sm font-bold">Turno</span>
+                        <span class="text-[10px] opacity-70">Programar carrito</span>
+                     </div>
+                   </button>
+                </div>
+             </div>
+        </div>
+
+      </div>
+
     </div>
   `,
    styles: [`
