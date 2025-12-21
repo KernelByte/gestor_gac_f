@@ -72,7 +72,7 @@ interface Publicador {
             
             <!-- Columna: Sin Asignar -->
             <div 
-               class="w-80 shrink-0 flex flex-col rounded-2xl bg-slate-100/50 border border-slate-200/60 max-h-full transition-colors"
+               class="w-64 shrink-0 flex flex-col rounded-2xl bg-slate-100/50 border border-slate-200/60 max-h-full transition-colors"
                [class.bg-slate-200]="isDraggingOver() === 'unassigned'"
                (dragover)="onDragOver($event, 'unassigned')"
                (dragleave)="onDragLeave()"
@@ -85,7 +85,7 @@ interface Publicador {
                </div>
                
                <!-- List -->
-               <div class="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+               <div class="p-2 flex-1 overflow-y-auto space-y-2 custom-scrollbar">
                   <ng-container *ngFor="let p of unassignedPublishers()">
                      <ng-container *ngTemplateOutlet="cardTemplate; context: { $implicit: p }"></ng-container>
                   </ng-container>
@@ -99,7 +99,7 @@ interface Publicador {
             <!-- Columnas: Grupos -->
             <div 
                *ngFor="let grupo of grupos()"
-               class="w-80 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm max-h-full transition-shadow hover:shadow-md"
+               class="w-64 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm max-h-full transition-shadow hover:shadow-md"
                [class.ring-2]="isDraggingOver() === grupo.id_grupo"
                [class.ring-[#5B3C88]]="isDraggingOver() === grupo.id_grupo"
                (dragover)="onDragOver($event, grupo.id_grupo)"
@@ -113,9 +113,9 @@ interface Publicador {
                    
                    <div class="flex items-start justify-between mt-1">
                       <div>
-                         <h3 class="font-bold text-slate-800 text-sm truncate pr-2" [title]="grupo.nombre_grupo">{{ grupo.nombre_grupo }}</h3>
-                         <p class="text-[11px] text-slate-400 mt-0.5" *ngIf="grupo.capitan_grupo">Capitán: <span class="text-slate-600 font-medium">{{ grupo.capitan_grupo }}</span></p>
-                         <p class="text-[11px] text-slate-300 italic mt-0.5" *ngIf="!grupo.capitan_grupo">Sin Capitán</p>
+                         <h3 class="font-bold text-slate-800 text-sm truncate pr-2 w-32" [title]="grupo.nombre_grupo">{{ grupo.nombre_grupo }}</h3>
+                         <p class="text-[10px] text-slate-400 mt-0.5 truncate w-32" *ngIf="grupo.capitan_grupo">CP: <span class="text-slate-600 font-medium">{{ grupo.capitan_grupo }}</span></p>
+                         <p class="text-[10px] text-slate-300 italic mt-0.5" *ngIf="!grupo.capitan_grupo">Sin Capitán</p>
                       </div>
                       <span class="bg-slate-50 text-slate-600 px-2 py-0.5 rounded-md text-xs font-bold border border-slate-100 shadow-sm">
                          {{ getGroupMembers(grupo.id_grupo).length }}
@@ -124,13 +124,13 @@ interface Publicador {
                </div>
 
                <!-- List -->
-               <div class="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar bg-slate-50/30">
+               <div class="p-2 flex-1 overflow-y-auto space-y-2 custom-scrollbar bg-slate-50/30">
                   <ng-container *ngFor="let p of getGroupMembers(grupo.id_grupo)">
                      <ng-container *ngTemplateOutlet="cardTemplate; context: { $implicit: p, inGroup: true }"></ng-container>
                   </ng-container>
                   
                   <div *ngIf="getGroupMembers(grupo.id_grupo).length === 0" class="h-20 flex items-center justify-center text-slate-300 text-xs italic border-2 border-dashed border-slate-100 rounded-xl">
-                      Grupo vacío
+                      Vacío
                   </div>
                </div>
             </div>
@@ -139,39 +139,35 @@ interface Publicador {
       </div>
     </div>
 
-    <!-- Template de Card de Publicador -->
+    <!-- Template de Card de Publicador COMPACTO -->
     <ng-template #cardTemplate let-p let-inGroup="inGroup">
       <div 
-         class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm cursor-move select-none hover:shadow-md hover:border-[#5B3C88]/30 active:scale-95 transition-all group relative"
+         class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm cursor-move select-none hover:shadow-md hover:border-[#5B3C88]/30 active:scale-95 transition-all group relative flex items-center gap-2 overflow-hidden h-14"
          draggable="true"
          (dragstart)="onDragStart($event, p)"
       >
-         <!-- Drag Handle visible on hover -->
-         <div class="absolute top-2 right-2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+         <!-- Color Indicator Bar -->
+         <div class="absolute left-0 top-0 bottom-0 w-1" [style.background-color]="getAvatarColor(p.id_publicador)"></div>
+
+         <!-- Avatar -->
+         <div 
+            class="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ml-1 shadow-sm"
+            [style.background-color]="getAvatarColor(p.id_publicador)"
+         >
+            {{ getInitials(p) }}
          </div>
 
-         <!-- Status Indicator Line -->
-         <div class="w-8 h-1 rounded-full mb-3" [style.background-color]="getAvatarColor(p.id_publicador)"></div>
-
-         <div class="flex items-center gap-3">
-            <div 
-               class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm"
-               [style.background-color]="getAvatarColor(p.id_publicador)"
-            >
-               {{ getInitials(p) }}
-            </div>
-            <div class="min-w-0"> 
-               <p class="text-sm font-bold text-slate-800 truncate leading-tight">{{ p.primer_nombre }} {{ p.primer_apellido }}</p>
-               <!-- Aqui podriamos mostrar privilegio si viniera en la API -->
-               <p class="text-[10px] text-slate-400 font-medium truncate mt-0.5">
-                  {{ p.rol?.descripcion_rol || 'Publicador' }}
-               </p>
-            </div>
+         <!-- Info -->
+         <div class="min-w-0 flex-1"> 
+            <p class="text-xs font-bold text-slate-800 truncate leading-tight">{{ p.primer_nombre }} {{ p.primer_apellido }}</p>
+            <p class="text-[10px] text-slate-400 font-medium truncate">
+               {{ p.rol?.descripcion_rol || 'Publicador' }}
+            </p>
          </div>
          
-         <div class="mt-2 flex justify-end" *ngIf="isModified(p)">
-             <span class="text-[9px] font-bold text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded">Modificado</span>
+         <!-- Modified Indicator (Dot) -->
+         <div class="absolute top-1.5 right-1.5" *ngIf="isModified(p)">
+             <span class="w-2 h-2 rounded-full bg-amber-500 block shadow-sm ring-1 ring-white"></span>
          </div>
       </div>
     </ng-template>
@@ -222,7 +218,7 @@ export class AsignacionGruposPage implements OnInit {
   });
 
   ngOnInit() {
-    console.log('AsignacionGruposPage loaded - Kanban Version');
+    console.log('AsignacionGruposPage loaded - Kanban Compact Version');
     this.loadData();
   }
 

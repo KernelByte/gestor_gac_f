@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { lastValueFrom } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 import { GruposService } from '../services/grupos.service';
 import { Grupo } from '../models/grupo.model';
@@ -94,7 +95,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
             </div>
             <div class="relative z-10">
                <p class="text-sm font-semibold text-slate-500 mb-0.5">Sin Asignar</p>
-               <h3 class="text-3xl font-black text-slate-800 tracking-tight">—</h3>
+               <h3 class="text-3xl font-black text-slate-800 tracking-tight">{{ totalSinAsignar() }}</h3>
             </div>
          </div>
       </div>
@@ -285,8 +286,10 @@ export class GruposPage implements OnInit {
    private authStore = inject(AuthStore);
    private fb = inject(FormBuilder);
    private router = inject(Router);
+   private http = inject(HttpClient);
 
    grupos = signal<Grupo[]>([]);
+   totalSinAsignar = signal(0);
    searchControl = this.fb.control('');
 
    // Pagination
@@ -330,6 +333,17 @@ export class GruposPage implements OnInit {
 
    ngOnInit() {
       this.loadGrupos();
+      this.loadSinAsignar();
+   }
+
+   loadSinAsignar() {
+      this.http.get<any[]>('/api/publicadores/').subscribe({
+         next: (pubs) => {
+            const count = pubs.filter(p => !p.id_grupo_publicador).length;
+            this.totalSinAsignar.set(count);
+         },
+         error: (err) => console.error('Error loading unassigned stats', err)
+      });
    }
 
    async loadGrupos() {
@@ -385,16 +399,31 @@ export class GruposPage implements OnInit {
       if (this.grupoForm.invalid) return;
 
       const user = this.authStore.user();
-      if (!user?.id_congregacion) {
+
+      // Validar si tiene congregación o es Admin/Gestor (que no tienen)
+      const isAdminOrGestor = user?.rol?.toLowerCase().includes('admin') || user?.rol?.toLowerCase().includes('gestor');
+
+      if (!user?.id_congregacion && !isAdminOrGestor) {
          alert('Error: No se ha detectado tu congregación.');
          return;
       }
 
       this.saving.set(true);
       const formVal = this.grupoForm.value;
+
+      // Determinar ID congregación
+      let idCongregacion = user?.id_congregacion;
+
+      // Si soy Admin y estoy editando, mantengo la congregación del grupo original
+      if (this.editingGrupo()) {
+         idCongregacion = this.editingGrupo()!.id_congregacion_grupo;
+      }
+      // Nota: Si soy Admin y creo uno nuevo, actualmente fallará si no hay selector.
+      // Pero el usuario pidió arreglar la EDICIÓN.
+
       const payload = {
          ...formVal,
-         id_congregacion_grupo: user.id_congregacion
+         id_congregacion_grupo: idCongregacion
       };
 
       try {

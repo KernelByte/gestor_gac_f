@@ -19,6 +19,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/basicas/roles/roles.page').then(m => m.RolesPage),
       },
       {
+        path: 'usuarios',
+        canActivate: [roleGuard],
+        data: { roles: ['Administrador'] },
+        loadComponent: () => import('./features/basicas/usuarios/pages/usuarios.page').then(m => m.UsuariosPage),
+      },
+      {
         path: 'secretario',
         canActivate: [roleGuard],
         data: { roles: ['Administrador', 'Coordinador', 'Secretario', 'Superintendente de servicio'] },

@@ -9,90 +9,113 @@ import { AuthService } from '../core/auth/auth.service';
   selector: 'app-shell',
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="flex h-screen overflow-hidden bg-[#f8f9fc]">
+    <div class="flex h-screen overflow-hidden bg-[#f3f4f6]">
       
       <!-- Mobile Overlay -->
       <div 
         *ngIf="mobileMenuOpen()" 
-        class="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity duration-300"
+        class="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-sm transition-opacity duration-300"
         (click)="closeMobileMenu()"
       ></div>
       
       <!-- Sidebar -->
       <aside
-        class="fixed top-0 left-0 h-screen bg-white border-r border-gray-200 flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        class="fixed top-0 left-0 h-screen bg-white shadow-[4px_0_24px_rgba(0,0,0,0.02)] border-r border-gray-100 flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]"
         [ngClass]="{
-          'w-72': !collapsed(),
-          'w-[70px]': collapsed(),
+          'w-[280px]': !collapsed(),
+          'w-[80px]': collapsed(),
           'translate-x-0': mobileMenuOpen(),
           '-translate-x-full lg:translate-x-0': !mobileMenuOpen()
         }"
       >
         <!-- Sidebar Header -->
-        <div class="h-16 flex items-center justify-center border-b border-gray-100 px-4">
-          <div class="flex items-center gap-3" [ngClass]="{ 'justify-center': collapsed() }">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#5B3C88] to-[#332244] flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-purple-500/20 shrink-0">
+        <div class="h-20 flex items-center justify-center px-6">
+          <div class="flex items-center gap-3.5 w-full" [ngClass]="{ 'justify-center': collapsed() }">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6D28D9] to-[#4C1D95] flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-purple-500/20 shrink-0 transform transition-transform hover:scale-105 duration-300">
               G
             </div>
             <div 
               *ngIf="!collapsed()" 
-              class="flex flex-col animate-fadeIn"
+              class="flex flex-col animate-fadeIn overflow-hidden"
             >
-              <span class="font-bold text-gray-800 whitespace-nowrap">Gestor GAC</span>
-              <span class="text-xs text-gray-400 whitespace-nowrap">Panel de administración</span>
+              <span class="font-extrabold text-slate-800 text-lg tracking-tight leading-none">Gestor GAC</span>
+              <span class="text-[11px] text-slate-400 font-medium tracking-wide uppercase mt-1">Administración</span>
             </div>
           </div>
         </div>
 
         <!-- Navigation -->
-        <div class="flex-1 overflow-y-auto py-4" [ngClass]="{ 'px-3': !collapsed(), 'px-2': collapsed() }">
-          <nav class="space-y-1">
+        <div class="flex-1 overflow-y-auto py-6" [ngClass]="{ 'px-4': !collapsed(), 'px-3': collapsed() }">
+          <nav class="space-y-1.5">
             
             <!-- Main Section -->
-            <div class="mb-6">
+            <div class="mb-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-3 mb-3 text-[11px] font-semibold text-gray-400 uppercase tracking-widest"
+                class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2"
               >Principal</p>
               
               <!-- Inicio -->
               <a
                 routerLink="/"
-                routerLinkActive="bg-[#5B3C88] text-white shadow-md shadow-purple-500/20 [&_.nav-icon]:bg-white/20"
+                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
                 [routerLinkActiveOptions]="{ exact: true }"
-                class="group flex items-center rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
                 [ngClass]="{
-                  'justify-center p-2': collapsed(),
-                  'gap-3 px-3 py-2.5': !collapsed()
+                  'justify-center p-2.5': collapsed(),
+                  'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Inicio"
               >
-                <div class="nav-icon w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 group-hover:bg-[#5B3C88]/10 transition-colors">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" />
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
+                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-medium">Inicio</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold">Inicio</span>
+                <div *ngIf="!collapsed()" class="ml-auto opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-200">
+                  <svg class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </div>
               </a>
 
               <!-- Roles -->
               <a
                 *ngIf="hasRole('Administrador')"
                 routerLink="/roles"
+                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
+                [ngClass]="{
+                  'justify-center p-2.5': collapsed(),
+                  'gap-3.5 px-3.5 py-3': !collapsed()
+                }"
+                title="Roles"
+              >
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
+                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                  </svg>
+                </div>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold">Roles</span>
+              </a>
+
+              <!-- Usuarios (Admin only) -->
+              <a
+                *ngIf="hasRole('Administrador')"
+                routerLink="/usuarios"
                 routerLinkActive="bg-[#5B3C88] text-white shadow-md shadow-purple-500/20 [&_.nav-icon]:bg-white/20"
                 class="group flex items-center rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
                 [ngClass]="{
                   'justify-center p-2': collapsed(),
                   'gap-3 px-3 py-2.5': !collapsed()
                 }"
-                title="Roles"
+                title="Usuarios"
               >
                 <div class="nav-icon w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 group-hover:bg-[#5B3C88]/10 transition-colors">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-medium">Roles</span>
+                <span *ngIf="!collapsed()" class="text-sm font-medium">Usuarios</span>
               </a>
             </div>
 
@@ -100,89 +123,89 @@ import { AuthService } from '../core/auth/auth.service';
             <div>
               <p 
                 *ngIf="!collapsed()"
-                class="px-3 mb-3 text-[11px] font-semibold text-gray-400 uppercase tracking-widest"
+                class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2"
               >Módulos</p>
               
               <!-- Configuracion -->
               <a 
                 routerLink="/configuracion" 
-                routerLinkActive="bg-[#5B3C88] text-white shadow-md shadow-purple-500/20 [&_.nav-icon]:bg-white/20" 
-                class="group flex items-center rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200" 
+                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
                 [ngClass]="{
-                  'justify-center p-2': collapsed(),
-                  'gap-3 px-3 py-2.5': !collapsed()
+                  'justify-center p-2.5': collapsed(),
+                  'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Configuración"
               >
-                <div class="nav-icon w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 group-hover:bg-[#5B3C88]/10 transition-colors">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
+                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-medium">Configuración</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold">Configuración</span>
               </a>
 
               <!-- Exhibidores -->
               <a 
                 routerLink="/exhibidores" 
-                routerLinkActive="bg-[#5B3C88] text-white shadow-md shadow-purple-500/20 [&_.nav-icon]:bg-white/20" 
-                class="group flex items-center rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200" 
+                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
                 [ngClass]="{
-                  'justify-center p-2': collapsed(),
-                  'gap-3 px-3 py-2.5': !collapsed()
+                  'justify-center p-2.5': collapsed(),
+                  'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Exhibidores"
               >
-                <div class="nav-icon w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 group-hover:bg-[#5B3C88]/10 transition-colors">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
+                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-medium">Exhibidores</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold">Exhibidores</span>
               </a>
 
               <!-- Territorios -->
               <a 
                 routerLink="/territorios" 
-                routerLinkActive="bg-[#5B3C88] text-white shadow-md shadow-purple-500/20 [&_.nav-icon]:bg-white/20" 
-                class="group flex items-center rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200" 
+                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
                 [ngClass]="{
-                  'justify-center p-2': collapsed(),
-                  'gap-3 px-3 py-2.5': !collapsed()
+                  'justify-center p-2.5': collapsed(),
+                  'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Territorios"
               >
-                <div class="nav-icon w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 group-hover:bg-[#5B3C88]/10 transition-colors">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
+                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-medium">Territorios</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold">Territorios</span>
               </a>
 
               <!-- Secretario submenu -->
               <div>
                 <button 
                   (click)="toggleSecretario()" 
-                  class="w-full group flex items-center rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
+                  class="w-full group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
                   [ngClass]="{
-                    'justify-center p-2': collapsed(),
-                    'gap-3 px-3 py-2.5': !collapsed(),
-                    'bg-gray-100': secretarioOpen() && !collapsed()
+                    'justify-center p-2.5': collapsed(),
+                    'gap-3.5 px-3.5 py-3': !collapsed(),
+                    'bg-slate-50 text-slate-900': secretarioOpen() && !collapsed()
                   }"
                   title="Secretario"
                 >
-                  <div class="nav-icon w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 group-hover:bg-[#5B3C88]/10 transition-colors">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
+                    <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <span *ngIf="!collapsed()" class="text-sm font-medium flex-1 text-left">Secretario</span>
+                  <span *ngIf="!collapsed()" class="text-sm font-semibold flex-1 text-left">Secretario</span>
                   <svg 
                     *ngIf="!collapsed()" 
                     [ngClass]="{ 'rotate-90': secretarioOpen() }" 
-                    class="w-4 h-4 text-gray-400 transition-transform duration-300 mr-1" 
+                    class="w-4 h-4 text-slate-400 transition-transform duration-300 mr-1" 
                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   >
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -198,26 +221,22 @@ import { AuthService } from '../core/auth/auth.service';
                     'max-h-40 opacity-100': secretarioOpen() 
                   }"
                 >
-                  <div class="mt-2 ml-[22px] pl-4 border-l-2 border-[#5B3C88]/20 space-y-1">
+                  <div class="mt-2 ml-[22px] pl-4 border-l-2 border-purple-100 space-y-1">
                     <a 
                       routerLink="/secretario/publicadores" 
-                      routerLinkActive="text-[#5B3C88] bg-[#5B3C88]/10 font-semibold" 
-                      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 text-sm transition-all"
+                      routerLinkActive="text-[#6D28D9] bg-purple-50 font-semibold" 
+                      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[13px] transition-all"
                     >
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
+                      <svg class="w-1.5 h-1.5 rounded-full fill-current opacity-70" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
                       <span>Publicadores</span>
                     </a>
-
+                    
                     <a 
                       routerLink="/secretario/grupos" 
-                      routerLinkActive="text-[#5B3C88] bg-[#5B3C88]/10 font-semibold" 
-                      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 text-sm transition-all"
+                      routerLinkActive="text-[#6D28D9] bg-purple-50 font-semibold" 
+                      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[13px] transition-all"
                     >
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                      </svg>
+                      <svg class="w-1.5 h-1.5 rounded-full fill-current opacity-70" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
                       <span>Grupos</span>
                     </a>
                   </div>
@@ -228,26 +247,26 @@ import { AuthService } from '../core/auth/auth.service';
         </div>
 
         <!-- Sidebar Footer -->
-        <div class="border-t border-gray-100" [ngClass]="{ 'p-2': collapsed(), 'p-3': !collapsed() }">
+        <div class="border-t border-gray-100 bg-white" [ngClass]="{ 'p-3': collapsed(), 'p-4': !collapsed() }">
           <!-- User Info (only when expanded) -->
           <div 
             *ngIf="!collapsed()"
-            class="flex items-center gap-3 px-3 py-3 rounded-xl bg-gray-50 mb-3"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100 mb-3"
           >
-            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#5B3C88] to-[#332244] flex items-center justify-center text-white text-sm font-bold shrink-0">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#6D28D9] to-[#4C1D95] flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm">
               {{ user()?.username?.charAt(0)?.toUpperCase() || 'U' }}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-800 truncate">{{ user()?.username || 'Usuario' }}</p>
-              <p class="text-xs text-gray-400 truncate">{{ user()?.roles?.[0] || 'Sin rol' }}</p>
+              <p class="text-sm font-bold text-slate-800 truncate">{{ user()?.username || 'Usuario' }}</p>
+              <p class="text-[10px] uppercase font-bold text-slate-400 truncate tracking-wide">{{ user()?.roles?.[0] || 'Sin rol' }}</p>
             </div>
           </div>
           
           <!-- Collapse Toggle Button -->
           <button 
-            class="w-full flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-200"
+            class="w-full flex items-center justify-center rounded-xl bg-white border border-gray-200 hover:bg-slate-50 hover:border-slate-300 text-slate-500 hover:text-slate-700 transition-all duration-200"
             [ngClass]="{
-              'p-2': collapsed(),
+              'p-2.5': collapsed(),
               'gap-2 px-3 py-2.5': !collapsed()
             }"
             (click)="toggleSidebar()"
@@ -258,77 +277,87 @@ import { AuthService } from '../core/auth/auth.service';
               [ngClass]="{ 'rotate-180': collapsed() }"
               viewBox="0 0 24 24" fill="none" stroke="currentColor"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
-            <span *ngIf="!collapsed()" class="text-sm font-medium">Colapsar</span>
+            <span *ngIf="!collapsed()" class="text-xs font-bold uppercase tracking-wider">Colapsar</span>
           </button>
         </div>
       </aside>
 
       <!-- Main Content Area -->
       <div 
-        class="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" 
+        class="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]" 
         [ngClass]="{
-          'lg:ml-72': !collapsed(),
-          'lg:ml-[70px]': collapsed()
+          'lg:ml-[280px]': !collapsed(),
+          'lg:ml-[80px]': collapsed()
         }"
       >
         
         <!-- Top Header -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20">
-          <div class="flex items-center gap-3">
+        <header class="h-20 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 sm:px-8 sticky top-0 z-30 transition-shadow duration-300" [class.shadow-sm]="true">
+          <div class="flex items-center gap-4">
             <!-- Mobile Menu Toggle -->
             <button 
-              class="p-2 rounded-xl hover:bg-gray-100 text-gray-600 transition-colors lg:hidden" 
+              class="p-2.5 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors lg:hidden active:scale-95" 
               (click)="openMobileMenu()"
             >
               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             
-            <!-- Page Title -->
-            <div>
-              <h1 class="text-lg font-semibold text-gray-800">Dashboard</h1>
-              <p class="text-xs text-gray-400 hidden sm:block">Bienvenido al panel de administración</p>
+            <!-- Breadcrumb / Page Title -->
+            <div class="hidden sm:block">
+              <h1 class="text-xl font-bold text-slate-800 tracking-tight">Dashboard</h1>
+              <div class="flex items-center gap-2 text-xs font-medium text-slate-400 mt-0.5">
+                <span>Inicio</span>
+                <span>/</span>
+                <span class="text-purple-600">Vista General</span>
+              </div>
             </div>
           </div>
 
           <!-- Right Actions -->
-          <div class="flex items-center gap-1 sm:gap-2">
+          <div class="flex items-center gap-3">
             <!-- Search -->
-            <div class="hidden md:flex items-center bg-gray-100 rounded-xl px-4 py-2.5 w-48 lg:w-64 focus-within:ring-2 focus-within:ring-[#5B3C88]/20 transition-all">
-              <svg class="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <div class="hidden md:flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 w-64 focus-within:w-80 focus-within:ring-2 focus-within:ring-purple-100 focus-within:border-purple-300 transition-all duration-300 group">
+              <svg class="w-4 h-4 text-slate-400 group-focus-within:text-purple-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input type="text" placeholder="Buscar..." class="bg-transparent border-none outline-none ml-2 text-sm text-gray-600 w-full placeholder-gray-400">
+              <input type="text" placeholder="Buscar..." class="bg-transparent border-none outline-none ml-2 text-sm text-slate-700 w-full placeholder:text-slate-400">
+              <div class="hidden lg:flex items-center gap-1">
+                <kbd class="hidden sm:inline-block min-h-[20px] px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white border border-slate-200 rounded-md shadow-[0_1px_1px_rgba(0,0,0,0.05)]">⌘K</kbd>
+              </div>
             </div>
+
+            <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
             <!-- Notifications -->
             <div class="relative">
               <button 
-                class="p-2.5 rounded-xl hover:bg-gray-100 text-gray-600 transition-colors relative" 
+                class="p-3 rounded-full hover:bg-slate-100 text-slate-500 hover:text-purple-600 transition-all duration-200 relative group active:scale-95" 
                 (click)="toggleNotifications()"
               >
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <div class="absolute inset-0 bg-purple-50 rounded-full scale-0 group-hover:scale-100 transition-transform duration-200"></div>
+                <svg class="w-5 h-5 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <span class="absolute top-2 right-2 w-2 h-2 bg-[#E55934] rounded-full"></span>
+                <span class="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-[#EF4444] border-2 border-white rounded-full animate-bounce"></span>
               </button>
               
               <div 
                 *ngIf="notificationsOpen()" 
-                class="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fadeIn"
+                class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100 z-50 overflow-hidden animate-fadeIn origin-top-right transform transition-all"
               >
-                <div class="p-4 border-b border-gray-100 flex items-center justify-between">
-                  <h3 class="font-semibold text-gray-800">Notificaciones</h3>
-                  <span class="text-xs text-[#5B3C88] font-medium bg-[#5B3C88]/10 px-2 py-1 rounded-full">3 nuevas</span>
+                <div class="p-4 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+                  <h3 class="font-bold text-slate-800">Notificaciones</h3>
+                  <span class="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full uppercase tracking-wide">3 nuevas</span>
                 </div>
-                <div class="p-6 text-sm text-gray-400 text-center">
-                  <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  No hay notificaciones nuevas
+                <div class="p-8 text-sm text-slate-400 text-center flex flex-col items-center gap-3">
+                   <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center">
+                      <svg class="w-6 h-6 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                   </div>
+                   <p>¡Estás al día!</p>
                 </div>
               </div>
             </div>
@@ -337,17 +366,16 @@ import { AuthService } from '../core/auth/auth.service';
             <div *ngIf="user() as u" class="relative">
               <button 
                 id="user-menu-button"
-                class="flex items-center gap-2 sm:gap-3 p-1.5 rounded-xl hover:bg-gray-100 transition-colors" 
+                class="flex items-center gap-3 p-1.5 pl-2 pr-4 rounded-full border border-slate-200 hover:border-purple-200 hover:shadow-md hover:bg-white transition-all duration-200 group bg-white" 
                 (click)="toggleUserMenu()"
               >
-                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#5B3C88] to-[#332244] flex items-center justify-center text-white text-sm font-bold shrink-0">
-                  {{ u.username.charAt(0).toUpperCase() || 'U' }}
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#6D28D9] to-[#4C1D95] flex items-center justify-center text-white text-xs font-bold shrink-0 ring-2 ring-white group-hover:ring-purple-100 transition-all">
+                  {{ u.username?.charAt(0)?.toUpperCase() || 'U' }}
                 </div>
                 <div class="hidden sm:block text-left">
-                  <p class="text-sm font-medium text-gray-700">{{ u.username }}</p>
-                  <p class="text-xs text-gray-400">{{ u.roles?.[0] || 'Usuario' }}</p>
+                  <p class="text-sm font-bold text-slate-700 group-hover:text-purple-700 transition-colors">{{ u.username }}</p>
                 </div>
-                <svg class="w-4 h-4 text-gray-400 hidden sm:block transition-transform duration-200" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <svg class="w-4 h-4 text-slate-400 hidden sm:block transition-transform duration-200 group-hover:text-purple-500" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -355,43 +383,52 @@ import { AuthService } from '../core/auth/auth.service';
               <div 
                 *ngIf="userMenuOpen()" 
                 id="user-menu-panel" 
-                class="absolute right-0 mt-2 w-56 sm:w-64 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fadeIn"
+                class="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100 z-50 overflow-hidden animate-fadeIn origin-top-right"
               >
-                <div class="p-4 border-b border-gray-100 bg-gradient-to-br from-[#5B3C88] to-[#332244] text-white">
-                  <p class="font-semibold">{{ u.username }}</p>
-                  <p class="text-sm text-white/70">{{ u.roles?.[0] || 'Usuario' }}</p>
+                <div class="p-5 border-b border-slate-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-cover relative">
+                  <div class="absolute inset-0 bg-gradient-to-br from-[#6D28D9] to-[#4C1D95] opacity-90"></div>
+                  <div class="relative z-10 text-white">
+                      <p class="font-bold text-lg leading-tight">{{ u.username }}</p>
+                      <p class="text-xs text-purple-200 font-medium mt-0.5">{{ u.roles?.[0] || 'Usuario' }}</p>
+                  </div>
                 </div>
                 
                 <div class="p-2">
                   <button 
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 text-gray-700 text-sm transition-colors" 
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-600 font-medium text-sm transition-colors group" 
                     (click)="editProfile()"
                   >
-                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                    <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </div>
                     Mi perfil
                   </button>
                   <button 
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 text-gray-700 text-sm transition-colors" 
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-600 font-medium text-sm transition-colors group" 
                     (click)="openSettings()"
                   >
-                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                     <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                     </div>
                     Configuración
                   </button>
                 </div>
 
-                <div class="p-2 border-t border-gray-100">
+                <div class="p-2 border-t border-slate-50">
                   <button 
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-[#E55934]/10 hover:bg-[#E55934]/20 text-[#E55934] text-sm font-medium transition-colors" 
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-500 font-medium text-sm transition-colors group" 
                     (click)="logout()"
                   >
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
+                     <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-400 group-hover:bg-red-100 group-hover:text-red-600 transition-colors">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                     </div>
                     Cerrar sesión
                   </button>
                 </div>
@@ -401,9 +438,9 @@ import { AuthService } from '../core/auth/auth.service';
         </header>
 
         <!-- Page Content -->
-        <main class="flex-1 overflow-hidden relative flex flex-col">
-          <div class="flex-1 h-full w-full overflow-hidden p-3 sm:p-4 md:p-6 flex flex-col">
-            <router-outlet></router-outlet>
+        <main class="flex-1 flex flex-col p-4 sm:p-6 md:p-6 overflow-hidden relative">
+          <div class="flex-1 h-full w-full overflow-y-auto scroll-smooth pr-1">
+             <router-outlet></router-outlet>
           </div>
         </main>
       </div>

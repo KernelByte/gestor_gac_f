@@ -636,9 +636,20 @@ export class PublicadoresPage implements OnInit {
 
     const user = this.authStore.user();
     const id_congregacion = user?.id_congregacion;
+    const isAdminOrGestor = user?.rol?.toLowerCase().includes('admin') || user?.rol?.toLowerCase().includes('gestor');
 
-    if (!id_congregacion && !this.editingPublicador()) {
-      alert('No se pudo determinar la congregación del usuario.');
+    // Validación: Si NO es admin, necesita ID congregación siempre.
+    // Si ES admin, puede no tener ID, pero si CREA uno nuevo, necesita contexto (pendiente UI).
+    // Si ES admin y EDITA, todo bien.
+
+    if (!id_congregacion && !isAdminOrGestor) {
+      alert('Error: No se ha detectado tu congregación.');
+      this.saving.set(false);
+      return;
+    }
+
+    if (!id_congregacion && isAdminOrGestor && !this.editingPublicador()) {
+      alert('Aviso: Como administrador, debes seleccionar una congregación para crear miembros (Función pendiente en UI).');
       this.saving.set(false);
       return;
     }
