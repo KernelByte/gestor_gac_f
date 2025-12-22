@@ -31,23 +31,23 @@ import { ThemeService } from '../core/services/theme.service';
       >
         <!-- Sidebar Header -->
         <div class="h-20 flex items-center justify-center px-6">
-          <div class="flex items-center gap-3.5 w-full" [ngClass]="{ 'justify-center': collapsed() }">
+          <div class="flex items-center gap-3 w-full" [ngClass]="{ 'justify-center': collapsed() }">
             
             <!-- Logo Image -->
-            <div class="relative w-10 h-10 shrink-0 transform transition-transform hover:scale-105 duration-300">
+            <div class="relative w-10 h-10 shrink-0 transform transition-transform duration-500 hover:rotate-12">
                <img 
-                 src="images/LogoApp.png" 
+                 src="images/LogoAppMorado.png" 
                  alt="Logo" 
-                 class="w-full h-full object-contain drop-shadow-md"
+                 class="w-full h-full object-contain"
                >
             </div>
 
             <div 
               *ngIf="!collapsed()" 
-              class="flex flex-col animate-fadeIn overflow-hidden"
+              class="flex flex-col justify-center animate-fadeIn overflow-hidden h-10"
             >
-              <span class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-blue text-2xl tracking-tight leading-none">gestor<span class="text-slate-700">GAC</span></span>
-              <span class="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase mt-1">Administración</span>
+              <span class="font-display font-bold text-slate-800 text-xl tracking-tight leading-none">Gestor<span class="text-[#6D28D9]">GAC</span></span>
+              <span class="font-sans font-medium text-[10px] text-slate-400 uppercase tracking-wider mt-1">Smart Management Suite</span>
             </div>
           </div>
         </div>
@@ -60,7 +60,7 @@ import { ThemeService } from '../core/services/theme.service';
             <div class="mb-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
+                class="px-4 mb-3 mt-2 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
               >Principal</p>
               
               <!-- Inicio -->
@@ -376,7 +376,7 @@ import { ThemeService } from '../core/services/theme.service';
                   {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
                 </div>
                 <div class="hidden sm:block text-left">
-                  <p class="text-sm font-bold text-slate-700 group-hover:text-purple-700 transition-colors max-w-[120px] truncate">{{ u.nombre || u.username }}</p>
+                  <p class="text-sm font-bold text-slate-700 group-hover:text-purple-700 transition-colors whitespace-nowrap">{{ u.nombre || u.username }}</p>
                   <p *ngIf="u.roles?.[0]" class="text-[10px] text-slate-400 font-bold uppercase tracking-wide leading-none mt-0.5">{{ u.roles?.[0] }}</p>
                 </div>
                 <svg class="w-4 h-4 text-slate-400 hidden sm:block transition-transform duration-200 group-hover:text-purple-500" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor">

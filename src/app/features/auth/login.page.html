@@ -29,17 +29,22 @@
     <div
       class="flex flex-col items-center mt-4 sm:mt-6 mb-6 sm:mb-8 transform transition-all duration-700 hover:scale-105 w-full">
 
-      <!-- Logo Container -->
+      <!-- Logo Container (Frameless & Modern) -->
       <div class="relative group">
-        <!-- Glow effect behind logo -->
+        <!-- Active Glow (reveals on hover) -->
         <div
-          class="absolute -inset-1 bg-gradient-to-tr from-brand-purple/40 to-indigo-600/40 rounded-[2rem] blur-xl opacity-40 group-hover:opacity-60 transition duration-500">
+          class="absolute -inset-8 bg-brand-purple/20 rounded-full blur-[40px] opacity-0 group-hover:opacity-60 transition-opacity duration-700">
         </div>
 
+        <!-- Static Ambient Glow -->
+        <div class="absolute inset-0 bg-brand-purple/10 rounded-full blur-2xl opacity-50">
+        </div>
+
+        <!-- Logo Image -->
         <div
-          class="relative w-20 h-20 sm:w-24 sm:h-24 bg-[#0f0f13]/60 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] flex items-center justify-center shadow-2xl shadow-brand-purple/10 p-4 sm:p-5 ring-1 ring-white/5 group-hover:ring-white/10 transition-all duration-300">
+          class="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center transition-transform duration-500 group-hover:scale-[1.02]">
           <img src="images/LogoAppLigth.png" alt="GAC Logo"
-            class="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(109,40,217,0.3)] filter brightness-110 scale-110" />
+            class="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(109,40,217,0.6)] filter brightness-110" />
         </div>
       </div>
 
@@ -96,7 +101,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Usuario requerido
+            Correo electrónico requerido
           </div>
         </div>
 

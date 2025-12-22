@@ -3,7 +3,7 @@ import { authGuard } from './core/auth/auth.guard';
 import { roleGuard } from './core/auth/role.guard';
 
 export const routes: Routes = [
-  { path: 'login', loadComponent: () => import('./features/auth/login.page').then(m => m.LoginPage) },
+  { path: 'login', title: 'Iniciar Sesión', loadComponent: () => import('./features/auth/login.page').then(m => m.LoginPage) },
 
   // Shell protegido: adentro va el dashboard y demás menús
   {
@@ -11,15 +11,17 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell.page').then(m => m.ShellPage),
     children: [
-      { path: '', loadComponent: () => import('./features/home/home.page').then(m => m.HomePage) },
+      { path: '', title: 'Dashboard', loadComponent: () => import('./features/home/home.page').then(m => m.HomePage) },
       {
         path: 'roles',
+        title: 'Roles',
         canActivate: [roleGuard],
         data: { roles: ['Administrador'] },
         loadComponent: () => import('./features/basicas/roles/roles.page').then(m => m.RolesPage),
       },
       {
         path: 'usuarios',
+        title: 'Usuarios',
         canActivate: [roleGuard],
         data: { roles: ['Administrador'] },
         loadComponent: () => import('./features/basicas/usuarios/pages/usuarios.page').then(m => m.UsuariosPage),
