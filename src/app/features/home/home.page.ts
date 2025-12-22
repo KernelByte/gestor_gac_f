@@ -52,7 +52,7 @@ import { AuthStore } from '../../core/auth/auth.store';
         </div>
 
         <!-- Informes (Orange) -->
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col justify-between hover:border-orange-200 transition-all hover:shadow-md group h-36">
+        <div class="bg-white rounded-2xl p-4 pb-6 shadow-sm border border-slate-100 flex flex-col justify-between hover:border-orange-200 transition-all hover:shadow-md group h-36">
            <div class="flex justify-between items-start">
               <div class="p-2 rounded-xl bg-orange-50 text-orange-500 group-hover:scale-105 transition-transform shadow-sm">
                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -131,46 +131,53 @@ import { AuthStore } from '../../core/auth/auth.store';
         <!-- Left Column: Charts & Activity (2 Cols) -->
         <div class="lg:col-span-2 flex flex-col gap-6">
             
-            <!-- Reports Performance Chart (NOW ORANGE matching Informes) -->
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col">
-                <div class="flex justify-between items-end mb-4">
-                    <div>
-                       <h3 class="font-bold text-slate-800">Rendimiento</h3>
-                       <p class="text-xs text-slate-400">Informes últimos 6 meses</p>
-                    </div>
-                    <div class="text-right">
-                       <span class="text-lg font-black text-slate-800 block">142</span>
-                       <span class="text-[10px] text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded">Total Sem.</span>
-                    </div>
+            <!-- Reports Performance Chart (Compact & Horizontal) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-row items-center justify-between h-32">
+                <div class="flex flex-col justify-center h-full">
+                   <div>
+                      <h3 class="font-bold text-slate-800 text-lg">Rendimiento</h3>
+                      <p class="text-xs text-slate-400 font-medium">Informes últimos 6 meses</p>
+                   </div>
+                   <div class="mt-3 flex items-center gap-3">
+                      <span class="text-3xl font-black text-slate-800 tracking-tight">142</span>
+                      <div class="flex flex-col">
+                        <span class="text-[10px] text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded w-fit">+12%</span>
+                        <span class="text-[9px] text-slate-400 mt-0.5">Media Semanal</span>
+                      </div>
+                   </div>
                 </div>
-                <!-- CSS Bar Chart (Orange Theme) -->
-                <div class="flex-1 flex items-end justify-between gap-2 h-32 border-b border-slate-100 pb-1">
-                    <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[40%] transition-all relative group cursor-pointer">
-                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">40</div>
+
+                <!-- Mini Bar Chart (Right Side) -->
+                <div class="h-full flex items-end gap-2 sm:gap-3">
+                    <div class="group flex flex-col items-center gap-1 cursor-pointer">
+                        <div class="w-2 sm:w-2.5 bg-orange-100 group-hover:bg-orange-400 rounded-full h-8 transition-all duration-300"></div>
+                        <span class="text-[9px] text-slate-300 font-bold">Jul</span>
                     </div>
-                    <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[65%] transition-all relative group cursor-pointer">
-                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">65</div>
+                    <div class="group flex flex-col items-center gap-1 cursor-pointer">
+                        <div class="w-2 sm:w-2.5 bg-orange-100 group-hover:bg-orange-400 rounded-full h-12 transition-all duration-300"></div>
+                        <span class="text-[9px] text-slate-300 font-bold">Ago</span>
                     </div>
-                    <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[45%] transition-all relative group cursor-pointer">
-                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">45</div>
+                    <div class="group flex flex-col items-center gap-1 cursor-pointer">
+                        <div class="w-2 sm:w-2.5 bg-orange-200 group-hover:bg-orange-400 rounded-full h-10 transition-all duration-300"></div>
+                        <span class="text-[9px] text-slate-300 font-bold">Sep</span>
                     </div>
-                     <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[80%] transition-all relative group cursor-pointer">
-                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">80</div>
+                     <div class="group flex flex-col items-center gap-1 cursor-pointer">
+                        <div class="w-2 sm:w-2.5 bg-orange-300 group-hover:bg-orange-400 rounded-full h-16 transition-all duration-300"></div>
+                        <span class="text-[9px] text-slate-300 font-bold">Oct</span>
                     </div>
-                     <div class="w-full bg-orange-50 hover:bg-orange-500 rounded-t-lg h-[60%] transition-all relative group cursor-pointer">
-                         <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">60</div>
+                     <div class="group flex flex-col items-center gap-1 cursor-pointer">
+                         <div class="w-2 sm:w-2.5 bg-orange-400 group-hover:bg-orange-500 rounded-full h-14 transition-all duration-300"></div>
+                        <span class="text-[9px] text-slate-300 font-bold">Nov</span>
                     </div>
-                     <div class="w-full bg-orange-500 shadow-lg shadow-orange-200 rounded-t-lg h-[75%] transition-all relative group cursor-pointer">
-                         <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">75</div>
+                     <div class="group flex flex-col items-center gap-1 cursor-pointer">
+                         <div class="w-2 sm:w-2.5 bg-orange-500 shadow-lg shadow-orange-200 rounded-full h-20 transition-all duration-300"></div>
+                        <span class="text-[9px] text-slate-500 font-bold">Dic</span>
                     </div>
-                </div>
-                <div class="flex justify-between mt-1 text-[10px] text-slate-400 font-medium">
-                    <span>Jul</span><span>Ago</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dic</span>
                 </div>
             </div>
 
             <!-- Enhanced Activity Feed (Color Corrected) -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col overflow-hidden flex-1">
                 <div class="px-5 py-4 border-b border-slate-50 flex items-center justify-between shrink-0 bg-slate-50/30">
                    <h2 class="font-bold text-slate-800 flex items-center gap-2">
                        <svg class="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -313,8 +320,8 @@ export class HomePage implements OnInit {
 
    ngOnInit() {
       const user = this.store.user();
-      if (user?.username) {
-         this.userName.set(user.username);
+      if (user) {
+         this.userName.set(user.nombre || user.username);
       }
 
       const now = new Date();

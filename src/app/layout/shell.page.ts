@@ -1,15 +1,16 @@
-import { Component, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthStore } from '../core/auth/auth.store';
 import { AuthService } from '../core/auth/auth.service';
+import { ThemeService } from '../core/services/theme.service';
 
 @Component({
   standalone: true,
   selector: 'app-shell',
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="flex h-screen overflow-hidden bg-[#f3f4f6]">
+    <div class="flex h-screen overflow-hidden bg-[#f3f4f6]" [class.dark]="themeService.darkMode()">
       
       <!-- Mobile Overlay -->
       <div 
@@ -31,15 +32,22 @@ import { AuthService } from '../core/auth/auth.service';
         <!-- Sidebar Header -->
         <div class="h-20 flex items-center justify-center px-6">
           <div class="flex items-center gap-3.5 w-full" [ngClass]="{ 'justify-center': collapsed() }">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6D28D9] to-[#4C1D95] flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-purple-500/20 shrink-0 transform transition-transform hover:scale-105 duration-300">
-              G
+            
+            <!-- Logo Image -->
+            <div class="relative w-10 h-10 shrink-0 transform transition-transform hover:scale-105 duration-300">
+               <img 
+                 src="images/LogoApp.png" 
+                 alt="Logo" 
+                 class="w-full h-full object-contain drop-shadow-md"
+               >
             </div>
+
             <div 
               *ngIf="!collapsed()" 
               class="flex flex-col animate-fadeIn overflow-hidden"
             >
-              <span class="font-extrabold text-slate-800 text-lg tracking-tight leading-none">Gestor GAC</span>
-              <span class="text-[11px] text-slate-400 font-medium tracking-wide uppercase mt-1">Administración</span>
+              <span class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-blue text-2xl tracking-tight leading-none">gestor<span class="text-slate-700">GAC</span></span>
+              <span class="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase mt-1">Administración</span>
             </div>
           </div>
         </div>
@@ -52,70 +60,71 @@ import { AuthService } from '../core/auth/auth.service';
             <div class="mb-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2"
+                class="px-4 mb-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
               >Principal</p>
               
               <!-- Inicio -->
               <a
                 routerLink="/"
-                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
+                                                                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 [routerLinkActiveOptions]="{ exact: true }"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Inicio"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
-                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <!-- Hover Effect Background handled by CSS or utility if simple, but here handled by standard hover:bg -->
+                
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold">Inicio</span>
-                <div *ngIf="!collapsed()" class="ml-auto opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-200">
-                  <svg class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                </div>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Inicio</span>
+                
+                <!-- Active Indicator (Right Border) handled by ring in active class for now, or add specific span -->
               </a>
 
               <!-- Roles -->
               <a
                 *ngIf="hasRole('Administrador')"
                 routerLink="/roles"
-                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
+                                                                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Roles"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
-                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold">Roles</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Roles</span>
               </a>
 
               <!-- Usuarios (Admin only) -->
               <a
                 *ngIf="hasRole('Administrador')"
                 routerLink="/usuarios"
-                routerLinkActive="bg-[#5B3C88] text-white shadow-md shadow-purple-500/20 [&_.nav-icon]:bg-white/20"
-                class="group flex items-center rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
+                                                                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
-                  'justify-center p-2': collapsed(),
-                  'gap-3 px-3 py-2.5': !collapsed()
+                  'justify-center p-2.5': collapsed(),
+                  'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Usuarios"
               >
-                <div class="nav-icon w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 group-hover:bg-[#5B3C88]/10 transition-colors">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-medium">Usuarios</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Usuarios</span>
               </a>
             </div>
 
@@ -123,72 +132,72 @@ import { AuthService } from '../core/auth/auth.service';
             <div>
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2"
+                class="px-4 mb-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
               >Módulos</p>
               
               <!-- Configuracion -->
               <a 
                 routerLink="/configuracion" 
-                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
+                                                                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Configuración"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
-                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold">Configuración</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Configuración</span>
               </a>
 
               <!-- Exhibidores -->
               <a 
                 routerLink="/exhibidores" 
-                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
+                routerLinkActive="bg-brand-blue text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-blue hover:!text-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Exhibidores"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
-                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold">Exhibidores</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Exhibidores</span>
               </a>
 
               <!-- Territorios -->
               <a 
                 routerLink="/territorios" 
-                routerLinkActive="bg-purple-50 text-[#6D28D9] shadow-sm ring-1 ring-purple-100 [&_.nav-icon]:text-[#6D28D9] [&_.nav-icon]:bg-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
+                routerLinkActive="bg-brand-green text-white shadow-lg shadow-green-500/30 ring-1 ring-green-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-green hover:!text-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Territorios"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
-                  <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold">Territorios</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Territorios</span>
               </a>
 
               <!-- Secretario submenu -->
               <div>
                 <button 
                   (click)="toggleSecretario()" 
-                  class="w-full group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 ease-out"
+                  class="w-full group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                   [ngClass]="{
                     'justify-center p-2.5': collapsed(),
                     'gap-3.5 px-3.5 py-3': !collapsed(),
@@ -196,12 +205,12 @@ import { AuthService } from '../core/auth/auth.service';
                   }"
                   title="Secretario"
                 >
-                  <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-colors duration-200">
+                  <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:bg-slate-100/80">
                     <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <span *ngIf="!collapsed()" class="text-sm font-semibold flex-1 text-left">Secretario</span>
+                  <span *ngIf="!collapsed()" class="text-sm font-semibold flex-1 text-left relative z-10">Secretario</span>
                   <svg 
                     *ngIf="!collapsed()" 
                     [ngClass]="{ 'rotate-90': secretarioOpen() }" 
@@ -221,22 +230,20 @@ import { AuthService } from '../core/auth/auth.service';
                     'max-h-40 opacity-100': secretarioOpen() 
                   }"
                 >
-                  <div class="mt-2 ml-[22px] pl-4 border-l-2 border-purple-100 space-y-1">
+                  <div class="mt-1 ml-[42px] pl-4 border-l-2 border-slate-100 space-y-1 relative">
                     <a 
                       routerLink="/secretario/publicadores" 
-                      routerLinkActive="text-[#6D28D9] bg-purple-50 font-semibold" 
-                      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[13px] transition-all"
+                      routerLinkActive="bg-brand-orange text-white shadow-md shadow-orange-500/20 ring-1 ring-orange-400 font-bold hover:!bg-brand-orange hover:!text-white" 
+                      class="flex items-center gap-2 px-3 py-2 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-xs font-medium transition-all duration-200"
                     >
-                      <svg class="w-1.5 h-1.5 rounded-full fill-current opacity-70" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
                       <span>Publicadores</span>
                     </a>
                     
                     <a 
                       routerLink="/secretario/grupos" 
-                      routerLinkActive="text-[#6D28D9] bg-purple-50 font-semibold" 
-                      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[13px] transition-all"
+                      routerLinkActive="bg-brand-orange text-white shadow-md shadow-orange-500/20 ring-1 ring-orange-400 font-bold hover:!bg-brand-orange hover:!text-white" 
+                      class="flex items-center gap-2 px-3 py-2 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-xs font-medium transition-all duration-200"
                     >
-                      <svg class="w-1.5 h-1.5 rounded-full fill-current opacity-70" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
                       <span>Grupos</span>
                     </a>
                   </div>
@@ -247,39 +254,20 @@ import { AuthService } from '../core/auth/auth.service';
         </div>
 
         <!-- Sidebar Footer -->
-        <div class="border-t border-gray-100 bg-white" [ngClass]="{ 'p-3': collapsed(), 'p-4': !collapsed() }">
-          <!-- User Info (only when expanded) -->
-          <div 
-            *ngIf="!collapsed()"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100 mb-3"
-          >
-            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#6D28D9] to-[#4C1D95] flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm">
-              {{ user()?.username?.charAt(0)?.toUpperCase() || 'U' }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-slate-800 truncate">{{ user()?.username || 'Usuario' }}</p>
-              <p class="text-[10px] uppercase font-bold text-slate-400 truncate tracking-wide">{{ user()?.roles?.[0] || 'Sin rol' }}</p>
-            </div>
-          </div>
-          
-          <!-- Collapse Toggle Button -->
+        <div class="mb-4 mt-auto flex justify-end px-4">         
+          <!-- Minimal Collapse Button -->
           <button 
-            class="w-full flex items-center justify-center rounded-xl bg-white border border-gray-200 hover:bg-slate-50 hover:border-slate-300 text-slate-500 hover:text-slate-700 transition-all duration-200"
-            [ngClass]="{
-              'p-2.5': collapsed(),
-              'gap-2 px-3 py-2.5': !collapsed()
-            }"
+            class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 border border-transparent hover:border-purple-100"
             (click)="toggleSidebar()"
-            [title]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
+            [title]="collapsed() ? 'Expandir' : 'Colapsar'"
           >
             <svg 
-              class="w-5 h-5 transition-transform duration-300" 
+              class="w-4 h-4 transition-transform duration-300" 
               [ngClass]="{ 'rotate-180': collapsed() }"
               viewBox="0 0 24 24" fill="none" stroke="currentColor"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
-            <span *ngIf="!collapsed()" class="text-xs font-bold uppercase tracking-wider">Colapsar</span>
           </button>
         </div>
       </aside>
@@ -306,43 +294,58 @@ import { AuthService } from '../core/auth/auth.service';
               </svg>
             </button>
             
-            <!-- Breadcrumb / Page Title -->
-            <div class="hidden sm:block">
-              <h1 class="text-xl font-bold text-slate-800 tracking-tight">Dashboard</h1>
-              <div class="flex items-center gap-2 text-xs font-medium text-slate-400 mt-0.5">
-                <span>Inicio</span>
-                <span>/</span>
-                <span class="text-purple-600">Vista General</span>
-              </div>
-            </div>
+            <!-- Breadcrumb / Page Title Removed -->
           </div>
 
           <!-- Right Actions -->
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 sm:gap-4">
             <!-- Search -->
-            <div class="hidden md:flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 w-64 focus-within:w-80 focus-within:ring-2 focus-within:ring-purple-100 focus-within:border-purple-300 transition-all duration-300 group">
+            <div 
+              class="hidden md:flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 w-64 focus-within:w-80 focus-within:ring-2 focus-within:ring-purple-100 focus-within:border-purple-300 transition-all duration-300 group cursor-text"
+              (click)="searchInput.focus()"
+            >
               <svg class="w-4 h-4 text-slate-400 group-focus-within:text-purple-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input type="text" placeholder="Buscar..." class="bg-transparent border-none outline-none ml-2 text-sm text-slate-700 w-full placeholder:text-slate-400">
+              <input 
+                #searchInput
+                type="text" 
+                placeholder="Buscar..." 
+                class="bg-transparent border-none outline-none ml-2 text-sm text-slate-700 w-full placeholder:text-slate-400"
+              >
               <div class="hidden lg:flex items-center gap-1">
                 <kbd class="hidden sm:inline-block min-h-[20px] px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white border border-slate-200 rounded-md shadow-[0_1px_1px_rgba(0,0,0,0.05)]">⌘K</kbd>
               </div>
             </div>
 
-            <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+            <!-- Theme Toggle -->
+            <button 
+              class="p-2.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-amber-500 transition-all active:scale-95 hidden sm:flex" 
+              (click)="toggleTheme()"
+              title="Cambiar tema"
+            >
+               <svg *ngIf="!themeService.darkMode()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+               <svg *ngIf="themeService.darkMode()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </button>
+
+            <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
 
             <!-- Notifications -->
             <div class="relative">
               <button 
-                class="p-3 rounded-full hover:bg-slate-100 text-slate-500 hover:text-purple-600 transition-all duration-200 relative group active:scale-95" 
+                class="p-2.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-purple-600 transition-all duration-200 relative group active:scale-95" 
                 (click)="toggleNotifications()"
               >
                 <div class="absolute inset-0 bg-purple-50 rounded-full scale-0 group-hover:scale-100 transition-transform duration-200"></div>
                 <svg class="w-5 h-5 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <span class="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-[#EF4444] border-2 border-white rounded-full animate-bounce"></span>
+                
+                <!-- Badge Logic -->
+                <div *ngIf="notificationCount() > 0" class="absolute -top-0.5 -right-0.5 z-20 flex items-center justify-center">
+                   <span *ngIf="notificationCount() < 9" class="bg-[#EF4444] text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-white">{{ notificationCount() }}</span>
+                   <span *ngIf="notificationCount() >= 9" class="h-2.5 w-2.5 bg-[#EF4444] rounded-full border border-white animate-bounce"></span>
+                </div>
               </button>
               
               <div 
@@ -351,7 +354,7 @@ import { AuthService } from '../core/auth/auth.service';
               >
                 <div class="p-4 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
                   <h3 class="font-bold text-slate-800">Notificaciones</h3>
-                  <span class="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full uppercase tracking-wide">3 nuevas</span>
+                  <span class="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full uppercase tracking-wide">{{ notificationCount() }} nuevas</span>
                 </div>
                 <div class="p-8 text-sm text-slate-400 text-center flex flex-col items-center gap-3">
                    <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center">
@@ -366,14 +369,15 @@ import { AuthService } from '../core/auth/auth.service';
             <div *ngIf="user() as u" class="relative">
               <button 
                 id="user-menu-button"
-                class="flex items-center gap-3 p-1.5 pl-2 pr-4 rounded-full border border-slate-200 hover:border-purple-200 hover:shadow-md hover:bg-white transition-all duration-200 group bg-white" 
+                class="flex items-center gap-3 p-1.5 pl-2 pr-4 rounded-full hover:bg-slate-100 transition-all duration-200 group focus:outline-none" 
                 (click)="toggleUserMenu()"
               >
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#6D28D9] to-[#4C1D95] flex items-center justify-center text-white text-xs font-bold shrink-0 ring-2 ring-white group-hover:ring-purple-100 transition-all">
-                  {{ u.username?.charAt(0)?.toUpperCase() || 'U' }}
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] flex items-center justify-center text-white text-xs font-bold shrink-0 ring-2 ring-transparent group-hover:ring-purple-100 transition-all">
+                  {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
                 </div>
                 <div class="hidden sm:block text-left">
-                  <p class="text-sm font-bold text-slate-700 group-hover:text-purple-700 transition-colors">{{ u.username }}</p>
+                  <p class="text-sm font-bold text-slate-700 group-hover:text-purple-700 transition-colors max-w-[120px] truncate">{{ u.nombre || u.username }}</p>
+                  <p *ngIf="u.roles?.[0]" class="text-[10px] text-slate-400 font-bold uppercase tracking-wide leading-none mt-0.5">{{ u.roles?.[0] }}</p>
                 </div>
                 <svg class="w-4 h-4 text-slate-400 hidden sm:block transition-transform duration-200 group-hover:text-purple-500" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -386,7 +390,7 @@ import { AuthService } from '../core/auth/auth.service';
                 class="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100 z-50 overflow-hidden animate-fadeIn origin-top-right"
               >
                 <div class="p-5 border-b border-slate-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-cover relative">
-                  <div class="absolute inset-0 bg-gradient-to-br from-[#6D28D9] to-[#4C1D95] opacity-90"></div>
+                  <div class="absolute inset-0 bg-gradient-to-br from-brand-purple to-[#4C1D95] opacity-90"></div>
                   <div class="relative z-10 text-white">
                       <p class="font-bold text-lg leading-tight">{{ u.username }}</p>
                       <p class="text-xs text-purple-200 font-medium mt-0.5">{{ u.roles?.[0] || 'Usuario' }}</p>
@@ -452,15 +456,35 @@ import { AuthService } from '../core/auth/auth.service';
     }
   `]
 })
+// ... Inside Component
 export class ShellPage implements OnInit, OnDestroy {
   private store = inject(AuthStore);
   private auth = inject(AuthService);
+  themeService = inject(ThemeService); // Inject public service
 
   collapsed = signal(false);
   mobileMenuOpen = signal(false);
   userMenuOpen = signal(false);
   secretarioOpen = signal(false);
   notificationsOpen = signal(false);
+
+  // New Signals & Props
+  // darkMode = signal(false); // Removed local signal
+  notificationCount = signal(3);
+  @ViewChild('searchInput') searchInput!: ElementRef;
+
+  // Search Shortcut
+  @HostListener('window:keydown.control.k', ['$event'])
+  @HostListener('window:keydown.meta.k', ['$event'])
+  handleSearchShortcut(event: any) {
+    event.preventDefault();
+    this.searchInput?.nativeElement?.focus();
+  }
+
+  // Uses Service method directly in template or here as proxy
+  toggleTheme() {
+    this.themeService.toggleTheme();
+  }
 
   private outsideClickHandler = (e: MouseEvent) => {
     try {
