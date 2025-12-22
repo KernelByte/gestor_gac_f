@@ -23,20 +23,16 @@ type TabType = 'personal' | 'teocratico';
 
 @Component({
   standalone: true,
-  selector: 'app-publicadores-page',
+  selector: 'app-publicadores-list',
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   template: `
-    <div class="h-full flex flex-col w-full max-w-[1600px] mx-auto p-4 sm:p-8 bg-gray-50/50">
+    <div class="flex flex-col gap-6">
       
-      <!-- Top Header Area -->
-      <div class="shrink-0 flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8">
-        <div>
-          <h1 class="text-3xl font-black text-slate-900 tracking-tight">Gestión de Miembros</h1>
-          <p class="text-slate-500 mt-1 max-w-2xl">Administra la información, privilegios y grupos de servicio de los publicadores de la congregación.</p>
-        </div>
+      <!-- Top Actions -->
+      <div class="flex justify-end">
         <button 
           (click)="openCreateForm()"
-          class="shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#5B3C88] hover:bg-[#4a2f73] text-white rounded-xl font-bold shadow-lg shadow-purple-900/20 transition-all active:scale-95"
+          class="shrink-0 inline-flex items-center gap-2 px-6 h-12 bg-[#5B3C88] hover:bg-[#4a2f73] text-white rounded-xl font-display font-bold shadow-lg shadow-purple-900/20 transition-all active:scale-95"
         >
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
           Novo Miembro
@@ -329,11 +325,11 @@ type TabType = 'personal' | 'teocratico';
                         <label class="block text-xs font-bold text-slate-500 mb-2 ml-1">Estado</label>
                          <div class="flex items-center gap-6">
                              <label class="flex items-center gap-2 cursor-pointer">
-                                 <input type="radio" value="1" class="w-5 h-5 text-[#5B3C88] border-slate-300 focus:ring-[#5B3C88]" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value)?.includes('Activo')" (change)="setEstado('Activo')">
+                                 <input type="radio" value="1" class="w-5 h-5 text-[#5B3C88] border-slate-300 focus:ring-[#5B3C88]" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Activo')" (change)="setEstado('Activo')">
                                  <span class="text-sm font-medium text-slate-700">Activo</span>
                              </label>
                               <label class="flex items-center gap-2 cursor-pointer">
-                                 <input type="radio" value="2" class="w-5 h-5 text-[#5B3C88] border-slate-300 focus:ring-[#5B3C88]" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value)?.includes('Inactivo')" (change)="setEstado('Inactivo')">
+                                 <input type="radio" value="2" class="w-5 h-5 text-[#5B3C88] border-slate-300 focus:ring-[#5B3C88]" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Inactivo')" (change)="setEstado('Inactivo')">
                                  <span class="text-sm font-medium text-slate-700">Inactivo</span>
                              </label>
                          </div>
@@ -463,7 +459,7 @@ type TabType = 'personal' | 'teocratico';
     }
   `]
 })
-export class PublicadoresPage implements OnInit {
+export class PublicadoresListComponent implements OnInit {
   private facade = inject(PublicadoresFacade);
   private authStore = inject(AuthStore);
   private http = inject(HttpClient);
@@ -522,15 +518,27 @@ export class PublicadoresPage implements OnInit {
 
   // Data Loading
   loadData() {
-    this.facade.load({ limit: 20, offset: 0 });
+    const user = this.authStore.user();
+    const params: any = { limit: 20, offset: 0 };
+    if (user?.id_congregacion) {
+      params.id_congregacion = user.id_congregacion;
+    }
+    this.facade.load(params);
   }
 
   async loadAuxiliaryData() {
     try {
+      const user = this.authStore.user();
+      const params: any = {};
+      if (user?.id_congregacion) {
+        params.id_congregacion = user.id_congregacion;
+      }
+
       // Added trailing slashes to match service configuration
       const estados = await lastValueFrom(this.http.get<Estado[]>('/api/estados/'));
       this.estados.set(estados || []);
-      const grupos = await lastValueFrom(this.http.get<Grupo[]>('/api/grupos/'));
+
+      const grupos = await lastValueFrom(this.http.get<Grupo[]>('/api/grupos/', { params }));
       this.grupos.set(grupos || []);
 
       // Debug log to verify data integrity
@@ -545,22 +553,32 @@ export class PublicadoresPage implements OnInit {
   onSearch() {
     clearTimeout(this.searchDebounce);
     this.searchDebounce = setTimeout(() => {
-      this.facade.load({
+      const user = this.authStore.user();
+      const params: any = {
         q: this.searchQuery || undefined,
         id_grupo: this.selectedGrupo || undefined,
         id_estado: this.selectedEstado || undefined,
         offset: 0
-      });
+      };
+      if (user?.id_congregacion) {
+        params.id_congregacion = user.id_congregacion;
+      }
+      this.facade.load(params);
     }, 300);
   }
 
   onFilterChange() {
-    this.facade.load({
+    const user = this.authStore.user();
+    const params: any = {
       q: this.searchQuery || undefined,
       id_grupo: this.selectedGrupo || undefined,
       id_estado: this.selectedEstado || undefined,
       offset: 0
-    });
+    };
+    if (user?.id_congregacion) {
+      params.id_congregacion = user.id_congregacion;
+    }
+    this.facade.load(params);
   }
 
   // Pagination

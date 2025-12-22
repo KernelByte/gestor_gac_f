@@ -12,7 +12,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
 
 @Component({
    standalone: true,
-   selector: 'app-grupos-page',
+   selector: 'app-grupos-list',
    imports: [CommonModule, ReactiveFormsModule],
    animations: [
       trigger('slideOver', [
@@ -37,28 +37,24 @@ import { AuthStore } from '../../../../core/auth/auth.store';
    template: `
     <div class="h-full flex flex-col w-full max-w-[1600px] mx-auto p-6 md:p-8 space-y-8 overflow-y-auto scroll-smooth simple-scrollbar">
       
-      <!-- 1. Header & Main Action -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-3xl font-black text-slate-900 tracking-tight">Gestión de Grupos</h1>
-          <p class="text-slate-500 mt-1 text-base">Administra los grupos de predicación y sus asignaciones actuales.</p>
-        </div>
-        <div class="flex items-center gap-3">
+    <div class="flex flex-col gap-6">
+      
+      <!-- Top Actions -->
+      <div class="flex justify-end items-center gap-3">
             <button 
               (click)="goToDynamicAssignment()"
-              class="inline-flex items-center gap-2 px-5 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-95"
+              class="inline-flex items-center gap-2 px-5 h-12 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-95"
             >
               <svg class="w-5 h-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
               Asignación Dinámica
             </button>
             <button 
               (click)="openCreatePanel()"
-              class="inline-flex items-center gap-2 px-6 py-3 bg-[#5B3C88] hover:bg-[#4a2f73] text-white rounded-xl font-bold text-sm shadow-xl shadow-purple-900/20 transition-all active:scale-95 group"
+              class="inline-flex items-center gap-2 px-6 h-12 bg-[#5B3C88] hover:bg-[#4a2f73] text-white rounded-xl font-display font-bold text-sm shadow-xl shadow-purple-900/20 transition-all active:scale-95 group"
             >
               <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
               Nuevo Grupo
             </button>
-        </div>
       </div>
 
       <!-- 2. KPI Cards -->
@@ -281,7 +277,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
     }
   `]
 })
-export class GruposPage implements OnInit {
+export class GruposListComponent implements OnInit {
    private gruposService = inject(GruposService);
    private authStore = inject(AuthStore);
    private fb = inject(FormBuilder);
@@ -337,7 +333,14 @@ export class GruposPage implements OnInit {
    }
 
    loadSinAsignar() {
-      this.http.get<any[]>('/api/publicadores/').subscribe({
+      const user = this.authStore.user();
+      const params: any = {};
+
+      if (user?.id_congregacion) {
+         params.id_congregacion = user.id_congregacion;
+      }
+
+      this.http.get<any[]>('/api/publicadores/', { params }).subscribe({
          next: (pubs) => {
             const count = pubs.filter(p => !p.id_grupo_publicador).length;
             this.totalSinAsignar.set(count);
@@ -349,10 +352,19 @@ export class GruposPage implements OnInit {
    async loadGrupos() {
       this.loading.set(true);
       try {
-         const data = await lastValueFrom(this.gruposService.getGrupos());
+         const user = this.authStore.user();
+         const params: any = {};
+
+         if (user?.id_congregacion) {
+            params.id_congregacion = user.id_congregacion;
+         }
+
+         const data = await lastValueFrom(this.gruposService.getGrupos(params));
          this.grupos.set(data);
-      } catch (err) {
+      } catch (err: any) {
          console.error('Error cargando grupos', err);
+         // Optional: show toast or alert if needed for debugging
+         // alert(err?.error?.detail || 'Error al cargar grupos');
       } finally {
          this.loading.set(false);
       }

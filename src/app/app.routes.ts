@@ -27,6 +27,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/basicas/usuarios/pages/usuarios.page').then(m => m.UsuariosPage),
       },
       {
+        path: 'territorios',
+        title: 'Territorios',
+        // canActivate: [roleGuard],
+        // data: { roles: [...] }, 
+        loadComponent: () => import('./features/territorios/pages/territorios.page').then(m => m.TerritoriosPage),
+      },
+      {
+        path: 'exhibidores',
+        title: 'Exhibidores',
+        loadComponent: () => import('./features/exhibidores/pages/exhibidores.page').then(m => m.ExhibidoresPage),
+      },
+      {
         path: 'secretario',
         canActivate: [roleGuard],
         data: { roles: ['Administrador', 'Coordinador', 'Secretario', 'Superintendente de servicio'] },

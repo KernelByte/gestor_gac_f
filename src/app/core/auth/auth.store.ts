@@ -4,6 +4,7 @@ export interface SessionUser {
   id: number | string;
   username: string;
   nombre?: string;
+  correo?: string;
   rol?: string;     // un solo rol desde backend
   roles?: string[];  // por si luego se devuelven múltiples
   id_usuario_publicador?: number | null;

@@ -48,4 +48,11 @@ export class UsuariosService {
    getCongregaciones(): Observable<Congregacion[]> {
       return this.http.get<Congregacion[]>(this.CONGREGACIONES_URL);
    }
+
+   getPublicadores(idCongregacion?: number): Observable<any[]> {
+      let params: any = {};
+      if (idCongregacion) params.id_congregacion = idCongregacion;
+      // We limit to active ones if possible, but the API might not support it yet without auth context
+      return this.http.get<any[]>('/api/publicadores/', { params });
+   }
 }

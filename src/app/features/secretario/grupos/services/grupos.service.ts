@@ -10,8 +10,8 @@ export class GruposService {
    private http = inject(HttpClient);
    private readonly API_URL = '/api/grupos/';
 
-   getGrupos(): Observable<Grupo[]> {
-      return this.http.get<Grupo[]>(this.API_URL);
+   getGrupos(params?: any): Observable<Grupo[]> {
+      return this.http.get<Grupo[]>(this.API_URL, { params });
    }
 
    getGrupo(id: number): Observable<Grupo> {

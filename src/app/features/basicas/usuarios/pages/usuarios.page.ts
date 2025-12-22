@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -47,17 +48,17 @@ import { Usuario } from '../models/usuario.model';
       ])
    ],
    template: `
-    <div class="h-full flex flex-col w-full max-w-[1600px] mx-auto pb-6 relative">
+    <div class="flex flex-col gap-6">
       
        <!-- 1. Header Section -->
-       <div class="shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pt-2">
+       <div class="shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
          <div>
-           <h1 class="text-3xl font-black text-slate-900 tracking-tight">Gestión de Usuarios</h1>
+           <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight">Gestión de Usuarios</h1>
            <p class="text-slate-500 mt-1 max-w-2xl text-base">Administra los accesos y credenciales de los miembros del sistema.</p>
          </div>
          <button 
            (click)="openCreatePanel()"
-           class="group shrink-0 inline-flex items-center gap-2 px-6 py-3.5 bg-[#6D28D9] hover:bg-[#5b21b6] text-white rounded-xl font-bold shadow-lg shadow-purple-900/20 transition-all active:scale-95 hover:shadow-purple-900/30"
+           class="group shrink-0 inline-flex items-center gap-2 px-6 h-12 bg-[#6D28D9] hover:bg-[#5b21b6] text-white rounded-xl font-display font-bold shadow-lg shadow-purple-900/20 transition-all active:scale-95 hover:shadow-purple-900/30"
          >
            <svg class="w-5 h-5 transition-transform group-hover:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
            <span>Nuevo Usuario</span>
@@ -65,7 +66,7 @@ import { Usuario } from '../models/usuario.model';
        </div>
 
        <!-- 2. Filters & Search Block -->
-       <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col sm:flex-row items-center gap-2">
+       <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center gap-2">
           <div class="relative flex-1 w-full group">
              <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
              <input 
@@ -85,27 +86,27 @@ import { Usuario } from '../models/usuario.model';
        </div>
 
        <!-- 3. User List Table -->
-       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
-          <div class="overflow-x-auto flex-1 simple-scrollbar">
+       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative min-h-[500px]">
+          <div class="overflow-x-auto simple-scrollbar">
              <table class="w-full text-left border-collapse">
-                <thead class="sticky top-0 bg-slate-50/90 backdrop-blur-sm z-10 border-b border-slate-200">
+                <thead class="sticky top-0 bg-slate-50/80 backdrop-blur-md z-10 border-b border-slate-200">
                    <tr>
-                      <th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Usuario</th>
-                      <th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Rol</th>
-                      <th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-center">Estado</th>
-                      <th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
+                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Usuario</th>
+                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Rol</th>
+                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Estado</th>
+                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Acciones</th>
                    </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                   <tr *ngFor="let u of filteredUsuarios()" @listAnimation class="group hover:bg-purple-50/30 transition-colors">
+                   <tr *ngFor="let u of filteredUsuarios()" @listAnimation class="group hover:bg-slate-50 transition-colors">
                       <!-- User Info -->
                       <td class="px-6 py-4">
                          <div class="flex items-center gap-4">
-                            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-[#6D28D9] to-[#5b21b6] text-white flex items-center justify-center shrink-0 font-bold text-lg shadow-md shadow-purple-200 ring-2 ring-white">
+                            <div [ngClass]="getUserStyle(u.nombre)" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-lg shadow-sm ring-1 ring-white border border-white/50">
                                {{ u.nombre.charAt(0).toUpperCase() }}
                             </div>
                             <div>
-                               <p class="font-bold text-slate-900 text-sm group-hover:text-[#6D28D9] transition-colors">{{ u.nombre }}</p>
+                               <p class="font-bold text-slate-900 text-sm tracking-tight">{{ u.nombre }}</p>
                                <p class="text-xs text-slate-500 font-medium">{{ u.correo }}</p>
                             </div>
                          </div>
@@ -121,9 +122,10 @@ import { Usuario } from '../models/usuario.model';
 
                       <!-- Status Badge (Mock) -->
                       <td class="px-6 py-4 text-center">
-                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                         <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-100/50">
+                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                             Activo
-                         </span>
+                         </div>
                       </td>
 
                       <!-- Actions -->
@@ -166,18 +168,20 @@ import { Usuario } from '../models/usuario.model';
                 <div class="h-full flex flex-col bg-white shadow-2xl overflow-y-scroll">
                    
                    <!-- Header -->
-                   <div class="px-6 py-6 bg-[#6D28D9] text-white shrink-0 relative overflow-hidden">
-                      <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-                      <div class="relative z-10 flex items-start justify-between">
-                         <div>
-                            <h2 class="text-xl font-black text-white" id="slide-over-title">{{ editingUser() ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
-                            <p class="text-sm text-purple-200 mt-1">Información de cuenta y permisos</p>
+                   <div class="px-8 py-6 border-b border-slate-100 bg-white flex items-center justify-between shrink-0 z-10">
+                      <div class="flex items-center gap-4">
+                         <div class="h-12 w-12 rounded-2xl bg-purple-50 flex items-center justify-center text-[#6D28D9] border border-purple-100">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                          </div>
-                         <button (click)="closePanel()" class="rounded-lg p-2 text-purple-200 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white">
-                            <span class="sr-only">Cerrar panel</span>
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                         </button>
+                         <div>
+                            <h2 class="text-xl font-display font-black text-slate-900 tracking-tight" id="slide-over-title">{{ editingUser() ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
+                            <p class="text-sm text-slate-500 font-medium mt-0.5">Información de cuenta y permisos</p>
+                         </div>
                       </div>
+                      <button (click)="closePanel()" class="p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+                         <span class="sr-only">Cerrar panel</span>
+                         <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      </button>
                    </div>
 
                    <!-- Body -->
@@ -255,30 +259,98 @@ import { Usuario } from '../models/usuario.model';
                                  
                                  <!-- Custom Congregation Select -->
                                  <div class="space-y-1 relative">
-                                    <label class="block text-sm font-bold text-[#6D28D9]">Congregación</label>
+                                    <label class="block text-sm font-bold text-[#6D28D9]">
+                                       Congregación <span *ngIf="isCongregationRequired()" class="text-red-500">*</span>
+                                    </label>
                                     
                                     <!-- Trigger Button -->
                                     <button type="button" (click)="congDropdownOpen.set(!congDropdownOpen())" 
-                                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white active:bg-slate-50 group">
+                                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white active:bg-slate-50 group"
+                                       [class.border-red-300]="userForm.get('id_congregacion')?.invalid && userForm.get('id_congregacion')?.touched">
                                        <span [class.text-slate-400]="!userForm.get('id_congregacion')?.value" class="font-medium text-slate-700 block truncate">
                                           {{ getSelectedCongName() || 'Seleccione congregación...' }}
                                        </span>
                                        <svg class="w-5 h-5 text-slate-400 transition-transform duration-200" [class.rotate-180]="congDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                                     </button>
+                                    
+                                    <p *ngIf="userForm.get('id_congregacion')?.invalid && userForm.get('id_congregacion')?.touched" class="text-xs text-red-500 font-bold ml-1">Requerido para este rol</p>
 
                                     <!-- Backdrop for click-outside -->
                                     <div *ngIf="congDropdownOpen()" (click)="congDropdownOpen.set(false)" class="fixed inset-0 z-10 cursor-default"></div>
 
                                     <!-- Dropdown Menu -->
-                                    <div *ngIf="congDropdownOpen()" @fadeIn class="absolute left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 z-20 overflow-hidden max-h-60 overflow-y-auto simple-scrollbar origin-top">
+                                    <div *ngIf="congDropdownOpen()" @fadeIn class="absolute left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 z-20 overflow-hidden max-h-72 overflow-y-auto simple-scrollbar origin-top flex flex-col">
+                                       
+                                       <!-- Search Input -->
+                                       <div class="sticky top-0 bg-white p-2 border-b border-slate-50">
+                                          <input type="text" placeholder="Buscar congregación..." 
+                                             [value]="congSearch()" 
+                                             (input)="congSearch.set($any($event.target).value)"
+                                             class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all font-medium placeholder:font-normal">
+                                       </div>
+
                                        <div class="p-1 space-y-0.5">
-                                          <button type="button" *ngFor="let c of congregaciones()" 
+                                          <button type="button" *ngFor="let c of filteredCongregaciones()" 
                                              (click)="selectCongregacion(c.id_congregacion)"
                                              class="w-full px-4 py-2.5 text-left text-sm transition-all flex items-center justify-between rounded-lg group"
                                              [ngClass]="{'text-[#6D28D9] font-bold bg-purple-50/30': isCongSelected(c.id_congregacion), 'text-slate-500 font-medium hover:text-slate-900 hover:bg-slate-50': !isCongSelected(c.id_congregacion)}">
                                              <span>{{ c.nombre_congregacion }}</span>
                                              <svg *ngIf="isCongSelected(c.id_congregacion)" class="w-4 h-4 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                           </button>
+                                          
+                                          <div *ngIf="filteredCongregaciones().length === 0" class="px-4 py-8 text-center">
+                                             <p class="text-xs text-slate-400 font-medium">No se encontraron resultados</p>
+                                          </div>
+                                       </div>
+                                    </div>
+                                 </div>
+
+                                 <!-- Custom Publisher Select -->
+                                 <div class="space-y-1 relative">
+                                    <label class="block text-sm font-bold text-[#6D28D9]">
+                                       Publicador Asociado <span *ngIf="isCongregationRequired()" class="text-red-500">*</span> <span *ngIf="!isCongregationRequired()" class="text-slate-400 font-normal">(Opcional)</span>
+                                    </label>
+                                    
+                                    <!-- Trigger Button -->
+                                    <button type="button" 
+                                       (click)="pubDropdownOpen.set(!pubDropdownOpen())" 
+                                       [disabled]="!userForm.get('id_congregacion')?.value"
+                                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white active:bg-slate-50 group disabled:opacity-50 disabled:cursor-not-allowed"
+                                       [class.border-red-300]="userForm.get('id_usuario_publicador')?.invalid && userForm.get('id_usuario_publicador')?.touched">
+                                       <span [class.text-slate-400]="!userForm.get('id_usuario_publicador')?.value" class="font-medium text-slate-700 block truncate">
+                                          {{ getSelectedPubName() || 'Seleccione publicador...' }}
+                                       </span>
+                                       <svg class="w-5 h-5 text-slate-400 transition-transform duration-200" [class.rotate-180]="pubDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                                    </button>
+                                    
+                                    <p *ngIf="userForm.get('id_usuario_publicador')?.invalid && userForm.get('id_usuario_publicador')?.touched" class="text-xs text-red-500 font-bold ml-1">Debes asociar un publicador</p>
+
+                                    <!-- Backdrop for click-outside -->
+                                    <div *ngIf="pubDropdownOpen()" (click)="pubDropdownOpen.set(false)" class="fixed inset-0 z-10 cursor-default"></div>
+
+                                    <!-- Dropdown Menu -->
+                                    <div *ngIf="pubDropdownOpen()" @fadeIn class="absolute left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 z-20 overflow-hidden max-h-72 overflow-y-auto simple-scrollbar origin-top flex flex-col">
+                                       
+                                       <!-- Search Input -->
+                                       <div class="sticky top-0 bg-white p-2 border-b border-slate-50">
+                                          <input type="text" placeholder="Buscar publicador..." 
+                                             [value]="pubSearch()" 
+                                             (input)="pubSearch.set($any($event.target).value)"
+                                             class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all font-medium placeholder:font-normal">
+                                       </div>
+
+                                       <div class="p-1 space-y-0.5">
+                                          <button type="button" *ngFor="let p of filteredPublicadores()" 
+                                             (click)="selectPublicador(p.id_publicador)"
+                                             class="w-full px-4 py-2.5 text-left text-sm transition-all flex items-center justify-between rounded-lg group"
+                                             [ngClass]="{'text-[#6D28D9] font-bold bg-purple-50/30': isPubSelected(p.id_publicador), 'text-slate-500 font-medium hover:text-slate-900 hover:bg-slate-50': !isPubSelected(p.id_publicador)}">
+                                             <span>{{ p.primer_nombre }} {{ p.primer_apellido }}</span>
+                                             <svg *ngIf="isPubSelected(p.id_publicador)" class="w-4 h-4 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                          </button>
+                                          
+                                          <div *ngIf="filteredPublicadores().length === 0" class="px-4 py-8 text-center">
+                                             <p class="text-xs text-slate-400 font-medium">No se encontraron resultados</p>
+                                          </div>
                                        </div>
                                     </div>
                                  </div>
@@ -318,13 +390,14 @@ import { Usuario } from '../models/usuario.model';
                    </div>
 
                    <!-- Actions -->
-                   <div class="shrink-0 px-6 py-5 bg-slate-50/80 backdrop-blur-sm border-t border-slate-200 grid grid-cols-2 gap-4">
-                      <button (click)="closePanel()" class="w-full inline-flex justify-center items-center px-4 py-3 border border-slate-300 shadow-sm font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm transition-colors">
+                   <div class="p-8 border-t border-slate-100 bg-slate-50/50 flex items-center gap-3 shrink-0 backdrop-blur-sm z-10">
+                      <button (click)="closePanel()" class="flex-1 py-3.5 px-6 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-sm">
                          Cancelar
                       </button>
-                      <button (click)="save()" [disabled]="userForm.invalid || saving()" type="submit" class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent font-bold rounded-xl text-white bg-[#6D28D9] hover:bg-[#5b21b6] shadow-lg shadow-purple-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6D28D9] sm:text-sm disabled:opacity-50 transition-all active:scale-95">
-                         <span *ngIf="saving()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white border-2 border-white/30 border-t-white rounded-full"></span>
-                         {{ saving() ? 'Guardando...' : (editingUser() ? 'Guardar Cambios' : 'Crear Usuario') }}
+                      <button (click)="save()" [disabled]="userForm.invalid || saving()" 
+                         class="flex-[2] py-3.5 px-6 bg-[#6D28D9] hover:bg-[#5b21b6] text-white font-bold rounded-xl shadow-lg shadow-purple-900/20 hover:shadow-purple-900/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95">
+                         <span *ngIf="saving()" class="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full"></span>
+                         <span *ngIf="!saving()">{{ editingUser() ? 'Guardar Cambios' : 'Crear Usuario' }}</span>
                       </button>
                    </div>
                 </div>
@@ -349,6 +422,7 @@ export class UsuariosPage implements OnInit {
    usuarios = signal<Usuario[]>([]);
    roles = signal<Rol[]>([]);
    congregaciones = signal<Congregacion[]>([]);
+   publicadores = signal<any[]>([]); // New
 
    panelOpen = signal(false);
    saving = signal(false);
@@ -358,6 +432,11 @@ export class UsuariosPage implements OnInit {
    // Custom Select States
    roleDropdownOpen = signal(false);
    congDropdownOpen = signal(false);
+   pubDropdownOpen = signal(false); // New
+
+   // Filtering states for dropdowns
+   congSearch = signal('');
+   pubSearch = signal('');
 
    searchControl = this.fb.control('');
 
@@ -370,7 +449,8 @@ export class UsuariosPage implements OnInit {
          contrasena: ['', [Validators.required, Validators.minLength(6)]],
          confirmPassword: ['', Validators.required],
          id_rol_usuario: [null, Validators.required],
-         id_congregacion: [null]
+         id_congregacion: [null],
+         id_usuario_publicador: [null] // New field
       }, { validators: this.passwordMatchValidator });
    }
 
@@ -385,6 +465,34 @@ export class UsuariosPage implements OnInit {
    selectRole(id: number) {
       this.userForm.patchValue({ id_rol_usuario: id });
       this.roleDropdownOpen.set(false);
+      this.updateRoleValidators(id);
+   }
+
+   updateRoleValidators(roleId: number) {
+      const selectedRole = this.roles().find(r => r.id_rol === roleId);
+      if (!selectedRole) return;
+
+      const roleName = selectedRole.descripcion_rol.toLowerCase().trim();
+      const isGlobal = roleName === 'administrador' || roleName === 'gestor aplicación';
+
+      const congControl = this.userForm.get('id_congregacion');
+      const pubControl = this.userForm.get('id_usuario_publicador');
+
+      if (isGlobal) {
+         congControl?.clearValidators();
+         pubControl?.clearValidators();
+      } else {
+         congControl?.setValidators(Validators.required);
+         pubControl?.setValidators(Validators.required);
+      }
+
+      congControl?.updateValueAndValidity();
+      pubControl?.updateValueAndValidity();
+   }
+
+   isCongregationRequired(): boolean {
+      const control = this.userForm.get('id_congregacion');
+      return control ? control.hasValidator(Validators.required) : false;
    }
 
    isRoleSelected(id: number): boolean {
@@ -398,12 +506,60 @@ export class UsuariosPage implements OnInit {
    }
 
    selectCongregacion(id: number) {
-      this.userForm.patchValue({ id_congregacion: id });
+      this.userForm.patchValue({
+         id_congregacion: id,
+         id_usuario_publicador: null // Reset publisher when changing congregation
+      });
       this.congDropdownOpen.set(false);
+      this.loadPublicadores(id);
    }
 
    isCongSelected(id: number): boolean {
       return this.userForm.get('id_congregacion')?.value === id;
+   }
+
+   // --- Publisher Helpers ---
+
+   getSelectedPubName(): string | null {
+      const id = this.userForm.get('id_usuario_publicador')?.value;
+      if (!id) return null;
+      const p = this.publicadores().find(p => p.id_publicador === id);
+      return p ? `${p.primer_nombre} ${p.primer_apellido}` : null;
+   }
+
+   selectPublicador(id: number) {
+      this.userForm.patchValue({ id_usuario_publicador: id });
+      this.pubDropdownOpen.set(false);
+   }
+
+   isPubSelected(id: number): boolean {
+      return this.userForm.get('id_usuario_publicador')?.value === id;
+   }
+
+   // Filtered lists for dropdowns
+   filteredCongregaciones = computed(() => {
+      const q = this.congSearch().toLowerCase();
+      return this.congregaciones().filter(c => c.nombre_congregacion.toLowerCase().includes(q));
+   });
+
+   filteredPublicadores = computed(() => {
+      const q = this.pubSearch().toLowerCase();
+      return this.publicadores().filter(p =>
+         p.primer_nombre.toLowerCase().includes(q) ||
+         p.primer_apellido.toLowerCase().includes(q)
+      );
+   });
+
+   getUserStyle(name: string): string {
+      const n = (name || '').toLowerCase();
+      const char = n.charCodeAt(0);
+
+      // Deterministic pastel color mapping based on first char
+      if (char % 5 === 0) return 'bg-purple-100 text-purple-700 ring-purple-600/20';
+      if (char % 5 === 1) return 'bg-blue-100 text-blue-700 ring-blue-600/20';
+      if (char % 5 === 2) return 'bg-emerald-100 text-emerald-700 ring-emerald-600/20';
+      if (char % 5 === 3) return 'bg-orange-100 text-orange-700 ring-orange-600/20';
+      return 'bg-cyan-100 text-cyan-700 ring-cyan-600/20';
    }
 
    // -----------------------------
@@ -441,6 +597,16 @@ export class UsuariosPage implements OnInit {
       }
    }
 
+   async loadPublicadores(congId: number) {
+      try {
+         const pubs = await lastValueFrom(this.service.getPublicadores(congId));
+         this.publicadores.set(pubs || []);
+      } catch (err) {
+         console.error('Error loading publicadores', err);
+         this.publicadores.set([]);
+      }
+   }
+
    openCreatePanel() {
       this.editingUser.set(null);
       this.userForm.reset();
@@ -448,6 +614,11 @@ export class UsuariosPage implements OnInit {
       // Re-enable password validators for new users
       this.userForm.get('contrasena')?.setValidators([Validators.required, Validators.minLength(6)]);
       this.userForm.get('confirmPassword')?.setValidators([Validators.required]);
+
+      // Reset to default optional state, user must select role to trigger required
+      this.userForm.get('id_congregacion')?.clearValidators();
+      this.userForm.get('id_usuario_publicador')?.clearValidators();
+
       this.userForm.updateValueAndValidity();
 
       this.panelOpen.set(true);
@@ -459,14 +630,26 @@ export class UsuariosPage implements OnInit {
          nombre: u.nombre,
          correo: u.correo,
          id_rol_usuario: u.id_rol_usuario,
-         id_congregacion: u.id_congregacion
+         id_congregacion: u.id_congregacion,
+         id_usuario_publicador: u.id_usuario_publicador
       });
+
+      if (u.id_congregacion) {
+         this.loadPublicadores(u.id_congregacion);
+      } else {
+         this.publicadores.set([]);
+      }
 
       // Disable password requirements for edit (optional update)
       this.userForm.get('contrasena')?.clearValidators();
       this.userForm.get('confirmPassword')?.clearValidators();
       this.userForm.get('contrasena')?.updateValueAndValidity();
       this.userForm.get('confirmPassword')?.updateValueAndValidity();
+
+      // Update validators based on existing role
+      if (u.id_rol_usuario) {
+         this.updateRoleValidators(u.id_rol_usuario);
+      }
 
       this.panelOpen.set(true);
    }
@@ -490,7 +673,8 @@ export class UsuariosPage implements OnInit {
          const basePayload = {
             nombre: formValue.nombre,
             correo: formValue.correo,
-            id_rol_usuario: formValue.id_rol_usuario
+            id_rol_usuario: formValue.id_rol_usuario,
+            id_usuario_publicador: formValue.id_usuario_publicador
          };
 
          if (this.editingUser()) {

@@ -28,7 +28,8 @@ export class PublicadoresFacade {
       const list = await loadPublicadores(this.repo, mergedParams);
       this.vm.update((s: VM) => ({ ...s, list, loading: false, params: mergedParams }));
     } catch (err: any) {
-      this.vm.update((s: VM) => ({ ...s, loading: false, error: err?.message || String(err) }));
+      const errorMsg = err?.error?.detail || err?.message || String(err);
+      this.vm.update((s: VM) => ({ ...s, loading: false, error: errorMsg }));
     }
   }
 

@@ -135,24 +135,85 @@ import { ThemeService } from '../core/services/theme.service';
                 class="px-4 mb-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
               >Módulos</p>
               
-              <!-- Configuracion -->
+              <!-- Secretario submenu -->
+              <div>
+                <button 
+                  (click)="toggleSecretario()" 
+                  class="w-full group flex items-center rounded-xl transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                  [ngClass]="{
+                    'justify-center p-2.5': collapsed(),
+                    'gap-3.5 px-3.5 py-3': !collapsed(),
+                    'bg-brand-orange text-white shadow-lg shadow-orange-500/30 ring-1 ring-orange-400 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 font-bold': secretarioOpen() && !collapsed(),
+                    'text-slate-500 hover:bg-slate-50 hover:text-slate-900': !secretarioOpen() || collapsed()
+                  }"
+                  title="Secretario"
+                >
+                  <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:bg-slate-100/80"
+                       [ngClass]="{'!bg-white/20 group-hover:!bg-white/20': secretarioOpen() && !collapsed()}">
+                    <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <span *ngIf="!collapsed()" class="text-sm font-semibold flex-1 text-left relative z-10">Secretario</span>
+                  <svg 
+                    *ngIf="!collapsed()" 
+                    [ngClass]="{ 
+                      'rotate-90': secretarioOpen(),
+                      'text-white': secretarioOpen(),
+                      'text-slate-400': !secretarioOpen()
+                    }" 
+                    class="w-4 h-4 transition-transform duration-300 mr-1" 
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+
+                <!-- Submenu -->
+                <div 
+                  *ngIf="!collapsed()"
+                  class="overflow-hidden transition-all duration-300 ease-in-out"
+                  [ngClass]="{ 
+                    'max-h-0 opacity-0': !secretarioOpen(), 
+                    'max-h-40 opacity-100': secretarioOpen() 
+                  }"
+                >
+                  <div class="mt-1 space-y-0.5 relative">
+                    <a 
+                      routerLink="/secretario/publicadores" 
+                      routerLinkActive="text-brand-orange bg-orange-50/50 font-bold" 
+                      class="group flex items-center pl-14 pr-3 py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-50 text-xs font-medium transition-all duration-200 rounded-lg relative min-h-[36px]"
+                    >
+                      <!-- Dot Indicator (Aligned with parent icon center) -->
+                      <div 
+                         class="absolute left-8 top-1/2 -translate-y-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-slate-300 transition-all duration-300 group-hover:bg-slate-400 group-hover:scale-125"
+                         routerLinkActive="!bg-brand-orange !w-1.5 !h-1.5 ring-2 ring-orange-100"
+                      ></div>
+                      <span>Publicadores</span>
+                    </a>
+                    
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- Territorios -->
               <a 
-                routerLink="/configuracion" 
-                                                                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
+                routerLink="/territorios" 
+                routerLinkActive="bg-brand-green text-white shadow-lg shadow-green-500/30 ring-1 ring-green-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-green hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
-                title="Configuración"
+                title="Territorios"
               >
                 <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Configuración</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Territorios</span>
               </a>
 
               <!-- Exhibidores -->
@@ -174,81 +235,35 @@ import { ThemeService } from '../core/services/theme.service';
                 <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Exhibidores</span>
               </a>
 
-              <!-- Territorios -->
+
+            </div>
+
+            <!-- Extras Section -->
+            <div class="mt-8">
+              <p 
+                *ngIf="!collapsed()"
+                class="px-4 mb-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
+              >Extras</p>
+              
+              <!-- Configuracion -->
               <a 
-                routerLink="/territorios" 
-                routerLinkActive="bg-brand-green text-white shadow-lg shadow-green-500/30 ring-1 ring-green-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-green hover:!text-white"
+                routerLink="/configuracion" 
+                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
-                title="Territorios"
+                title="Configuración"
               >
                 <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Territorios</span>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Configuración</span>
               </a>
-
-              <!-- Secretario submenu -->
-              <div>
-                <button 
-                  (click)="toggleSecretario()" 
-                  class="w-full group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
-                  [ngClass]="{
-                    'justify-center p-2.5': collapsed(),
-                    'gap-3.5 px-3.5 py-3': !collapsed(),
-                    'bg-slate-50 text-slate-900': secretarioOpen() && !collapsed()
-                  }"
-                  title="Secretario"
-                >
-                  <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:bg-slate-100/80">
-                    <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <span *ngIf="!collapsed()" class="text-sm font-semibold flex-1 text-left relative z-10">Secretario</span>
-                  <svg 
-                    *ngIf="!collapsed()" 
-                    [ngClass]="{ 'rotate-90': secretarioOpen() }" 
-                    class="w-4 h-4 text-slate-400 transition-transform duration-300 mr-1" 
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                  </svg>
-                </button>
-
-                <!-- Submenu -->
-                <div 
-                  *ngIf="!collapsed()"
-                  class="overflow-hidden transition-all duration-300 ease-in-out"
-                  [ngClass]="{ 
-                    'max-h-0 opacity-0': !secretarioOpen(), 
-                    'max-h-40 opacity-100': secretarioOpen() 
-                  }"
-                >
-                  <div class="mt-1 ml-[42px] pl-4 border-l-2 border-slate-100 space-y-1 relative">
-                    <a 
-                      routerLink="/secretario/publicadores" 
-                      routerLinkActive="bg-brand-orange text-white shadow-md shadow-orange-500/20 ring-1 ring-orange-400 font-bold hover:!bg-brand-orange hover:!text-white" 
-                      class="flex items-center gap-2 px-3 py-2 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-xs font-medium transition-all duration-200"
-                    >
-                      <span>Publicadores</span>
-                    </a>
-                    
-                    <a 
-                      routerLink="/secretario/grupos" 
-                      routerLinkActive="bg-brand-orange text-white shadow-md shadow-orange-500/20 ring-1 ring-orange-400 font-bold hover:!bg-brand-orange hover:!text-white" 
-                      class="flex items-center gap-2 px-3 py-2 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-xs font-medium transition-all duration-200"
-                    >
-                      <span>Grupos</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
             </div>
           </nav>
         </div>
@@ -377,7 +392,7 @@ import { ThemeService } from '../core/services/theme.service';
                 </div>
                 <div class="hidden sm:block text-left">
                   <p class="text-sm font-bold text-slate-700 group-hover:text-purple-700 transition-colors whitespace-nowrap">{{ u.nombre || u.username }}</p>
-                  <p *ngIf="u.roles?.[0]" class="text-[10px] text-slate-400 font-bold uppercase tracking-wide leading-none mt-0.5">{{ u.roles?.[0] }}</p>
+                  <p *ngIf="u.roles?.[0]" class="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-none mt-0.5">{{ u.roles?.[0] }}</p>
                 </div>
                 <svg class="w-4 h-4 text-slate-400 hidden sm:block transition-transform duration-200 group-hover:text-purple-500" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -387,53 +402,53 @@ import { ThemeService } from '../core/services/theme.service';
               <div 
                 *ngIf="userMenuOpen()" 
                 id="user-menu-panel" 
-                class="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100 z-50 overflow-hidden animate-fadeIn origin-top-right"
+                class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl ring-1 ring-slate-900/5 z-50 overflow-hidden animate-fadeIn origin-top-right scale-100"
               >
-                <div class="p-5 border-b border-slate-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-cover relative">
-                  <div class="absolute inset-0 bg-gradient-to-br from-brand-purple to-[#4C1D95] opacity-90"></div>
-                  <div class="relative z-10 text-white">
-                      <p class="font-bold text-lg leading-tight">{{ u.username }}</p>
-                      <p class="text-xs text-purple-200 font-medium mt-0.5">{{ u.roles?.[0] || 'Usuario' }}</p>
-                  </div>
+                <!-- User Header (Premium) -->
+                <div class="py-6 px-5 bg-gradient-to-br from-brand-purple to-[#4C1D95] border-b border-purple-800/20">
+                   <div class="flex flex-col relative z-10">
+                      <h3 class="font-display font-bold text-white text-lg leading-tight tracking-tight">{{ u.nombre || u.username }}</h3>
+                      <p class="font-sans text-purple-200 text-xs font-medium mt-0.5 truncate">{{ u.correo }}</p>
+                      <div class="mt-3">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-white text-[10px] font-bold border border-white/10 uppercase tracking-wider backdrop-blur-md shadow-sm">
+                          {{ u.roles?.[0] || 'Usuario' }}
+                        </span>
+                      </div>
+                   </div>
                 </div>
                 
-                <div class="p-2">
+                <!-- Menu Items -->
+                <div class="p-2 space-y-1">
                   <button 
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-600 font-medium text-sm transition-colors group" 
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-600 font-medium text-sm transition-all duration-200 group" 
                     (click)="editProfile()"
                   >
-                    <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                    <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-purple-100 group-hover:text-purple-600 transition-colors">
+                        <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                     </div>
-                    Mi perfil
+                    <span>Mi perfil</span>
                   </button>
+                  
                   <button 
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 text-slate-600 font-medium text-sm transition-colors group" 
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-600 font-medium text-sm transition-all duration-200 group" 
                     (click)="openSettings()"
                   >
-                     <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
+                     <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-purple-100 group-hover:text-purple-600 transition-colors">
+                        <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                      </div>
-                    Configuración
+                    <span>Configuración</span>
                   </button>
                 </div>
 
-                <div class="p-2 border-t border-slate-50">
+                <div class="p-2 border-t border-slate-100 mt-1">
                   <button 
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-500 font-medium text-sm transition-colors group" 
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 text-slate-600 hover:text-red-600 font-medium text-sm transition-all duration-200 group" 
                     (click)="logout()"
                   >
-                     <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-400 group-hover:bg-red-100 group-hover:text-red-600 transition-colors">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
+                     <div class="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-400 group-hover:bg-red-100 group-hover:text-red-500 transition-colors">
+                        <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                      </div>
-                    Cerrar sesión
+                    <span>Cerrar sesión</span>
                   </button>
                 </div>
               </div>
@@ -442,10 +457,9 @@ import { ThemeService } from '../core/services/theme.service';
         </header>
 
         <!-- Page Content -->
-        <main class="flex-1 flex flex-col p-4 sm:p-6 md:p-6 overflow-hidden relative">
-          <div class="flex-1 h-full w-full overflow-y-auto scroll-smooth pr-1">
-             <router-outlet></router-outlet>
-          </div>
+        <!-- Page Content -->
+        <main class="flex-1 overflow-y-auto p-8">
+          <router-outlet></router-outlet>
         </main>
       </div>
     </div>

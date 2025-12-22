@@ -4,15 +4,11 @@ import { PUBLICADORES_PROVIDERS } from './publicadores/providers';
 export const SECRETARIO_ROUTES: Routes = [
    {
       path: 'publicadores',
-      title: 'Publicadores',
-      loadComponent: () => import('./publicadores/ui/pages/publicadores.page').then(m => m.PublicadoresPage),
+      title: 'Gestión de Publicadores',
+      loadComponent: () => import('./publicadores/ui/pages/publicadores-main.page').then(m => m.PublicadoresMainPage),
       providers: [...PUBLICADORES_PROVIDERS]
    },
-   {
-      path: 'grupos',
-      title: 'Grupos',
-      loadComponent: () => import('./grupos/pages/grupos.page').then(m => m.GruposPage)
-   },
+   // 'grupos' main route is merged into publicadores tab
    {
       path: 'grupos/asignacion',
       title: 'Asignación Grupos',
