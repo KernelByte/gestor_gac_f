@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { AuthStore } from '../core/auth/auth.store';
 import { AuthService } from '../core/auth/auth.service';
 import { ThemeService } from '../core/services/theme.service';
@@ -126,6 +126,23 @@ import { ThemeService } from '../core/services/theme.service';
                 </div>
                 <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Usuarios</span>
               </a>
+              <a
+                routerLink="/reuniones"
+                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                [ngClass]="{
+                  'justify-center p-2.5': collapsed(),
+                  'gap-3.5 px-3.5 py-3': !collapsed()
+                }"
+                title="Reuniones"
+              >
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Reuniones</span>
+              </a>
             </div>
 
             <!-- Modules Section -->
@@ -135,67 +152,24 @@ import { ThemeService } from '../core/services/theme.service';
                 class="px-4 mb-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
               >Módulos</p>
               
-              <!-- Secretario submenu -->
-              <div>
-                <button 
-                  (click)="toggleSecretario()" 
-                  class="w-full group flex items-center rounded-xl transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
-                  [ngClass]="{
-                    'justify-center p-2.5': collapsed(),
-                    'gap-3.5 px-3.5 py-3': !collapsed(),
-                    'bg-brand-orange text-white shadow-lg shadow-orange-500/30 ring-1 ring-orange-400 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 font-bold': secretarioOpen() && !collapsed(),
-                    'text-slate-500 hover:bg-slate-50 hover:text-slate-900': !secretarioOpen() || collapsed()
-                  }"
-                  title="Secretario"
-                >
-                  <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:bg-slate-100/80"
-                       [ngClass]="{'!bg-white/20 group-hover:!bg-white/20': secretarioOpen() && !collapsed()}">
-                    <svg class="w-5 h-5 transition-transform group-hover:scale-110 duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <span *ngIf="!collapsed()" class="text-sm font-semibold flex-1 text-left relative z-10">Secretario</span>
-                  <svg 
-                    *ngIf="!collapsed()" 
-                    [ngClass]="{ 
-                      'rotate-90': secretarioOpen(),
-                      'text-white': secretarioOpen(),
-                      'text-slate-400': !secretarioOpen()
-                    }" 
-                    class="w-4 h-4 transition-transform duration-300 mr-1" 
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              <!-- Publicadores -->
+              <a 
+                routerLink="/secretario/publicadores" 
+                routerLinkActive="bg-brand-orange text-white shadow-lg shadow-orange-500/30 ring-1 ring-orange-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-orange hover:!text-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                [ngClass]="{
+                  'justify-center p-2.5': collapsed(),
+                  'gap-3.5 px-3.5 py-3': !collapsed()
+                }"
+                title="Publicadores"
+              >
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                </button>
-
-                <!-- Submenu -->
-                <div 
-                  *ngIf="!collapsed()"
-                  class="overflow-hidden transition-all duration-300 ease-in-out"
-                  [ngClass]="{ 
-                    'max-h-0 opacity-0': !secretarioOpen(), 
-                    'max-h-40 opacity-100': secretarioOpen() 
-                  }"
-                >
-                  <div class="mt-1 space-y-0.5 relative">
-                    <a 
-                      routerLink="/secretario/publicadores" 
-                      routerLinkActive="text-brand-orange bg-orange-50/50 font-bold" 
-                      class="group flex items-center pl-14 pr-3 py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-50 text-xs font-medium transition-all duration-200 rounded-lg relative min-h-[36px]"
-                    >
-                      <!-- Dot Indicator (Aligned with parent icon center) -->
-                      <div 
-                         class="absolute left-8 top-1/2 -translate-y-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-slate-300 transition-all duration-300 group-hover:bg-slate-400 group-hover:scale-125"
-                         routerLinkActive="!bg-brand-orange !w-1.5 !h-1.5 ring-2 ring-orange-100"
-                      ></div>
-                      <span>Publicadores</span>
-                    </a>
-                    
-
-                  </div>
                 </div>
-              </div>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Publicadores</span>
+              </a>
 
               <!-- Territorios -->
               <a 
@@ -479,11 +453,13 @@ export class ShellPage implements OnInit, OnDestroy {
   collapsed = signal(false);
   mobileMenuOpen = signal(false);
   userMenuOpen = signal(false);
-  secretarioOpen = signal(false);
   notificationsOpen = signal(false);
 
   // New Signals & Props
   // darkMode = signal(false); // Removed local signal
+  // Page Title State
+  pageTitle = signal<{ title: string, subtitle: string }>({ title: 'Gestor GAC', subtitle: 'Panel de Administración' });
+
   notificationCount = signal(3);
   @ViewChild('searchInput') searchInput!: ElementRef;
 
@@ -515,8 +491,40 @@ export class ShellPage implements OnInit, OnDestroy {
 
   user = computed(() => this.store.user());
 
+  router = inject(Router); // Re-injecting Router as it might be missing or private
+
   ngOnInit(): void {
     document.addEventListener('click', this.outsideClickHandler);
+
+    // Initial Title update
+    this.updateTitle(this.router.url);
+
+    // Listen to route changes
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        this.updateTitle(event.urlAfterRedirects);
+      }
+    });
+  }
+
+  private updateTitle(url: string) {
+    if (url.includes('/roles')) {
+      this.pageTitle.set({ title: 'Gestión de Roles', subtitle: 'Administra los roles y permisos del sistema.' });
+    } else if (url.includes('/usuarios')) {
+      this.pageTitle.set({ title: 'Gestión de Usuarios', subtitle: 'Administra y crea los usuarios.' });
+    } else if (url.includes('/secretario/grupos')) {
+      this.pageTitle.set({ title: 'Grupos de Predicación', subtitle: 'Organiza los grupos y asignaciones.' });
+    } else if (url.includes('/secretario/publicadores')) {
+      this.pageTitle.set({ title: 'Publicadores', subtitle: 'Base de datos de hermanos y publicadores.' });
+    } else if (url.includes('/territorios')) {
+      this.pageTitle.set({ title: 'Territorios', subtitle: 'Gestión de mapas y asignaciones.' });
+    } else if (url.includes('/exhibidores')) {
+      this.pageTitle.set({ title: 'Exhibidores', subtitle: 'Gestión de puntos de predicación pública.' });
+    } else if (url.includes('/reuniones')) {
+      this.pageTitle.set({ title: 'Reuniones', subtitle: 'Seguimiento de Asistencia' });
+    } else {
+      this.pageTitle.set({ title: 'Inicio', subtitle: 'Bienvenido al panel principal de gestión.' });
+    }
   }
 
   ngOnDestroy(): void {
@@ -533,16 +541,12 @@ export class ShellPage implements OnInit, OnDestroy {
 
   toggleSidebar() {
     this.collapsed.update(v => !v);
-    if (this.collapsed()) {
-      this.secretarioOpen.set(false);
-    }
   }
 
   openMobileMenu() { this.mobileMenuOpen.set(true); }
   closeMobileMenu() { this.mobileMenuOpen.set(false); }
 
   toggleUserMenu() { this.userMenuOpen.update(v => !v); }
-  toggleSecretario() { this.secretarioOpen.update(v => !v); }
   toggleNotifications() { this.notificationsOpen.update(v => !v); }
 
   editProfile() {

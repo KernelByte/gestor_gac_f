@@ -39,6 +39,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/exhibidores/pages/exhibidores.page').then(m => m.ExhibidoresPage),
       },
       {
+        path: 'reuniones',
+        title: 'Reuniones',
+        loadComponent: () => import('./features/reuniones/reuniones.page').then(m => m.ReunionesPageComponent),
+      },
+      {
         path: 'secretario',
         canActivate: [roleGuard],
         data: { roles: ['Administrador', 'Coordinador', 'Secretario', 'Superintendente de servicio'] },

@@ -91,7 +91,7 @@ import { lastValueFrom } from 'rxjs';
                 <div class="flex items-center gap-4">
                   <!-- Dynamic Light Color Avatar -->
                   <div [ngClass]="getRoleStyle(rol.descripcion_rol)" 
-                       class="h-10 w-10 shrink-0 rounded-full flex items-center justify-center font-bold text-lg shadow-sm border border-white/50 ring-1">
+                       class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-lg shadow-sm ring-1 ring-white border border-white/50">
                     {{ rol.descripcion_rol.charAt(0).toUpperCase() }}
                   </div>
                   <div>
@@ -269,35 +269,15 @@ export class RolesPage implements OnInit {
 
   // --- Mock Helpers for UI ---
   getRoleStyle(roleName: string): string {
-    const name = (roleName || '').toLowerCase();
+    const n = (roleName || '').toLowerCase();
+    const char = n.charCodeAt(0);
 
-    // Admin / Core -> Purple (Brand)
-    if (name.includes('admin') || name.includes('super')) {
-      return 'bg-purple-100 text-purple-700 ring-purple-500/20 shadow-purple-200/50';
-    }
-
-    // Secretary / Docs -> Blue
-    if (name.includes('secretar')) {
-      return 'bg-blue-100 text-blue-700 ring-blue-500/20 shadow-blue-200/50';
-    }
-
-    // Money / Active -> Emerald/Green
-    if (name.includes('finanza') || name.includes('contable') || name.includes('tesor')) {
-      return 'bg-emerald-100 text-emerald-700 ring-emerald-500/20 shadow-emerald-200/50';
-    }
-
-    // Service / Help -> Orange/Amber
-    if (name.includes('serv') || name.includes('public') || name.includes('auxiliar')) {
-      return 'bg-orange-100 text-orange-700 ring-orange-500/20 shadow-orange-200/50';
-    }
-
-    // Tech / Audio -> Cyan/Sky
-    if (name.includes('audio') || name.includes('video') || name.includes('tec')) {
-      return 'bg-cyan-100 text-cyan-700 ring-cyan-500/20 shadow-cyan-200/50';
-    }
-
-    // Default -> Slate/Gray
-    return 'bg-slate-100 text-slate-600 ring-slate-500/20 shadow-slate-200/50';
+    // Deterministic pastel color mapping based on first char (Homologated with Users Page)
+    if (char % 5 === 0) return 'bg-purple-100 text-purple-700 ring-purple-600/20';
+    if (char % 5 === 1) return 'bg-blue-100 text-blue-700 ring-blue-600/20';
+    if (char % 5 === 2) return 'bg-emerald-100 text-emerald-700 ring-emerald-600/20';
+    if (char % 5 === 3) return 'bg-orange-100 text-orange-700 ring-orange-600/20';
+    return 'bg-cyan-100 text-cyan-700 ring-cyan-600/20';
   }
 
   getRoleDescription(name: string): string {

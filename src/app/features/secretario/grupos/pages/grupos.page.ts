@@ -35,148 +35,163 @@ import { AuthStore } from '../../../../core/auth/auth.store';
       ])
    ],
    template: `
-    <div class="h-full flex flex-col w-full max-w-[1600px] mx-auto p-6 md:p-8 space-y-8 overflow-y-auto scroll-smooth simple-scrollbar">
-      
     <div class="flex flex-col gap-6">
       
       <!-- Top Actions -->
-      <div class="flex justify-end items-center gap-3">
-            <button 
-              (click)="goToDynamicAssignment()"
-              class="inline-flex items-center gap-2 px-5 h-12 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-95"
-            >
-              <svg class="w-5 h-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-              Asignación Dinámica
-            </button>
-            <button 
-              (click)="openCreatePanel()"
-              class="inline-flex items-center gap-2 px-6 h-12 bg-[#5B3C88] hover:bg-[#4a2f73] text-white rounded-xl font-display font-bold text-sm shadow-xl shadow-purple-900/20 transition-all active:scale-95 group"
-            >
-              <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-              Nuevo Grupo
-            </button>
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <!-- Title removed (handled by parent) -->
+            <div></div>
+            
+            <div class="flex gap-3">
+               <button 
+                  (click)="goToDynamicAssignment()"
+                  class="inline-flex items-center gap-2 px-5 h-12 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl font-display font-bold text-sm shadow-sm transition-all active:scale-95"
+               >
+                  <svg class="w-5 h-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                  Asignación Dinámica
+               </button>
+               <button 
+                  (click)="openCreatePanel()"
+                  class="inline-flex items-center gap-2 px-6 h-12 bg-brand-orange hover:bg-orange-600 text-white rounded-xl font-display font-bold text-sm shadow-xl shadow-orange-900/20 transition-all active:scale-95 group"
+               >
+                  <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+                  Nuevo Grupo
+               </button>
+            </div>
       </div>
 
-      <!-- 2. KPI Cards -->
+      <!-- KPI Cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
          <!-- Total Grupos -->
-         <div class="bg-white rounded-2xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-slate-100 flex items-center gap-5 relative overflow-hidden">
-            <div class="absolute right-0 top-0 w-32 h-32 bg-purple-50/50 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-            <div class="w-14 h-14 rounded-2xl bg-purple-50 text-[#5B3C88] flex items-center justify-center shrink-0 relative z-10">
+         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5 relative overflow-hidden group hover:shadow-md transition-all">
+            <div class="absolute right-0 top-0 w-32 h-32 bg-orange-50/50 rounded-full -mr-10 -mt-10 blur-2xl transition-opacity opacity-50 group-hover:opacity-100"></div>
+            <div class="w-14 h-14 rounded-2xl bg-orange-50 text-brand-orange flex items-center justify-center shrink-0 relative z-10 ring-1 ring-orange-100">
                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             </div>
             <div class="relative z-10">
-               <p class="text-sm font-semibold text-slate-500 mb-0.5">Total Grupos</p>
-               <h3 class="text-3xl font-black text-slate-800 tracking-tight">{{ grupos().length }}</h3>
+               <p class="text-sm font-bold text-slate-500 uppercase tracking-wide mb-0.5">Total Grupos</p>
+               <h3 class="text-3xl font-display font-black text-slate-800 tracking-tight">{{ grupos().length }}</h3>
             </div>
          </div>
 
-         <!-- Publicadores Asignados (Mock) -->
-         <div class="bg-white rounded-2xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-slate-100 flex items-center gap-5 relative overflow-hidden">
-            <div class="absolute right-0 top-0 w-32 h-32 bg-emerald-50/50 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-            <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 relative z-10">
+         <!-- Publicadores Asignados -->
+         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5 relative overflow-hidden group hover:shadow-md transition-all">
+            <div class="absolute right-0 top-0 w-32 h-32 bg-emerald-50/50 rounded-full -mr-10 -mt-10 blur-2xl transition-opacity opacity-50 group-hover:opacity-100"></div>
+            <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 relative z-10 ring-1 ring-emerald-100">
                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
             <div class="relative z-10">
-               <p class="text-sm font-semibold text-slate-500 mb-0.5">Publicadores Asignados</p>
-               <h3 class="text-3xl font-black text-slate-800 tracking-tight">{{ totalAsignados() }}</h3>
+               <p class="text-sm font-bold text-slate-500 uppercase tracking-wide mb-0.5">Asignados</p>
+               <h3 class="text-3xl font-display font-black text-slate-800 tracking-tight">{{ totalAsignados() }}</h3>
             </div>
          </div>
 
-         <!-- Sin Asignar (Mock) -->
-         <div class="bg-white rounded-2xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-slate-100 flex items-center gap-5 relative overflow-hidden">
-            <div class="absolute right-0 top-0 w-32 h-32 bg-orange-50/50 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-            <div class="w-14 h-14 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 relative z-10">
-               <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+         <!-- Sin Asignar -->
+         <!-- Sin Asignar -->
+         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5 relative overflow-hidden group hover:shadow-md transition-all">
+            <!-- Background Blob -->
+            <div class="absolute right-0 top-0 w-32 h-32 rounded-full -mr-10 -mt-10 blur-2xl transition-opacity opacity-50 group-hover:opacity-100"
+                 [ngClass]="totalSinAsignar() > 0 ? 'bg-red-50/50' : 'bg-slate-100/50'"></div>
+            
+            <!-- Icon -->
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 relative z-10 ring-1"
+                 [ngClass]="totalSinAsignar() > 0 ? 'bg-red-50 text-red-500 ring-red-100' : 'bg-slate-50 text-slate-400 ring-slate-100'">
+               <svg *ngIf="totalSinAsignar() > 0" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+               <svg *ngIf="totalSinAsignar() === 0" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
+            
             <div class="relative z-10">
-               <p class="text-sm font-semibold text-slate-500 mb-0.5">Sin Asignar</p>
-               <h3 class="text-3xl font-black text-slate-800 tracking-tight">{{ totalSinAsignar() }}</h3>
+               <p class="text-sm font-bold text-slate-500 uppercase tracking-wide mb-0.5">Sin Asignar</p>
+               <h3 class="text-3xl font-display font-black tracking-tight"
+                   [ngClass]="totalSinAsignar() > 0 ? 'text-red-900' : 'text-slate-700'">
+                   {{ totalSinAsignar() }}
+               </h3>
+               <p *ngIf="totalSinAsignar() === 0" class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">
+                  ¡Todo en orden!
+               </p>
             </div>
          </div>
       </div>
 
-
-
-      <!-- 4. Main Table -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+      <!-- Main Table -->
+      <div *ngIf="filteredGrupos().length > 0; else emptyState" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
           <div class="overflow-x-auto simple-scrollbar">
              <table class="w-full min-w-[800px]">
                 <thead>
-                   <tr class="border-b border-slate-100 bg-white sticky top-0 z-20 shadow-sm">
-                      <th class="px-8 py-5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-white">Nombre del Grupo</th>
-                      <th class="px-6 py-5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-white">Capitán</th>
-                      <th class="px-6 py-5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-white">Auxiliar</th>
-                      <th class="px-6 py-5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-white">Miembros</th>
-                      <th class="px-8 py-5 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-white">Acciones</th>
+                   <tr class="border-b border-slate-200 bg-slate-50/80 backdrop-blur-md sticky top-0 z-20">
+                      <th class="px-8 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre del Grupo</th>
+                      <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Capitán</th>
+                      <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Auxiliar</th>
+                      <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Miembros</th>
+                      <th class="px-8 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Acciones</th>
                    </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
-                   <tr *ngFor="let grupo of filteredGrupos(); let i = index" class="group hover:bg-slate-50/80 transition-colors">
+                   <tr *ngFor="let grupo of filteredGrupos(); let i = index" class="group hover:bg-slate-50 transition-colors">
                       
                       <!-- Nombre -->
                       <td class="px-8 py-5">
                          <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0 shadow-sm border border-white"
-                                 [ngClass]="getAvatarColor(i)">
-                               {{ grupo.nombre_grupo.charAt(0).toUpperCase() }}
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black shrink-0 ring-2 ring-white shadow-sm"
+                                 [ngClass]="getAvatarClass(grupo.id_grupo)">
+                               {{ grupo.id_grupo }}
                             </div>
                             <div>
-                               <p class="font-bold text-slate-900 text-base">{{ grupo.nombre_grupo }}</p>
+                               <p class="font-bold text-slate-900 text-base font-display">{{ grupo.nombre_grupo }}</p>
                                <p class="text-xs text-slate-400 font-medium mt-0.5">ID: #{{ grupo.id_grupo }}</p>
                             </div>
                          </div>
                       </td>
 
-                      <!-- Capitán (Antes Supervisor) -->
+                      <!-- Capitán -->
                       <td class="px-6 py-5">
                          <div class="flex items-center gap-3" *ngIf="grupo.capitan_grupo; else noCapitan">
-                             <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                             <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 ring-1 ring-white">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                              </div>
                              <span class="font-semibold text-slate-700">{{ grupo.capitan_grupo }}</span>
                          </div>
                          <ng-template #noCapitan>
-                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-bold">
+                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-bold border border-slate-200">
                                 Sin Asignar
                              </span>
                          </ng-template>
                       </td>
 
-                      <!-- Auxiliar (Movido después de Capitán) -->
+                      <!-- Auxiliar -->
                       <td class="px-6 py-5">
                           <span *ngIf="grupo.auxiliar_grupo" class="text-sm font-medium text-slate-600">{{ grupo.auxiliar_grupo }}</span>
-                          <span *ngIf="!grupo.auxiliar_grupo" class="text-slate-300 text-sm italic">--</span>
+                          <span *ngIf="!grupo.auxiliar_grupo" class="text-slate-300 text-sm font-medium">--</span>
                       </td>
 
-                      <!-- Miembros (Pill) -->
+                      <!-- Miembros -->
+                      <!-- Miembros -->
                       <td class="px-6 py-5">
-                         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 border border-slate-100">
-                            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                            <span class="text-sm font-bold text-slate-700">{{ grupo.cantidad_publicadores || 0 }} Publicadores</span>
-                         </div>
+                          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-bold">
+                             {{ grupo.cantidad_publicadores || 0 }} Publicadores
+                          </span>
                       </td>
 
                       <!-- Acciones -->
                       <td class="px-8 py-5 text-right">
-                         <div class="flex items-center justify-end gap-3">
-                            <button (click)="goToAssignment(grupo)" class="hidden lg:flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-50 text-[#5B3C88] border border-purple-100 text-xs font-bold hover:bg-purple-100 transition-colors">
+                         <div class="flex items-center justify-end gap-2 group-hover:opacity-100 transition-opacity">
+                            <button (click)="goToAssignment(grupo)" class="hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-50 text-brand-orange border border-orange-100 text-xs font-bold hover:bg-orange-100 transition-colors shadow-sm">
                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
                                Asignar
                             </button>
                             
                             <div class="relative group/menu">
-                                <button class="p-2 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors">
-                                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                                <button class="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
                                 </button>
-                                <!-- Tooltip Menu -->
-                                <div class="absolute right-0 top-10 w-40 bg-white rounded-xl shadow-xl border border-slate-100 p-1 opacity-0 group-hover/menu:opacity-100 invisible group-hover/menu:visible transition-all z-20 flex flex-col transform translate-y-2 group-hover/menu:translate-y-0">
-                                   <button (click)="editGrupo(grupo)" class="flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg text-left">
-                                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                <!-- Dropdown -->
+                                <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 p-1.5 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-20 transform translate-y-2 group-hover/menu:translate-y-0">
+                                   <button (click)="editGrupo(grupo)" class="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg text-left transition-colors">
+                                      <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                       Editar Grupo
                                    </button>
-                                   <button (click)="confirmDelete(grupo)" class="flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg text-left">
-                                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                   <button (click)="confirmDelete(grupo)" class="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-lg text-left transition-colors">
+                                      <svg class="w-4 h-4 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                       Eliminar
                                    </button>
                                 </div>
@@ -188,30 +203,53 @@ import { AuthStore } from '../../../../core/auth/auth.store';
              </table>
           </div>
           
-           <!-- Footer Pagination (Removed as requested) -->
-           <div class="px-8 py-5 border-t border-slate-50 flex items-center justify-between bg-white/50" *ngIf="grupos().length > 0">
-               <p class="text-xs font-semibold text-slate-400">
-                   Total: <span class="text-slate-900 font-bold">{{ grupos().length }}</span> grupos
-               </p>
-           </div>
+          <div class="px-8 py-4 border-t border-slate-50 bg-slate-50/50 flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-400">Total: {{ grupos().length }} registros</span>
+          </div>
       </div>
 
-      <!-- 5. Slide Over Panel (Create/Edit) -->
+      <!-- Empty State -->
+      <ng-template #emptyState>
+        <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-12 flex flex-col items-center justify-center text-center">
+            <div class="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">No hay grupos creados</h3>
+            <p class="text-slate-500 max-w-sm mb-6">Comienza creando tu primer grupo de predicación para asignar publicadores.</p>
+            <button (click)="openCreatePanel()" class="inline-flex items-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-all active:scale-95">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Crear Grupo
+            </button>
+        </div>
+      </ng-template>
+
+      <!-- Slide Over Panel -->
       <div *ngIf="panelOpen()" class="fixed inset-0 z-50 overflow-hidden" @fadeIn>
-          <!-- Backdrop -->
-          <div class="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" (click)="closePanel()"></div>
+          <div class="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" (click)="closePanel()"></div>
           
-          <!-- Panel -->
           <div class="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col" @slideOver>
              <!-- Header -->
-             <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                 <div>
-                    <h2 class="text-xl font-black text-slate-900">{{ editingGrupo() ? 'Editar Grupo' : 'Nuevo Grupo' }}</h2>
-                    <p class="text-xs font-medium text-slate-500 mt-1">Completa los detalles del grupo de servicio.</p>
+             <div class="px-8 pt-8 pb-6 shrink-0 bg-white border-b border-slate-50">
+                 <div class="flex items-start justify-between">
+                      <div class="flex gap-4">
+                          <div class="w-12 h-12 rounded-xl bg-orange-50 text-brand-orange flex items-center justify-center shrink-0">
+                               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+                          </div>
+                          <div>
+                              <div class="flex items-center gap-2 mb-1">
+                                 <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-500">
+                                   {{ editingGrupo() ? 'Edición' : 'Nuevo' }}
+                                 </span>
+                              </div>
+                              <h2 class="text-2xl font-display font-black text-slate-900 tracking-tight">
+                                  {{ editingGrupo() ? 'Editar Grupo' : 'Crear Grupo' }}
+                              </h2>
+                          </div>
+                      </div>
+                     <button (click)="closePanel()" class="p-2 -mr-2 text-slate-300 hover:text-slate-500 transition-colors rounded-full hover:bg-slate-50">
+                         <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                     </button>
                  </div>
-                 <button (click)="closePanel()" class="p-2 rounded-lg text-slate-400 hover:bg-white hover:text-slate-600 hover:shadow-sm transition-all">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                 </button>
              </div>
              
              <!-- Body -->
@@ -220,7 +258,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
                     
                     <div class="space-y-2">
                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Nombre del Grupo</label>
-                       <input formControlName="nombre_grupo" type="text" placeholder="Ej: Grupo Centro" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-semibold text-slate-700 focus:bg-white focus:border-[#5B3C88] focus:ring-4 focus:ring-[#5B3C88]/10 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                       <input formControlName="nombre_grupo" type="text" placeholder="Ej: Grupo Centro" class="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-xl text-sm font-semibold text-slate-700 focus:bg-white focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                        <p *ngIf="grupoForm.get('nombre_grupo')?.touched && grupoForm.get('nombre_grupo')?.invalid" class="text-xs text-red-500 font-bold">Campo requerido</p>
                     </div>
 
@@ -230,7 +268,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
                           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                              <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                           </div>
-                          <input formControlName="capitan_grupo" type="text" placeholder="Nombre completo" class="w-full pl-11 pr-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-semibold text-slate-700 focus:bg-white focus:border-[#5B3C88] focus:ring-4 focus:ring-[#5B3C88]/10 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                          <input formControlName="capitan_grupo" type="text" placeholder="Nombre completo" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-transparent rounded-xl text-sm font-semibold text-slate-700 focus:bg-white focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                        </div>
                     </div>
 
@@ -240,7 +278,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
                           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                              <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                           </div>
-                          <input formControlName="auxiliar_grupo" type="text" placeholder="Nombre completo" class="w-full pl-11 pr-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-semibold text-slate-700 focus:bg-white focus:border-[#5B3C88] focus:ring-4 focus:ring-[#5B3C88]/10 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                          <input formControlName="auxiliar_grupo" type="text" placeholder="Nombre completo" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-transparent rounded-xl text-sm font-semibold text-slate-700 focus:bg-white focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                        </div>
                     </div>
 
@@ -248,15 +286,14 @@ import { AuthStore } from '../../../../core/auth/auth.store';
              </div>
 
              <!-- Footer -->
-             <div class="p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-white">
-                <button (click)="closePanel()" class="px-6 py-3 rounded-xl text-slate-500 hover:bg-slate-50 font-bold text-sm transition-colors">Cancelar</button>
-                <button (click)="save()" [disabled]="grupoForm.invalid || saving()" class="px-8 py-3 rounded-xl bg-[#5B3C88] text-white font-bold text-sm hover:bg-[#4a2f73] shadow-lg shadow-purple-900/20 active:scale-95 transition-all disabled:opacity-50">
+             <div class="px-8 py-6 border-t border-slate-100 bg-slate-50/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0 relative z-20">
+                <button (click)="closePanel()" class="px-6 h-12 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 text-slate-500 font-bold text-sm transition-all focus:outline-none">Cancelar</button>
+                <button (click)="save()" [disabled]="grupoForm.invalid || saving()" class="px-8 h-12 rounded-xl bg-brand-orange text-white font-bold text-sm hover:bg-orange-600 shadow-lg shadow-orange-900/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
                    {{ saving() ? 'Guardando...' : 'Guardar Cambios' }}
                 </button>
              </div>
           </div>
       </div>
-
     </div>
   `,
    styles: [`
@@ -371,15 +408,18 @@ export class GruposListComponent implements OnInit {
    }
 
    // Helpers
-   getAvatarColor(index: number): string {
-      const colors = [
-         'bg-purple-100 text-[#5B3C88]',
-         'bg-blue-100 text-blue-600',
-         'bg-emerald-100 text-emerald-600',
-         'bg-orange-100 text-orange-600',
-         'bg-pink-100 text-pink-600'
+   getAvatarClass(id: number): string {
+      const COLORS = [
+         'bg-blue-100 text-blue-700',
+         'bg-emerald-100 text-emerald-700',
+         'bg-orange-100 text-orange-700',
+         'bg-purple-100 text-purple-700',
+         'bg-cyan-100 text-cyan-700',
+         'bg-rose-100 text-rose-700',
+         'bg-teal-100 text-teal-700',
+         'bg-indigo-100 text-indigo-700'
       ];
-      return colors[index % colors.length];
+      return COLORS[Math.abs(id) % COLORS.length];
    }
 
    // CRUD Actions

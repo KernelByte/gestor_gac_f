@@ -48,7 +48,7 @@ interface Publicador {
                    <div *ngFor="let p of draggingAvatars(); let i = index" class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] z-10">
                       {{ getInitials(p) }}
                    </div>
-                   <div *ngIf="pendingChangesCount() > 0" class="w-8 h-8 rounded-full border-2 border-white bg-[#5B3C88] text-white flex items-center justify-center text-[10px] font-bold z-20">
+                   <div *ngIf="pendingChangesCount() > 0" class="w-8 h-8 rounded-full border-2 border-white bg-brand-orange text-white flex items-center justify-center text-[10px] font-bold z-20">
                       +{{ pendingChangesCount() }}
                    </div>
                 </div>
@@ -58,7 +58,7 @@ interface Publicador {
              <button 
                (click)="saveChanges()"
                [disabled]="isSaving() || pendingChangesCount() === 0"
-               class="px-6 py-2.5 bg-[#5B3C88] hover:bg-[#4a2f73] text-white rounded-xl font-bold text-sm shadow-lg shadow-purple-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale flex items-center gap-2"
+               class="px-6 py-2.5 bg-brand-orange hover:bg-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale flex items-center gap-2"
              >
                <svg *ngIf="isSaving()" class="animate-spin -ml-1 mr-1 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                {{ isSaving() ? 'Guardando...' : 'Guardar Cambios' }}
@@ -101,7 +101,7 @@ interface Publicador {
                *ngFor="let grupo of grupos()"
                class="w-64 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm max-h-full transition-shadow hover:shadow-md"
                [class.ring-2]="isDraggingOver() === grupo.id_grupo"
-               [class.ring-[#5B3C88]]="isDraggingOver() === grupo.id_grupo"
+               [class.ring-brand-orange]="isDraggingOver() === grupo.id_grupo"
                (dragover)="onDragOver($event, grupo.id_grupo)"
                (dragleave)="onDragLeave()"
                (drop)="onDrop($event, grupo.id_grupo)"
@@ -142,7 +142,7 @@ interface Publicador {
     <!-- Template de Card de Publicador COMPACTO -->
     <ng-template #cardTemplate let-p let-inGroup="inGroup">
       <div 
-         class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm cursor-move select-none hover:shadow-md hover:border-[#5B3C88]/30 active:scale-95 transition-all group relative flex items-center gap-2 overflow-hidden h-14"
+         class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm cursor-move select-none hover:shadow-md hover:border-brand-orange/30 active:scale-95 transition-all group relative flex items-center gap-2 overflow-hidden h-14"
          draggable="true"
          (dragstart)="onDragStart($event, p)"
       >
