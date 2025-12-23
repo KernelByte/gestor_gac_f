@@ -19,7 +19,19 @@ interface Grupo {
   capitan_grupo?: string;
 }
 
-type TabType = 'personal' | 'teocratico';
+type TabType = 'personal' | 'teocratico' | 'emergencia';
+
+interface ContactoEmergencia {
+  id_contacto_emergencia?: number;
+  id_publicador: number;
+  nombre: string;
+  telefono?: string;
+  parentesco?: string;
+  direccion?: string;
+  etiqueta?: string;
+  es_principal?: boolean;
+  solo_urgencias?: boolean;
+}
 
 @Component({
   standalone: true,
@@ -40,9 +52,9 @@ type TabType = 'personal' | 'teocratico';
       </div>
 
       <!-- Search & Filter Card -->
-      <div class="shrink-0 bg-white p-4 rounded-2xl shadow-sm border border-slate-200/60 mb-6 flex flex-col xl:flex-row items-center gap-4">
+      <div class="shrink-0 bg-white p-4 rounded-2xl shadow-sm border border-slate-200/60 mb-6 flex flex-col lg:flex-row items-start lg:items-center gap-4 transition-all">
         <!-- Search Input -->
-        <div class="relative w-full xl:max-w-md">
+        <div class="relative w-full lg:max-w-md">
            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
            </div>
@@ -55,15 +67,15 @@ type TabType = 'personal' | 'teocratico';
            >
         </div>
 
-        <!-- Filter Chips (Static styling for demo based on image, mapped to real functionality where possible) -->
-        <div class="flex items-center gap-2 overflow-x-auto w-full pb-1 xl:pb-0 no-scrollbar">
+        <!-- Filter Chips -->
+        <div class="flex items-center gap-2 overflow-x-auto w-full pb-1 lg:pb-0 no-scrollbar mask-linear-fade">
            <button 
               (click)="selectedEstado = null; onFilterChange()"
               [class.bg-brand-orange]="selectedEstado === null"
               [class.text-white]="selectedEstado === null"
               [class.bg-slate-100]="selectedEstado !== null"
               [class.text-slate-600]="selectedEstado !== null"
-              class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors shrink-0"
             >
               Todos <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px]">{{ vm().list.length }}</span>
            </button>
@@ -75,36 +87,86 @@ type TabType = 'personal' | 'teocratico';
               [class.text-white]="selectedEstado === e.id_estado"
               [class.bg-slate-50]="selectedEstado !== e.id_estado"
               [class.text-slate-600]="selectedEstado !== e.id_estado"
-              class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap hover:bg-slate-100 transition-colors"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap hover:bg-slate-100 transition-colors shrink-0"
            >
               {{ e.nombre_estado }}
            </button>
         </div>
-
-        <div class="h-8 w-px bg-slate-200 hidden xl:block"></div>
-
-        <button class="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors xl:ml-auto">
-           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-        </button>
       </div>
 
-      <!-- Main Table Card -->
-      <div class="min-h-[500px] relative bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="absolute inset-0 overflow-auto simple-scrollbar">
-           
-           <!-- Loading Overlay -->
-           <div *ngIf="vm().loading" class="absolute inset-0 z-20 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
-              <div class="w-8 h-8 rounded-full border-2 border-slate-100 border-t-brand-orange animate-spin"></div>
-           </div>
+      <!-- Main Content Area: Responsive Switch -->
+      <div class="min-h-[500px] relative bg-transparent md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-slate-200 overflow-hidden flex flex-col">
+        
+        <!-- Loading Overlay -->
+        <div *ngIf="vm().loading" class="absolute inset-0 z-20 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-2xl">
+           <div class="w-8 h-8 rounded-full border-2 border-slate-100 border-t-brand-orange animate-spin"></div>
+        </div>
 
+        <!-- 1. Mobile Card View (Visible < md) -->
+        <div class="md:hidden space-y-4 pb-20">
+            <div *ngFor="let p of vm().list; trackBy: trackById" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div 
+                           class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 border border-slate-100 text-sm font-bold shadow-sm"
+                           [ngClass]="getAvatarClass(p.id_publicador)"
+                       >
+                          {{ getInitials(p) }}
+                       </div>
+                       <div>
+                           <h3 class="font-bold text-slate-900 leading-tight">{{ p.primer_nombre }} {{ p.primer_apellido }}</h3>
+                           <p class="text-xs text-slate-500 font-medium">{{ p.segundo_nombre }} {{ p.segundo_apellido }}</p>
+                       </div>
+                    </div>
+                     <!-- Estado Badge Mobile -->
+                    <span 
+                        class="inline-flex h-2.5 w-2.5 rounded-full"
+                        [ngClass]="getEstadoDotClass(p.id_estado_publicador)"
+                    ></span>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+                    <div class="bg-slate-50 p-2 rounded-lg">
+                        <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Grupo</span>
+                        <span class="font-bold text-slate-700 truncate block">{{ getGrupoNombre(p.id_grupo_publicador) }}</span>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded-lg">
+                        <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Estado</span>
+                        <span class="font-bold text-slate-700 truncate block">{{ getEstadoNombre(p.id_estado_publicador) }}</span>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded-lg col-span-2 flex items-center gap-2">
+                         <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                         <span class="font-medium text-slate-600">{{ p.telefono || 'Sin teléfono' }}</span>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-2">
+                    <button (click)="openEditForm(p)" class="flex-1 py-2.5 rounded-xl bg-brand-orange/10 text-brand-orange font-bold text-xs hover:bg-brand-orange hover:text-white transition-colors">
+                        Editar
+                    </button>
+                    <button (click)="confirmDelete(p)" class="py-2.5 px-4 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            </div>
+             <!-- Empty State Mobile -->
+             <div *ngIf="vm().list.length === 0 && !vm().loading" class="text-center py-12">
+                 <p class="text-slate-400 font-medium">No se encontraron resultados</p>
+             </div>
+        </div>
+
+        <!-- 2. Desktop Table View (Visible md+) -->
+        <div class="hidden md:block absolute inset-0 overflow-auto simple-scrollbar">
            <table class="w-full text-left border-collapse">
               <thead class="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-md shadow-sm">
                  <tr class="border-b border-slate-200">
                     <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre</th>
                     <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Grupo</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Fecha Nac.</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Fecha Bau.</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Teléfono</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Fecha Nac.</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider hidden xl:table-cell">Fecha Bau.</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Teléfono</th>
                     <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Estado</th>
                     <th class="px-4 py-4 w-10"></th>
                  </tr>
@@ -136,18 +198,18 @@ type TabType = 'personal' | 'teocratico';
                        </div>
                     </td>
 
-                    <!-- Fecha Nacimiento -->
-                    <td class="px-6 py-4">
+                    <!-- Fecha Nacimiento (LG+) -->
+                    <td class="px-6 py-4 hidden lg:table-cell">
                        <span class="text-sm text-slate-600 font-medium">{{ formatDate(p.fecha_nacimiento) }}</span>
                     </td>
 
-                    <!-- Fecha Bautismo -->
-                    <td class="px-6 py-4">
+                    <!-- Fecha Bautismo (XL+) -->
+                    <td class="px-6 py-4 hidden xl:table-cell">
                        <span class="text-sm text-slate-600 font-medium">{{ formatDate(p.fecha_bautismo) }}</span>
                     </td>
 
-                    <!-- Teléfono -->
-                    <td class="px-6 py-4">
+                    <!-- Teléfono (LG+) -->
+                    <td class="px-6 py-4 hidden lg:table-cell">
                        <span class="text-sm text-slate-600 font-mono">{{ p.telefono || '—' }}</span>
                     </td>
 
@@ -195,8 +257,9 @@ type TabType = 'personal' | 'teocratico';
            </table>
         </div>
 
-        <!-- Pagination Footer -->
-        <div class="p-6 border-t border-slate-100 flex items-center justify-between bg-white shrink-0">
+        <!-- Pagination Footer (Common) -->
+        <div class="mt-auto p-6 border-t border-slate-100 flex items-center justify-between bg-white shrink-0 md:rounded-b-2xl">
+
             <span class="text-xs font-medium text-slate-500">Mostrando <span class="font-bold text-slate-800">{{ vm().list.length }}</span> registros</span>
             <div class="flex gap-2">
                  <button 
@@ -275,6 +338,15 @@ type TabType = 'personal' | 'teocratico';
                >
                   Teocrático
                   <span *ngIf="activeTab() === 'teocratico'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-orange"></span>
+               </button>
+               <button 
+                  *ngIf="editingPublicador()"
+                  (click)="loadContactos(); activeTab.set('emergencia')" 
+                  class="pb-3 text-sm font-bold transition-colors relative"
+                  [ngClass]="activeTab() === 'emergencia' ? 'text-brand-orange' : 'text-slate-400 hover:text-slate-600'"
+               >
+                  Contactos Emergencia
+                  <span *ngIf="activeTab() === 'emergencia'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-orange"></span>
                </button>
            </div>
 
@@ -484,9 +556,13 @@ export class PublicadoresListComponent implements OnInit {
   // Auxiliary Data
   estados = signal<Estado[]>([]);
   grupos = signal<Grupo[]>([]);
+  contactos = signal<ContactoEmergencia[]>([]);
+  showContactoForm = signal(false);
+  editingContacto = signal<ContactoEmergencia | null>(null);
 
   // Form
   publicadorForm: FormGroup;
+  contactoForm: FormGroup;
 
   constructor() {
     this.publicadorForm = this.fb.group({
@@ -504,6 +580,16 @@ export class PublicadoresListComponent implements OnInit {
       id_grupo_publicador: [null],
       id_estado_publicador: [null, Validators.required],
       consentimiento_datos: [false]
+    });
+
+    this.contactoForm = this.fb.group({
+      nombre: ['', Validators.required],
+      parentesco: [''],
+      telefono: [''],
+      direccion: [''],
+      etiqueta: [''],
+      es_principal: [false],
+      solo_urgencias: [false]
     });
   }
 
@@ -778,6 +864,75 @@ export class PublicadoresListComponent implements OnInit {
       });
     } catch {
       return date;
+    }
+  }
+
+  // --- Emergencia Logic ---
+
+  async loadContactos() {
+    const pub = this.editingPublicador();
+    if (!pub) return;
+    try {
+      const res = await lastValueFrom(this.http.get<ContactoEmergencia[]>('/api/contactos-emergencia/', {
+        params: { id_publicador: pub.id_publicador }
+      }));
+      this.contactos.set(res || []);
+    } catch (e) {
+      console.error('Error loading contactos', e);
+      this.contactos.set([]);
+    }
+  }
+
+  initNewContacto() {
+    this.editingContacto.set(null);
+    this.contactoForm.reset({ es_principal: false, solo_urgencias: false });
+    this.showContactoForm.set(true);
+  }
+
+  editContacto(c: ContactoEmergencia) {
+    this.editingContacto.set(c);
+    this.contactoForm.patchValue({
+      nombre: c.nombre,
+      parentesco: c.parentesco,
+      telefono: c.telefono,
+      direccion: c.direccion,
+      etiqueta: c.etiqueta,
+      es_principal: c.es_principal,
+      solo_urgencias: c.solo_urgencias
+    });
+    this.showContactoForm.set(true);
+  }
+
+  async saveContacto() {
+    if (this.contactoForm.invalid) return;
+
+    const val = this.contactoForm.value;
+    const pub = this.editingPublicador();
+    if (!pub) return;
+
+    try {
+      if (this.editingContacto()) {
+        const id = this.editingContacto()!.id_contacto_emergencia;
+        await lastValueFrom(this.http.put('/api/contactos-emergencia/' + id, val));
+      } else {
+        const payload = { ...val, id_publicador: pub.id_publicador };
+        await lastValueFrom(this.http.post('/api/contactos-emergencia/', payload));
+      }
+      this.showContactoForm.set(false);
+      this.loadContactos();
+    } catch (e) {
+      console.error('Error saving contacto', e);
+      alert('Error al guardar contacto');
+    }
+  }
+
+  async deleteContacto(c: ContactoEmergencia) {
+    if (!confirm('¿Eliminar este contacto?')) return;
+    try {
+      await lastValueFrom(this.http.delete('/api/contactos-emergencia/' + c.id_contacto_emergencia));
+      this.loadContactos();
+    } catch (e) {
+      alert('Error eliminando contacto');
     }
   }
 }

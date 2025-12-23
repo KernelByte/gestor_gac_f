@@ -90,13 +90,13 @@ import { lastValueFrom } from 'rxjs';
               <td class="px-6 py-4">
                 <div class="flex items-center gap-4">
                   <!-- Dynamic Light Color Avatar -->
-                  <div [ngClass]="getRoleStyle(rol.descripcion_rol)" 
+                  <div [ngClass]="getRoleStyle(rol.nombre_rol)" 
                        class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-lg shadow-sm ring-1 ring-white border border-white/50">
-                    {{ rol.descripcion_rol.charAt(0).toUpperCase() }}
+                    {{ rol.nombre_rol.charAt(0).toUpperCase() }}
                   </div>
                   <div>
-                    <p class="text-sm font-bold text-slate-800 tracking-tight">{{ rol.descripcion_rol }}</p>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">ID: {{ rol.id_rol.toString().padStart(3, '0') }}</p>
+                    <p class="text-sm font-bold text-slate-800 tracking-tight">{{ rol.nombre_rol }}</p>
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{{ rol.descripcion_rol }}</p>
                   </div>
                 </div>
               </td>
@@ -104,7 +104,7 @@ import { lastValueFrom } from 'rxjs';
               <!-- Users Count (Interactive Pill) -->
               <td class="px-6 py-4 text-center">
                  <button 
-                    (click)="navigateToUsers(rol.descripcion_rol)" 
+                    (click)="navigateToUsers(rol.nombre_rol)" 
                     class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 text-slate-600 text-xs font-bold border border-slate-200 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700 transition-all active:scale-95 group/btn"
                     title="Ver usuarios"
                  >
@@ -179,36 +179,18 @@ import { lastValueFrom } from 'rxjs';
                   <div class="space-y-2 group">
                      <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nombre del Rol</label>
                      <div class="relative">
-                        <input type="text" formControlName="descripcion_rol" 
+                        <input type="text" formControlName="nombre_rol" 
                            class="peer w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 font-bold focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal"
                            placeholder="Ej: Administrador">
-                        <!-- Valid Indicator -->
-                        <div class="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 opacity-0 peer-valid:opacity-100 transition-opacity pointer-events-none" *ngIf="rolForm.valid && rolForm.dirty">
-                           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        </div>
-                     </div>
-                     <p *ngIf="rolForm.get('descripcion_rol')?.touched && rolForm.get('descripcion_rol')?.invalid" 
-                        class="text-xs text-red-500 font-bold flex items-center gap-1 mt-1 animate-pulse">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        El nombre es requerido
-                     </p>
-                  </div>
-
-                  <!-- Info Box (Mock) -->
-                  <div class="p-4 rounded-xl bg-blue-50 border border-blue-100 flex gap-3">
-                     <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                     <div>
-                        <h4 class="text-sm font-bold text-blue-900">Información del Sistema</h4>
-                        <p class="text-xs text-blue-700 mt-1 leading-relaxed">
-                           Al crear un rol, se asignarán permisos predeterminados básicos. Podrá configurar permisos avanzados en el módulo de configuración.
-                        </p>
                      </div>
                   </div>
 
-                  <!-- Description Mock -->
-                  <div class="space-y-2 opacity-60">
-                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Descripción (Autogenerada)</label>
-                     <textarea disabled rows="3" class="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-slate-500 text-sm font-medium resize-none cursor-not-allowed">La descripción se generará automáticamente basada en el nombre del rol.</textarea>
+                  <!-- Description Input -->
+                  <div class="space-y-2 group">
+                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Descripción</label>
+                     <textarea formControlName="descripcion_rol" rows="3" 
+                        class="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 text-sm font-medium resize-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all placeholder:text-slate-400"
+                        placeholder="Descripción breve del rol..."></textarea>
                   </div>
 
                </form>
@@ -242,7 +224,7 @@ export class RolesPage implements OnInit {
   filteredRoles = computed(() => {
     const term = this.searchTerm().toLowerCase();
     return this.roles().filter(r =>
-      r.descripcion_rol.toLowerCase().includes(term)
+      r.nombre_rol.toLowerCase().includes(term)
     );
   });
 
@@ -255,7 +237,8 @@ export class RolesPage implements OnInit {
 
   constructor() {
     this.rolForm = this.fb.group({
-      descripcion_rol: ['', [Validators.required, Validators.minLength(3)]]
+      nombre_rol: ['', [Validators.required, Validators.minLength(3)]],
+      descripcion_rol: ['', [Validators.required]]
     });
   }
 
@@ -322,6 +305,7 @@ export class RolesPage implements OnInit {
   editRol(rol: Rol) {
     this.editingRol.set(rol);
     this.rolForm.patchValue({
+      nombre_rol: rol.nombre_rol,
       descripcion_rol: rol.descripcion_rol
     });
     this.panelOpen.set(true);
@@ -356,7 +340,7 @@ export class RolesPage implements OnInit {
   }
 
   confirmDelete(rol: Rol) {
-    if (confirm(`¿Estás seguro de eliminar el rol "${rol.descripcion_rol}"?`)) {
+    if (confirm(`¿Estás seguro de eliminar el rol "${rol.nombre_rol}"?`)) {
       this.deleteRol(rol.id_rol);
     }
   }

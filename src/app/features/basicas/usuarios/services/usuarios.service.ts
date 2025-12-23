@@ -5,6 +5,7 @@ import { Usuario, UsuarioCreate, UsuarioUpdate } from '../models/usuario.model';
 
 export interface Rol {
    id_rol: number;
+   nombre_rol: string;
    descripcion_rol: string;
 }
 

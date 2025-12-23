@@ -78,9 +78,13 @@ import { Usuario } from '../models/usuario.model';
           </div>
           <div class="h-8 w-px bg-slate-100 hidden sm:block"></div>
           <div class="w-full sm:w-auto px-2">
-             <button class="w-full sm:w-auto flex items-center justify-between gap-3 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl font-bold text-sm transition-colors border border-transparent hover:border-slate-200">
-                <span>Más Filtros</span>
-                <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+             <button 
+                (click)="clearSearch()"
+                [disabled]="!searchControl.value"
+                class="w-full sm:w-auto flex items-center justify-between gap-3 px-4 py-2 bg-white hover:bg-slate-50 text-slate-500 hover:text-red-500 rounded-xl font-bold text-sm transition-colors border border-slate-200 hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-slate-500 disabled:hover:border-slate-200"
+             >
+                <span>Limpiar Filtros</span>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
              </button>
           </div>
        </div>
@@ -93,6 +97,7 @@ import { Usuario } from '../models/usuario.model';
                    <tr>
                       <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Usuario</th>
                       <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Rol</th>
+                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Teléfono</th>
                       <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Estado</th>
                       <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Acciones</th>
                    </tr>
@@ -120,6 +125,11 @@ import { Usuario } from '../models/usuario.model';
                          </span>
                       </td>
 
+                      <!-- Phone -->
+                      <td class="px-6 py-4">
+                         <span class="text-sm text-slate-600 font-mono">{{ u.telefono || '—' }}</span>
+                      </td>
+
                       <!-- Status Badge (Mock) -->
                       <td class="px-6 py-4 text-center">
                          <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-100/50">
@@ -143,7 +153,7 @@ import { Usuario } from '../models/usuario.model';
                    
                    <!-- Empty State -->
                    <tr *ngIf="filteredUsuarios().length === 0" class="text-center">
-                       <td colspan="4" class="py-20">
+                       <td colspan="5" class="py-20">
                           <div class="flex flex-col items-center justify-center text-slate-400">
                              <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                                 <svg class="w-8 h-8 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
@@ -214,6 +224,33 @@ import { Usuario } from '../models/usuario.model';
                                     </div>
                                     <input formControlName="correo" type="email" class="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium sm:text-sm" placeholder="ana@ejemplo.com">
                                  </div>
+                              </div>
+
+                              <div class="space-y-1">
+                                 <label class="block text-sm font-bold text-slate-700">Teléfono</label>
+                                 <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                       <svg class="h-5 w-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                    </div>
+                                    <input formControlName="telefono" type="text" class="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium sm:text-sm" placeholder="Ej. 300 123 4567">
+                                 </div>
+                              </div>
+
+                              <div class="grid grid-cols-3 gap-4">
+                                  <div class="col-span-1 space-y-1">
+                                      <label class="block text-sm font-bold text-slate-700">Tipo ID</label>
+                                      <select formControlName="tipo_identificacion" class="block w-full px-3 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:bg-white focus:border-[#6D28D9] font-medium text-sm">
+                                          <option value="">Seleccione</option>
+                                          <option value="CC">C.C.</option>
+                                          <option value="CE">C.E.</option>
+                                          <option value="TI">T.I.</option>
+                                          <option value="PASSPORT">Pasaporte</option>
+                                      </select>
+                                  </div>
+                                  <div class="col-span-2 space-y-1">
+                                      <label class="block text-sm font-bold text-slate-700">Número ID</label>
+                                      <input formControlName="id_identificacion" type="text" class="block w-full px-3 py-3 border border-slate-200 rounded-xl bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#6D28D9] text-sm" placeholder="Ej. 123456789">
+                                  </div>
                               </div>
                            </div>
                         </div>
@@ -450,7 +487,10 @@ export class UsuariosPage implements OnInit {
          confirmPassword: ['', Validators.required],
          id_rol_usuario: [null, Validators.required],
          id_congregacion: [null],
-         id_usuario_publicador: [null] // New field
+         id_usuario_publicador: [null],
+         telefono: [''],
+         tipo_identificacion: [''],
+         id_identificacion: ['']
       }, { validators: this.passwordMatchValidator });
    }
 
@@ -631,7 +671,10 @@ export class UsuariosPage implements OnInit {
          correo: u.correo,
          id_rol_usuario: u.id_rol_usuario,
          id_congregacion: u.id_congregacion,
-         id_usuario_publicador: u.id_usuario_publicador
+         id_usuario_publicador: u.id_usuario_publicador,
+         telefono: u.telefono,
+         tipo_identificacion: u.tipo_identificacion,
+         id_identificacion: u.id_identificacion
       });
 
       if (u.id_congregacion) {
@@ -674,7 +717,10 @@ export class UsuariosPage implements OnInit {
             nombre: formValue.nombre,
             correo: formValue.correo,
             id_rol_usuario: formValue.id_rol_usuario,
-            id_usuario_publicador: formValue.id_usuario_publicador
+            id_usuario_publicador: formValue.id_usuario_publicador,
+            telefono: formValue.telefono,
+            tipo_identificacion: formValue.tipo_identificacion,
+            id_identificacion: formValue.id_identificacion
          };
 
          if (this.editingUser()) {
@@ -727,8 +773,12 @@ export class UsuariosPage implements OnInit {
       // Priority 3: Lookup by ID
       if (u.id_rol_usuario) {
          const r = this.roles().find(r => r.id_rol === u.id_rol_usuario);
-         if (r) return r.descripcion_rol;
+         if (r) return r.nombre_rol;
       }
       return 'Sin Rol';
+   }
+
+   clearSearch() {
+      this.searchControl.setValue('');
    }
 }
