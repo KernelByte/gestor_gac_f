@@ -238,7 +238,7 @@ interface ContactoEmergencia {
                                </div>
                                <div>
                                   <p class="text-sm font-bold text-slate-900">{{ getFullName(p) }}</p>
-                                  <p class="text-xs text-slate-400 font-medium">ID: {{ p.id_publicador }}</p>
+                                  <p *ngIf="isAdminOrGestor()" class="text-xs text-slate-400 font-medium">ID: {{ p.id_publicador }}</p>
                                </div>
                             </div>
                          </td>
@@ -744,6 +744,13 @@ export class PublicadoresListComponent implements OnInit {
   contactos = signal<ContactoEmergencia[]>([]);
   showContactoForm = signal(false);
   editingContacto = signal<ContactoEmergencia | null>(null);
+
+  // Role Check - Solo admin y gestor pueden ver el ID
+  isAdminOrGestor = computed(() => {
+    const user = this.authStore.user();
+    const rol = user?.rol?.toLowerCase() || '';
+    return rol.includes('admin') || rol.includes('gestor');
+  });
 
   // Form
   publicadorForm: FormGroup;
