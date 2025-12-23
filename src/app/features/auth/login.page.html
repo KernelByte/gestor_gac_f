@@ -25,54 +25,37 @@
   <!-- Content Wrapper -->
   <div class="relative z-10 w-full max-w-[420px] sm:max-w-[440px] flex flex-col items-center">
 
-    <!-- Logo Section (Refined & Premium) -->
-    <div
-      class="flex flex-col items-center mt-4 sm:mt-6 mb-6 sm:mb-8 transform transition-all duration-700 hover:scale-105 w-full">
-
-      <!-- Logo Container (Frameless & Modern) -->
-      <div class="relative group">
-        <!-- Active Glow (reveals on hover) -->
-        <div
-          class="absolute -inset-8 bg-brand-purple/20 rounded-full blur-[40px] opacity-0 group-hover:opacity-60 transition-opacity duration-700">
-        </div>
-
-        <!-- Static Ambient Glow -->
-        <div class="absolute inset-0 bg-brand-purple/10 rounded-full blur-2xl opacity-50">
-        </div>
-
-        <!-- Logo Image -->
-        <div
-          class="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center transition-transform duration-500 group-hover:scale-[1.02]">
-          <img src="images/LogoAppLigth.png" alt="GAC Logo"
-            class="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(109,40,217,0.6)] filter brightness-110" />
-        </div>
-      </div>
-
-      <!-- Typography -->
-      <div class="mt-4 sm:mt-6 text-center space-y-1">
-        <h2 class="text-3xl sm:text-4xl font-black tracking-tight text-white select-none drop-shadow-sm">
-          gestor<span
-            class="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple via-violet-500 to-indigo-500 saturate-150 animate-shine bg-[length:200%_auto]">GAC</span>
+    <!-- Branding Section (Text Only) -->
+    <div class="flex flex-col items-center mb-8 sm:mb-10 w-full animate-fadeIn">
+      <div class="text-center space-y-2">
+        <h2 class="text-4xl sm:text-5xl font-black tracking-tight text-white select-none drop-shadow-xl">
+          Gestor <span
+            class="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple via-violet-400 to-indigo-400 saturate-150 animate-shine bg-[length:200%_auto]">GAC</span>
         </h2>
-        <div
-          class="h-0.5 w-8 sm:w-10 bg-gradient-to-r from-transparent via-slate-700 to-transparent mx-auto my-2 opacity-50">
+        <div class="flex items-center justify-center gap-3 opacity-60">
+          <div class="h-px w-12 bg-gradient-to-r from-transparent to-slate-500"></div>
+          <p class="text-[10px] sm:text-[11px] text-slate-300 font-bold tracking-[0.4em] uppercase antialiased">
+            Administración
+          </p>
+          <div class="h-px w-12 bg-gradient-to-l from-transparent to-slate-500"></div>
         </div>
-        <p
-          class="text-[9px] sm:text-[10px] text-slate-400/80 font-bold tracking-[0.3em] sm:tracking-[0.4em] uppercase text-center antialiased">
-          Administración Central
-        </p>
       </div>
     </div>
 
     <!-- Main Card -->
     <div
-      class="w-full bg-slate-900/60 backdrop-blur-2xl rounded-2xl sm:rounded-3xl border border-white/10 shadow-[0_8px_40px_rgb(0,0,0,0.5)] p-5 sm:p-8 transition-all duration-300 hover:border-white/20 hover:shadow-brand-purple/5">
+      class="w-full bg-slate-900/40 backdrop-blur-3xl rounded-[2rem] border border-white/5 shadow-[0_8px_50px_rgb(0,0,0,0.7)] p-6 sm:p-10 transition-all duration-500 hover:border-white/10 relative overflow-hidden ring-1 ring-white/5">
+
+      <!-- Subtle Gradient Overlay inside card -->
+      <div
+        class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 hover:opacity-10 transition-opacity duration-700 pointer-events-none">
+      </div>
 
       <!-- Card Header -->
-      <div class="mb-5 sm:mb-6 text-center">
-        <h1 class="text-lg sm:text-xl font-bold text-white mb-1.5">¡Hola de nuevo!</h1>
-        <p class="text-slate-400 text-xs sm:text-sm">
-          Ingresa tus credenciales para continuar.
+      <div class="mb-8 text-center relative z-10">
+        <h1 class="text-2xl font-black text-white mb-2 tracking-tight">Bienvenido</h1>
+        <p class="text-slate-400 text-sm font-medium">
+          Accede a tu panel de control
         </p>
       </div>
 

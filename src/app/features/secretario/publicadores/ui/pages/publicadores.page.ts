@@ -38,7 +38,7 @@ interface ContactoEmergencia {
   selector: 'app-publicadores-list',
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   template: `
-    <div class="flex flex-col gap-6 h-full">
+    <div class="flex flex-col gap-4 h-full overflow-hidden p-1">
       
       <!-- Search, Filters & Action Toolbar Wrapper -->
       <div class="shrink-0 flex flex-col xl:flex-row items-start xl:items-center gap-4">
@@ -145,18 +145,18 @@ interface ContactoEmergencia {
       </div>
 
       <!-- Main Content Area: Flex Grow to Fill Space -->
-      <div class="flex-1 min-h-0 relative bg-transparent md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-slate-200 overflow-hidden flex flex-col">
+      <div class="flex-1 min-h-0 relative bg-transparent md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-slate-200 flex flex-col overflow-hidden">
         
         <!-- Loading Overlay -->
         <div *ngIf="vm().loading" class="absolute inset-0 z-20 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-2xl">
            <div class="w-8 h-8 rounded-full border-2 border-slate-100 border-t-brand-orange animate-spin"></div>
         </div>
 
-        <!-- Scrollable Content Container -->
-        <div class="flex-1 min-h-0 relative">
+        <!-- Scrollable Content Container (Primary Scroll) -->
+        <div class="flex-1 overflow-y-auto min-h-0 relative simple-scrollbar">
              
              <!-- 1. Mobile Card View (Visible < md) -->
-             <div class="md:hidden h-full overflow-y-auto p-4 space-y-4 pb-4">
+             <div class="md:hidden p-4 space-y-4 pb-4">
                  <div *ngFor="let p of pagedList(); trackBy: trackById" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative">
                      <div class="flex items-start justify-between mb-4">
                          <div class="flex items-center gap-3">
@@ -211,7 +211,7 @@ interface ContactoEmergencia {
              </div>
 
              <!-- 2. Desktop Table View (Visible md+) -->
-             <div class="hidden md:block h-full overflow-y-auto simple-scrollbar">
+             <div class="hidden md:block">
                 <table class="w-full text-left border-collapse">
                    <thead class="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-md shadow-sm">
                       <tr class="border-b border-slate-200">
@@ -317,7 +317,7 @@ interface ContactoEmergencia {
         </div>
 
         <!-- Pagination Footer (Fixed at bottom) -->
-        <div class="shrink-0 p-6 border-t border-slate-100 flex items-center justify-between bg-white shrink-0 md:rounded-b-2xl">
+        <div class="shrink-0 relative z-20 p-6 border-t border-slate-100 flex flex-nowrap items-center justify-between bg-white md:rounded-b-2xl">
 
             <span class="text-xs font-medium text-slate-500">
                Mostrando {{ (currentPage() - 1) * pageSize + 1 }} - {{ Math.min(currentPage() * pageSize, filteredList().length) }} 
@@ -353,7 +353,7 @@ interface ContactoEmergencia {
           [ngClass]="{ 'translate-x-0': panelOpen(), 'translate-x-full': !panelOpen() }"
         >
           <!-- Title & Close -->
-           <div class="px-8 pt-8 pb-6 shrink-0 bg-white">
+           <div class="px-5 md:px-8 pt-8 pb-6 shrink-0 bg-white">
               <div class="flex items-start justify-between">
                    <div>
                        <div class="flex items-center gap-2 mb-2">
@@ -384,7 +384,7 @@ interface ContactoEmergencia {
            </div>
 
            <!-- Tabs -->
-           <div class="px-8 border-b border-slate-100 flex gap-8 shrink-0">
+           <div class="px-5 md:px-8 border-b border-slate-100 flex gap-4 md:gap-8 shrink-0 overflow-x-auto no-scrollbar">
                <button 
                   (click)="activeTab.set('personal')" 
                   class="pb-3 text-sm font-bold transition-colors relative"
@@ -413,7 +413,7 @@ interface ContactoEmergencia {
            </div>
 
            <!-- Form Content -->
-           <div class="flex-1 overflow-y-auto px-8 py-6 simple-scrollbar">
+           <div class="flex-1 overflow-y-auto px-5 md:px-8 py-6 simple-scrollbar">
               <form [formGroup]="publicadorForm" (ngSubmit)="onSubmit()" class="space-y-6">
                 
                 <!-- TAB: PERSONAL -->
@@ -421,7 +421,7 @@ interface ContactoEmergencia {
                      <!-- Nombre Completo Input Style (Full Width) -->
                      <div>
                         <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Nombre Completo</label>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                              <input formControlName="primer_nombre" placeholder="Nombre 1" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
                              <input formControlName="segundo_nombre" placeholder="Nombre 2" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
                              <input formControlName="primer_apellido" placeholder="Apellido 1" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
@@ -429,7 +429,7 @@ interface ContactoEmergencia {
                         </div>
                      </div>
 
-                     <div class="grid grid-cols-2 gap-4">
+                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Teléfono</label>
                             <input formControlName="telefono" placeholder="+57 300 123 4567" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
@@ -440,7 +440,7 @@ interface ContactoEmergencia {
                         </div>
                      </div>
 
-                     <div class="grid grid-cols-2 gap-4">
+                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Fecha Nacimiento</label>
                             <input type="date" formControlName="fecha_nacimiento" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
@@ -503,7 +503,7 @@ interface ContactoEmergencia {
                             </select>
                       </div>
 
-                      <div class="grid grid-cols-2 gap-4">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Fecha Bautismo</label>
                              <input type="date" formControlName="fecha_bautismo" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
@@ -590,7 +590,7 @@ interface ContactoEmergencia {
                                   <input formControlName="nombre" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all">
                               </div>
                               
-                              <div class="grid grid-cols-2 gap-4">
+                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   <div>
                                      <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Parentesco</label>
                                      <input formControlName="parentesco" placeholder="Ej. Madre, Esposa" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all">
@@ -636,7 +636,7 @@ interface ContactoEmergencia {
            </div>
 
            <!-- Panel Footer -->
-           <div class="px-8 py-6 border-t border-slate-100/50 bg-slate-50/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0 relative z-20">
+           <div class="px-5 md:px-8 py-6 border-t border-slate-100/50 bg-slate-50/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0 relative z-20">
                <button (click)="closePanel()" class="px-6 h-12 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 text-slate-500 font-bold text-sm transition-all">Cancelar</button>
                <button (click)="onSubmit()" [disabled]="publicadorForm.invalid || saving()" class="px-8 h-12 rounded-xl bg-brand-orange text-white font-bold text-sm hover:bg-orange-600 shadow-lg shadow-orange-900/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none">
                    {{ saving() ? 'Guardando...' : 'Guardar Cambios' }}
@@ -662,7 +662,8 @@ interface ContactoEmergencia {
   `,
   styles: [`
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
       height: 100%;
       overflow: hidden;
     }

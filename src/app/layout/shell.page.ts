@@ -30,37 +30,33 @@ import { ThemeService } from '../core/services/theme.service';
         }"
       >
         <!-- Sidebar Header -->
-        <div class="h-20 flex items-center justify-center px-6">
-          <div class="flex items-center gap-3 w-full" [ngClass]="{ 'justify-center': collapsed() }">
-            
-            <!-- Logo Image -->
-            <div class="relative w-10 h-10 shrink-0 transform transition-transform duration-500 hover:rotate-12">
-               <img 
-                 src="images/LogoAppMorado.png" 
-                 alt="Logo" 
-                 class="w-full h-full object-contain"
-               >
-            </div>
+        <div class="flex flex-col items-center justify-center py-6 border-b border-transparent transition-all duration-300">
+             <!-- Logo Image -->
+             <div class="relative w-12 h-12 shrink-0 transform transition-transform duration-500 hover:rotate-6 mb-2">
+                <img 
+                  src="images/LogoAppMorado.png" 
+                  alt="Logo" 
+                  class="w-full h-full object-contain drop-shadow-sm"
+                >
+             </div>
 
-            <div 
-              *ngIf="!collapsed()" 
-              class="flex flex-col justify-center animate-fadeIn overflow-hidden h-10"
-            >
-              <span class="font-display font-bold text-slate-800 text-xl tracking-tight leading-none">Gestor<span class="text-[#6D28D9]">GAC</span></span>
-              <span class="font-sans font-medium text-[10px] text-slate-400 uppercase tracking-wider mt-1">Smart Management Suite</span>
-            </div>
-          </div>
+             <!-- Brand Name -->
+             <div *ngIf="!collapsed()" class="animate-fadeIn text-center">
+               <span class="font-display font-black text-slate-900 text-xl tracking-tight leading-none block">
+                 Gestor<span class="text-[#6D28D9]">GAC</span>
+               </span>
+             </div>
         </div>
 
         <!-- Navigation -->
-        <div class="flex-1 overflow-y-auto py-6" [ngClass]="{ 'px-4': !collapsed(), 'px-3': collapsed() }">
+        <div class="flex-1 overflow-y-auto py-6" [ngClass]="{ 'px-6': !collapsed(), 'px-3': collapsed() }">
           <nav class="space-y-1.5">
             
             <!-- Main Section -->
             <div class="mb-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 mt-2 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
+                class="px-4 mb-3 mt-2 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
               >Principal</p>
               
               <!-- Inicio -->
@@ -149,7 +145,7 @@ import { ThemeService } from '../core/services/theme.service';
             <div>
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
+                class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
               >Módulos</p>
               
               <!-- Publicadores -->
@@ -216,7 +212,7 @@ import { ThemeService } from '../core/services/theme.service';
             <div class="mt-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-2"
+                class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
               >Extras</p>
               
               <!-- Configuracion -->
@@ -242,23 +238,23 @@ import { ThemeService } from '../core/services/theme.service';
           </nav>
         </div>
 
-        <!-- Sidebar Footer -->
-        <div class="mb-4 mt-auto flex justify-end px-4">         
-          <!-- Minimal Collapse Button -->
-          <button 
-            class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 border border-transparent hover:border-purple-100"
-            (click)="toggleSidebar()"
-            [title]="collapsed() ? 'Expandir' : 'Colapsar'"
-          >
-            <svg 
-              class="w-4 h-4 transition-transform duration-300" 
-              [ngClass]="{ 'rotate-180': collapsed() }"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        </div>
+        <!-- Modern Floating Collapse Button (Enhanced Area & Micro-interaction) -->
+        <button 
+          class="absolute -right-5 top-[44px] w-10 h-10 flex items-center justify-center cursor-pointer z-50 focus:outline-none group/toggle"
+          (click)="toggleSidebar()"
+          [title]="collapsed() ? 'Expandir' : 'Colapsar'"
+        >
+          <!-- Visual Circle -->
+          <div class="w-7 h-7 bg-white border border-slate-200 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.05)] flex items-center justify-center text-slate-400 group-hover/toggle:text-brand-purple group-hover/toggle:border-brand-purple group-hover/toggle:shadow-md transition-all duration-300 group-hover/toggle:translate-x-0.5">
+              <svg 
+                class="w-4 h-4 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" 
+                [ngClass]="{ 'rotate-180': collapsed() }"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              >
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+              </svg>
+          </div>
+        </button>
       </aside>
 
       <!-- Main Content Area -->
@@ -431,9 +427,10 @@ import { ThemeService } from '../core/services/theme.service';
         </header>
 
         <!-- Page Content -->
-        <!-- Page Content -->
-        <main class="flex-1 overflow-y-auto p-8">
-          <router-outlet></router-outlet>
+        <main class="flex-1 overflow-hidden relative flex flex-col p-4 md:p-8">
+          <div class="router-container flex-1 min-h-0 relative overflow-hidden flex flex-col">
+             <router-outlet></router-outlet>
+          </div>
         </main>
       </div>
     </div>
@@ -441,6 +438,16 @@ import { ThemeService } from '../core/services/theme.service';
   styles: [`
     :host {
       display: block;
+    }
+    /* Ensure routed components fill the available space */
+    /* The router-outlet renders components as siblings, so we target them with + */
+    .router-container ::ng-deep > router-outlet + * {
+      flex: 1 1 0%;
+      min-height: 0;
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
   `]
 })

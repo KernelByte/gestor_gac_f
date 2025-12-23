@@ -14,34 +14,48 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
    template: `
     <div class="flex flex-col gap-6 h-full">
       
-      <!-- 1. Header Section -->
-      <div class="shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
-         <div>
-           <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight">{{ pageTitle() }}</h1>
-           <p class="text-slate-500 mt-1 max-w-2xl text-base">{{ pageDescription() }}</p>
-         </div>
-      </div>
+      <!-- Header & Navigation Wrapper -->
+      <div class="shrink-0 flex flex-col gap-6">
+          
+          <!-- Title & Description -->
+          <div>
+            <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight mb-2">{{ pageTitle() }}</h1>
+            <p class="text-slate-500 text-lg leading-relaxed max-w-3xl">{{ pageDescription() }}</p>
+          </div>
 
-      <!-- 2. Navigation Tabs -->
-      <div class="flex border-b border-slate-200 gap-8">
-         <button (click)="currentTab.set('listado')" 
-            class="pb-4 text-sm font-bold transition-all relative"
-            [ngClass]="currentTab() === 'listado' ? 'text-brand-orange' : 'text-slate-500 hover:text-slate-700'">
-            Listado de Publicadores
-            <span *ngIf="currentTab() === 'listado'" class="absolute bottom-0 left-0 w-full h-0.5 bg-brand-orange rounded-t-full"></span>
-         </button>
-         <button (click)="currentTab.set('grupos')" 
-            class="pb-4 text-sm font-bold transition-all relative"
-            [ngClass]="currentTab() === 'grupos' ? 'text-brand-orange' : 'text-slate-500 hover:text-slate-700'">
-            Grupos de Predicación
-            <span *ngIf="currentTab() === 'grupos'" class="absolute bottom-0 left-0 w-full h-0.5 bg-brand-orange rounded-t-full"></span>
-         </button>
-         <button (click)="currentTab.set('contactos')" 
-            class="pb-4 text-sm font-bold transition-all relative"
-            [ngClass]="currentTab() === 'contactos' ? 'text-brand-orange' : 'text-slate-500 hover:text-slate-700'">
-            Contactos de Emergencia
-            <span *ngIf="currentTab() === 'contactos'" class="absolute bottom-0 left-0 w-full h-0.5 bg-brand-orange rounded-t-full"></span>
-         </button>
+          <!-- Modern Tab Navigation (Segmented Control) -->
+          <div class="bg-slate-100/80 p-1.5 rounded-2xl flex flex-wrap md:flex-nowrap gap-1 w-full md:w-fit">
+              <button 
+                (click)="currentTab.set('listado')" 
+                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
+                [ngClass]="currentTab() === 'listado' ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Listado
+              </button>
+              
+              <button 
+                (click)="currentTab.set('grupos')" 
+                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
+                [ngClass]="currentTab() === 'grupos' ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'"
+              >
+                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                 <!-- Icono distinguido para Grupos -->
+                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> 
+                 <!-- Mejor icono para grupos (Home/Location style) -->
+                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Grupos
+              </button>
+              
+              <button 
+                (click)="currentTab.set('contactos')" 
+                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
+                [ngClass]="currentTab() === 'contactos' ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'"
+              >
+                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                Contactos
+              </button>
+          </div>
       </div>
 
       <!-- 3. Content Area -->

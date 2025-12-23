@@ -36,44 +36,51 @@ interface Turno {
    template: `
     <div class="flex flex-col gap-6 h-full">
       
-      <!-- Header -->
-      <div class="shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
-         <div>
-           <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight">Gestión de Exhibidores</h1>
-           <p class="text-slate-500 mt-1 max-w-2xl text-base">Administre ubicaciones, asigne turnos y supervise el testimonio público.</p>
-         </div>
-         <div class="flex items-center gap-3">
-           <button class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-50 shadow-sm transition-all flex items-center gap-2">
-             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-             Calendario General
-           </button>
-           <button class="px-5 py-2.5 bg-[#2563EB] text-white font-bold rounded-xl text-sm hover:bg-[#1d4ed8] shadow-lg shadow-blue-900/20 transition-all active:scale-95 flex items-center gap-2">
-             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-             Nueva Ubicación
-           </button>
-         </div>
-      </div>
+      <!-- Header & Navigation Wrapper -->
+      <div class="shrink-0 flex flex-col gap-6">
+         
+         <!-- Top Row: Title/Desc + Actions -->
+         <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <!-- Title & Description -->
+            <div>
+               <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight mb-2">Gestión de Exhibidores</h1>
+               <p class="text-slate-500 text-lg leading-relaxed max-w-3xl">Administre ubicaciones, asigne turnos y supervise el testimonio público.</p>
+            </div>
 
-      <!-- Navigation Tabs -->
-      <div class="flex border-b border-slate-200 gap-8">
-         <button (click)="currentTab.set('overview')" 
-            class="pb-4 text-sm font-bold transition-all relative"
-            [ngClass]="currentTab() === 'overview' ? 'text-[#2563EB]' : 'text-slate-500 hover:text-slate-700'">
-            Vista de Ubicaciones
-            <span *ngIf="currentTab() === 'overview'" class="absolute bottom-0 left-0 w-full h-0.5 bg-[#2563EB] rounded-t-full"></span>
-         </button>
-         <button (click)="currentTab.set('history')" 
-            class="pb-4 text-sm font-bold transition-all relative"
-            [ngClass]="currentTab() === 'history' ? 'text-[#2563EB]' : 'text-slate-500 hover:text-slate-700'">
-            Historial de Participación
-            <span *ngIf="currentTab() === 'history'" class="absolute bottom-0 left-0 w-full h-0.5 bg-[#2563EB] rounded-t-full"></span>
-         </button>
-         <button (click)="currentTab.set('rules')" 
-            class="pb-4 text-sm font-bold transition-all relative"
-            [ngClass]="currentTab() === 'rules' ? 'text-[#2563EB]' : 'text-slate-500 hover:text-slate-700'">
-            Reglas y Requisitos
-            <span *ngIf="currentTab() === 'rules'" class="absolute bottom-0 left-0 w-full h-0.5 bg-[#2563EB] rounded-t-full"></span>
-         </button>
+            <!-- Global Actions -->
+            <div class="flex items-center gap-3 shrink-0">
+               <button class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-50 shadow-sm transition-all flex items-center gap-2">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  Calendario
+               </button>
+               <button class="px-5 py-2.5 bg-[#2563EB] text-white font-bold rounded-xl text-sm hover:bg-[#1d4ed8] shadow-lg shadow-blue-900/20 transition-all active:scale-95 flex items-center gap-2">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  Nueva Ubicación
+               </button>
+            </div>
+         </div>
+
+         <!-- Modern Tab Navigation (Segmented Control) -->
+         <div class="bg-slate-100/80 p-1.5 rounded-2xl flex flex-wrap md:flex-nowrap gap-1 w-full md:w-fit">
+            <button (click)="currentTab.set('overview')" 
+               class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
+               [ngClass]="currentTab() === 'overview' ? 'bg-white text-[#2563EB] shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'">
+               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+               Ubicaciones
+            </button>
+            <button (click)="currentTab.set('history')" 
+               class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
+               [ngClass]="currentTab() === 'history' ? 'bg-white text-[#2563EB] shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'">
+               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+               Historial
+            </button>
+            <button (click)="currentTab.set('rules')" 
+               class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
+               [ngClass]="currentTab() === 'rules' ? 'bg-white text-[#2563EB] shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'">
+               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+               Reglas
+            </button>
+         </div>
       </div>
 
       <!-- Content Area -->
