@@ -6,6 +6,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
 import { RolesService } from './services/roles.service';
 import { Rol } from './models/rol.model';
 import { lastValueFrom } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   standalone: true,
@@ -78,6 +79,7 @@ import { lastValueFrom } from 'rxjs';
           <thead class="bg-slate-50/80 border-b border-slate-200 sticky top-0 z-10 backdrop-blur-md">
             <tr>
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Rol</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 hidden lg:table-cell">Descripción</th>
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Usuarios</th>
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Estado</th>
               <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-400"></th>
@@ -85,8 +87,7 @@ import { lastValueFrom } from 'rxjs';
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr *ngFor="let rol of filteredRoles()" class="group transition-colors duration-200 hover:bg-slate-50">
-              <!-- Name & ID -->
-              <!-- Name & ID -->
+              <!-- Name & Avatar -->
               <td class="px-6 py-4">
                 <div class="flex items-center gap-4">
                   <!-- Dynamic Light Color Avatar -->
@@ -96,17 +97,24 @@ import { lastValueFrom } from 'rxjs';
                   </div>
                   <div>
                     <p class="text-sm font-bold text-slate-800 tracking-tight">{{ rol.nombre_rol }}</p>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{{ rol.descripcion_rol }}</p>
+                    <p class="text-[11px] font-medium text-slate-400 mt-0.5">ID: {{ rol.id_rol }}</p>
                   </div>
                 </div>
+              </td>
+
+              <!-- Description (Separate Column) -->
+              <td class="px-6 py-4 hidden lg:table-cell">
+                <p class="text-sm text-slate-600 font-medium max-w-xs truncate" [title]="rol.descripcion_rol">
+                  {{ rol.descripcion_rol || '—' }}
+                </p>
               </td>
 
               <!-- Users Count (Interactive Pill) -->
               <td class="px-6 py-4 text-center">
                  <button 
-                    (click)="navigateToUsers(rol.nombre_rol)" 
+                    (click)="navigateToUsers(rol.id_rol)" 
                     class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 text-slate-600 text-xs font-bold border border-slate-200 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700 transition-all active:scale-95 group/btn"
-                    title="Ver usuarios"
+                    title="Ver usuarios con este rol"
                  >
                     <svg class="w-3.5 h-3.5 opacity-70 group-hover/btn:text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     {{ getRoleUserCount(rol.id_rol) }}
@@ -216,8 +224,10 @@ export class RolesPage implements OnInit {
   private rolesService = inject(RolesService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private http = inject(HttpClient);
 
   roles = signal<Rol[]>([]);
+  usuarios = signal<any[]>([]); // For counting users per role
   searchTerm = signal('');
 
   // Computed Signal for Filtering
@@ -274,12 +284,12 @@ export class RolesPage implements OnInit {
   }
 
   getRoleUserCount(id: number): number {
-    // Deterministic mock number based on ID
-    return (id * 7) % 20 + 1;
+    // Real count based on loaded users
+    return this.usuarios().filter(u => u.id_rol_usuario === id).length;
   }
 
-  navigateToUsers(roleName: string) {
-    this.router.navigate(['/usuarios'], { queryParams: { q: roleName } });
+  navigateToUsers(rolId: number) {
+    this.router.navigate(['/usuarios'], { queryParams: { rol: rolId } });
   }
 
   // --- Logic ---
@@ -287,8 +297,12 @@ export class RolesPage implements OnInit {
   async loadRoles() {
     this.loading.set(true);
     try {
-      const data = await lastValueFrom(this.rolesService.getRoles());
-      this.roles.set(data);
+      const [roles, usuarios] = await Promise.all([
+        lastValueFrom(this.rolesService.getRoles()),
+        lastValueFrom(this.http.get<any[]>('/api/usuarios/'))
+      ]);
+      this.roles.set(roles);
+      this.usuarios.set(usuarios || []);
     } catch (err) {
       console.error('Error cargando roles', err);
     } finally {

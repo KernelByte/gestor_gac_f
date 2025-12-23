@@ -76,11 +76,24 @@ import { Usuario } from '../models/usuario.model';
                 class="w-full pl-12 pr-4 py-3 bg-transparent border-none rounded-xl text-slate-700 font-medium placeholder:text-slate-400 outline-none"
              >
           </div>
+          
+          <!-- Active Role Filter Badge -->
+          <div *ngIf="selectedRolFilter()" class="flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl">
+             <span class="text-xs font-bold text-purple-700">Rol: {{ getSelectedRolFilterName() }}</span>
+             <button 
+                (click)="clearRolFilter()"
+                class="p-1 rounded-full hover:bg-purple-100 text-purple-500 hover:text-purple-700 transition-colors"
+                title="Quitar filtro de rol"
+             >
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+             </button>
+          </div>
+          
           <div class="h-8 w-px bg-slate-100 hidden sm:block"></div>
           <div class="w-full sm:w-auto px-2">
              <button 
-                (click)="clearSearch()"
-                [disabled]="!searchControl.value"
+                (click)="clearAllFilters()"
+                [disabled]="!searchControl.value && !selectedRolFilter()"
                 class="w-full sm:w-auto flex items-center justify-between gap-3 px-4 py-2 bg-white hover:bg-slate-50 text-slate-500 hover:text-red-500 rounded-xl font-bold text-sm transition-colors border border-slate-200 hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-slate-500 disabled:hover:border-slate-200"
              >
                 <span>Limpiar Filtros</span>
@@ -95,9 +108,9 @@ import { Usuario } from '../models/usuario.model';
              <table class="w-full text-left border-collapse">
                 <thead class="sticky top-0 bg-slate-50/80 backdrop-blur-md z-10 border-b border-slate-200">
                    <tr>
-                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Usuario</th>
-                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Rol</th>
-                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Teléfono</th>
+                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-left">Usuario</th>
+                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Rol</th>
+                      <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Teléfono</th>
                       <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Estado</th>
                       <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Acciones</th>
                    </tr>
@@ -118,15 +131,17 @@ import { Usuario } from '../models/usuario.model';
                       </td>
                       
                       <!-- Role Badge -->
-                      <td class="px-6 py-4">
-                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-white border border-slate-200 text-slate-600 shadow-sm group-hover:border-purple-200 group-hover:text-purple-700 transition-colors">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9] mr-2"></span>
+                      <td class="px-6 py-4 text-center">
+                         <div 
+                            [ngClass]="getRolBadgeStyle(u)"
+                            class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                         >
                             {{ getRolName(u) }}
-                         </span>
+                         </div>
                       </td>
 
                       <!-- Phone -->
-                      <td class="px-6 py-4">
+                      <td class="px-6 py-4 text-center">
                          <span class="text-sm text-slate-600 font-mono">{{ u.telefono || '—' }}</span>
                       </td>
 
@@ -140,7 +155,7 @@ import { Usuario } from '../models/usuario.model';
 
                       <!-- Actions -->
                       <td class="px-6 py-4 text-right">
-                         <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
+                         <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
                             <button (click)="editUsuario(u)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-[#6D28D9] transition-all shadow-sm hover:shadow-md hover:shadow-purple-200" title="Editar">
                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                             </button>
@@ -455,6 +470,7 @@ import { Usuario } from '../models/usuario.model';
 export class UsuariosPage implements OnInit {
    private service = inject(UsuariosService);
    private fb = inject(FormBuilder);
+   private route = inject(ActivatedRoute);
 
    usuarios = signal<Usuario[]>([]);
    roles = signal<Rol[]>([]);
@@ -474,6 +490,8 @@ export class UsuariosPage implements OnInit {
    // Filtering states for dropdowns
    congSearch = signal('');
    pubSearch = signal('');
+   selectedRolFilter = signal<number | null>(null); // Filter by role from query params
+   searchQuery = signal(''); // Signal for reactive search
 
    searchControl = this.fb.control('');
 
@@ -605,16 +623,48 @@ export class UsuariosPage implements OnInit {
    // -----------------------------
 
    ngOnInit() {
+      // Check for role filter from query params
+      this.route.queryParams.subscribe(params => {
+         if (params['rol']) {
+            this.selectedRolFilter.set(Number(params['rol']));
+         }
+      });
+
+      // Connect FormControl to signal for reactive filtering
+      this.searchControl.valueChanges.subscribe(value => {
+         this.searchQuery.set(value || '');
+      });
+
       this.loadData();
       this.loadAuxData();
    }
 
+   // --- Role Filter Helpers ---
+   getSelectedRolFilterName(): string {
+      const id = this.selectedRolFilter();
+      if (!id) return '';
+      const rol = this.roles().find(r => r.id_rol === id);
+      return rol ? rol.descripcion_rol : `Rol #${id}`;
+   }
+
+   clearRolFilter() {
+      this.selectedRolFilter.set(null);
+   }
+
+   clearAllFilters() {
+      this.searchControl.setValue('');
+      this.selectedRolFilter.set(null);
+   }
+
    filteredUsuarios = computed(() => {
-      const q = this.searchControl.value?.toLowerCase() || '';
-      return this.usuarios().filter(u =>
-         u.nombre.toLowerCase().includes(q) ||
-         u.correo.toLowerCase().includes(q)
-      );
+      const q = this.searchQuery().toLowerCase();
+      const rolFilter = this.selectedRolFilter();
+
+      return this.usuarios().filter(u => {
+         const matchesSearch = u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q);
+         const matchesRol = rolFilter === null || u.id_rol_usuario === rolFilter;
+         return matchesSearch && matchesRol;
+      });
    });
 
    async loadData() {
@@ -776,6 +826,41 @@ export class UsuariosPage implements OnInit {
          if (r) return r.nombre_rol;
       }
       return 'Sin Rol';
+   }
+
+   getRolBadgeStyle(u: Usuario): string {
+      const rolName = this.getRolName(u).toLowerCase();
+
+      // Specific color mapping based on role name keywords
+      if (rolName.includes('admin')) {
+         return 'bg-emerald-50 text-emerald-700 border border-emerald-100/50';
+      }
+      if (rolName.includes('secret')) {
+         return 'bg-indigo-50 text-indigo-700 border border-indigo-100/50';
+      }
+      if (rolName.includes('super')) {
+         return 'bg-blue-50 text-blue-700 border border-blue-100/50';
+      }
+      if (rolName.includes('coord')) {
+         return 'bg-amber-50 text-amber-700 border border-amber-100/50';
+      }
+      if (rolName.includes('gestor')) {
+         return 'bg-purple-50 text-purple-700 border border-purple-100/50';
+      }
+      if (rolName.includes('public')) {
+         return 'bg-cyan-50 text-cyan-700 border border-cyan-100/50';
+      }
+
+      // Fallback: Use ID-based color if available
+      const id = u.id_rol_usuario || 0;
+      const colors = [
+         'bg-rose-50 text-rose-700 border border-rose-100/50',
+         'bg-teal-50 text-teal-700 border border-teal-100/50',
+         'bg-orange-50 text-orange-700 border border-orange-100/50',
+         'bg-pink-50 text-pink-700 border border-pink-100/50',
+         'bg-sky-50 text-sky-700 border border-sky-100/50'
+      ];
+      return colors[id % colors.length];
    }
 
    clearSearch() {

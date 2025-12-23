@@ -51,9 +51,8 @@ export class UsuariosService {
    }
 
    getPublicadores(idCongregacion?: number): Observable<any[]> {
-      let params: any = {};
+      let params: any = { limit: 1000 }; // Increase limit to fetch all publishers
       if (idCongregacion) params.id_congregacion = idCongregacion;
-      // We limit to active ones if possible, but the API might not support it yet without auth context
       return this.http.get<any[]>('/api/publicadores/', { params });
    }
 }

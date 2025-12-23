@@ -122,7 +122,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
                       <th class="px-8 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre del Grupo</th>
                       <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Capitán</th>
                       <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Auxiliar</th>
-                      <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Miembros</th>
+                      <th class="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Miembros</th>
                       <th class="px-8 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Acciones</th>
                    </tr>
                 </thead>
@@ -132,13 +132,18 @@ import { AuthStore } from '../../../../core/auth/auth.store';
                       <!-- Nombre -->
                       <td class="px-8 py-5">
                          <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black shrink-0 ring-2 ring-white shadow-sm"
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                                  [ngClass]="getAvatarClass(grupo.id_grupo)">
-                               {{ grupo.id_grupo }}
+                               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                  <circle cx="9" cy="7" r="4"></circle>
+                                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                               </svg>
                             </div>
                             <div>
-                               <p class="font-bold text-slate-900 text-base font-display">{{ grupo.nombre_grupo }}</p>
-                               <p class="text-xs text-slate-400 font-medium mt-0.5">ID: #{{ grupo.id_grupo }}</p>
+                               <p class="font-bold text-slate-700 text-base font-display">{{ grupo.nombre_grupo }}</p>
+                               <p *ngIf="isAdminOrGestor()" class="text-xs text-slate-400 font-medium mt-0.5">ID: #{{ grupo.id_grupo }}</p>
                             </div>
                          </div>
                       </td>
@@ -149,10 +154,10 @@ import { AuthStore } from '../../../../core/auth/auth.store';
                              <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 ring-1 ring-white">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                              </div>
-                             <span class="font-semibold text-slate-700">{{ grupo.capitan_grupo }}</span>
+                             <span class="text-sm font-medium text-slate-600">{{ grupo.capitan_grupo }}</span>
                          </div>
                          <ng-template #noCapitan>
-                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-bold border border-slate-200">
+                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 text-[11px] font-bold border border-slate-100/50">
                                 Sin Asignar
                              </span>
                          </ng-template>
@@ -160,22 +165,30 @@ import { AuthStore } from '../../../../core/auth/auth.store';
 
                       <!-- Auxiliar -->
                       <td class="px-6 py-5">
-                          <span *ngIf="grupo.auxiliar_grupo" class="text-sm font-medium text-slate-600">{{ grupo.auxiliar_grupo }}</span>
-                          <span *ngIf="!grupo.auxiliar_grupo" class="text-slate-300 text-sm font-medium">--</span>
+                         <div class="flex items-center gap-3" *ngIf="grupo.auxiliar_grupo; else noAuxiliar">
+                             <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 ring-1 ring-white">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                             </div>
+                             <span class="text-sm font-medium text-slate-600">{{ grupo.auxiliar_grupo }}</span>
+                         </div>
+                         <ng-template #noAuxiliar>
+                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 text-[11px] font-bold border border-slate-100/50">
+                                Sin Asignar
+                             </span>
+                         </ng-template>
                       </td>
 
                       <!-- Miembros -->
-                      <!-- Miembros -->
-                      <td class="px-6 py-5">
-                          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-bold">
+                      <td class="px-6 py-5 text-center">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-700 text-[11px] font-bold">
                              {{ grupo.cantidad_publicadores || 0 }} Publicadores
                           </span>
                       </td>
 
                       <!-- Acciones -->
                       <td class="px-8 py-5 text-right">
-                         <div class="flex items-center justify-end gap-2 group-hover:opacity-100 transition-opacity">
-                            <button (click)="goToAssignment(grupo)" class="hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-50 text-brand-orange border border-orange-100 text-xs font-bold hover:bg-orange-100 transition-colors shadow-sm">
+                         <div class="flex items-center justify-end gap-2">
+                            <button (click)="goToAssignment(grupo)" class="hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-50 text-brand-orange border border-orange-100/50 text-xs font-bold hover:bg-orange-100 transition-colors shadow-sm">
                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
                                Asignar
                             </button>
@@ -345,6 +358,13 @@ export class GruposListComponent implements OnInit {
 
    totalAsignados = computed(() => this.grupos().reduce((acc, g) => acc + (g.cantidad_publicadores || 0), 0));
 
+   // Check if current user is Admin or Gestor Aplicación
+   isAdminOrGestor = computed(() => {
+      const user = this.authStore.user();
+      const rol = user?.rol?.toLowerCase() || '';
+      return rol.includes('admin') || rol.includes('gestor');
+   });
+
    loading = signal(false);
    saving = signal(false);
    panelOpen = signal(false);
@@ -397,6 +417,8 @@ export class GruposListComponent implements OnInit {
          }
 
          const data = await lastValueFrom(this.gruposService.getGrupos(params));
+         console.log('Grupos cargados:', data);
+         console.log('Total asignados calculado:', data.reduce((acc, g) => acc + (g.cantidad_publicadores || 0), 0));
          this.grupos.set(data);
       } catch (err: any) {
          console.error('Error cargando grupos', err);
@@ -407,19 +429,9 @@ export class GruposListComponent implements OnInit {
       }
    }
 
-   // Helpers
+   // Helpers - Same orange style for all groups
    getAvatarClass(id: number): string {
-      const COLORS = [
-         'bg-blue-100 text-blue-700',
-         'bg-emerald-100 text-emerald-700',
-         'bg-orange-100 text-orange-700',
-         'bg-purple-100 text-purple-700',
-         'bg-cyan-100 text-cyan-700',
-         'bg-rose-100 text-rose-700',
-         'bg-teal-100 text-teal-700',
-         'bg-indigo-100 text-indigo-700'
-      ];
-      return COLORS[Math.abs(id) % COLORS.length];
+      return 'bg-orange-50 text-brand-orange';
    }
 
    // CRUD Actions
@@ -487,6 +499,7 @@ export class GruposListComponent implements OnInit {
          }
          this.closePanel();
          this.loadGrupos();
+         this.loadSinAsignar(); // Reload unassigned count after saving
       } catch (err) {
          console.error('Error guardando grupo', err);
       } finally {
