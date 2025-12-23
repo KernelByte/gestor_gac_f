@@ -8,6 +8,11 @@ export const SECRETARIO_ROUTES: Routes = [
       loadComponent: () => import('./publicadores/ui/pages/publicadores-main.page').then(m => m.PublicadoresMainPage),
       providers: [...PUBLICADORES_PROVIDERS]
    },
+   {
+      path: 'informes',
+      title: 'Informes de Servicio',
+      loadComponent: () => import('./informes/informes-main.page').then(m => m.InformesMainPage)
+   },
    // 'grupos' main route is merged into publicadores tab
    {
       path: 'grupos/asignacion',
