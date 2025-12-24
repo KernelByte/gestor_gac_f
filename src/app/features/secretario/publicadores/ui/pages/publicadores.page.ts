@@ -9,6 +9,7 @@ import { lastValueFrom } from 'rxjs';
 import { PrivilegiosService } from '../../../privilegios/infrastructure/privilegios.service';
 import { Privilegio } from '../../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../../privilegios/domain/models/publicador-privilegio';
+import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
 
 interface Estado {
   id_estado: number;
@@ -39,7 +40,7 @@ interface ContactoEmergencia {
 @Component({
   standalone: true,
   selector: 'app-publicadores-list',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePickerComponent],
   template: `
     <!-- Layout Container (Flex Row) -->
     <div class="flex h-full gap-5 overflow-hidden">
@@ -518,7 +519,7 @@ interface ContactoEmergencia {
                                       [class.text-slate-400]="!publicadorForm.get('sexo')?.value"
                                       [class.text-slate-800]="publicadorForm.get('sexo')?.value"
                                     >
-                                        {{ publicadorForm.get('sexo')?.value || 'Seleccionar' }}
+                                        {{ getSexoDisplayName() }}
                                         <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="sexoDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
 
@@ -530,21 +531,21 @@ interface ContactoEmergencia {
                                         <div class="p-1">
                                             <button 
                                               type="button"
-                                              (click)="publicadorForm.get('sexo')?.setValue('Masculino'); sexoDropdownOpen.set(false)"
+                                              (click)="publicadorForm.get('sexo')?.setValue('M'); sexoDropdownOpen.set(false)"
                                               class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-between group"
-                                              [ngClass]="publicadorForm.get('sexo')?.value === 'Masculino' ? 'bg-orange-50 text-brand-orange' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
+                                              [ngClass]="publicadorForm.get('sexo')?.value === 'M' ? 'bg-orange-50 text-brand-orange' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
                                             >
                                                 Masculino
-                                                <svg *ngIf="publicadorForm.get('sexo')?.value === 'Masculino'" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                                <svg *ngIf="publicadorForm.get('sexo')?.value === 'M'" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                                             </button>
                                             <button 
                                               type="button"
-                                              (click)="publicadorForm.get('sexo')?.setValue('Femenino'); sexoDropdownOpen.set(false)"
+                                              (click)="publicadorForm.get('sexo')?.setValue('F'); sexoDropdownOpen.set(false)"
                                               class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-between group"
-                                              [ngClass]="publicadorForm.get('sexo')?.value === 'Femenino' ? 'bg-orange-50 text-brand-orange' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
+                                              [ngClass]="publicadorForm.get('sexo')?.value === 'F' ? 'bg-orange-50 text-brand-orange' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
                                             >
                                                 Femenino
-                                                <svg *ngIf="publicadorForm.get('sexo')?.value === 'Femenino'" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                                <svg *ngIf="publicadorForm.get('sexo')?.value === 'F'" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                                             </button>
                                         </div>
                                     </div>
@@ -569,7 +570,7 @@ interface ContactoEmergencia {
                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                    Fecha Nacimiento
                                 </label>
-                                <input type="date" formControlName="fecha_nacimiento" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none">
+                                <app-date-picker formControlName="fecha_nacimiento" placeholder="Seleccionar fecha"></app-date-picker>
                             </div>
                             
                             <!-- Estado (Radio Group Styled) -->
@@ -637,7 +638,7 @@ interface ContactoEmergencia {
                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                Fecha Bautismo
                              </label>
-                             <input type="date" formControlName="fecha_bautismo" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none">
+                             <app-date-picker formControlName="fecha_bautismo" placeholder="Seleccionar fecha"></app-date-picker>
                          </div>
                          <div class="col-span-1 space-y-2">
                              <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
@@ -1505,6 +1506,14 @@ export class PublicadoresListComponent implements OnInit {
     // Use loose equality (==) to handle potential string/number mismatches in API response
     const grupo = this.grupos().find(g => g.id_grupo == id);
     return grupo ? grupo.nombre_grupo : 'Sin Grupo';
+  }
+
+  // Sexo Display Helper
+  getSexoDisplayName(): string {
+    const value = this.publicadorForm.get('sexo')?.value;
+    if (value === 'M') return 'Masculino';
+    if (value === 'F') return 'Femenino';
+    return 'Seleccionar';
   }
 
   // Custom Dropdown State
