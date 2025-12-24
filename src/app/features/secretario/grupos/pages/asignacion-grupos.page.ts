@@ -12,13 +12,16 @@ interface Grupo {
   id_grupo: number;
   nombre_grupo: string;
   capitan_grupo?: string;
+  auxiliar_grupo?: string;
   cantidad_publicadores?: number;
 }
 
 interface Publicador {
   id_publicador: number;
   primer_nombre: string;
+  segundo_nombre?: string | null;
   primer_apellido: string;
+  segundo_apellido?: string | null;
   id_grupo_publicador?: number | null;
   sexo?: string;
   // Ajustar según la respuesta real de tu API si hay privilegio/rol
@@ -128,62 +131,91 @@ interface Publicador {
                </div>
             </div>
 
-            <!-- Columnas: Grupos -->
+            <!-- Columnas: Grupos - Diseño Limpio -->
             <div 
                *ngFor="let grupo of grupos()"
-               class="w-80 shrink-0 flex flex-col rounded-3xl bg-white border border-slate-100 shadow-xl shadow-slate-200/40 max-h-full transition-all duration-300 transform"
+               class="w-80 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200/80 shadow-lg max-h-full transition-all duration-300"
                [class.ring-2]="isDraggingOver() === grupo.id_grupo"
                [class.ring-brand-orange]="isDraggingOver() === grupo.id_grupo"
-               [class.scale-[1.02]]="isDraggingOver() === grupo.id_grupo"
+               [class.scale-[1.01]]="isDraggingOver() === grupo.id_grupo"
                (dragover)="onDragOver($event, grupo.id_grupo)"
                (dragleave)="onDragLeave()"
                (drop)="onDrop($event, grupo.id_grupo)"
             >
-               <!-- Header con Color -->
-               <div class="px-5 py-4 border-b border-slate-50 relative overflow-hidden rounded-t-3xl bg-white group-header z-10">
-                   <!-- Decoración de fondo suave -->
-                   <div class="absolute inset-x-0 -top-full h-full opacity-5 pointer-events-none transition-opacity duration-300" [ngClass]="getGroupColorClass(grupo.id_grupo)"></div>
-                   
-                   <div class="flex items-start justify-between">
-                      <div class="flex items-start gap-3">
-                         <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-lg font-black shadow-md mt-0.5" 
-                              [ngClass]="getGroupColorClass(grupo.id_grupo)">
+               <!-- Header Limpio -->
+               <div class="px-4 py-3 bg-gradient-to-r from-slate-800 to-slate-700 rounded-t-2xl">
+                   <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-3">
+                         <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-white text-sm font-black">
                             {{ grupo.nombre_grupo.charAt(0) }}
                          </div>
                          <div>
-                             <h3 class="font-bold text-slate-800 text-sm truncate w-40 leading-snug" [title]="grupo.nombre_grupo">{{ grupo.nombre_grupo }}</h3>
-                             
-                             <div class="flex items-center gap-1.5 mt-1" *ngIf="grupo.capitan_grupo">
-                                <div class="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center">
-                                    <svg class="w-2.5 h-2.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                </div>
-                                <span class="text-[10px] text-slate-500 font-medium truncate w-32">{{ grupo.capitan_grupo }}</span>
-                             </div>
-
-                             <div class="flex items-center gap-1.5 mt-1" *ngIf="!grupo.capitan_grupo">
-                                <div class="w-4 h-4 rounded-full bg-red-50 flex items-center justify-center">
-                                    <svg class="w-2.5 h-2.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                </div>
-                                <span class="text-[10px] text-red-400 font-medium italic">Sin Capitán asignado</span>
-                             </div>
+                             <h3 class="font-bold text-white text-sm truncate max-w-[160px]" [title]="grupo.nombre_grupo">{{ grupo.nombre_grupo }}</h3>
+                             <p class="text-slate-300 text-[10px] font-medium">{{ getGroupMembers(grupo.id_grupo).length }} miembros</p>
                          </div>
                       </div>
-
-                      <span class="bg-slate-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow-lg shadow-slate-900/20">
-                         {{ getGroupMembers(grupo.id_grupo).length }}
-                      </span>
                    </div>
                </div>
 
-               <!-- List -->
-               <div class="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar bg-slate-50/50">
-                  <ng-container *ngFor="let p of getGroupMembers(grupo.id_grupo)">
-                     <ng-container *ngTemplateOutlet="cardTemplate; context: { $implicit: p, inGroup: true }"></ng-container>
-                  </ng-container>
+               <!-- Sección de Liderazgo -->
+               <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
+                  <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Liderazgo del Grupo</p>
+                  <div class="space-y-2">
+                     <!-- Capitán -->
+                     <div class="flex items-start gap-2.5 p-2 rounded-lg" [ngClass]="grupo.capitan_grupo ? 'bg-white border border-slate-100' : 'bg-amber-50/50 border border-dashed border-amber-200'">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5" [ngClass]="grupo.capitan_grupo ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-500'">
+                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                           <p class="text-[9px] font-bold text-slate-400 uppercase">Capitán</p>
+                           <p class="text-xs font-bold truncate" [ngClass]="grupo.capitan_grupo ? 'text-slate-800' : 'text-amber-600 italic'">
+                              {{ grupo.capitan_grupo || 'Sin asignar' }}
+                           </p>
+                           <!-- Tags de privilegios del Capitán -->
+                           <div class="flex flex-wrap gap-1 mt-1" *ngIf="getPrivilegioTagsByName(grupo.capitan_grupo).length > 0">
+                              <span *ngFor="let tag of getPrivilegioTagsByName(grupo.capitan_grupo)" 
+                                    class="inline-flex items-center gap-0.5 text-[8px] font-bold px-1 py-0.5 rounded whitespace-nowrap"
+                                    [ngClass]="tag.class">
+                                 {{ tag.label }}
+                              </span>
+                           </div>
+                        </div>
+                     </div>
+                     <!-- Auxiliar -->
+                     <div class="flex items-start gap-2.5 p-2 rounded-lg" [ngClass]="grupo.auxiliar_grupo ? 'bg-white border border-slate-100' : 'bg-slate-50 border border-dashed border-slate-200'">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5" [ngClass]="grupo.auxiliar_grupo ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-400'">
+                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                           <p class="text-[9px] font-bold text-slate-400 uppercase">Auxiliar</p>
+                           <p class="text-xs font-medium truncate" [ngClass]="grupo.auxiliar_grupo ? 'text-slate-700' : 'text-slate-400 italic'">
+                              {{ grupo.auxiliar_grupo || 'Sin asignar' }}
+                           </p>
+                           <!-- Tags de privilegios del Auxiliar -->
+                           <div class="flex flex-wrap gap-1 mt-1" *ngIf="getPrivilegioTagsByName(grupo.auxiliar_grupo).length > 0">
+                              <span *ngFor="let tag of getPrivilegioTagsByName(grupo.auxiliar_grupo)" 
+                                    class="inline-flex items-center gap-0.5 text-[8px] font-bold px-1 py-0.5 rounded whitespace-nowrap"
+                                    [ngClass]="tag.class">
+                                 {{ tag.label }}
+                              </span>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               <!-- Listado de Publicadores -->
+               <div class="px-3 py-2 flex-1 overflow-y-auto custom-scrollbar">
+                  <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Publicadores</p>
+                  <div class="space-y-2">
+                     <ng-container *ngFor="let p of getGroupMembers(grupo.id_grupo)">
+                        <ng-container *ngTemplateOutlet="cardTemplate; context: { $implicit: p, inGroup: true }"></ng-container>
+                     </ng-container>
+                  </div>
                   
-                  <div *ngIf="getGroupMembers(grupo.id_grupo).length === 0" class="h-32 flex flex-col items-center justify-center text-slate-300 text-xs italic border border-dashed border-slate-200 rounded-2xl bg-slate-50 mx-2 mb-2">
-                       <svg class="w-8 h-8 opacity-30 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                      Grupo sin miembros
+                  <div *ngIf="getGroupMembers(grupo.id_grupo).length === 0" class="py-8 flex flex-col items-center justify-center text-slate-300 text-xs border border-dashed border-slate-200 rounded-xl bg-slate-50/50 mt-2">
+                       <svg class="w-6 h-6 opacity-40 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                      <span>Arrastra publicadores aquí</span>
                   </div>
                </div>
             </div>
@@ -192,24 +224,19 @@ interface Publicador {
       </div>
     </div>
 
-    <!-- Template de Card de Publicador PREMIUM -->
+    <!-- Template de Card de Publicador - Diseño Limpio -->
     <ng-template #cardTemplate let-p let-inGroup="inGroup">
       <div 
-         class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-lg hover:border-slate-300 hover:scale-[1.02] transition-all duration-200 group relative flex items-center gap-3 select-none"
+         class="bg-white p-2.5 rounded-xl border border-slate-100 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-slate-200 transition-all duration-200 group relative flex items-center gap-2.5 select-none"
          draggable="true"
          (dragstart)="onDragStart($event, p)"
       >
-         <!-- Drag Handle (Visible on Hover) -->
-         <div class="absolute left-1 top-1/2 -translate-y-1/2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16"/></svg>
-         </div>
-
-         <!-- Avatar -->
-         <div 
-            class="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 shadow-sm transition-transform group-hover:scale-110 ml-1"
-            [style.background-color]="getAvatarColor(p.id_publicador)"
-         >
-            {{ getInitials(p) }}
+         <!-- Avatar - Icono de Usuario -->
+         <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+               <circle cx="12" cy="7" r="4"></circle>
+            </svg>
          </div>
 
          <!-- Info -->
@@ -231,11 +258,7 @@ interface Publicador {
                    </span>
                 </ng-container>
                 <ng-template #noPrivilegio>
-                   <span class="inline-flex items-center gap-1 text-[9px] text-slate-400 font-medium bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100">
-                      <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
+                   <span class="text-[9px] text-slate-400 font-medium bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100">
                       Publicador
                    </span>
                 </ng-template>
@@ -446,6 +469,31 @@ export class AsignacionGruposPage implements OnInit {
     }
 
     return tags;
+  }
+
+  // Obtener tags de privilegios buscando por nombre del publicador (para Capitán/Auxiliar)
+  getPrivilegioTagsByName(nombreCompleto: string | undefined): { label: string; class: string; icon: string }[] {
+    if (!nombreCompleto) return [];
+
+    const nombreBuscado = nombreCompleto.toLowerCase().trim();
+
+    // Buscar el publicador por nombre - intentar varias combinaciones
+    const publicador = this.publicadores().find(p => {
+      // Construir todas las variaciones posibles del nombre
+      const nombres = [
+        `${p.primer_nombre} ${p.primer_apellido}`,
+        `${p.primer_nombre} ${p.segundo_nombre || ''} ${p.primer_apellido}`.replace(/\s+/g, ' '),
+        `${p.primer_nombre} ${p.primer_apellido} ${p.segundo_apellido || ''}`.replace(/\s+/g, ' '),
+        `${p.primer_nombre} ${p.segundo_nombre || ''} ${p.primer_apellido} ${p.segundo_apellido || ''}`.replace(/\s+/g, ' ')
+      ].map(n => n.toLowerCase().trim());
+
+      // Verificar si alguna variación coincide
+      return nombres.some(n => n === nombreBuscado);
+    });
+
+    if (!publicador) return [];
+
+    return this.getPrivilegioTags(publicador);
   }
 
   goBack() {
