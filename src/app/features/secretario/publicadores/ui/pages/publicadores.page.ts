@@ -6,6 +6,9 @@ import { Publicador } from '../../domain/models/publicador';
 import { AuthStore } from '../../../../../core/auth/auth.store';
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
+import { PrivilegiosService } from '../../../privilegios/infrastructure/privilegios.service';
+import { Privilegio } from '../../../privilegios/domain/models/privilegio';
+import { PublicadorPrivilegio } from '../../../privilegios/domain/models/publicador-privilegio';
 
 interface Estado {
   id_estado: number;
@@ -653,7 +656,89 @@ interface ContactoEmergencia {
                          </div>
                        </div>
                        
-                       <!-- Privilegios -->
+                       <!-- Privilegios Management Section (Only in Edit Mode) -->
+                       <div *ngIf="editingPublicador()" class="pt-4 space-y-4 border-t border-slate-100 mt-4">
+                           <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Privilegios</label>
+
+                           <!-- List of Privileges -->
+                           <div class="space-y-2">
+                               <div *ngFor="let pp of publicadorPrivilegios(); trackBy: trackPrivilegeById" class="p-3 rounded-xl border border-slate-100 bg-slate-50 relative group transition-all hover:bg-white hover:shadow-sm hover:border-slate-200">
+                                   <div class="flex items-start justify-between">
+                                       <div>
+                                           <h4 class="text-xs font-bold text-slate-800">{{ getPrivilegioNombre(pp.id_privilegio) }}</h4>
+                                           <div class="text-[11px] text-slate-500 font-medium flex gap-2">
+                                               <span>Desde: {{ formatDate(pp.fecha_inicio) }}</span>
+                                               <span *ngIf="pp.fecha_fin" class="text-slate-400">Hasta: {{ formatDate(pp.fecha_fin) }}</span>
+                                               <span *ngIf="!pp.fecha_fin" class="text-emerald-600 font-bold px-1.5 py-0.5 bg-emerald-50 rounded-md">Activo</span>
+                                           </div>
+                                       </div>
+                                       <button type="button" (click)="deletePublicadorPrivilegio(pp.id_publicador_privilegio)" class="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 transition-all">
+                                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                       </button>
+                                   </div>
+                               </div>
+                               <div *ngIf="publicadorPrivilegios().length === 0" class="text-center py-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                                   <p class="text-xs text-slate-400">Sin privilegios asignados</p>
+                               </div>
+                           </div>
+
+                           <!-- Add New Privilege Form -->
+                           <div class="bg-indigo-50/30 rounded-xl p-3 border border-indigo-100">
+                               <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Asignar Nuevo</p>
+                               <div class="space-y-3">
+                                   <!-- Select Privilegio -->
+                                   <div>
+                                       <select 
+                                         [ngModel]="newPrivilegio().id_privilegio" 
+                                         (ngModelChange)="updateNewPrivilegio('id_privilegio', $event)"
+                                         class="w-full h-9 px-3 bg-white border border-indigo-200 rounded-lg text-xs font-medium text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none cursor-pointer"
+                                       >
+                                           <option [ngValue]="null">Seleccionar Privilegio...</option>
+                                           <option *ngFor="let p of privilegios()" [value]="p.id_privilegio">{{ p.nombre_privilegio }}</option>
+                                       </select>
+                                   </div>
+                                   
+                                   <!-- Dates Row -->
+                                   <div class="grid grid-cols-2 gap-2">
+                                       <div>
+                                           <label class="block text-[9px] text-slate-500 font-bold mb-1">Inicio</label>
+                                           <input 
+                                             type="date" 
+                                             [ngModel]="newPrivilegio().fecha_inicio"
+                                             (ngModelChange)="updateNewPrivilegio('fecha_inicio', $event)"
+                                             class="w-full h-8 px-2 bg-white border border-indigo-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                           >
+                                       </div>
+                                       <div [class.opacity-50]="!isAuxiliarySelected()" [class.pointer-events-none]="!isAuxiliarySelected()">
+                                           <label class="block text-[9px] text-slate-500 font-bold mb-1">Fin (Opcional)</label>
+                                           <input 
+                                             type="date" 
+                                             [ngModel]="newPrivilegio().fecha_fin"
+                                             (ngModelChange)="updateNewPrivilegio('fecha_fin', $event)"
+                                             [disabled]="!isAuxiliarySelected()"
+                                             class="w-full h-8 px-2 bg-white border border-indigo-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                           >
+                                       </div>
+                                   </div>
+
+                                   <!-- Add Button -->
+                                   <button 
+                                     type="button" 
+                                     (click)="addPrivilegio()"
+                                     [disabled]="!canAddPrivilegio()"
+                                     class="w-full h-8 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-indigo-500/20 transition-all flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                   >
+                                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                       Asignar Privilegio
+                                   </button>
+                               </div>
+                           </div>
+                       </div>
+                       <div *ngIf="!editingPublicador()" class="mt-6 p-4 bg-slate-50 rounded-xl text-center border border-dashed border-slate-200">
+                           <p class="text-xs text-slate-400">Guarda el publicador para gestionar sus privilegios.</p>
+                       </div>
+
+                       <!-- Privilegios Management Section (Only in Edit Mode) -->
                        <div class="pt-2 space-y-3">
                           <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Privilegios Especiales</label>
                           <button 
@@ -682,8 +767,7 @@ interface ContactoEmergencia {
                                   <svg *ngIf="publicadorForm.get('ungido')?.value" class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                               </div>
                           </button>
-                      </div>
-                </div>
+                      </div>                </div>
 
                 <!-- TAB: EMERGENCIA -->
                 <div *ngIf="activeTab() === 'emergencia'" class="space-y-6 animate-fadeIn">
@@ -919,7 +1003,7 @@ export class PublicadoresListComponent implements OnInit {
   private authStore = inject(AuthStore);
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
-
+  private privilegiosService = inject(PrivilegiosService);
   vm = this.facade.vm;
   Math = Math;
 
@@ -963,7 +1047,17 @@ export class PublicadoresListComponent implements OnInit {
   publicadorForm: FormGroup;
   contactoForm: FormGroup;
 
+  // Privilegios Signals
+  privilegios = signal<Privilegio[]>([]);
+  publicadorPrivilegios = signal<PublicadorPrivilegio[]>([]);
+  newPrivilegio = signal<{ id_privilegio: number | null, fecha_inicio: string, fecha_fin: string | null }>({
+    id_privilegio: null,
+    fecha_inicio: new Date().toISOString().split('T')[0],
+    fecha_fin: null
+  });
+
   constructor() {
+    // Configurar validaciones de contraseña si fuera necesario
     this.publicadorForm = this.fb.group({
       primer_nombre: ['', [Validators.required, Validators.maxLength(100)]],
       segundo_nombre: ['', Validators.maxLength(100)],
@@ -1024,7 +1118,7 @@ export class PublicadoresListComponent implements OnInit {
       list = list.filter(p => p.id_estado_publicador === estadoId);
     }
 
-    // Filter by Group
+    // Filter by Grupo
     const grupoId = this.selectedGrupoFilter();
     if (grupoId !== null) {
       list = list.filter(p => p.id_grupo_publicador == grupoId);
@@ -1088,6 +1182,10 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   async loadAuxiliaryData() {
+    this.loadPrivilegiosCatalog(); // Cargar catálogo de privilegios
+    // Cargar Grupos (Simulado o real si existiera servicio)
+    // this.gruposService.getAll()...
+    // Por ahora usamos datos hardcodeados en la señal o lo que venga del facade
     try {
       const user = this.authStore.user();
       const params: any = {};
@@ -1107,6 +1205,20 @@ export class PublicadoresListComponent implements OnInit {
     } catch (error) {
       console.error('Error loading auxiliary data:', error);
     }
+  }
+
+  loadPrivilegiosCatalog() {
+    this.privilegiosService.getPrivilegios().subscribe({
+      next: (data) => this.privilegios.set(data),
+      error: (err) => console.error('Error cargando privilegios', err)
+    });
+  }
+
+  loadPublicadorPrivilegios(id: number) {
+    this.privilegiosService.getPublicadorPrivilegios(id).subscribe({
+      next: (data) => this.publicadorPrivilegios.set(data),
+      error: (err) => console.error('Error cargando privilegios de publicador', err)
+    });
   }
 
   // Search & Filters
@@ -1138,6 +1250,7 @@ export class PublicadoresListComponent implements OnInit {
       id_grupo_publicador: null,
       id_estado_publicador: null
     });
+    this.publicadorPrivilegios.set([]); // Clear privileges for new form
     this.panelOpen.set(true);
   }
 
@@ -1161,12 +1274,14 @@ export class PublicadoresListComponent implements OnInit {
       id_estado_publicador: p.id_estado_publicador || null,
       consentimiento_datos: p.consentimiento_datos || false
     });
+    this.loadPublicadorPrivilegios(p.id_publicador); // Fetch privileges for this publisher
     this.panelOpen.set(true);
   }
 
   closePanel() {
     this.panelOpen.set(false);
     this.editingPublicador.set(null);
+    this.publicadorPrivilegios.set([]); // Clear privileges on close
     this.publicadorForm.reset();
   }
 
@@ -1257,6 +1372,10 @@ export class PublicadoresListComponent implements OnInit {
   // Helpers
   trackById(index: number, item: Publicador) {
     return item.id_publicador;
+  }
+
+  trackPrivilegeById(index: number, item: PublicadorPrivilegio) {
+    return item.id_publicador_privilegio;
   }
 
   getInitials(p: Publicador | null): string {
@@ -1403,4 +1522,74 @@ export class PublicadoresListComponent implements OnInit {
       alert('Error eliminando contacto');
     }
   }
+  // --- Privilegios Helpers ---
+
+  getPrivilegioNombre(id: number): string {
+    const priv = this.privilegios().find(p => p.id_privilegio === id);
+    return priv ? priv.nombre_privilegio : 'Desconocido';
+  }
+
+  updateNewPrivilegio(field: string, value: any) {
+    // Si value es string de evento, extraer? No, ngModelChange da el valor.
+    // Manejar inputs dates vacíos
+    this.newPrivilegio.update(prev => ({ ...prev, [field]: value }));
+  }
+
+  isAuxiliarySelected(): boolean {
+    const id = this.newPrivilegio().id_privilegio;
+    if (!id) return false;
+    const nombre = this.getPrivilegioNombre(Number(id));
+    return nombre.toLowerCase().includes('auxiliar');
+  }
+
+  canAddPrivilegio(): boolean {
+    const p = this.newPrivilegio();
+    return !!p.id_privilegio && !!p.fecha_inicio;
+  }
+
+  addPrivilegio() {
+    const pub = this.editingPublicador();
+    if (!pub || !this.canAddPrivilegio()) return;
+
+    const privData = this.newPrivilegio();
+    const payload: any = {
+      id_publicador: pub.id_publicador,
+      id_privilegio: Number(privData.id_privilegio),
+      fecha_inicio: privData.fecha_inicio,
+      fecha_fin: privData.fecha_fin || null
+    };
+
+    // Si NO es auxiliar, forzar fecha_fin a null por regla de negocio (salvo que el usuario quiera cerrar un rango, pero 'Asignar' implica iniciar)
+    // El usuario dijo: "Para precursor regular no se llena la fecha fin".
+    if (!this.isAuxiliarySelected()) {
+      payload.fecha_fin = null;
+    }
+
+    this.privilegiosService.createPublicadorPrivilegio(payload).subscribe({
+      next: () => {
+        this.loadPublicadorPrivilegios(pub.id_publicador);
+        // Reset form
+        this.newPrivilegio.set({
+          id_privilegio: null,
+          fecha_inicio: new Date().toISOString().split('T')[0],
+          fecha_fin: null
+        });
+      },
+      error: (err) => {
+        alert('Error al asignar privilegio: ' + (err.error?.detail || err.message));
+      }
+    });
+  }
+
+  deletePublicadorPrivilegio(id: number) {
+    if (!confirm('¿Estás seguro de eliminar este privilegio del historial?')) return;
+    const pub = this.editingPublicador();
+    if (!pub) return;
+
+    this.privilegiosService.deletePublicadorPrivilegio(id).subscribe({
+      next: () => this.loadPublicadorPrivilegios(pub.id_publicador),
+      error: (err) => alert('Error: ' + err.message)
+    });
+  }
+
 }
