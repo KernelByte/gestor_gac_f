@@ -38,7 +38,11 @@ interface ContactoEmergencia {
   selector: 'app-publicadores-list',
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   template: `
-    <div class="flex flex-col gap-4 h-full overflow-hidden p-1">
+    <!-- Main Content Container -->
+    <div 
+      class="flex flex-col gap-4 h-full overflow-hidden transition-all duration-500 ease-out"
+      [ngClass]="panelOpen() ? 'pr-[490px]' : 'pr-0'"
+    >
       
       <!-- Search, Filters & Action Toolbar Wrapper -->
       <div class="shrink-0 flex flex-col xl:flex-row items-start xl:items-center gap-4">
@@ -341,15 +345,14 @@ interface ContactoEmergencia {
             </div>
         </div>
       </div>
+    </div> <!-- End Main Content Container -->
 
-      <!-- Side Panel (Robust Fixed Layout) -->
-      <div *ngIf="panelOpen()" class="fixed inset-0 z-[100] overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="tryClosePanel()"></div>
-
-        <div class="fixed inset-y-0 right-0 max-w-lg w-full flex">
-          <!-- Panel Content with soft left corners and subtle border -->
-          <div class="w-full h-full flex flex-col bg-white rounded-l-3xl shadow-[0_0_60px_-15px_rgba(0,0,0,0.3)] border-l border-slate-200/80 ring-1 ring-black/5 animate-slideInRight">
+    <!-- ======== DETAIL PANEL (Fixed Right, Sin Overlay) ======== -->
+    <div 
+      *ngIf="panelOpen()"
+      class="fixed inset-y-0 right-0 w-[480px] z-50 flex flex-col bg-white rounded-l-2xl border-l border-slate-200 shadow-[-30px_0_60px_-15px_rgba(0,0,0,0.15)] animate-slideInRight overflow-hidden"
+    >
+      <!-- Panel Content -->
             
             <!-- 1. Header Fijo y Limpio -->
             <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white z-10 rounded-tl-3xl">
@@ -646,8 +649,7 @@ interface ContactoEmergencia {
                   {{ saving() ? 'Guardando...' : (editingPublicador() ? 'Guardar Cambios' : 'Crear Publicador') }}
                </button>
            </div>
-        </div>
-      </div>
+    </div> <!-- End Detail Panel -->
 
        <!-- Delete Modal (Clean) -->
       <div *ngIf="deleteModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -662,7 +664,6 @@ interface ContactoEmergencia {
           </div>
       </div>
 
-    </div>
   `,
   styles: [`
     :host {
