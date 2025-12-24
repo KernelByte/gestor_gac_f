@@ -44,107 +44,109 @@ interface ContactoEmergencia {
       [ngClass]="panelOpen() ? 'pr-[490px]' : 'pr-0'"
     >
       
-      <!-- Search, Filters & Action Toolbar Wrapper -->
-      <div class="shrink-0 flex flex-col xl:flex-row items-start xl:items-center gap-4">
+      <!-- Compact Toolbar -->
+      <div class="shrink-0 bg-white rounded-xl shadow-sm border border-slate-200/60 p-1.5 flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
         
-        <!-- Search & Filters Container (White Card) -->
-        <div class="flex-1 w-full bg-white p-2 rounded-2xl shadow-sm border border-slate-200/60 flex flex-col xl:flex-row items-center gap-2 min-w-0">
-            <!-- Search Input -->
-            <div class="relative w-full xl:max-w-md h-12">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                </div>
-                <input 
-                    type="text" 
-                    [ngModel]="searchQuery()"
-                    (ngModelChange)="onSearch($event)"
-                    placeholder="Buscar miembro..." 
-                    class="w-full h-full pl-11 pr-4 bg-slate-50 border-none rounded-xl text-slate-700 font-medium placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none"
-                >
+        <!-- Search Input (Compact) -->
+        <div class="relative flex-1 min-w-[200px]">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
+            <input 
+                type="text" 
+                [ngModel]="searchQuery()"
+                (ngModelChange)="onSearch($event)"
+                placeholder="Buscar..." 
+                class="w-full h-9 pl-9 pr-3 bg-slate-50 border-none rounded-lg text-sm text-slate-700 font-medium placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none"
+            >
+        </div>
 
-            <!-- Filters (Inline, inside white card) -->
-            <div class="flex items-center gap-2 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 no-scrollbar mask-linear-fade flex-1">
-                <button 
-                    (click)="selectedEstado.set(null); currentPage.set(1)"
-                    [class.bg-brand-orange]="selectedEstado() === null"
-                    [class.text-white]="selectedEstado() === null"
-                    [class.bg-slate-100]="selectedEstado() !== null"
-                    [class.text-slate-600]="selectedEstado() !== null"
-                    class="flex items-center gap-2 px-4 h-12 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shrink-0"
-                >
-                    Todos <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px]">{{ totalFilteredCount() }}</span>
-                </button>
-                
-                <button 
-                    *ngFor="let e of estadosWithCounts()"
-                    (click)="selectedEstado.set(e.id_estado); currentPage.set(1)"
-                    [class.bg-brand-orange]="selectedEstado() === e.id_estado"
-                    [class.text-white]="selectedEstado() === e.id_estado"
-                    [class.bg-slate-50]="selectedEstado() !== e.id_estado"
-                    [class.text-slate-600]="selectedEstado() !== e.id_estado"
-                    class="flex items-center gap-2 px-4 h-12 rounded-xl text-xs font-bold whitespace-nowrap hover:bg-slate-100 transition-colors shrink-0"
-                >
-                    {{ e.nombre_estado }}
-                    <span class="bg-black/5 px-1.5 py-0.5 rounded text-[10px] opacity-70">{{ e.count }}</span>
-                </button>
+        <!-- Separator -->
+        <div class="w-px h-6 bg-slate-200 hidden lg:block shrink-0"></div>
 
-                <!-- Divider -->
-                <div class="w-px h-8 bg-slate-200 shrink-0 hidden xl:block"></div>
+        <!-- Quick Filters (Pills) -->
+        <div class="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
+            <button 
+                (click)="selectedEstado.set(null); currentPage.set(1)"
+                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
+                [ngClass]="selectedEstado() === null 
+                  ? 'bg-brand-orange text-white shadow-sm' 
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+            >
+                Todos <span class="text-[10px] opacity-80">{{ totalFilteredCount() }}</span>
+            </button>
+            
+            <button 
+                *ngFor="let e of estadosWithCounts()"
+                (click)="selectedEstado.set(e.id_estado); currentPage.set(1)"
+                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
+                [ngClass]="selectedEstado() === e.id_estado 
+                  ? 'bg-brand-orange text-white shadow-sm' 
+                  : 'text-slate-600 hover:bg-slate-100'"
+            >
+                {{ e.nombre_estado }} <span class="text-[10px] opacity-60">{{ e.count }}</span>
+            </button>
+        </div>
 
-                <!-- More Filters Dropdown -->
-                <div class="relative shrink-0">
+        <!-- Separator -->
+        <div class="w-px h-6 bg-slate-200 hidden lg:block shrink-0"></div>
+
+        <!-- More Filters Dropdown (Compact) -->
+        <div class="relative shrink-0">
+            <button 
+                (click)="showAdvancedFilters.set(!showAdvancedFilters())"
+                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
+                [ngClass]="selectedGrupoFilter() !== null 
+                  ? 'bg-brand-orange text-white shadow-sm' 
+                  : 'text-slate-500 hover:bg-slate-100'"
+            >
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                <span class="hidden sm:inline">{{ selectedGrupoFilter() !== null ? getGrupoNombre(selectedGrupoFilter()) : 'Filtros' }}</span>
+                <svg class="w-3 h-3 transition-transform" [class.rotate-180]="showAdvancedFilters()" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div 
+                *ngIf="showAdvancedFilters()"
+                class="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 z-50 py-1.5 animate-fadeInUp"
+            >
+                <div class="px-3 py-1.5 border-b border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grupo de Predicación</p>
+                </div>
+                <div class="max-h-52 overflow-y-auto simple-scrollbar">
                     <button 
-                        (click)="showAdvancedFilters.set(!showAdvancedFilters())"
-                        class="flex items-center gap-2 px-4 h-12 rounded-xl text-xs font-bold whitespace-nowrap transition-colors"
-                        [ngClass]="selectedGrupoFilter() !== null ? 'bg-brand-orange text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'"
+                        (click)="selectedGrupoFilter.set(null); showAdvancedFilters.set(false); currentPage.set(1)"
+                        class="w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 transition-colors flex items-center justify-between"
+                        [class.text-brand-orange]="selectedGrupoFilter() === null"
+                        [class.text-slate-700]="selectedGrupoFilter() !== null"
                     >
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                        <span>{{ selectedGrupoFilter() !== null ? getGrupoNombre(selectedGrupoFilter()) : 'Más Filtros' }}</span>
-                        <svg class="w-3 h-3 transition-transform" [class.rotate-180]="showAdvancedFilters()" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <span>Todos los Grupos</span>
+                        <svg *ngIf="selectedGrupoFilter() === null" class="w-3.5 h-3.5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     </button>
-                    
-                    <!-- Dropdown Menu -->
-                    <div 
-                        *ngIf="showAdvancedFilters()"
-                        class="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 z-50 py-2 animate-fadeInUp"
+                    <button 
+                        *ngFor="let g of grupos()"
+                        (click)="selectedGrupoFilter.set(g.id_grupo); showAdvancedFilters.set(false); currentPage.set(1)"
+                        class="w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 transition-colors flex items-center justify-between"
+                        [class.text-brand-orange]="selectedGrupoFilter() === g.id_grupo"
+                        [class.text-slate-700]="selectedGrupoFilter() !== g.id_grupo"
                     >
-                        <div class="px-3 py-2 border-b border-slate-100">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grupo de Predicación</p>
-                        </div>
-                        <div class="max-h-60 overflow-y-auto simple-scrollbar">
-                            <button 
-                                (click)="selectedGrupoFilter.set(null); showAdvancedFilters.set(false); currentPage.set(1)"
-                                class="w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-slate-50 transition-colors flex items-center justify-between"
-                                [class.text-brand-orange]="selectedGrupoFilter() === null"
-                                [class.text-slate-700]="selectedGrupoFilter() !== null"
-                            >
-                                <span>Todos los Grupos</span>
-                                <svg *ngIf="selectedGrupoFilter() === null" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            </button>
-                            <button 
-                                *ngFor="let g of grupos()"
-                                (click)="selectedGrupoFilter.set(g.id_grupo); showAdvancedFilters.set(false); currentPage.set(1)"
-                                class="w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-slate-50 transition-colors flex items-center justify-between"
-                                [class.text-brand-orange]="selectedGrupoFilter() === g.id_grupo"
-                                [class.text-slate-700]="selectedGrupoFilter() !== g.id_grupo"
-                            >
-                                <span>{{ g.nombre_grupo }}</span>
-                                <svg *ngIf="selectedGrupoFilter() === g.id_grupo" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            </button>
-                        </div>
-                    </div>
+                        <span>{{ g.nombre_grupo }}</span>
+                        <svg *ngIf="selectedGrupoFilter() === g.id_grupo" class="w-3.5 h-3.5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Action Button (Outside White Card) -->
+        <!-- Spacer -->
+        <div class="flex-1 hidden lg:block"></div>
+
+        <!-- Action Button (Compact, inside toolbar) -->
         <button 
             (click)="openCreateForm()"
-            class="shrink-0 inline-flex items-center justify-center gap-2 px-6 h-12 bg-brand-orange hover:bg-orange-600 text-white rounded-xl font-display font-bold shadow-lg shadow-orange-900/20 transition-all active:scale-95 whitespace-nowrap"
+            class="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 h-9 bg-brand-orange hover:bg-orange-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-orange-900/10 transition-all active:scale-95 whitespace-nowrap"
         >
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-            Nuevo Publicador
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+            <span class="hidden sm:inline">Nuevo</span>
         </button>
       </div>
 
