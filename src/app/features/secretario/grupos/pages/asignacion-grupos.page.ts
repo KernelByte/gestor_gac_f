@@ -2,7 +2,10 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, forkJoin } from 'rxjs';
+import { PrivilegiosService } from '../../privilegios/infrastructure/privilegios.service';
+import { Privilegio } from '../../privilegios/domain/models/privilegio';
+import { PublicadorPrivilegio } from '../../privilegios/domain/models/publicador-privilegio';
 
 // Interfaces simplificadas para la vista
 interface Grupo {
@@ -21,6 +24,8 @@ interface Publicador {
   // Ajustar según la respuesta real de tu API si hay privilegio/rol
   rol?: any;
   privilegio?: any;
+  // Privilegios activos del publicador (cargados desde el frontend)
+  privilegios_activos?: number[]; // Array de id_privilegio
 }
 
 @Component({
@@ -212,12 +217,28 @@ interface Publicador {
             <p class="text-[13px] font-black text-slate-800 truncate leading-tight group-hover:text-brand-orange transition-colors">
                 {{ p.primer_nombre }} {{ p.primer_apellido }}
             </p>
-            <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="text-[10px] text-slate-400 font-medium truncate bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100">
-                   {{ p.rol?.descripcion_rol || 'Publicador' }}
-                </span>
-                <span *ngIf="p.sexo === 'Masculino'" class="text-[9px] text-blue-400 bg-blue-50 px-1 rounded font-bold">M</span>
-                <span *ngIf="p.sexo === 'Femenino'" class="text-[9px] text-pink-400 bg-pink-50 px-1 rounded font-bold">F</span>
+            <div class="flex items-center gap-1 mt-1 flex-wrap">
+                <!-- Privilegios Tags con iconos -->
+                <ng-container *ngIf="getPrivilegioTags(p).length > 0; else noPrivilegio">
+                   <span *ngFor="let tag of getPrivilegioTags(p)" 
+                         class="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap"
+                         [ngClass]="tag.class"
+                         [title]="tag.label">
+                      <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path [attr.d]="tag.icon"></path>
+                      </svg>
+                      {{ tag.label }}
+                   </span>
+                </ng-container>
+                <ng-template #noPrivilegio>
+                   <span class="inline-flex items-center gap-1 text-[9px] text-slate-400 font-medium bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100">
+                      <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      Publicador
+                   </span>
+                </ng-template>
             </div>
          </div>
          
@@ -242,10 +263,15 @@ interface Publicador {
 export class AsignacionGruposPage implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private privilegiosService = inject(PrivilegiosService);
 
   // Data
   grupos = signal<Grupo[]>([]);
   publicadores = signal<Publicador[]>([]);
+
+  // Privilegios Data
+  privilegiosCatalogo = signal<Privilegio[]>([]);
+  publicadorPrivilegiosMap = signal<Map<number, number[]>>(new Map()); // id_publicador -> id_privilegio[]
 
   // State
   isSaving = signal(false);
@@ -283,14 +309,15 @@ export class AsignacionGruposPage implements OnInit {
 
   async loadData() {
     try {
-      // Cargar grupos y publicadores en paralelo
-      const [gruposData, pubsData] = await Promise.all([
+      // Cargar grupos, publicadores y catálogo de privilegios en paralelo
+      const [gruposData, pubsData, privilegiosData] = await Promise.all([
         lastValueFrom(this.http.get<Grupo[]>('/api/grupos/')),
-        lastValueFrom(this.http.get<Publicador[]>('/api/publicadores/')) // Ajustar endpoint si necesita limit=1000
+        lastValueFrom(this.http.get<Publicador[]>('/api/publicadores/')),
+        lastValueFrom(this.privilegiosService.getPrivilegios())
       ]);
 
       this.grupos.set(gruposData || []);
-      this.publicadores.set(pubsData || []);
+      this.privilegiosCatalogo.set(privilegiosData || []);
 
       // Guardar estado inicial para detectar cambios
       this.initialState.clear();
@@ -298,9 +325,48 @@ export class AsignacionGruposPage implements OnInit {
         this.initialState.set(p.id_publicador, p.id_grupo_publicador || null);
       });
 
+      // Cargar privilegios para todos los publicadores
+      await this.loadAllPublicadorPrivilegios(pubsData || []);
+
+      this.publicadores.set(pubsData || []);
+
     } catch (err) {
       console.error('Error cargando datos', err);
       alert('Error al cargar datos. Ver consola.');
+    }
+  }
+
+  // Cargar privilegios de todos los publicadores de forma eficiente
+  async loadAllPublicadorPrivilegios(publicadores: Publicador[]) {
+    try {
+      // Obtener todos los publicador-privilegios de la API
+      const allPrivilegios = await lastValueFrom(
+        this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/')
+      );
+
+      console.log('📌 Privilegios cargados desde API:', allPrivilegios);
+      console.log('📌 Catálogo de privilegios:', this.privilegiosCatalogo());
+
+      // Filtrar solo los privilegios activos (sin fecha_fin o fecha_fin en el futuro)
+      const today = new Date().toISOString().split('T')[0];
+      const privilegiosMap = new Map<number, number[]>();
+
+      for (const pp of (allPrivilegios || [])) {
+        // Solo privilegios activos (sin fecha_fin o fecha_fin >= hoy)
+        if (!pp.fecha_fin || pp.fecha_fin >= today) {
+          if (!privilegiosMap.has(pp.id_publicador)) {
+            privilegiosMap.set(pp.id_publicador, []);
+          }
+          privilegiosMap.get(pp.id_publicador)!.push(pp.id_privilegio);
+        }
+      }
+
+      console.log('📌 Mapa de privilegios por publicador:', Object.fromEntries(privilegiosMap));
+
+      this.publicadorPrivilegiosMap.set(privilegiosMap);
+    } catch (err) {
+      console.error('❌ Error cargando privilegios de publicadores', err);
+      // Continue without failing - just won't show privileges
     }
   }
 
@@ -329,6 +395,57 @@ export class AsignacionGruposPage implements OnInit {
   getGroupColorClass(id: number): string {
     const colors = ['bg-purple-500', 'bg-blue-500', 'bg-emerald-500', 'bg-orange-500', 'bg-pink-500'];
     return colors[id % colors.length];
+  }
+
+  // Obtener tags de privilegios para mostrar en la tarjeta del publicador
+  getPrivilegioTags(p: Publicador): { label: string; class: string; icon: string }[] {
+    const tags: { label: string; class: string; icon: string }[] = [];
+    const privilegiosMap = this.publicadorPrivilegiosMap();
+    const privilegiosIds = privilegiosMap.get(p.id_publicador) || [];
+    const catalogo = this.privilegiosCatalogo();
+
+    // Definir el mapeo de privilegios a etiquetas visuales más descriptivas
+    // icon: SVG path para íconos inline compactos
+    const privilegioConfig: { [key: string]: { label: string; class: string; icon: string } } = {
+      'anciano': {
+        label: 'Anciano',
+        class: 'text-indigo-700 bg-indigo-50 border border-indigo-200',
+        icon: 'M12 14l9-5-9-5-9 5 9 5zm0 7l-9-5 9-5 9 5-9 5z' // libro/enseñanza
+      },
+      'siervo ministerial': {
+        label: 'Siervo Ministerial',
+        class: 'text-purple-700 bg-purple-50 border border-purple-200',
+        icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' // grupo/servicio
+      },
+      'precursor regular': {
+        label: 'Precursor Regular',
+        class: 'text-emerald-700 bg-emerald-50 border border-emerald-200',
+        icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' // check/tiempo completo
+      },
+      'precursor auxiliar': {
+        label: 'Precursor Auxiliar',
+        class: 'text-amber-700 bg-amber-50 border border-amber-200',
+        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' // reloj/temporal
+      },
+    };
+
+    // Recorrer privilegios asignados al publicador
+    for (const idPrivilegio of privilegiosIds) {
+      const privilegio = catalogo.find(pr => pr.id_privilegio === idPrivilegio);
+      if (privilegio) {
+        const nombreLower = privilegio.nombre_privilegio.toLowerCase().trim();
+
+        // Buscar coincidencia en la configuración
+        for (const [key, config] of Object.entries(privilegioConfig)) {
+          if (nombreLower.includes(key)) {
+            tags.push(config);
+            break;
+          }
+        }
+      }
+    }
+
+    return tags;
   }
 
   goBack() {
