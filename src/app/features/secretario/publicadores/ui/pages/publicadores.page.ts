@@ -621,9 +621,9 @@ interface ContactoEmergencia {
                                Grupo de Servicio
                             </label>
                             <div class="relative">
-                                <select formControlName="id_grupo_publicador" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
+                                <select [compareWith]="compareFn" formControlName="id_grupo_publicador" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
                                     <option [ngValue]="null">Sin asignar</option>
-                                    <option *ngFor="let g of grupos()" [ngValue]="g.id_grupo">{{ g.nombre_grupo }}</option>
+                                    <option *ngFor="let g of grupos(); trackBy: trackGroupById" [ngValue]="g.id_grupo">{{ g.nombre_grupo }}</option>
                                 </select>
                                 <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
@@ -682,20 +682,43 @@ interface ContactoEmergencia {
                                </div>
                            </div>
 
+
                            <!-- Add New Privilege Form -->
-                           <div class="bg-indigo-50/30 rounded-xl p-3 border border-indigo-100">
+                           <div class="bg-indigo-50/30 rounded-xl p-3 border border-indigo-100 relative">
                                <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Asignar Nuevo</p>
                                <div class="space-y-3">
-                                   <!-- Select Privilegio -->
-                                   <div>
-                                       <select 
-                                         [ngModel]="newPrivilegio().id_privilegio" 
-                                         (ngModelChange)="updateNewPrivilegio('id_privilegio', $event)"
-                                         class="w-full h-9 px-3 bg-white border border-indigo-200 rounded-lg text-xs font-medium text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none cursor-pointer"
+                                   <!-- Custom Select Privilegio -->
+                                   <div class="relative">
+                                       <!-- Backdrop for click outside -->
+                                       <div *ngIf="privilegeDropdownOpen()" (click)="privilegeDropdownOpen.set(false)" class="fixed inset-0 z-10"></div>
+                                       
+                                       <!-- Trigger -->
+                                       <button 
+                                         type="button"
+                                         (click)="togglePrivilegeDropdown()"
+                                         class="w-full h-10 px-3 bg-white border border-indigo-200 rounded-lg text-xs font-bold text-slate-700 shadow-sm flex items-center justify-between hover:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
                                        >
-                                           <option [ngValue]="null">Seleccionar Privilegio...</option>
-                                           <option *ngFor="let p of privilegios()" [value]="p.id_privilegio">{{ p.nombre_privilegio }}</option>
-                                       </select>
+                                          <span [class.text-slate-400]="!newPrivilegio().id_privilegio">
+                                            {{ getSelectedPrivilegeName() }}
+                                          </span>
+                                          <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="privilegeDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                       </button>
+
+                                       <!-- Dropdown Menu -->
+                                       <div *ngIf="privilegeDropdownOpen()" class="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-100 z-20 overflow-hidden animate-fadeIn">
+                                           <div class="max-h-48 overflow-y-auto py-1">
+                                               <button 
+                                                 *ngFor="let p of privilegios()" 
+                                                 type="button"
+                                                 (click)="selectNewPrivilege(p)"
+                                                 class="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group"
+                                               >
+                                                   {{ p.nombre_privilegio }}
+                                                   <svg *ngIf="newPrivilegio().id_privilegio === p.id_privilegio" class="w-3.5 h-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                               </button>
+                                               <div *ngIf="privilegios().length === 0" class="px-4 py-2 text-xs text-slate-400 text-center">No hay opciones</div>
+                                           </div>
+                                       </div>
                                    </div>
                                    
                                    <!-- Dates Row -->
@@ -706,6 +729,7 @@ interface ContactoEmergencia {
                                              type="date" 
                                              [ngModel]="newPrivilegio().fecha_inicio"
                                              (ngModelChange)="updateNewPrivilegio('fecha_inicio', $event)"
+                                             [ngModelOptions]="{standalone: true}"
                                              class="w-full h-8 px-2 bg-white border border-indigo-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
                                            >
                                        </div>
@@ -715,6 +739,7 @@ interface ContactoEmergencia {
                                              type="date" 
                                              [ngModel]="newPrivilegio().fecha_fin"
                                              (ngModelChange)="updateNewPrivilegio('fecha_fin', $event)"
+                                             [ngModelOptions]="{standalone: true}"
                                              [disabled]="!isAuxiliarySelected()"
                                              class="w-full h-8 px-2 bg-white border border-indigo-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
                                            >
@@ -904,7 +929,6 @@ interface ContactoEmergencia {
                           </div>
                      </div>
                 </div>
-
               </form>
            </div>
 
@@ -946,8 +970,33 @@ interface ContactoEmergencia {
              <div class="flex gap-3 justify-end">
                 <button (click)="closeDeleteModal()" class="px-4 py-2 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50">Cancelar</button>
                 <button (click)="executeDelete()" class="px-4 py-2 rounded-lg bg-red-600 text-white font-bold text-sm hover:bg-red-700">Eliminar</button>
-             </div>
+              </div>
           </div>
+      </div>
+
+      <!-- Toast Notification -->
+      <div 
+        *ngIf="toastMessage()" 
+        class="fixed bottom-6 right-6 z-[100] animate-fadeInUp"
+      >
+        <div 
+          class="flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border backdrop-blur-sm"
+          [ngClass]="toastMessage()?.type === 'success' 
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            : 'bg-red-50 border-red-200 text-red-800'"
+        >
+          <div 
+            class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+            [ngClass]="toastMessage()?.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'"
+          >
+            <svg *ngIf="toastMessage()?.type === 'success'" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg *ngIf="toastMessage()?.type === 'error'" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </div>
+          <span class="text-sm font-bold">{{ toastMessage()?.text }}</span>
+          <button (click)="toastMessage.set(null)" class="ml-2 p-1 rounded-lg hover:bg-black/5 transition-colors">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
       </div>
 
   `,
@@ -1035,6 +1084,14 @@ export class PublicadoresListComponent implements OnInit {
   startEditingContacto = signal(false);
   sexoDropdownOpen = signal(false);
   editingContacto = signal<ContactoEmergencia | null>(null);
+
+  // Toast Notification
+  toastMessage = signal<{ text: string, type: 'success' | 'error' } | null>(null);
+
+  showToast(text: string, type: 'success' | 'error' = 'success') {
+    this.toastMessage.set({ text, type });
+    setTimeout(() => this.toastMessage.set(null), 3000);
+  }
 
   // Role Check - Solo admin y gestor pueden ver el ID
   isAdminOrGestor = computed(() => {
@@ -1370,12 +1427,20 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   // Helpers
+  compareFn(c1: any, c2: any): boolean {
+    return c1 == c2;
+  }
+
   trackById(index: number, item: Publicador) {
     return item.id_publicador;
   }
 
   trackPrivilegeById(index: number, item: PublicadorPrivilegio) {
     return item.id_publicador_privilegio;
+  }
+
+  trackGroupById(index: number, item: Grupo) {
+    return item.id_grupo;
   }
 
   getInitials(p: Publicador | null): string {
@@ -1406,11 +1471,31 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   getGrupoNombre(id: number | string | null | undefined): string {
-    if (!id) return 'Sin Grupo'; // Better default text
+    if (!id) return 'Sin Grupo';
     // Use loose equality (==) to handle potential string/number mismatches in API response
     const grupo = this.grupos().find(g => g.id_grupo == id);
-    return grupo?.nombre_grupo || 'Sin Grupo';
+    return grupo ? grupo.nombre_grupo : 'Sin Grupo';
   }
+
+  // Custom Dropdown State
+  privilegeDropdownOpen = signal(false);
+
+  togglePrivilegeDropdown() {
+    this.privilegeDropdownOpen.update(v => !v);
+  }
+
+  selectNewPrivilege(p: Privilegio) {
+    this.updateNewPrivilegio('id_privilegio', p.id_privilegio);
+    this.privilegeDropdownOpen.set(false);
+  }
+
+  getSelectedPrivilegeName(): string {
+    const id = this.newPrivilegio().id_privilegio;
+    if (!id) return 'Seleccionar Privilegio...';
+    return this.getPrivilegioNombre(id);
+  }
+
+
 
   getEstadoNombre(id: number | string | null | undefined): string {
     if (!id) return 'Sin estado';
@@ -1574,9 +1659,11 @@ export class PublicadoresListComponent implements OnInit {
           fecha_inicio: new Date().toISOString().split('T')[0],
           fecha_fin: null
         });
+        this.privilegeDropdownOpen.set(false);
+        this.showToast('Privilegio asignado correctamente', 'success');
       },
       error: (err) => {
-        alert('Error al asignar privilegio: ' + (err.error?.detail || err.message));
+        this.showToast('Error: ' + (err.error?.detail || 'No se pudo asignar el privilegio'), 'error');
       }
     });
   }
@@ -1587,8 +1674,11 @@ export class PublicadoresListComponent implements OnInit {
     if (!pub) return;
 
     this.privilegiosService.deletePublicadorPrivilegio(id).subscribe({
-      next: () => this.loadPublicadorPrivilegios(pub.id_publicador),
-      error: (err) => alert('Error: ' + err.message)
+      next: () => {
+        this.loadPublicadorPrivilegios(pub.id_publicador);
+        this.showToast('Privilegio eliminado', 'success');
+      },
+      error: (err) => this.showToast('Error al eliminar: ' + err.message, 'error')
     });
   }
 

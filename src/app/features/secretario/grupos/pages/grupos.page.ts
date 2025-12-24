@@ -316,8 +316,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
                         <div class="space-y-2">
                            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
                               <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
-                              Capitán (Supervisor)
-                           </label>
+                              Capitán                           </label>
                            <div class="relative">
                               <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                                  <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center ring-1 ring-orange-200/50">
