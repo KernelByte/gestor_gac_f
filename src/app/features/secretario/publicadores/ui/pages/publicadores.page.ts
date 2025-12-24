@@ -351,76 +351,88 @@ interface ContactoEmergencia {
     <!-- RIGHT SIDE: Editor Panel (Side Sheet) -->
     <!-- RIGHT SIDE: Editor Panel (Side Sheet with Smooth Transition) -->
     <div 
-      class="shrink-0 flex flex-col bg-white border-l border-y border-slate-200 overflow-hidden transition-all duration-500 cubic-bezier(0.4, 0.0, 0.2, 1)"
+      class="shrink-0 flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
       [ngClass]="panelOpen() 
-        ? 'w-[440px] opacity-100 rounded-2xl border translate-x-0 ml-0' 
-        : 'w-0 opacity-0 border-none translate-x-20 ml-0'"
+        ? 'w-[480px] opacity-100' 
+        : 'w-0 opacity-0'"
     >
-      <!-- Fixed Width Inner Container (Prevent content squishing) -->
-      <div class="w-[440px] flex flex-col h-full">
-      <!-- Panel Header (Clean & Modern) -->
-      <div class="shrink-0 bg-gradient-to-b from-slate-50 to-white">
+      <!-- Inner Container with premium styling -->
+      <div class="h-full flex flex-col bg-white rounded-l-3xl shadow-2xl shadow-slate-900/10 border-l border-slate-100 overflow-hidden">
         
-        <!-- Top Row: Title & Close -->
-        <div class="px-6 pt-5 pb-4 flex items-start justify-between">
-          <div>
-            <h2 class="text-lg font-bold text-slate-900 leading-tight">
-              {{ editingPublicador() ? 'Editar Publicador' : 'Nuevo Publicador' }}
-            </h2>
-            <p class="text-xs text-slate-500 mt-0.5" *ngIf="editingPublicador()">
-              {{ editingPublicador()?.primer_nombre }} {{ editingPublicador()?.segundo_nombre }} {{ editingPublicador()?.primer_apellido }} {{ editingPublicador()?.segundo_apellido }}
-            </p>
-            <p class="text-xs text-slate-500 mt-0.5" *ngIf="!editingPublicador()">
-              Complete la información requerida
-            </p>
-          </div>
-          <button 
-            (click)="tryClosePanel()" 
-            class="p-1.5 -mt-1 -mr-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+        <!-- Premium Gradient Header -->
+        <div class="shrink-0 relative overflow-hidden">
+             <!-- Background gradient -->
+             <div class="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50/30"></div>
+             <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-100/50 to-transparent rounded-full -mr-16 -mt-16 blur-2xl"></div>
+             
+             <div class="relative px-8 pt-8 pb-4">
+                <div class="flex items-start justify-between">
+                     <div class="flex gap-4">
+                         <!-- Icon with gradient background -->
+                         <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-orange to-orange-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/30 ring-4 ring-white">
+                              <svg *ngIf="!editingPublicador()" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                              <svg *ngIf="editingPublicador()" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                         </div>
+                         <div>
+                             <div class="flex items-center gap-2 mb-1.5">
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                                      [ngClass]="editingPublicador() ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'">
+                                  {{ editingPublicador() ? 'Modo Edición' : 'Nuevo Registro' }}
+                                </span>
+                             </div>
+                             <h2 class="text-2xl font-display font-black text-slate-900 tracking-tight">
+                                 {{ editingPublicador() ? 'Editar Publicador' : 'Nuevo Publicador' }}
+                             </h2>
+                             <p class="text-sm text-slate-500 mt-0.5" *ngIf="editingPublicador()">
+                               {{ editingPublicador()?.primer_nombre }} {{ editingPublicador()?.primer_apellido }}
+                             </p>
+                             <p class="text-sm text-slate-500 mt-0.5" *ngIf="!editingPublicador()">
+                               Complete la información requerida
+                             </p>
+                         </div>
+                     </div>
+                    <button (click)="tryClosePanel()" class="p-2.5 -mr-2 text-slate-400 hover:text-slate-600 transition-all rounded-xl hover:bg-white/80 hover:shadow-sm group">
+                        <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+             </div>
+
+             <!-- Tabs Navigation -->
+             <div class="px-8 pb-6">
+                <div class="flex p-1 bg-slate-100/50 hover:bg-slate-100/80 transition-colors rounded-xl border border-slate-200/50 backdrop-blur-sm">
+                  <button 
+                    (click)="activeTab.set('personal')" 
+                    class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
+                    [ngClass]="activeTab() === 'personal' 
+                      ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' 
+                      : 'text-slate-500 hover:text-slate-700'"
+                  >
+                    Personal
+                  </button>
+                  <button 
+                    (click)="activeTab.set('teocratico')" 
+                    class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
+                    [ngClass]="activeTab() === 'teocratico' 
+                      ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' 
+                      : 'text-slate-500 hover:text-slate-700'"
+                  >
+                    Teocrático
+                  </button>
+                  <button 
+                    *ngIf="editingPublicador()" 
+                    (click)="activeTab.set('emergencia')" 
+                    class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
+                    [ngClass]="activeTab() === 'emergencia' 
+                      ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' 
+                      : 'text-slate-500 hover:text-slate-700'"
+                  >
+                    Emergencia
+                  </button>
+                </div>
+             </div>
         </div>
 
-        <!-- Tabs Navigation (Modern Pill Style) -->
-        <div class="px-6 pb-4">
-          <div class="flex p-1 bg-slate-100/80 rounded-xl">
-            <button 
-              (click)="activeTab.set('personal')" 
-              class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
-              [ngClass]="activeTab() === 'personal' 
-                ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' 
-                : 'text-slate-500 hover:text-slate-700'"
-            >
-              Personal
-            </button>
-            <button 
-              (click)="activeTab.set('teocratico')" 
-              class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
-              [ngClass]="activeTab() === 'teocratico' 
-                ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' 
-                : 'text-slate-500 hover:text-slate-700'"
-            >
-              Teocrático
-            </button>
-            <button 
-              *ngIf="editingPublicador()" 
-              (click)="activeTab.set('emergencia')" 
-              class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
-              [ngClass]="activeTab() === 'emergencia' 
-                ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' 
-                : 'text-slate-500 hover:text-slate-700'"
-            >
-              Emergencia
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Divider -->
-      <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent shrink-0"></div>
+        <!-- Divider is not needed with the new design, content scrolls cleanly -->
 
             <!-- 3. Scrollable Content Area -->
             <div class="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">
@@ -428,133 +440,215 @@ interface ContactoEmergencia {
 
                 <!-- TAB: PERSONAL -->
                 <!-- TAB: PERSONAL -->
-                <div *ngIf="activeTab() === 'personal'" class="space-y-5 animate-fadeIn">
-                     <!-- Sección Identidad (Card Sutil) -->
-                     <div class="bg-slate-50/80 p-5 rounded-2xl border border-slate-100">
-                        <div class="flex items-center gap-2 mb-4">
-                            <div class="w-1 h-4 bg-brand-orange rounded-full"></div>
-                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Identidad</h3>
+                <div *ngIf="activeTab() === 'personal'" class="space-y-6 animate-fadeIn bg-white">
+                     
+                     <!-- Section: Identidad -->
+                     <div class="space-y-6">
+                        <div class="flex items-center gap-3 py-2">
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                           <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Identidad</span>
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
                         </div>
-                        
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-4">
+
+                        <div class="grid grid-cols-2 gap-4">
                              <!-- Fila 1: Nombres -->
-                             <div class="col-span-1">
-                               <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Primer Nombre <span class="text-red-500">*</span></label>
-                               <input formControlName="primer_nombre" placeholder="Ej: Juan" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                             <div class="col-span-1 space-y-2">
+                               <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
+                                  Primer Nombre <span class="text-red-400">*</span>
+                               </label>
+                               <input formControlName="primer_nombre" placeholder="Ej: Juan" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
-                             <div class="col-span-1">
-                               <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Segundo Nombre</label>
-                               <input formControlName="segundo_nombre" placeholder="Ej: Carlos" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                             <div class="col-span-1 space-y-2">
+                               <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
+                                  Segundo Nombre
+                               </label>
+                               <input formControlName="segundo_nombre" placeholder="Ej: Carlos" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                              
                              <!-- Fila 2: Apellidos -->
-                             <div class="col-span-1">
-                               <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Primer Apellido <span class="text-red-500">*</span></label>
-                               <input formControlName="primer_apellido" placeholder="Ej: Pérez" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                             <div class="col-span-1 space-y-2">
+                               <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
+                                  Primer Apellido <span class="text-red-400">*</span>
+                               </label>
+                               <input formControlName="primer_apellido" placeholder="Ej: Pérez" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
-                             <div class="col-span-1">
-                               <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Segundo Apellido</label>
-                               <input formControlName="segundo_apellido" placeholder="Ej: García" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                             <div class="col-span-1 space-y-2">
+                               <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
+                                  Segundo Apellido
+                               </label>
+                               <input formControlName="segundo_apellido" placeholder="Ej: García" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                         </div>
                      </div>
 
-                     <!-- Sección Contacto -->
-                     <div class="space-y-4">
+                     <!-- Section: Contacto -->
+                     <div class="space-y-6">
+                        <div class="flex items-center gap-3 py-2">
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                           <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contacto</span>
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-4">
-                            <div class="col-span-1">
-                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Teléfono</label>
-                                <input formControlName="telefono" placeholder="+57 300..." class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                            <div class="col-span-1 space-y-2">
+                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                  Teléfono
+                                </label>
+                                <input formControlName="telefono" placeholder="+57 300..." class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                             </div>
-                             <div class="col-span-1">
-                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Sexo</label>
-                                <select formControlName="sexo" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all cursor-pointer appearance-none">
-                                    <option value="">Seleccionar</option>
-                                    <option value="Masculino">Masculino</option>
-                                    <option value="Femenino">Femenino</option>
-                                </select>
+                             <div class="col-span-1 space-y-2">
+                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                  Sexo
+                                </label>
+                                <div class="relative">
+                                    <select formControlName="sexo" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
+                                        <option value="">Seleccionar</option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Femenino">Femenino</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                    </div>
+                                </div>
                              </div>
                         </div>
 
-                         <div class="col-span-2">
-                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Dirección / Barrio</label>
-                            <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                         <div class="col-span-2 space-y-2">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                               <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                               Dirección / Barrio
+                            </label>
+                            <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
-                            <div class="col-span-1">
-                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Fecha Nacimiento</label>
-                                <input type="date" formControlName="fecha_nacimiento" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                            <div class="col-span-1 space-y-2">
+                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                   Fecha Nacimiento
+                                </label>
+                                <input type="date" formControlName="fecha_nacimiento" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none">
                             </div>
                             
-                            <!-- Estado (Compacto) -->
-                            <div class="col-span-1">
-                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Estado Inicial</label>
-                                <div class="flex items-center gap-3 h-10 px-1">
-                                     <label class="flex items-center gap-2 cursor-pointer group">
-                                         <div class="relative flex items-center justify-center">
-                                            <input type="radio" value="1" class="peer sr-only" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Activo')" (change)="setEstado('Activo')">
-                                            <div class="w-4 h-4 border-2 border-slate-300 rounded-full peer-checked:border-brand-orange peer-checked:bg-brand-orange transition-all"></div>
-                                         </div>
-                                         <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Activo</span>
-                                     </label>
-                                      <label class="flex items-center gap-2 cursor-pointer group">
-                                         <div class="relative flex items-center justify-center">
-                                            <input type="radio" value="2" class="peer sr-only" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Inactivo')" (change)="setEstado('Inactivo')">
-                                             <div class="w-4 h-4 border-2 border-slate-300 rounded-full peer-checked:border-brand-orange peer-checked:bg-brand-orange transition-all"></div>
-                                         </div>
-                                         <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Inactivo</span>
-                                     </label>
+                            <!-- Estado (Radio Group Styled) -->
+                            <div class="col-span-1 space-y-2">
+                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                   Estado Inicial
+                                </label>
+                                <div class="flex items-center gap-2 h-12">
+                                     <button type="button" 
+                                             (click)="setEstado('Activo')"
+                                             class="flex-1 h-10 rounded-lg border-2 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                                             [ngClass]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Activo') 
+                                                ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' 
+                                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'">
+                                         <div class="w-2 h-2 rounded-full" [ngClass]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Activo') ? 'bg-emerald-500' : 'bg-slate-300'"></div>
+                                         Activo
+                                     </button>
+                                     <button type="button" 
+                                             (click)="setEstado('Inactivo')"
+                                             class="flex-1 h-10 rounded-lg border-2 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                                             [ngClass]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Inactivo') 
+                                                ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' 
+                                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'">
+                                         <div class="w-2 h-2 rounded-full" [ngClass]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Inactivo') ? 'bg-red-500' : 'bg-slate-300'"></div>
+                                         Inactivo
+                                     </button>
                                  </div>
                             </div>
                         </div>
                      </div>
                 </div>
 
+                <!-- TAB: TEOCRÁTICO is next -->
+
                 <!-- TAB: TEOCRÁTICO -->
-                <div *ngIf="activeTab() === 'teocratico'" class="space-y-4 animate-fadeIn">
+                <div *ngIf="activeTab() === 'teocratico'" class="space-y-6 animate-fadeIn bg-white">
                        
-                       <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-3">
-                            <label class="block text-[11px] font-bold text-slate-500 mb-0.5 ml-0.5">Grupo de Servicio</label>
-                            <select formControlName="id_grupo_publicador" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all cursor-pointer appearance-none">
-                                <option [ngValue]="null">Sin asignar</option>
-                                <option *ngFor="let g of grupos()" [ngValue]="g.id_grupo">{{ g.nombre_grupo }}</option>
-                            </select>
+                       <!-- Header -->
+                       <div class="flex items-center gap-3 py-2">
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                           <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Servicio</span>
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                       </div>
+
+                       <div class="space-y-2">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                               <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                               Grupo de Servicio
+                            </label>
+                            <div class="relative">
+                                <select formControlName="id_grupo_publicador" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
+                                    <option [ngValue]="null">Sin asignar</option>
+                                    <option *ngFor="let g of grupos()" [ngValue]="g.id_grupo">{{ g.nombre_grupo }}</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                            </div>
                        </div>
 
                        <div class="grid grid-cols-2 gap-4">
-                         <div class="col-span-1">
-                             <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Fecha Bautismo</label>
-                             <input type="date" formControlName="fecha_bautismo" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                         <div class="col-span-1 space-y-2">
+                             <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                               <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                               Fecha Bautismo
+                             </label>
+                             <input type="date" formControlName="fecha_bautismo" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none">
                          </div>
-                         <div class="col-span-1">
-                             <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Estado</label>
-                             <select formControlName="id_estado_publicador" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all cursor-pointer appearance-none">
-                                 <option [ngValue]="null">Seleccionar</option>
-                                 <option *ngFor="let e of estadosPublicador()" [ngValue]="e.id_estado">{{ e.nombre_estado }}</option>
-                             </select>
+                         <div class="col-span-1 space-y-2">
+                             <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                               <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                               Estado
+                             </label>
+                             <div class="relative">
+                                 <select formControlName="id_estado_publicador" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
+                                     <option [ngValue]="null">Seleccionar</option>
+                                     <option *ngFor="let e of estadosPublicador()" [ngValue]="e.id_estado">{{ e.nombre_estado }}</option>
+                                 </select>
+                                 <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                 </div>
+                             </div>
                          </div>
                        </div>
                        
-                       <!-- Privilegios (Card Distinct) -->
-                       <div class="mt-4 p-4 bg-orange-50/50 rounded-xl border border-orange-100/60">
-                          <label class="block text-xs font-bold text-orange-800 uppercase tracking-wide mb-3">Privilegios</label>
-                          <div class="flex flex-wrap gap-2">
-                               <button 
-                                type="button" 
-                                (click)="toggleUngido()"
-                                [class.bg-brand-orange]="publicadorForm.get('ungido')?.value"
-                                [class.text-white]="publicadorForm.get('ungido')?.value"
-                                [class.border-brand-orange]="publicadorForm.get('ungido')?.value"
-                                [class.bg-white]="!publicadorForm.get('ungido')?.value"
-                                [class.text-slate-600]="!publicadorForm.get('ungido')?.value"
-                                [class.border-slate-200]="!publicadorForm.get('ungido')?.value"
-                                class="px-4 py-2 rounded-lg border text-xs font-bold shadow-sm transition-all flex items-center gap-2"
-                               >
-                                  <span class="w-2 h-2 rounded-full" [class.bg-white]="publicadorForm.get('ungido')?.value" [class.bg-slate-300]="!publicadorForm.get('ungido')?.value"></span>
-                                  Ungido
-                               </button>
-                          </div>
+                       <!-- Privilegios -->
+                       <div class="pt-2 space-y-3">
+                          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Privilegios Especiales</label>
+                          <button 
+                            type="button" 
+                            (click)="toggleUngido()"
+                            [class.ring-2]="publicadorForm.get('ungido')?.value"
+                            [class.ring-brand-orange]="publicadorForm.get('ungido')?.value"
+                            [class.bg-orange-50]="publicadorForm.get('ungido')?.value"
+                            [class.border-brand-orange]="publicadorForm.get('ungido')?.value"
+                            [class.bg-white]="!publicadorForm.get('ungido')?.value"
+                            [class.border-slate-200]="!publicadorForm.get('ungido')?.value"
+                            class="w-full h-14 rounded-xl border-2 flex items-center justify-between px-4 transition-all duration-200 group"
+                          >
+                              <div class="flex items-center gap-3">
+                                  <div class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                                       [ngClass]="publicadorForm.get('ungido')?.value ? 'bg-brand-orange text-white' : 'bg-slate-100 text-slate-400'">
+                                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                                  </div>
+                                  <div class="text-left">
+                                      <span class="block text-sm font-bold" [ngClass]="publicadorForm.get('ungido')?.value ? 'text-brand-orange' : 'text-slate-700'">Participante de los emblemas</span>
+                                      <span class="text-xs text-slate-500 font-medium">Ungido</span>
+                                  </div>
+                              </div>
+                              <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+                                   [ngClass]="publicadorForm.get('ungido')?.value ? 'border-brand-orange bg-brand-orange' : 'border-slate-300'">
+                                  <svg *ngIf="publicadorForm.get('ungido')?.value" class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                              </div>
+                          </button>
                       </div>
                 </div>
 
@@ -622,60 +716,73 @@ interface ContactoEmergencia {
 
                     <!-- Formulario Contacto (Inline) -->
                      <!-- Formulario Contacto (Inline Refined) -->
-                     <div *ngIf="showContactoForm()" [formGroup]="contactoForm" class="bg-slate-50 p-5 rounded-2xl border border-slate-200 animate-fadeInUp">
-                          <h4 class="text-sm font-bold text-slate-900 mb-4">{{ editingContacto() ? 'Editar Contacto' : 'Nuevo Contacto' }}</h4>
+                     <!-- Formulario Contacto (Inline Refined) -->
+                     <div *ngIf="showContactoForm()" [formGroup]="contactoForm" class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-sm animate-fadeInUp">
+                          <h4 class="text-lg font-display font-bold text-slate-900 mb-6">{{ editingContacto() ? 'Editar Contacto' : 'Nuevo Contacto' }}</h4>
                           
                           <div class="space-y-4">
-                              <div>
-                                  <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Nombre Completo</label>
-                                  <input formControlName="nombre" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                              <div class="space-y-2">
+                                  <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                     <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                     Nombre Completo
+                                  </label>
+                                  <input formControlName="nombre" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 font-normal">
                               </div>
                               
                               <div class="grid grid-cols-2 gap-4">
-                                  <div class="col-span-1">
-                                     <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Parentesco</label>
-                                     <input formControlName="parentesco" placeholder="Ej. Madre" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                                  <div class="col-span-1 space-y-2">
+                                     <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                        Parentesco
+                                     </label>
+                                     <input formControlName="parentesco" placeholder="Ej. Madre" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 font-normal">
                                   </div>
-                                  <div class="col-span-1">
-                                     <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Teléfono</label>
-                                     <input formControlName="telefono" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                                  <div class="col-span-1 space-y-2">
+                                     <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                        Teléfono
+                                     </label>
+                                     <input formControlName="telefono" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none">
                                   </div>
                               </div>
                               
-                              <div>
-                                  <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Dirección (Opcional)</label>
-                                  <input formControlName="direccion" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                              <div class="space-y-2">
+                                  <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                     <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                     Dirección (Opcional)
+                                  </label>
+                                  <input formControlName="direccion" class="w-full h-12 px-4 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none">
                               </div>
 
-                              <div class="flex gap-6 pt-2">
-                                  <label class="flex items-center gap-2 cursor-pointer group">
+                              <div class="flex gap-4 pt-4">
+                                  <label class="flex-1 flex items-center justify-between p-3 rounded-xl border-2 border-slate-100 hover:border-brand-orange/30 cursor-pointer transition-all group">
+                                      <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Contacto Principal</span>
                                       <div class="relative flex items-center justify-center">
                                          <input type="checkbox" formControlName="es_principal" class="peer sr-only">
-                                         <div class="w-4 h-4 border-2 border-slate-300 rounded md:rounded-md peer-checked:bg-brand-orange peer-checked:border-brand-orange transition-all"></div>
-                                         <svg class="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                         <div class="w-5 h-5 border-2 border-slate-300 rounded peer-checked:bg-brand-orange peer-checked:border-brand-orange transition-all"></div>
+                                         <svg class="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                       </div>
-                                      <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Contacto Principal</span>
                                   </label>
-                                  <label class="flex items-center gap-2 cursor-pointer group">
+                                  <label class="flex-1 flex items-center justify-between p-3 rounded-xl border-2 border-slate-100 hover:border-brand-orange/30 cursor-pointer transition-all group">
+                                      <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Solo Urgencias</span>
                                       <div class="relative flex items-center justify-center">
                                          <input type="checkbox" formControlName="solo_urgencias" class="peer sr-only">
-                                         <div class="w-4 h-4 border-2 border-slate-300 rounded md:rounded-md peer-checked:bg-brand-orange peer-checked:border-brand-orange transition-all"></div>
-                                         <svg class="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                         <div class="w-5 h-5 border-2 border-slate-300 rounded peer-checked:bg-brand-orange peer-checked:border-brand-orange transition-all"></div>
+                                         <svg class="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                       </div>
-                                      <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Solo Urgencias</span>
                                   </label>
                               </div>
                           </div>
 
-                          <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-200/50">
-                              <button type="button" (click)="showContactoForm.set(false)" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-white hover:text-slate-800 transition-all">Cancelar</button>
+                          <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-slate-100">
+                              <button type="button" (click)="showContactoForm.set(false)" class="px-5 py-2.5 rounded-xl border-2 border-slate-100 text-slate-500 font-bold text-xs hover:bg-slate-50 hover:text-slate-700 transition-all">Cancelar</button>
                               <button 
                                 type="button" 
                                 (click)="saveContacto()"
                                 [disabled]="contactoForm.invalid"
-                                class="px-5 py-2.5 rounded-xl bg-brand-orange text-white font-bold text-xs shadow-lg shadow-orange-900/10 hover:bg-orange-600 hover:shadow-orange-900/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none"
+                                class="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs shadow-lg shadow-slate-900/20 hover:bg-black hover:shadow-slate-900/30 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none"
                               >
-                                {{ editingContacto() ? 'Actualizar' : 'Guardar Contacto' }}
+                                {{ editingContacto() ? 'Actualizar' : 'Guardar' }}
                               </button>
                           </div>
                      </div>
@@ -685,23 +792,30 @@ interface ContactoEmergencia {
            </div>
 
            <!-- Panel Footer -->
-           <div class="px-6 py-4 border-t border-slate-200 bg-white flex items-center justify-between gap-4 shrink-0">
-               <button 
-                  type="button"
-                  (click)="tryClosePanel()" 
-                  class="px-5 h-11 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-white hover:border-slate-300 hover:text-slate-700 transition-all"
-               >
-                  Cancelar
-               </button>
-               <button 
-                  type="button"
-                  (click)="onSubmit()" 
-                  [disabled]="publicadorForm.invalid || saving()" 
-                  class="px-8 h-11 rounded-xl bg-brand-orange text-white font-bold text-sm hover:bg-orange-600 shadow-lg shadow-orange-900/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none flex items-center gap-2"
-               >
-                  <svg *ngIf="saving()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  {{ saving() ? 'Guardando...' : (editingPublicador() ? 'Guardar Cambios' : 'Crear Publicador') }}
-               </button>
+           <div class="px-8 py-5 border-t border-slate-100 bg-white flex items-center justify-between gap-4 shrink-0">
+               <div class="hidden sm:block">
+                  <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                     <span class="text-red-400">*</span> Campo obligatorio
+                  </p>
+               </div>
+               <div class="flex items-center gap-3 w-full sm:w-auto">
+                   <button 
+                      type="button"
+                      (click)="tryClosePanel()" 
+                      class="flex-1 sm:flex-none px-6 h-11 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 transition-all focus:ring-4 focus:ring-slate-100 outline-none"
+                   >
+                      Cancelar
+                   </button>
+                   <button 
+                      type="button"
+                      (click)="onSubmit()" 
+                      [disabled]="publicadorForm.invalid || saving()" 
+                      class="flex-1 sm:flex-none px-8 h-11 rounded-xl bg-gradient-to-r from-brand-orange to-orange-500 text-white font-bold text-sm hover:shadow-lg hover:shadow-brand-orange/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+                   >
+                      <svg *ngIf="saving()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                      {{ saving() ? 'Guardando...' : (editingPublicador() ? 'Guardar Cambios' : 'Crear Registro') }}
+                   </button>
+               </div>
            </div>
       </div> <!-- End Inner Container -->
     </div> <!-- End Detail Panel Outer -->

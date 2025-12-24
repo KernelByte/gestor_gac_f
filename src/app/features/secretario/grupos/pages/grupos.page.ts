@@ -411,7 +411,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
               </div>
 
               <!-- Premium Footer -->
-              <div class="shrink-0 px-8 py-5 border-t border-slate-100 bg-gradient-to-r from-slate-50 to-slate-100/50 backdrop-blur-sm">
+              <div class="shrink-0 px-8 py-5 border-t border-slate-100 bg-white">
                  <div class="flex items-center justify-between">
                     <p class="text-xs text-slate-400 hidden sm:block">
                        <span class="text-red-400">*</span> Campo obligatorio
