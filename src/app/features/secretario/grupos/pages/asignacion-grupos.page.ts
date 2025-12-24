@@ -28,70 +28,97 @@ interface Publicador {
   selector: 'app-asignacion-grupos',
   imports: [CommonModule],
   template: `
-    <div class="h-full flex flex-col w-full max-w-[1920px] mx-auto bg-slate-50 overflow-hidden">
+    <div class="h-full flex flex-col w-full bg-slate-50/50 overflow-hidden font-sans">
       
-      <!-- Header -->
-      <div class="shrink-0 bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between z-20 shadow-sm">
-        <div>
-          <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-             <button (click)="goBack()" class="p-1 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors">
-                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-             </button>
-             Tablero de Asignación de Grupos
-          </h1>
-          <p class="text-slate-500 text-sm mt-1 ml-9">Arrastra los publicadores para asignarlos a los grupos.</p>
+      <!-- Premium Header -->
+      <header class="shrink-0 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 flex items-center justify-between px-8 py-4 z-30 sticky top-0">
+        <div class="flex items-center gap-6">
+           <button (click)="goBack()" class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all active:scale-95 group">
+              <svg class="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+           </button>
+           
+           <div>
+              <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                 <span>Tablero de Asignación</span>
+                 <span class="px-2 py-0.5 rounded-md bg-orange-50 text-brand-orange text-[10px] font-bold uppercase tracking-widest border border-orange-100">Dinámico</span>
+              </h1>
+              <p class="text-slate-500 text-xs font-medium mt-0.5">Gestione la distribución de los publicadores arrastrando y soltando.</p>
+           </div>
         </div>
         
-        <div class="flex items-center gap-4">
-             <div class="flex items-center gap-2 mr-4">
+        <div class="flex items-center gap-6">
+             <!-- Status Indicators -->
+             <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100" *ngIf="pendingChangesCount() > 0">
                 <div class="flex -space-x-2">
-                   <div *ngFor="let p of draggingAvatars(); let i = index" class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] z-10">
-                      {{ getInitials(p) }}
+                   <div *ngFor="let p of draggingAvatars();" class="w-7 h-7 rounded-full border-2 border-white bg-white shadow-sm flex items-center justify-center overflow-hidden">
+                      <div class="w-full h-full flex items-center justify-center text-[9px] font-black text-white" [style.background-color]="getAvatarColor(p.id_publicador)">
+                        {{ getInitials(p) }}
+                      </div>
                    </div>
-                   <div *ngIf="pendingChangesCount() > 0" class="w-8 h-8 rounded-full border-2 border-white bg-brand-orange text-white flex items-center justify-center text-[10px] font-bold z-20">
-                      +{{ pendingChangesCount() }}
+                   <div *ngIf="pendingChangesCount() > 5" class="w-7 h-7 rounded-full border-2 border-white bg-slate-800 text-white flex items-center justify-center text-[9px] font-bold z-10">
+                      +{{ pendingChangesCount() - 5 }}
                    </div>
                 </div>
-                <span class="text-xs font-bold text-slate-500" *ngIf="pendingChangesCount() > 0">Cambios pendientes</span>
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold text-slate-800 leading-none">{{ pendingChangesCount() }} cambios</span>
+                    <span class="text-[10px] text-slate-400 font-medium leading-none mt-0.5">Pendientes de guardar</span>
+                </div>
              </div>
 
-             <button 
-               (click)="saveChanges()"
-               [disabled]="isSaving() || pendingChangesCount() === 0"
-               class="px-6 py-2.5 bg-brand-orange hover:bg-orange-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale flex items-center gap-2"
-             >
-               <svg *ngIf="isSaving()" class="animate-spin -ml-1 mr-1 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-               {{ isSaving() ? 'Guardando...' : 'Guardar Cambios' }}
-             </button>
+             <div class="h-8 w-px bg-slate-200" *ngIf="pendingChangesCount() > 0"></div>
+
+             <div class="flex items-center gap-3">
+                 <div class="text-right hidden sm:block">
+                    <p class="text-xs font-bold text-slate-700">Guardado Automático</p>
+                    <p class="text-[10px] text-slate-400">Desactivado</p>
+                 </div>
+                 
+                 <button 
+                   (click)="saveChanges()"
+                   [disabled]="isSaving() || pendingChangesCount() === 0"
+                   class="relative overflow-hidden pl-5 pr-6 py-2.5 bg-brand-orange text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-all hover:bg-orange-600 hover:shadow-orange-500/40 active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed group flex items-center gap-2"
+                 >
+                   <div *ngIf="isSaving()" class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                   <svg *ngIf="isSaving()" class="animate-spin h-4 w-4 text-white relative z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                   <svg *ngIf="!isSaving()" class="w-4 h-4 relative z-10 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-8H7v8"/><path stroke-linecap="round" stroke-linejoin="round" d="M7 3v5h8"/></svg>
+                   <span class="relative z-10">{{ isSaving() ? 'Guardando...' : 'Aplicar Cambios' }}</span>
+                 </button>
+             </div>
         </div>
-      </div>
+      </header>
 
       <!-- Kanban Board Area -->
-      <div class="flex-1 overflow-x-auto overflow-y-hidden p-6 relative">
-         <div class="flex h-full gap-6 pb-4">
+      <div class="flex-1 overflow-x-auto overflow-y-hidden p-8 relative">
+         <div class="flex h-full gap-8 pb-4 w-max mx-auto min-w-full justify-start md:justify-center">
             
-            <!-- Columna: Sin Asignar -->
+            <!-- Columna: Sin Asignar (Staging Area) -->
             <div 
-               class="w-64 shrink-0 flex flex-col rounded-2xl bg-slate-100/50 border border-slate-200/60 max-h-full transition-colors"
+               class="w-72 shrink-0 flex flex-col rounded-3xl bg-slate-100/60 border-2 border-dashed border-slate-300 max-h-full transition-all duration-300"
                [class.bg-slate-200]="isDraggingOver() === 'unassigned'"
+               [class.border-slate-400]="isDraggingOver() === 'unassigned'"
+               [class.scale-[1.02]]="isDraggingOver() === 'unassigned'"
                (dragover)="onDragOver($event, 'unassigned')"
                (dragleave)="onDragLeave()"
                (drop)="onDrop($event, null)"
             >
                <!-- Header -->
-               <div class="px-4 py-3 border-b border-slate-200/60 flex items-center justify-between bg-white rounded-t-2xl">
-                  <span class="font-bold text-slate-700">Sin Asignar</span>
-                  <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs font-bold">{{ unassignedPublishers().length }}</span>
+               <div class="px-5 py-4 border-b border-slate-200/50 flex items-center justify-between rounded-t-3xl bg-slate-50/50 backdrop-blur-sm">
+                  <div class="flex items-center gap-2">
+                      <div class="w-2 h-2 rounded-full bg-slate-400"></div>
+                      <span class="font-bold text-slate-700 text-sm uppercase tracking-wide">Sin Asignar</span>
+                  </div>
+                  <span class="bg-white text-slate-600 px-2.5 py-1 rounded-lg text-xs font-black shadow-sm border border-slate-200">{{ unassignedPublishers().length }}</span>
                </div>
                
                <!-- List -->
-               <div class="p-2 flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+               <div class="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
                   <ng-container *ngFor="let p of unassignedPublishers()">
                      <ng-container *ngTemplateOutlet="cardTemplate; context: { $implicit: p }"></ng-container>
                   </ng-container>
                   
-                   <div *ngIf="unassignedPublishers().length === 0" class="h-20 flex items-center justify-center text-slate-400 text-xs italic border-2 border-dashed border-slate-200 rounded-xl">
-                      Arrastra aquí para desasignar
+                   <div *ngIf="unassignedPublishers().length === 0" class="h-32 flex flex-col items-center justify-center text-slate-400 text-xs italic border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                      <svg class="w-8 h-8 opacity-20 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                      <span>Zona de espera vacía</span>
                    </div>
                </div>
             </div>
@@ -99,38 +126,59 @@ interface Publicador {
             <!-- Columnas: Grupos -->
             <div 
                *ngFor="let grupo of grupos()"
-               class="w-64 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm max-h-full transition-shadow hover:shadow-md"
+               class="w-80 shrink-0 flex flex-col rounded-3xl bg-white border border-slate-100 shadow-xl shadow-slate-200/40 max-h-full transition-all duration-300 transform"
                [class.ring-2]="isDraggingOver() === grupo.id_grupo"
                [class.ring-brand-orange]="isDraggingOver() === grupo.id_grupo"
+               [class.scale-[1.02]]="isDraggingOver() === grupo.id_grupo"
                (dragover)="onDragOver($event, grupo.id_grupo)"
                (dragleave)="onDragLeave()"
                (drop)="onDrop($event, grupo.id_grupo)"
             >
                <!-- Header con Color -->
-               <div class="px-4 py-3 border-b border-slate-100 relative overflow-hidden rounded-t-2xl">
-                   <!-- Decoración de color top -->
-                   <div class="absolute top-0 left-0 w-full h-1" [ngClass]="getGroupColorClass(grupo.id_grupo)"></div>
+               <div class="px-5 py-4 border-b border-slate-50 relative overflow-hidden rounded-t-3xl bg-white group-header z-10">
+                   <!-- Decoración de fondo suave -->
+                   <div class="absolute inset-x-0 -top-full h-full opacity-5 pointer-events-none transition-opacity duration-300" [ngClass]="getGroupColorClass(grupo.id_grupo)"></div>
                    
-                   <div class="flex items-start justify-between mt-1">
-                      <div>
-                         <h3 class="font-bold text-slate-800 text-sm truncate pr-2 w-32" [title]="grupo.nombre_grupo">{{ grupo.nombre_grupo }}</h3>
-                         <p class="text-[10px] text-slate-400 mt-0.5 truncate w-32" *ngIf="grupo.capitan_grupo">CP: <span class="text-slate-600 font-medium">{{ grupo.capitan_grupo }}</span></p>
-                         <p class="text-[10px] text-slate-300 italic mt-0.5" *ngIf="!grupo.capitan_grupo">Sin Capitán</p>
+                   <div class="flex items-start justify-between">
+                      <div class="flex items-start gap-3">
+                         <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-lg font-black shadow-md mt-0.5" 
+                              [ngClass]="getGroupColorClass(grupo.id_grupo)">
+                            {{ grupo.nombre_grupo.charAt(0) }}
+                         </div>
+                         <div>
+                             <h3 class="font-bold text-slate-800 text-sm truncate w-40 leading-snug" [title]="grupo.nombre_grupo">{{ grupo.nombre_grupo }}</h3>
+                             
+                             <div class="flex items-center gap-1.5 mt-1" *ngIf="grupo.capitan_grupo">
+                                <div class="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center">
+                                    <svg class="w-2.5 h-2.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                </div>
+                                <span class="text-[10px] text-slate-500 font-medium truncate w-32">{{ grupo.capitan_grupo }}</span>
+                             </div>
+
+                             <div class="flex items-center gap-1.5 mt-1" *ngIf="!grupo.capitan_grupo">
+                                <div class="w-4 h-4 rounded-full bg-red-50 flex items-center justify-center">
+                                    <svg class="w-2.5 h-2.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                </div>
+                                <span class="text-[10px] text-red-400 font-medium italic">Sin Capitán asignado</span>
+                             </div>
+                         </div>
                       </div>
-                      <span class="bg-slate-50 text-slate-600 px-2 py-0.5 rounded-md text-xs font-bold border border-slate-100 shadow-sm">
+
+                      <span class="bg-slate-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow-lg shadow-slate-900/20">
                          {{ getGroupMembers(grupo.id_grupo).length }}
                       </span>
                    </div>
                </div>
 
                <!-- List -->
-               <div class="p-2 flex-1 overflow-y-auto space-y-2 custom-scrollbar bg-slate-50/30">
+               <div class="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar bg-slate-50/50">
                   <ng-container *ngFor="let p of getGroupMembers(grupo.id_grupo)">
                      <ng-container *ngTemplateOutlet="cardTemplate; context: { $implicit: p, inGroup: true }"></ng-container>
                   </ng-container>
                   
-                  <div *ngIf="getGroupMembers(grupo.id_grupo).length === 0" class="h-20 flex items-center justify-center text-slate-300 text-xs italic border-2 border-dashed border-slate-100 rounded-xl">
-                      Vacío
+                  <div *ngIf="getGroupMembers(grupo.id_grupo).length === 0" class="h-32 flex flex-col items-center justify-center text-slate-300 text-xs italic border border-dashed border-slate-200 rounded-2xl bg-slate-50 mx-2 mb-2">
+                       <svg class="w-8 h-8 opacity-30 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                      Grupo sin miembros
                   </div>
                </div>
             </div>
@@ -139,35 +187,46 @@ interface Publicador {
       </div>
     </div>
 
-    <!-- Template de Card de Publicador COMPACTO -->
+    <!-- Template de Card de Publicador PREMIUM -->
     <ng-template #cardTemplate let-p let-inGroup="inGroup">
       <div 
-         class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm cursor-move select-none hover:shadow-md hover:border-brand-orange/30 active:scale-95 transition-all group relative flex items-center gap-2 overflow-hidden h-14"
+         class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-lg hover:border-slate-300 hover:scale-[1.02] transition-all duration-200 group relative flex items-center gap-3 select-none"
          draggable="true"
          (dragstart)="onDragStart($event, p)"
       >
-         <!-- Color Indicator Bar -->
-         <div class="absolute left-0 top-0 bottom-0 w-1" [style.background-color]="getAvatarColor(p.id_publicador)"></div>
+         <!-- Drag Handle (Visible on Hover) -->
+         <div class="absolute left-1 top-1/2 -translate-y-1/2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16"/></svg>
+         </div>
 
          <!-- Avatar -->
          <div 
-            class="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ml-1 shadow-sm"
+            class="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 shadow-sm transition-transform group-hover:scale-110 ml-1"
             [style.background-color]="getAvatarColor(p.id_publicador)"
          >
             {{ getInitials(p) }}
          </div>
 
          <!-- Info -->
-         <div class="min-w-0 flex-1"> 
-            <p class="text-xs font-bold text-slate-800 truncate leading-tight">{{ p.primer_nombre }} {{ p.primer_apellido }}</p>
-            <p class="text-[10px] text-slate-400 font-medium truncate">
-               {{ p.rol?.descripcion_rol || 'Publicador' }}
+         <div class="min-w-0 flex-1 flex flex-col justify-center"> 
+            <p class="text-[13px] font-black text-slate-800 truncate leading-tight group-hover:text-brand-orange transition-colors">
+                {{ p.primer_nombre }} {{ p.primer_apellido }}
             </p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[10px] text-slate-400 font-medium truncate bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100">
+                   {{ p.rol?.descripcion_rol || 'Publicador' }}
+                </span>
+                <span *ngIf="p.sexo === 'Masculino'" class="text-[9px] text-blue-400 bg-blue-50 px-1 rounded font-bold">M</span>
+                <span *ngIf="p.sexo === 'Femenino'" class="text-[9px] text-pink-400 bg-pink-50 px-1 rounded font-bold">F</span>
+            </div>
          </div>
          
-         <!-- Modified Indicator (Dot) -->
-         <div class="absolute top-1.5 right-1.5" *ngIf="isModified(p)">
-             <span class="w-2 h-2 rounded-full bg-amber-500 block shadow-sm ring-1 ring-white"></span>
+         <!-- Modified Indicator (Full Badge) -->
+         <div class="absolute top-2 right-2" *ngIf="isModified(p)">
+             <span class="flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-orange opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-orange"></span>
+              </span>
          </div>
       </div>
     </ng-template>
