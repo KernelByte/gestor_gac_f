@@ -427,116 +427,134 @@ interface ContactoEmergencia {
               <form [formGroup]="publicadorForm" (ngSubmit)="onSubmit()" class="space-y-6 pb-20"> <!-- pb-20 para espacio extra al final -->
 
                 <!-- TAB: PERSONAL -->
-                <div *ngIf="activeTab() === 'personal'" class="space-y-6 animate-fadeIn">
-                     <!-- Sección Nombre -->
-                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-100/50">
-                        <label class="block text-xs font-bold text-slate-700 mb-3 uppercase tracking-wider">Identidad</label>
+                <!-- TAB: PERSONAL -->
+                <div *ngIf="activeTab() === 'personal'" class="space-y-5 animate-fadeIn">
+                     <!-- Sección Identidad (Card Sutil) -->
+                     <div class="bg-slate-50/80 p-5 rounded-2xl border border-slate-100">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-1 h-4 bg-brand-orange rounded-full"></div>
+                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Identidad</h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-4">
+                             <!-- Fila 1: Nombres -->
+                             <div class="col-span-1">
+                               <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Primer Nombre <span class="text-red-500">*</span></label>
+                               <input formControlName="primer_nombre" placeholder="Ej: Juan" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                             </div>
+                             <div class="col-span-1">
+                               <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Segundo Nombre</label>
+                               <input formControlName="segundo_nombre" placeholder="Ej: Carlos" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                             </div>
+                             
+                             <!-- Fila 2: Apellidos -->
+                             <div class="col-span-1">
+                               <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Primer Apellido <span class="text-red-500">*</span></label>
+                               <input formControlName="primer_apellido" placeholder="Ej: Pérez" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                             </div>
+                             <div class="col-span-1">
+                               <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Segundo Apellido</label>
+                               <input formControlName="segundo_apellido" placeholder="Ej: García" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                             </div>
+                        </div>
+                     </div>
+
+                     <!-- Sección Contacto -->
+                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
+                            <div class="col-span-1">
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Teléfono</label>
+                                <input formControlName="telefono" placeholder="+57 300..." class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                            </div>
                              <div class="col-span-1">
-                               <label class="block text-[10px] font-semibold text-slate-500 mb-1">Primer Nombre <span class="text-red-500">*</span></label>
-                               <input formControlName="primer_nombre" placeholder="Ej: Juan" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
-                             </div>
-                             <div class="col-span-1">
-                               <label class="block text-[10px] font-semibold text-slate-500 mb-1">Segundo Nombre</label>
-                               <input formControlName="segundo_nombre" placeholder="Ej: Carlos" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
-                             </div>
-                             <div class="col-span-1">
-                               <label class="block text-[10px] font-semibold text-slate-500 mb-1">Primer Apellido <span class="text-red-500">*</span></label>
-                               <input formControlName="primer_apellido" placeholder="Ej: Pérez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
-                             </div>
-                             <div class="col-span-1">
-                               <label class="block text-[10px] font-semibold text-slate-500 mb-1">Segundo Apellido</label>
-                               <input formControlName="segundo_apellido" placeholder="Ej: García" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Sexo</label>
+                                <select formControlName="sexo" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all cursor-pointer appearance-none">
+                                    <option value="">Seleccionar</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Femenino">Femenino</option>
+                                </select>
                              </div>
                         </div>
-                     </div>
 
-                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Teléfono</label>
-                            <input formControlName="telefono" placeholder="+57 300 123 4567" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
+                         <div class="col-span-2">
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Dirección / Barrio</label>
+                            <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
                         </div>
-                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Dirección / Barrio</label>
-                            <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
-                        </div>
-                     </div>
 
-                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Fecha Nacimiento</label>
-                            <input type="date" formControlName="fecha_nacimiento" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="col-span-1">
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Fecha Nacimiento</label>
+                                <input type="date" formControlName="fecha_nacimiento" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                            </div>
+                            
+                            <!-- Estado (Compacto) -->
+                            <div class="col-span-1">
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Estado Inicial</label>
+                                <div class="flex items-center gap-3 h-10 px-1">
+                                     <label class="flex items-center gap-2 cursor-pointer group">
+                                         <div class="relative flex items-center justify-center">
+                                            <input type="radio" value="1" class="peer sr-only" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Activo')" (change)="setEstado('Activo')">
+                                            <div class="w-4 h-4 border-2 border-slate-300 rounded-full peer-checked:border-brand-orange peer-checked:bg-brand-orange transition-all"></div>
+                                         </div>
+                                         <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Activo</span>
+                                     </label>
+                                      <label class="flex items-center gap-2 cursor-pointer group">
+                                         <div class="relative flex items-center justify-center">
+                                            <input type="radio" value="2" class="peer sr-only" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Inactivo')" (change)="setEstado('Inactivo')">
+                                             <div class="w-4 h-4 border-2 border-slate-300 rounded-full peer-checked:border-brand-orange peer-checked:bg-brand-orange transition-all"></div>
+                                         </div>
+                                         <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Inactivo</span>
+                                     </label>
+                                 </div>
+                            </div>
                         </div>
-                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Sexo</label>
-                            <select formControlName="sexo" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all cursor-pointer">
-                                <option value="">Seleccionar</option>
-                                <option value="Masculino">Masculino</option>
-                                <option value="Femenino">Femenino</option>
-                            </select>
-                        </div>
-                     </div>
-
-                     <!-- Estado Radio Group -->
-                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-2 ml-1">Estado</label>
-                         <div class="flex items-center gap-6">
-                             <label class="flex items-center gap-2 cursor-pointer">
-                                 <input type="radio" value="1" class="w-5 h-5 text-brand-orange border-slate-300 focus:ring-brand-orange" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Activo')" (change)="setEstado('Activo')">
-                                 <span class="text-sm font-medium text-slate-700">Activo</span>
-                             </label>
-                              <label class="flex items-center gap-2 cursor-pointer">
-                                 <input type="radio" value="2" class="w-5 h-5 text-brand-orange border-slate-300 focus:ring-brand-orange" [checked]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Inactivo')" (change)="setEstado('Inactivo')">
-                                 <span class="text-sm font-medium text-slate-700">Inactivo</span>
-                             </label>
-                         </div>
                      </div>
                 </div>
 
                 <!-- TAB: TEOCRÁTICO -->
-                <div *ngIf="activeTab() === 'teocratico'" class="space-y-5 animate-fadeIn">
-                      
-                      <!-- Privilegios Alert/Box -->
-                      <div class="p-4 bg-orange-50 rounded-xl border border-orange-100 flex flex-col gap-2">
-                          <span class="text-xs font-bold text-orange-800 uppercase tracking-wide">Privilegios Actuales</span>
-                          <div class="flex gap-2 flex-wrap">
+                <div *ngIf="activeTab() === 'teocratico'" class="space-y-4 animate-fadeIn">
+                       
+                       <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-3">
+                            <label class="block text-[11px] font-bold text-slate-500 mb-0.5 ml-0.5">Grupo de Servicio</label>
+                            <select formControlName="id_grupo_publicador" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all cursor-pointer appearance-none">
+                                <option [ngValue]="null">Sin asignar</option>
+                                <option *ngFor="let g of grupos()" [ngValue]="g.id_grupo">{{ g.nombre_grupo }}</option>
+                            </select>
+                       </div>
+
+                       <div class="grid grid-cols-2 gap-4">
+                         <div class="col-span-1">
+                             <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Fecha Bautismo</label>
+                             <input type="date" formControlName="fecha_bautismo" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
+                         </div>
+                         <div class="col-span-1">
+                             <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Estado</label>
+                             <select formControlName="id_estado_publicador" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all cursor-pointer appearance-none">
+                                 <option [ngValue]="null">Seleccionar</option>
+                                 <option *ngFor="let e of estadosPublicador()" [ngValue]="e.id_estado">{{ e.nombre_estado }}</option>
+                             </select>
+                         </div>
+                       </div>
+                       
+                       <!-- Privilegios (Card Distinct) -->
+                       <div class="mt-4 p-4 bg-orange-50/50 rounded-xl border border-orange-100/60">
+                          <label class="block text-xs font-bold text-orange-800 uppercase tracking-wide mb-3">Privilegios</label>
+                          <div class="flex flex-wrap gap-2">
                                <button 
                                 type="button" 
                                 (click)="toggleUngido()"
                                 [class.bg-brand-orange]="publicadorForm.get('ungido')?.value"
                                 [class.text-white]="publicadorForm.get('ungido')?.value"
+                                [class.border-brand-orange]="publicadorForm.get('ungido')?.value"
                                 [class.bg-white]="!publicadorForm.get('ungido')?.value"
-                                [class.text-orange-700]="!publicadorForm.get('ungido')?.value"
-                                class="px-3 py-1.5 rounded-lg border border-orange-200 text-xs font-bold shadow-sm transition-all"
+                                [class.text-slate-600]="!publicadorForm.get('ungido')?.value"
+                                [class.border-slate-200]="!publicadorForm.get('ungido')?.value"
+                                class="px-4 py-2 rounded-lg border text-xs font-bold shadow-sm transition-all flex items-center gap-2"
                                >
+                                  <span class="w-2 h-2 rounded-full" [class.bg-white]="publicadorForm.get('ungido')?.value" [class.bg-slate-300]="!publicadorForm.get('ungido')?.value"></span>
                                   Ungido
                                </button>
-                               <span class="px-3 py-1.5 rounded-lg bg-white border border-orange-200 text-orange-400 text-xs font-bold border-dashed cursor-not-allowed" title="Próximamente">
-                                  + Agregar Privilegio
-                               </span>
                           </div>
-                      </div>
-
-                      <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Grupo de Servicio</label>
-                            <select formControlName="id_grupo_publicador" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all cursor-pointer">
-                                <option [ngValue]="null">Sin asignar</option>
-                                <option *ngFor="let g of grupos()" [ngValue]="g.id_grupo">{{ g.nombre_grupo }}</option>
-                            </select>
-                      </div>
-
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Fecha Bautismo</label>
-                             <input type="date" formControlName="fecha_bautismo" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Estado (Detallado)</label>
-                            <select formControlName="id_estado_publicador" class="w-full px-4 py-3 bg-[#f8f9fc] border border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-brand-orange/30 focus:ring-4 focus:ring-brand-orange/5 outline-none transition-all cursor-pointer">
-                                <option [ngValue]="null">Seleccionar</option>
-                                <option *ngFor="let e of estadosPublicador()" [ngValue]="e.id_estado">{{ e.nombre_estado }}</option>
-                            </select>
-                        </div>
                       </div>
                 </div>
 
@@ -603,39 +621,48 @@ interface ContactoEmergencia {
                     </div>
 
                     <!-- Formulario Contacto (Inline) -->
+                     <!-- Formulario Contacto (Inline Refined) -->
                      <div *ngIf="showContactoForm()" [formGroup]="contactoForm" class="bg-slate-50 p-5 rounded-2xl border border-slate-200 animate-fadeInUp">
                           <h4 class="text-sm font-bold text-slate-900 mb-4">{{ editingContacto() ? 'Editar Contacto' : 'Nuevo Contacto' }}</h4>
                           
                           <div class="space-y-4">
                               <div>
-                                  <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Nombre Completo</label>
-                                  <input formControlName="nombre" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all">
+                                  <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Nombre Completo</label>
+                                  <input formControlName="nombre" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
                               </div>
                               
-                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  <div>
-                                     <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Parentesco</label>
-                                     <input formControlName="parentesco" placeholder="Ej. Madre, Esposa" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all">
+                              <div class="grid grid-cols-2 gap-4">
+                                  <div class="col-span-1">
+                                     <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Parentesco</label>
+                                     <input formControlName="parentesco" placeholder="Ej. Madre" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
                                   </div>
-                                  <div>
-                                     <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Teléfono</label>
-                                     <input formControlName="telefono" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all">
+                                  <div class="col-span-1">
+                                     <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Teléfono</label>
+                                     <input formControlName="telefono" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
                                   </div>
                               </div>
                               
                               <div>
-                                  <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Dirección (Opcional)</label>
-                                  <input formControlName="direccion" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all">
+                                  <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-0.5">Dirección (Opcional)</label>
+                                  <input formControlName="direccion" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none transition-all">
                               </div>
 
                               <div class="flex gap-6 pt-2">
-                                  <label class="flex items-center gap-2 cursor-pointer">
-                                      <input type="checkbox" formControlName="es_principal" class="w-4 h-4 text-brand-orange rounded border-slate-300 focus:ring-brand-orange">
-                                      <span class="text-xs font-bold text-slate-700">Contacto Principal</span>
+                                  <label class="flex items-center gap-2 cursor-pointer group">
+                                      <div class="relative flex items-center justify-center">
+                                         <input type="checkbox" formControlName="es_principal" class="peer sr-only">
+                                         <div class="w-4 h-4 border-2 border-slate-300 rounded md:rounded-md peer-checked:bg-brand-orange peer-checked:border-brand-orange transition-all"></div>
+                                         <svg class="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                      </div>
+                                      <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Contacto Principal</span>
                                   </label>
-                                  <label class="flex items-center gap-2 cursor-pointer">
-                                      <input type="checkbox" formControlName="solo_urgencias" class="w-4 h-4 text-brand-orange rounded border-slate-300 focus:ring-brand-orange">
-                                      <span class="text-xs font-bold text-slate-700">Solo Urgencias</span>
+                                  <label class="flex items-center gap-2 cursor-pointer group">
+                                      <div class="relative flex items-center justify-center">
+                                         <input type="checkbox" formControlName="solo_urgencias" class="peer sr-only">
+                                         <div class="w-4 h-4 border-2 border-slate-300 rounded md:rounded-md peer-checked:bg-brand-orange peer-checked:border-brand-orange transition-all"></div>
+                                         <svg class="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                      </div>
+                                      <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Solo Urgencias</span>
                                   </label>
                               </div>
                           </div>
