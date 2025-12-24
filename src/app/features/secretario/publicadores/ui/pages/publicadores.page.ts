@@ -645,12 +645,42 @@ interface ContactoEmergencia {
                                Estado
                              </label>
                              <div class="relative">
-                                 <select formControlName="id_estado_publicador" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
-                                     <option [ngValue]="null">Seleccionar</option>
-                                     <option *ngFor="let e of estadosPublicador()" [ngValue]="e.id_estado">{{ e.nombre_estado }}</option>
-                                 </select>
-                                 <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                 <!-- Backdrop for click outside -->
+                                 <div *ngIf="estadoDropdownOpen()" (click)="estadoDropdownOpen.set(false)" class="fixed inset-0 z-10"></div>
+                                 
+                                 <!-- Trigger Button -->
+                                 <button 
+                                   type="button"
+                                   (click)="toggleEstadoDropdown()"
+                                   class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none flex items-center justify-between"
+                                 >
+                                    <span [class.text-slate-400]="!publicadorForm.get('id_estado_publicador')?.value">
+                                      {{ getSelectedEstadoName() }}
+                                    </span>
+                                    <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="estadoDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                 </button>
+
+                                 <!-- Dropdown Menu -->
+                                 <div *ngIf="estadoDropdownOpen()" class="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-100 z-20 overflow-hidden animate-fadeIn">
+                                     <div class="max-h-48 overflow-y-auto py-1">
+                                         <button 
+                                           type="button"
+                                           (click)="selectEstado(null)"
+                                           class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-50 transition-colors flex items-center justify-between"
+                                         >
+                                             Seleccionar
+                                             <svg *ngIf="!publicadorForm.get('id_estado_publicador')?.value" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                         </button>
+                                         <button 
+                                           *ngFor="let e of estadosPublicador()" 
+                                           type="button"
+                                           (click)="selectEstado(e.id_estado)"
+                                           class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-orange transition-colors flex items-center justify-between"
+                                         >
+                                             {{ e.nombre_estado }}
+                                             <svg *ngIf="publicadorForm.get('id_estado_publicador')?.value == e.id_estado" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                         </button>
+                                     </div>
                                  </div>
                              </div>
                          </div>
@@ -1495,7 +1525,24 @@ export class PublicadoresListComponent implements OnInit {
     return this.getPrivilegioNombre(id);
   }
 
+  // Estado Dropdown State
+  estadoDropdownOpen = signal(false);
 
+  toggleEstadoDropdown() {
+    this.estadoDropdownOpen.update(v => !v);
+  }
+
+  selectEstado(id: number | null) {
+    this.publicadorForm.get('id_estado_publicador')?.setValue(id);
+    this.estadoDropdownOpen.set(false);
+  }
+
+  getSelectedEstadoName(): string {
+    const id = this.publicadorForm.get('id_estado_publicador')?.value;
+    if (!id) return 'Seleccionar';
+    const estado = this.estadosPublicador().find(e => e.id_estado == id);
+    return estado?.nombre_estado || 'Seleccionar';
+  }
 
   getEstadoNombre(id: number | string | null | undefined): string {
     if (!id) return 'Sin estado';
