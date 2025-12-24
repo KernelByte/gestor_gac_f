@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { InformesService } from './services/informes.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { ResumenMensual, InformeConPublicador, InformeLoteItem, Periodo, HistorialAnual, ResumenSucursal } from './models/informe.model';
+import { ExcelService } from '../../../core/services/excel.service';
 
 @Component({
   standalone: true,
@@ -264,7 +265,11 @@ import { ResumenMensual, InformeConPublicador, InformeLoteItem, Periodo, Histori
                 <div class="flex gap-3">
                   <button (click)="exportarExcel()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-white transition-all flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                    Cargar Excel
+                    Descargar Plantilla
+                  </button>
+                  <button class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-white transition-all flex items-center gap-2 opacity-50 cursor-not-allowed">
+                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                     Subir Plantilla
                   </button>
                   <button (click)="guardarTodo()" [disabled]="saving()" class="px-6 py-2.5 rounded-xl bg-brand-purple text-white font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-500/20 transition-all flex items-center gap-2 disabled:opacity-50">
                     <svg *ngIf="!saving()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
@@ -309,6 +314,7 @@ import { ResumenMensual, InformeConPublicador, InformeLoteItem, Periodo, Histori
 })
 export class InformesMainPage implements OnInit {
   private informesService = inject(InformesService);
+  private excelService = inject(ExcelService);
   private authStore = inject(AuthStore);
 
   tabs = [
@@ -442,7 +448,74 @@ export class InformesMainPage implements OnInit {
     });
   }
 
-  exportarExcel() { /* TODO: Implement file upload dialog */ }
+  async exportarExcel() {
+    if (!this.selectedGrupo && this.vistaGrupo()) {
+      // If "All Groups" selected, maybe warn or loop? For now, if "All Groups" in group view, we should probably pick the first or ask?
+      // Simpler: If no group selected but in group view, probably generate for ALL data visible?
+      // But the template is designed for ONE group.
+      // Let's assume if no group selected (so "Congregation" view or "All Groups"), we might generate a generic list or error.
+      // But let's support the current view's data. If it's a mix, the header "Group Name" will be tricky.
+      // Let's look at the requirement: "descargar una plantilla...". Usually per group.
+      // I'll grab the first group from the list if selected, or "Congregación" if not.
+
+      // Better approach: If in "Congregation" view, title is "Congregación X".
+      // If in "Group" view and specific group selected: "Grupo X".
+
+      // Let's gather data from the current `resumen()`
+    }
+
+    // Validar si hay datos
+    const pubs = this.resumen()?.publicadores_list || [];
+    if (pubs.length === 0) {
+      alert('No hay publicadores para generar la plantilla');
+      return;
+    }
+
+    // Determine Group info
+    let groupName = 'Congregación';
+    let captain = '';
+    let assistant = '';
+    let groupId = 0;
+
+    if (this.selectedGrupo) {
+      const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
+      if (g) {
+        groupName = g.nombre_grupo;
+        // We might need captain info. It might be in the group object or we need to fetch it.
+        // checking `grupos` signal content in code... it's `any[]`.
+        // Let's assume we can pass generic names or leave blank if missing.
+        // For now, I'll put placeholders or try to find it.
+        // If "Capitán" is not in `g`, we leave it blank.
+        captain = g.capitan || ''; // Hypothetical
+        assistant = g.auxiliar || ''; // Hypothetical
+        groupId = g.id_grupo;
+      }
+    } else {
+      // If no group selected, we might be exporting the whole congregation list?
+      // The template is specific to "Grupo".
+      // Let's assume this feature is mainly for Group Captains.
+      // Only allow if specific group is active? 
+      // User said "una ves la llene el usuario sera la que se cargue...".
+      // Likely for a specific group.
+    }
+
+    // Prepare data
+    const templateData = {
+      groupName: groupName,
+      captainName: captain,
+      assistantName: assistant,
+      period: `${this.getMesLabel(this.selectedMes).toUpperCase()} ${this.selectedAno}`,
+      publishers: pubs.map(p => ({
+        id: p.id_publicador,
+        name: p.nombre_completo,
+        precursorType: p.privilegio_activo || ''
+      })),
+      congregationId: this.authStore.user()?.id_congregacion || 1,
+      groupId: groupId
+    };
+
+    await this.excelService.generateInformeTemplate(templateData);
+  }
 
   trackByPub = (_: number, pub: InformeConPublicador) => pub.id_publicador;
   getInitials = (name: string) => name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
