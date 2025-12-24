@@ -38,11 +38,11 @@ interface ContactoEmergencia {
   selector: 'app-publicadores-list',
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   template: `
-    <!-- Main Content Container -->
-    <div 
-      class="flex flex-col gap-4 h-full overflow-hidden transition-all duration-500 ease-out"
-      [ngClass]="panelOpen() ? 'pr-[490px]' : 'pr-0'"
-    >
+    <!-- Layout Container (Flex Row) -->
+    <div class="flex h-full gap-5 overflow-hidden">
+    
+    <!-- LEFT SIDE: Main Content (List, Search, Toolbar) -->
+    <div class="flex-1 flex flex-col gap-5 min-w-0 transition-all duration-500 ease-in-out">
       
       <!-- Compact Toolbar -->
       <div class="shrink-0 bg-white rounded-xl shadow-sm border border-slate-200/60 p-1.5 flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
@@ -322,80 +322,105 @@ interface ContactoEmergencia {
              </div>
         </div>
 
-        <!-- Pagination Footer (Fixed at bottom) -->
-        <div class="shrink-0 relative z-20 p-6 border-t border-slate-100 flex flex-nowrap items-center justify-between bg-white md:rounded-b-2xl">
-
-            <span class="text-xs font-medium text-slate-500">
-               Mostrando {{ (currentPage() - 1) * pageSize + 1 }} - {{ Math.min(currentPage() * pageSize, filteredList().length) }} 
-               de <span class="font-bold text-slate-800">{{ filteredList().length }}</span> registros
+        <!-- Pagination Footer (Compact & Professional) -->
+        <div class="shrink-0 z-20 px-5 py-3 border-t border-slate-200 flex items-center justify-between bg-white md:rounded-b-2xl">
+            <span class="text-[11px] font-semibold text-slate-500">
+               {{ (currentPage() - 1) * pageSize + 1 }} - {{ Math.min(currentPage() * pageSize, filteredList().length) }} 
+               de <span class="text-slate-900">{{ filteredList().length }}</span> registros
             </span>
-            <div class="flex gap-2">
+            <div class="flex items-center gap-2">
                  <button 
                   (click)="prevPage()" 
                   [disabled]="currentPage() === 1"
-                  class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-50 transition-all font-bold"
+                  class="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-all"
                  >
-                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                  </button>
                  <button 
                   (click)="nextPage()" 
                   [disabled]="currentPage() * pageSize >= filteredList().length"
-                  class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-50 transition-all font-bold"
+                  class="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition-all"
                  >
-                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                  </button>
             </div>
         </div>
       </div>
-    </div> <!-- End Main Content Container -->
+    </div> <!-- End Left Side -->
 
-    <!-- ======== DETAIL PANEL (Fixed Right, Sin Overlay) ======== -->
+    <!-- RIGHT SIDE: Editor Panel (Side Sheet) -->
+    <!-- RIGHT SIDE: Editor Panel (Side Sheet with Smooth Transition) -->
     <div 
-      *ngIf="panelOpen()"
-      class="fixed inset-y-0 right-0 w-[480px] z-50 flex flex-col bg-white rounded-l-2xl border-l border-slate-200 shadow-[-30px_0_60px_-15px_rgba(0,0,0,0.15)] animate-slideInRight overflow-hidden"
+      class="shrink-0 flex flex-col bg-white border-l border-y border-slate-200 overflow-hidden transition-all duration-500 cubic-bezier(0.4, 0.0, 0.2, 1)"
+      [ngClass]="panelOpen() 
+        ? 'w-[440px] opacity-100 rounded-2xl border translate-x-0 ml-0' 
+        : 'w-0 opacity-0 border-none translate-x-20 ml-0'"
     >
-      <!-- Panel Content -->
-            
-            <!-- 1. Header Fijo y Limpio -->
-            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white z-10 rounded-tl-3xl">
-              <div>
-                <h2 class="text-xl font-bold text-slate-900 leading-tight">
-                  {{ editingPublicador() ? 'Editar Publicador' : 'Nuevo Publicador' }}
-                </h2>
-                <p class="text-xs text-slate-500 mt-1" *ngIf="editingPublicador()">
-                  {{ editingPublicador()?.primer_nombre }} {{ editingPublicador()?.primer_apellido }}
-                </p>
-                <p class="text-xs text-slate-500 mt-1" *ngIf="!editingPublicador()">
-                  Complete la información requerida
-                </p>
-              </div>
-              <button (click)="tryClosePanel()" class="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      <!-- Fixed Width Inner Container (Prevent content squishing) -->
+      <div class="w-[440px] flex flex-col h-full">
+      <!-- Panel Header (Clean & Modern) -->
+      <div class="shrink-0 bg-gradient-to-b from-slate-50 to-white">
+        
+        <!-- Top Row: Title & Close -->
+        <div class="px-6 pt-5 pb-4 flex items-start justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 leading-tight">
+              {{ editingPublicador() ? 'Editar Publicador' : 'Nuevo Publicador' }}
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5" *ngIf="editingPublicador()">
+              {{ editingPublicador()?.primer_nombre }} {{ editingPublicador()?.segundo_nombre }} {{ editingPublicador()?.primer_apellido }} {{ editingPublicador()?.segundo_apellido }}
+            </p>
+            <p class="text-xs text-slate-500 mt-0.5" *ngIf="!editingPublicador()">
+              Complete la información requerida
+            </p>
+          </div>
+          <button 
+            (click)="tryClosePanel()" 
+            class="p-1.5 -mt-1 -mr-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-            <!-- 2. Tabs Navigation (Estilo Segmentado) -->
-            <div class="px-6 pt-4 pb-0 shrink-0">
-               <div class="flex p-1 bg-slate-100 rounded-lg">
-                  <button (click)="activeTab.set('personal')" 
-                     class="flex-1 py-1.5 text-xs font-bold rounded-md transition-all shadow-sm"
-                     [ngClass]="activeTab() === 'personal' ? 'bg-white text-slate-900' : 'text-slate-500 hover:text-slate-700'">
-                     Personal
-                  </button>
-                  <button (click)="activeTab.set('teocratico')" 
-                     class="flex-1 py-1.5 text-xs font-bold rounded-md transition-all"
-                      [ngClass]="activeTab() === 'teocratico' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
-                     Teocrático
-                  </button>
-                  <button *ngIf="editingPublicador()" (click)="activeTab.set('emergencia')" 
-                     class="flex-1 py-1.5 text-xs font-bold rounded-md transition-all"
-                      [ngClass]="activeTab() === 'emergencia' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
-                     Emergencia
-                  </button>
-               </div>
-            </div>
+        <!-- Tabs Navigation (Modern Pill Style) -->
+        <div class="px-6 pb-4">
+          <div class="flex p-1 bg-slate-100/80 rounded-xl">
+            <button 
+              (click)="activeTab.set('personal')" 
+              class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
+              [ngClass]="activeTab() === 'personal' 
+                ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' 
+                : 'text-slate-500 hover:text-slate-700'"
+            >
+              Personal
+            </button>
+            <button 
+              (click)="activeTab.set('teocratico')" 
+              class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
+              [ngClass]="activeTab() === 'teocratico' 
+                ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' 
+                : 'text-slate-500 hover:text-slate-700'"
+            >
+              Teocrático
+            </button>
+            <button 
+              *ngIf="editingPublicador()" 
+              (click)="activeTab.set('emergencia')" 
+              class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
+              [ngClass]="activeTab() === 'emergencia' 
+                ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' 
+                : 'text-slate-500 hover:text-slate-700'"
+            >
+              Emergencia
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent shrink-0"></div>
 
             <!-- 3. Scrollable Content Area -->
             <div class="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">
@@ -632,8 +657,8 @@ interface ContactoEmergencia {
               </form>
            </div>
 
-           <!-- Panel Footer (Sticky) -->
-           <div class="px-5 md:px-8 py-5 border-t border-slate-100/50 bg-slate-50/80 backdrop-blur-sm flex items-center justify-between gap-4 shrink-0 relative z-20">
+           <!-- Panel Footer -->
+           <div class="px-6 py-4 border-t border-slate-200 bg-white flex items-center justify-between gap-4 shrink-0">
                <button 
                   type="button"
                   (click)="tryClosePanel()" 
@@ -651,7 +676,8 @@ interface ContactoEmergencia {
                   {{ saving() ? 'Guardando...' : (editingPublicador() ? 'Guardar Cambios' : 'Crear Publicador') }}
                </button>
            </div>
-    </div> <!-- End Detail Panel -->
+      </div> <!-- End Inner Container -->
+    </div> <!-- End Detail Panel Outer -->
 
        <!-- Delete Modal (Clean) -->
       <div *ngIf="deleteModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -705,14 +731,12 @@ interface ContactoEmergencia {
     .box-decoration-clone {
         box-decoration-break: clone;
     }
-    /* Hide scrollbar for Chrome, Safari and Opera */
-    .no-scrollbar::-webkit-scrollbar {
-        display: none;
+    .animate-slideInRight {
+      animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    /* Hide scrollbar for IE, Edge and Firefox */
-    .no-scrollbar {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
     }
   `]
 })
