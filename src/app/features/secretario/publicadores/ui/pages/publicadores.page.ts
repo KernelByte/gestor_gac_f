@@ -1369,6 +1369,8 @@ export class PublicadoresListComponent implements OnInit {
     this.panelOpen.set(false);
     this.editingPublicador.set(null);
     this.publicadorPrivilegios.set([]); // Clear privileges on close
+    this.contactos.set([]); // Clear emergency contacts on close
+    this.showContactoForm.set(false); // Hide contact form
     this.publicadorForm.reset();
   }
 
