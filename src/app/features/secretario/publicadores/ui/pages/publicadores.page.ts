@@ -756,24 +756,22 @@ interface ContactoEmergencia {
                                    <div class="grid grid-cols-2 gap-2">
                                        <div>
                                            <label class="block text-[9px] text-slate-500 font-bold mb-1">Inicio</label>
-                                           <input 
-                                             type="date" 
+                                           <app-date-picker 
                                              [ngModel]="newPrivilegio().fecha_inicio"
                                              (ngModelChange)="updateNewPrivilegio('fecha_inicio', $event)"
                                              [ngModelOptions]="{standalone: true}"
-                                             class="w-full h-8 px-2 bg-white border border-indigo-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                                           >
+                                             placeholder="Seleccionar"
+                                           ></app-date-picker>
                                        </div>
                                        <div [class.opacity-50]="!isAuxiliarySelected()" [class.pointer-events-none]="!isAuxiliarySelected()">
                                            <label class="block text-[9px] text-slate-500 font-bold mb-1">Fin (Opcional)</label>
-                                           <input 
-                                             type="date" 
+                                           <app-date-picker 
                                              [ngModel]="newPrivilegio().fecha_fin"
                                              (ngModelChange)="updateNewPrivilegio('fecha_fin', $event)"
                                              [ngModelOptions]="{standalone: true}"
                                              [disabled]="!isAuxiliarySelected()"
-                                             class="w-full h-8 px-2 bg-white border border-indigo-200 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                                           >
+                                             placeholder="Seleccionar"
+                                           ></app-date-picker>
                                        </div>
                                    </div>
 
@@ -1363,6 +1361,7 @@ export class PublicadoresListComponent implements OnInit {
       consentimiento_datos: p.consentimiento_datos || false
     });
     this.loadPublicadorPrivilegios(p.id_publicador); // Fetch privileges for this publisher
+    this.loadContactos(); // Fetch emergency contacts for this publisher
     this.panelOpen.set(true);
   }
 
@@ -1402,7 +1401,24 @@ export class PublicadoresListComponent implements OnInit {
     if (this.publicadorForm.invalid) return;
 
     this.saving.set(true);
-    const data = this.publicadorForm.value;
+    const rawData = this.publicadorForm.value;
+
+    // Transform data for API compatibility
+    const data = {
+      ...rawData,
+      // Convert ungido boolean to string for backend
+      ungido: rawData.ungido ? 'Sí' : null,
+      // Convert empty strings to null for optional fields
+      segundo_nombre: rawData.segundo_nombre || null,
+      segundo_apellido: rawData.segundo_apellido || null,
+      telefono: rawData.telefono || null,
+      direccion: rawData.direccion || null,
+      barrio: rawData.barrio || null,
+      fecha_nacimiento: rawData.fecha_nacimiento || null,
+      fecha_bautismo: rawData.fecha_bautismo || null,
+      sexo: rawData.sexo || null,
+      id_grupo_publicador: rawData.id_grupo_publicador || null
+    };
 
     const user = this.authStore.user();
     const id_congregacion = user?.id_congregacion;
