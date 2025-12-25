@@ -160,52 +160,93 @@ interface Publicador {
                    </div>
                </div>
 
-               <!-- Sección de Liderazgo -->
-               <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
-                  <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Liderazgo del Grupo</p>
-                  <div class="space-y-2">
-                     <!-- Capitán -->
-                     <div class="flex items-start gap-2.5 p-2 rounded-lg" [ngClass]="grupo.capitan_grupo ? 'bg-white border border-slate-100' : 'bg-amber-50/50 border border-dashed border-amber-200'">
-                        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5" [ngClass]="grupo.capitan_grupo ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-500'">
-                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                           <p class="text-[9px] font-bold text-slate-400 uppercase">Capitán</p>
-                           <p class="text-xs font-bold truncate" [ngClass]="grupo.capitan_grupo ? 'text-slate-800' : 'text-amber-600 italic'">
-                              {{ grupo.capitan_grupo || 'Sin asignar' }}
-                           </p>
-                           <!-- Tags de privilegios del Capitán -->
-                           <div class="flex flex-wrap gap-1 mt-1" *ngIf="getPrivilegioTagsByName(grupo.capitan_grupo).length > 0">
-                              <span *ngFor="let tag of getPrivilegioTagsByName(grupo.capitan_grupo)" 
-                                    class="inline-flex items-center gap-0.5 text-[8px] font-bold px-1 py-0.5 rounded whitespace-nowrap"
-                                    [ngClass]="tag.class">
-                                 {{ tag.label }}
-                              </span>
-                           </div>
-                        </div>
-                     </div>
-                     <!-- Auxiliar -->
-                     <div class="flex items-start gap-2.5 p-2 rounded-lg" [ngClass]="grupo.auxiliar_grupo ? 'bg-white border border-slate-100' : 'bg-slate-50 border border-dashed border-slate-200'">
-                        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5" [ngClass]="grupo.auxiliar_grupo ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-400'">
-                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                           <p class="text-[9px] font-bold text-slate-400 uppercase">Auxiliar</p>
-                           <p class="text-xs font-medium truncate" [ngClass]="grupo.auxiliar_grupo ? 'text-slate-700' : 'text-slate-400 italic'">
-                              {{ grupo.auxiliar_grupo || 'Sin asignar' }}
-                           </p>
-                           <!-- Tags de privilegios del Auxiliar -->
-                           <div class="flex flex-wrap gap-1 mt-1" *ngIf="getPrivilegioTagsByName(grupo.auxiliar_grupo).length > 0">
-                              <span *ngFor="let tag of getPrivilegioTagsByName(grupo.auxiliar_grupo)" 
-                                    class="inline-flex items-center gap-0.5 text-[8px] font-bold px-1 py-0.5 rounded whitespace-nowrap"
-                                    [ngClass]="tag.class">
-                                 {{ tag.label }}
-                              </span>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
+                <!-- Sección de Liderazgo -->
+                <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
+                   <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Liderazgo del Grupo</p>
+                   <div class="space-y-2">
+                      <!-- Capitán Drop Zone -->
+                      <div 
+                        class="relative flex items-start gap-2.5 p-2 rounded-lg transition-all duration-200 group/leader"
+                        [ngClass]="{
+                           'bg-white border border-slate-100': !isDraggingOverLeader() || isDraggingOverLeader()?.groupId !== grupo.id_grupo || isDraggingOverLeader()?.role !== 'capitan',
+                           'bg-indigo-50 border-2 border-dashed border-indigo-300 scale-[1.02] shadow-sm z-10': isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'capitan',
+                           'bg-amber-50/50 border border-dashed border-amber-200': !grupo.capitan_grupo && (!isDraggingOverLeader() || isDraggingOverLeader()?.groupId !== grupo.id_grupo || isDraggingOverLeader()?.role !== 'capitan')
+                        }"
+                        (dragover)="onDragOverLeader($event, grupo.id_grupo, 'capitan')"
+                        (dragleave)="onDragLeaveLeader()"
+                        (drop)="onDropLeader($event, grupo.id_grupo, 'capitan')"
+                      >
+                         <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors pointer-events-none"
+                              [ngClass]="{
+                                 'bg-indigo-100 text-indigo-600': grupo.capitan_grupo || (isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'capitan'),
+                                 'bg-amber-100 text-amber-500': !grupo.capitan_grupo && !(isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'capitan')
+                              }">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                         </div>
+                         <div class="flex-1 min-w-0 pointer-events-none">
+                            <div class="flex items-center justify-between">
+                               <p class="text-[9px] font-bold text-slate-400 uppercase">Capitán</p>
+                               <button *ngIf="grupo.capitan_grupo" (click)="removeLeader(grupo.id_grupo, 'capitan')" class="pointer-events-auto opacity-0 group-hover/leader:opacity-100 p-0.5 hover:bg-red-50 hover:text-red-500 rounded transition-all" title="Quitar asignación">
+                                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                               </button>
+                            </div>
+                            <p class="text-xs font-bold truncate transition-colors" 
+                               [ngClass]="{'text-indigo-700': isLeaderModified(grupo.id_grupo, 'capitan'), 'text-slate-800': !isLeaderModified(grupo.id_grupo, 'capitan') && grupo.capitan_grupo, 'text-amber-600 italic': !grupo.capitan_grupo}">
+                               {{ grupo.capitan_grupo || 'Arrastra aquí...' }}
+                            </p>
+                            <!-- Tags de privilegios del Capitán -->
+                            <div class="flex flex-wrap gap-1 mt-1" *ngIf="getPrivilegioTagsByName(grupo.capitan_grupo).length > 0">
+                               <span *ngFor="let tag of getPrivilegioTagsByName(grupo.capitan_grupo)" 
+                                     class="inline-flex items-center gap-0.5 text-[8px] font-bold px-1 py-0.5 rounded whitespace-nowrap"
+                                     [ngClass]="tag.class">
+                                  {{ tag.label }}
+                               </span>
+                            </div>
+                         </div>
+                      </div>
+
+                      <!-- Auxiliar Drop Zone -->
+                      <div 
+                        class="relative flex items-start gap-2.5 p-2 rounded-lg transition-all duration-200 group/leader"
+                        [ngClass]="{
+                           'bg-white border border-slate-100': !isDraggingOverLeader() || isDraggingOverLeader()?.groupId !== grupo.id_grupo || isDraggingOverLeader()?.role !== 'auxiliar',
+                           'bg-purple-50 border-2 border-dashed border-purple-300 scale-[1.02] shadow-sm z-10': isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'auxiliar',
+                           'bg-slate-50 border border-dashed border-slate-200': !grupo.auxiliar_grupo && (!isDraggingOverLeader() || isDraggingOverLeader()?.groupId !== grupo.id_grupo || isDraggingOverLeader()?.role !== 'auxiliar')
+                        }"
+                        (dragover)="onDragOverLeader($event, grupo.id_grupo, 'auxiliar')"
+                        (dragleave)="onDragLeaveLeader()"
+                        (drop)="onDropLeader($event, grupo.id_grupo, 'auxiliar')"
+                      >
+                         <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors pointer-events-none"
+                              [ngClass]="{
+                                 'bg-purple-100 text-purple-600': grupo.auxiliar_grupo || (isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'auxiliar'),
+                                 'bg-slate-100 text-slate-400': !grupo.auxiliar_grupo && !(isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'auxiliar')
+                              }">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                         </div>
+                         <div class="flex-1 min-w-0 pointer-events-none">
+                            <div class="flex items-center justify-between">
+                               <p class="text-[9px] font-bold text-slate-400 uppercase">Auxiliar</p>
+                               <button *ngIf="grupo.auxiliar_grupo" (click)="removeLeader(grupo.id_grupo, 'auxiliar')" class="pointer-events-auto opacity-0 group-hover/leader:opacity-100 p-0.5 hover:bg-red-50 hover:text-red-500 rounded transition-all" title="Quitar asignación">
+                                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                               </button>
+                            </div>
+                            <p class="text-xs font-medium truncate transition-colors"
+                               [ngClass]="{'text-purple-700 font-bold': isLeaderModified(grupo.id_grupo, 'auxiliar'), 'text-slate-700': !isLeaderModified(grupo.id_grupo, 'auxiliar') && grupo.auxiliar_grupo, 'text-slate-400 italic': !grupo.auxiliar_grupo}">
+                               {{ grupo.auxiliar_grupo || 'Arrastra aquí...' }}
+                            </p>
+                            <!-- Tags de privilegios del Auxiliar -->
+                            <div class="flex flex-wrap gap-1 mt-1" *ngIf="getPrivilegioTagsByName(grupo.auxiliar_grupo).length > 0">
+                               <span *ngFor="let tag of getPrivilegioTagsByName(grupo.auxiliar_grupo)" 
+                                     class="inline-flex items-center gap-0.5 text-[8px] font-bold px-1 py-0.5 rounded whitespace-nowrap"
+                                     [ngClass]="tag.class">
+                                  {{ tag.label }}
+                               </span>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                </div>
 
                <!-- Listado de Publicadores -->
                <div class="px-3 py-2 flex-1 overflow-y-auto custom-scrollbar">
@@ -225,6 +266,21 @@ interface Publicador {
 
          </div>
       </div>
+      <!-- Toast de Éxito -->
+     <div *ngIf="showSuccessMessage()" class="fixed bottom-6 right-6 z-50 slide-in-bottom">
+        <div class="bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 border border-slate-700/50 backdrop-blur-md bg-opacity-95">
+           <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+           </div>
+           <div>
+              <h4 class="font-bold text-sm text-white">Cambios guardados</h4>
+              <p class="text-[11px] font-medium text-slate-400">La asignación se ha actualizado correctamente.</p>
+           </div>
+           <button (click)="showSuccessMessage.set(false)" class="text-slate-500 hover:text-white transition-colors ml-2 -mr-1 p-1">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+           </button>
+        </div>
+     </div>
     </div>
 
     <!-- Template de Card de Publicador - Diseño Limpio -->
@@ -284,6 +340,14 @@ interface Publicador {
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    @keyframes slideInBottom {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .slide-in-bottom {
+      animation: slideInBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
   `]
 })
 export class AsignacionGruposPage implements OnInit {
@@ -301,19 +365,36 @@ export class AsignacionGruposPage implements OnInit {
 
   // State
   isSaving = signal(false);
+  showSuccessMessage = signal(false); // Nuevo signal para el toast
   isDraggingOver = signal<number | 'unassigned' | null>(null);
+  isDraggingOverLeader = signal<{ groupId: number, role: 'capitan' | 'auxiliar' } | null>(null);
   draggedItem: Publicador | null = null;
-  initialState = new Map<number, number | null>(); // id_pub -> id_grupo (original)
+
+  // Convertimos los estados iniciales a señales para que pendingChangesCount reaccione a sus cambios
+  initialState = signal(new Map<number, number | null>());
+  initialLeaderState = signal(new Map<number, { capitan: string | undefined, auxiliar: string | undefined }>());
+  pendingLeaderChanges = new Map<number, { capitan?: string, auxiliar?: string }>();
 
   // Computed
   pendingChangesCount = computed(() => {
     let count = 0;
+    const initialMap = this.initialState();
+    const initialLeaderMap = this.initialLeaderState();
+
+    // Cambios en publicadores
     for (const p of this.publicadores()) {
-      const original = this.initialState.get(p.id_publicador);
+      const original = initialMap.get(p.id_publicador);
       const current = p.id_grupo_publicador || null;
-      // Comparar teniendo en cuenta null/undefined
       if (original !== current) {
         count++;
+      }
+    }
+    // Cambios en líderes
+    for (const g of this.grupos()) {
+      const initial = initialLeaderMap.get(g.id_grupo);
+      if (initial) {
+        if ((g.capitan_grupo || '') !== (initial.capitan || '')) count++;
+        if ((g.auxiliar_grupo || '') !== (initial.auxiliar || '')) count++;
       }
     }
     return count;
@@ -324,7 +405,6 @@ export class AsignacionGruposPage implements OnInit {
   );
 
   draggingAvatars = computed(() => {
-    // Return list of modified user avatars for header
     return this.publicadores().filter(p => this.isModified(p)).slice(0, 5);
   });
 
@@ -335,7 +415,6 @@ export class AsignacionGruposPage implements OnInit {
 
   async loadData() {
     try {
-      // Cargar grupos, publicadores y catálogo de privilegios en paralelo
       const [gruposData, pubsData, privilegiosData] = await Promise.all([
         lastValueFrom(this.http.get<Grupo[]>('/api/grupos/')),
         lastValueFrom(this.http.get<Publicador[]>('/api/publicadores/')),
@@ -346,14 +425,24 @@ export class AsignacionGruposPage implements OnInit {
       this.privilegiosCatalogo.set(privilegiosData || []);
 
       // Guardar estado inicial para detectar cambios
-      this.initialState.clear();
+      const newInitialState = new Map<number, number | null>();
       (pubsData || []).forEach(p => {
-        this.initialState.set(p.id_publicador, p.id_grupo_publicador || null);
+        newInitialState.set(p.id_publicador, p.id_grupo_publicador || null);
       });
+      this.initialState.set(newInitialState);
 
-      // Cargar privilegios para todos los publicadores
+      // Guardar estado inicial de líderes
+      const newInitialLeaderState = new Map<number, { capitan: string | undefined, auxiliar: string | undefined }>();
+      this.pendingLeaderChanges.clear();
+      (gruposData || []).forEach(g => {
+        newInitialLeaderState.set(g.id_grupo, {
+          capitan: g.capitan_grupo,
+          auxiliar: g.auxiliar_grupo
+        });
+      });
+      this.initialLeaderState.set(newInitialLeaderState);
+
       await this.loadAllPublicadorPrivilegios(pubsData || []);
-
       this.publicadores.set(pubsData || []);
 
     } catch (err) {
@@ -365,7 +454,6 @@ export class AsignacionGruposPage implements OnInit {
   // Cargar privilegios de todos los publicadores de forma eficiente
   async loadAllPublicadorPrivilegios(publicadores: Publicador[]) {
     try {
-      // Obtener todos los publicador-privilegios de la API
       const allPrivilegios = await lastValueFrom(
         this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/')
       );
@@ -373,12 +461,10 @@ export class AsignacionGruposPage implements OnInit {
       console.log('📌 Privilegios cargados desde API:', allPrivilegios);
       console.log('📌 Catálogo de privilegios:', this.privilegiosCatalogo());
 
-      // Filtrar solo los privilegios activos (sin fecha_fin o fecha_fin en el futuro)
       const today = new Date().toISOString().split('T')[0];
       const privilegiosMap = new Map<number, number[]>();
 
       for (const pp of (allPrivilegios || [])) {
-        // Solo privilegios activos (sin fecha_fin o fecha_fin >= hoy)
         if (!pp.fecha_fin || pp.fecha_fin >= today) {
           if (!privilegiosMap.has(pp.id_publicador)) {
             privilegiosMap.set(pp.id_publicador, []);
@@ -392,7 +478,6 @@ export class AsignacionGruposPage implements OnInit {
       this.publicadorPrivilegiosMap.set(privilegiosMap);
     } catch (err) {
       console.error('❌ Error cargando privilegios de publicadores', err);
-      // Continue without failing - just won't show privileges
     }
   }
 
@@ -404,7 +489,7 @@ export class AsignacionGruposPage implements OnInit {
   }
 
   isModified(p: Publicador): boolean {
-    const original = this.initialState.get(p.id_publicador);
+    const original = this.initialState().get(p.id_publicador);
     const current = p.id_grupo_publicador || null;
     return original !== current;
   }
@@ -430,38 +515,33 @@ export class AsignacionGruposPage implements OnInit {
     const privilegiosIds = privilegiosMap.get(p.id_publicador) || [];
     const catalogo = this.privilegiosCatalogo();
 
-    // Definir el mapeo de privilegios a etiquetas visuales más descriptivas
-    // icon: SVG path para íconos inline compactos
     const privilegioConfig: { [key: string]: { label: string; class: string; icon: string } } = {
       'anciano': {
         label: 'Anciano',
         class: 'text-indigo-700 bg-indigo-50 border border-indigo-200',
-        icon: 'M12 14l9-5-9-5-9 5 9 5zm0 7l-9-5 9-5 9 5-9 5z' // libro/enseñanza
+        icon: 'M12 14l9-5-9-5-9 5 9 5zm0 7l-9-5 9-5 9 5-9 5z'
       },
       'siervo ministerial': {
         label: 'Siervo Ministerial',
         class: 'text-purple-700 bg-purple-50 border border-purple-200',
-        icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' // grupo/servicio
+        icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'
       },
       'precursor regular': {
         label: 'Precursor Regular',
         class: 'text-emerald-700 bg-emerald-50 border border-emerald-200',
-        icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' // check/tiempo completo
+        icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
       },
       'precursor auxiliar': {
         label: 'Precursor Auxiliar',
         class: 'text-amber-700 bg-amber-50 border border-amber-200',
-        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' // reloj/temporal
+        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
       },
     };
 
-    // Recorrer privilegios asignados al publicador
     for (const idPrivilegio of privilegiosIds) {
       const privilegio = catalogo.find(pr => pr.id_privilegio === idPrivilegio);
       if (privilegio) {
         const nombreLower = privilegio.nombre_privilegio.toLowerCase().trim();
-
-        // Buscar coincidencia en la configuración
         for (const [key, config] of Object.entries(privilegioConfig)) {
           if (nombreLower.includes(key)) {
             tags.push(config);
@@ -474,15 +554,12 @@ export class AsignacionGruposPage implements OnInit {
     return tags;
   }
 
-  // Obtener tags de privilegios buscando por nombre del publicador (para Capitán/Auxiliar)
   getPrivilegioTagsByName(nombreCompleto: string | undefined): { label: string; class: string; icon: string }[] {
     if (!nombreCompleto) return [];
 
     const nombreBuscado = nombreCompleto.toLowerCase().trim();
 
-    // Buscar el publicador por nombre - intentar varias combinaciones
     const publicador = this.publicadores().find(p => {
-      // Construir todas las variaciones posibles del nombre
       const nombres = [
         `${p.primer_nombre} ${p.primer_apellido}`,
         `${p.primer_nombre} ${p.segundo_nombre || ''} ${p.primer_apellido}`.replace(/\s+/g, ' '),
@@ -490,7 +567,6 @@ export class AsignacionGruposPage implements OnInit {
         `${p.primer_nombre} ${p.segundo_nombre || ''} ${p.primer_apellido} ${p.segundo_apellido || ''}`.replace(/\s+/g, ' ')
       ].map(n => n.toLowerCase().trim());
 
-      // Verificar si alguna variación coincide
       return nombres.some(n => n === nombreBuscado);
     });
 
@@ -516,7 +592,7 @@ export class AsignacionGruposPage implements OnInit {
   }
 
   onDragOver(e: DragEvent, targetId: number | 'unassigned') {
-    e.preventDefault(); // Necessary to allow dropping
+    e.preventDefault();
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'move';
     }
@@ -524,7 +600,6 @@ export class AsignacionGruposPage implements OnInit {
   }
 
   onDragLeave() {
-    // Optional: add debounce or logic to prevent flickering
     this.isDraggingOver.set(null);
   }
 
@@ -535,12 +610,11 @@ export class AsignacionGruposPage implements OnInit {
     if (!this.draggedItem) return;
 
     const p = this.draggedItem;
+    const oldGroupId = p.id_grupo_publicador;
+
     this.draggedItem = null;
 
-    // Update Local State
-    if (p.id_grupo_publicador !== targetGroupId) {
-      // We create a new array ref to trigger change detection if needed, 
-      // though updating the object prop inside signal array might need explicit update
+    if (oldGroupId !== targetGroupId) {
       this.publicadores.update(current => {
         return current.map(item => {
           if (item.id_publicador === p.id_publicador) {
@@ -552,39 +626,140 @@ export class AsignacionGruposPage implements OnInit {
     }
   }
 
+  // --- Leader Drag & Drop ---
+
+  onDragOverLeader(e: DragEvent, groupId: number, role: 'capitan' | 'auxiliar') {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
+    this.isDraggingOverLeader.set({ groupId, role });
+    this.isDraggingOver.set(null);
+  }
+
+  onDragLeaveLeader() {
+    this.isDraggingOverLeader.set(null);
+  }
+
+  onDropLeader(e: DragEvent, groupId: number, role: 'capitan' | 'auxiliar') {
+    e.preventDefault();
+    e.stopPropagation();
+    this.isDraggingOverLeader.set(null);
+
+    if (!this.draggedItem) return;
+    const p = this.draggedItem;
+    this.draggedItem = null;
+
+    const fullName = `${p.primer_nombre} ${p.primer_apellido}${p.segundo_apellido ? ' ' + p.segundo_apellido : ''}`.trim();
+
+    this.grupos.update(currentGrupos => {
+      return currentGrupos.map(g => {
+        if (g.id_grupo === groupId) {
+          if (role === 'capitan') {
+            return { ...g, capitan_grupo: fullName };
+          } else {
+            return { ...g, auxiliar_grupo: fullName };
+          }
+        }
+        return g;
+      });
+    });
+  }
+
+  removeLeader(groupId: number, role: 'capitan' | 'auxiliar') {
+    if (!confirm(`¿Estás seguro de quitar al ${role} de este grupo?`)) return;
+
+    this.grupos.update(currentGrupos => {
+      return currentGrupos.map(g => {
+        if (g.id_grupo === groupId) {
+          if (role === 'capitan') {
+            return { ...g, capitan_grupo: undefined };
+          } else {
+            return { ...g, auxiliar_grupo: undefined };
+          }
+        }
+        return g;
+      });
+    });
+  }
+
+  isLeaderModified(groupId: number, role: 'capitan' | 'auxiliar'): boolean {
+    const group = this.grupos().find(g => g.id_grupo === groupId);
+    const initial = this.initialLeaderState().get(groupId);
+    if (!group || !initial) return false;
+
+    if (role === 'capitan') {
+      return (group.capitan_grupo || '') !== (initial.capitan || '');
+    } else {
+      return (group.auxiliar_grupo || '') !== (initial.auxiliar || '');
+    }
+  }
+
   // Save
   async saveChanges() {
-    const modified = this.publicadores().filter(p => this.isModified(p));
-    if (modified.length === 0) return;
+    const modifiedPubs = this.publicadores().filter(p => this.isModified(p));
+
+    const modifiedGroups = this.grupos().filter(g =>
+      this.isLeaderModified(g.id_grupo, 'capitan') || this.isLeaderModified(g.id_grupo, 'auxiliar')
+    );
+
+    if (modifiedPubs.length === 0 && modifiedGroups.length === 0) return;
 
     this.isSaving.set(true);
     try {
-      // Batch updates: call endpoint for each modified publisher
-      // Ideally backend should have a bulk update endpoint
-      const updatePromises = modified.map(p => {
-        // Assuming PUT /api/publicadores/{id} accepts partial updates or we send what we have
-        // If endpoint is strict, we might need full object. 
-        // Safe bet: send id_grupo_publicador if backend allows it.
-        // Based on publicador_router.py, it expects PublicadorUpdate which likely has Optional fields.
-        const payload = {
-          id_grupo_publicador: p.id_grupo_publicador
-        };
-        return lastValueFrom(this.http.put(`/api/publicadores/${p.id_publicador}`, payload));
-      });
+      const promises: Promise<any>[] = [];
 
-      await Promise.all(updatePromises);
+      // 1. Save Publisher Changes
+      if (modifiedPubs.length > 0) {
+        const pubPromises = modifiedPubs.map(p => {
+          const payload = {
+            id_grupo_publicador: p.id_grupo_publicador
+          };
+          return lastValueFrom(this.http.put(`/api/publicadores/${p.id_publicador}`, payload));
+        });
+        promises.push(...pubPromises);
+      }
 
-      // Update initial state
-      this.initialState.clear();
+      // 2. Save Group Leader Changes
+      if (modifiedGroups.length > 0) {
+        const groupPromises = modifiedGroups.map(g => {
+          const payload = {
+            capitan_grupo: g.capitan_grupo,
+            auxiliar_grupo: g.auxiliar_grupo
+          };
+          return lastValueFrom(this.http.put(`/api/grupos/${g.id_grupo}`, payload));
+        });
+        promises.push(...groupPromises);
+      }
+
+      await Promise.all(promises);
+
+      // Update initial state to match current state (This triggers pendingChangesCount to drop to 0)
+      const newInitialState = new Map<number, number | null>();
       this.publicadores().forEach(p => {
-        this.initialState.set(p.id_publicador, p.id_grupo_publicador || null);
+        newInitialState.set(p.id_publicador, p.id_grupo_publicador || null);
       });
+      this.initialState.set(newInitialState);
 
-      alert('Cambios guardados correctamente.');
+      const newInitialLeaderState = new Map<number, { capitan: string | undefined, auxiliar: string | undefined }>();
+      this.grupos().forEach(g => {
+        newInitialLeaderState.set(g.id_grupo, {
+          capitan: g.capitan_grupo,
+          auxiliar: g.auxiliar_grupo
+        });
+      });
+      this.initialLeaderState.set(newInitialLeaderState);
+
+      // Show success message
+      this.showSuccessMessage.set(true);
+      setTimeout(() => {
+        this.showSuccessMessage.set(false);
+      }, 4000);
 
     } catch (err) {
-      console.error('Error guardando cambios', err);
-      alert('Hubo un error al guardar algunos cambios. Revisa la consola.');
+      console.error('Error saving changes', err);
+      alert('Error al guardar cambios. Intenta nuevamente.');
     } finally {
       this.isSaving.set(false);
     }
