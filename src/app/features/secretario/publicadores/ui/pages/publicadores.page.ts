@@ -224,8 +224,16 @@ interface ContactoEmergencia {
                      </div>
                  </div>
                   <!-- Empty State Mobile -->
-                  <div *ngIf="pagedList().length === 0 && !vm().loading" class="text-center py-12">
-                      <p class="text-slate-400 font-medium">No se encontraron resultados</p>
+                  <div *ngIf="pagedList().length === 0 && !vm().loading" class="text-center py-16 px-4">
+                      <div class="w-16 h-16 mx-auto bg-gradient-to-br from-orange-50 via-white to-amber-50 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-orange-100/50">
+                         <svg class="w-8 h-8 text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                      </div>
+                      <h3 class="text-slate-800 font-bold mb-1">No se encontraron publicadores</h3>
+                      <p class="text-slate-400 text-sm mb-4">Ajusta los filtros o búsqueda</p>
+                      <button (click)="openCreateForm()" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-orange text-white rounded-lg text-sm font-bold shadow-md shadow-orange-500/20">
+                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                         Agregar
+                      </button>
                   </div>
              </div>
 
@@ -330,13 +338,22 @@ interface ContactoEmergencia {
 
                       <!-- Empty State -->
                       <tr *ngIf="pagedList().length === 0 && !vm().loading">
-                         <td colspan="7" class="py-20 text-center">
+                         <td colspan="7" class="py-24 text-center">
                              <div class="flex flex-col items-center">
-                                 <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                    <svg class="w-8 h-8 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+                                 <div class="w-20 h-20 bg-gradient-to-br from-orange-50 via-white to-amber-50 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-orange-100/50 ring-4 ring-orange-50/50">
+                                    <svg class="w-10 h-10 text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                       <circle cx="9" cy="7" r="4"></circle>
+                                       <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
                                  </div>
-                                 <h3 class="text-slate-900 font-bold">No se encontraron miembros</h3>
-                                 <p class="text-slate-500 text-sm mt-1">Intenta con otros términos de búsqueda.</p>
+                                 <h3 class="text-lg font-bold text-slate-800 mb-1">No se encontraron publicadores</h3>
+                                 <p class="text-slate-500 text-sm max-w-xs">Intenta ajustando los filtros o términos de búsqueda.</p>
+                                 <button (click)="openCreateForm()" class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-xl text-sm font-bold shadow-md shadow-orange-500/20 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30 transition-all active:scale-95">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+                                    Agregar Publicador
+                                 </button>
                              </div>
                          </td>
                       </tr>

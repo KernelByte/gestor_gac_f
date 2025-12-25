@@ -463,26 +463,27 @@ export class PublicadoresContactosComponent {
 
         this.loadEstados();
 
-        // Auto load data on init
+        // Auto load data on init - ONCE
+        let listLoaded = false;
         effect(() => {
-            // Just trigger load if empty
             const user = this.authStore.user();
-            if (this.vm().list.length === 0 && user) {
+            if (!listLoaded && this.vm().list.length === 0 && user) {
+                listLoaded = true;
                 const params: any = { limit: 100, offset: 0 };
                 if (user.id_congregacion) params.id_congregacion = user.id_congregacion;
                 this.facade.load(params);
             }
-        });
+        }, { allowSignalWrites: true });
 
-        // Load ALL emergency contacts mapping for filtering
-        // Wrapped in effect to ensure we have the user context.
+        // Load ALL emergency contacts mapping for filtering - ONCE
+        let mapLoaded = false;
         effect(() => {
             const user = this.authStore.user();
-            // Load if user exists (whether they have a specific congregation or are admin)
-            if (user) {
+            if (!mapLoaded && user) {
+                mapLoaded = true;
                 this.loadEmergencyContactsMap();
             }
-        });
+        }, { allowSignalWrites: true });
 
         // Auto load contacts when selection changes
         effect(async () => {
@@ -504,7 +505,7 @@ export class PublicadoresContactosComponent {
             } else {
                 this.contactos.set([]);
             }
-        });
+        }, { allowSignalWrites: true });
     }
 
     async loadEstados() {
