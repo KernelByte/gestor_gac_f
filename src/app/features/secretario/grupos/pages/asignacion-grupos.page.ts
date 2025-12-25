@@ -134,10 +134,10 @@ interface Publicador {
             
             <!-- Columna: Sin Asignar (Staging Area) -->
             <div 
-               class="w-64 sm:w-72 shrink-0 flex flex-col rounded-2xl bg-gradient-to-b from-slate-100 to-slate-50 border border-slate-200/80 max-h-full transition-all duration-300 snap-start shadow-sm"
+               class="w-64 sm:w-72 shrink-0 flex flex-col rounded-2xl bg-gradient-to-b from-slate-100 to-slate-50 border border-slate-300 shadow-[0_4px_12px_rgba(0,0,0,0.08)] max-h-full transition-all duration-300 snap-start"
                [class.bg-brand-orange-soft]="isDraggingOver() === 'unassigned'"
                [class.border-brand-orange]="isDraggingOver() === 'unassigned'"
-               [class.shadow-lg]="isDraggingOver() === 'unassigned'"
+               [class.shadow-xl]="isDraggingOver() === 'unassigned'"
                (dragover)="onDragOver($event, 'unassigned')"
                (dragleave)="onDragLeave()"
                (drop)="onDrop($event, null)"
@@ -175,7 +175,7 @@ interface Publicador {
             <!-- Columnas: Grupos - Diseño Profesional -->
             <div 
                *ngFor="let grupo of grupos()"
-               class="w-64 sm:w-72 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg max-h-full transition-all duration-300 snap-start"
+               class="w-64 sm:w-72 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-300 shadow-[0_4px_16px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.15)] ring-1 ring-black/5 max-h-full transition-all duration-300 snap-start"
                [class.ring-2]="isDraggingOver() === grupo.id_grupo"
                [class.ring-brand-orange]="isDraggingOver() === grupo.id_grupo"
                [class.shadow-xl]="isDraggingOver() === grupo.id_grupo"
@@ -329,7 +329,7 @@ interface Publicador {
     <!-- Template de Card de Publicador - Diseño Limpio -->
     <ng-template #cardTemplate let-p let-inGroup="inGroup">
       <div 
-         class="bg-white p-2.5 rounded-xl border border-slate-100 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-slate-200 transition-all duration-200 group relative flex items-center gap-2.5 select-none"
+         class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:border-slate-300 hover:scale-[1.01] transition-all duration-200 group relative flex items-center gap-2.5 select-none"
          draggable="true"
          (dragstart)="onDragStart($event, p)"
       >
