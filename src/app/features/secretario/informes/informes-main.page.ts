@@ -400,15 +400,8 @@ export class InformesMainPage implements OnInit {
   setVista(isGrupo: boolean) {
     this.vistaGrupo.set(isGrupo);
     if (!isGrupo) {
-      // Al volver a vista congregación, mostrar todo
       this.selectGrupo(null);
-      // selectGrupo(null) ya llama a loadResumen()
     } else {
-      // Al ir a grupos, si no hay grupo seleccionado, cargamos todo (o mantenemos selección previa si existiera y no la borráramos)
-      // Pero como la borramos al salir, empezamos en 'Todos'.
-      // Si queremos persistir la selección al cambiar de tab, necesitaríamos otra variable.
-      // Por ahora, el comportamiento pedido es "ponerme de nuevo todos" al volver a congregación.
-      // Así que está bien limpiar.
       if (this.selectedGrupo === null) {
         this.loadResumen();
       }
