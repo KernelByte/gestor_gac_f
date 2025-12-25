@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { lastValueFrom } from 'rxjs';
@@ -11,7 +12,7 @@ import { Usuario } from '../models/usuario.model';
 
 interface CategoriaPermisos {
    categoria: string;
-   icono: string;
+   icono: SafeHtml;
    permisos: PermisoConEstado[];
    expandido: boolean;
 }
@@ -62,7 +63,7 @@ interface CategoriaPermisos {
                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                   <!-- Icon & Title -->
                   <div class="flex items-center gap-4 flex-1 min-w-0">
-                     <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 flex-shrink-0">
+                     <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
                         <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                      </div>
                      <div class="min-w-0">
@@ -73,7 +74,7 @@ interface CategoriaPermisos {
                   
                   <!-- User Info -->
                   <div *ngIf="usuario()" class="flex items-center gap-3 sm:ml-auto bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
-                     <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
+                     <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                         {{ getInitials(usuario()!) }}
                      </div>
                      <div class="min-w-0">
@@ -133,16 +134,16 @@ interface CategoriaPermisos {
          </div>
 
          <!-- Categories Grid -->
-         <div *ngIf="!loading()" @fadeIn class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+         <div *ngIf="!loading()" @fadeIn class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
             <div *ngFor="let cat of filteredCategorias()" 
                class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow">
                
                <!-- Category Header -->
                <button (click)="toggleCategoria(cat)" 
-                  class="w-full px-5 py-4 flex items-center gap-3 bg-gradient-to-r from-slate-50 to-white hover:from-purple-50 hover:to-white transition-colors">
-                  <div class="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm"
+                  class="w-full px-5 py-4 flex items-center gap-3 bg-slate-50 hover:bg-purple-50 transition-colors">
+                  <div class="w-11 h-11 rounded-xl flex items-center justify-center"
                      [ngClass]="getCategoryBgClass(cat.categoria)">
-                     <span class="text-lg">{{ getCategoryIcon(cat.categoria) }}</span>
+                     <div class="w-5 h-5" [innerHTML]="getCategoryIcon(cat.categoria)"></div>
                   </div>
                   <div class="flex-1 text-left">
                      <h3 class="font-bold text-slate-700">{{ cat.categoria }}</h3>
@@ -153,7 +154,7 @@ interface CategoriaPermisos {
                   <div class="flex items-center gap-3">
                      <div class="hidden sm:flex items-center gap-2">
                         <div class="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
-                           <div class="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-300"
+                            <div class="h-full bg-purple-500 rounded-full transition-all duration-300"
                               [style.width.%]="(getAssignedCount(cat) / cat.permisos.length) * 100"></div>
                         </div>
                         <span class="text-xs font-semibold text-slate-500 w-8">{{ getAssignedCount(cat) }}/{{ cat.permisos.length }}</span>
@@ -240,10 +241,10 @@ interface CategoriaPermisos {
 
       <!-- Floating Save Button -->
       <div *ngIf="!loading() && hasChanges()" @slideUp
-         class="fixed bottom-0 inset-x-0 p-4 bg-gradient-to-t from-slate-900/10 to-transparent pointer-events-none">
+         class="fixed bottom-0 inset-x-0 p-4 pointer-events-none">
          <div class="max-w-md mx-auto pointer-events-auto">
             <button (click)="guardar()" [disabled]="saving()"
-               class="w-full py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-size-200 animate-gradient-x text-white font-bold rounded-2xl shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/50 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed">
+               class="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed">
                <svg *ngIf="!saving()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
                   <polyline points="17 21 17 13 7 13 7 21"/>
@@ -285,6 +286,7 @@ export class UsuarioPermisosPage implements OnInit {
    private router = inject(Router);
    private permisosService = inject(PermisosService);
    private usuariosService = inject(UsuariosService);
+   private sanitizer = inject(DomSanitizer);
 
    loading = signal(true);
    saving = signal(false);
@@ -416,10 +418,8 @@ export class UsuarioPermisosPage implements OnInit {
          this.permisos.set(permisos);
          this.permisosOriginales.set(new Set(permisos.filter(p => p.asignado).map(p => p.id_permiso)));
 
-         // Expandir todas las categorías por defecto
-         const cats = new Set<string>();
-         permisos.forEach(p => cats.add(this.getCategoriaNombre(p.codigo)));
-         this.categoriasExpandidas.set(cats);
+         // Mantener categorías colapsadas por defecto (Set vacío)
+         this.categoriasExpandidas.set(new Set<string>());
       } catch (err) {
          console.error('Error loading data', err);
       } finally {
@@ -508,17 +508,18 @@ export class UsuarioPermisosPage implements OnInit {
       return nombres[prefijo] || prefijo.charAt(0).toUpperCase() + prefijo.slice(1);
    }
 
-   getCategoryIcon(categoria: string): string {
+   getCategoryIcon(categoria: string): SafeHtml {
       const iconos: Record<string, string> = {
-         'Publicadores y Grupos': '👥',
-         'Publicadores': '👥',
-         'Grupos': '📁',
-         'Informes': '📊',
-         'Territorios': '🗺️',
-         'Reuniones': '📅',
-         'Exhibidores': '🖥️'
+         'Publicadores y Grupos': '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>',
+         'Grupos': '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>',
+         'Informes': '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>',
+         'Territorios': '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>',
+         'Reuniones': '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>',
+         'Exhibidores': '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>'
       };
-      return iconos[categoria] || '📋';
+
+      const svg = iconos[categoria] || '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>';
+      return this.sanitizer.bypassSecurityTrustHtml(svg);
    }
 
    getCategoryBgClass(categoria: string): string {
