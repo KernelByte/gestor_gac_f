@@ -43,43 +43,52 @@ interface CategoriaPermisos {
       ])
    ],
    template: `
-   <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+   <div class="min-h-screen" style="background-color: #f3f4f6;">
       
-      <!-- Sticky Header -->
-      <div class="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-slate-100">
-         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-               <!-- Back & Title -->
-               <div class="flex items-center gap-4 flex-1 min-w-0">
-                  <a routerLink="/usuarios" 
-                     class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-purple-100 text-slate-500 hover:text-purple-600 transition-all">
-                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                  </a>
-                  <div class="min-w-0">
-                     <h1 class="text-xl sm:text-2xl font-bold text-slate-800 truncate">Permisos de Usuario</h1>
-                     <p class="text-sm text-slate-500 hidden sm:block">Configura los accesos y permisos especiales</p>
+      <!-- Main Content Container -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+         
+         <!-- Page Header -->
+         <div class="mb-6">
+            <!-- Back Link -->
+            <a routerLink="/usuarios" 
+               class="inline-flex items-center gap-2 text-slate-500 hover:text-purple-600 transition-colors mb-4 text-sm font-medium">
+               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+               Volver a Usuarios
+            </a>
+            
+            <!-- Header Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5">
+               <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <!-- Icon & Title -->
+                  <div class="flex items-center gap-4 flex-1 min-w-0">
+                     <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 flex-shrink-0">
+                        <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                     </div>
+                     <div class="min-w-0">
+                        <h1 class="text-xl sm:text-2xl font-bold text-slate-800 truncate">Permisos de Usuario</h1>
+                        <p class="text-sm text-slate-500">Configura los accesos y permisos especiales</p>
+                     </div>
                   </div>
-               </div>
-               
-               <!-- User Badge -->
-               <div *ngIf="usuario()" class="flex items-center gap-3 bg-gradient-to-r from-slate-50 to-purple-50 px-4 py-2 rounded-xl border border-slate-100">
-                  <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm">
-                     {{ getInitials(usuario()!) }}
+                  
+                  <!-- User Info -->
+                  <div *ngIf="usuario()" class="flex items-center gap-3 sm:ml-auto bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                     <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
+                        {{ getInitials(usuario()!) }}
+                     </div>
+                     <div class="min-w-0">
+                        <p class="font-semibold text-slate-700 text-sm truncate">{{ usuario()!.nombre }}</p>
+                        <p class="text-xs text-slate-400 truncate">{{ usuario()!.correo }}</p>
+                     </div>
+                     <span class="ml-2 px-3 py-1.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full whitespace-nowrap">
+                        {{ getRolName(usuario()!) }}
+                     </span>
                   </div>
-                  <div class="hidden sm:block">
-                     <p class="font-semibold text-slate-700 text-sm">{{ usuario()!.nombre }}</p>
-                     <p class="text-xs text-slate-400">{{ usuario()!.correo }}</p>
-                  </div>
-                  <span class="ml-2 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">
-                     {{ getRolName(usuario()!) }}
-                  </span>
                </div>
             </div>
          </div>
-      </div>
 
-      <!-- Main Content -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+         <!-- Content Below Header -->
          
          <!-- Loading State -->
          <div *ngIf="loading()" class="flex flex-col items-center justify-center py-20 gap-4">
