@@ -1,5 +1,5 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject, OnInit, signal, OnDestroy, Renderer2 } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { lastValueFrom, forkJoin } from 'rxjs';
@@ -58,7 +58,19 @@ interface Publicador {
             </div>
             
             <!-- Right Section -->
-            <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                 <!-- Full Screen Toggle Button -->
+                 <button 
+                   (click)="toggleFullScreen()"
+                   class="hidden sm:flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all active:scale-95"
+                   title="Pantalla Completa"
+                 >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                 </button>
+
+                 <!-- Separator -->
+                 <div class="hidden sm:block w-px h-6 bg-slate-200 mx-1"></div>
+
                  <!-- Cambios Pendientes Indicator -->
                  <div class="hidden lg:flex items-center gap-3 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-200/60" *ngIf="pendingChangesCount() > 0">
                     <div class="w-8 h-8 rounded-lg bg-brand-orange flex items-center justify-center text-white">
@@ -91,14 +103,33 @@ interface Publicador {
       </header>
 
       <!-- Kanban Board Area - Responsivo con Diseño Estético -->
-      <div class="flex-1 min-h-0 p-4 sm:p-6 lg:p-8 bg-slate-50/50">
-         <div class="w-full h-full bg-white rounded-3xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col relative">
+      <div class="flex-1 min-h-0 p-4 sm:p-6 lg:p-8 bg-slate-50/50 transition-all duration-300" 
+           [class.p-0]="isFullScreen()" 
+           [class.sm:p-0]="isFullScreen()" 
+           [class.lg:p-0]="isFullScreen()">
+         
+         <div class="w-full h-full bg-white rounded-3xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col relative transition-all duration-300"
+              [ngClass]="{'fixed inset-0 z-[9999] rounded-none border-0': isFullScreen()}">
             
+            <!-- Controls Overlay for FullScreen Mode -->
+            <div *ngIf="isFullScreen()" class="absolute top-2 right-4 sm:right-1/2 sm:translate-x-1/2 z-50 animate-fade-in-down">
+               <button 
+                  (click)="toggleFullScreen()"
+                  class="flex items-center gap-2 px-4 py-2 bg-slate-900/90 hover:bg-slate-800 text-white backdrop-blur-md rounded-full shadow-xl border border-white/10 transition-all active:scale-95 group"
+               >
+                  <span class="text-xs font-bold tracking-wide">Salir de Pantalla Completa</span>
+                  <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+               </button>
+            </div>
+
             <!-- Sombras decorativas laterales (Fade effect manual) -->
             <div class="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
             <div class="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
 
-            <div class="flex-1 overflow-x-auto overflow-y-hidden p-6 custom-scrollbar">
+            <div class="flex-1 overflow-x-auto overflow-y-hidden p-6 custom-scrollbar" 
+                 [class.px-8]="isFullScreen()"
+                 [class.pb-8]="isFullScreen()"
+                 [class.pt-14]="isFullScreen()">
                <div class="flex h-full gap-5 pb-2">
             
             <!-- Columna: Sin Asignar (Staging Area) -->
@@ -360,12 +391,33 @@ interface Publicador {
     .slide-in-bottom {
       animation: slideInBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+
+    /* Global FullScreen Override Styles */
+    ::ng-deep body.gac-fullscreen-active app-shell aside,
+    ::ng-deep body.gac-fullscreen-active app-shell header {
+      display: none !important;
+    }
+    
+    ::ng-deep body.gac-fullscreen-active app-shell aside + div {
+      margin-left: 0 !important;
+    }
+    
+    ::ng-deep body.gac-fullscreen-active app-shell main {
+      padding: 0 !important;
+      height: 100vh !important;
+    }
+    
+    ::ng-deep body.gac-fullscreen-active app-shell .router-container {
+      height: 100vh !important;
+    }
   `]
 })
-export class AsignacionGruposPage implements OnInit {
+export class AsignacionGruposPage implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private router = inject(Router);
   private privilegiosService = inject(PrivilegiosService);
+  private renderer = inject(Renderer2);
+  private document = inject(DOCUMENT);
 
   // Data
   grupos = signal<Grupo[]>([]);
@@ -375,12 +427,27 @@ export class AsignacionGruposPage implements OnInit {
   privilegiosCatalogo = signal<Privilegio[]>([]);
   publicadorPrivilegiosMap = signal<Map<number, number[]>>(new Map()); // id_publicador -> id_privilegio[]
 
-  // State
-  isSaving = signal(false);
-  showSuccessMessage = signal(false); // Nuevo signal para el toast
-  isDraggingOver = signal<number | 'unassigned' | null>(null);
-  isDraggingOverLeader = signal<{ groupId: number, role: 'capitan' | 'auxiliar' } | null>(null);
+  // UI State
+  isDraggingOver = signal<'unassigned' | number | null>(null);
   draggedItem: Publicador | null = null;
+  draggedLeader: { type: 'capitan' | 'auxiliar', groupId: number, publicador: Publicador } | null = null;
+  isSaving = signal(false);
+  showSuccessMessage = signal(false);
+  isFullScreen = signal(false); // Estado para pantalla completa
+
+  toggleFullScreen() {
+    this.isFullScreen.update(v => !v);
+    if (this.isFullScreen()) {
+      this.renderer.addClass(this.document.body, 'gac-fullscreen-active');
+    } else {
+      this.renderer.removeClass(this.document.body, 'gac-fullscreen-active');
+    }
+  }
+
+  ngOnDestroy() {
+    this.renderer.removeClass(this.document.body, 'gac-fullscreen-active');
+  }
+  isDraggingOverLeader = signal<{ groupId: number, role: 'capitan' | 'auxiliar' } | null>(null);
 
   // Convertimos los estados iniciales a señales para que pendingChangesCount reaccione a sus cambios
   initialState = signal(new Map<number, number | null>());
