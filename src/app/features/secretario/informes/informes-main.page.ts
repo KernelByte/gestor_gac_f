@@ -186,13 +186,15 @@ import { saveAs } from 'file-saver';
                     <tr>
                       <th class="px-6 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100">Publicador</th>
                       <th class="px-4 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-32 border-b border-slate-100">Participó</th>
-                      <th class="px-4 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-32 border-b border-slate-100">Estudios</th>
                       <th class="px-4 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-32 border-b border-slate-100">Horas</th>
+                      <th class="px-4 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-32 border-b border-slate-100">Estudios</th>
                       <th class="px-4 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100 min-w-[200px]">Observaciones</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-50">
-                    <tr *ngFor="let pub of resumen()?.publicadores_list || []; trackBy: trackByPub" class="group hover:bg-slate-50/80 transition-all duration-200">
+                  <tbody>
+                    <tr *ngFor="let pub of resumen()?.publicadores_list || []; let odd = odd; trackBy: trackByPub" 
+                        class="group transition-all duration-200"
+                        [ngClass]="odd ? 'bg-slate-50/50 hover:bg-slate-100/80' : 'bg-white hover:bg-slate-50/80'">
                       <!-- Publicador -->
                       <td class="px-6 py-4">
                         <div class="flex items-center gap-4">
@@ -237,15 +239,7 @@ import { saveAs } from 'file-saver';
                         </div>
                       </td>
 
-                      <!-- Estudios -->
-                      <td class="px-4 py-4 text-center">
-                        <input type="number" min="0" placeholder="0"
-                            [value]="getInformeValue(pub, 'cursos') || ''" 
-                            (input)="updateInforme(pub, 'cursos', $event)"
-                            class="w-20 px-0 py-2 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-brand-purple text-center text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:ring-0 transition-all">
-                      </td>
-
-                      <!-- Horas -->
+                      <!-- Horas (ahora antes de Estudios) -->
                       <td class="px-4 py-4 text-center">
                          <div *ngIf="pub.requiere_horas" class="relative group/input">
                             <input type="number" min="0" placeholder="0"
@@ -256,6 +250,14 @@ import { saveAs } from 'file-saver';
                          <div *ngIf="!pub.requiere_horas" class="flex flex-col items-center justify-center opacity-30">
                             <div class="h-0.5 w-4 bg-slate-400 rounded-full"></div>
                          </div>
+                      </td>
+
+                      <!-- Estudios (ahora después de Horas) -->
+                      <td class="px-4 py-4 text-center">
+                        <input type="number" min="0" placeholder="0"
+                            [value]="getInformeValue(pub, 'cursos') || ''" 
+                            (input)="updateInforme(pub, 'cursos', $event)"
+                            class="w-20 px-0 py-2 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-brand-purple text-center text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:ring-0 transition-all">
                       </td>
 
                       <!-- Notas -->
@@ -277,8 +279,9 @@ import { saveAs } from 'file-saver';
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                     Descargar Plantilla
                   </button>
-                  <button class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-white transition-all flex items-center gap-2 opacity-50 cursor-not-allowed">
-                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                  <input type="file" #fileInput accept=".xlsx" (change)="importarExcel($event)" class="hidden">
+                  <button (click)="fileInput.click()" [disabled]="saving()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-white transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l4-4m0 0l4 4m-4-4v12"/></svg>
                      Subir Plantilla
                   </button>
                   <button (click)="guardarTodo()" [disabled]="saving()" class="px-6 py-2.5 rounded-xl bg-brand-purple text-white font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-500/20 transition-all flex items-center gap-2 disabled:opacity-50">
@@ -318,6 +321,37 @@ import { saveAs } from 'file-saver';
           </div>
         </ng-container>
       </div>
+
+      <!-- Toast Notification -->
+      <div 
+        *ngIf="toastMessage()" 
+        class="fixed bottom-6 right-6 z-[100] animate-fadeInUp max-w-md"
+      >
+        <div 
+          class="flex items-start gap-3 px-5 py-4 rounded-xl shadow-xl border backdrop-blur-sm"
+          [ngClass]="toastMessage()?.type === 'success' 
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            : toastMessage()?.type === 'error'
+            ? 'bg-red-50 border-red-200 text-red-800'
+            : 'bg-blue-50 border-blue-200 text-blue-800'"
+        >
+          <div 
+            class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+            [ngClass]="toastMessage()?.type === 'success' ? 'bg-emerald-500' : toastMessage()?.type === 'error' ? 'bg-red-500' : 'bg-blue-500'"
+          >
+            <svg *ngIf="toastMessage()?.type === 'success'" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg *ngIf="toastMessage()?.type === 'error'" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg *ngIf="toastMessage()?.type === 'info'" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-bold">{{ toastMessage()?.title }}</p>
+            <p *ngIf="toastMessage()?.text" class="text-xs mt-1 opacity-80 whitespace-pre-line">{{ toastMessage()?.text }}</p>
+          </div>
+          <button (click)="toastMessage.set(null)" class="p-1 rounded-lg hover:bg-black/5 transition-colors shrink-0">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
     </div>
   `,
   styles: [`:host { display: flex; flex-direction: column; height: 100%; overflow: hidden; }`]
@@ -342,6 +376,7 @@ export class InformesMainPage implements OnInit {
   grupos = signal<any[]>([]);
   saving = signal(false);
   vistaGrupo = signal(false);
+  toastMessage = signal<{ title: string, text?: string, type: 'success' | 'error' | 'info' } | null>(null);
 
   selectedMes = (new Date().getMonth() === 0 ? '12' : new Date().getMonth().toString());
   selectedAno = (new Date().getMonth() === 0 ? (new Date().getFullYear() - 1).toString() : new Date().getFullYear().toString());
@@ -515,29 +550,85 @@ export class InformesMainPage implements OnInit {
   }
 
   async exportarExcel() {
-    if (!this.selectedGrupo) {
-      alert('Por favor seleccione un grupo específico para descargar la plantilla.');
-      return;
-    }
-
     this.saving.set(true);
-    // Obtener nombre del grupo para el archivo
-    const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
-    const nombreGrupo = g ? g.nombre_grupo : 'Grupo';
     const periodo = `${this.selectedAno}-${this.getMesLabel(this.selectedMes)}`;
+    const congregacionId = this.authStore.user()?.id_congregacion;
 
-    this.informesService.exportTemplate(this.getPeriodoId(), this.selectedGrupo).subscribe({
-      next: (blob) => {
-        const filename = `Informe_${nombreGrupo}_${periodo}.xlsx`;
-        saveAs(blob, filename);
+    if (this.selectedGrupo) {
+      // Descargar por grupo
+      const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
+      const nombreGrupo = g ? g.nombre_grupo : 'Grupo';
+      this.informesService.exportTemplate(this.getPeriodoId(), this.selectedGrupo).subscribe({
+        next: (blob) => {
+          const filename = `Informe_${nombreGrupo}_${periodo}.xlsx`;
+          saveAs(blob, filename);
+          this.saving.set(false);
+        },
+        error: (err) => {
+          console.error('Error descargando plantilla', err);
+          alert('Error al descargar la plantilla desde el servidor.');
+          this.saving.set(false);
+        }
+      });
+    } else {
+      // Descargar toda la congregación
+      this.informesService.exportTemplateCongregacion(this.getPeriodoId(), congregacionId!).subscribe({
+        next: (blob) => {
+          const filename = `Informe_Congregacion_${periodo}.xlsx`;
+          saveAs(blob, filename);
+          this.saving.set(false);
+        },
+        error: (err) => {
+          console.error('Error descargando plantilla', err);
+          alert('Error al descargar la plantilla desde el servidor.');
+          this.saving.set(false);
+        }
+      });
+    }
+  }
+
+  importarExcel(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.saving.set(true);
+
+    this.informesService.importTemplate(file).subscribe({
+      next: (result: any) => {
+        const title = `${result.tipo_plantilla}: ${result.nombre_origen || 'Importación'}`;
+        let text = `📅 Período: ${result.periodo}\n`;
+        text += `• Creados: ${result.creados}\n`;
+        text += `• Actualizados: ${result.actualizados}`;
+        if (result.omitidos > 0) {
+          text += `\n• Omitidos: ${result.omitidos}`;
+        }
+
+        if (result.errores && result.errores.length > 0) {
+          text += `\n\n⚠️ Errores:\n`;
+          for (const e of result.errores.slice(0, 3)) {
+            text += `Fila ${e.fila}: ${e.error}\n`;
+          }
+        }
+
+        this.showToast(title, result.omitidos > 0 ? 'info' : 'success', text);
+        input.value = '';
+        this.loadResumen();
         this.saving.set(false);
       },
       error: (err) => {
-        console.error('Error descargando plantilla', err);
-        alert('Error al descargar la plantilla desde el servidor.');
+        console.error('Error importando plantilla:', err);
+        const detail = err.error?.detail || 'Error desconocido al importar';
+        this.showToast('Error de importación', 'error', detail);
+        input.value = '';
         this.saving.set(false);
       }
     });
+  }
+
+  showToast(title: string, type: 'success' | 'error' | 'info' = 'success', text?: string) {
+    this.toastMessage.set({ title, type, text });
+    setTimeout(() => this.toastMessage.set(null), type === 'error' ? 8000 : 5000);
   }
 
   trackByPub = (_: number, pub: InformeConPublicador) => pub.id_publicador;

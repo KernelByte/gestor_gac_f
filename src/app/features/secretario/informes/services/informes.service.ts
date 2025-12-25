@@ -93,4 +93,15 @@ export class InformesService {
       formData.append('archivo', file);
       return this.http.post(`${this.apiUrl}/import-template`, formData);
    }
+
+   exportTemplateCongregacion(periodoId: number, congregacionId: number): Observable<Blob> {
+      const params = new HttpParams()
+         .set('periodo_id', periodoId.toString())
+         .set('congregacion_id', congregacionId.toString());
+
+      return this.http.get(`${this.apiUrl}/export-template`, {
+         params,
+         responseType: 'blob'
+      });
+   }
 }
