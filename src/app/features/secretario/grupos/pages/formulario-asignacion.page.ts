@@ -33,8 +33,9 @@ interface Grupo {
     <div class="h-screen bg-[#F8F9FC] flex flex-col font-sans overflow-hidden">
       
       <!-- Minimalist Header -->
-      <header class="bg-white/95 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-40 shrink-0">
-        <div class="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-4">
+      <header class="bg-white/95 backdrop-blur-sm border-b border-slate-200/80 shadow-sm z-40 sticky top-0 shrink-0">
+        <div class="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+           <div class="flex items-center justify-between gap-4">
            
            <!-- Title & Back -->
            <div class="flex items-center gap-5 min-w-0">
@@ -67,6 +68,7 @@ interface Grupo {
                  <span>{{ saving() ? 'Guardando...' : 'Guardar Cambios' }}</span>
               </button>
            </div>
+            </div>
         </div>
       </header>
 
