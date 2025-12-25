@@ -298,21 +298,49 @@ export class UsuarioPermisosPage implements OnInit {
 
    categorias = computed(() => {
       const porCategoria: Map<string, PermisoConEstado[]> = new Map();
+
       for (const p of this.permisos()) {
-         const catKey = this.getCategoriaNombre(p.codigo);
+         // Combinar Publicadores y Grupos en una sola categoría
+         let catKey = this.getCategoriaNombre(p.codigo);
+         if (catKey === 'Grupos') {
+            catKey = 'Publicadores y Grupos';
+         } else if (catKey === 'Publicadores') {
+            catKey = 'Publicadores y Grupos';
+         }
+
          if (!porCategoria.has(catKey)) {
             porCategoria.set(catKey, []);
          }
          porCategoria.get(catKey)!.push(p);
       }
 
+      // Ordenar categorías en un orden específico
+      const ordenCategorias = [
+         'Publicadores y Grupos',
+         'Informes',
+         'Territorios',
+         'Reuniones',
+         'Exhibidores'
+      ];
+
       const expandidas = this.categoriasExpandidas();
-      return Array.from(porCategoria.entries()).map(([cat, permisos]) => ({
-         categoria: cat,
-         icono: this.getCategoryIcon(cat),
-         permisos,
-         expandido: expandidas.has(cat)
-      }));
+      const categoriasOrdenadas = Array.from(porCategoria.entries())
+         .sort(([a], [b]) => {
+            const indexA = ordenCategorias.indexOf(a);
+            const indexB = ordenCategorias.indexOf(b);
+            if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+         })
+         .map(([cat, permisos]) => ({
+            categoria: cat,
+            icono: this.getCategoryIcon(cat),
+            permisos,
+            expandido: expandidas.has(cat)
+         }));
+
+      return categoriasOrdenadas;
    });
 
    filteredCategorias = computed(() => {
@@ -482,6 +510,7 @@ export class UsuarioPermisosPage implements OnInit {
 
    getCategoryIcon(categoria: string): string {
       const iconos: Record<string, string> = {
+         'Publicadores y Grupos': '👥',
          'Publicadores': '👥',
          'Grupos': '📁',
          'Informes': '📊',
@@ -494,6 +523,7 @@ export class UsuarioPermisosPage implements OnInit {
 
    getCategoryBgClass(categoria: string): string {
       const clases: Record<string, string> = {
+         'Publicadores y Grupos': 'bg-blue-100 text-blue-600',
          'Publicadores': 'bg-blue-100 text-blue-600',
          'Grupos': 'bg-amber-100 text-amber-600',
          'Informes': 'bg-emerald-100 text-emerald-600',
