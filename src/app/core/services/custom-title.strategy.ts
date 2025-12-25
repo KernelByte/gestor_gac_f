@@ -13,7 +13,7 @@ export class CustomTitleStrategy extends TitleStrategy {
       if (title !== undefined) {
          this.title.setTitle(`GAC - ${title}`);
       } else {
-         this.title.setTitle('Gestor GAC');
+         this.title.setTitle('Sistema GAC');
       }
    }
 }

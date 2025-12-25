@@ -484,7 +484,7 @@ export class ShellPage implements OnInit, OnDestroy {
   // New Signals & Props
   // darkMode = signal(false); // Removed local signal
   // Page Title State
-  pageTitle = signal<{ title: string, subtitle: string }>({ title: 'Gestor GAC', subtitle: 'Panel de Administración' });
+  pageTitle = signal<{ title: string, subtitle: string }>({ title: 'Sistema GAC', subtitle: 'Panel de Administración' });
 
   notificationCount = signal(3);
   @ViewChild('searchInput') searchInput!: ElementRef;

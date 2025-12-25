@@ -190,7 +190,7 @@ import { ExcelService } from '../../../core/services/excel.service';
                       <td class="px-6 py-4">
                         <div class="flex items-center gap-4">
                           <div class="relative">
-                             <div class="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-105"
+                             <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-105"
                                 [ngClass]="getAvatarClass(pub.id_publicador)">
                                 {{ getInitials(pub.nombre_completo) }}
                              </div>
@@ -199,9 +199,9 @@ import { ExcelService } from '../../../core/services/excel.service';
                              </div>
                           </div>
                           <div>
-                            <p class="font-bold text-slate-800 text-sm group-hover:text-brand-purple transition-colors">{{ pub.nombre_completo }}</p>
-                            <div class="flex items-center gap-2 mt-1">
-                               <p *ngIf="pub.privilegio_activo" class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide opacity-90"
+                            <p class="font-bold text-slate-900 text-sm group-hover:text-brand-purple transition-colors mb-0.5">{{ pub.nombre_completo }}</p>
+                            <div class="flex items-center gap-2">
+                               <p *ngIf="pub.privilegio_activo" class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide shadow-sm"
                                  [ngClass]="getPrivilegioClass(pub.privilegio_activo)">
                                  {{ pub.privilegio_activo }}
                                </p>
@@ -521,14 +521,22 @@ export class InformesMainPage implements OnInit {
   getInitials = (name: string) => name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
 
   getAvatarClass(id: number): string {
-    const colors = ['bg-purple-100 text-purple-700', 'bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700', 'bg-orange-100 text-orange-700', 'bg-pink-100 text-pink-700'];
-    return colors[id % colors.length];
+    const COLORS = [
+      'bg-blue-50 text-blue-600',
+      'bg-emerald-50 text-emerald-600',
+      'bg-orange-50 text-orange-600',
+      'bg-purple-50 text-purple-600',
+      'bg-cyan-50 text-cyan-600',
+      'bg-rose-50 text-rose-600',
+      'bg-indigo-50 text-indigo-600'
+    ];
+    return COLORS[Math.abs(id) % COLORS.length];
   }
 
   getPrivilegioClass(priv: string): string {
     if (priv?.includes('Regular')) return 'bg-purple-100 text-purple-700';
-    if (priv?.includes('Auxiliar')) return 'bg-blue-100 text-blue-700';
-    if (priv?.includes('Especial')) return 'bg-amber-100 text-amber-700';
+    if (priv?.includes('Auxiliar')) return 'bg-amber-100 text-amber-700';
+    if (priv?.includes('Especial')) return 'bg-rose-100 text-rose-700';
     return 'bg-slate-100 text-slate-600';
   }
 }
