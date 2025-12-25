@@ -36,114 +36,117 @@ interface Publicador {
   selector: 'app-asignacion-grupos',
   imports: [CommonModule],
   template: `
-    <div class="h-full flex flex-col w-full bg-slate-50/50 overflow-hidden font-sans">
+    <div class="h-full flex flex-col w-full bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-hidden font-sans">
       
-      <!-- Premium Header -->
-      <header class="shrink-0 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 flex items-center justify-between px-8 py-4 z-30 sticky top-0">
-        <div class="flex items-center gap-6">
-           <button (click)="goBack()" class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all active:scale-95 group">
-              <svg class="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-           </button>
-           
-           <div>
-              <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                 <span>Tablero de Asignación</span>
-                 <span class="px-2 py-0.5 rounded-md bg-orange-50 text-brand-orange text-[10px] font-bold uppercase tracking-widest border border-orange-100">Dinámico</span>
-              </h1>
-              <p class="text-slate-500 text-xs font-medium mt-0.5">Gestione la distribución de los publicadores arrastrando y soltando.</p>
-           </div>
-        </div>
-        
-        <div class="flex items-center gap-6">
-             <!-- Status Indicators -->
-             <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100" *ngIf="pendingChangesCount() > 0">
-                <div class="flex -space-x-2">
-                   <div *ngFor="let p of draggingAvatars();" class="w-7 h-7 rounded-full border-2 border-white bg-white shadow-sm flex items-center justify-center overflow-hidden">
-                      <div class="w-full h-full flex items-center justify-center text-[9px] font-black text-white" [style.background-color]="getAvatarColor(p.id_publicador)">
-                        {{ getInitials(p) }}
-                      </div>
-                   </div>
-                   <div *ngIf="pendingChangesCount() > 5" class="w-7 h-7 rounded-full border-2 border-white bg-slate-800 text-white flex items-center justify-center text-[9px] font-bold z-10">
-                      +{{ pendingChangesCount() - 5 }}
-                   </div>
-                </div>
-                <div class="flex flex-col">
-                    <span class="text-xs font-bold text-slate-800 leading-none">{{ pendingChangesCount() }} cambios</span>
-                    <span class="text-[10px] text-slate-400 font-medium leading-none mt-0.5">Pendientes de guardar</span>
-                </div>
-             </div>
+      <!-- Header Moderno Responsivo -->
+      <header class="shrink-0 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-sm z-30 sticky top-0">
+        <div class="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div class="flex items-center justify-between gap-4">
+            <!-- Left Section -->
+            <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+               <button (click)="goBack()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all active:scale-95 shrink-0">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+               </button>
+               
+               <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                     <h1 class="text-lg sm:text-xl lg:text-2xl font-extrabold text-slate-900 tracking-tight truncate">Asignación Dinámica</h1>
+                     <span class="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-brand-orange text-white text-[9px] font-bold uppercase tracking-wider shadow-sm">Beta</span>
+                  </div>
+                  <p class="text-slate-500 text-[11px] sm:text-xs font-medium mt-0.5 hidden sm:block">Arrastra y suelta para reorganizar los grupos</p>
+               </div>
+            </div>
+            
+            <!-- Right Section -->
+            <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+                 <!-- Cambios Pendientes Indicator -->
+                 <div class="hidden lg:flex items-center gap-3 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-200/60" *ngIf="pendingChangesCount() > 0">
+                    <div class="w-8 h-8 rounded-lg bg-brand-orange flex items-center justify-center text-white">
+                       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-slate-800 leading-tight">{{ pendingChangesCount() }} cambios</span>
+                        <span class="text-[10px] text-slate-500 font-medium">sin guardar</span>
+                    </div>
+                 </div>
 
-             <div class="h-8 w-px bg-slate-200" *ngIf="pendingChangesCount() > 0"></div>
-
-             <div class="flex items-center gap-3">
-                 <div class="text-right hidden sm:block">
-                    <p class="text-xs font-bold text-slate-700">Guardado Automático</p>
-                    <p class="text-[10px] text-slate-400">Desactivado</p>
+                 <!-- Mobile Changes Badge -->
+                 <div class="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-brand-orange-soft text-brand-orange font-bold text-sm" *ngIf="pendingChangesCount() > 0">
+                    {{ pendingChangesCount() }}
                  </div>
                  
+                 <!-- Save Button -->
                  <button 
                    (click)="saveChanges()"
                    [disabled]="isSaving() || pendingChangesCount() === 0"
-                   class="relative overflow-hidden pl-5 pr-6 py-2.5 bg-brand-orange text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-all hover:bg-orange-600 hover:shadow-orange-500/40 active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed group flex items-center gap-2"
+                   class="relative overflow-hidden px-3 sm:px-5 py-2 sm:py-2.5 bg-brand-orange text-white rounded-xl font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/30 transition-all hover:bg-orange-600 hover:shadow-orange-500/40 active:scale-95 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed flex items-center gap-2"
                  >
-                   <div *ngIf="isSaving()" class="absolute inset-0 bg-white/20 animate-pulse"></div>
-                   <svg *ngIf="isSaving()" class="animate-spin h-4 w-4 text-white relative z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                   <svg *ngIf="!isSaving()" class="w-4 h-4 relative z-10 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-8H7v8"/><path stroke-linecap="round" stroke-linejoin="round" d="M7 3v5h8"/></svg>
-                   <span class="relative z-10">{{ isSaving() ? 'Guardando...' : 'Aplicar Cambios' }}</span>
+                   <svg *ngIf="isSaving()" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                   <svg *ngIf="!isSaving()" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                   <span class="hidden sm:inline">{{ isSaving() ? 'Guardando...' : 'Guardar' }}</span>
                  </button>
-             </div>
+            </div>
+          </div>
         </div>
       </header>
 
-      <!-- Kanban Board Area -->
-      <div class="flex-1 overflow-x-auto overflow-y-hidden p-8 relative">
-         <div class="flex h-full gap-8 pb-4 w-max mx-auto min-w-full justify-start md:justify-center">
+      <!-- Kanban Board Area - Responsivo -->
+      <div class="flex-1 overflow-x-auto overflow-y-hidden p-4 sm:p-6 lg:p-8">
+         <div class="flex h-full gap-4 sm:gap-6 pb-4 snap-x snap-mandatory lg:snap-none">
             
             <!-- Columna: Sin Asignar (Staging Area) -->
             <div 
-               class="w-72 shrink-0 flex flex-col rounded-3xl bg-slate-100/60 border-2 border-dashed border-slate-300 max-h-full transition-all duration-300"
-               [class.bg-slate-200]="isDraggingOver() === 'unassigned'"
-               [class.border-slate-400]="isDraggingOver() === 'unassigned'"
-               [class.scale-[1.02]]="isDraggingOver() === 'unassigned'"
+               class="w-72 sm:w-80 shrink-0 flex flex-col rounded-2xl bg-gradient-to-b from-slate-100 to-slate-50 border border-slate-200/80 max-h-full transition-all duration-300 snap-start shadow-sm"
+               [class.bg-brand-orange-soft]="isDraggingOver() === 'unassigned'"
+               [class.border-brand-orange]="isDraggingOver() === 'unassigned'"
+               [class.shadow-lg]="isDraggingOver() === 'unassigned'"
                (dragover)="onDragOver($event, 'unassigned')"
                (dragleave)="onDragLeave()"
                (drop)="onDrop($event, null)"
             >
                <!-- Header -->
-               <div class="px-5 py-4 border-b border-slate-200/50 flex items-center justify-between rounded-t-3xl bg-slate-50/50 backdrop-blur-sm">
-                  <div class="flex items-center gap-2">
-                      <div class="w-2 h-2 rounded-full bg-slate-400"></div>
-                      <span class="font-bold text-slate-700 text-sm uppercase tracking-wide">Sin Asignar</span>
+               <div class="px-4 py-3 border-b border-slate-200/60 flex items-center justify-between rounded-t-2xl bg-white/60 backdrop-blur-sm">
+                  <div class="flex items-center gap-2.5">
+                      <div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center">
+                         <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                      </div>
+                      <div>
+                         <p class="font-bold text-slate-700 text-sm">Sin Asignar</p>
+                         <p class="text-[10px] text-slate-400">Zona de espera</p>
+                      </div>
                   </div>
-                  <span class="bg-white text-slate-600 px-2.5 py-1 rounded-lg text-xs font-black shadow-sm border border-slate-200">{{ unassignedPublishers().length }}</span>
+                  <span class="bg-slate-800 text-white px-2.5 py-1 rounded-lg text-xs font-bold tabular-nums">{{ unassignedPublishers().length }}</span>
                </div>
                
                <!-- List -->
-               <div class="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+               <div class="p-3 flex-1 overflow-y-auto space-y-2 custom-scrollbar">
                   <ng-container *ngFor="let p of unassignedPublishers()">
                      <ng-container *ngTemplateOutlet="cardTemplate; context: { $implicit: p }"></ng-container>
                   </ng-container>
                   
-                   <div *ngIf="unassignedPublishers().length === 0" class="h-32 flex flex-col items-center justify-center text-slate-400 text-xs italic border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                      <svg class="w-8 h-8 opacity-20 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                      <span>Zona de espera vacía</span>
+                   <div *ngIf="unassignedPublishers().length === 0" class="py-12 flex flex-col items-center justify-center text-slate-400 text-xs">
+                      <div class="w-12 h-12 rounded-xl bg-slate-100/80 flex items-center justify-center mb-3">
+                         <svg class="w-6 h-6 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                      </div>
+                      <span class="font-medium">Sin publicadores pendientes</span>
+                      <span class="text-[10px] text-slate-300 mt-1">Todos están asignados</span>
                    </div>
                </div>
             </div>
 
-            <!-- Columnas: Grupos - Diseño Limpio -->
+            <!-- Columnas: Grupos - Diseño Profesional -->
             <div 
                *ngFor="let grupo of grupos()"
-               class="w-80 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200/80 shadow-lg max-h-full transition-all duration-300"
+               class="w-72 sm:w-80 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg max-h-full transition-all duration-300 snap-start"
                [class.ring-2]="isDraggingOver() === grupo.id_grupo"
                [class.ring-brand-orange]="isDraggingOver() === grupo.id_grupo"
-               [class.scale-[1.01]]="isDraggingOver() === grupo.id_grupo"
+               [class.shadow-xl]="isDraggingOver() === grupo.id_grupo"
                (dragover)="onDragOver($event, grupo.id_grupo)"
                (dragleave)="onDragLeave()"
                (drop)="onDrop($event, grupo.id_grupo)"
             >
-               <!-- Header Limpio -->
-               <div class="px-4 py-3 bg-gradient-to-r from-slate-800 to-slate-700 rounded-t-2xl">
+               <!-- Header con color de marca -->
+               <div class="px-4 py-3 bg-brand-purple rounded-t-2xl">
                    <div class="flex items-center justify-between">
                       <div class="flex items-center gap-3">
                          <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-white text-sm font-black">
