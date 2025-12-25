@@ -110,33 +110,29 @@ interface Grupo {
                <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar bg-white">
                   <div 
                      *ngFor="let p of filteredAvailable()"
-                     class="group relative flex items-center p-2.5 rounded-xl border border-transparent transition-all cursor-pointer select-none"
+                     class="group relative flex items-center p-2.5 rounded-xl border transition-all cursor-pointer select-none mb-2"
                      [ngClass]="{
-                        'hover:bg-slate-50 hover:border-slate-100': !p.selected,
-                        'bg-orange-50/50 border-orange-100': p.selected
+                        'bg-slate-50/50 border-slate-200 hover:bg-white hover:border-slate-300 hover:shadow-sm': !p.selected,
+                        'bg-orange-50 border-orange-200 shadow-sm ring-1 ring-orange-200': p.selected
                      }"
                      (click)="toggleSelection(p)"
                   >
                      <!-- Avatar & Info -->
                      <!-- Avatar & Info -->
                      <div class="flex items-center gap-3 min-w-0 flex-1">
-                        <!-- Modern Icon: Neutral base, scale & color pop on hover -->
+                        <!-- Modern Avatar with Initials -->
                         <div 
-                           class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ease-out group-hover:scale-110 group-hover:shadow-md group-hover:ring-4 group-hover:ring-orange-50/50"
-                           [ngClass]="{
-                              'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-orange-500': !p.selected,
-                              'bg-orange-500 text-white shadow-lg shadow-orange-500/20 ring-2 ring-orange-200': p.selected
-                           }"
+                           class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-sm font-bold shrink-0 transition-transform duration-300 group-hover:scale-105"
+                           [ngClass]="getAvatarClass(p.id_publicador)"
                         >
-                           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                           {{ getInitials(p) }}
                         </div>
                         
                         <div class="min-w-0 flex-1">
                            <div class="flex items-center justify-between">
-                              <p class="text-[13px] font-bold text-slate-700 truncate group-hover:text-slate-900 transition-colors">
+                              <p class="text-[14px] font-bold text-slate-800 truncate group-hover:text-slate-900 transition-colors">
                                  {{ p.primer_nombre }} {{ p.primer_apellido }}
                               </p>
-                              
                            </div>
                            <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                                  <!-- Privilegios Tags -->
@@ -149,7 +145,7 @@ interface Grupo {
                                     </span>
                                  </ng-container>
                                  <ng-template #noPrivilegioSimple>
-                                    <p class="text-[11px] text-slate-400 truncate">Publicador</p>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">Publicador</p>
                                  </ng-template>
                            </div>
                         </div>
@@ -238,30 +234,27 @@ interface Grupo {
                <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar bg-white">
                   <div 
                      *ngFor="let p of filteredGroupMembers()"
-                     class="group relative flex items-center p-2.5 rounded-xl border border-transparent transition-all cursor-pointer select-none"
+                     class="group relative flex items-center p-2.5 rounded-xl border transition-all cursor-pointer select-none mb-2"
                      [ngClass]="{
-                        'hover:bg-orange-50/30 hover:border-orange-100': !p.selected,
-                        'bg-orange-50 border-orange-100': p.selected
+                        'bg-orange-50/30 border-orange-100 hover:bg-orange-50 hover:border-orange-200 hover:shadow-sm': !p.selected,
+                        'bg-orange-100 border-orange-300 shadow-sm ring-1 ring-orange-300': p.selected
                      }"
                      (click)="toggleSelection(p)"
                   >
                      <!-- Avatar & Info -->
                      <!-- Avatar & Info -->
                      <div class="flex items-center gap-3 min-w-0 flex-1">
-                        <!-- Modern Icon: Neutral base, scale & color pop on hover -->
+                        <!-- Modern Avatar with Initials -->
                         <div 
-                           class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ease-out group-hover:scale-110 group-hover:shadow-md group-hover:ring-4 group-hover:ring-orange-50/50"
-                           [ngClass]="{
-                              'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-orange-500': !p.selected,
-                              'bg-orange-500 text-white shadow-lg shadow-orange-500/20 ring-2 ring-orange-200': p.selected
-                           }"
+                           class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-sm font-bold shrink-0 transition-transform duration-300 group-hover:scale-105"
+                           [ngClass]="getAvatarClass(p.id_publicador)"
                         >
-                           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                           {{ getInitials(p) }}
                         </div>
                         
                         <div class="min-w-0 flex-1">
                            <div class="flex items-center justify-between">
-                              <p class="text-[13px] font-bold text-slate-800 truncate group-hover:text-orange-700 transition-colors">
+                              <p class="text-[14px] font-bold text-slate-800 truncate group-hover:text-orange-700 transition-colors">
                                  {{ p.primer_nombre }} {{ p.primer_apellido }}
                               </p>
                               
@@ -277,7 +270,7 @@ interface Grupo {
                                     </span>
                                  </ng-container>
                                  <ng-template #noPrivilegioGroup>
-                                    <p class="text-[11px] font-medium text-slate-400 truncate">Publicador</p>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">Publicador</p>
                                  </ng-template>
                            </div>
                         </div>
@@ -477,9 +470,17 @@ export class FormularioAsignacionPage implements OnInit {
       return (p.primer_nombre.charAt(0) + p.primer_apellido.charAt(0)).toUpperCase();
    }
 
-   getAvatarColor(id: number): string {
-      const colors = ['#EF476F', '#FFD166', '#06D6A0', '#118AB2', '#073B4C', '#9D4EDD', '#FF9F1C'];
-      return colors[id % colors.length];
+   getAvatarClass(id: number): string {
+      const COLORS = [
+         'bg-blue-50 text-blue-600',
+         'bg-emerald-50 text-emerald-600',
+         'bg-orange-50 text-orange-600',
+         'bg-purple-50 text-purple-600',
+         'bg-cyan-50 text-cyan-600',
+         'bg-rose-50 text-rose-600',
+         'bg-indigo-50 text-indigo-600'
+      ];
+      return COLORS[Math.abs(id) % COLORS.length];
    }
 
    goBack() {
