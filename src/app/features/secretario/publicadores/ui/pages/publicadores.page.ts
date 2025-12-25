@@ -171,14 +171,23 @@ interface ContactoEmergencia {
                      <div class="flex items-start justify-between mb-4">
                          <div class="flex items-center gap-3">
                              <div 
-                                class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 border border-slate-100 text-sm font-bold shadow-sm"
+                                class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-sm font-bold shadow-sm"
                                 [ngClass]="getAvatarClass(p.id_publicador)"
                             >
                                {{ getInitials(p) }}
                             </div>
                             <div>
-                                <h3 class="font-bold text-slate-900 leading-tight">{{ p.primer_nombre }} {{ p.primer_apellido }}</h3>
-                                <p class="text-xs text-slate-500 font-medium">{{ p.segundo_nombre }} {{ p.segundo_apellido }}</p>
+                                <h3 class="font-bold text-slate-900 leading-tight mb-1">{{ p.primer_nombre }} {{ p.primer_apellido }}</h3>
+                                <div class="flex flex-wrap gap-1 items-center">
+                                     <ng-container *ngFor="let role of getRoles(p)">
+                                          <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
+                                              {{ role.label }}
+                                          </span>
+                                          <span *ngIf="role.type === 'text'" class="text-[10px] uppercase tracking-wider" [ngClass]="role.class">
+                                              {{ role.label }}
+                                          </span>
+                                     </ng-container>
+                                </div>
                             </div>
                          </div>
                           <!-- Estado Badge Mobile -->
@@ -241,15 +250,25 @@ interface ContactoEmergencia {
                          <td class="px-8 py-4 relative">
                             <div class="flex items-center gap-4">
                                <div 
-                                   class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-black/5 text-xs font-bold"
+                                   class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-sm font-bold shadow-sm"
                                    [ngClass]="getAvatarClass(p.id_publicador)"
                                >
                                   {{ getInitials(p) }}
                                </div>
-                               <div>
-                                  <p class="text-sm font-bold text-slate-900">{{ getFullName(p) }}</p>
-                                  <p *ngIf="isAdminOrGestor()" class="text-xs text-slate-400 font-medium">ID: {{ p.id_publicador }}</p>
-                               </div>
+                                  <div class="flex flex-col gap-0.5 justify-center">
+                                      <p class="text-sm font-bold text-slate-900 leading-tight mb-0.5">{{ getFullName(p) }}</p>
+                                      <div class="flex flex-wrap gap-1 items-center">
+                                         <ng-container *ngFor="let role of getRoles(p)">
+                                              <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
+                                                  {{ role.label }}
+                                              </span>
+                                              <span *ngIf="role.type === 'text'" class="text-[10px] uppercase tracking-wider" [ngClass]="role.class">
+                                                  {{ role.label }}
+                                              </span>
+                                         </ng-container>
+                                         <span *ngIf="isAdminOrGestor()" class="text-[10px] text-slate-300 font-medium">#{{ p.id_publicador }}</span>
+                                      </div>
+                                  </div>
                             </div>
                          </td>
 
@@ -1114,6 +1133,9 @@ export class PublicadoresListComponent implements OnInit {
   sexoDropdownOpen = signal(false);
   editingContacto = signal<ContactoEmergencia | null>(null);
 
+  // Privileges Data for List View
+  publicadorPrivilegiosMap = signal<Map<number, number[]>>(new Map());
+
   // Toast Notification
   toastMessage = signal<{ text: string, type: 'success' | 'error' } | null>(null);
 
@@ -1269,9 +1291,7 @@ export class PublicadoresListComponent implements OnInit {
 
   async loadAuxiliaryData() {
     this.loadPrivilegiosCatalog(); // Cargar catálogo de privilegios
-    // Cargar Grupos (Simulado o real si existiera servicio)
-    // this.gruposService.getAll()...
-    // Por ahora usamos datos hardcodeados en la señal o lo que venga del facade
+
     try {
       const user = this.authStore.user();
       const params: any = {};
@@ -1280,14 +1300,31 @@ export class PublicadoresListComponent implements OnInit {
       }
 
       // Added trailing slashes to match service configuration
-      const estados = await lastValueFrom(this.http.get<Estado[]>('/api/estados/'));
-      this.estados.set(estados || []);
+      const [estados, grupos, allPrivilegios] = await Promise.all([
+        lastValueFrom(this.http.get<Estado[]>('/api/estados/')),
+        lastValueFrom(this.http.get<Grupo[]>('/api/grupos/', { params })),
+        lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/'))
+      ]);
 
-      const grupos = await lastValueFrom(this.http.get<Grupo[]>('/api/grupos/', { params }));
+      this.estados.set(estados || []);
       this.grupos.set(grupos || []);
 
+      // Process Privileges Map for List View
+      const today = new Date().toISOString().split('T')[0];
+      const privilegiosMap = new Map<number, number[]>();
+
+      for (const pp of (allPrivilegios || [])) {
+        if (!pp.fecha_fin || pp.fecha_fin >= today) {
+          if (!privilegiosMap.has(pp.id_publicador)) {
+            privilegiosMap.set(pp.id_publicador, []);
+          }
+          privilegiosMap.get(pp.id_publicador)!.push(pp.id_privilegio);
+        }
+      }
+      this.publicadorPrivilegiosMap.set(privilegiosMap);
+
       // Debug log to verify data integrity
-      console.log('Aux Data Loaded:', { estados: estados, grupos: grupos });
+      console.log('Aux Data Loaded:', { estados: estados?.length, grupos: grupos?.length, ppCount: allPrivilegios?.length });
     } catch (error) {
       console.error('Error loading auxiliary data:', error);
     }
@@ -1501,16 +1538,46 @@ export class PublicadoresListComponent implements OnInit {
 
   getAvatarClass(id: number): string {
     const COLORS = [
-      'bg-blue-100 text-blue-700',
-      'bg-emerald-100 text-emerald-700',
-      'bg-orange-100 text-orange-700',
-      'bg-purple-100 text-purple-700',
-      'bg-cyan-100 text-cyan-700',
-      'bg-rose-100 text-rose-700',
-      'bg-teal-100 text-teal-700',
-      'bg-indigo-100 text-indigo-700'
+      'bg-blue-50 text-blue-600',
+      'bg-emerald-50 text-emerald-600',
+      'bg-orange-50 text-orange-600',
+      'bg-purple-50 text-purple-600',
+      'bg-cyan-50 text-cyan-600',
+      'bg-rose-50 text-rose-600',
+      'bg-indigo-50 text-indigo-600'
     ];
     return COLORS[Math.abs(id) % COLORS.length];
+  }
+
+  getRoles(p: Publicador): { label: string, type: 'pill' | 'text', class: string }[] {
+    const privilegiosIds = this.publicadorPrivilegiosMap().get(p.id_publicador) || [];
+    const catalogo = this.privilegios();
+
+    const roleNames = privilegiosIds.map(id => catalogo.find(pr => pr.id_privilegio === id)?.nombre_privilegio?.toLowerCase() || '').filter(Boolean);
+
+    // Sort logic or simple mapping? Let's just collect them all.
+    // Order: Precursor R > Precursor A > Anciano > Ministerial > Publicador
+    const roles: { label: string, type: 'pill' | 'text', class: string }[] = [];
+
+    if (roleNames.some(r => r.includes('precursor regular'))) {
+      roles.push({ label: 'PRECURSOR REGULAR', type: 'pill', class: 'bg-purple-100 text-purple-700' });
+    }
+    if (roleNames.some(r => r.includes('precursor auxiliar'))) {
+      roles.push({ label: 'PRECURSOR AUXILIAR', type: 'pill', class: 'bg-amber-100 text-amber-700' });
+    }
+    if (roleNames.some(r => r.includes('anciano'))) {
+      roles.push({ label: 'ANCIANO', type: 'pill', class: 'bg-indigo-100 text-indigo-700' });
+    }
+    if (roleNames.some(r => r.includes('siervo'))) {
+      roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-blue-100 text-blue-700' });
+    }
+
+    // Default if no specific roles
+    if (roles.length === 0) {
+      roles.push({ label: 'PUBLICADOR', type: 'text', class: 'text-slate-400 font-medium text-[10px] uppercase tracking-wide' });
+    }
+
+    return roles;
   }
 
   getFullName(p: Publicador): string {

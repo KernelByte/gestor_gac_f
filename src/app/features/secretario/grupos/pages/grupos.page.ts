@@ -14,12 +14,12 @@ import { AuthStore } from '../../../../core/auth/auth.store';
    selector: 'app-grupos-list',
    imports: [CommonModule, ReactiveFormsModule],
    template: `
-    <div class="flex flex-row h-full overflow-hidden bg-gray-100">
+    <div class="flex flex-row h-full overflow-hidden gap-5">
       
       <!-- Main Content Area -->
       <div class="flex-1 flex flex-col min-w-0 h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
            
-          <div class="flex flex-col gap-4 h-full w-full overflow-hidden p-6 pb-0">
+          <div class="flex flex-col gap-5 h-full w-full overflow-hidden">
             
             <!-- Top Actions (shrink-0) -->
             <div class="shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
