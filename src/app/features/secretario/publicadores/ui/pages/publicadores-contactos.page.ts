@@ -28,7 +28,7 @@ interface ContactoEmergencia {
         
         <!-- SIDEBAR (List) -->
         <!-- Logic: On mobile, hidden if a contact is selected. On Desktop, always visible (flex). -->
-        <div class="flex-none w-full lg:w-96 flex flex-col bg-white lg:rounded-2xl shadow-sm border-x lg:border border-slate-200 overflow-hidden transition-all duration-300"
+        <div class="flex-none w-full lg:w-[420px] flex flex-col bg-white lg:rounded-2xl shadow-sm border-x lg:border border-slate-200 overflow-hidden transition-all duration-300"
              [ngClass]="selectedPublicador() ? 'hidden lg:flex h-full' : 'flex h-full'">
             
             <!-- Floating Header -->
@@ -51,20 +51,27 @@ interface ContactoEmergencia {
                 
                 <!-- Filter Pills (Scrollable) -->
                 <div class="flex gap-2 mt-4 overflow-x-auto no-scrollbar pb-1 mask-linear-fade">
-                    <button (click)="filterType.set('all')"
-                        class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0"
-                        [ngClass]="filterType() === 'all' ? 'bg-slate-800 border-slate-800 text-white shadow-md shadow-slate-900/20' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'">
+                    <button (click)="toggleFilter('all')"
+                        class="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border shrink-0"
+                        [ngClass]="activeFilters().has('all') ? 'bg-slate-800 border-slate-800 text-white shadow-md shadow-slate-900/10' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'">
                         Todos
                     </button>
-                    <button (click)="filterType.set('active')"
-                        class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0"
-                        [ngClass]="filterType() === 'active' ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-200 hover:text-emerald-600'">
+                    <button (click)="toggleFilter('active')"
+                        class="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border shrink-0 flex items-center gap-1.5"
+                        [ngClass]="activeFilters().has('active') ? 'bg-emerald-100 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600 hover:text-emerald-600 hover:border-emerald-200'">
+                        <span class="w-1.5 h-1.5 rounded-full" [ngClass]="activeFilters().has('active') ? 'bg-emerald-500' : 'bg-emerald-400'"></span>
                         Activos
                     </button>
-                    <button (click)="filterType.set('inactive')"
-                        class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0"
-                        [ngClass]="filterType() === 'inactive' ? 'bg-red-500 border-red-500 text-white shadow-md shadow-red-500/20' : 'bg-white border-slate-200 text-slate-600 hover:border-red-200 hover:text-red-600'">
+                    <button (click)="toggleFilter('inactive')"
+                        class="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border shrink-0"
+                        [ngClass]="activeFilters().has('inactive') ? 'bg-slate-200 border-slate-300 text-slate-600' : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300'">
                         Inactivos
+                    </button>
+                    <button (click)="toggleFilter('no-phone')"
+                        class="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border shrink-0 flex items-center gap-1.5"
+                        [ngClass]="activeFilters().has('no-phone') ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-white border-slate-200 text-slate-600 hover:text-amber-600 hover:border-amber-200'">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        Sin Teléfono
                     </button>
                 </div>
             </div>
@@ -123,12 +130,15 @@ interface ContactoEmergencia {
              [ngClass]="!selectedPublicador() ? 'hidden lg:flex' : 'flex h-full'">
             
             <!-- EMPTY STATE -->
-            <div *ngIf="!selectedPublicador()" class="flex-1 w-full h-full flex flex-col items-center justify-center p-8 bg-slate-50/50 z-10">
-                <div class="w-32 h-32 bg-white rounded-3xl shadow-xl shadow-slate-200/60 flex items-center justify-center mb-6 ring-4 ring-slate-50 transform rotate-3 transition-transform hover:rotate-0 duration-500">
-                    <svg class="w-16 h-16 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <!-- EMPTY STATE -->
+            <div *ngIf="!selectedPublicador()" class="flex-1 w-full h-full flex flex-col items-center justify-center p-8 bg-white z-10">
+                <div class="w-24 h-24 bg-orange-50/50 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-orange-100 flex items-center justify-center mb-8">
+                    <svg class="w-10 h-10 text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                    </svg>
                 </div>
-                <h2 class="text-2xl font-display font-black text-slate-800 tracking-tight">Selecciona un miembro</h2>
-                <p class="text-slate-500 max-w-sm text-center mt-3 text-lg leading-relaxed">
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">Selecciona un miembro</h2>
+                <p class="text-slate-500 max-w-xs text-center mt-2 text-sm leading-relaxed">
                     Selecciona un publicador de la lista para gestionar sus contactos de emergencia.
                 </p>
             </div>
@@ -361,12 +371,19 @@ export class PublicadoresContactosComponent {
 
     // UI State
     searchQuery = signal('');
-    filterType = signal<'all' | 'active' | 'inactive'>('all');
+    // Valid filters: 'active', 'inactive', 'no-phone'
+    // 'all' is represented by empty set or specific check
+    activeFilters = signal<Set<string>>(new Set(['all']));
     selectedPublicador = signal<Publicador | null>(null);
 
     // Contacts Data
     contactos = signal<ContactoEmergencia[]>([]);
     loadingContactos = false;
+
+    // Cache for filter Logic
+    // Map<publicadorId, boolean> -> true if has at least one emergency contact with phone
+    private hasEmergencyPhoneMap = signal<Map<number, boolean>>(new Map());
+    private estados = signal<any[]>([]);
 
     // Form State
     showForm = signal(false);
@@ -386,15 +403,48 @@ export class PublicadoresContactosComponent {
             );
         }
 
-        // 2. Status Filter
-        if (this.filterType() === 'active') {
-            // Assuming id_estado 1 is active, adjust if needed (usually checking name is safer but id is faster)
-            // Or using a simple heuristic if 'Activo' str is not available here easily without joining
-            // If the facade provides populated Publicador with estado name, better.
-            // For now, let's assume standard IDs: 1=Activo, 2=Inactivo
-            list = list.filter(p => p.id_estado_publicador === 1);
-        } else if (this.filterType() === 'inactive') {
-            list = list.filter(p => p.id_estado_publicador !== 1);
+        // 2. Filters
+        const filters = this.activeFilters();
+
+        if (filters.has('all')) {
+            return list;
+        }
+
+        // Apply Status Filters dynamically
+        // Find ALL states that are considered "Active" (name includes 'activo')
+        // CRITICAL FIX: "Inactivo" contains "activo", so we must explicitly exclude it.
+        const activeStates = this.estados().filter(e => {
+            const n = e.nombre_estado.toLowerCase();
+            return n.includes('activo') && !n.includes('inactivo');
+        });
+        const activeIds = new Set(activeStates.map(e => e.id_estado));
+
+        // Check if we found any, otherwise fallback to standard logic (maybe ID 1?) 
+        // useful if api fails or hasn't loaded yet.
+        if (activeIds.size === 0) {
+            activeIds.add(1);
+        }
+
+        let statusFiltered = list;
+        const wantsActive = filters.has('active');
+        const wantsInactive = filters.has('inactive');
+
+        if (wantsActive && !wantsInactive) {
+            // Users with ANY of the active IDs
+            statusFiltered = list.filter(p => p.id_estado_publicador !== null && activeIds.has(p.id_estado_publicador));
+        } else if (!wantsActive && wantsInactive) {
+            // Users with NONE of the active IDs (implied inactive)
+            statusFiltered = list.filter(p => p.id_estado_publicador === null || !activeIds.has(p.id_estado_publicador));
+        }
+
+        list = statusFiltered;
+
+        // Apply Attribute Filters (AND logic)
+        if (filters.has('no-phone')) {
+            // "Sin Teléfono [Emergencia]"
+            // Show only those who DO NOT have an emergency phone
+            const map = this.hasEmergencyPhoneMap();
+            list = list.filter(p => !map.get(Number(p.id_publicador)));
         }
 
         return list;
@@ -411,6 +461,8 @@ export class PublicadoresContactosComponent {
             solo_urgencias: [false]
         });
 
+        this.loadEstados();
+
         // Auto load data on init
         effect(() => {
             // Just trigger load if empty
@@ -419,6 +471,16 @@ export class PublicadoresContactosComponent {
                 const params: any = { limit: 100, offset: 0 };
                 if (user.id_congregacion) params.id_congregacion = user.id_congregacion;
                 this.facade.load(params);
+            }
+        });
+
+        // Load ALL emergency contacts mapping for filtering
+        // Wrapped in effect to ensure we have the user context.
+        effect(() => {
+            const user = this.authStore.user();
+            // Load if user exists (whether they have a specific congregation or are admin)
+            if (user) {
+                this.loadEmergencyContactsMap();
             }
         });
 
@@ -443,6 +505,90 @@ export class PublicadoresContactosComponent {
                 this.contactos.set([]);
             }
         });
+    }
+
+    async loadEstados() {
+        try {
+            const res = await lastValueFrom(this.http.get<any[]>('/api/estados/'));
+            this.estados.set(res || []);
+        } catch (e) {
+            console.error('Error loading estados', e);
+        }
+    }
+
+    async loadEmergencyContactsMap() {
+        try {
+            const user = this.authStore.user();
+            const params: any = { limit: 10000, offset: 0 };
+
+            if (user?.id_congregacion) {
+                params.id_congregacion = user.id_congregacion;
+            }
+
+            // Fetch ALL contacts to build the Index
+            const allContacts = await lastValueFrom(this.http.get<ContactoEmergencia[]>('/api/contactos-emergencia/', { params }));
+
+            const map = new Map<number, boolean>();
+            if (allContacts) {
+                for (const c of allContacts) {
+                    const pid = Number(c.id_publicador);
+                    const s = String(c.telefono || '').trim();
+                    // Must have content AND at least one digit to be a "real" phone
+                    const hasPhone = s.length > 0 && /\d/.test(s);
+
+                    // Logic: If ANY of their contacts has a phone, they are "Good".
+                    if (!map.has(pid)) {
+                        map.set(pid, hasPhone);
+                    } else if (hasPhone) {
+                        // If we found a valid phone for a user who previously had "false" (bad contact), update to true
+                        map.set(pid, true);
+                    }
+                }
+            }
+            this.hasEmergencyPhoneMap.set(map);
+        } catch (err) {
+            console.error('Could not load emergency contacts index', err);
+        }
+    }
+
+    toggleFilter(f: string) {
+        const current = new Set(this.activeFilters());
+
+        if (f === 'all') {
+            this.activeFilters.set(new Set(['all']));
+            return;
+        }
+
+        // If clicking a specific filter, remove 'all'
+        if (current.has('all')) {
+            current.delete('all');
+        }
+
+        // Exclusive Logic for Status
+        if (f === 'active') {
+            if (current.has('active')) current.delete('active');
+            else {
+                current.add('active');
+                current.delete('inactive'); // Remove opposing status
+            }
+        } else if (f === 'inactive') {
+            if (current.has('inactive')) current.delete('inactive');
+            else {
+                current.add('inactive');
+                current.delete('active'); // Remove opposing status
+            }
+        } else {
+            // General Generic Toggle
+            if (current.has(f)) current.delete(f);
+            else current.add(f);
+        }
+
+        // If empty, revert to all
+        if (current.size === 0) {
+            current.add('all');
+        }
+
+        this.activeFilters.set(current);
     }
 
     selectPublicador(p: Publicador) {
@@ -496,11 +642,15 @@ export class PublicadoresContactosComponent {
                 await lastValueFrom(this.http.post('/api/contactos-emergencia/', payload));
             }
             this.showForm.set(false);
-            // Reload
+            // Reload local list
             const res = await lastValueFrom(this.http.get<ContactoEmergencia[]>('/api/contactos-emergencia/', {
                 params: { id_publicador: pub.id_publicador }
             }));
             this.contactos.set(res || []);
+
+            // Refresh Global Filter
+            await this.loadEmergencyContactsMap();
+
         } catch (e) {
             alert('Error al guardar');
         } finally {
@@ -520,6 +670,10 @@ export class PublicadoresContactosComponent {
                 params: { id_publicador: pub.id_publicador }
             }));
             this.contactos.set(res || []);
+
+            // Refresh Global Filter
+            await this.loadEmergencyContactsMap();
+
         } catch (e) {
             alert('Error al eliminar');
         } finally {

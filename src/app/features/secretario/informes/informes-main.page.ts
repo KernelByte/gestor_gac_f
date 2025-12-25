@@ -2,9 +2,16 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InformesService } from './services/informes.service';
+import { GruposService } from '../grupos/services/grupos.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { ResumenMensual, InformeConPublicador, InformeLoteItem, Periodo, HistorialAnual, ResumenSucursal } from './models/informe.model';
-import { ExcelService } from '../../../core/services/excel.service';
+
+import { HttpClient } from '@angular/common/http';
+import { lastValueFrom } from 'rxjs';
+import { PrivilegiosService } from '../privilegios/infrastructure/privilegios.service';
+import { Privilegio } from '../privilegios/domain/models/privilegio';
+import { PublicadorPrivilegio } from '../privilegios/domain/models/publicador-privilegio';
+import { saveAs } from 'file-saver';
 
 @Component({
   standalone: true,
@@ -200,12 +207,15 @@ import { ExcelService } from '../../../core/services/excel.service';
                           </div>
                           <div>
                             <p class="font-bold text-slate-900 text-sm group-hover:text-brand-purple transition-colors mb-0.5">{{ pub.nombre_completo }}</p>
-                            <div class="flex items-center gap-2">
-                               <p *ngIf="pub.privilegio_activo" class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide shadow-sm"
-                                 [ngClass]="getPrivilegioClass(pub.privilegio_activo)">
-                                 {{ pub.privilegio_activo }}
-                               </p>
-                               <span *ngIf="!pub.privilegio_activo" class="text-[10px] font-medium text-slate-400 uppercase tracking-wide px-1">Publicador</span>
+                            <div class="flex flex-wrap gap-1 items-center">
+                               <ng-container *ngFor="let role of getRoles(pub)">
+                                    <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
+                                        {{ role.label }}
+                                    </span>
+                                    <span *ngIf="role.type === 'text'" class="text-[10px] uppercase tracking-wider" [ngClass]="role.class">
+                                        {{ role.label }}
+                                    </span>
+                               </ng-container>
                             </div>
                           </div>
                         </div>
@@ -314,8 +324,11 @@ import { ExcelService } from '../../../core/services/excel.service';
 })
 export class InformesMainPage implements OnInit {
   private informesService = inject(InformesService);
-  private excelService = inject(ExcelService);
+  private gruposService = inject(GruposService);
+
   private authStore = inject(AuthStore);
+  private http = inject(HttpClient);
+  private privilegiosService = inject(PrivilegiosService);
 
   tabs = [
     { id: 'entrada', label: 'Entrada Mensual', icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>' },
@@ -330,13 +343,17 @@ export class InformesMainPage implements OnInit {
   saving = signal(false);
   vistaGrupo = signal(false);
 
-  selectedMes = (new Date().getMonth() + 1).toString();
-  selectedAno = new Date().getFullYear().toString();
+  selectedMes = (new Date().getMonth() === 0 ? '12' : new Date().getMonth().toString());
+  selectedAno = (new Date().getMonth() === 0 ? (new Date().getFullYear() - 1).toString() : new Date().getFullYear().toString());
   selectedGrupo: number | null = null;
   searchQuery = '';
   soloSinInforme = false;
 
   localChanges: Map<number, Partial<InformeLoteItem>> = new Map();
+
+  // Privilegios Loading
+  privilegios = signal<Privilegio[]>([]);
+  publicadorPrivilegiosMap = signal<Map<number, number[]>>(new Map());
 
   meses = [
     { value: '1', label: 'Enero' }, { value: '2', label: 'Febrero' }, { value: '3', label: 'Marzo' },
@@ -348,6 +365,44 @@ export class InformesMainPage implements OnInit {
 
   ngOnInit() {
     this.loadResumen();
+    this.loadGrupos();
+    this.loadPrivilegiosData();
+  }
+
+  async loadPrivilegiosData() {
+    try {
+      // 1. Load Catalog
+      const catalog = await lastValueFrom(this.privilegiosService.getPrivilegios());
+      this.privilegios.set(catalog);
+
+      // 2. Load Assignments
+      const allPrivilegios = await lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/'));
+
+      const today = new Date().toISOString().split('T')[0];
+      const privilegiosMap = new Map<number, number[]>();
+
+      for (const pp of (allPrivilegios || [])) {
+        // Filter active privileges
+        if (!pp.fecha_fin || pp.fecha_fin >= today) {
+          if (!privilegiosMap.has(pp.id_publicador)) {
+            privilegiosMap.set(pp.id_publicador, []);
+          }
+          privilegiosMap.get(pp.id_publicador)!.push(pp.id_privilegio);
+        }
+      }
+      this.publicadorPrivilegiosMap.set(privilegiosMap);
+
+    } catch (error) {
+      console.error('Error loading privileges data:', error);
+    }
+  }
+
+  loadGrupos() {
+    const congregacionId = this.authStore.user()?.id_congregacion;
+    this.gruposService.getGrupos({ congregacion_id: congregacionId }).subscribe({
+      next: (data) => this.grupos.set(data),
+      error: (err) => console.error('Error loading groups:', err)
+    });
   }
 
   // --- Dropdown Logic ---
@@ -449,72 +504,29 @@ export class InformesMainPage implements OnInit {
   }
 
   async exportarExcel() {
-    if (!this.selectedGrupo && this.vistaGrupo()) {
-      // If "All Groups" selected, maybe warn or loop? For now, if "All Groups" in group view, we should probably pick the first or ask?
-      // Simpler: If no group selected but in group view, probably generate for ALL data visible?
-      // But the template is designed for ONE group.
-      // Let's assume if no group selected (so "Congregation" view or "All Groups"), we might generate a generic list or error.
-      // But let's support the current view's data. If it's a mix, the header "Group Name" will be tricky.
-      // Let's look at the requirement: "descargar una plantilla...". Usually per group.
-      // I'll grab the first group from the list if selected, or "Congregación" if not.
-
-      // Better approach: If in "Congregation" view, title is "Congregación X".
-      // If in "Group" view and specific group selected: "Grupo X".
-
-      // Let's gather data from the current `resumen()`
-    }
-
-    // Validar si hay datos
-    const pubs = this.resumen()?.publicadores_list || [];
-    if (pubs.length === 0) {
-      alert('No hay publicadores para generar la plantilla');
+    if (!this.selectedGrupo) {
+      alert('Por favor seleccione un grupo específico para descargar la plantilla.');
       return;
     }
 
-    // Determine Group info
-    let groupName = 'Congregación';
-    let captain = '';
-    let assistant = '';
-    let groupId = 0;
+    this.saving.set(true);
+    // Obtener nombre del grupo para el archivo
+    const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
+    const nombreGrupo = g ? g.nombre_grupo : 'Grupo';
+    const periodo = `${this.selectedAno}-${this.getMesLabel(this.selectedMes)}`;
 
-    if (this.selectedGrupo) {
-      const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
-      if (g) {
-        groupName = g.nombre_grupo;
-        // We might need captain info. It might be in the group object or we need to fetch it.
-        // checking `grupos` signal content in code... it's `any[]`.
-        // Let's assume we can pass generic names or leave blank if missing.
-        // For now, I'll put placeholders or try to find it.
-        // If "Capitán" is not in `g`, we leave it blank.
-        captain = g.capitan || ''; // Hypothetical
-        assistant = g.auxiliar || ''; // Hypothetical
-        groupId = g.id_grupo;
+    this.informesService.exportTemplate(this.getPeriodoId(), this.selectedGrupo).subscribe({
+      next: (blob) => {
+        const filename = `Informe_${nombreGrupo}_${periodo}.xlsx`;
+        saveAs(blob, filename);
+        this.saving.set(false);
+      },
+      error: (err) => {
+        console.error('Error descargando plantilla', err);
+        alert('Error al descargar la plantilla desde el servidor.');
+        this.saving.set(false);
       }
-    } else {
-      // If no group selected, we might be exporting the whole congregation list?
-      // The template is specific to "Grupo".
-      // Let's assume this feature is mainly for Group Captains.
-      // Only allow if specific group is active? 
-      // User said "una ves la llene el usuario sera la que se cargue...".
-      // Likely for a specific group.
-    }
-
-    // Prepare data
-    const templateData = {
-      groupName: groupName,
-      captainName: captain,
-      assistantName: assistant,
-      period: `${this.getMesLabel(this.selectedMes).toUpperCase()} ${this.selectedAno}`,
-      publishers: pubs.map(p => ({
-        id: p.id_publicador,
-        name: p.nombre_completo,
-        precursorType: p.privilegio_activo || ''
-      })),
-      congregationId: this.authStore.user()?.id_congregacion || 1,
-      groupId: groupId
-    };
-
-    await this.excelService.generateInformeTemplate(templateData);
+    });
   }
 
   trackByPub = (_: number, pub: InformeConPublicador) => pub.id_publicador;
@@ -533,11 +545,58 @@ export class InformesMainPage implements OnInit {
     return COLORS[Math.abs(id) % COLORS.length];
   }
 
-  getPrivilegioClass(priv: string): string {
-    if (priv?.includes('Regular')) return 'bg-purple-100 text-purple-700';
-    if (priv?.includes('Auxiliar')) return 'bg-amber-100 text-amber-700';
-    if (priv?.includes('Especial')) return 'bg-rose-100 text-rose-700';
-    if (priv?.includes('Siervo') || priv?.includes('Ministerial')) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-slate-100 text-slate-600';
+  getRoles(pub: InformeConPublicador): { label: string, type: 'pill' | 'text', class: string }[] {
+    const roles: { label: string, type: 'pill' | 'text', class: string }[] = [];
+
+    // 1. Try to get from loaded map (accurate assignments)
+    const assignedIds = this.publicadorPrivilegiosMap().get(pub.id_publicador);
+    const catalog = this.privilegios();
+
+    if (assignedIds && assignedIds.length > 0 && catalog.length > 0) {
+      // Map Ids to Names
+      const roleNames = assignedIds.map(id => catalog.find(pr => pr.id_privilegio === id)?.nombre_privilegio?.toLowerCase() || '').filter(Boolean);
+
+      if (roleNames.some(r => r.includes('regular'))) {
+        roles.push({ label: 'PRECURSOR REGULAR', type: 'pill', class: 'bg-purple-100 text-purple-700' });
+      }
+      if (roleNames.some(r => r.includes('auxiliar'))) {
+        roles.push({ label: 'PRECURSOR AUXILIAR', type: 'pill', class: 'bg-amber-100 text-amber-700' });
+      }
+      if (roleNames.some(r => r.includes('especial'))) {
+        roles.push({ label: 'PRECURSOR ESPECIAL', type: 'pill', class: 'bg-rose-100 text-rose-700' });
+      }
+      if (roleNames.some(r => r.includes('anciano'))) {
+        roles.push({ label: 'ANCIANO', type: 'pill', class: 'bg-indigo-100 text-indigo-700' });
+      }
+      if (roleNames.some(r => r.includes('siervo') || r.includes('ministerial'))) {
+        roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-yellow-100 text-yellow-800' });
+      }
+
+    } else {
+      // 2. Fallback to 'privilegio_activo' string from backend report summary
+      const p = pub.privilegio_activo?.toLowerCase() || '';
+
+      if (p.includes('regular')) {
+        roles.push({ label: 'PRECURSOR REGULAR', type: 'pill', class: 'bg-purple-100 text-purple-700' });
+      }
+      if (p.includes('auxiliar')) {
+        roles.push({ label: 'PRECURSOR AUXILIAR', type: 'pill', class: 'bg-amber-100 text-amber-700' });
+      }
+      if (p.includes('anciano')) {
+        roles.push({ label: 'ANCIANO', type: 'pill', class: 'bg-indigo-100 text-indigo-700' });
+      }
+      if (p.includes('siervo') || p.includes('ministerial')) {
+        roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-yellow-100 text-yellow-800' });
+      }
+      if (p.includes('especial')) {
+        roles.push({ label: 'PRECURSOR ESPECIAL', type: 'pill', class: 'bg-rose-100 text-rose-700' });
+      }
+    }
+
+    if (roles.length === 0) {
+      roles.push({ label: 'PUBLICADOR', type: 'text', class: 'text-slate-400 font-medium text-[10px] uppercase tracking-wide' });
+    }
+
+    return roles;
   }
 }
