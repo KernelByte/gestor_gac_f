@@ -55,4 +55,38 @@ export class UsuariosService {
       if (idCongregacion) params.id_congregacion = idCongregacion;
       return this.http.get<any[]>('/api/publicadores/', { params });
    }
+
+   // ---- Endpoints seguros para Coordinador/Secretario ----
+
+   /**
+    * Obtiene usuarios de la congregación del usuario logueado.
+    * Solo devuelve usuarios con rol "Usuario Publicador".
+    * Requiere rol Coordinador o Secretario.
+    */
+   getUsuariosMiCongregacion(q?: string): Observable<Usuario[]> {
+      let params: any = {};
+      if (q) params.q = q;
+      return this.http.get<Usuario[]>(`${this.API_URL}mi-congregacion`, { params });
+   }
+
+   /**
+    * Crea un usuario con rol "Usuario Publicador" (forzado en el servidor).
+    * Requiere rol Coordinador o Secretario.
+    * El publicador debe pertenecer a la congregación del usuario logueado.
+    */
+   createUsuarioPublicador(usuario: UsuarioCreatePublicador): Observable<Usuario> {
+      return this.http.post<Usuario>(`${this.API_URL}crear-publicador`, usuario);
+   }
 }
+
+// Interface para creación restringida (sin campo de rol)
+export interface UsuarioCreatePublicador {
+   nombre: string;
+   correo: string;
+   contrasena: string;
+   telefono?: string;
+   tipo_identificacion?: string;
+   id_identificacion?: string;
+   id_usuario_publicador: number; // Requerido - debe pertenecer a la misma congregación
+}
+

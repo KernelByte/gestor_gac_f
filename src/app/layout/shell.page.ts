@@ -103,9 +103,9 @@ import { ThemeService } from '../core/services/theme.service';
                 <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Roles</span>
               </a>
 
-              <!-- Usuarios (Admin only) -->
+              <!-- Usuarios (Admin, Coordinador, Secretario) -->
               <a
-                *ngIf="hasRole('Administrador')"
+                *ngIf="hasRole('Administrador') || hasRole('Coordinador') || hasRole('Secretario')"
                 routerLink="/usuarios"
                                                                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"

@@ -5,8 +5,9 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractContro
 import { trigger, transition, style, animate } from '@angular/animations';
 import { lastValueFrom } from 'rxjs';
 
-import { UsuariosService, Rol, Congregacion } from '../services/usuarios.service';
+import { UsuariosService, Rol, Congregacion, UsuarioCreatePublicador } from '../services/usuarios.service';
 import { Usuario } from '../models/usuario.model';
+import { AuthStore } from '../../../../core/auth/auth.store';
 
 @Component({
    standalone: true,
@@ -277,10 +278,21 @@ import { Usuario } from '../models/usuario.model';
                              Acceso y Rol
                            </h3>
 
+
                            <div class="bg-purple-50 rounded-xl p-4 border border-purple-100">
                               <div class="space-y-4">
-                                 <!-- Custom Role Select -->
-                                 <div class="space-y-1 relative">
+                                 <!-- Rol fijo para Coordinador/Secretario -->
+                                 <div *ngIf="!isAdmin()" class="space-y-1">
+                                    <label class="block text-sm font-bold text-[#6D28D9]">Rol de Usuario</label>
+                                    <div class="w-full bg-cyan-50 border border-cyan-200 rounded-xl px-4 py-3 flex items-center gap-2">
+                                       <svg class="w-5 h-5 text-cyan-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                       <span class="font-medium text-cyan-800">Usuario Publicador</span>
+                                       <span class="text-xs text-cyan-600 ml-auto">(asignado automáticamente)</span>
+                                    </div>
+                                 </div>
+
+                                 <!-- Custom Role Select (Solo Admin) -->
+                                 <div *ngIf="isAdmin()" class="space-y-1 relative">
                                     <label class="block text-sm font-bold text-[#6D28D9]">Rol de Usuario</label>
                                     
                                     <!-- Trigger Button -->
@@ -309,8 +321,8 @@ import { Usuario } from '../models/usuario.model';
                                     </div>
                                  </div>
                                  
-                                 <!-- Custom Congregation Select -->
-                                 <div class="space-y-1 relative">
+                                 <!-- Custom Congregation Select (Solo Admin) -->
+                                 <div *ngIf="isAdmin()" class="space-y-1 relative">
                                     <label class="block text-sm font-bold text-[#6D28D9]">
                                        Congregación <span *ngIf="isCongregationRequired()" class="text-red-500">*</span>
                                     </label>
@@ -357,16 +369,17 @@ import { Usuario } from '../models/usuario.model';
                                     </div>
                                  </div>
 
+
                                  <!-- Custom Publisher Select -->
                                  <div class="space-y-1 relative">
                                     <label class="block text-sm font-bold text-[#6D28D9]">
-                                       Publicador Asociado <span *ngIf="isCongregationRequired()" class="text-red-500">*</span> <span *ngIf="!isCongregationRequired()" class="text-slate-400 font-normal">(Opcional)</span>
+                                       Publicador Asociado <span class="text-red-500">*</span>
                                     </label>
                                     
                                     <!-- Trigger Button -->
                                     <button type="button" 
                                        (click)="pubDropdownOpen.set(!pubDropdownOpen())" 
-                                       [disabled]="!userForm.get('id_congregacion')?.value"
+                                       [disabled]="isAdmin() && !userForm.get('id_congregacion')?.value"
                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white active:bg-slate-50 group disabled:opacity-50 disabled:cursor-not-allowed"
                                        [class.border-red-300]="userForm.get('id_usuario_publicador')?.invalid && userForm.get('id_usuario_publicador')?.touched">
                                        <span [class.text-slate-400]="!userForm.get('id_usuario_publicador')?.value" class="font-medium text-slate-700 block truncate">
@@ -471,11 +484,23 @@ export class UsuariosPage implements OnInit {
    private service = inject(UsuariosService);
    private fb = inject(FormBuilder);
    private route = inject(ActivatedRoute);
+   private authStore = inject(AuthStore);
 
    usuarios = signal<Usuario[]>([]);
    roles = signal<Rol[]>([]);
    congregaciones = signal<Congregacion[]>([]);
-   publicadores = signal<any[]>([]); // New
+   publicadores = signal<any[]>([]);
+
+   // Modo restringido para Coordinador/Secretario
+   isAdmin = computed(() => {
+      const user = this.authStore.user();
+      const roles = user?.roles ?? (user?.rol ? [user.rol] : []);
+      return roles.map(r => (r || '').toLowerCase()).includes('administrador');
+   });
+
+   currentUserCongregacion = computed(() => {
+      return this.authStore.user()?.id_congregacion ?? null;
+   });
 
    panelOpen = signal(false);
    saving = signal(false);
@@ -669,7 +694,15 @@ export class UsuariosPage implements OnInit {
 
    async loadData() {
       try {
-         const data = await lastValueFrom(this.service.getUsuarios());
+         // Usar endpoint apropiado según rol del usuario
+         let data: Usuario[];
+         if (this.isAdmin()) {
+            // Admin: ver todos los usuarios
+            data = await lastValueFrom(this.service.getUsuarios());
+         } else {
+            // Coordinador/Secretario: solo usuarios de su congregación
+            data = await lastValueFrom(this.service.getUsuariosMiCongregacion());
+         }
          this.usuarios.set(data);
       } catch (err) {
          console.error(err);
@@ -705,9 +738,23 @@ export class UsuariosPage implements OnInit {
       this.userForm.get('contrasena')?.setValidators([Validators.required, Validators.minLength(6)]);
       this.userForm.get('confirmPassword')?.setValidators([Validators.required]);
 
-      // Reset to default optional state, user must select role to trigger required
-      this.userForm.get('id_congregacion')?.clearValidators();
-      this.userForm.get('id_usuario_publicador')?.clearValidators();
+      if (this.isAdmin()) {
+         // Admin: opcional hasta que seleccione rol que lo requiera
+         this.userForm.get('id_congregacion')?.clearValidators();
+         this.userForm.get('id_usuario_publicador')?.clearValidators();
+         this.userForm.get('id_rol_usuario')?.setValidators([Validators.required]);
+      } else {
+         // Coordinador/Secretario: publicador requerido, rol NO requerido (forzado en servidor)
+         this.userForm.get('id_rol_usuario')?.clearValidators();
+         this.userForm.get('id_congregacion')?.clearValidators();
+         this.userForm.get('id_usuario_publicador')?.setValidators([Validators.required]);
+
+         // Auto-cargar publicadores de su congregación
+         const congId = this.currentUserCongregacion();
+         if (congId) {
+            this.loadPublicadores(congId);
+         }
+      }
 
       this.userForm.updateValueAndValidity();
 
@@ -757,45 +804,65 @@ export class UsuariosPage implements OnInit {
       if (this.userForm.invalid) return;
 
       this.saving.set(true);
-      const val = this.userForm.value;
 
       try {
          const formValue = this.userForm.value;
 
-         // Extract only backend-accepted fields
-         const basePayload = {
-            nombre: formValue.nombre,
-            correo: formValue.correo,
-            id_rol_usuario: formValue.id_rol_usuario,
-            id_usuario_publicador: formValue.id_usuario_publicador,
-            telefono: formValue.telefono,
-            tipo_identificacion: formValue.tipo_identificacion,
-            id_identificacion: formValue.id_identificacion
-         };
-
          if (this.editingUser()) {
+            // --- Modo edición (solo Admin puede editar actualmente) ---
             const id = this.editingUser()!.id_usuario;
             if (id === undefined) {
                throw new Error('El usuario no tiene ID válido para editar');
             }
 
-            const updatePayload: any = { ...basePayload };
+            const updatePayload: any = {
+               nombre: formValue.nombre,
+               correo: formValue.correo,
+               id_rol_usuario: formValue.id_rol_usuario,
+               id_usuario_publicador: formValue.id_usuario_publicador,
+               telefono: formValue.telefono,
+               tipo_identificacion: formValue.tipo_identificacion,
+               id_identificacion: formValue.id_identificacion
+            };
             if (formValue.contrasena) {
                updatePayload.contrasena = formValue.contrasena;
             }
 
             await lastValueFrom(this.service.updateUsuario(id, updatePayload));
-
             this.loadData();
 
          } else {
-            const createPayload = {
-               ...basePayload,
-               contrasena: formValue.contrasena,
-               id_usuario_estado: 1
-            };
+            // --- Modo creación ---
+            let newUser: Usuario;
 
-            const newUser = await lastValueFrom(this.service.createUsuario(createPayload));
+            if (this.isAdmin()) {
+               // Admin: crear usuario con cualquier rol
+               const createPayload = {
+                  nombre: formValue.nombre,
+                  correo: formValue.correo,
+                  contrasena: formValue.contrasena,
+                  id_rol_usuario: formValue.id_rol_usuario,
+                  id_usuario_publicador: formValue.id_usuario_publicador,
+                  telefono: formValue.telefono,
+                  tipo_identificacion: formValue.tipo_identificacion,
+                  id_identificacion: formValue.id_identificacion,
+                  id_usuario_estado: 1
+               };
+               newUser = await lastValueFrom(this.service.createUsuario(createPayload));
+            } else {
+               // Coordinador/Secretario: usar endpoint restringido
+               // El rol se fuerza a 6 (Usuario Publicador) en el servidor
+               const restrictedPayload: UsuarioCreatePublicador = {
+                  nombre: formValue.nombre,
+                  correo: formValue.correo,
+                  contrasena: formValue.contrasena,
+                  id_usuario_publicador: formValue.id_usuario_publicador,
+                  telefono: formValue.telefono,
+                  tipo_identificacion: formValue.tipo_identificacion,
+                  id_identificacion: formValue.id_identificacion
+               };
+               newUser = await lastValueFrom(this.service.createUsuarioPublicador(restrictedPayload));
+            }
 
             this.usuarios.update(list => [newUser, ...list]);
          }
@@ -820,10 +887,13 @@ export class UsuariosPage implements OnInit {
       if (u.rol) return u.rol;
       // Priority 2: Roles array
       if (u.roles && u.roles.length > 0) return u.roles[0];
-      // Priority 3: Lookup by ID
+      // Priority 3: Lookup by ID in loaded roles
       if (u.id_rol_usuario) {
          const r = this.roles().find(r => r.id_rol === u.id_rol_usuario);
          if (r) return r.nombre_rol;
+
+         // Fallback: Si el rol es 6 (Usuario Publicador) y no tenemos roles cargados
+         if (u.id_rol_usuario === 6) return 'Usuario Publicador';
       }
       return 'Sin Rol';
    }

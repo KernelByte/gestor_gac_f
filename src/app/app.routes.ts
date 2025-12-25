@@ -23,7 +23,7 @@ export const routes: Routes = [
         path: 'usuarios',
         title: 'Usuarios',
         canActivate: [roleGuard],
-        data: { roles: ['Administrador'] },
+        data: { roles: ['Administrador', 'Coordinador', 'Secretario'] },
         loadComponent: () => import('./features/basicas/usuarios/pages/usuarios.page').then(m => m.UsuariosPage),
       },
       {
