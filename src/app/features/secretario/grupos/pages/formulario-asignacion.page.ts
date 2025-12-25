@@ -142,12 +142,9 @@ interface Grupo {
                                  <!-- Privilegios Tags -->
                                  <ng-container *ngIf="getPrivilegioTags(p).length > 0; else noPrivilegioSimple">
                                     <span *ngFor="let tag of getPrivilegioTags(p)" 
-                                          class="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap"
+                                          class="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap shadow-sm"
                                           [ngClass]="tag.class"
                                           [title]="tag.label">
-                                       <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                         <path [attr.d]="tag.icon"></path>
-                                       </svg>
                                        {{ tag.label }}
                                     </span>
                                  </ng-container>
@@ -273,12 +270,9 @@ interface Grupo {
                                  <!-- Privilegios Tags -->
                                  <ng-container *ngIf="getPrivilegioTags(p).length > 0; else noPrivilegioGroup">
                                     <span *ngFor="let tag of getPrivilegioTags(p)" 
-                                          class="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap"
+                                          class="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap shadow-sm"
                                           [ngClass]="tag.class"
                                           [title]="tag.label">
-                                       <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                         <path [attr.d]="tag.icon"></path>
-                                       </svg>
                                        {{ tag.label }}
                                     </span>
                                  </ng-container>
@@ -517,32 +511,28 @@ export class FormularioAsignacionPage implements OnInit {
       }
    }
 
-   getPrivilegioTags(p: Publicador): { label: string; class: string; icon: string }[] {
-      const tags: { label: string; class: string; icon: string }[] = [];
+   getPrivilegioTags(p: Publicador): { label: string; class: string }[] {
+      const tags: { label: string; class: string }[] = [];
       const privilegiosMap = this.publicadorPrivilegiosMap();
       const privilegiosIds = privilegiosMap.get(p.id_publicador) || [];
       const catalogo = this.privilegiosCatalogo();
 
-      const privilegioConfig: { [key: string]: { label: string; class: string; icon: string } } = {
+      const privilegioConfig: { [key: string]: { label: string; class: string } } = {
          'anciano': {
             label: 'Anciano',
-            class: 'text-indigo-700 bg-indigo-50 border border-indigo-200',
-            icon: 'M12 14l9-5-9-5-9 5 9 5zm0 7l-9-5 9-5 9 5-9 5z'
+            class: 'text-indigo-700 bg-indigo-100 shadow-sm'
          },
          'siervo ministerial': {
             label: 'Siervo Ministerial',
-            class: 'text-purple-700 bg-purple-50 border border-purple-200',
-            icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'
+            class: 'text-yellow-800 bg-yellow-100 shadow-sm'
          },
          'precursor regular': {
             label: 'Precursor Regular',
-            class: 'text-emerald-700 bg-emerald-50 border border-emerald-200',
-            icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+            class: 'text-purple-700 bg-purple-100 shadow-sm'
          },
          'precursor auxiliar': {
             label: 'Precursor Auxiliar',
-            class: 'text-amber-700 bg-amber-50 border border-amber-200',
-            icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+            class: 'text-amber-700 bg-amber-100 shadow-sm'
          },
       };
 

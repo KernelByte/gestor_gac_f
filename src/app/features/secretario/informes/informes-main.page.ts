@@ -537,6 +537,7 @@ export class InformesMainPage implements OnInit {
     if (priv?.includes('Regular')) return 'bg-purple-100 text-purple-700';
     if (priv?.includes('Auxiliar')) return 'bg-amber-100 text-amber-700';
     if (priv?.includes('Especial')) return 'bg-rose-100 text-rose-700';
+    if (priv?.includes('Siervo') || priv?.includes('Ministerial')) return 'bg-yellow-100 text-yellow-800';
     return 'bg-slate-100 text-slate-600';
   }
 }

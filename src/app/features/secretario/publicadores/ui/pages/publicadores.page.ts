@@ -1569,7 +1569,7 @@ export class PublicadoresListComponent implements OnInit {
       roles.push({ label: 'ANCIANO', type: 'pill', class: 'bg-indigo-100 text-indigo-700' });
     }
     if (roleNames.some(r => r.includes('siervo'))) {
-      roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-blue-100 text-blue-700' });
+      roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-yellow-100 text-yellow-800' });
     }
 
     // Default if no specific roles
