@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
+import { AuthStore } from '../../../../core/auth/auth.store';
 
 interface Publicador {
    id_publicador: number;
    primer_nombre: string;
    primer_apellido: string;
    id_grupo_publicador?: number | null;
+   id_estado_publicador?: number;
    rol?: any;
    selected?: boolean;
 }
@@ -25,178 +27,268 @@ interface Grupo {
    selector: 'app-formulario-asignacion',
    imports: [CommonModule, FormsModule],
    template: `
-    <div class="min-h-screen bg-[#f8f9fc] p-6">
-      <div class="max-w-7xl mx-auto">
-        
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <div class="flex items-center gap-3 mb-1">
-                <button (click)="goBack()" class="p-1 rounded-lg hover:bg-white text-slate-400 transition-colors">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                </button>
-                <h1 class="text-3xl font-extrabold text-[#1a1a1a]">Asignar Publicadores</h1>
-            </div>
-            <p class="text-gray-500 text-sm md:text-base ml-10">
-               Gestionando miembros para: <span class="font-bold text-[#5B3C88]">{{ grupo()?.nombre_grupo || 'Cargando...' }}</span>
-            </p>
-          </div>
-          <div class="flex items-center gap-3">
-            <button 
-              (click)="goBack()"
-              class="px-5 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              Cancelar
-            </button>
-            <button 
-              (click)="save()"
-              [disabled]="saving()"
-              class="px-5 py-2.5 rounded-xl bg-[#5B3C88] text-white font-medium hover:bg-[#4a3170] transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
-            >
-              <svg *ngIf="saving()" class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              {{ saving() ? 'Guardando...' : 'Guardar Cambios' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Grid de Listas -->
-        <div class="grid grid-cols-1 xl:grid-cols-[1fr_auto_1fr] gap-6 items-start h-[calc(100vh-200px)]">
-          
-          <!-- Lista Disponibles (Sin Grupo) -->
-          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full">
-            <div class="p-5 border-b border-gray-100 bg-slate-50/50">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                    <h2 class="text-lg font-bold text-gray-800">Publicadores Disponibles</h2>
-                    <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ filteredAvailable().length }}</span>
-                </div>
+    <div class="h-screen bg-[#F8F9FC] flex flex-col font-sans overflow-hidden">
+      
+      <!-- Minimalist Header -->
+      <header class="bg-white/95 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-40 shrink-0">
+        <div class="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-4">
+           
+           <!-- Title & Back -->
+           <div class="flex items-center gap-5 min-w-0">
+              <button (click)="goBack()" class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-sm transition-all active:scale-95 group">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <div class="flex flex-col min-w-0">
+                 <h1 class="text-xl font-bold text-slate-900 tracking-tight truncate">Asignar Publicadores</h1>
+                 <div class="flex items-center gap-2 text-sm font-medium text-slate-500">
+                    <span class="text-xs uppercase tracking-wider font-bold text-slate-400">Grupo</span>
+                    <span class="text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded text-xs tracking-wide truncate max-w-[250px]">{{ grupo()?.nombre_grupo || '...' }}</span>
+                 </div>
               </div>
-              
-              <div class="relative">
-                <input 
-                  type="text" 
-                  placeholder="Buscar..." 
-                  class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-[#5B3C88] focus:border-[#5B3C88] block w-full pl-10 p-2.5 transition-shadow"
-                  [(ngModel)]="searchAvailable"
-                >
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                </div>
-              </div>
-            </div>
+           </div>
 
-            <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-              <div 
-                *ngFor="let p of filteredAvailable()"
-                class="flex items-center p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all select-none"
-                [class.bg-purple-50]="p.selected"
-                [class.border-purple-200]="p.selected"
-                (click)="toggleSelection(p)"
+           <!-- Actions -->
+           <div class="flex items-center gap-3 shrink-0">
+              <button 
+                 (click)="goBack()"
+                 class="hidden sm:flex px-5 py-2 rounded-lg text-slate-500 font-bold text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors"
               >
-                <div class="flex items-center h-5 mr-3">
-                  <input 
-                    type="checkbox" 
-                    [checked]="p.selected"
-                    class="w-4 h-4 text-[#5B3C88] rounded focus:ring-[#5B3C88] cursor-pointer pointer-events-none"
-                  >
-                </div>
-                <div 
-                  class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white mr-3 shrink-0 uppercase"
-                  [style.background-color]="getAvatarColor(p.id_publicador)"
-                >
-                  {{ getInitials(p) }}
-                </div>
-                <div>
-                  <p class="text-sm font-bold text-slate-700">{{ p.primer_nombre }} {{ p.primer_apellido }}</p>
-                  <p class="text-xs text-slate-400">{{ p.rol?.descripcion_rol || 'Publicador' }}</p>
-                </div>
-              </div>
-              <div *ngIf="filteredAvailable().length === 0" class="p-8 text-center text-slate-400 text-sm italic">
-                  No hay publicadores disponibles
-              </div>
-            </div>
-          </div>
+                 Cancelar
+              </button>
+              <button 
+                 (click)="save()"
+                 [disabled]="saving()"
+                 class="px-6 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm tracking-wide hover:bg-orange-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-sm hover:shadow-orange-200"
+              >
+                 <svg *ngIf="saving()" class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                 <span>{{ saving() ? 'Guardando...' : 'Guardar Cambios' }}</span>
+              </button>
+           </div>
+        </div>
+      </header>
 
-          <!-- Botones de Transferencia -->
-          <div class="hidden xl:flex flex-col gap-4 justify-center h-full">
-            <button (click)="moveToGroup()" class="p-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 text-[#5B3C88] hover:scale-105 transition-all">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M13 18l6-6"/><path d="M13 6l6 6"/></svg>
-            </button>
-            <button (click)="moveToAvailable()" class="p-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 text-gray-500 hover:scale-105 transition-all">
-               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M5 12l6 6"/><path d="M5 12l6-6"/></svg>
-            </button>
-          </div>
-          
-          <!-- Botones Mobile -->
-          <div class="flex xl:hidden justify-center gap-4 py-2">
-             <button (click)="moveToGroup()" class="px-4 py-2 bg-white border rounded-lg shadow text-[#5B3C88] font-bold">Agregar ↓</button>
-             <button (click)="moveToAvailable()" class="px-4 py-2 bg-white border rounded-lg shadow text-gray-500 font-bold">Quitar ↑</button>
-          </div>
-
-          <!-- Lista Miembros del Grupo -->
-          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full border-t-4 border-t-[#5B3C88]">
-            <div class="p-5 border-b border-gray-100 bg-slate-50/50">
-               <div class="flex items-center justify-between mb-4">
-                  <div class="flex items-center gap-2">
-                     <h2 class="text-lg font-bold text-gray-800">Miembros del Grupo</h2>
-                     <span class="bg-[#5B3C88] text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ filteredGroupMembers().length }}</span>
+      <!-- Main Content -->
+      <main class="flex-1 min-h-0 overflow-hidden p-6 sm:p-10 lg:p-12 pb-0">
+         <div class="w-full max-w-[1920px] mx-auto h-full grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 lg:gap-16 items-start relative pb-8">
+            
+            <!-- LISTA: Disponibles (Left Panel) -->
+            <div class="h-full bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+               
+               <!-- Panel Header -->
+               <div class="p-5 border-b border-slate-100 bg-white">
+                  <div class="flex items-center justify-between mb-4">
+                     <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                        <div>
+                           <h2 class="text-base font-bold text-slate-800">Disponibles</h2>
+                           <p class="text-[11px] font-semibold text-slate-400">Sin grupo asignado</p>
+                        </div>
+                     </div>
+                     <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-md">{{ filteredAvailable().length }}</span>
+                  </div>
+                  
+                  <!-- Minimal Search -->
+                  <div class="relative">
+                     <input 
+                        type="text" 
+                        placeholder="Buscar..." 
+                        class="w-full bg-slate-50 border-none text-slate-700 text-sm rounded-lg pl-9 pr-4 py-2.5 focus:ring-2 focus:ring-orange-100 focus:bg-white transition-all placeholder:text-slate-400 font-medium"
+                        [(ngModel)]="searchAvailable"
+                     >
+                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                     </div>
                   </div>
                </div>
 
-               <div class="relative">
-                 <input 
-                   type="text" 
-                   placeholder="Buscar en grupo..." 
-                   class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-[#5B3C88] focus:border-[#5B3C88] block w-full pl-10 p-2.5 transition-shadow"
-                   [(ngModel)]="searchGroup"
-                 >
-                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                   <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                 </div>
+               <!-- List Content -->
+               <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar bg-white">
+                  <div 
+                     *ngFor="let p of filteredAvailable()"
+                     class="group relative flex items-center p-2.5 rounded-xl border border-transparent transition-all cursor-pointer select-none"
+                     [ngClass]="{
+                        'hover:bg-slate-50 hover:border-slate-100': !p.selected,
+                        'bg-orange-50/50 border-orange-100': p.selected
+                     }"
+                     (click)="toggleSelection(p)"
+                  >
+                     <!-- Avatar & Info -->
+                     <!-- Avatar & Info -->
+                     <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <!-- Modern Icon: Neutral base, scale & color pop on hover -->
+                        <div 
+                           class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ease-out group-hover:scale-110 group-hover:shadow-md group-hover:ring-4 group-hover:ring-orange-50/50"
+                           [ngClass]="{
+                              'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-orange-500': !p.selected,
+                              'bg-orange-500 text-white shadow-lg shadow-orange-500/20 ring-2 ring-orange-200': p.selected
+                           }"
+                        >
+                           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        </div>
+                        
+                        <div class="min-w-0 flex-1">
+                           <div class="flex items-center justify-between">
+                              <p class="text-[13px] font-bold text-slate-700 truncate group-hover:text-slate-900 transition-colors">
+                                 {{ p.primer_nombre }} {{ p.primer_apellido }}
+                              </p>
+                              <!-- Role Pill -->
+                              <span *ngIf="p.rol?.descripcion_rol" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-500">
+                                 {{ p.rol?.descripcion_rol }}
+                              </span>
+                           </div>
+                           <p class="text-[11px] text-slate-400 truncate">Publicador</p>
+                        </div>
+
+                        <!-- Checkbox (Minimal) -->
+                        <div 
+                           class="w-5 h-5 rounded-full border flex items-center justify-center transition-all shrink-0 ml-1"
+                           [ngClass]="{
+                              'border-slate-300 bg-white group-hover:border-slate-400': !p.selected,
+                              'border-orange-500 bg-orange-500 text-white': p.selected
+                           }"
+                        >
+                           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5"/></svg>
+                        </div>
+                     </div>
+                  </div>
+                  
+                  <!-- Empty State -->
+                  <div *ngIf="filteredAvailable().length === 0" class="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                     <p class="text-sm font-bold text-slate-400">Sin resultados</p>
+                  </div>
                </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-               <div 
-                 *ngFor="let p of filteredGroupMembers()"
-                 class="flex items-center p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-all select-none"
-                 [class.bg-purple-50]="p.selected"
-                 [class.border-purple-200]="p.selected"
-                 (click)="toggleSelection(p)"
-               >
-                 <div class="flex items-center h-5 mr-3">
-                   <input 
-                     type="checkbox" 
-                     [checked]="p.selected"
-                     class="w-4 h-4 text-[#5B3C88] rounded focus:ring-[#5B3C88] cursor-pointer pointer-events-none"
-                   >
-                 </div>
-                 <div 
-                   class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white mr-3 shrink-0 uppercase"
-                   [style.background-color]="getAvatarColor(p.id_publicador)"
-                 >
-                   {{ getInitials(p) }}
-                 </div>
-                 <div>
-                   <p class="text-sm font-bold text-slate-700">{{ p.primer_nombre }} {{ p.primer_apellido }}</p>
-                   <p class="text-xs text-slate-400">{{ p.rol?.descripcion_rol || 'Publicador' }}</p>
-                 </div>
+            <!-- ACTION BUTTONS CENTER (Modern Flat) -->
+             <div class="hidden lg:flex flex-col gap-3 justify-center h-full z-10 px-2 lg:px-4">
+                <button 
+                   (click)="moveToGroup()" 
+                   class="w-12 h-12 rounded-xl bg-orange-50 border border-orange-100 text-orange-500 hover:bg-orange-500 hover:text-white hover:border-orange-500 hover:scale-105 transition-all duration-200 flex items-center justify-center shadow-sm"
+                   title="Agregar al grupo"
+                >  
+                   <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                </button>
+                <button 
+                   (click)="moveToAvailable()" 
+                   class="w-12 h-12 rounded-xl bg-white border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-300 hover:scale-105 transition-all duration-200 flex items-center justify-center shadow-sm"
+                   title="Quitar del grupo"
+                >
+                   <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+                </button>
+             </div>
+            
+            <!-- ACTION BUTTONS MOBILE -->
+            <div class="flex lg:hidden justify-center gap-3 py-4 px-4 bg-white/95 backdrop-blur border-t border-slate-100 sticky bottom-0 z-50">
+               <button (click)="moveToGroup()" class="flex-1 px-4 py-3 bg-orange-500 text-white rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-transform">
+                  Agregar
+               </button>
+               <button (click)="moveToAvailable()" class="flex-1 px-4 py-3 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold text-sm active:scale-95 transition-transform">
+                  Quitar
+               </button>
+            </div>
+
+            <!-- LISTA: Miembros del Grupo (Right Panel) -->
+            <div class="h-full bg-white rounded-2xl border border-orange-200 shadow-[0_4px_20px_rgba(249,115,22,0.04)] flex flex-col overflow-hidden relative">
+               
+               <!-- Panel Header -->
+               <div class="p-5 border-b border-orange-50 bg-orange-50/20">
+                  <div class="flex items-center justify-between mb-4">
+                     <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-500">
+                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                        <div>
+                           <h2 class="text-base font-bold text-slate-900">Miembros</h2>
+                           <p class="text-[11px] font-semibold text-orange-500">Asignados al grupo</p>
+                        </div>
+                     </div>
+                     <span class="bg-orange-100 text-orange-600 text-xs font-bold px-2.5 py-1 rounded-md">{{ filteredGroupMembers().length }}</span>
+                  </div>
+                  
+                  <!-- Minimal Search -->
+                  <div class="relative">
+                     <input 
+                        type="text" 
+                        placeholder="Buscar..." 
+                        class="w-full bg-white border border-orange-100 text-slate-700 text-sm rounded-lg pl-9 pr-4 py-2.5 focus:ring-2 focus:ring-orange-100 focus:border-orange-200 transition-all placeholder:text-orange-300 font-medium"
+                        [(ngModel)]="searchGroup"
+                     >
+                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="w-4 h-4 text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                     </div>
+                  </div>
                </div>
-               <div *ngIf="filteredGroupMembers().length === 0" class="p-8 text-center text-slate-400 text-sm italic">
-                  Este grupo aún no tiene miembros.
+
+               <!-- List Content -->
+               <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar bg-white">
+                  <div 
+                     *ngFor="let p of filteredGroupMembers()"
+                     class="group relative flex items-center p-2.5 rounded-xl border border-transparent transition-all cursor-pointer select-none"
+                     [ngClass]="{
+                        'hover:bg-orange-50/30 hover:border-orange-100': !p.selected,
+                        'bg-orange-50 border-orange-100': p.selected
+                     }"
+                     (click)="toggleSelection(p)"
+                  >
+                     <!-- Avatar & Info -->
+                     <!-- Avatar & Info -->
+                     <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <!-- Modern Icon: Neutral base, scale & color pop on hover -->
+                        <div 
+                           class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ease-out group-hover:scale-110 group-hover:shadow-md group-hover:ring-4 group-hover:ring-orange-50/50"
+                           [ngClass]="{
+                              'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-orange-500': !p.selected,
+                              'bg-orange-500 text-white shadow-lg shadow-orange-500/20 ring-2 ring-orange-200': p.selected
+                           }"
+                        >
+                           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        </div>
+                        
+                        <div class="min-w-0 flex-1">
+                           <div class="flex items-center justify-between">
+                              <p class="text-[13px] font-bold text-slate-800 truncate group-hover:text-orange-700 transition-colors">
+                                 {{ p.primer_nombre }} {{ p.primer_apellido }}
+                              </p>
+                              <!-- Role Pill -->
+                              <span *ngIf="p.rol?.descripcion_rol" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-500">
+                                 {{ p.rol?.descripcion_rol }}
+                              </span>
+                           </div>
+                           <p class="text-[11px] text-slate-400 truncate">Publicador</p>
+                        </div>
+
+                        <!-- Checkbox (Minimal) -->
+                        <div 
+                           class="w-5 h-5 rounded-full border flex items-center justify-center transition-all shrink-0 ml-1"
+                           [ngClass]="{
+                              'border-slate-300 bg-white group-hover:border-orange-300': !p.selected,
+                              'border-orange-500 bg-orange-500 text-white': p.selected
+                           }"
+                        >
+                           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5"/></svg>
+                        </div>
+                     </div>
+                  </div>
+
+                  <!-- Empty State -->
+                  <div *ngIf="filteredGroupMembers().length === 0" class="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                     <p class="text-sm font-bold text-orange-400">Grupo vacío</p>
+                  </div>
                </div>
             </div>
-          </div>
 
-        </div>
-      </div>
+         </div>
+       </main>
     </div>
   `,
    styles: [`
-    :host { display: block; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+     :host { display: block; height: 100vh; }
+     .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   `]
 })
 export class FormularioAsignacionPage implements OnInit {
@@ -210,6 +302,9 @@ export class FormularioAsignacionPage implements OnInit {
    // Arrays originales
    availablePublishers = signal<Publicador[]>([]);
    groupMembers = signal<Publicador[]>([]);
+
+   private authStore = inject(AuthStore);
+
 
    // Search
    searchAvailable = '';
@@ -233,9 +328,18 @@ export class FormularioAsignacionPage implements OnInit {
    async loadData() {
       if (!this.grupoId) return;
       try {
+         const user = this.authStore.user();
+         const params: any = {};
+         if (user?.id_congregacion) {
+            params.id_congregacion = user.id_congregacion;
+         }
+         // Asegurar traer todos los registros (evitar paginación por defecto)
+         params.skip = 0;
+         params.limit = 1000;
+
          const [grupoRes, allPubs] = await Promise.all([
             lastValueFrom(this.http.get<Grupo>(`/api/grupos/${this.grupoId}`)),
-            lastValueFrom(this.http.get<Publicador[]>('/api/publicadores/'))
+            lastValueFrom(this.http.get<Publicador[]>('/api/publicadores/', { params }))
          ]);
 
          this.grupo.set(grupoRes);
@@ -246,7 +350,8 @@ export class FormularioAsignacionPage implements OnInit {
          allPubs.forEach(p => {
             this.initialMap.set(p.id_publicador, p.id_grupo_publicador || null);
 
-            if (p.id_grupo_publicador === this.grupoId) {
+            // Safer comparison: convert both to numbers to avoid string/number mismatch
+            if (p.id_grupo_publicador != null && Number(p.id_grupo_publicador) === Number(this.grupoId)) {
                members.push({ ...p, selected: false });
             } else if (!p.id_grupo_publicador) {
                available.push({ ...p, selected: false });
@@ -345,6 +450,6 @@ export class FormularioAsignacionPage implements OnInit {
    }
 
    goBack() {
-      this.router.navigate(['/secretario/grupos']);
+      this.router.navigate(['/secretario/publicadores'], { queryParams: { tab: 'grupos' } });
    }
 }
