@@ -21,6 +21,7 @@ export interface PermisoConEstado {
    descripcion?: string;
    icono?: string;
    asignado: boolean;
+   alcance?: string; // e.g. 'todos', 'grupo:1', etc.
 }
 
 export interface PermisosPorCategoria {

@@ -186,38 +186,63 @@ interface CategoriaPermisos {
                   </div>
                   
                   <div class="divide-y divide-slate-50">
-                     <div *ngFor="let permiso of cat.permisos" 
-                        class="px-5 py-3.5 flex items-center gap-4 hover:bg-purple-50/30 transition-colors group cursor-pointer"
-                        (click)="togglePermiso(permiso)">
-                        
-                        <!-- Permission Icon & Info -->
-                        <div class="flex-1 min-w-0">
-                           <div class="flex items-center gap-2">
-                              <span class="text-sm" [class.text-emerald-500]="permiso.asignado" [class.text-slate-400]="!permiso.asignado">
-                                 {{ getPermisoIcon(permiso.codigo) }}
-                              </span>
-                              <h4 class="font-semibold text-sm truncate"
-                                 [class.text-slate-700]="permiso.asignado"
-                                 [class.text-slate-500]="!permiso.asignado">
-                                 {{ permiso.nombre }}
-                              </h4>
+                      <div *ngFor="let permiso of cat.permisos">
+                        <div class="px-5 py-3.5 flex items-center gap-4 hover:bg-purple-50/30 transition-colors group cursor-pointer"
+                           (click)="togglePermiso(permiso)">
+                           
+                           <!-- Permission Icon & Info -->
+                           <div class="flex-1 min-w-0">
+                              <div class="flex items-center gap-2">
+                                 <span class="text-sm" [class.text-emerald-500]="permiso.asignado" [class.text-slate-400]="!permiso.asignado">
+                                    {{ getPermisoIcon(permiso.codigo) }}
+                                 </span>
+                                 <h4 class="font-semibold text-sm truncate"
+                                    [class.text-slate-700]="permiso.asignado"
+                                    [class.text-slate-500]="!permiso.asignado">
+                                    {{ permiso.nombre }}
+                                 </h4>
+                              </div>
+                              <p *ngIf="permiso.descripcion" class="text-xs text-slate-400 mt-0.5 truncate">
+                                 {{ permiso.descripcion }}
+                              </p>
                            </div>
-                           <p *ngIf="permiso.descripcion" class="text-xs text-slate-400 mt-0.5 truncate">
-                              {{ permiso.descripcion }}
-                           </p>
+                           
+                           <!-- Toggle Switch -->
+                           <div class="relative w-11 h-6 rounded-full transition-all duration-200 cursor-pointer flex-shrink-0"
+                              [class.bg-emerald-500]="permiso.asignado"
+                              [class.bg-slate-200]="!permiso.asignado"
+                              [class.shadow-emerald-500/30]="permiso.asignado"
+                              [class.shadow-lg]="permiso.asignado">
+                              <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 flex items-center justify-center"
+                                 [class.translate-x-5]="permiso.asignado">
+                                 <svg *ngIf="permiso.asignado" class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                    <path d="M5 13l4 4L19 7"/>
+                                 </svg>
+                              </div>
+                           </div>
                         </div>
-                        
-                        <!-- Toggle Switch -->
-                        <div class="relative w-11 h-6 rounded-full transition-all duration-200 cursor-pointer flex-shrink-0"
-                           [class.bg-emerald-500]="permiso.asignado"
-                           [class.bg-slate-200]="!permiso.asignado"
-                           [class.shadow-emerald-500/30]="permiso.asignado"
-                           [class.shadow-lg]="permiso.asignado">
-                           <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 flex items-center justify-center"
-                              [class.translate-x-5]="permiso.asignado">
-                              <svg *ngIf="permiso.asignado" class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                                 <path d="M5 13l4 4L19 7"/>
-                              </svg>
+
+                        <!-- Config Panel for Informes.Editar -->
+                        <div *ngIf="permiso.codigo === 'informes.editar' && permiso.asignado" 
+                             class="px-5 pb-4 pl-[3.25rem] animate-fadeIn">
+                           <div class="bg-slate-50 rounded-xl border border-slate-200 p-3 shadow-sm">
+                              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                 Alcance de edición
+                              </label>
+                              <div class="flex items-center gap-3">
+                                 <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="scope_edit" [value]="'todos'" 
+                                           [(ngModel)]="permiso.alcance" (click)="$event.stopPropagation()"
+                                           class="text-purple-600 focus:ring-purple-500 border-gray-300">
+                                    <span class="text-sm text-slate-700">Todos los grupos</span>
+                                 </label>
+                                 <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="scope_edit" [value]="'asignados'" 
+                                           [(ngModel)]="permiso.alcance" (click)="$event.stopPropagation()"
+                                           class="text-purple-600 focus:ring-purple-500 border-gray-300">
+                                    <span class="text-sm text-slate-700">Solo asignados</span>
+                                 </label>
+                              </div>
                            </div>
                         </div>
                      </div>
@@ -414,6 +439,20 @@ export class UsuarioPermisosPage implements OnInit {
             return;
          }
 
+         // Mock informes.historial if missing (Visual request)
+         const hasHistorial = permisos.some(p => p.codigo === 'informes.historial');
+         if (!hasHistorial) {
+            permisos.push({
+               id_permiso: 99999, // Temp ID
+               codigo: 'informes.historial',
+               nombre: 'Ver Historial',
+               descripcion: 'Acceso al historial de informes de servicio',
+               asignado: false, // Removed categoria
+               alcance: 'todos'
+            });
+         }
+         permisos.forEach(p => { if (!p.alcance) p.alcance = 'todos'; });
+
          this.usuario.set(usuario);
          this.permisos.set(permisos);
          this.permisosOriginales.set(new Set(permisos.filter(p => p.asignado).map(p => p.id_permiso)));
@@ -539,7 +578,9 @@ export class UsuarioPermisosPage implements OnInit {
       if (codigo.includes('ver')) return '👁️';
       if (codigo.includes('editar')) return '✏️';
       if (codigo.includes('crear')) return '➕';
+      if (codigo.includes('crear')) return '➕';
       if (codigo.includes('enviar')) return '📤';
+      if (codigo.includes('historial')) return '⏳';
       return '🔐';
    }
 
