@@ -131,8 +131,8 @@ import { saveAs } from 'file-saver';
 
               <!-- View Switcher -->
               <div class="flex rounded-xl bg-slate-100 p-1">
-                <button (click)="vistaGrupo.set(false)" [class.bg-white]="!vistaGrupo()" [class.shadow-sm]="!vistaGrupo()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600">Congregación</button>
-                <button (click)="vistaGrupo.set(true)" [class.bg-white]="vistaGrupo()" [class.shadow-sm]="vistaGrupo()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600">Por Grupos</button>
+                <button (click)="setVista(false)" [class.bg-white]="!vistaGrupo()" [class.shadow-sm]="!vistaGrupo()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600">Congregación</button>
+                <button (click)="setVista(true)" [class.bg-white]="vistaGrupo()" [class.shadow-sm]="vistaGrupo()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600">Por Grupos</button>
               </div>
 
               <!-- Selector GRUPO (Condicional) -->
@@ -394,6 +394,24 @@ export class InformesMainPage implements OnInit {
 
     } catch (error) {
       console.error('Error loading privileges data:', error);
+    }
+  }
+
+  setVista(isGrupo: boolean) {
+    this.vistaGrupo.set(isGrupo);
+    if (!isGrupo) {
+      // Al volver a vista congregación, mostrar todo
+      this.selectGrupo(null);
+      // selectGrupo(null) ya llama a loadResumen()
+    } else {
+      // Al ir a grupos, si no hay grupo seleccionado, cargamos todo (o mantenemos selección previa si existiera y no la borráramos)
+      // Pero como la borramos al salir, empezamos en 'Todos'.
+      // Si queremos persistir la selección al cambiar de tab, necesitaríamos otra variable.
+      // Por ahora, el comportamiento pedido es "ponerme de nuevo todos" al volver a congregación.
+      // Así que está bien limpiar.
+      if (this.selectedGrupo === null) {
+        this.loadResumen();
+      }
     }
   }
 
