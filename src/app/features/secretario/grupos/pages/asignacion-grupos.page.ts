@@ -51,7 +51,6 @@ interface Publicador {
                <div class="min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
                      <h1 class="text-lg sm:text-xl lg:text-2xl font-extrabold text-slate-900 tracking-tight truncate">Asignación Dinámica</h1>
-                     <span class="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-brand-orange text-white text-[9px] font-bold uppercase tracking-wider shadow-sm">Beta</span>
                   </div>
                   <p class="text-slate-500 text-[11px] sm:text-xs font-medium mt-0.5 hidden sm:block">Arrastra y suelta para reorganizar los grupos</p>
                </div>
