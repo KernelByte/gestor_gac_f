@@ -90,9 +90,16 @@ interface Publicador {
         </div>
       </header>
 
-      <!-- Kanban Board Area - Responsivo -->
-      <div class="flex-1 overflow-x-auto overflow-y-hidden p-4 sm:p-6 lg:p-8">
-         <div class="flex h-full gap-4 sm:gap-6 pb-4 snap-x snap-mandatory lg:snap-none">
+      <!-- Kanban Board Area - Responsivo con Diseño Estético -->
+      <div class="flex-1 min-h-0 p-4 sm:p-6 lg:p-8 bg-slate-50/50">
+         <div class="w-full h-full bg-white rounded-3xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col relative">
+            
+            <!-- Sombras decorativas laterales (Fade effect manual) -->
+            <div class="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+
+            <div class="flex-1 overflow-x-auto overflow-y-hidden p-6 custom-scrollbar">
+               <div class="flex h-full gap-5 pb-2">
             
             <!-- Columna: Sin Asignar (Staging Area) -->
             <div 
@@ -267,8 +274,10 @@ interface Publicador {
                </div>
             </div>
 
-         </div>
-      </div>
+          </div>
+       </div>
+    </div>
+ </div>
       <!-- Toast de Éxito -->
      <div *ngIf="showSuccessMessage()" class="fixed bottom-6 right-6 z-50 slide-in-bottom">
         <div class="bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 border border-slate-700/50 backdrop-blur-md bg-opacity-95">
