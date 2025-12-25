@@ -308,7 +308,43 @@ interface Publicador {
        </div>
     </div>
  </div>
-      <!-- Toast de Éxito -->
+      <!-- Modal de Confirmación de Salida -->
+      <div *ngIf="showExitConfirmation()" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" (click)="showExitConfirmation.set(false)"></div>
+        
+        <!-- Modal Content -->
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden animate-fade-in-up border border-slate-100">
+           
+           <div class="p-6 text-center">
+              <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <svg class="w-8 h-8 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              </div>
+              
+              <h3 class="text-lg font-black text-slate-800 mb-2">¿Salir sin guardar?</h3>
+              <p class="text-sm text-slate-500 font-medium leading-relaxed">
+                 Tienes <span class="text-orange-600 font-bold">{{ pendingChangesCount() }} cambios pendientes</span>. Si sales ahora, perderás todo el progreso no guardado.
+              </p>
+           </div>
+           
+           <div class="bg-slate-50 p-4 flex gap-3">
+              <button 
+                 (click)="showExitConfirmation.set(false)" 
+                 class="flex-1 py-2.5 px-4 rounded-xl text-slate-600 font-bold text-sm hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all"
+              >
+                 Cancelar
+              </button>
+              <button 
+                 (click)="confirmExit()" 
+                 class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm shadow-lg shadow-red-500/30 hover:shadow-red-500/40 hover:from-red-600 hover:to-red-700 transition-all active:scale-95"
+              >
+                 Salir de todas formas
+              </button>
+           </div>
+        </div>
+      </div>
+
+       <!-- Toast de Éxito -->
      <div *ngIf="showSuccessMessage()" class="fixed bottom-6 right-6 z-50 slide-in-bottom">
         <div class="bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 border border-slate-700/50 backdrop-blur-md bg-opacity-95">
            <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
@@ -432,6 +468,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
   draggedLeader: { type: 'capitan' | 'auxiliar', groupId: number, publicador: Publicador } | null = null;
   isSaving = signal(false);
   showSuccessMessage = signal(false);
+  showExitConfirmation = signal(false); // Modal state
   isFullScreen = signal(false); // Estado para pantalla completa
 
   toggleFullScreen() {
@@ -655,8 +692,18 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   goBack() {
     if (this.pendingChangesCount() > 0) {
-      if (!confirm('Tienes cambios sin guardar. ¿Seguro que quieres salir?')) return;
+      this.showExitConfirmation.set(true);
+      return;
     }
+    this.performExit();
+  }
+
+  confirmExit() {
+    this.showExitConfirmation.set(false);
+    this.performExit();
+  }
+
+  private performExit() {
     this.router.navigate(['/secretario/publicadores'], { queryParams: { tab: 'grupos' } });
   }
 
