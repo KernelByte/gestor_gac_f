@@ -134,7 +134,7 @@ interface Publicador {
             
             <!-- Columna: Sin Asignar (Staging Area) -->
             <div 
-               class="w-72 sm:w-80 shrink-0 flex flex-col rounded-2xl bg-gradient-to-b from-slate-100 to-slate-50 border border-slate-200/80 max-h-full transition-all duration-300 snap-start shadow-sm"
+               class="w-64 sm:w-72 shrink-0 flex flex-col rounded-2xl bg-gradient-to-b from-slate-100 to-slate-50 border border-slate-200/80 max-h-full transition-all duration-300 snap-start shadow-sm"
                [class.bg-brand-orange-soft]="isDraggingOver() === 'unassigned'"
                [class.border-brand-orange]="isDraggingOver() === 'unassigned'"
                [class.shadow-lg]="isDraggingOver() === 'unassigned'"
@@ -175,7 +175,7 @@ interface Publicador {
             <!-- Columnas: Grupos - Diseño Profesional -->
             <div 
                *ngFor="let grupo of grupos()"
-               class="w-72 sm:w-80 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg max-h-full transition-all duration-300 snap-start"
+               class="w-64 sm:w-72 shrink-0 flex flex-col rounded-2xl bg-white border border-slate-200/80 shadow-md hover:shadow-lg max-h-full transition-all duration-300 snap-start"
                [class.ring-2]="isDraggingOver() === grupo.id_grupo"
                [class.ring-brand-orange]="isDraggingOver() === grupo.id_grupo"
                [class.shadow-xl]="isDraggingOver() === grupo.id_grupo"
