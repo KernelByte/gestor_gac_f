@@ -1,17 +1,18 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PublicadoresListComponent } from './publicadores.page'; // Using the modified file but new class name
-import { GruposListComponent } from '../../../grupos/pages/grupos.page'; // Using the modified file but new class name
+import { ActivatedRoute } from '@angular/router';
+import { PublicadoresListComponent } from './publicadores.page';
+import { GruposListComponent } from '../../../grupos/pages/grupos.page';
 
 import { PublicadoresContactosComponent } from './publicadores-contactos.page';
 
 export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
 
 @Component({
-   standalone: true,
-   selector: 'app-publicadores-main',
-   imports: [CommonModule, PublicadoresListComponent, GruposListComponent, PublicadoresContactosComponent],
-   template: `
+  standalone: true,
+  selector: 'app-publicadores-main',
+  imports: [CommonModule, PublicadoresListComponent, GruposListComponent, PublicadoresContactosComponent],
+  template: `
     <div class="flex flex-col gap-6 h-full">
       
       <!-- Header & Navigation Wrapper -->
@@ -77,7 +78,7 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
 
     </div>
   `,
-   styles: [`
+  styles: [`
     :host { display: block; }
     .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
     @keyframes fadeIn {
@@ -86,22 +87,33 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
     }
   `]
 })
-export class PublicadoresMainPage {
-   currentTab = signal<PublicadoresTab>('listado');
+export class PublicadoresMainPage implements OnInit {
+  private route = inject(ActivatedRoute);
 
-   pageTitle = computed(() => {
-      switch (this.currentTab()) {
-         case 'listado': return 'Gestión de Publicadores';
-         case 'grupos': return 'Grupos de Predicación';
-         case 'contactos': return 'Contactos de Emergencia';
-      }
-   });
+  currentTab = signal<PublicadoresTab>('listado');
 
-   pageDescription = computed(() => {
-      switch (this.currentTab()) {
-         case 'listado': return 'Administra el directorio de publicadores y su información teocrática.';
-         case 'grupos': return 'Organiza los grupos de servicio del campo y sus asignaciones.';
-         case 'contactos': return 'Gestiona la información de los contactos en caso de emergencia.';
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      const tab = params['tab'];
+      if (tab === 'grupos' || tab === 'contactos' || tab === 'listado') {
+        this.currentTab.set(tab);
       }
-   });
+    });
+  }
+
+  pageTitle = computed(() => {
+    switch (this.currentTab()) {
+      case 'listado': return 'Gestión de Publicadores';
+      case 'grupos': return 'Grupos de Predicación';
+      case 'contactos': return 'Contactos de Emergencia';
+    }
+  });
+
+  pageDescription = computed(() => {
+    switch (this.currentTab()) {
+      case 'listado': return 'Administra el directorio de publicadores y su información teocrática.';
+      case 'grupos': return 'Organiza los grupos de servicio del campo y sus asignaciones.';
+      case 'contactos': return 'Gestiona la información de los contactos en caso de emergencia.';
+    }
+  });
 }

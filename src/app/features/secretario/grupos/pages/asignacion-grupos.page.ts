@@ -145,24 +145,27 @@ interface Publicador {
                (dragleave)="onDragLeave()"
                (drop)="onDrop($event, grupo.id_grupo)"
             >
-               <!-- Header con color de marca -->
-               <div class="px-4 py-3 bg-brand-purple rounded-t-2xl">
-                   <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-3">
-                         <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-white text-sm font-black">
-                            {{ grupo.nombre_grupo.charAt(0) }}
-                         </div>
-                         <div>
-                             <h3 class="font-bold text-white text-sm truncate max-w-[160px]" [title]="grupo.nombre_grupo">{{ grupo.nombre_grupo }}</h3>
-                             <p class="text-slate-300 text-[10px] font-medium">{{ getGroupMembers(grupo.id_grupo).length }} miembros</p>
-                         </div>
-                      </div>
+                <!-- Header con color de marca (Naranja) -->
+               <div class="px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl">
+                   <div class="flex flex-col">
+                       <h3 class="font-bold text-white text-base truncate" [title]="grupo.nombre_grupo">{{ grupo.nombre_grupo }}</h3>
+                       <div class="flex items-center gap-3 mt-1">
+                          <p class="text-orange-100 text-[11px] font-medium flex items-center gap-1">
+                             <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                             {{ getGroupMembers(grupo.id_grupo).length }} miembros
+                          </p>
+                          <span class="text-orange-300/50 text-[10px]">•</span>
+                          <p class="text-white text-[11px] font-bold flex items-center gap-1">
+                              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                              {{ getPrecursoresCount(grupo.id_grupo) }} Precursores
+                          </p>
+                       </div>
                    </div>
                </div>
 
                 <!-- Sección de Liderazgo -->
                 <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
-                   <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Liderazgo del Grupo</p>
+                   <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Encargados del grupo</p>
                    <div class="space-y-2">
                       <!-- Capitán Drop Zone -->
                       <div 
@@ -250,7 +253,7 @@ interface Publicador {
 
                <!-- Listado de Publicadores -->
                <div class="px-3 py-2 flex-1 overflow-y-auto custom-scrollbar">
-                  <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Publicadores</p>
+                  <p class="text-[9px] font-bold text-orange-500 uppercase tracking-widest mb-2 px-1">Publicadores</p>
                   <div class="space-y-2">
                      <ng-container *ngFor="let p of getGroupMembers(grupo.id_grupo)">
                         <ng-container *ngTemplateOutlet="cardTemplate; context: { $implicit: p, inGroup: true }"></ng-container>
@@ -579,7 +582,7 @@ export class AsignacionGruposPage implements OnInit {
     if (this.pendingChangesCount() > 0) {
       if (!confirm('Tienes cambios sin guardar. ¿Seguro que quieres salir?')) return;
     }
-    this.router.navigate(['/secretario/grupos']);
+    this.router.navigate(['/secretario/publicadores'], { queryParams: { tab: 'grupos' } });
   }
 
   // Drag & Drop Logic
@@ -694,6 +697,25 @@ export class AsignacionGruposPage implements OnInit {
     } else {
       return (group.auxiliar_grupo || '') !== (initial.auxiliar || '');
     }
+  }
+
+  getPrecursoresCount(groupId: number): number {
+    const members = this.getGroupMembers(groupId);
+    let count = 0;
+    const catalogo = this.privilegiosCatalogo();
+    const map = this.publicadorPrivilegiosMap();
+
+    for (const p of members) {
+      const ids = map.get(p.id_publicador);
+      if (ids) {
+        const isPrec = ids.some(id => {
+          const priv = catalogo.find(pr => pr.id_privilegio === id);
+          return priv && priv.nombre_privilegio.toLowerCase().includes('precursor');
+        });
+        if (isPrec) count++;
+      }
+    }
+    return count;
   }
 
   // Save
