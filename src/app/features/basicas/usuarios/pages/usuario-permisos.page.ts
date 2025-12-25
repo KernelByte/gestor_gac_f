@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { lastValueFrom } from 'rxjs';
-import { trigger, transition, style, animate } from '@angular/animations';
+import { trigger, transition, style, animate, state } from '@angular/animations';
 
 import { PermisosService, PermisoConEstado } from '../services/permisos.service';
 import { UsuariosService } from '../services/usuarios.service';
@@ -13,6 +13,7 @@ interface CategoriaPermisos {
    categoria: string;
    icono: string;
    permisos: PermisoConEstado[];
+   expandido: boolean;
 }
 
 @Component({
@@ -25,111 +26,250 @@ interface CategoriaPermisos {
             style({ opacity: 0, transform: 'translateY(8px)' }),
             animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
          ])
+      ]),
+      trigger('expandCollapse', [
+         state('collapsed', style({ height: '0', opacity: 0, overflow: 'hidden' })),
+         state('expanded', style({ height: '*', opacity: 1 })),
+         transition('collapsed <=> expanded', animate('250ms ease-in-out'))
+      ]),
+      trigger('slideUp', [
+         transition(':enter', [
+            style({ opacity: 0, transform: 'translateY(20px)' }),
+            animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+         ]),
+         transition(':leave', [
+            animate('200ms ease-in', style({ opacity: 0, transform: 'translateY(20px)' }))
+         ])
       ])
    ],
    template: `
-   <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 p-6">
-      <div class="max-w-4xl mx-auto">
-         
-         <!-- Header -->
-         <div class="mb-8">
-            <a routerLink="/usuarios" class="inline-flex items-center gap-2 text-slate-500 hover:text-purple-600 transition-colors mb-4">
-               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-               <span class="font-medium">Volver a Usuarios</span>
-            </a>
-            
-            <div class="flex items-center gap-4">
-               <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-                  <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-               </div>
-               <div>
-                  <h1 class="text-2xl font-bold text-slate-800">Permisos de Usuario</h1>
-                  <p class="text-slate-500">Configura los accesos y permisos especiales</p>
-               </div>
-            </div>
-         </div>
-
-         <!-- Loading State -->
-         <div *ngIf="loading()" class="flex items-center justify-center py-20">
-            <div class="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full"></div>
-         </div>
-
-         <!-- User Info Card -->
-         <div *ngIf="!loading() && usuario()" @fadeIn class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
-            <div class="flex items-center gap-4">
-               <div class="w-14 h-14 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-md">
-                  {{ getInitials(usuario()!) }}
-               </div>
-               <div class="flex-1">
-                  <h2 class="text-lg font-bold text-slate-800">{{ usuario()!.nombre }}</h2>
-                  <p class="text-slate-500 text-sm">{{ usuario()!.correo }}</p>
-               </div>
-               <div class="px-4 py-2 bg-cyan-50 rounded-xl">
-                  <span class="text-cyan-700 font-semibold text-sm">{{ getRolName(usuario()!) }}</span>
-               </div>
-            </div>
-         </div>
-
-         <!-- Permissions by Category -->
-         <div *ngIf="!loading()" @fadeIn class="space-y-4">
-            <div *ngFor="let cat of categorias()" 
-               class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-               
-               <!-- Category Header -->
-               <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                     <span class="text-purple-600 text-lg">{{ getCategoryIcon(cat.categoria) }}</span>
+   <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
+      
+      <!-- Sticky Header -->
+      <div class="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-slate-100">
+         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+               <!-- Back & Title -->
+               <div class="flex items-center gap-4 flex-1 min-w-0">
+                  <a routerLink="/usuarios" 
+                     class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-purple-100 text-slate-500 hover:text-purple-600 transition-all">
+                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                  </a>
+                  <div class="min-w-0">
+                     <h1 class="text-xl sm:text-2xl font-bold text-slate-800 truncate">Permisos de Usuario</h1>
+                     <p class="text-sm text-slate-500 hidden sm:block">Configura los accesos y permisos especiales</p>
                   </div>
-                  <h3 class="font-bold text-slate-700">{{ cat.categoria }}</h3>
-                  <span class="ml-auto text-xs text-slate-400 font-medium">
-                     {{ getAssignedCount(cat) }}/{{ cat.permisos.length }} activos
+               </div>
+               
+               <!-- User Badge -->
+               <div *ngIf="usuario()" class="flex items-center gap-3 bg-gradient-to-r from-slate-50 to-purple-50 px-4 py-2 rounded-xl border border-slate-100">
+                  <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                     {{ getInitials(usuario()!) }}
+                  </div>
+                  <div class="hidden sm:block">
+                     <p class="font-semibold text-slate-700 text-sm">{{ usuario()!.nombre }}</p>
+                     <p class="text-xs text-slate-400">{{ usuario()!.correo }}</p>
+                  </div>
+                  <span class="ml-2 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">
+                     {{ getRolName(usuario()!) }}
                   </span>
                </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+         
+         <!-- Loading State -->
+         <div *ngIf="loading()" class="flex flex-col items-center justify-center py-20 gap-4">
+            <div class="animate-spin w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full"></div>
+            <p class="text-slate-500">Cargando permisos...</p>
+         </div>
+
+         <!-- Stats & Search Bar -->
+         <div *ngIf="!loading()" @fadeIn class="mb-6">
+            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+               <!-- Stats -->
+               <div class="flex items-center gap-4">
+                  <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-100 shadow-sm">
+                     <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                     <span class="text-sm font-medium text-slate-600">
+                        <span class="text-emerald-600 font-bold">{{ totalAsignados() }}</span> de {{ totalPermisos() }} permisos activos
+                     </span>
+                  </div>
+                  
+                  <!-- Quick Actions -->
+                  <button (click)="toggleTodos(true)" 
+                     class="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
+                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                     Activar todos
+                  </button>
+                  <button (click)="toggleTodos(false)" 
+                     class="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                     Desactivar todos
+                  </button>
+               </div>
+               
+               <!-- Search -->
+               <div class="relative w-full sm:w-64">
+                  <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                  <input type="text" 
+                     [(ngModel)]="searchQuery"
+                     placeholder="Buscar permiso..."
+                     class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all">
+               </div>
+            </div>
+         </div>
+
+         <!-- Categories Grid -->
+         <div *ngIf="!loading()" @fadeIn class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div *ngFor="let cat of filteredCategorias()" 
+               class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow">
+               
+               <!-- Category Header -->
+               <button (click)="toggleCategoria(cat)" 
+                  class="w-full px-5 py-4 flex items-center gap-3 bg-gradient-to-r from-slate-50 to-white hover:from-purple-50 hover:to-white transition-colors">
+                  <div class="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm"
+                     [ngClass]="getCategoryBgClass(cat.categoria)">
+                     <span class="text-lg">{{ getCategoryIcon(cat.categoria) }}</span>
+                  </div>
+                  <div class="flex-1 text-left">
+                     <h3 class="font-bold text-slate-700">{{ cat.categoria }}</h3>
+                     <p class="text-xs text-slate-400">{{ cat.permisos.length }} permisos disponibles</p>
+                  </div>
+                  
+                  <!-- Progress & Toggle -->
+                  <div class="flex items-center gap-3">
+                     <div class="hidden sm:flex items-center gap-2">
+                        <div class="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
+                           <div class="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-300"
+                              [style.width.%]="(getAssignedCount(cat) / cat.permisos.length) * 100"></div>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 w-8">{{ getAssignedCount(cat) }}/{{ cat.permisos.length }}</span>
+                     </div>
+                     <svg class="w-5 h-5 text-slate-400 transition-transform duration-200" 
+                        [class.rotate-180]="cat.expandido"
+                        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7"/>
+                     </svg>
+                  </div>
+               </button>
                
                <!-- Permissions List -->
-               <div class="divide-y divide-slate-50">
-                  <div *ngFor="let permiso of cat.permisos" 
-                     class="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
-                     
-                     <div class="flex-1">
-                        <h4 class="font-semibold text-slate-700">{{ permiso.nombre }}</h4>
-                        <p *ngIf="permiso.descripcion" class="text-sm text-slate-400">{{ permiso.descripcion }}</p>
+               <div [@expandCollapse]="cat.expandido ? 'expanded' : 'collapsed'" class="border-t border-slate-100">
+                  <!-- Toggle All for Category -->
+                  <div class="px-5 py-3 bg-slate-50/50 flex items-center justify-between border-b border-slate-100">
+                     <span class="text-xs font-medium text-slate-500">Permisos de {{ cat.categoria }}</span>
+                     <div class="flex items-center gap-2">
+                        <button (click)="toggleCategoriaTodos(cat, true); $event.stopPropagation()"
+                           class="px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded transition-colors">
+                           Activar todo
+                        </button>
+                        <span class="text-slate-300">|</span>
+                        <button (click)="toggleCategoriaTodos(cat, false); $event.stopPropagation()"
+                           class="px-2 py-1 text-xs font-medium text-slate-400 hover:bg-slate-100 rounded transition-colors">
+                           Desactivar
+                        </button>
                      </div>
-                     
-                     <!-- Toggle Switch -->
-                     <button type="button" (click)="togglePermiso(permiso)"
-                        class="relative w-14 h-8 rounded-full transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-purple-500/20"
-                        [class.bg-purple-600]="permiso.asignado"
-                        [class.bg-slate-200]="!permiso.asignado">
-                        <span class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200"
-                           [class.translate-x-6]="permiso.asignado">
-                        </span>
-                     </button>
+                  </div>
+                  
+                  <div class="divide-y divide-slate-50">
+                     <div *ngFor="let permiso of cat.permisos" 
+                        class="px-5 py-3.5 flex items-center gap-4 hover:bg-purple-50/30 transition-colors group cursor-pointer"
+                        (click)="togglePermiso(permiso)">
+                        
+                        <!-- Permission Icon & Info -->
+                        <div class="flex-1 min-w-0">
+                           <div class="flex items-center gap-2">
+                              <span class="text-sm" [class.text-emerald-500]="permiso.asignado" [class.text-slate-400]="!permiso.asignado">
+                                 {{ getPermisoIcon(permiso.codigo) }}
+                              </span>
+                              <h4 class="font-semibold text-sm truncate"
+                                 [class.text-slate-700]="permiso.asignado"
+                                 [class.text-slate-500]="!permiso.asignado">
+                                 {{ permiso.nombre }}
+                              </h4>
+                           </div>
+                           <p *ngIf="permiso.descripcion" class="text-xs text-slate-400 mt-0.5 truncate">
+                              {{ permiso.descripcion }}
+                           </p>
+                        </div>
+                        
+                        <!-- Toggle Switch -->
+                        <div class="relative w-11 h-6 rounded-full transition-all duration-200 cursor-pointer flex-shrink-0"
+                           [class.bg-emerald-500]="permiso.asignado"
+                           [class.bg-slate-200]="!permiso.asignado"
+                           [class.shadow-emerald-500/30]="permiso.asignado"
+                           [class.shadow-lg]="permiso.asignado">
+                           <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 flex items-center justify-center"
+                              [class.translate-x-5]="permiso.asignado">
+                              <svg *ngIf="permiso.asignado" class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                 <path d="M5 13l4 4L19 7"/>
+                              </svg>
+                           </div>
+                        </div>
+                     </div>
                   </div>
                </div>
             </div>
          </div>
 
-         <!-- Save Button -->
-         <div *ngIf="!loading() && hasChanges()" @fadeIn 
-            class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+         <!-- Empty State -->
+         <div *ngIf="!loading() && filteredCategorias().length === 0" 
+            class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+               <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+               </svg>
+            </div>
+            <p class="text-slate-500 font-medium">No se encontraron permisos</p>
+            <p class="text-sm text-slate-400 mt-1">Intenta con otro término de búsqueda</p>
+         </div>
+      </div>
+
+      <!-- Floating Save Button -->
+      <div *ngIf="!loading() && hasChanges()" @slideUp
+         class="fixed bottom-0 inset-x-0 p-4 bg-gradient-to-t from-slate-900/10 to-transparent pointer-events-none">
+         <div class="max-w-md mx-auto pointer-events-auto">
             <button (click)="guardar()" [disabled]="saving()"
-               class="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-2xl shadow-xl shadow-purple-500/30 hover:shadow-purple-500/40 hover:scale-105 transition-all flex items-center gap-3 disabled:opacity-50">
-               <svg *ngIf="!saving()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+               class="w-full py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-size-200 animate-gradient-x text-white font-bold rounded-2xl shadow-2xl shadow-purple-500/40 hover:shadow-purple-500/50 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed">
+               <svg *ngIf="!saving()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+               </svg>
                <div *ngIf="saving()" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-               {{ saving() ? 'Guardando...' : 'Guardar Cambios' }}
+               {{ saving() ? 'Guardando cambios...' : 'Guardar ' + changesCount() + ' cambios' }}
             </button>
          </div>
+      </div>
 
-         <!-- Success Toast -->
-         <div *ngIf="showSuccess()" @fadeIn
-            class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-emerald-500 text-white font-semibold rounded-2xl shadow-xl flex items-center gap-3">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            Permisos actualizados correctamente
+      <!-- Success Toast -->
+      <div *ngIf="showSuccess()" @slideUp
+         class="fixed top-20 right-4 sm:right-8 z-50 px-5 py-4 bg-emerald-500 text-white font-semibold rounded-2xl shadow-xl flex items-center gap-3">
+         <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+               <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+               <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+         </div>
+         <div>
+            <p class="font-bold">¡Permisos actualizados!</p>
+            <p class="text-sm text-emerald-100">Los cambios se guardaron correctamente</p>
          </div>
       </div>
    </div>
-   `
+   `,
+   styles: [`
+      .bg-size-200 { background-size: 200% 100%; }
+      @keyframes gradient-x {
+         0%, 100% { background-position: 0% 50%; }
+         50% { background-position: 100% 50%; }
+      }
+      .animate-gradient-x { animation: gradient-x 3s ease infinite; }
+   `]
 })
 export class UsuarioPermisosPage implements OnInit {
    private route = inject(ActivatedRoute);
@@ -140,23 +280,16 @@ export class UsuarioPermisosPage implements OnInit {
    loading = signal(true);
    saving = signal(false);
    showSuccess = signal(false);
+   searchQuery = '';
 
    usuario = signal<Usuario | null>(null);
    permisos = signal<PermisoConEstado[]>([]);
    permisosOriginales = signal<Set<number>>(new Set());
+   categoriasExpandidas = signal<Set<string>>(new Set());
 
    categorias = computed(() => {
-      const agrupados: Map<string, PermisoConEstado[]> = new Map();
-      for (const p of this.permisos()) {
-         const cat = agrupados.get(p.codigo.split('.')[0]) || [];
-         cat.push(p);
-         agrupados.set(p.codigo.split('.')[0], cat);
-      }
-
-      // Agrupar por categoría real del permiso
       const porCategoria: Map<string, PermisoConEstado[]> = new Map();
       for (const p of this.permisos()) {
-         // Usar primera parte del código como categoría si no tenemos otra
          const catKey = this.getCategoriaNombre(p.codigo);
          if (!porCategoria.has(catKey)) {
             porCategoria.set(catKey, []);
@@ -164,12 +297,34 @@ export class UsuarioPermisosPage implements OnInit {
          porCategoria.get(catKey)!.push(p);
       }
 
+      const expandidas = this.categoriasExpandidas();
       return Array.from(porCategoria.entries()).map(([cat, permisos]) => ({
          categoria: cat,
          icono: this.getCategoryIcon(cat),
-         permisos
+         permisos,
+         expandido: expandidas.has(cat)
       }));
    });
+
+   filteredCategorias = computed(() => {
+      const query = this.searchQuery.toLowerCase().trim();
+      if (!query) return this.categorias();
+
+      return this.categorias()
+         .map(cat => ({
+            ...cat,
+            permisos: cat.permisos.filter(p =>
+               p.nombre.toLowerCase().includes(query) ||
+               p.descripcion?.toLowerCase().includes(query) ||
+               p.codigo.toLowerCase().includes(query)
+            ),
+            expandido: true
+         }))
+         .filter(cat => cat.permisos.length > 0);
+   });
+
+   totalAsignados = computed(() => this.permisos().filter(p => p.asignado).length);
+   totalPermisos = computed(() => this.permisos().length);
 
    hasChanges = computed(() => {
       const originales = this.permisosOriginales();
@@ -180,6 +335,20 @@ export class UsuarioPermisosPage implements OnInit {
          if (!actuales.has(id)) return true;
       }
       return false;
+   });
+
+   changesCount = computed(() => {
+      const originales = this.permisosOriginales();
+      const actuales = new Set(this.permisos().filter(p => p.asignado).map(p => p.id_permiso));
+      let count = 0;
+
+      for (const id of originales) {
+         if (!actuales.has(id)) count++;
+      }
+      for (const id of actuales) {
+         if (!originales.has(id)) count++;
+      }
+      return count;
    });
 
    async ngOnInit() {
@@ -195,7 +364,6 @@ export class UsuarioPermisosPage implements OnInit {
    async loadData(idUsuario: number) {
       this.loading.set(true);
       try {
-         // Cargar usuario y permisos en paralelo
          const [usuarios, permisos] = await Promise.all([
             lastValueFrom(this.usuariosService.getUsuarios()),
             lastValueFrom(this.permisosService.getPermisosUsuario(idUsuario))
@@ -210,11 +378,28 @@ export class UsuarioPermisosPage implements OnInit {
          this.usuario.set(usuario);
          this.permisos.set(permisos);
          this.permisosOriginales.set(new Set(permisos.filter(p => p.asignado).map(p => p.id_permiso)));
+
+         // Expandir todas las categorías por defecto
+         const cats = new Set<string>();
+         permisos.forEach(p => cats.add(this.getCategoriaNombre(p.codigo)));
+         this.categoriasExpandidas.set(cats);
       } catch (err) {
          console.error('Error loading data', err);
       } finally {
          this.loading.set(false);
       }
+   }
+
+   toggleCategoria(cat: CategoriaPermisos) {
+      this.categoriasExpandidas.update(set => {
+         const newSet = new Set(set);
+         if (newSet.has(cat.categoria)) {
+            newSet.delete(cat.categoria);
+         } else {
+            newSet.add(cat.categoria);
+         }
+         return newSet;
+      });
    }
 
    togglePermiso(permiso: PermisoConEstado) {
@@ -224,6 +409,17 @@ export class UsuarioPermisosPage implements OnInit {
             : p
          )
       );
+   }
+
+   toggleCategoriaTodos(cat: CategoriaPermisos, value: boolean) {
+      const ids = new Set(cat.permisos.map(p => p.id_permiso));
+      this.permisos.update(list =>
+         list.map(p => ids.has(p.id_permiso) ? { ...p, asignado: value } : p)
+      );
+   }
+
+   toggleTodos(value: boolean) {
+      this.permisos.update(list => list.map(p => ({ ...p, asignado: value })));
    }
 
    async guardar() {
@@ -239,12 +435,10 @@ export class UsuarioPermisosPage implements OnInit {
             this.permisosService.updatePermisosUsuario(this.usuario()!.id_usuario!, permisosActivos)
          );
 
-         // Actualizar originales
          this.permisosOriginales.set(new Set(permisosActivos));
 
-         // Mostrar éxito
          this.showSuccess.set(true);
-         setTimeout(() => this.showSuccess.set(false), 3000);
+         setTimeout(() => this.showSuccess.set(false), 4000);
 
       } catch (err) {
          console.error('Error saving permissions', err);
@@ -284,9 +478,29 @@ export class UsuarioPermisosPage implements OnInit {
          'Informes': '📊',
          'Territorios': '🗺️',
          'Reuniones': '📅',
-         'Exhibidores': '📺'
+         'Exhibidores': '🖥️'
       };
       return iconos[categoria] || '📋';
+   }
+
+   getCategoryBgClass(categoria: string): string {
+      const clases: Record<string, string> = {
+         'Publicadores': 'bg-blue-100 text-blue-600',
+         'Grupos': 'bg-amber-100 text-amber-600',
+         'Informes': 'bg-emerald-100 text-emerald-600',
+         'Territorios': 'bg-teal-100 text-teal-600',
+         'Reuniones': 'bg-purple-100 text-purple-600',
+         'Exhibidores': 'bg-rose-100 text-rose-600'
+      };
+      return clases[categoria] || 'bg-slate-100 text-slate-600';
+   }
+
+   getPermisoIcon(codigo: string): string {
+      if (codigo.includes('ver')) return '👁️';
+      if (codigo.includes('editar')) return '✏️';
+      if (codigo.includes('crear')) return '➕';
+      if (codigo.includes('enviar')) return '📤';
+      return '🔐';
    }
 
    getAssignedCount(cat: CategoriaPermisos): number {
