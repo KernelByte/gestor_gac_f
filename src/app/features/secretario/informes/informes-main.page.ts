@@ -21,7 +21,7 @@ import { saveAs } from 'file-saver';
     <div class="flex flex-col gap-4 h-full overflow-hidden p-1">
       <!-- Tabs Navigation -->
       <div class="shrink-0 flex items-center gap-2 bg-white rounded-2xl p-2 shadow-sm border border-slate-200/60">
-        <button *ngFor="let tab of tabs" 
+        <button *ngFor="let tab of visibleTabs()" 
           (click)="activeTab.set(tab.id)"
           class="px-5 py-3 rounded-xl text-sm font-bold transition-all"
           [ngClass]="activeTab() === tab.id 
@@ -86,9 +86,10 @@ import { saveAs } from 'file-saver';
               <div *ngIf="activeDropdown()" (click)="closeDropdown()" class="fixed inset-0 z-10 cursor-default"></div>
 
               <!-- Selector MES -->
-              <div class="relative z-20">
-                <button (click)="toggleDropdown('mes')" 
-                  class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[140px] justify-between">
+              <div class="relative z-20" [class.pointer-events-none]="isRestrictedUser()" [class.opacity-50]="isRestrictedUser()">
+                <button (click)="!isRestrictedUser() && toggleDropdown('mes')" 
+                  class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[140px] justify-between"
+                  [class.cursor-not-allowed]="isRestrictedUser()">
                   <span>{{ getMesLabel(selectedMes) }}</span>
                   <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="activeDropdown() === 'mes'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
@@ -108,9 +109,10 @@ import { saveAs } from 'file-saver';
               </div>
 
               <!-- Selector AÑO -->
-              <div class="relative z-20">
-                <button (click)="toggleDropdown('ano')" 
-                  class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[100px] justify-between">
+              <div class="relative z-20" [class.pointer-events-none]="isRestrictedUser()" [class.opacity-50]="isRestrictedUser()">
+                <button (click)="!isRestrictedUser() && toggleDropdown('ano')" 
+                  class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[100px] justify-between"
+                  [class.cursor-not-allowed]="isRestrictedUser()">
                   <span>{{ selectedAno }}</span>
                   <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="activeDropdown() === 'ano'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
@@ -129,14 +131,14 @@ import { saveAs } from 'file-saver';
                 </div>
               </div>
 
-              <!-- View Switcher -->
-              <div class="flex rounded-xl bg-slate-100 p-1">
+              <!-- View Switcher (Hidden for restricted users) -->
+              <div *ngIf="!isRestrictedUser()" class="flex rounded-xl bg-slate-100 p-1">
                 <button (click)="setVista(false)" [class.bg-white]="!vistaGrupo()" [class.shadow-sm]="!vistaGrupo()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600">Congregación</button>
                 <button (click)="setVista(true)" [class.bg-white]="vistaGrupo()" [class.shadow-sm]="vistaGrupo()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600">Por Grupos</button>
               </div>
 
-              <!-- Selector GRUPO (Condicional) -->
-              <div *ngIf="vistaGrupo()" class="relative z-20">
+              <!-- Selector GRUPO (Condicional - oculto para usuarios restringidos si ya tiene grupo asignado) -->
+              <div *ngIf="vistaGrupo() && !isRestrictedUser()" class="relative z-20">
                  <button (click)="toggleDropdown('grupo')" 
                   class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[180px] justify-between">
                   <span class="truncate max-w-[140px]">{{ getGrupoLabel(selectedGrupo) }}</span>
@@ -390,6 +392,26 @@ export class InformesMainPage implements OnInit {
   privilegios = signal<Privilegio[]>([]);
   publicadorPrivilegiosMap = signal<Map<number, number[]>>(new Map());
 
+  // Restricted user detection: Publicador sin roles privilegiados
+  isRestrictedUser = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return true;
+    const roles = user.roles ?? (user.rol ? [user.rol] : []);
+    const rolesLower = roles.map(r => (r || '').toLowerCase());
+    // Si tiene Administrador, Coordinador o Secretario -> NO restringido
+    if (rolesLower.includes('administrador') || rolesLower.includes('coordinador') || rolesLower.includes('secretario')) {
+      return false;
+    }
+    return true; // Solo Publicador u otros roles menores -> Restringido
+  });
+
+  visibleTabs = computed(() => {
+    if (this.isRestrictedUser()) {
+      return this.tabs.filter(t => t.id === 'entrada');
+    }
+    return this.tabs;
+  });
+
   meses = [
     { value: '1', label: 'Enero' }, { value: '2', label: 'Febrero' }, { value: '3', label: 'Marzo' },
     { value: '4', label: 'Abril' }, { value: '5', label: 'Mayo' }, { value: '6', label: 'Junio' },
@@ -398,10 +420,35 @@ export class InformesMainPage implements OnInit {
   ];
   anos = Array.from({ length: 10 }, (_, i) => (new Date().getFullYear() - 5 + i).toString());
 
-  ngOnInit() {
+  async ngOnInit() {
+    // Primero inicializar para usuarios restringidos (precargar grupo)
+    await this.initializeForRestrictedUser();
+    // Luego cargar datos (ya con el grupo correcto si es restringido)
     this.loadResumen();
     this.loadGrupos();
     this.loadPrivilegiosData();
+  }
+
+  private async initializeForRestrictedUser() {
+    if (this.isRestrictedUser()) {
+      // Precargar grupo del publicador
+      const user = this.authStore.user();
+      if (user?.id_usuario_publicador) {
+        // Necesitamos obtener el grupo del publicador desde el backend
+        try {
+          const publicador = await lastValueFrom(
+            this.http.get<any>(`/api/publicadores/${user.id_usuario_publicador}`)
+          );
+          if (publicador?.id_grupo_publicador) {
+            this.selectedGrupo = publicador.id_grupo_publicador;
+            this.vistaGrupo.set(true);
+            console.log('Restricted user group set to:', this.selectedGrupo);
+          }
+        } catch (e) {
+          console.error('Error loading publicador data for restricted user:', e);
+        }
+      }
+    }
   }
 
   async loadPrivilegiosData() {

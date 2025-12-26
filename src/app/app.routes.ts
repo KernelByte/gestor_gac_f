@@ -53,7 +53,7 @@ export const routes: Routes = [
       {
         path: 'secretario',
         canActivate: [roleGuard],
-        data: { roles: ['Administrador', 'Coordinador', 'Secretario', 'Superintendente de servicio'] },
+        data: { roles: ['Administrador', 'Coordinador', 'Secretario', 'Superintendente de servicio', 'Publicador'] },
         loadChildren: () => import('./features/secretario/routes').then(m => m.SECRETARIO_ROUTES)
       },
       {
