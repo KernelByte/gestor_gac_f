@@ -1,0 +1,50 @@
+<div class="shrink-0 hidden sm:grid sm:grid-cols-3 gap-2 sm:gap-4">
+   <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
+      <div class="flex items-center justify-between">
+         <div>
+            <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Informes Recibidos</p>
+            <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">
+               {{ resumen?.informes_recibidos || 0 }}<span class="text-base sm:text-lg text-slate-400">/ {{
+                  resumen?.total_publicadores || 0 }}</span>
+            </p>
+         </div>
+         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-100 flex items-center justify-center">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+         </div>
+      </div>
+   </div>
+   <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
+      <div class="flex items-center justify-between">
+         <div>
+            <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Cursos</p>
+            <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{{ resumen?.total_cursos || 0 }}
+            </p>
+         </div>
+         <div
+            class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-100 flex items-center justify-center">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+         </div>
+      </div>
+   </div>
+   <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
+      <div class="flex items-center justify-between">
+         <div>
+            <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Horas (Precursores)</p>
+            <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{{ resumen?.total_horas_precursores
+               || 0 | number }}</p>
+         </div>
+         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-orange-100 flex items-center justify-center">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-brand-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+         </div>
+      </div>
+   </div>
+</div>
