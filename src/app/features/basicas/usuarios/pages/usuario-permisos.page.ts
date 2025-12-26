@@ -47,175 +47,263 @@ interface CategoriaPermisos {
    <div class="min-h-screen" style="background-color: #f3f4f6;">
       
       <!-- Main Content Container -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
          
-         <!-- Page Header -->
-         <div class="mb-6">
-            <!-- Back Link -->
+         <!-- Navigation Breadcrumb -->
+         <nav class="mb-6">
             <a routerLink="/usuarios" 
-               class="inline-flex items-center gap-2 text-slate-500 hover:text-purple-600 transition-colors mb-4 text-sm font-medium">
-               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-               Volver a Usuarios
+               class="group inline-flex items-center gap-2 text-slate-500 hover:text-purple-600 transition-all duration-200 text-sm font-medium">
+               <div class="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center justify-center group-hover:shadow-md group-hover:border-purple-200 transition-all">
+                  <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+               </div>
+               <span class="group-hover:underline underline-offset-2">Volver a Usuarios</span>
             </a>
-            
-            <!-- Header Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5">
-               <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <!-- Icon & Title -->
-                  <div class="flex items-center gap-4 flex-1 min-w-0">
-                     <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                     </div>
-                     <div class="min-w-0">
-                        <h1 class="text-xl sm:text-2xl font-bold text-slate-800 truncate">Permisos de Usuario</h1>
-                        <p class="text-sm text-slate-500">Configura los accesos y permisos especiales</p>
-                     </div>
-                  </div>
-                  
-                  <!-- User Info -->
-                  <div *ngIf="usuario()" class="flex items-center gap-3 sm:ml-auto bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
-                     <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                        {{ getInitials(usuario()!) }}
-                     </div>
-                     <div class="min-w-0">
-                        <p class="font-semibold text-slate-700 text-sm truncate">{{ usuario()!.nombre }}</p>
-                        <p class="text-xs text-slate-400 truncate">{{ usuario()!.correo }}</p>
-                     </div>
-                     <span class="ml-2 px-3 py-1.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full whitespace-nowrap">
-                        {{ getRolName(usuario()!) }}
-                     </span>
-                  </div>
-               </div>
-            </div>
-         </div>
-
-         <!-- Content Below Header -->
+         </nav>
          
-         <!-- Loading State -->
-         <div *ngIf="loading()" class="flex flex-col items-center justify-center py-20 gap-4">
-            <div class="animate-spin w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full"></div>
-            <p class="text-slate-500">Cargando permisos...</p>
-         </div>
-
-         <!-- Stats & Search Bar -->
-         <div *ngIf="!loading()" @fadeIn class="mb-6">
-            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-               <!-- Stats -->
-               <div class="flex items-center gap-4">
-                  <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-100 shadow-sm">
-                     <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-                     <span class="text-sm font-medium text-slate-600">
-                        <span class="text-emerald-600 font-bold">{{ totalAsignados() }}</span> de {{ totalPermisos() }} permisos activos
-                     </span>
+         <!-- Header Card -->
+         <div class="mb-6 bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+               <!-- Icon & Title -->
+               <div class="flex items-center gap-4 flex-1 min-w-0">
+                  <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                     <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                   </div>
-                  
-                  <!-- Quick Actions -->
-                  <button (click)="toggleTodos(true)" 
-                     class="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
-                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                     Activar todos
-                  </button>
-                  <button (click)="toggleTodos(false)" 
-                     class="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
-                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                     Desactivar todos
-                  </button>
+                  <div class="min-w-0">
+                     <h1 class="text-xl font-bold text-slate-800">Permisos de Usuario</h1>
+                     <p class="text-sm text-slate-500">Configura los accesos y permisos especiales</p>
+                  </div>
                </div>
                
-               <!-- Search -->
-               <div class="relative w-full sm:w-64">
-                  <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                  <input type="text" 
-                     [(ngModel)]="searchQuery"
-                     placeholder="Buscar permiso..."
-                     class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all">
+               <!-- User Info -->
+               <div *ngIf="usuario()" class="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl">
+                  <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                     {{ getInitials(usuario()!) }}
+                  </div>
+                  <div class="min-w-0">
+                     <p class="font-semibold text-slate-700 text-sm truncate">{{ usuario()!.nombre }}</p>
+                     <p class="text-xs text-slate-400 truncate">{{ usuario()!.correo }}</p>
+                  </div>
+                  <span class="ml-2 px-3 py-1.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full whitespace-nowrap">
+                     {{ getRolName(usuario()!) }}
+                  </span>
                </div>
             </div>
          </div>
 
-         <!-- Categories Grid -->
-         <div *ngIf="!loading()" @fadeIn class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-            <div *ngFor="let cat of filteredCategorias()" 
-               class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow">
-               
-               <!-- Category Header -->
-               <button (click)="toggleCategoria(cat)" 
-                  class="w-full px-5 py-4 flex items-center gap-3 bg-slate-50 hover:bg-purple-50 transition-colors">
-                  <div class="w-11 h-11 rounded-xl flex items-center justify-center"
-                     [ngClass]="getCategoryBgClass(cat.categoria)">
-                     <div class="w-5 h-5" [innerHTML]="getCategoryIcon(cat.categoria)"></div>
-                  </div>
-                  <div class="flex-1 text-left">
-                     <h3 class="font-bold text-slate-700">{{ cat.categoria }}</h3>
-                     <p class="text-xs text-slate-400">{{ cat.permisos.length }} permisos disponibles</p>
-                  </div>
-                  
-                  <!-- Progress & Toggle -->
-                  <div class="flex items-center gap-3">
-                     <div class="hidden sm:flex items-center gap-2">
-                        <div class="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div class="h-full bg-purple-500 rounded-full transition-all duration-300"
-                              [style.width.%]="(getAssignedCount(cat) / cat.permisos.length) * 100"></div>
-                        </div>
-                        <span class="text-xs font-semibold text-slate-500 w-8">{{ getAssignedCount(cat) }}/{{ cat.permisos.length }}</span>
+         <!-- Loading State -->
+         <div *ngIf="loading()" class="flex flex-col items-center justify-center py-24 gap-5">
+            <div class="relative">
+               <div class="w-16 h-16 border-4 border-purple-200 rounded-full"></div>
+               <div class="absolute inset-0 w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p class="text-slate-500 font-medium">Cargando permisos...</p>
+         </div>
+
+         <!-- Floating Toolbar -->
+         <div *ngIf="!loading()" @fadeIn class="sticky top-4 z-20 mb-6">
+            <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-200/60 p-4">
+               <div class="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
+                  <!-- Stats Badge -->
+                  <div class="flex items-center gap-4 flex-wrap">
+                     <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200">
+                        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span class="text-sm font-semibold text-emerald-700">
+                           {{ totalAsignados() }} de {{ totalPermisos() }} activos
+                        </span>
                      </div>
-                     <svg class="w-5 h-5 text-slate-400 transition-transform duration-200" 
-                        [class.rotate-180]="cat.expandido"
-                        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M19 9l-7 7-7-7"/>
-                     </svg>
-                  </div>
-               </button>
-               
-               <!-- Permissions List -->
-               <div [@expandCollapse]="cat.expandido ? 'expanded' : 'collapsed'" class="border-t border-slate-100">
-                  <!-- Toggle All for Category -->
-                  <div class="px-5 py-3 bg-slate-50/50 flex items-center justify-between border-b border-slate-100">
-                     <span class="text-xs font-medium text-slate-500">Permisos de {{ cat.categoria }}</span>
-                     <div class="flex items-center gap-2">
-                        <button (click)="toggleCategoriaTodos(cat, true); $event.stopPropagation()"
-                           class="px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded transition-colors">
-                           Activar todo
+                     
+                     <!-- Quick Actions -->
+                     <div class="hidden sm:flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+                        <button (click)="toggleTodos(true)" 
+                           class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 rounded-lg transition-colors">
+                           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                           Activar todos
                         </button>
-                        <span class="text-slate-300">|</span>
-                        <button (click)="toggleCategoriaTodos(cat, false); $event.stopPropagation()"
-                           class="px-2 py-1 text-xs font-medium text-slate-400 hover:bg-slate-100 rounded transition-colors">
+                        <button (click)="toggleTodos(false)" 
+                           class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
+                           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                            Desactivar
                         </button>
                      </div>
                   </div>
                   
-                  <div class="divide-y divide-slate-50">
-                      <div *ngFor="let permiso of cat.permisos">
-                        <div class="px-5 py-3.5 flex items-center gap-4 hover:bg-purple-50/30 transition-colors group cursor-pointer"
-                           (click)="togglePermiso(permiso)">
+                  <!-- Search Input -->
+                  <div class="relative w-full sm:w-72">
+                     <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                     <input type="text" 
+                        [(ngModel)]="searchQuery"
+                        placeholder="Buscar permisos..."
+                        class="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl text-sm font-medium focus:outline-none focus:bg-white focus:border-purple-400 focus:shadow-lg focus:shadow-purple-500/10 transition-all placeholder:text-slate-400">
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         <!-- Categories Container with Scroll -->
+         <div *ngIf="!loading()" @fadeIn class="max-h-[calc(100vh-240px)] overflow-y-auto simple-scrollbar rounded-2xl">
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start pb-4">
+            <div *ngFor="let cat of filteredCategorias()" 
+               class="group bg-white rounded-2xl shadow-lg shadow-slate-200/50 border-2 overflow-hidden transition-all duration-300 hover:shadow-xl"
+               [class.border-amber-200]="getCategoryTheme(cat.categoria) === 'amber'"
+               [class.hover:border-amber-300]="getCategoryTheme(cat.categoria) === 'amber'"
+               [class.border-purple-200]="getCategoryTheme(cat.categoria) === 'purple'"
+               [class.hover:border-purple-300]="getCategoryTheme(cat.categoria) === 'purple'"
+               [class.border-emerald-200]="getCategoryTheme(cat.categoria) === 'emerald'"
+               [class.hover:border-emerald-300]="getCategoryTheme(cat.categoria) === 'emerald'"
+               [class.border-blue-200]="getCategoryTheme(cat.categoria) === 'blue'"
+               [class.hover:border-blue-300]="getCategoryTheme(cat.categoria) === 'blue'">
+               
+               <!-- Category Header -->
+               <button (click)="toggleCategoria(cat)" 
+                  class="w-full px-6 py-5 flex items-center gap-4 transition-colors"
+                  [ngClass]="getCategoryHoverClass(cat.categoria)">
+                  <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105"
+                     [ngClass]="getCategoryBgClass(cat.categoria)">
+                     <div class="w-6 h-6" [innerHTML]="getCategoryIcon(cat.categoria)"></div>
+                  </div>
+                  <div class="flex-1 text-left">
+                     <h3 class="text-lg font-bold text-slate-800">{{ cat.categoria }}</h3>
+                     <p class="text-sm text-slate-500">{{ cat.permisos.length }} permisos disponibles</p>
+                  </div>
+                  
+                  <!-- Progress & Toggle -->
+                  <div class="flex items-center gap-4">
+                     <div class="hidden sm:flex flex-col items-end gap-1">
+                        <span class="text-sm font-bold"
+                           [class.text-amber-600]="getCategoryTheme(cat.categoria) === 'amber'"
+                           [class.text-purple-600]="getCategoryTheme(cat.categoria) === 'purple'"
+                           [class.text-emerald-600]="getCategoryTheme(cat.categoria) === 'emerald'"
+                           [class.text-blue-600]="getCategoryTheme(cat.categoria) === 'blue'">
+                           {{ getAssignedCount(cat) }}/{{ cat.permisos.length }}
+                        </span>
+                        <div class="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                           <div class="h-full rounded-full transition-all duration-500"
+                              [class.bg-amber-500]="getCategoryTheme(cat.categoria) === 'amber'"
+                              [class.bg-purple-500]="getCategoryTheme(cat.categoria) === 'purple'"
+                              [class.bg-emerald-500]="getCategoryTheme(cat.categoria) === 'emerald'"
+                              [class.bg-blue-500]="getCategoryTheme(cat.categoria) === 'blue'"
+                              [style.width.%]="(getAssignedCount(cat) / cat.permisos.length) * 100"></div>
+                        </div>
+                     </div>
+                     <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
+                        [class.bg-amber-100]="getCategoryTheme(cat.categoria) === 'amber' && cat.expandido"
+                        [class.bg-purple-100]="getCategoryTheme(cat.categoria) === 'purple' && cat.expandido"
+                        [class.bg-emerald-100]="getCategoryTheme(cat.categoria) === 'emerald' && cat.expandido"
+                        [class.bg-blue-100]="getCategoryTheme(cat.categoria) === 'blue' && cat.expandido"
+                        [class.bg-slate-100]="!cat.expandido">
+                        <svg class="w-5 h-5 transition-transform duration-300" 
+                           [class.rotate-180]="cat.expandido"
+                           [class.text-amber-600]="getCategoryTheme(cat.categoria) === 'amber'"
+                           [class.text-purple-600]="getCategoryTheme(cat.categoria) === 'purple'"
+                           [class.text-emerald-600]="getCategoryTheme(cat.categoria) === 'emerald'"
+                           [class.text-blue-600]="getCategoryTheme(cat.categoria) === 'blue'"
+                           fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                           <path d="M19 9l-7 7-7-7"/>
+                        </svg>
+                     </div>
+                  </div>
+               </button>
+               
+               <!-- Permissions List -->
+               <div [@expandCollapse]="cat.expandido ? 'expanded' : 'collapsed'">
+                  <!-- Quick Actions Bar -->
+                  <div class="px-6 py-3 flex items-center justify-between border-t border-b"
+                     [class.bg-amber-50]="getCategoryTheme(cat.categoria) === 'amber'"
+                     [class.border-amber-100]="getCategoryTheme(cat.categoria) === 'amber'"
+                     [class.bg-purple-50]="getCategoryTheme(cat.categoria) === 'purple'"
+                     [class.border-purple-100]="getCategoryTheme(cat.categoria) === 'purple'"
+                     [class.bg-emerald-50]="getCategoryTheme(cat.categoria) === 'emerald'"
+                     [class.border-emerald-100]="getCategoryTheme(cat.categoria) === 'emerald'"
+                     [class.bg-blue-50]="getCategoryTheme(cat.categoria) === 'blue'"
+                     [class.border-blue-100]="getCategoryTheme(cat.categoria) === 'blue'">
+                     <span class="text-xs font-bold uppercase tracking-wider"
+                        [class.text-amber-700]="getCategoryTheme(cat.categoria) === 'amber'"
+                        [class.text-purple-700]="getCategoryTheme(cat.categoria) === 'purple'"
+                        [class.text-emerald-700]="getCategoryTheme(cat.categoria) === 'emerald'"
+                        [class.text-blue-700]="getCategoryTheme(cat.categoria) === 'blue'">
+                        Permisos
+                     </span>
+                     <div class="flex items-center gap-2">
+                        <button (click)="toggleCategoriaTodos(cat, true); $event.stopPropagation()"
+                           class="px-3 py-1.5 text-xs font-bold rounded-lg transition-colors"
+                           [class.text-amber-700]="getCategoryTheme(cat.categoria) === 'amber'"
+                           [class.hover:bg-amber-100]="getCategoryTheme(cat.categoria) === 'amber'"
+                           [class.text-purple-700]="getCategoryTheme(cat.categoria) === 'purple'"
+                           [class.hover:bg-purple-100]="getCategoryTheme(cat.categoria) === 'purple'"
+                           [class.text-emerald-700]="getCategoryTheme(cat.categoria) === 'emerald'"
+                           [class.hover:bg-emerald-100]="getCategoryTheme(cat.categoria) === 'emerald'"
+                           [class.text-blue-700]="getCategoryTheme(cat.categoria) === 'blue'"
+                           [class.hover:bg-blue-100]="getCategoryTheme(cat.categoria) === 'blue'">
+                           <div class="flex items-center gap-1.5">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                              <span>Activar todo</span>
+                           </div>
+                        </button>
+                        <button (click)="toggleCategoriaTodos(cat, false); $event.stopPropagation()"
+                           class="px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+                           <div class="flex items-center gap-1.5">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                              <span>Desactivar</span>
+                           </div>
+                        </button>
+                     </div>
+                  </div>
+                  
+                  <div class="divide-y divide-slate-100">
+                     <div *ngFor="let permiso of cat.permisos">
+                        <div class="px-6 py-4 flex items-center gap-4 cursor-pointer transition-colors"
+                           (click)="togglePermiso(permiso)"
+                           [ngClass]="getCategoryHoverClass(cat.categoria)">
                            
-                           <!-- Permission Icon & Info -->
+                           <!-- Permission Info -->
                            <div class="flex-1 min-w-0">
-                              <div class="flex items-center gap-2">
-                                 <span class="text-sm" [class.text-emerald-500]="permiso.asignado" [class.text-slate-400]="!permiso.asignado">
-                                    {{ getPermisoIcon(permiso.codigo) }}
-                                 </span>
-                                 <h4 class="font-semibold text-sm truncate"
-                                    [class.text-slate-700]="permiso.asignado"
-                                    [class.text-slate-500]="!permiso.asignado">
-                                    {{ permiso.nombre }}
-                                 </h4>
+                              <div class="flex items-center gap-3">
+                                 <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0"
+                                    [class.bg-slate-100]="!permiso.asignado"
+                                    [class.text-slate-400]="!permiso.asignado"
+                                    [class.bg-purple-100]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
+                                    [class.text-purple-600]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
+                                    [class.bg-amber-100]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
+                                    [class.text-amber-600]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
+                                    [class.bg-emerald-100]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
+                                    [class.text-emerald-600]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
+                                    [class.bg-blue-100]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'"
+                                    [class.text-blue-600]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'">
+                                    <div class="w-4 h-4" [innerHTML]="getPermisoIconSvg(permiso.codigo)"></div>
+                                 </div>
+                                 <div>
+                                    <h4 class="font-semibold transition-colors"
+                                       [class.text-slate-800]="permiso.asignado"
+                                       [class.text-slate-500]="!permiso.asignado">
+                                       {{ permiso.nombre }}
+                                    </h4>
+                                    <p *ngIf="permiso.descripcion" class="text-xs text-slate-400 mt-0.5">
+                                       {{ permiso.descripcion }}
+                                    </p>
+                                 </div>
                               </div>
-                              <p *ngIf="permiso.descripcion" class="text-xs text-slate-400 mt-0.5 truncate">
-                                 {{ permiso.descripcion }}
-                              </p>
                            </div>
                            
-                           <!-- Toggle Switch -->
-                           <div class="relative w-11 h-6 rounded-full transition-all duration-200 cursor-pointer flex-shrink-0"
-                              [class.bg-emerald-500]="permiso.asignado"
-                              [class.bg-slate-200]="!permiso.asignado"
-                              [class.shadow-emerald-500/30]="permiso.asignado"
+                           <!-- Themed Toggle Switch -->
+                           <div class="relative w-12 h-7 rounded-full transition-all duration-300 cursor-pointer flex-shrink-0"
+                              [class.bg-amber-500]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
+                              [class.shadow-amber-500/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
+                              [class.bg-purple-500]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
+                              [class.shadow-purple-500/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
+                              [class.bg-emerald-500]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
+                              [class.shadow-emerald-500/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
+                              [class.bg-blue-500]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'"
+                              [class.shadow-blue-500/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'"
+                              [class.bg-slate-300]="!permiso.asignado"
                               [class.shadow-lg]="permiso.asignado">
-                              <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 flex items-center justify-center"
+                              <div class="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 flex items-center justify-center"
                                  [class.translate-x-5]="permiso.asignado">
-                                 <svg *ngIf="permiso.asignado" class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                 <svg *ngIf="permiso.asignado" class="w-3 h-3" 
+                                    [class.text-amber-500]="getCategoryTheme(cat.categoria) === 'amber'"
+                                    [class.text-purple-500]="getCategoryTheme(cat.categoria) === 'purple'"
+                                    [class.text-emerald-500]="getCategoryTheme(cat.categoria) === 'emerald'"
+                                    [class.text-blue-500]="getCategoryTheme(cat.categoria) === 'blue'"
+                                    fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                     <path d="M5 13l4 4L19 7"/>
                                  </svg>
                               </div>
@@ -224,23 +312,23 @@ interface CategoriaPermisos {
 
                         <!-- Config Panel for Informes.Editar -->
                         <div *ngIf="permiso.codigo === 'informes.editar' && permiso.asignado" 
-                             class="px-5 pb-4 pl-[3.25rem] animate-fadeIn">
-                           <div class="bg-slate-50 rounded-xl border border-slate-200 p-3 shadow-sm">
-                              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                             class="px-6 pb-4 pl-16">
+                           <div class="bg-purple-50 rounded-xl border border-purple-200 p-4">
+                              <label class="block text-xs font-bold text-purple-700 uppercase tracking-wider mb-3">
                                  Alcance de edición
                               </label>
-                              <div class="flex items-center gap-3">
-                                 <label class="flex items-center gap-2 cursor-pointer">
+                              <div class="flex flex-wrap items-center gap-4">
+                                 <label class="flex items-center gap-2 cursor-pointer group">
                                     <input type="radio" name="scope_edit" [value]="'todos'" 
                                            [(ngModel)]="permiso.alcance" (click)="$event.stopPropagation()"
-                                           class="text-purple-600 focus:ring-purple-500 border-gray-300">
-                                    <span class="text-sm text-slate-700">Todos los grupos</span>
+                                           class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-purple-300">
+                                    <span class="text-sm font-medium text-slate-700 group-hover:text-purple-700">Todos los grupos</span>
                                  </label>
-                                 <label class="flex items-center gap-2 cursor-pointer">
+                                 <label class="flex items-center gap-2 cursor-pointer group">
                                     <input type="radio" name="scope_edit" [value]="'asignados'" 
                                            [(ngModel)]="permiso.alcance" (click)="$event.stopPropagation()"
-                                           class="text-purple-600 focus:ring-purple-500 border-gray-300">
-                                    <span class="text-sm text-slate-700">Solo asignados</span>
+                                           class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-purple-300">
+                                    <span class="text-sm font-medium text-slate-700 group-hover:text-purple-700">Solo asignados</span>
                                  </label>
                               </div>
                            </div>
@@ -249,6 +337,7 @@ interface CategoriaPermisos {
                   </div>
                </div>
             </div>
+         </div>
          </div>
 
          <!-- Empty State -->
@@ -561,27 +650,70 @@ export class UsuarioPermisosPage implements OnInit {
       return this.sanitizer.bypassSecurityTrustHtml(svg);
    }
 
-   getCategoryBgClass(categoria: string): string {
-      const clases: Record<string, string> = {
-         'Publicadores y Grupos': 'bg-blue-100 text-blue-600',
-         'Publicadores': 'bg-blue-100 text-blue-600',
-         'Grupos': 'bg-amber-100 text-amber-600',
-         'Informes': 'bg-emerald-100 text-emerald-600',
-         'Territorios': 'bg-teal-100 text-teal-600',
-         'Reuniones': 'bg-purple-100 text-purple-600',
-         'Exhibidores': 'bg-rose-100 text-rose-600'
+   getCategoryTheme(categoria: string): 'amber' | 'purple' | 'emerald' | 'blue' | 'slate' {
+      const themes: Record<string, string> = {
+         'Publicadores y Grupos': 'amber',
+         'Publicadores': 'amber',
+         'Grupos': 'amber',
+         'Informes': 'purple',
+         'Territorios': 'emerald',
+         'Reuniones': 'purple',
+         'Exhibidores': 'blue'
       };
-      return clases[categoria] || 'bg-slate-100 text-slate-600';
+      return (themes[categoria] || 'slate') as any;
+   }
+
+   getCategoryBgClass(categoria: string): string {
+      const theme = this.getCategoryTheme(categoria);
+      return `bg-${theme}-100 text-${theme}-600`;
+   }
+
+   getCategoryHoverClass(categoria: string): string {
+      const theme = this.getCategoryTheme(categoria);
+      return `hover:bg-${theme}-50`;
+   }
+
+   // Helper para clases dinámicas de los toggles y barras
+   getThemeColorClasses(categoria: string) {
+      const theme = this.getCategoryTheme(categoria);
+      return {
+         toggleActive: `bg-${theme}-500`,
+         toggleShadow: `shadow-${theme}-500/30`,
+         textActive: `text-${theme}-700`,
+         bar: `bg-${theme}-500`,
+         lightBg: `bg-${theme}-50`,
+         border: `border-${theme}-200`,
+         ring: `focus:ring-${theme}-500`
+      };
    }
 
    getPermisoIcon(codigo: string): string {
       if (codigo.includes('ver')) return '👁️';
       if (codigo.includes('editar')) return '✏️';
       if (codigo.includes('crear')) return '➕';
-      if (codigo.includes('crear')) return '➕';
       if (codigo.includes('enviar')) return '📤';
       if (codigo.includes('historial')) return '⏳';
       return '🔐';
+   }
+
+   getPermisoIconSvg(codigo: string): SafeHtml {
+      const icons: Record<string, string> = {
+         'ver': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+         'editar': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+         'crear': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+         'enviar': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+         'historial': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+      };
+
+      let iconKey = 'default';
+      if (codigo.includes('ver')) iconKey = 'ver';
+      else if (codigo.includes('editar')) iconKey = 'editar';
+      else if (codigo.includes('crear')) iconKey = 'crear';
+      else if (codigo.includes('enviar')) iconKey = 'enviar';
+      else if (codigo.includes('historial')) iconKey = 'historial';
+
+      const svg = icons[iconKey] || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+      return this.sanitizer.bypassSecurityTrustHtml(svg);
    }
 
    getAssignedCount(cat: CategoriaPermisos): number {
