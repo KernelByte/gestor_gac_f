@@ -20,17 +20,18 @@ import { saveAs } from 'file-saver';
   template: `
     <div class="flex flex-col gap-4 h-full overflow-hidden p-1">
       <!-- Tabs Navigation -->
-      <div class="shrink-0 flex items-center gap-2 bg-white rounded-2xl p-2 shadow-sm border border-slate-200/60">
+      <div class="shrink-0 flex items-center gap-1 sm:gap-2 bg-white rounded-2xl p-1.5 sm:p-2 shadow-sm border border-slate-200/60 overflow-x-auto">
         <button *ngFor="let tab of visibleTabs()" 
           (click)="activeTab.set(tab.id)"
-          class="px-5 py-3 rounded-xl text-sm font-bold transition-all"
+          class="px-3 py-2 sm:px-5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0"
           [ngClass]="activeTab() === tab.id 
             ? 'bg-brand-purple text-white shadow-lg shadow-purple-500/20' 
             : 'text-slate-500 hover:bg-slate-50'"
         >
-          <span class="flex items-center gap-2">
+          <span class="flex items-center gap-1.5 sm:gap-2">
             <span [innerHTML]="tab.icon"></span>
-            {{ tab.label }}
+            <span class="hidden xs:inline">{{ tab.label }}</span>
+            <span class="xs:hidden">{{ tab.label.split(' ')[0] }}</span>
           </span>
         </button>
       </div>
@@ -40,54 +41,55 @@ import { saveAs } from 'file-saver';
         <!-- Tab 1: Entrada Mensual -->
         <ng-container *ngIf="activeTab() === 'entrada'">
           <div class="flex flex-col gap-4 h-full">
-            <!-- Summary Cards -->
-            <div class="shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60">
+            <!-- Summary Cards (Hidden on mobile for more vertical space) -->\r\n            <div class=\"shrink-0 hidden sm:grid sm:grid-cols-3 gap-2 sm:gap-4\">
+              <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Informes Recibidos</p>
-                    <p class="text-3xl font-black text-slate-900 mt-1">
-                      {{ resumen()?.informes_recibidos || 0 }}<span class="text-lg text-slate-400">/ {{ resumen()?.total_publicadores || 0 }}</span>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Informes Recibidos</p>
+                    <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">
+                      {{ resumen()?.informes_recibidos || 0 }}<span class="text-base sm:text-lg text-slate-400">/ {{ resumen()?.total_publicadores || 0 }}</span>
                     </p>
                   </div>
-                  <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   </div>
                 </div>
               </div>
-              <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60">
+              <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Cursos</p>
-                    <p class="text-3xl font-black text-slate-900 mt-1">{{ resumen()?.total_cursos || 0 }}</p>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Cursos</p>
+                    <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{{ resumen()?.total_cursos || 0 }}</p>
                   </div>
-                  <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                  <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                   </div>
                 </div>
               </div>
-              <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60">
+              <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Horas (Precursores)</p>
-                    <p class="text-3xl font-black text-slate-900 mt-1">{{ resumen()?.total_horas_precursores || 0 | number }}</p>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Horas (Precursores)</p>
+                    <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{{ resumen()?.total_horas_precursores || 0 | number }}</p>
                   </div>
-                  <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-brand-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-orange-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-brand-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Filters Bar (Custom Dropdowns) -->
-            <div class="shrink-0 flex flex-wrap items-center gap-3 bg-white p-3 rounded-2xl shadow-sm border border-slate-200/60 relative z-20">
+            <div class="shrink-0 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 bg-white p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 relative z-20">
               
               <!-- Backdrop para cerrar dropdowns al hacer click fuera -->
               <div *ngIf="activeDropdown()" (click)="closeDropdown()" class="fixed inset-0 z-10 cursor-default"></div>
 
-              <!-- Selector MES -->
-              <div class="relative z-20" [class.pointer-events-none]="isRestrictedUser()" [class.opacity-50]="isRestrictedUser()">
-                <button (click)="!isRestrictedUser() && toggleDropdown('mes')" 
+              <!-- Fila 1: Selectores de Periodo -->
+              <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <!-- Selector MES -->
+                <div class="relative z-20" [class.pointer-events-none]="isRestrictedUser()" [class.opacity-50]="isRestrictedUser()">
+                  <button (click)="!isRestrictedUser() && toggleDropdown('mes')" 
                   class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[140px] justify-between"
                   [class.cursor-not-allowed]="isRestrictedUser()">
                   <span>{{ getMesLabel(selectedMes) }}</span>
@@ -132,15 +134,15 @@ import { saveAs } from 'file-saver';
               </div>
 
               <!-- View Switcher (Hidden for restricted users) -->
-              <div *ngIf="!isRestrictedUser()" class="flex rounded-xl bg-slate-100 p-1">
-                <button (click)="setVista(false)" [class.bg-white]="!vistaGrupo()" [class.shadow-sm]="!vistaGrupo()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600">Congregación</button>
-                <button (click)="setVista(true)" [class.bg-white]="vistaGrupo()" [class.shadow-sm]="vistaGrupo()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600">Por Grupos</button>
-              </div>
+                <div *ngIf="!isRestrictedUser()" class="flex rounded-xl bg-slate-100 p-0.5 sm:p-1">
+                  <button (click)="setVista(false)" [class.bg-white]="!vistaGrupo()" [class.shadow-sm]="!vistaGrupo()" class="px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all text-slate-600">Congregación</button>
+                  <button (click)="setVista(true)" [class.bg-white]="vistaGrupo()" [class.shadow-sm]="vistaGrupo()" class="px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all text-slate-600">Por Grupos</button>
+                </div>
 
-              <!-- Selector GRUPO (Condicional - oculto para usuarios restringidos si ya tiene grupo asignado) -->
-              <div *ngIf="vistaGrupo() && !isRestrictedUser()" class="relative z-20">
-                 <button (click)="toggleDropdown('grupo')" 
-                  class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[180px] justify-between">
+                <!-- Selector GRUPO (Condicional - oculto para usuarios restringidos si ya tiene grupo asignado) -->
+                <div *ngIf="vistaGrupo() && !isRestrictedUser()" class="relative z-20">
+                   <button (click)="toggleDropdown('grupo')" 
+                    class="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-xs sm:text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[120px] sm:min-w-[180px] justify-between">
                   <span class="truncate max-w-[140px]">{{ getGrupoLabel(selectedGrupo) }}</span>
                   <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="activeDropdown() === 'grupo'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
@@ -162,147 +164,37 @@ import { saveAs } from 'file-saver';
                     </button>
                   </div>
                 </div>
-              </div>
-
-              <div class="flex-1"></div>
-              
-              <!-- Search & Filter -->
-              <div class="relative group">
-                <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="loadResumen()" placeholder="Buscar publicador..." class="pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-transparent hover:bg-white hover:border-slate-200 focus:bg-white focus:border-brand-purple/30 text-sm w-64 focus:ring-4 focus:ring-brand-purple/5 transition-all outline-none">
-                <svg class="w-4 h-4 text-slate-400 group-hover:text-brand-purple absolute left-3 top-1/2 -translate-y-1/2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              </div>
-              <label class="group flex items-center gap-3 px-4 py-2.5 rounded-xl cursor-pointer select-none transition-all duration-300 ring-2"
-                     [ngClass]="soloSinInforme 
-                       ? 'bg-brand-purple/10 ring-brand-purple/30 shadow-lg shadow-purple-500/10' 
-                       : 'bg-slate-50 hover:bg-slate-100 ring-transparent hover:ring-slate-200'">
-                 <div class="relative">
-                    <input type="checkbox" [(ngModel)]="soloSinInforme" (ngModelChange)="loadResumen()" class="peer sr-only">
-                    <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:bg-brand-purple transition-colors duration-300 shadow-inner"></div>
-                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] peer-checked:translate-x-5 flex items-center justify-center">
-                       <svg class="w-3 h-3 text-brand-purple opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                    </div>
-                 </div>
-                 <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 transition-colors duration-300" [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span class="text-sm font-bold transition-colors duration-300" [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-600'">Sin informe</span>
-                 </div>
-              </label>
-            </div>
-
-            <!-- Data Table -->
-            <div class="flex-1 min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200/60 flex flex-col overflow-hidden">
-              <div class="flex-1 overflow-y-auto">
-                <table class="w-full text-left border-separate border-spacing-0">
-                  <thead class="sticky top-0 z-10 bg-white/95 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                    <tr>
-                      <th class="px-6 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100">Publicador</th>
-                      <th class="px-4 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-32 border-b border-slate-100">Participó</th>
-                      <th class="px-4 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-32 border-b border-slate-100">Horas</th>
-                      <th class="px-4 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-32 border-b border-slate-100">Estudios</th>
-                      <th class="px-4 py-5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100 min-w-[200px]">Observaciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let pub of resumen()?.publicadores_list || []; let odd = odd; trackBy: trackByPub" 
-                        class="group transition-all duration-200"
-                        [ngClass]="odd ? 'bg-slate-50/50 hover:bg-slate-100/80' : 'bg-white hover:bg-slate-50/80'">
-                      <!-- Publicador -->
-                      <td class="px-6 py-4">
-                        <div class="flex items-center gap-4">
-                          <div class="relative">
-                             <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-105"
-                                [ngClass]="getAvatarClass(pub.id_publicador)">
-                                {{ getInitials(pub.nombre_completo) }}
-                             </div>
-                             <div *ngIf="getInformeValue(pub, 'participo')" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white flex items-center justify-center">
-                                <svg class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                             </div>
-                          </div>
-                          <div>
-                            <p class="font-bold text-slate-900 text-sm group-hover:text-brand-purple transition-colors mb-0.5">{{ pub.nombre_completo }}</p>
-                            <div class="flex flex-wrap gap-1 items-center">
-                               <ng-container *ngFor="let role of getRoles(pub)">
-                                    <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
-                                        {{ role.label }}
-                                    </span>
-                                    <span *ngIf="role.type === 'text'" class="text-[10px] uppercase tracking-wider" [ngClass]="role.class">
-                                        {{ role.label }}
-                                    </span>
-                               </ng-container>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      <!-- Participó -->
-                      <td class="px-4 py-4 text-center align-middle">
-                        <div class="flex justify-center">
-                            <label class="relative flex items-center justify-center cursor-pointer group/check p-2">
-                                <input type="checkbox" 
-                                    [checked]="getInformeValue(pub, 'participo')" 
-                                    (change)="updateInforme(pub, 'participo', $event)"
-                                    class="peer sr-only">
-                                <div class="w-12 h-7 bg-slate-200 rounded-full peer-checked:bg-brand-purple transition-all duration-300 ease-out peer-checked:shadow-lg peer-checked:shadow-purple-500/30"></div>
-                                <div class="absolute w-5 h-5 bg-white rounded-full shadow-sm left-3 peer-checked:translate-x-5 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex items-center justify-center">
-                                    <svg class="w-3 h-3 text-brand-purple opacity-0 peer-checked:opacity-100 transition-opacity duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                </div>
-                            </label>
-                        </div>
-                      </td>
-
-                      <!-- Horas (ahora antes de Estudios) -->
-                      <td class="px-4 py-4 text-center">
-                         <div *ngIf="pub.requiere_horas" class="relative group/input">
-                            <input type="number" min="0" placeholder="0"
-                                [value]="getInformeValue(pub, 'horas') || ''" 
-                                (input)="updateInforme(pub, 'horas', $event)"
-                                class="w-20 px-3 py-2 rounded-xl bg-orange-50/50 border border-orange-100 text-center text-sm font-bold text-brand-orange placeholder:text-orange-200/50 focus:bg-white focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-all shadow-sm">
-                         </div>
-                         <div *ngIf="!pub.requiere_horas" class="flex flex-col items-center justify-center opacity-30">
-                            <div class="h-0.5 w-4 bg-slate-400 rounded-full"></div>
-                         </div>
-                      </td>
-
-                      <!-- Estudios (ahora después de Horas) -->
-                      <td class="px-4 py-4 text-center">
-                        <input type="number" min="0" placeholder="0"
-                            [value]="getInformeValue(pub, 'cursos') || ''" 
-                            (input)="updateInforme(pub, 'cursos', $event)"
-                            class="w-20 px-0 py-2 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-brand-purple text-center text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:ring-0 transition-all">
-                      </td>
-
-                      <!-- Notas -->
-                      <td class="px-4 py-4">
-                        <input type="text" placeholder="Agregar nota..."
-                            [value]="getInformeValue(pub, 'notas') || ''" 
-                            (input)="updateInforme(pub, 'notas', $event)"
-                            class="w-full px-4 py-2 bg-transparent rounded-xl border border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm focus:bg-white focus:border-brand-purple/50 focus:ring-4 focus:ring-brand-purple/5 text-sm transition-all placeholder:text-slate-300">
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <!-- Footer -->
-              <div class="shrink-0 px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/80">
-                <span class="text-xs text-slate-500">Mostrando <span class="font-bold text-slate-700">{{ resumen()?.publicadores_list?.length || 0 }}</span> publicadores</span>
-                <div class="flex gap-3">
-                  <button (click)="exportarExcel()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-white transition-all flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                    Descargar Plantilla
-                  </button>
-                  <input type="file" #fileInput accept=".xlsx" (change)="importarExcel($event)" class="hidden">
-                  <button (click)="fileInput.click()" [disabled]="saving()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-white transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l4-4m0 0l4 4m-4-4v12"/></svg>
-                     Subir Plantilla
-                  </button>
-                  <button (click)="guardarTodo()" [disabled]="saving()" class="px-6 py-2.5 rounded-xl bg-brand-purple text-white font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-500/20 transition-all flex items-center gap-2 disabled:opacity-50">
-                    <svg *ngIf="!saving()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                    <svg *ngIf="saving()" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                    {{ saving() ? 'Guardando...' : 'Guardar Todo' }}
-                  </button>
                 </div>
-              </div>
+              </div> <!-- Cierre Fila 1 -->
+
+              <!-- Fila 2: Búsqueda y Filtro (en móvil aparece debajo) -->
+              <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto sm:ml-auto">
+                <!-- Search -->
+                <div class="relative group flex-1 sm:flex-none">
+                  <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="loadResumen()" placeholder="Buscar..." class="pl-9 pr-3 py-2 sm:py-2.5 rounded-xl bg-slate-50 border border-transparent hover:bg-white hover:border-slate-200 focus:bg-white focus:border-brand-purple/30 text-sm w-full sm:w-56 lg:w-64 focus:ring-4 focus:ring-brand-purple/5 transition-all outline-none">
+                  <svg class="w-4 h-4 text-slate-400 group-hover:text-brand-purple absolute left-3 top-1/2 -translate-y-1/2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <!-- Toggle Sin Informe -->
+                <label class="group flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl cursor-pointer select-none transition-all duration-300 ring-2"
+                       [ngClass]="soloSinInforme 
+                         ? 'bg-brand-purple/10 ring-brand-purple/30 shadow-lg shadow-purple-500/10' 
+                         : 'bg-slate-50 hover:bg-slate-100 ring-transparent hover:ring-slate-200'">
+                   <div class="relative">
+                      <input type="checkbox" [(ngModel)]="soloSinInforme" (ngModelChange)="loadResumen()" class="peer sr-only">
+                      <div class="w-9 sm:w-11 h-5 sm:h-6 bg-slate-300 rounded-full peer peer-checked:bg-brand-purple transition-colors duration-300 shadow-inner"></div>
+                      <div class="absolute top-0.5 left-0.5 w-4 sm:w-5 h-4 sm:h-5 bg-white rounded-full shadow-md transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] peer-checked:translate-x-4 sm:peer-checked:translate-x-5 flex items-center justify-center">
+                         <svg class="w-2.5 sm:w-3 h-2.5 sm:h-3 text-brand-purple opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                   </div>
+                   <div class="flex items-center gap-1.5 sm:gap-2">
+                      <svg class="w-3.5 sm:w-4 h-3.5 sm:h-4 transition-colors duration-300" [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <span class="text-xs sm:text-sm font-bold transition-colors duration-300" [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-600'">Sin informe</span>
+                   </div>
+                </label>
+              </div> <!-- Cierre Fila 2 -->
             </div>
+
+            <!-- Data List/Table Container -->\r\n            <div class=\"flex-1 min-h-0 bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 flex flex-col overflow-hidden\">\r\n              <div class=\"flex-1 overflow-y-auto simple-scrollbar\">\r\n                \r\n                <!-- Desktop Table (hidden on mobile) -->\r\n                <table class=\"hidden md:table w-full text-left border-separate border-spacing-0\">\r\n                  <thead class=\"sticky top-0 z-10 bg-white/95 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.02)]\">\r\n                    <tr>\r\n                      <th class=\"px-6 py-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100\">Publicador</th>\r\n                      <th class=\"px-4 py-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-28 border-b border-slate-100\">Participó</th>\r\n                      <th class=\"px-4 py-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-24 border-b border-slate-100\">Horas</th>\r\n                      <th class=\"px-4 py-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-24 border-b border-slate-100\">Estudios</th>\r\n                      <th class=\"px-4 py-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100\">Observaciones</th>\r\n                    </tr>\r\n                  </thead>\r\n                  <tbody>\r\n                    <tr *ngFor=\"let pub of resumen()?.publicadores_list || []; let odd = odd; trackBy: trackByPub\" \r\n                        class=\"group transition-all duration-200\"\r\n                        [ngClass]=\"odd ? 'bg-slate-50/50 hover:bg-slate-100/80' : 'bg-white hover:bg-slate-50/80'\">\r\n                      <!-- Publicador -->\r\n                      <td class=\"px-6 py-3\">\r\n                        <div class=\"flex items-center gap-3\">\r\n                          <div class=\"relative\">\r\n                             <div class=\"w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shadow-sm ring-1 ring-black/5\"\r\n                                [ngClass]=\"getAvatarClass(pub.id_publicador)\">\r\n                                {{ getInitials(pub.nombre_completo) }}\r\n                             </div>\r\n                             <div *ngIf=\"getInformeValue(pub, 'participo')\" class=\"absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white flex items-center justify-center\">\r\n                                <svg class=\"w-2 h-2 text-white\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"4\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5 13l4 4L19 7\" /></svg>\r\n                             </div>\r\n                          </div>\r\n                          <div>\r\n                            <p class=\"font-bold text-slate-900 text-sm\">{{ pub.nombre_completo }}</p>\r\n                            <div class=\"flex flex-wrap gap-1 items-center\">\r\n                               <ng-container *ngFor=\"let role of getRoles(pub)\">\r\n                                    <span *ngIf=\"role.type === 'pill'\" class=\"inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider\" [ngClass]=\"role.class\">\r\n                                        {{ role.label }}\r\n                                    </span>\r\n                                    <span *ngIf=\"role.type === 'text'\" class=\"text-[9px] uppercase tracking-wider\" [ngClass]=\"role.class\">\r\n                                        {{ role.label }}\r\n                                    </span>\r\n                               </ng-container>\r\n                            </div>\r\n                          </div>\r\n                        </div>\r\n                      </td>\r\n                      \r\n                      <!-- Participó -->\r\n                      <td class=\"px-4 py-3 text-center align-middle\">\r\n                        <div class=\"flex justify-center\">\r\n                            <label class=\"relative flex items-center justify-center cursor-pointer p-1\">\r\n                                <input type=\"checkbox\" \r\n                                    [checked]=\"getInformeValue(pub, 'participo')\" \r\n                                    (change)=\"updateInforme(pub, 'participo', $event)\"\r\n                                    class=\"peer sr-only\">\r\n                                <div class=\"w-10 h-6 bg-slate-200 rounded-full peer-checked:bg-brand-purple transition-all duration-300\"></div>\r\n                                <div class=\"absolute w-4 h-4 bg-white rounded-full shadow-sm left-2 peer-checked:translate-x-4 transition-transform duration-300 flex items-center justify-center\">\r\n                                    <svg class=\"w-2.5 h-2.5 text-brand-purple opacity-0 peer-checked:opacity-100 transition-opacity\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"3\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5 13l4 4L19 7\" /></svg>\r\n                                </div>\r\n                            </label>\r\n                        </div>\r\n                      </td>\r\n\r\n                      <!-- Horas -->\r\n                      <td class=\"px-4 py-3 text-center\">\r\n                         <div *ngIf=\"pub.requiere_horas\">\r\n                            <input type=\"number\" min=\"0\" placeholder=\"0\"\r\n                                [value]=\"getInformeValue(pub, 'horas') || ''\" \r\n                                (input)=\"updateInforme(pub, 'horas', $event)\"\r\n                                class=\"w-16 px-2 py-1.5 rounded-lg bg-orange-50/50 border border-orange-100 text-center text-sm font-bold text-brand-orange placeholder:text-orange-200/50 focus:bg-white focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-all\">\r\n                         </div>\r\n                         <div *ngIf=\"!pub.requiere_horas\" class=\"flex justify-center opacity-30\">\r\n                            <div class=\"h-0.5 w-4 bg-slate-400 rounded-full\"></div>\r\n                         </div>\r\n                      </td>\r\n\r\n                      <!-- Estudios -->\r\n                      <td class=\"px-4 py-3 text-center\">\r\n                        <input type=\"number\" min=\"0\" placeholder=\"0\"\r\n                            [value]=\"getInformeValue(pub, 'cursos') || ''\" \r\n                            (input)=\"updateInforme(pub, 'cursos', $event)\"\r\n                            class=\"w-16 px-0 py-1.5 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-brand-purple text-center text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:ring-0 transition-all\">\r\n                      </td>\r\n\r\n                      <!-- Notas -->\r\n                      <td class=\"px-4 py-3\">\r\n                        <input type=\"text\" placeholder=\"Nota...\"\r\n                            [value]=\"getInformeValue(pub, 'notas') || ''\" \r\n                            (input)=\"updateInforme(pub, 'notas', $event)\"\r\n                            class=\"w-full px-3 py-1.5 bg-transparent rounded-lg border border-transparent hover:bg-white hover:border-slate-200 focus:bg-white focus:border-brand-purple/50 focus:ring-2 focus:ring-brand-purple/5 text-sm transition-all placeholder:text-slate-300\">\r\n                      </td>\r\n                    </tr>\r\n                  </tbody>\r\n                </table>\r\n\r\n                <!-- Mobile Cards (visible only on mobile) -->\r\n                <div class=\"md:hidden divide-y divide-slate-100\">\r\n                  <div *ngFor=\"let pub of resumen()?.publicadores_list || []; trackBy: trackByPub\" \r\n                       class=\"p-3 hover:bg-slate-50/80 transition-colors\">\r\n                    <!-- Header: Avatar + Name -->\r\n                    <div class=\"flex items-center gap-3 mb-3\">\r\n                      <div class=\"relative\">\r\n                         <div class=\"w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shadow-sm ring-1 ring-black/5\"\r\n                            [ngClass]=\"getAvatarClass(pub.id_publicador)\">\r\n                            {{ getInitials(pub.nombre_completo) }}\r\n                         </div>\r\n                         <div *ngIf=\"getInformeValue(pub, 'participo')\" class=\"absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white flex items-center justify-center\">\r\n                            <svg class=\"w-2 h-2 text-white\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"4\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5 13l4 4L19 7\" /></svg>\r\n                         </div>\r\n                      </div>\r\n                      <div class=\"flex-1 min-w-0\">\r\n                        <p class=\"font-bold text-slate-900 text-sm truncate\">{{ pub.nombre_completo }}</p>\r\n                        <div class=\"flex flex-wrap gap-1\">\r\n                           <ng-container *ngFor=\"let role of getRoles(pub)\">\r\n                                <span *ngIf=\"role.type === 'pill'\" class=\"inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase\" [ngClass]=\"role.class\">\r\n                                    {{ role.label }}\r\n                                </span>\r\n                                <span *ngIf=\"role.type === 'text'\" class=\"text-[8px] uppercase\" [ngClass]=\"role.class\">\r\n                                    {{ role.label }}\r\n                                </span>\r\n                           </ng-container>\r\n                        </div>\r\n                      </div>\r\n                      <!-- Participó Toggle (inline) -->\r\n                      <label class=\"relative cursor-pointer shrink-0\">\r\n                          <input type=\"checkbox\" \r\n                              [checked]=\"getInformeValue(pub, 'participo')\" \r\n                              (change)=\"updateInforme(pub, 'participo', $event)\"\r\n                              class=\"peer sr-only\">\r\n                          <div class=\"w-10 h-6 bg-slate-200 rounded-full peer-checked:bg-brand-purple transition-all\"></div>\r\n                          <div class=\"absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm peer-checked:translate-x-4 transition-transform flex items-center justify-center\">\r\n                              <svg class=\"w-2.5 h-2.5 text-brand-purple opacity-0 peer-checked:opacity-100\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"3\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M5 13l4 4L19 7\" /></svg>\r\n                          </div>\r\n                      </label>\r\n                    </div>\r\n                    \r\n                    <!-- Input Row: Horas, Estudios, Notas -->\r\n                    <div class=\"flex items-center gap-2\">\r\n                      <!-- Horas -->\r\n                      <div *ngIf=\"pub.requiere_horas\" class=\"flex items-center gap-1.5 bg-orange-50 rounded-lg px-2 py-1.5\">\r\n                        <svg class=\"w-3.5 h-3.5 text-brand-orange shrink-0\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z\"/></svg>\r\n                        <input type=\"number\" min=\"0\" placeholder=\"0\"\r\n                            [value]=\"getInformeValue(pub, 'horas') || ''\" \r\n                            (input)=\"updateInforme(pub, 'horas', $event)\"\r\n                            class=\"w-12 bg-transparent text-center text-sm font-bold text-brand-orange placeholder:text-orange-300 focus:outline-none\">\r\n                      </div>\r\n                      \r\n                      <!-- Estudios -->\r\n                      <div class=\"flex items-center gap-1.5 bg-emerald-50 rounded-lg px-2 py-1.5\">\r\n                        <svg class=\"w-3.5 h-3.5 text-emerald-600 shrink-0\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253\"/></svg>\r\n                        <input type=\"number\" min=\"0\" placeholder=\"0\"\r\n                            [value]=\"getInformeValue(pub, 'cursos') || ''\" \r\n                            (input)=\"updateInforme(pub, 'cursos', $event)\"\r\n                            class=\"w-10 bg-transparent text-center text-sm font-bold text-emerald-700 placeholder:text-emerald-300 focus:outline-none\">\r\n                      </div>\r\n                      \r\n                      <!-- Notas -->\r\n                      <div class=\"flex-1\">\r\n                        <input type=\"text\" placeholder=\"Nota...\"\r\n                            [value]=\"getInformeValue(pub, 'notas') || ''\" \r\n                            (input)=\"updateInforme(pub, 'notas', $event)\"\r\n                            class=\"w-full px-2.5 py-1.5 bg-slate-50 rounded-lg border border-transparent focus:bg-white focus:border-brand-purple/30 text-sm transition-all placeholder:text-slate-400\">\r\n                      </div>\r\n                    </div>\r\n                  </div>\r\n                </div>\r\n\r\n              </div>\r\n              \r\n              <!-- Footer -->\r\n              <div class=\"shrink-0 px-3 sm:px-6 py-3 sm:py-4 border-t border-slate-100 bg-slate-50/80\">\r\n                <!-- Mobile: Stacked layout -->\r\n                <div class=\"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3\">\r\n                  <span class=\"text-xs text-slate-500 text-center sm:text-left\">\r\n                    Mostrando <span class=\"font-bold text-slate-700\">{{ resumen()?.publicadores_list?.length || 0 }}</span> publicadores\r\n                  </span>\r\n                  \r\n                  <!-- Buttons -->\r\n                  <div class=\"flex flex-col sm:flex-row gap-2 sm:gap-3\">\r\n                    <!-- Excel buttons row -->\r\n                    <div class=\"flex gap-2\">\r\n                      <button (click)=\"exportarExcel()\" class=\"flex-1 sm:flex-none px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs sm:text-sm hover:bg-white transition-all flex items-center justify-center gap-1.5 sm:gap-2\">\r\n                        <svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12\"/></svg>\r\n                        <span class=\"hidden sm:inline\">Descargar</span>\r\n                        <span class=\"sm:hidden\">Bajar</span>\r\n                      </button>\r\n                      <input type=\"file\" #fileInput accept=\".xlsx\" (change)=\"importarExcel($event)\" class=\"hidden\">\r\n                      <button (click)=\"fileInput.click()\" [disabled]=\"saving()\" class=\"flex-1 sm:flex-none px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs sm:text-sm hover:bg-white transition-all flex items-center justify-center gap-1.5 sm:gap-2 disabled:opacity-50\">\r\n                         <svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l4-4m0 0l4 4m-4-4v12\"/></svg>\r\n                         <span class=\"hidden sm:inline\">Subir</span>\r\n                         <span class=\"sm:hidden\">Subir</span>\r\n                      </button>\r\n                    </div>\r\n                    <!-- Save button (full width on mobile) -->\r\n                    <button (click)=\"guardarTodo()\" [disabled]=\"saving()\" class=\"w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-brand-purple text-white font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50\">\r\n                      <svg *ngIf=\"!saving()\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4\"/></svg>\r\n                      <svg *ngIf=\"saving()\" class=\"w-4 h-4 animate-spin\" fill=\"none\" viewBox=\"0 0 24 24\"><circle class=\"opacity-25\" cx=\"12\" cy=\"12\" r=\"10\" stroke=\"currentColor\" stroke-width=\"4\"></circle><path class=\"opacity-75\" fill=\"currentColor\" d=\"M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z\"></path></svg>\r\n                      {{ saving() ? 'Guardando...' : 'Guardar Todo' }}\r\n                    </button>\r\n                  </div>\r\n                </div>\r\n              </div>\r\n            </div>
           </div>
         </ng-container>
 
