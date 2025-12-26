@@ -124,4 +124,37 @@ export class InformesTableComponent {
 
       this.informeChange.emit({ pub, field, value });
    }
+
+   getBonusHours(pub: InformeConPublicador): number | null {
+      // 1. Check if Precursor Regular
+      // Use existing logic or helper. Since getRoles returns visual pills, let's reuse the logic but cleaner
+      // or just call getRoles and check label. A bit inefficient but simplest given separation.
+      const roles = this.getRoles(pub);
+      const isRegular = roles.some(r => r.label === 'PRECURSOR REGULAR');
+      if (!isRegular) return null;
+
+      // 2. Get values
+      const hours = this.getInformeValue(pub, 'horas') || 0;
+      const notes = this.getInformeValue(pub, 'notas') || '';
+
+      // 3. Parse first number in notes
+      // Match integer number.
+      const match = notes.match(/(\d+)/);
+      if (!match) return null;
+
+      const obsHours = parseInt(match[1], 10);
+      if (isNaN(obsHours) || obsHours <= 0) return null;
+
+      // 4. Calculate gap to fill up to 55
+      const target = 55;
+      if (hours >= target) return null; // Already reached target
+
+      const gap = target - hours;
+
+      // 5. Bonus is min(obsHours, gap)
+      const bonus = Math.min(obsHours, gap);
+
+      return bonus > 0 ? bonus : null;
+   }
+
 }
