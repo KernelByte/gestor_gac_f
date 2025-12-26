@@ -123,7 +123,7 @@ import { ThemeService } from '../core/services/theme.service';
                 <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Usuarios</span>
               </a>
               <a
-                *ngIf="hasPermission('reuniones.ver')"
+                *ngIf="hasPermission('reuniones.ver') || hasRole('Secretario') || hasRole('Coordinador')"
                 routerLink="/reuniones"
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
@@ -143,7 +143,7 @@ import { ThemeService } from '../core/services/theme.service';
             </div>
 
             <!-- Modules Section -->
-            <div *ngIf="hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver')">
+            <div *ngIf="hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador')">
               <p 
                 *ngIf="!collapsed()"
                 class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
@@ -152,7 +152,7 @@ import { ThemeService } from '../core/services/theme.service';
               <!-- Publicadores -->
               <!-- Publicadores -->
               <a 
-                *ngIf="hasPermission('publicadores.ver')"
+                *ngIf="hasPermission('publicadores.ver') || hasRole('Secretario') || hasRole('Coordinador')"
                 routerLink="/secretario/publicadores"
                 routerLinkActive="bg-brand-orange text-white shadow-lg shadow-orange-500/30 ring-1 ring-orange-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-orange hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
@@ -173,7 +173,7 @@ import { ThemeService } from '../core/services/theme.service';
               <!-- Informes -->
               <!-- Informes -->
               <a 
-                *ngIf="hasPermission('informes.ver')"
+                *ngIf="hasPermission('informes.ver') || hasRole('Secretario') || hasRole('Coordinador')"
                 routerLink="/secretario/informes"
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
@@ -237,7 +237,8 @@ import { ThemeService } from '../core/services/theme.service';
             </div>
 
             <!-- Extras Section -->
-            <div *ngIf="hasPermission('configuracion.ver')" class="mt-8">
+            <!-- Extras Section -->
+            <div *ngIf="hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador')" class="mt-8">
               <p 
                 *ngIf="!collapsed()"
                 class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
@@ -245,7 +246,7 @@ import { ThemeService } from '../core/services/theme.service';
               
               <!-- Configuracion -->
               <a 
-                *ngIf="hasPermission('configuracion.ver')"
+                *ngIf="hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador')"
                 routerLink="/configuracion" 
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
