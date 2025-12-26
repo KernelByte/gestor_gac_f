@@ -19,32 +19,46 @@ import { ThemeService } from '../core/services/theme.service';
         (click)="closeMobileMenu()"
       ></div>
       
+      
       <!-- Sidebar -->
       <aside
-        class="fixed top-0 left-0 h-screen bg-white shadow-[4px_0_24px_rgba(0,0,0,0.02)] border-r border-gray-100 flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]"
+        class="fixed top-0 left-0 lg:top-4 lg:left-4 h-screen lg:h-[calc(100vh-2rem)] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)] lg:rounded-3xl flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] overflow-hidden"
         [ngClass]="{
-          'w-[280px]': !collapsed(),
-          'w-[80px]': collapsed(),
+          'w-[272px]': !collapsed(),
+          'w-[72px]': collapsed(),
           'translate-x-0': mobileMenuOpen(),
           '-translate-x-full lg:translate-x-0': !mobileMenuOpen()
         }"
       >
         <!-- Sidebar Header -->
-        <div class="flex flex-col items-center justify-center py-6 border-b border-transparent transition-all duration-300">
-             <!-- Logo Image -->
-             <div class="relative w-12 h-12 shrink-0 transform transition-transform duration-500 hover:rotate-6 mb-2">
-                <img 
-                  src="images/LogoAppMorado.png" 
-                  alt="Logo" 
-                  class="w-full h-full object-contain drop-shadow-sm"
-                >
+        <div class="flex flex-col items-center justify-center py-6 px-4 border-b border-gray-100/50 transition-all duration-300">
+             <!-- Logo Image - Minimalist & Interactive -->
+             <div 
+               class="relative w-14 h-14 shrink-0 mb-3 group cursor-pointer"
+               (click)="toggleSidebar()"
+               [title]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
+             >
+                <!-- Simple Background -->
+                <div class="relative w-full h-full bg-white rounded-2xl p-2.5 shadow-sm group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 ring-1 ring-gray-100 group-hover:ring-purple-200">
+                  <img 
+                    src="images/LogoAppMorado.png" 
+                    alt="Sistema GAC" 
+                    class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
+                  >
+                </div>
              </div>
 
-             <!-- Brand Name -->
-             <div *ngIf="!collapsed()" class="animate-fadeIn text-center">
-               <span class="font-display font-black text-slate-900 text-xl tracking-tight leading-none block">
-                 Gestor<span class="text-[#6D28D9]">GAC</span>
-               </span>
+             <!-- Brand Name - Vertical Stack -->
+             <div *ngIf="!collapsed()" class="animate-fadeIn text-center space-y-1">
+               <!-- "Sistema" - Subtle Label -->
+               <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">
+                 Sistema
+               </p>
+               
+               <!-- "GAC" - Main Brand -->
+               <h1 class="font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-[#7C3AED] via-[#6D28D9] to-[#5B21B6] text-[26px] tracking-tight leading-none">
+                 GAC
+               </h1>
              </div>
         </div>
 
@@ -268,36 +282,21 @@ import { ThemeService } from '../core/services/theme.service';
           </nav>
         </div>
 
-        <!-- Modern Floating Collapse Button (Enhanced Area & Micro-interaction) -->
-        <button 
-          class="absolute -right-5 top-[44px] w-10 h-10 flex items-center justify-center cursor-pointer z-50 focus:outline-none group/toggle"
-          (click)="toggleSidebar()"
-          [title]="collapsed() ? 'Expandir' : 'Colapsar'"
-        >
-          <!-- Visual Circle -->
-          <div class="w-7 h-7 bg-white border border-slate-200 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.05)] flex items-center justify-center text-slate-400 group-hover/toggle:text-brand-purple group-hover/toggle:border-brand-purple group-hover/toggle:shadow-md transition-all duration-300 group-hover/toggle:translate-x-0.5">
-              <svg 
-                class="w-4 h-4 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" 
-                [ngClass]="{ 'rotate-180': collapsed() }"
-                viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              >
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-              </svg>
-          </div>
-        </button>
+
       </aside>
 
       <!-- Main Content Area -->
       <div 
-        class="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]" 
+        class="flex-1 flex flex-col min-w-0 h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] pb-4" 
         [ngClass]="{
-          'lg:ml-[280px]': !collapsed(),
-          'lg:ml-[80px]': collapsed()
+          'lg:ml-[288px]': !collapsed(),
+          'lg:ml-[88px]': collapsed()
         }"
       >
         
-        <!-- Top Header -->
-        <header class="h-20 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 sm:px-8 sticky top-0 z-30 transition-shadow duration-300" [class.shadow-sm]="true">
+        
+        <!-- Top Header - Floating Island -->
+        <header class="mx-4 md:mx-8 mt-4 mb-4 h-[72px] bg-white/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-8 sticky top-4 z-30 transition-all duration-300 rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)] border border-gray-100/50">
           <div class="flex items-center gap-4">
             <!-- Mobile Menu Toggle -->
             <button 
@@ -316,7 +315,7 @@ import { ThemeService } from '../core/services/theme.service';
           <div class="flex items-center gap-2 sm:gap-4">
             <!-- Search -->
             <div 
-              class="hidden md:flex items-center bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 w-64 focus-within:w-80 focus-within:ring-2 focus-within:ring-purple-100 focus-within:border-purple-300 transition-all duration-300 group cursor-text"
+              class="hidden md:flex items-center bg-slate-50/80 backdrop-blur-sm border border-slate-200/70 rounded-full px-4 py-2.5 w-64 focus-within:w-80 focus-within:ring-2 focus-within:ring-purple-100 focus-within:border-purple-300 transition-all duration-300 group cursor-text"
               (click)="searchInput.focus()"
             >
               <svg class="w-4 h-4 text-slate-400 group-focus-within:text-purple-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -456,8 +455,9 @@ import { ThemeService } from '../core/services/theme.service';
           </div>
         </header>
 
+
         <!-- Page Content -->
-        <main class="flex-1 overflow-hidden relative flex flex-col p-4 md:p-8">
+        <main class="flex-1 overflow-hidden relative flex flex-col mx-4 md:mx-8">
           <div class="router-container flex-1 min-h-0 relative overflow-hidden flex flex-col">
              <router-outlet></router-outlet>
           </div>
