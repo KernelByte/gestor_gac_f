@@ -123,6 +123,7 @@ import { ThemeService } from '../core/services/theme.service';
                 <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Usuarios</span>
               </a>
               <a
+                *ngIf="hasPermission('reuniones.ver')"
                 routerLink="/reuniones"
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
@@ -142,15 +143,17 @@ import { ThemeService } from '../core/services/theme.service';
             </div>
 
             <!-- Modules Section -->
-            <div>
+            <div *ngIf="hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver')">
               <p 
                 *ngIf="!collapsed()"
                 class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
               >Módulos</p>
               
               <!-- Publicadores -->
+              <!-- Publicadores -->
               <a 
-                routerLink="/secretario/publicadores" 
+                *ngIf="hasPermission('publicadores.ver')"
+                routerLink="/secretario/publicadores"
                 routerLinkActive="bg-brand-orange text-white shadow-lg shadow-orange-500/30 ring-1 ring-orange-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-orange hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
@@ -168,8 +171,10 @@ import { ThemeService } from '../core/services/theme.service';
               </a>
 
               <!-- Informes -->
+              <!-- Informes -->
               <a 
-                routerLink="/secretario/informes" 
+                *ngIf="hasPermission('informes.ver')"
+                routerLink="/secretario/informes"
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
@@ -187,8 +192,10 @@ import { ThemeService } from '../core/services/theme.service';
               </a>
 
               <!-- Territorios -->
+              <!-- Territorios -->
               <a 
-                routerLink="/territorios" 
+                *ngIf="hasPermission('territorios.ver')"
+                routerLink="/territorios"
                 routerLinkActive="bg-brand-green text-white shadow-lg shadow-green-500/30 ring-1 ring-green-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-green hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
@@ -206,8 +213,10 @@ import { ThemeService } from '../core/services/theme.service';
               </a>
 
               <!-- Exhibidores -->
+              <!-- Exhibidores -->
               <a 
-                routerLink="/exhibidores" 
+                *ngIf="hasPermission('exhibidores.ver')"
+                routerLink="/exhibidores"
                 routerLinkActive="bg-brand-blue text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-blue hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
@@ -228,7 +237,7 @@ import { ThemeService } from '../core/services/theme.service';
             </div>
 
             <!-- Extras Section -->
-            <div class="mt-8">
+            <div *ngIf="hasPermission('configuracion.ver')" class="mt-8">
               <p 
                 *ngIf="!collapsed()"
                 class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
@@ -236,6 +245,7 @@ import { ThemeService } from '../core/services/theme.service';
               
               <!-- Configuracion -->
               <a 
+                *ngIf="hasPermission('configuracion.ver')"
                 routerLink="/configuracion" 
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
@@ -550,6 +560,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Exhibidores', subtitle: 'Gestión de puntos de predicación pública.' });
     } else if (url.includes('/reuniones')) {
       this.pageTitle.set({ title: 'Reuniones', subtitle: 'Seguimiento de Asistencia' });
+    } else if (url.includes('/configuracion')) {
+      this.pageTitle.set({ title: 'Configuración', subtitle: 'Ajustes generales de la congregación' });
     } else {
       this.pageTitle.set({ title: 'Inicio', subtitle: 'Bienvenido al panel principal de gestión.' });
     }
@@ -564,6 +576,8 @@ export class ShellPage implements OnInit, OnDestroy {
     const roles = u?.roles ?? (u?.rol ? [u.rol] : []);
     return roles.map(x => (x || '').toLowerCase()).includes(r.toLowerCase());
   };
+
+  hasPermission = (p: string) => this.store.hasPermission(p);
 
   logout() { this.auth.logout(); }
 
