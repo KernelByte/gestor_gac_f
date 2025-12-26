@@ -171,12 +171,21 @@ import { saveAs } from 'file-saver';
                 <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="loadResumen()" placeholder="Buscar publicador..." class="pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-transparent hover:bg-white hover:border-slate-200 focus:bg-white focus:border-brand-purple/30 text-sm w-64 focus:ring-4 focus:ring-brand-purple/5 transition-all outline-none">
                 <svg class="w-4 h-4 text-slate-400 group-hover:text-brand-purple absolute left-3 top-1/2 -translate-y-1/2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
               </div>
-              <label class="flex items-center gap-2 text-sm font-bold text-slate-600 cursor-pointer hover:text-brand-purple transition-colors select-none">
+              <label class="group flex items-center gap-3 px-4 py-2.5 rounded-xl cursor-pointer select-none transition-all duration-300 ring-2"
+                     [ngClass]="soloSinInforme 
+                       ? 'bg-brand-purple/10 ring-brand-purple/30 shadow-lg shadow-purple-500/10' 
+                       : 'bg-slate-50 hover:bg-slate-100 ring-transparent hover:ring-slate-200'">
                  <div class="relative">
                     <input type="checkbox" [(ngModel)]="soloSinInforme" (ngModelChange)="loadResumen()" class="peer sr-only">
-                    <div class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-purple"></div>
+                    <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:bg-brand-purple transition-colors duration-300 shadow-inner"></div>
+                    <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] peer-checked:translate-x-5 flex items-center justify-center">
+                       <svg class="w-3 h-3 text-brand-purple opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    </div>
                  </div>
-                 <span>Sin informe</span>
+                 <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 transition-colors duration-300" [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span class="text-sm font-bold transition-colors duration-300" [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-600'">Sin informe</span>
+                 </div>
               </label>
             </div>
 
