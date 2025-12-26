@@ -59,6 +59,7 @@ export interface InformeLoteCreate {
 }
 
 export interface InformeLoteResult {
+   procesados: number;
    creados: number;
    actualizados: number;
    errores: { id_publicador: number; error: string }[];

@@ -242,8 +242,16 @@ export class InformesMainPage implements OnInit {
     }));
 
     this.informesService.guardarInformesLote({ periodo_id: this.getPeriodoId(), informes: items }).subscribe({
-      next: () => { this.localChanges.clear(); this.loadResumen(); this.saving.set(false); },
-      error: () => this.saving.set(false)
+      next: (result) => {
+        this.localChanges.clear();
+        this.loadResumen();
+        this.saving.set(false);
+        this.showToast('Cambios guardados', 'success', `Se procesaron ${result.procesados} informes.`);
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.showToast('Error al guardar', 'error', err.error?.detail || 'No se pudieron guardar los cambios.');
+      }
     });
   }
 
