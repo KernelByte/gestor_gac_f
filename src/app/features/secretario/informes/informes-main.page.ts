@@ -67,6 +67,12 @@ export class InformesMainPage implements OnInit {
     if (rolesLower.includes('administrador') || rolesLower.includes('coordinador') || rolesLower.includes('secretario')) {
       return false;
     }
+
+    // Si tiene permiso explícito de "Ver Todos los Grupos" (Scope global)
+    if (user.permisos?.includes('informes.editar_todos')) {
+      return false;
+    }
+
     return true; // Solo Publicador u otros roles menores -> Restringido
   });
 
@@ -221,7 +227,15 @@ export class InformesMainPage implements OnInit {
     const { pub, field, value } = event;
     const existing = this.localChanges.get(pub.id_publicador) || { id_publicador: pub.id_publicador, participo: pub.participo ?? false, cursos_biblicos: pub.cursos_biblicos ?? 0, horas: pub.horas ?? 0, observaciones: pub.observaciones };
 
-    if (field === 'participo') existing.participo = value;
+    if (field === 'participo') {
+      existing.participo = value;
+      // Si se desmarca, limpiar los otros campos
+      if (!value) {
+        existing.horas = 0;
+        existing.cursos_biblicos = 0;
+        existing.observaciones = null;
+      }
+    }
     else if (field === 'cursos') existing.cursos_biblicos = value;
     else if (field === 'horas') existing.horas = value;
     else if (field === 'notas') existing.observaciones = value;

@@ -320,13 +320,13 @@ interface CategoriaPermisos {
                               <div class="flex flex-wrap items-center gap-4">
                                  <label class="flex items-center gap-2 cursor-pointer group">
                                     <input type="radio" name="scope_edit" [value]="'todos'" 
-                                           [(ngModel)]="permiso.alcance" (click)="$event.stopPropagation()"
+                                           [(ngModel)]="permiso.alcance" (ngModelChange)="updateScope(permiso)" (click)="$event.stopPropagation()"
                                            class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-purple-300">
                                     <span class="text-sm font-medium text-slate-700 group-hover:text-purple-700">Todos los grupos</span>
                                  </label>
                                  <label class="flex items-center gap-2 cursor-pointer group">
                                     <input type="radio" name="scope_edit" [value]="'asignados'" 
-                                           [(ngModel)]="permiso.alcance" (click)="$event.stopPropagation()"
+                                           [(ngModel)]="permiso.alcance" (ngModelChange)="updateScope(permiso)" (click)="$event.stopPropagation()"
                                            class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-purple-300">
                                     <span class="text-sm font-medium text-slate-700 group-hover:text-purple-700">Solo asignados</span>
                                  </label>
@@ -483,6 +483,15 @@ export class UsuarioPermisosPage implements OnInit {
       const originales = this.permisosOriginales();
       const actuales = new Set(this.permisos().filter(p => p.asignado).map(p => p.id_permiso));
 
+      // Add logic for global globalEditPermisoId if present in scope
+      const globalId = (this as any)._globalEditPermisoId;
+      if (globalId) {
+         const editPermiso = this.permisos().find(p => p.codigo === 'informes.editar');
+         if (editPermiso?.asignado && editPermiso.alcance === 'todos') {
+            actuales.add(globalId);
+         }
+      }
+
       if (originales.size !== actuales.size) return true;
       for (const id of originales) {
          if (!actuales.has(id)) return true;
@@ -493,6 +502,16 @@ export class UsuarioPermisosPage implements OnInit {
    changesCount = computed(() => {
       const originales = this.permisosOriginales();
       const actuales = new Set(this.permisos().filter(p => p.asignado).map(p => p.id_permiso));
+
+      // Add logic for global globalEditPermisoId if present in scope
+      const globalId = (this as any)._globalEditPermisoId;
+      if (globalId) {
+         const editPermiso = this.permisos().find(p => p.codigo === 'informes.editar');
+         if (editPermiso?.asignado && editPermiso.alcance === 'todos') {
+            actuales.add(globalId);
+         }
+      }
+
       let count = 0;
 
       for (const id of originales) {
@@ -528,25 +547,45 @@ export class UsuarioPermisosPage implements OnInit {
             return;
          }
 
-         // Mock informes.historial if missing (Visual request)
-         const hasHistorial = permisos.some(p => p.codigo === 'informes.historial');
+         // Detect Global Scope Permission
+         const globalEditPermiso = permisos.find(p => p.codigo === 'informes.editar_todos');
+         const hasGlobalEdit = globalEditPermiso?.asignado ?? false;
+
+         // Set scope for informes.editar
+         const editPermiso = permisos.find(p => p.codigo === 'informes.editar');
+         if (editPermiso) {
+            editPermiso.alcance = hasGlobalEdit ? 'todos' : 'asignados';
+         }
+
+         // Hide informes.editar_todos from the UI list (it's handled via the scope radio)
+         const visiblePermisos = permisos.filter(p => p.codigo !== 'informes.editar_todos');
+
+         // Check/Add mock perms if needed (for visual completeness if not in DB yet, though we added it)
+         const hasHistorial = visiblePermisos.some(p => p.codigo === 'informes.historial');
          if (!hasHistorial) {
-            permisos.push({
-               id_permiso: 99999, // Temp ID
+            visiblePermisos.push({
+               id_permiso: 99999,
                codigo: 'informes.historial',
                nombre: 'Ver Historial',
                descripcion: 'Acceso al historial de informes de servicio',
-               asignado: false, // Removed categoria
+               asignado: false,
                alcance: 'todos'
             });
          }
-         permisos.forEach(p => { if (!p.alcance) p.alcance = 'todos'; });
+         visiblePermisos.forEach(p => { if (!p.alcance) p.alcance = 'todos'; });
 
          this.usuario.set(usuario);
-         this.permisos.set(permisos);
-         this.permisosOriginales.set(new Set(permisos.filter(p => p.asignado).map(p => p.id_permiso)));
+         this.permisos.set(visiblePermisos);
 
-         // Mantener categorías colapsadas por defecto (Set vacío)
+         // Store all original IDs including the hidden global one if assigned
+         const originalIds = new Set(permisos.filter(p => p.asignado).map(p => p.id_permiso));
+         this.permisosOriginales.set(originalIds);
+
+         // Store reference to hidden permission ID for saving later
+         if (globalEditPermiso) {
+            (this as any)._globalEditPermisoId = globalEditPermiso.id_permiso;
+         }
+
          this.categoriasExpandidas.set(new Set<string>());
       } catch (err) {
          console.error('Error loading data', err);
@@ -587,20 +626,42 @@ export class UsuarioPermisosPage implements OnInit {
       this.permisos.update(list => list.map(p => ({ ...p, asignado: value })));
    }
 
+   updateScope(permiso: PermisoConEstado) {
+      // Force update of permissions signal to trigger hasChanges check
+      this.permisos.update(list => [...list]);
+   }
+
    async guardar() {
       if (this.saving() || !this.usuario()) return;
 
       this.saving.set(true);
       try {
-         const permisosActivos = this.permisos()
+         // Get currently visible active permissions
+         const activeIds = this.permisos()
             .filter(p => p.asignado)
             .map(p => p.id_permiso);
 
+         // Helper to add/remove global permission ID
+         const globalId = (this as any)._globalEditPermisoId;
+
+         if (globalId) {
+            const editPermiso = this.permisos().find(p => p.codigo === 'informes.editar');
+
+            // If Edit is ON and Scope is 'todos', add global ID
+            if (editPermiso?.asignado && editPermiso.alcance === 'todos') {
+               if (!activeIds.includes(globalId)) {
+                  activeIds.push(globalId);
+               }
+            }
+            // Logic to ensure it's NOT in the list is implicit as it wasn't in visiblePermisos 
+            // and we built activeIds only from visiblePermisos.
+         }
+
          await lastValueFrom(
-            this.permisosService.updatePermisosUsuario(this.usuario()!.id_usuario!, permisosActivos)
+            this.permisosService.updatePermisosUsuario(this.usuario()!.id_usuario!, activeIds)
          );
 
-         this.permisosOriginales.set(new Set(permisosActivos));
+         this.permisosOriginales.set(new Set(activeIds));
 
          this.showSuccess.set(true);
          setTimeout(() => this.showSuccess.set(false), 4000);
