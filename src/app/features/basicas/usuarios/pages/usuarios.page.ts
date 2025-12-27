@@ -31,7 +31,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
       ])
    ],
    template: `
-    <div class="flex flex-col md:flex-row h-full overflow-hidden gap-5 relative">
+    <div class="flex flex-col md:flex-row h-full overflow-hidden relative" [class.gap-5]="panelOpen()">
       
        <!-- 1. Main Content Area -->
        <div class="flex-1 flex flex-col min-w-0 h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">

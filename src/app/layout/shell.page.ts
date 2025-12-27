@@ -22,7 +22,7 @@ import { ThemeService } from '../core/services/theme.service';
       
       <!-- Sidebar -->
       <aside
-        class="fixed top-0 left-0 lg:top-4 lg:left-4 h-screen lg:h-[calc(100vh-2rem)] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)] lg:rounded-3xl flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] overflow-hidden"
+        class="fixed top-0 left-0 lg:top-6 lg:left-6 h-screen lg:h-[calc(100vh-3rem)] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)] lg:rounded-3xl flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] overflow-hidden"
         [ngClass]="{
           'w-[272px]': !collapsed(),
           'w-[72px]': collapsed(),
@@ -287,16 +287,16 @@ import { ThemeService } from '../core/services/theme.service';
 
       <!-- Main Content Area -->
       <div 
-        class="flex-1 flex flex-col min-w-0 h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] pb-4" 
+        class="flex-1 flex flex-col min-w-0 h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]" 
         [ngClass]="{
-          'lg:ml-[288px]': !collapsed(),
-          'lg:ml-[88px]': collapsed()
+          'lg:ml-[296px]': !collapsed(),
+          'lg:ml-[96px]': collapsed()
         }"
       >
         
         
         <!-- Top Header - Floating Island -->
-        <header class="mx-4 md:mx-8 mt-4 mb-4 h-[72px] bg-white/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-8 sticky top-4 z-30 transition-all duration-300 rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)] border border-gray-100/50">
+        <header class="mx-4 md:mx-6 mt-4 md:mt-6 mb-4 md:mb-6 h-[72px] bg-white/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-8 sticky top-4 md:top-6 z-30 transition-all duration-300 rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)] border border-gray-100/50">
           <div class="flex items-center gap-4">
             <!-- Mobile Menu Toggle -->
             <button 
@@ -457,7 +457,7 @@ import { ThemeService } from '../core/services/theme.service';
 
 
         <!-- Page Content -->
-        <main class="flex-1 overflow-hidden relative flex flex-col mx-4 md:mx-8">
+        <main class="flex-1 overflow-hidden relative flex flex-col mx-4 md:mx-6 mb-4 md:mb-6">
           <div class="router-container flex-1 min-h-0 relative overflow-hidden flex flex-col">
              <router-outlet></router-outlet>
           </div>
