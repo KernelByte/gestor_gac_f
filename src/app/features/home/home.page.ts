@@ -1,5 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { AuthStore } from '../../core/auth/auth.store';
 
 @Component({
@@ -39,7 +40,7 @@ import { AuthStore } from '../../core/auth/auth.store';
               </div>
            </div>
            <div>
-              <h3 class="text-2xl font-black text-slate-800 tracking-tight">156</h3>
+              <h3 class="text-2xl font-black text-slate-800 tracking-tight">{{ totalPublicadores() }}</h3>
               <p class="text-xs font-bold text-slate-400 uppercase tracking-wide">Publicadores</p>
            </div>
            <div class="mt-2 h-1 w-full bg-slate-50 rounded-full overflow-hidden flex items-end gap-0.5 opacity-50">
@@ -314,14 +315,17 @@ import { AuthStore } from '../../core/auth/auth.store';
 })
 export class HomePage implements OnInit {
    private store = inject(AuthStore);
+   private http = inject(HttpClient);
 
    userName = signal('Usuario');
    currentDate = signal('');
+   totalPublicadores = signal(0);
 
    ngOnInit() {
       const user = this.store.user();
       if (user) {
          this.userName.set(user.nombre || user.username);
+         this.loadPublicadoresCount();
       }
 
       const now = new Date();
@@ -332,5 +336,17 @@ export class HomePage implements OnInit {
          day: 'numeric'
       };
       this.currentDate.set(now.toLocaleDateString('es-ES', options));
+   }
+
+   private loadPublicadoresCount() {
+      this.http.get<any[]>('/api/publicadores/').subscribe({
+         next: (publicadores) => {
+            this.totalPublicadores.set(publicadores.length);
+         },
+         error: (err) => {
+            console.error('Error cargando publicadores:', err);
+            // Mantener el valor por defecto en caso de error
+         }
+      });
    }
 }
