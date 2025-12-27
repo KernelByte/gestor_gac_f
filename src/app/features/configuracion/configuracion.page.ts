@@ -39,6 +39,7 @@ export class ConfiguracionPage implements OnInit {
 
    loading = signal(true);
    saving = signal(false);
+   showSecurityCode = signal(false);
 
    ngOnInit() {
       this.loadConfig();

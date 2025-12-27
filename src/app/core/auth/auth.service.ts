@@ -41,4 +41,18 @@ export class AuthService {
     this.store.clear();
     this.router.navigateByUrl('/login');
   }
+
+  forgotPassword(email: string, codigo_seguridad: string) {
+    return this.http.post<{ message: string }>(`${API}/auth/forgot-password`, {
+      email,
+      codigo_seguridad
+    });
+  }
+
+  resetPassword(token: string, new_password: string) {
+    return this.http.post<{ message: string }>(`${API}/auth/reset-password`, {
+      token,
+      new_password
+    });
+  }
 }

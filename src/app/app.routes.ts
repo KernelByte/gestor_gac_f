@@ -4,6 +4,8 @@ import { roleGuard } from './core/auth/role.guard';
 
 export const routes: Routes = [
   { path: 'login', title: 'Iniciar Sesión', loadComponent: () => import('./features/auth/login.page').then(m => m.LoginPage) },
+  { path: 'auth/forgot-password', title: 'Recuperar Contraseña', loadComponent: () => import('./features/auth/forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage) },
+  { path: 'auth/reset-password', title: 'Restablecer Contraseña', loadComponent: () => import('./features/auth/reset-password/reset-password.page').then(m => m.ResetPasswordPage) },
 
   // Shell protegido: adentro va el dashboard y demás menús
   {

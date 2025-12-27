@@ -1,67 +1,185 @@
-<div class="max-w-4xl mx-auto p-6 md:p-8 animate-fadeIn">
-   <!-- Header -->
-   <div class="mb-8">
-      <h1 class="text-3xl font-display font-black text-slate-900 mb-2">Configuración</h1>
-      <p class="text-slate-500 font-medium">Gestiona los detalles generales de la congregación</p>
-   </div>
-
-   <!-- Main Card -->
-   <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-white relative overflow-hidden">
-      <!-- Loader -->
-      <div *ngIf="loading()"
-         class="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
-         <div class="w-10 h-10 border-4 border-slate-200 border-t-purple-600 rounded-full animate-spin"></div>
+<div class="w-full h-full p-4 md:p-8 animate-fadeIn">
+   <!-- Header Section -->
+   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div>
+         <h1 class="text-3xl md:text-4xl font-display font-black text-slate-900 tracking-tight">
+            Configuración
+         </h1>
+         <p class="text-slate-500 font-medium mt-1">
+            Gestiona los detalles y preferencias de tu congregación
+         </p>
       </div>
 
-      <div class="p-8">
-         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Nombre Congregacion -->
-            <div class="space-y-2">
-               <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Nombre
-                  Congregación</label>
-               <input [(ngModel)]="config.nombre_congregacion" type="text"
-                  class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent focus:border-purple-500 focus:bg-white rounded-xl text-slate-900 font-bold transition-all outline-none"
-                  placeholder="Ej. Central">
-            </div>
+      <!-- Optional: Status Badge or similar info could go here -->
+      <div
+         class="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full text-sm font-semibold text-slate-600">
+         <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+         Sistema Conectado
+      </div>
+   </div>
 
-            <!-- Circuito -->
-            <div class="space-y-2">
-               <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Circuito</label>
-               <input [(ngModel)]="config.circuito" type="text"
-                  class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent focus:border-purple-500 focus:bg-white rounded-xl text-slate-900 font-bold transition-all outline-none"
-                  placeholder="Ej. CO-01">
-            </div>
+   <!-- Main Content Card -->
+   <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden relative">
 
-            <!-- Direccion -->
-            <div class="md:col-span-2 space-y-2">
-               <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Dirección</label>
-               <input [(ngModel)]="config.direccion" type="text"
-                  class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent focus:border-purple-500 focus:bg-white rounded-xl text-slate-900 font-bold transition-all outline-none"
-                  placeholder="Dirección del Salón del Reino">
-            </div>
-
-            <!-- Codigo Seguridad (Optional) -->
-            <div class="space-y-2 relative group">
-               <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Código de
-                  Seguridad</label>
-               <input [(ngModel)]="config.codigo_seguridad" type="text"
-                  class="w-full px-4 py-3 bg-slate-50 border-2 border-transparent focus:border-purple-500 focus:bg-white rounded-xl text-slate-900 font-bold transition-all outline-none"
-                  placeholder="Código interno">
-               <p class="text-[10px] text-slate-400 font-medium pl-1 mt-1">Usado para validaciones internas críticas</p>
-            </div>
+      <!-- Loading Overlay -->
+      <div *ngIf="loading()"
+         class="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center transition-all duration-300">
+         <div class="flex flex-col items-center gap-4">
+            <div class="w-12 h-12 border-4 border-slate-100 border-t-brand-purple rounded-full animate-spin"></div>
+            <span class="text-sm font-bold text-slate-500 animate-pulse">Cargando datos...</span>
          </div>
       </div>
 
-      <!-- Actions Footer -->
-      <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-         <button *ngIf="canEdit()" (click)="save()" [disabled]="saving()"
-            class="px-6 py-2.5 bg-brand-purple text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2">
-            <span *ngIf="saving()"
-               class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            <span>{{ saving() ? 'Guardando...' : 'Guardar Cambios' }}</span>
-         </button>
-         <div *ngIf="!canEdit()" class="text-sm text-slate-500 font-medium italic">
-            Modo solo lectura
+      <div class="p-6 md:p-10">
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+
+            <!-- Congretation Name -->
+            <div class="space-y-3 group">
+               <label class="block text-sm font-bold text-slate-700 ml-1">
+                  Nombre de la Congregación
+               </label>
+               <div class="relative transition-all duration-300 focus-within:scale-[1.01]">
+                  <div
+                     class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-purple transition-colors">
+                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                           d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                     </svg>
+                  </div>
+                  <input [(ngModel)]="config.nombre_congregacion" [readonly]="!canEdit()" type="text"
+                     class="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-semibold focus:bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all placeholder:text-slate-400"
+                     placeholder="Ej. Central">
+               </div>
+            </div>
+
+            <!-- Circuit -->
+            <div class="space-y-3 group">
+               <label class="block text-sm font-bold text-slate-700 ml-1">
+                  Circuito
+               </label>
+               <div class="relative transition-all duration-300 focus-within:scale-[1.01]">
+                  <div
+                     class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-purple transition-colors">
+                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                           d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                     </svg>
+                  </div>
+                  <input [(ngModel)]="config.circuito" [readonly]="!canEdit()" type="text"
+                     class="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-semibold focus:bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all placeholder:text-slate-400"
+                     placeholder="Ej. CO-01">
+               </div>
+            </div>
+
+            <!-- Address (Full Width) -->
+            <div class="md:col-span-2 space-y-3 group">
+               <label class="block text-sm font-bold text-slate-700 ml-1">
+                  Dirección del Salón del Reino
+               </label>
+               <div class="relative transition-all duration-300 focus-within:scale-[1.005]">
+                  <div
+                     class="absolute top-4 left-0 pl-4 flex items-start pointer-events-none text-slate-400 group-focus-within:text-brand-purple transition-colors">
+                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                     </svg>
+                  </div>
+                  <textarea [(ngModel)]="config.direccion" [readonly]="!canEdit()" rows="2"
+                     class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-semibold focus:bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all placeholder:text-slate-400 resize-none"
+                     placeholder="Calle Principal #123, Ciudad..."></textarea>
+               </div>
+            </div>
+
+            <!-- Security Code -->
+            <div
+               class="md:col-span-2 bg-rose-50/50 rounded-2xl p-6 border border-rose-100 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+               <div class="flex gap-4">
+                  <div
+                     class="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-rose-500 shadow-sm border border-rose-100 shrink-0">
+                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                           d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                     </svg>
+                  </div>
+                  <div>
+                     <h3 class="font-bold text-slate-900">Código de Seguridad</h3>
+                     <p class="text-sm text-slate-500 mt-1 max-w-sm">
+                        Este código se utiliza para autorizar operaciones sensibles (eliminar datos, restaurar copias).
+                        Mantenlo seguro.
+                     </p>
+                  </div>
+               </div>
+
+               <div class="w-full md:w-auto min-w-[280px] space-y-2">
+                  <div class="relative group">
+                     <input [type]="showSecurityCode() ? 'text' : 'password'" [(ngModel)]="config.codigo_seguridad"
+                        [readonly]="!canEdit()"
+                        class="w-full pl-4 pr-12 py-3 bg-white border border-rose-200 rounded-xl text-slate-900 font-bold focus:border-rose-400 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all placeholder:text-slate-400 shadow-sm"
+                        placeholder="••••••">
+
+                     <button type="button" (click)="showSecurityCode.set(!showSecurityCode())"
+                        class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-rose-500 transition-colors">
+                        <svg *ngIf="!showSecurityCode()" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                           stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <svg *ngIf="showSecurityCode()" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                           stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                     </button>
+                  </div>
+               </div>
+            </div>
+
+         </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div
+         class="px-6 py-6 md:px-10 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
+
+         <div class="text-sm text-slate-500 font-medium order-2 md:order-1">
+            <span *ngIf="!canEdit()" class="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+               </svg>
+               Modo solo lectura
+            </span>
+            <span *ngIf="canEdit()">
+               * Los cambios se aplicarán inmediatamente.
+            </span>
+         </div>
+
+         <div class="order-1 md:order-2 w-full md:w-auto">
+            <button *ngIf="canEdit()" (click)="save()" [disabled]="saving()"
+               class="w-full md:w-auto relative px-8 py-3 bg-brand-purple text-white font-bold rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 overflow-hidden group">
+
+               <!-- Loading Spinner -->
+               <span *ngIf="saving()" class="absolute inset-0 flex items-center justify-center bg-brand-purple">
+                  <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+               </span>
+
+               <span [class.opacity-0]="saving()" class="flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  Guardar Cambios
+               </span>
+
+               <!-- Shine Effect -->
+               <div
+                  class="absolute inset-0 -translate-x-full group-hover:animate-[shine_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent">
+               </div>
+            </button>
          </div>
       </div>
    </div>
