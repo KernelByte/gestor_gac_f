@@ -155,33 +155,33 @@ interface ContactoEmergencia {
                 </div>
 
                 <!-- Header Profile -->
-                <div class="relative bg-white border-b border-slate-100 p-8 pb-12 overflow-hidden shadow-sm shrink-0">
+                <div class="relative bg-white border-b border-slate-100 p-5 md:p-8 md:pb-12 overflow-hidden shadow-sm shrink-0">
                      <!-- Deco BG -->
-                     <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-orange-50 to-transparent rounded-bl-full -mr-12 -mt-12 opacity-60"></div>
-                     <div class="absolute bottom-0 left-0 w-32 h-32 bg-slate-50 rounded-tr-full -ml-8 -mb-8"></div>
+                     <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-orange-50 to-transparent rounded-bl-full -mr-12 -mt-12 opacity-60 pointer-events-none"></div>
+                     <div class="absolute bottom-0 left-0 w-32 h-32 bg-slate-50 rounded-tr-full -ml-8 -mb-8 pointer-events-none"></div>
                      
                      <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
-                        <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-4 md:gap-6">
                             <!-- Avatar Large -->
-                            <div class="w-20 h-20 rounded-2xl shadow-xl flex items-center justify-center text-2xl font-display font-black ring-4 ring-white"
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-xl flex items-center justify-center text-xl md:text-2xl font-display font-black ring-4 ring-white shrink-0"
                                  [ngClass]="getAvatarClass(p.id_publicador)">
                                 {{ getInitials(p) }}
                             </div>
                             <div>
-                                <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight">{{ p.primer_nombre }} {{ p.primer_apellido }}</h1>
-                                <div class="flex items-center gap-4 mt-2">
-                                    <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200" title="Número de teléfono personal">
+                                <h1 class="text-xl md:text-3xl font-display font-black text-slate-900 tracking-tight leading-tight">{{ p.primer_nombre }} {{ p.primer_apellido }}</h1>
+                                <div class="flex flex-wrap items-center gap-3 md:gap-4 mt-2">
+                                    <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] md:text-xs font-bold border border-slate-200" title="Número de teléfono personal">
                                         <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                        <span class="text-slate-400 font-normal mr-1">Personal:</span>
+                                        <span class="text-slate-400 font-normal mr-1 hidden sm:inline">Personal:</span>
                                         {{ p.telefono || 'N/A' }}
                                     </div>
-                                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100" *ngIf="p.id_estado_publicador === 1">Activo</span>
+                                    <span class="text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100" *ngIf="p.id_estado_publicador === 1">Activo</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Add Button -->
-                        <button (click)="initNewContacto()" class="group flex items-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 hover:bg-orange-600 hover:shadow-orange-600/40 active:scale-95 transition-all">
+                        <button (click)="initNewContacto()" class="w-full md:w-auto group flex items-center justify-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 hover:bg-orange-600 hover:shadow-orange-600/40 active:scale-95 transition-all">
                             <span class="bg-white/20 p-1 rounded-lg group-hover:rotate-90 transition-transform duration-300">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </span>
@@ -194,9 +194,12 @@ interface ContactoEmergencia {
                 <div class="flex-1 overflow-y-auto bg-slate-50 p-4 lg:p-8 relative">
                     
                     <!-- Form Overlay / Inline -->
-                    <div *ngIf="showForm()" class="mb-8 animate-fadeInUp">
-                        <!-- Same form structure but enhanced styles -->
-                        <div class="bg-white rounded-2xl shadow-xl shadow-slate-900/5 border border-slate-200 overflow-hidden max-w-3xl mx-auto">
+                    <div *ngIf="showForm()" class="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:mb-8 animate-fadeInUp flex flex-col justify-end md:block">
+                        <!-- Backdrop for mobile -->
+                        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm md:hidden" (click)="showForm.set(false)"></div>
+                        
+                        <!-- Form Container -->
+                        <div class="relative w-full bg-white rounded-t-3xl md:rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] md:shadow-xl md:shadow-slate-900/5 border-t md:border border-slate-200 overflow-hidden max-w-3xl mx-auto h-[85vh] md:h-auto flex flex-col md:block">
                             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                                  <h3 class="font-bold text-slate-800 flex items-center gap-2">
                                      <span class="w-2 h-2 rounded-full bg-brand-orange"></span>
@@ -207,24 +210,24 @@ interface ContactoEmergencia {
                                  </button>
                             </div>
                             <!-- Reusing form logic with improved classes -->
-                            <div class="p-6 md:p-8" [formGroup]="form">
+                            <div class="p-6 md:p-8 flex-1 overflow-y-auto" [formGroup]="form">
                                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                      <div class="space-y-2">
-                                         <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nombre Completo <span class="text-red-400">*</span></label>
-                                         <input formControlName="nombre" class="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all" placeholder="Nombre del contacto">
+                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Nombre Completo <span class="text-red-400">*</span></label>
+                                         <input formControlName="nombre" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal" placeholder="Nombre del contacto">
                                      </div>
                                      <div class="space-y-2">
-                                         <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Parentesco</label>
-                                         <input formControlName="parentesco" class="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all" placeholder="Ej: Madre, Esposo">
+                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Parentesco</label>
+                                         <input formControlName="parentesco" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal" placeholder="Ej: Madre, Esposo">
                                      </div>
                                      <div class="space-y-2">
-                                         <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Teléfono</label>
-                                         <input formControlName="telefono" class="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all" placeholder="+57...">
+                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Teléfono</label>
+                                         <input formControlName="telefono" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal" placeholder="+57...">
                                      </div>
                                      <div class="space-y-2">
-                                         <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Etiqueta Visual</label>
+                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Etiqueta Visual</label>
                                          <div class="relative">
-                                            <select formControlName="etiqueta" class="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all appearance-none cursor-pointer">
+                                            <select formControlName="etiqueta" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
                                                 <option value="">-- Seleccionar --</option>
                                                 <option value="Esposa/o">Esposa/o</option>
                                                 <option value="Hijo/a">Hijo/a</option>
@@ -235,8 +238,8 @@ interface ContactoEmergencia {
                                          </div>
                                      </div>
                                      <div class="md:col-span-2 space-y-2">
-                                         <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Dirección / Notas</label>
-                                         <textarea formControlName="direccion" class="w-full h-24 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all resize-none" placeholder="Dirección física o indicaciones especiales..."></textarea>
+                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Dirección / Notas</label>
+                                         <textarea formControlName="direccion" class="w-full h-24 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none resize-none placeholder:text-slate-400 placeholder:font-normal" placeholder="Dirección física o indicaciones especiales..."></textarea>
                                      </div>
                                  </div>
                                  
@@ -284,8 +287,8 @@ interface ContactoEmergencia {
                         
                         <!-- Card Item -->
                         <div *ngFor="let c of contactos()" class="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 hover:border-orange-100 transition-all duration-300 relative overflow-hidden">
-                             <!-- Action Buttons (Floating) -->
-                             <div class="absolute top-4 right-4 flex gap-1 transform translate-x-12 group-hover:translate-x-0 transition-transform duration-300 bg-white/80 backdrop-blur rounded-lg p-1 shadow-sm border border-slate-100">
+                             <!-- Action Buttons (Static on mobile, Hover on Desktop) -->
+                             <div class="absolute top-4 right-4 flex gap-1 transform translate-x-0 lg:translate-x-12 lg:group-hover:translate-x-0 transition-transform duration-300 bg-white/80 backdrop-blur rounded-lg p-1 shadow-sm border border-slate-100 z-10">
                                  <button (click)="edit(c)" class="p-2 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-md transition-colors" title="Editar">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                  </button>

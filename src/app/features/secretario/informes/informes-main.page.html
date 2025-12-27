@@ -31,7 +31,7 @@
                (closeDropdown)="closeDropdown()" (selectMes)="selectMes($event)" (selectAno)="selectAno($event)"
                (selectGrupo)="selectGrupo($event)" (setVista)="setVista($event)"
                (searchQueryChange)="searchQuery = $event; loadResumen()"
-               (soloSinInformeChange)="soloSinInforme = $event; loadResumen()">
+               (soloSinInformeChange)="onSoloSinInformeChange($event)">
             </app-informes-filters>
 
             <!-- Data List/Table Container -->

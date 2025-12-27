@@ -540,6 +540,7 @@ export class ShellPage implements OnInit, OnDestroy {
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.updateTitle(event.urlAfterRedirects);
+        this.closeMobileMenu();
       }
     });
   }

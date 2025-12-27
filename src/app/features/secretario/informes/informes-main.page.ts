@@ -92,6 +92,12 @@ export class InformesMainPage implements OnInit {
   anos = Array.from({ length: 10 }, (_, i) => (new Date().getFullYear() - 5 + i).toString());
 
   async ngOnInit() {
+    // Restaurar preferencia de filtro "Sin Informe"
+    const savedFilter = localStorage.getItem('informes_soloSinInforme');
+    if (savedFilter !== null) {
+      this.soloSinInforme = savedFilter === 'true';
+    }
+
     // Primero inicializar para usuarios restringidos (precargar grupo)
     await this.initializeForRestrictedUser();
     // Luego cargar datos (ya con el grupo correcto si es restringido)
@@ -176,6 +182,12 @@ export class InformesMainPage implements OnInit {
 
   closeDropdown() {
     this.activeDropdown.set(null);
+  }
+
+  onSoloSinInformeChange(value: boolean) {
+    this.soloSinInforme = value;
+    localStorage.setItem('informes_soloSinInforme', value.toString());
+    this.loadResumen();
   }
 
   selectMes(mes: string) {

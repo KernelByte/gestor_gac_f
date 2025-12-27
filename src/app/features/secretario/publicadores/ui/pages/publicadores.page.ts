@@ -69,7 +69,7 @@ interface ContactoEmergencia {
         <div class="w-px h-6 bg-slate-200 hidden lg:block shrink-0"></div>
 
         <!-- Quick Filters (Pills) -->
-        <div class="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
+        <div class="hidden md:flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
             <button 
                 (click)="selectedEstado.set(null); currentPage.set(1)"
                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
@@ -96,7 +96,7 @@ interface ContactoEmergencia {
         <div class="w-px h-6 bg-slate-200 hidden lg:block shrink-0"></div>
 
         <!-- More Filters Dropdown (Compact) -->
-        <div class="relative shrink-0">
+        <div class="relative shrink-0 hidden md:block">
             <button 
                 (click)="showAdvancedFilters.set(!showAdvancedFilters())"
                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
@@ -402,14 +402,14 @@ interface ContactoEmergencia {
         <!-- Premium Gradient Header -->
         <div class="shrink-0 relative overflow-hidden">
              <!-- Background gradient -->
-             <div class="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50/30"></div>
-             <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-100/50 to-transparent rounded-full -mr-16 -mt-16 blur-2xl"></div>
+             <div class="hidden md:block absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50/30"></div>
+             <div class="hidden md:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-100/50 to-transparent rounded-full -mr-16 -mt-16 blur-2xl"></div>
              
-             <div class="relative px-8 pt-8 pb-4">
+             <div class="relative px-4 pt-4 pb-2 md:px-8 md:pt-8 md:pb-4">
                 <div class="flex items-start justify-between">
                      <div class="flex gap-4">
                          <!-- Icon with gradient background -->
-                         <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-orange to-orange-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/30 ring-4 ring-white">
+                         <div class="hidden md:flex w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-orange to-orange-500 text-white items-center justify-center shrink-0 shadow-lg shadow-orange-500/30 ring-4 ring-white">
                               <svg *ngIf="!editingPublicador()" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                               <svg *ngIf="editingPublicador()" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                          </div>
@@ -426,7 +426,7 @@ interface ContactoEmergencia {
                              <p class="text-sm text-slate-500 mt-0.5" *ngIf="editingPublicador()">
                                {{ getFullName(editingPublicador()!) }}
                              </p>
-                             <p class="text-sm text-slate-500 mt-0.5" *ngIf="!editingPublicador()">
+                             <p class="text-sm text-slate-500 mt-0.5 hidden md:block" *ngIf="!editingPublicador()">
                                Complete la información requerida
                              </p>
                          </div>

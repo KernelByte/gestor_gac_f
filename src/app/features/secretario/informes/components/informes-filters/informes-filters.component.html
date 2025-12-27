@@ -7,7 +7,8 @@
    <!-- Fila 1: Selectores de Periodo -->
    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
       <!-- Selector MES -->
-      <div class="relative z-20" [class.pointer-events-none]="isRestrictedUser" [class.opacity-50]="isRestrictedUser">
+      <div class="relative z-20 hidden sm:block" [class.pointer-events-none]="isRestrictedUser"
+         [class.opacity-50]="isRestrictedUser">
          <button (click)="!isRestrictedUser && toggleDropdown.emit('mes')"
             class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[140px] justify-between"
             [class.cursor-not-allowed]="isRestrictedUser">
@@ -35,7 +36,8 @@
       </div>
 
       <!-- Selector AÑO -->
-      <div class="relative z-20" [class.pointer-events-none]="isRestrictedUser" [class.opacity-50]="isRestrictedUser">
+      <div class="relative z-20 hidden sm:block" [class.pointer-events-none]="isRestrictedUser"
+         [class.opacity-50]="isRestrictedUser">
          <button (click)="!isRestrictedUser && toggleDropdown.emit('ano')"
             class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[100px] justify-between"
             [class.cursor-not-allowed]="isRestrictedUser">
