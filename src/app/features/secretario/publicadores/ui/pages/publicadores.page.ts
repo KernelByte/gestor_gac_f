@@ -43,7 +43,7 @@ interface ContactoEmergencia {
   imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePickerComponent],
   template: `
     <!-- Layout Container (Flex Row) -->
-    <div class="flex h-full gap-5 overflow-hidden">
+    <div class="flex h-full overflow-hidden">
     
     <!-- LEFT SIDE: Main Content (List, Search, Toolbar) -->
     <div class="flex-1 flex flex-col gap-5 min-w-0 transition-all duration-500 ease-in-out">
