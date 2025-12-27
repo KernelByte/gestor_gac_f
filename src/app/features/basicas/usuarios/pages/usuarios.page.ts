@@ -31,7 +31,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
       ])
    ],
    template: `
-    <div class="flex flex-row h-full overflow-hidden gap-5">
+    <div class="flex flex-col md:flex-row h-full overflow-hidden gap-5 relative">
       
        <!-- 1. Main Content Area -->
        <div class="flex-1 flex flex-col min-w-0 h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
@@ -93,95 +93,137 @@ import { AuthStore } from '../../../../core/auth/auth.store';
              <!-- User List Table (Flexible) -->
              <div class="flex-1 min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col transition-all duration-300">
                 <div class="flex-1 overflow-x-auto overflow-y-auto simple-scrollbar">
-                   <table class="w-full text-left border-collapse min-w-[800px]">
-                      <thead class="sticky top-0 bg-slate-50/95 backdrop-blur-md z-10 border-b border-slate-200">
-                         <tr>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-left">Usuario</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Rol</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Teléfono</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Estado</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Acciones</th>
-                         </tr>
-                      </thead>
-                      <tbody class="divide-y divide-slate-100">
-                         <tr *ngFor="let u of filteredUsuarios()" @listAnimation class="group hover:bg-slate-50 transition-colors">
-                            <!-- User Info -->
-                            <td class="px-6 py-4">
-                               <div class="flex items-center gap-4">
-                                  <div [ngClass]="getUserStyle(u.nombre)" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-lg shadow-sm ring-1 ring-white border border-white/50">
-                                     {{ u.nombre.charAt(0).toUpperCase() }}
-                                  </div>
-                                  <div>
-                                     <p class="font-bold text-slate-900 text-sm tracking-tight">{{ u.nombre }}</p>
-                                     <p class="text-xs text-slate-500 font-medium">{{ u.correo }}</p>
-                                  </div>
-                               </div>
-                            </td>
-                            
-                            <!-- Role Badge -->
-                            <td class="px-6 py-4 text-center">
-                               <div 
-                                  [ngClass]="getRolBadgeStyle(u)"
-                                  class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold"
-                               >
-                                  {{ getRolName(u) }}
-                               </div>
-                            </td>
+                    <!-- Mobile Card View -->
+                    <div class="md:hidden space-y-4 p-4 pb-20">
+                       <div *ngFor="let u of filteredUsuarios()" (click)="editUsuario(u)" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 active:scale-[0.98] transition-all">
+                          <div class="flex items-center gap-4 mb-3">
+                             <div [ngClass]="getUserStyle(u.nombre)" class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 font-bold text-xl shadow-sm ring-1 ring-white border border-white/50">
+                                {{ u.nombre.charAt(0).toUpperCase() }}
+                             </div>
+                             <div>
+                                <p class="font-bold text-slate-900 text-lg leading-tight">{{ u.nombre }}</p>
+                                <p class="text-sm text-slate-500 font-medium">{{ u.correo }}</p>
+                             </div>
+                          </div>
+                          <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+                             <div class="flex items-center gap-2">
+                                <div [ngClass]="getRolBadgeStyle(u)" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold">
+                                    {{ getRolName(u) }}
+                                </div>
+                                <div *ngIf="u.telefono" class="p-1.5 bg-slate-50 rounded-full text-slate-400">
+                                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                </div>
+                             </div>
+                             <button (click)="$event.stopPropagation(); openPermisos(u)" class="px-3 py-1.5 text-[#6D28D9] hover:bg-purple-50 bg-white border border-purple-100 rounded-lg transition-colors">
+                                <span class="text-xs font-bold">Permisos</span>
+                             </button>
+                          </div>
+                       </div>
+                       
+                       <!-- Empty State -->
+                       <div *ngIf="filteredUsuarios().length === 0" class="flex flex-col items-center justify-center py-10 text-slate-400">
+                          <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                             <svg class="w-8 h-8 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                          </div>
+                          <p class="font-medium">No se encontraron usuarios</p>
+                       </div>
+                    </div>
 
-                            <!-- Phone -->
-                            <td class="px-6 py-4 text-center">
-                               <span class="text-sm text-slate-600 font-mono">{{ u.telefono || '—' }}</span>
-                            </td>
-
-                            <!-- Status Badge (Mock) -->
-                            <td class="px-6 py-4 text-center">
-                               <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-100/50">
-                                  <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                  Activo
-                               </div>
-                            </td>
-
-                            <!-- Actions -->
-                            <td class="px-6 py-4 text-right">
-                               <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                                  <button (click)="openPermisos(u)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-amber-500 transition-all shadow-sm hover:shadow-md hover:shadow-amber-200" title="Permisos">
-                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                                  </button>
-                                  <button (click)="editUsuario(u)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-[#6D28D9] transition-all shadow-sm hover:shadow-md hover:shadow-purple-200" title="Editar">
-                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                  </button>
-                                  <button class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-red-500 transition-all shadow-sm hover:shadow-md hover:shadow-red-200" title="Eliminar">
-                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                  </button>
-                               </div>
-                            </td>
-                         </tr>
-                         
-                         <!-- Empty State -->
-                         <tr *ngIf="filteredUsuarios().length === 0" class="text-center">
-                             <td colspan="5" class="py-20">
-                                <div class="flex flex-col items-center justify-center text-slate-400">
-                                   <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                      <svg class="w-8 h-8 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <table class="w-full text-left border-collapse min-w-[800px] hidden md:table">
+                       <thead class="sticky top-0 bg-slate-50/95 backdrop-blur-md z-10 border-b border-slate-200">
+                          <tr>
+                             <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-left">Usuario</th>
+                             <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Rol</th>
+                             <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Teléfono</th>
+                             <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Estado</th>
+                             <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Acciones</th>
+                          </tr>
+                       </thead>
+                       <tbody class="divide-y divide-slate-100">
+                          <tr *ngFor="let u of filteredUsuarios()" @listAnimation class="group hover:bg-slate-50 transition-colors">
+                             <!-- User Info -->
+                             <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                   <div [ngClass]="getUserStyle(u.nombre)" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-lg shadow-sm ring-1 ring-white border border-white/50">
+                                      {{ u.nombre.charAt(0).toUpperCase() }}
                                    </div>
-                                   <p class="font-medium">No se encontraron usuarios</p>
-                                   <p class="text-sm mt-1 opacity-70">Intenta ajustar tu búsqueda</p>
+                                   <div>
+                                      <p class="font-bold text-slate-900 text-sm tracking-tight">{{ u.nombre }}</p>
+                                      <p class="text-xs text-slate-500 font-medium">{{ u.correo }}</p>
+                                   </div>
                                 </div>
                              </td>
-                         </tr>
-                      </tbody>
-                   </table>
+                             
+                             <!-- Role Badge -->
+                             <td class="px-6 py-4 text-center">
+                                <div 
+                                   [ngClass]="getRolBadgeStyle(u)"
+                                   class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                                >
+                                   {{ getRolName(u) }}
+                                </div>
+                             </td>
+ 
+                             <!-- Phone -->
+                             <td class="px-6 py-4 text-center">
+                                <span class="text-sm text-slate-600 font-mono">{{ u.telefono || '—' }}</span>
+                             </td>
+ 
+                             <!-- Status Badge (Mock) -->
+                             <td class="px-6 py-4 text-center">
+                                <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-100/50">
+                                   <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                   Activo
+                                </div>
+                             </td>
+ 
+                             <!-- Actions -->
+                             <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                                   <button (click)="openPermisos(u)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-amber-500 transition-all shadow-sm hover:shadow-md hover:shadow-amber-200" title="Permisos">
+                                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                   </button>
+                                   <button (click)="editUsuario(u)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-[#6D28D9] transition-all shadow-sm hover:shadow-md hover:shadow-purple-200" title="Editar">
+                                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                   </button>
+                                   <button class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-red-500 transition-all shadow-sm hover:shadow-md hover:shadow-red-200" title="Eliminar">
+                                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                   </button>
+                                </div>
+                             </td>
+                          </tr>
+                          
+                          <!-- Empty State -->
+                          <tr *ngIf="filteredUsuarios().length === 0" class="text-center">
+                              <td colspan="5" class="py-20">
+                                 <div class="flex flex-col items-center justify-center text-slate-400">
+                                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                       <svg class="w-8 h-8 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                    </div>
+                                    <p class="font-medium">No se encontraron usuarios</p>
+                                    <p class="text-sm mt-1 opacity-70">Intenta ajustar tu búsqueda</p>
+                                 </div>
+                              </td>
+                          </tr>
+                       </tbody>
+                    </table>
                 </div>
              </div>
           </div>
        </div>
 
        <!-- 2. Slide Over Panel (Fluid, sibling) -->
-       <div class="shrink-0 h-full flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-            [class.w-[480px]]="panelOpen()"
+       <div class="shrink-0 flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+            fixed inset-0 z-50 md:static md:z-auto md:h-full"
+            [class.w-full]="panelOpen()"
+            [class.md:w-[480px]]="panelOpen()"
             [class.w-0]="!panelOpen()"
             [class.opacity-100]="panelOpen()"
             [class.opacity-0]="!panelOpen()">
+            
+            <!-- Mobile Backdrop (Optional functionality if we want to close by clicking outside on mobile content) -->
+            <!-- Note: The content itself is full width on mobile, so no visible backdrop needed unless we want a partial sheet. 
+                 But here we decided on full screen overlay for mobile -->
             
             <!-- Inner container -->
             <div class="h-full flex flex-col bg-white rounded-l-3xl shadow-2xl shadow-slate-900/10 border-l border-slate-100 overflow-hidden">
