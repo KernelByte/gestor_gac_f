@@ -31,7 +31,7 @@ export const routes: Routes = [
         title: 'Permisos de Usuario',
         canActivate: [roleGuard],
         data: { roles: ['Administrador', 'Coordinador', 'Secretario'] },
-        loadComponent: () => import('./features/basicas/usuarios/pages/usuario-permisos.page').then(m => m.UsuarioPermisosPage),
+        loadComponent: () => import('./features/basicas/usuarios/pages/usuario-permisos/usuario-permisos.page').then(m => m.UsuarioPermisosPage),
       },
       {
         path: 'territorios',

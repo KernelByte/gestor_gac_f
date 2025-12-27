@@ -391,13 +391,13 @@ interface ContactoEmergencia {
     <!-- RIGHT SIDE: Editor Panel (Side Sheet) -->
     <!-- RIGHT SIDE: Editor Panel (Side Sheet with Smooth Transition) -->
     <div 
-      class="shrink-0 flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+      class="shrink-0 flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:h-auto"
       [ngClass]="panelOpen() 
-        ? 'w-[480px] opacity-100' 
-        : 'w-0 opacity-0'"
+        ? 'w-full opacity-100 md:w-[480px] md:ml-5' 
+        : 'w-0 opacity-0 md:ml-0'"
     >
       <!-- Inner Container with premium styling -->
-      <div class="h-full flex flex-col bg-white rounded-l-3xl shadow-2xl shadow-slate-900/10 border-l border-slate-100 overflow-hidden">
+      <div class="h-full flex flex-col bg-white rounded-none md:rounded-l-3xl shadow-2xl shadow-slate-900/10 border-l border-slate-100 overflow-hidden">
         
         <!-- Premium Gradient Header -->
         <div class="shrink-0 relative overflow-hidden">
@@ -493,34 +493,34 @@ interface ContactoEmergencia {
                         <div class="grid grid-cols-2 gap-4">
                              <!-- Fila 1: Nombres -->
                              <div class="col-span-1 space-y-2">
-                               <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                               <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                                   Primer Nombre <span class="text-red-400">*</span>
                                </label>
-                               <input formControlName="primer_nombre" placeholder="Ej: Juan" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                               <input formControlName="primer_nombre" placeholder="Ej: Juan" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                              <div class="col-span-1 space-y-2">
-                               <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                               <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
                                   Segundo Nombre
                                </label>
-                               <input formControlName="segundo_nombre" placeholder="Ej: Carlos" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                               <input formControlName="segundo_nombre" placeholder="Ej: Carlos" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                              
                              <!-- Fila 2: Apellidos -->
                              <div class="col-span-1 space-y-2">
-                               <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                               <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                                   Primer Apellido <span class="text-red-400">*</span>
                                </label>
-                               <input formControlName="primer_apellido" placeholder="Ej: Pérez" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                               <input formControlName="primer_apellido" placeholder="Ej: Pérez" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                              <div class="col-span-1 space-y-2">
-                               <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                               <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
                                   Segundo Apellido
                                </label>
-                               <input formControlName="segundo_apellido" placeholder="Ej: García" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                               <input formControlName="segundo_apellido" placeholder="Ej: García" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                         </div>
                      </div>
@@ -535,14 +535,14 @@ interface ContactoEmergencia {
 
                         <div class="grid grid-cols-2 gap-4">
                             <div class="col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                                   Teléfono
                                 </label>
-                                <input formControlName="telefono" placeholder="+57 300..." class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                                <input formControlName="telefono" placeholder="+57 300..." class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                             </div>
                              <div class="col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                   Sexo
                                 </label>
@@ -551,7 +551,7 @@ interface ContactoEmergencia {
                                     <button
                                       type="button"
                                       (click)="sexoDropdownOpen.set(!sexoDropdownOpen())"
-                                      class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-left shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none flex items-center justify-between"
+                                      class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-left shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none flex items-center justify-between"
                                       [class.text-slate-400]="!publicadorForm.get('sexo')?.value"
                                       [class.text-slate-800]="publicadorForm.get('sexo')?.value"
                                     >
@@ -593,16 +593,16 @@ interface ContactoEmergencia {
                         </div>
 
                          <div class="col-span-2 space-y-2">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                            <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                Dirección / Barrio
                             </label>
-                            <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                            <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div class="col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                    Fecha Nacimiento
                                 </label>
@@ -611,7 +611,7 @@ interface ContactoEmergencia {
                             
                             <!-- Estado (Radio Group Styled) -->
                             <div class="col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                                    Estado Inicial
                                 </label>
@@ -653,12 +653,12 @@ interface ContactoEmergencia {
                        </div>
 
                        <div class="space-y-2">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                            <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
                                Grupo de Servicio
                             </label>
                             <div class="relative">
-                                <select [compareWith]="compareFn" formControlName="id_grupo_publicador" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
+                                <select [compareWith]="compareFn" formControlName="id_grupo_publicador" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
                                     <option [ngValue]="null">Sin asignar</option>
                                     <option *ngFor="let g of grupos(); trackBy: trackGroupById" [ngValue]="g.id_grupo">{{ g.nombre_grupo }}</option>
                                 </select>
@@ -670,14 +670,14 @@ interface ContactoEmergencia {
 
                        <div class="grid grid-cols-2 gap-4">
                          <div class="col-span-1 space-y-2">
-                             <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                             <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                Fecha Bautismo
                              </label>
                              <app-date-picker formControlName="fecha_bautismo" placeholder="Seleccionar fecha"></app-date-picker>
                          </div>
                          <div class="col-span-1 space-y-2">
-                             <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                             <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                Estado
                              </label>
@@ -689,7 +689,7 @@ interface ContactoEmergencia {
                                  <button 
                                    type="button"
                                    (click)="toggleEstadoDropdown()"
-                                   class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none flex items-center justify-between"
+                                   class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none flex items-center justify-between"
                                  >
                                     <span [class.text-slate-400]="!publicadorForm.get('id_estado_publicador')?.value">
                                       {{ getSelectedEstadoName() }}
@@ -929,7 +929,7 @@ interface ContactoEmergencia {
                           
                           <div class="space-y-4">
                               <div class="space-y-2">
-                                  <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                  <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                      Nombre Completo
                                   </label>
@@ -938,14 +938,14 @@ interface ContactoEmergencia {
                               
                               <div class="grid grid-cols-2 gap-4">
                                   <div class="col-span-1 space-y-2">
-                                     <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                         Parentesco
                                      </label>
                                      <input formControlName="parentesco" placeholder="Ej. Madre" class="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 font-normal">
                                   </div>
                                   <div class="col-span-1 space-y-2">
-                                     <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                         Teléfono
                                      </label>
@@ -954,7 +954,7 @@ interface ContactoEmergencia {
                               </div>
                               
                               <div class="space-y-2">
-                                  <label class="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                  <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                      Dirección (Opcional)
                                   </label>
