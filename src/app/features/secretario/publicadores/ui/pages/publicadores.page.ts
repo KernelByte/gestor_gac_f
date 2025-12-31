@@ -1027,14 +1027,40 @@ interface ContactoEmergencia {
     </div> <!-- End Detail Panel Outer -->
 
        <!-- Delete Modal (Clean) -->
+      <!-- Delete Modal (Refined & Clean) -->
       <div *ngIf="deleteModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity" (click)="closeDeleteModal()"></div>
-          <div class="relative bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full animate-fadeInUp">
-             <h3 class="text-lg font-bold text-slate-900 mb-2">¿Eliminar miembro?</h3>
-             <p class="text-sm text-slate-500 mb-6">Esta acción eliminará permanentemente a <strong class="text-slate-900">{{ publicadorToDelete()?.primer_nombre }}</strong> de la base de datos.</p>
-             <div class="flex gap-3 justify-end">
-                <button (click)="closeDeleteModal()" class="px-4 py-2 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50">Cancelar</button>
-                <button (click)="executeDelete()" class="px-4 py-2 rounded-lg bg-red-600 text-white font-bold text-sm hover:bg-red-700">Eliminar</button>
+          <!-- Backdrop: Clean dark overlay without blur -->
+          <div class="absolute inset-0 bg-slate-900/50 transition-opacity" (click)="closeDeleteModal()"></div>
+          
+          <!-- Modal Card -->
+          <div class="relative bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-[380px] w-full animate-fadeInUp border border-slate-100">
+             
+             <!-- Icon Header -->
+             <div class="flex items-center gap-4 mb-5">
+                <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 leading-tight">¿Eliminar miembro?</h3>
+                    <p class="text-xs text-slate-500 font-medium">Esta acción es irreversible</p>
+                </div>
+             </div>
+
+             <!-- Content -->
+             <p class="text-sm text-slate-600 leading-relaxed mb-6">
+                 Estás a punto de eliminar a <strong class="text-slate-900 bg-slate-100 px-1 rounded">{{ publicadorToDelete()?.primer_nombre }} {{ publicadorToDelete()?.primer_apellido }}</strong>. ¿Deseas continuar?
+             </p>
+
+             <!-- Actions -->
+             <div class="flex items-center gap-3">
+                <button (click)="closeDeleteModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    Cancelar
+                </button>
+                <button (click)="executeDelete()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm shadow-md shadow-red-600/20 hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/30 transition-all active:scale-95">
+                    Eliminar
+                </button>
               </div>
           </div>
       </div>
