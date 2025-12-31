@@ -12,7 +12,9 @@ import { PublicadorPrivilegio } from '../../privilegios/domain/models/publicador
 interface Publicador {
    id_publicador: number;
    primer_nombre: string;
+   segundo_nombre?: string | null;
    primer_apellido: string;
+   segundo_apellido?: string | null;
    id_grupo_publicador?: number | null;
    id_estado_publicador?: number;
    rol?: any;
@@ -126,15 +128,17 @@ export class FormularioAsignacionPage implements OnInit {
    }
 
    filteredAvailable() {
-      return this.availablePublishers().filter(p =>
-         (p.primer_nombre + ' ' + p.primer_apellido).toLowerCase().includes(this.searchAvailable.toLowerCase())
-      ).sort((a, b) => a.primer_nombre.localeCompare(b.primer_nombre));
+      return this.availablePublishers().filter(p => {
+         const fullName = [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido].filter(Boolean).join(' ');
+         return fullName.toLowerCase().includes(this.searchAvailable.toLowerCase());
+      }).sort((a, b) => a.primer_nombre.localeCompare(b.primer_nombre));
    }
 
    filteredGroupMembers() {
-      return this.groupMembers().filter(p =>
-         (p.primer_nombre + ' ' + p.primer_apellido).toLowerCase().includes(this.searchGroup.toLowerCase())
-      ).sort((a, b) => a.primer_nombre.localeCompare(b.primer_nombre));
+      return this.groupMembers().filter(p => {
+         const fullName = [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido].filter(Boolean).join(' ');
+         return fullName.toLowerCase().includes(this.searchGroup.toLowerCase());
+      }).sort((a, b) => a.primer_nombre.localeCompare(b.primer_nombre));
    }
 
    toggleSelection(p: Publicador) {
@@ -210,6 +214,12 @@ export class FormularioAsignacionPage implements OnInit {
       } finally {
          this.saving.set(false);
       }
+   }
+
+   getFullName(p: Publicador): string {
+      return [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido]
+         .filter(Boolean)
+         .join(' ');
    }
 
    getInitials(p: Publicador): string {

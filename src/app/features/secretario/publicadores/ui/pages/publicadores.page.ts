@@ -497,14 +497,14 @@ interface ContactoEmergencia {
                                   <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                                   Primer Nombre <span class="text-red-400">*</span>
                                </label>
-                               <input formControlName="primer_nombre" placeholder="Ej: Juan" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                               <input formControlName="primer_nombre" (input)="capitalizeInput('primer_nombre')" placeholder="Ej: Juan" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                              <div class="col-span-1 space-y-2">
                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
                                   Segundo Nombre
                                </label>
-                               <input formControlName="segundo_nombre" placeholder="Ej: Carlos" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                               <input formControlName="segundo_nombre" (input)="capitalizeInput('segundo_nombre')" placeholder="Ej: Carlos" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                              
                              <!-- Fila 2: Apellidos -->
@@ -513,14 +513,14 @@ interface ContactoEmergencia {
                                   <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                                   Primer Apellido <span class="text-red-400">*</span>
                                </label>
-                               <input formControlName="primer_apellido" placeholder="Ej: Pérez" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                               <input formControlName="primer_apellido" (input)="capitalizeInput('primer_apellido')" placeholder="Ej: Pérez" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                              <div class="col-span-1 space-y-2">
                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
                                   Segundo Apellido
                                </label>
-                               <input formControlName="segundo_apellido" placeholder="Ej: García" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                               <input formControlName="segundo_apellido" (input)="capitalizeInput('segundo_apellido')" placeholder="Ej: García" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
                              </div>
                         </div>
                      </div>
@@ -1055,11 +1055,12 @@ interface ContactoEmergencia {
 
              <!-- Actions -->
              <div class="flex items-center gap-3">
-                <button (click)="closeDeleteModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                <button (click)="closeDeleteModal()" [disabled]="isDeleting()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:text-slate-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Cancelar
                 </button>
-                <button (click)="executeDelete()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm shadow-md shadow-red-600/20 hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/30 transition-all active:scale-95">
-                    Eliminar
+                <button (click)="executeDelete()" [disabled]="isDeleting()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm shadow-md shadow-red-600/20 hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none">
+                    <svg *ngIf="isDeleting()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span>{{ isDeleting() ? 'Eliminando...' : 'Eliminar' }}</span>
                 </button>
               </div>
           </div>
@@ -1410,11 +1411,14 @@ export class PublicadoresListComponent implements OnInit {
   openCreateForm() {
     this.editingPublicador.set(null);
     this.activeTab.set('personal');
+
+    const estadoActivo = this.estadosPublicador().find(e => e.nombre_estado.includes('Activo'));
+
     this.publicadorForm.reset({
       consentimiento_datos: false,
       ungido: false,
       id_grupo_publicador: null,
-      id_estado_publicador: null
+      id_estado_publicador: estadoActivo ? estadoActivo.id_estado : null
     });
     this.publicadorPrivilegios.set([]); // Clear privileges for new form
     this.panelOpen.set(true);
@@ -1476,6 +1480,20 @@ export class PublicadoresListComponent implements OnInit {
     const estado = this.estadosPublicador().find(e => e.nombre_estado.includes(type));
     if (estado) {
       this.publicadorForm.get('id_estado_publicador')?.setValue(estado.id_estado);
+    }
+  }
+
+
+  capitalizeInput(controlName: string) {
+    const control = this.publicadorForm.get(controlName);
+    if (control && control.value) {
+      const value = control.value.toString();
+      if (value.length > 0) {
+        const newValue = value.charAt(0).toUpperCase() + value.slice(1);
+        if (value !== newValue) {
+          control.setValue(newValue, { emitEvent: false });
+        }
+      }
     }
   }
 
@@ -1543,15 +1561,32 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   closeDeleteModal() {
+    if (this.isDeleting()) return; // Prevent closing while deleting
     this.deleteModalOpen.set(false);
     this.publicadorToDelete.set(null);
   }
 
+  isDeleting = signal(false);
+
   async executeDelete() {
     const p = this.publicadorToDelete();
-    if (p) {
+    if (!p) return;
+
+    this.isDeleting.set(true);
+    try {
       await this.facade.remove(p.id_publicador);
-      this.closeDeleteModal();
+      this.showToast('Publicador eliminado correctamente', 'success');
+
+      // Force close modal on success
+      this.isDeleting.set(false);
+      this.deleteModalOpen.set(false);
+      this.publicadorToDelete.set(null);
+
+    } catch (err: any) {
+      console.error('Error deleting publicador:', err);
+      const msg = err?.error?.detail || 'No se pudo eliminar el publicador';
+      this.showToast(msg, 'error');
+      this.isDeleting.set(false);
     }
   }
 

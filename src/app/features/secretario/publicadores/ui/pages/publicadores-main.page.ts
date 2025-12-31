@@ -19,7 +19,7 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
       <div class="shrink-0 flex flex-col gap-6">
           
           <!-- Title & Description -->
-          <div>
+          <div class="px-8">
             <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight mb-2">{{ pageTitle() }}</h1>
             <p class="text-slate-500 text-lg leading-relaxed max-w-3xl hidden md:block">{{ pageDescription() }}</p>
           </div>
