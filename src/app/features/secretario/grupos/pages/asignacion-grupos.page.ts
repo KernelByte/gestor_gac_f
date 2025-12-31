@@ -88,12 +88,15 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   // UI State
   isDraggingOver = signal<'unassigned' | number | null>(null);
-  draggedItem: Publicador | null = null;
+  draggedPublishers: Publicador[] = []; // Changed from single item to array
   draggedLeader: { type: 'capitan' | 'auxiliar', groupId: number, publicador: Publicador } | null = null;
   isSaving = signal(false);
   showSuccessMessage = signal(false);
   showExitConfirmation = signal(false); // Modal state
   isFullScreen = signal(false); // Estado para pantalla completa
+
+  // Selection State
+  selectedPublishersIds = signal<Set<number>>(new Set());
 
   toggleFullScreen() {
     this.isFullScreen.update(v => !v);
@@ -327,12 +330,55 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     this.router.navigate(['/secretario/publicadores'], { queryParams: { tab: 'grupos' } });
   }
 
+  toggleSelectAll(groupId: number | 'unassigned') {
+    const currentSelected = this.selectedPublishersIds();
+    let targets: number[] = [];
+
+    if (groupId === 'unassigned') {
+      targets = this.unassignedPublishers().map(p => p.id_publicador);
+    } else {
+      targets = this.getGroupMembers(groupId).map(p => p.id_publicador);
+    }
+
+    // Check if ALL targets are currently selected
+    const allSelected = targets.length > 0 && targets.every(id => currentSelected.has(id));
+
+    // Clear everything first (single source selection model)
+    const newSelected = new Set<number>();
+
+    if (!allSelected) {
+      targets.forEach(id => newSelected.add(id));
+    }
+
+    this.selectedPublishersIds.set(newSelected);
+  }
+
+  isSelected(id: number): boolean {
+    return this.selectedPublishersIds().has(id);
+  }
+
   // Drag & Drop Logic
   onDragStart(e: DragEvent, p: Publicador) {
-    this.draggedItem = p;
+    let items: Publicador[] = [];
+
+    if (this.isSelected(p.id_publicador)) {
+      const ids = this.selectedPublishersIds();
+      items = this.publicadores().filter(pub => ids.has(pub.id_publicador));
+    } else {
+      this.selectedPublishersIds.set(new Set()); // Clear selection if dragging unselected
+      items = [p];
+    }
+
+    this.draggedPublishers = items;
+
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', JSON.stringify(p));
+      e.dataTransfer.setData('text/plain', JSON.stringify(items.map(i => i.id_publicador)));
+
+      // Optional: Set drag image customized if multiple
+      if (items.length > 1) {
+        // Attempt to show count? For now default.
+      }
     }
   }
 
@@ -352,23 +398,28 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     e.preventDefault();
     this.isDraggingOver.set(null);
 
-    if (!this.draggedItem) return;
+    if (this.draggedPublishers.length === 0) return;
 
-    const p = this.draggedItem;
-    const oldGroupId = p.id_grupo_publicador;
+    const items = this.draggedPublishers;
+    this.draggedPublishers = [];
+    this.selectedPublishersIds.set(new Set()); // Clear selection
 
-    this.draggedItem = null;
+    const idsToMove = new Set(items.map(p => p.id_publicador));
+    let changed = false;
 
-    if (oldGroupId !== targetGroupId) {
-      this.publicadores.update(current => {
-        return current.map(item => {
-          if (item.id_publicador === p.id_publicador) {
-            return { ...item, id_grupo_publicador: targetGroupId };
+    // Check if change is needed before updating signals
+    // But since we iterate map, we can just do it.
+
+    this.publicadores.update(current => {
+      return current.map(p => {
+        if (idsToMove.has(p.id_publicador)) {
+          if (p.id_grupo_publicador !== targetGroupId) {
+            return { ...p, id_grupo_publicador: targetGroupId };
           }
-          return item;
-        });
+        }
+        return p;
       });
-    }
+    });
   }
 
   // --- Leader Drag & Drop ---
@@ -392,9 +443,10 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     e.stopPropagation();
     this.isDraggingOverLeader.set(null);
 
-    if (!this.draggedItem) return;
-    const p = this.draggedItem;
-    this.draggedItem = null;
+    if (this.draggedPublishers.length !== 1) return; // Only allow single drop
+
+    const p = this.draggedPublishers[0];
+    this.draggedPublishers = [];
 
     const fullName = `${p.primer_nombre} ${p.primer_apellido}${p.segundo_apellido ? ' ' + p.segundo_apellido : ''} `.trim();
 

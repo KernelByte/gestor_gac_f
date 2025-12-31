@@ -141,6 +141,16 @@ export class FormularioAsignacionPage implements OnInit {
       p.selected = !p.selected;
    }
 
+   toggleSelectAll(type: 'available' | 'members') {
+      const list = type === 'available' ? this.filteredAvailable() : this.filteredGroupMembers();
+      if (list.length === 0) return;
+
+      const allSelected = list.every(p => p.selected);
+      const newState = !allSelected;
+
+      list.forEach(p => p.selected = newState);
+   }
+
    moveToGroup() {
       const selected = this.availablePublishers().filter(p => p.selected);
       const remaining = this.availablePublishers().filter(p => !p.selected);

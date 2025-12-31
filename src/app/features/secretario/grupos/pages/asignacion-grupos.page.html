@@ -139,8 +139,18 @@
                            <p class="text-[10px] text-slate-400">Zona de espera</p>
                         </div>
                      </div>
-                     <span class="bg-slate-800 text-white px-2.5 py-1 rounded-lg text-xs font-bold tabular-nums">{{
-                        unassignedPublishers().length }}</span>
+                     <div class="flex items-center gap-2">
+                        <button (click)="toggleSelectAll('unassigned')"
+                           class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                           title="Seleccionar todos">
+                           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round"
+                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                           </svg>
+                        </button>
+                        <span class="bg-slate-800 text-white px-2.5 py-1 rounded-lg text-xs font-bold tabular-nums">{{
+                           unassignedPublishers().length }}</span>
+                     </div>
                   </div>
 
                   <!-- List -->
@@ -174,31 +184,41 @@
                   (drop)="onDrop($event, grupo.id_grupo)">
                   <!-- Header con color de marca (Naranja) -->
                   <div class="px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl">
-                     <div class="flex flex-col">
-                        <h3 class="font-bold text-white text-base truncate" [title]="grupo.nombre_grupo">{{
-                           grupo.nombre_grupo }}</h3>
-                        <div class="flex items-center gap-3 mt-1">
-                           <p class="text-orange-100 text-[11px] font-medium flex items-center gap-1">
-                              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                 <circle cx="9" cy="7" r="4"></circle>
-                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                              </svg>
-                              {{ getGroupMembers(grupo.id_grupo).length }} miembros
-                           </p>
-                           <span class="text-orange-300/50 text-[10px]">•</span>
-                           <p class="text-white text-[11px] font-bold flex items-center gap-1">
-                              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                 <path
-                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
-                                 </path>
-                              </svg>
-                              {{ getPrecursoresCount(grupo.id_grupo) }} Precursores
-                           </p>
+                     <div class="flex items-center justify-between gap-2">
+                        <div class="flex flex-col min-w-0">
+                           <h3 class="font-bold text-white text-base truncate" [title]="grupo.nombre_grupo">{{
+                              grupo.nombre_grupo }}</h3>
+                           <div class="flex items-center gap-3 mt-1">
+                              <p class="text-orange-100 text-[11px] font-medium flex items-center gap-1">
+                                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                 </svg>
+                                 {{ getGroupMembers(grupo.id_grupo).length }} miembros
+                              </p>
+                              <span class="text-orange-300/50 text-[10px]">•</span>
+                              <p class="text-white text-[11px] font-bold flex items-center gap-1">
+                                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                       d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
+                                    </path>
+                                 </svg>
+                                 {{ getPrecursoresCount(grupo.id_grupo) }} Precursores
+                              </p>
+                           </div>
                         </div>
+                        <button (click)="toggleSelectAll(grupo.id_grupo)"
+                           class="p-1 rounded-lg text-orange-100 hover:text-white hover:bg-white/20 transition-colors shrink-0"
+                           title="Seleccionar todos">
+                           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round"
+                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                           </svg>
+                        </button>
                      </div>
                   </div>
 
@@ -401,8 +421,10 @@
 <!-- Template de Card de Publicador - Diseño Limpio -->
 <ng-template #cardTemplate let-p let-inGroup="inGroup">
    <div
-      class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:border-slate-300 hover:scale-[1.01] transition-all duration-200 group relative flex items-center gap-2.5 select-none"
-      draggable="true" (dragstart)="onDragStart($event, p)">
+      class="p-2.5 rounded-xl border border-slate-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:border-slate-300 hover:scale-[1.01] transition-all duration-200 group relative flex items-center gap-2.5 select-none"
+      [class.bg-white]="!isSelected(p.id_publicador)" [class.bg-orange-50]="isSelected(p.id_publicador)"
+      [class.ring-2]="isSelected(p.id_publicador)" [class.ring-brand-orange]="isSelected(p.id_publicador)"
+      [class.z-10]="isSelected(p.id_publicador)" draggable="true" (dragstart)="onDragStart($event, p)">
       <!-- Avatar - Icono de Usuario -->
       <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
          <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"

@@ -71,8 +71,18 @@
                         <p class="text-[11px] font-semibold text-slate-400">Sin grupo asignado</p>
                      </div>
                   </div>
-                  <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-md">{{
-                     filteredAvailable().length }}</span>
+                  <div class="flex items-center gap-2">
+                     <button (click)="toggleSelectAll('available')"
+                        class="p-1 px-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                        title="Seleccionar todos">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                     </button>
+                     <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-md">{{
+                        filteredAvailable().length }}</span>
+                  </div>
                </div>
 
                <!-- Minimal Search -->
@@ -213,8 +223,18 @@
                         <p class="text-[11px] font-semibold text-orange-500">Asignados al grupo</p>
                      </div>
                   </div>
-                  <span class="bg-orange-100 text-orange-600 text-xs font-bold px-2.5 py-1 rounded-md">{{
-                     filteredGroupMembers().length }}</span>
+                  <div class="flex items-center gap-2">
+                     <button (click)="toggleSelectAll('members')"
+                        class="p-1 px-1.5 rounded-lg text-orange-400 hover:text-orange-600 hover:bg-orange-100 transition-colors"
+                        title="Seleccionar todos">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                     </button>
+                     <span class="bg-orange-100 text-orange-600 text-xs font-bold px-2.5 py-1 rounded-md">{{
+                        filteredGroupMembers().length }}</span>
+                  </div>
                </div>
 
                <!-- Minimal Search -->
