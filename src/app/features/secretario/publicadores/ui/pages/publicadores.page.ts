@@ -95,48 +95,100 @@ interface ContactoEmergencia {
         <!-- Separator -->
         <div class="w-px h-6 bg-slate-200 hidden lg:block shrink-0"></div>
 
-        <!-- More Filters Dropdown (Compact) -->
+        <!-- More Filters Dropdown (Advanced) -->
         <div class="relative shrink-0 hidden md:block">
+            <!-- Trigger Button -->
             <button 
                 (click)="showAdvancedFilters.set(!showAdvancedFilters())"
-                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
-                [ngClass]="selectedGrupoFilter() !== null 
-                  ? 'bg-brand-orange text-white shadow-sm' 
-                  : 'text-slate-500 hover:bg-slate-100'"
+                class="flex items-center gap-2 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all border outline-none"
+                [ngClass]="activeFiltersCount() > 0 
+                  ? 'bg-orange-50 border-orange-200 text-brand-orange shadow-sm' 
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'"
             >
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                <span class="hidden sm:inline">{{ selectedGrupoFilter() !== null ? getGrupoNombre(selectedGrupoFilter()) : 'Filtros' }}</span>
-                <svg class="w-3 h-3 transition-transform" [class.rotate-180]="showAdvancedFilters()" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                <span class="hidden sm:inline">Filtros</span>
+                <span *ngIf="activeFiltersCount() > 0" class="flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-black shadow-sm">
+                    {{ activeFiltersCount() }}
+                </span>
+                <svg class="w-3 h-3 opacity-50 transition-transform duration-200" [class.rotate-180]="showAdvancedFilters()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </button>
             
+            <!-- Backdrop (Click Outside) -->
+             <div *ngIf="showAdvancedFilters()" (click)="showAdvancedFilters.set(false)" class="fixed inset-0 z-40 bg-transparent"></div>
+
             <!-- Dropdown Menu -->
             <div 
                 *ngIf="showAdvancedFilters()"
-                class="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 z-50 py-1.5 animate-fadeInUp"
+                class="absolute top-full right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 z-50 overflow-hidden animate-fadeInUp flex flex-col max-h-[80vh]"
             >
-                <div class="px-3 py-1.5 border-b border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grupo de Predicación</p>
+                <!-- Header -->
+                <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 sticky top-0">
+                    <span class="text-xs font-bold text-slate-800">Filtros Avanzados</span>
+                    <button 
+                        *ngIf="activeFiltersCount() > 0"
+                        (click)="clearFilters()"
+                        class="text-[10px] font-bold text-brand-orange hover:text-orange-600 transition-colors uppercase tracking-wider"
+                    >
+                        Limpiar Todo
+                    </button>
                 </div>
-                <div class="max-h-52 overflow-y-auto simple-scrollbar">
-                    <button 
-                        (click)="selectedGrupoFilter.set(null); showAdvancedFilters.set(false); currentPage.set(1)"
-                        class="w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 transition-colors flex items-center justify-between"
-                        [class.text-brand-orange]="selectedGrupoFilter() === null"
-                        [class.text-slate-700]="selectedGrupoFilter() !== null"
-                    >
-                        <span>Todos los Grupos</span>
-                        <svg *ngIf="selectedGrupoFilter() === null" class="w-3.5 h-3.5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    </button>
-                    <button 
-                        *ngFor="let g of grupos()"
-                        (click)="selectedGrupoFilter.set(g.id_grupo); showAdvancedFilters.set(false); currentPage.set(1)"
-                        class="w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 transition-colors flex items-center justify-between"
-                        [class.text-brand-orange]="selectedGrupoFilter() === g.id_grupo"
-                        [class.text-slate-700]="selectedGrupoFilter() !== g.id_grupo"
-                    >
-                        <span>{{ g.nombre_grupo }}</span>
-                        <svg *ngIf="selectedGrupoFilter() === g.id_grupo" class="w-3.5 h-3.5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    </button>
+
+                <!-- Scrollable Content -->
+                <div class="overflow-y-auto p-2 simple-scrollbar">
+                    
+                    <!-- Section: Privilegios -->
+                    <div class="mb-4">
+                        <div class="px-2 py-1.5 flex items-center gap-2">
+                             <span class="w-1 h-3 rounded-full bg-indigo-500"></span>
+                             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Privilegios</span>
+                        </div>
+                        <div class="space-y-0.5">
+                            <label 
+                                *ngFor="let p of privilegios()"
+                                class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group"
+                            >
+                                <span class="text-xs font-bold text-slate-700 group-hover:text-slate-900">{{ p.nombre_privilegio }}</span>
+                                <div class="relative flex items-center justify-center">
+                                    <input 
+                                        type="checkbox" 
+                                        [checked]="selectedPrivilegiosFilter().includes(p.id_privilegio)"
+                                        (change)="togglePrivilegioFilter(p.id_privilegio)"
+                                        class="peer sr-only"
+                                    >
+                                    <div class="w-4 h-4 border-2 border-slate-200 rounded transition-all peer-checked:bg-indigo-500 peer-checked:border-indigo-500 peer-checked:ring-2 peer-checked:ring-indigo-500/20"></div>
+                                    <svg class="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="h-px bg-slate-100 mx-2 my-2"></div>
+
+                    <!-- Section: Grupos -->
+                    <div class="mb-2">
+                        <div class="px-2 py-1.5 flex items-center gap-2">
+                             <span class="w-1 h-3 rounded-full bg-brand-orange"></span>
+                             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grupos</span>
+                        </div>
+                        <div class="space-y-0.5">
+                            <label 
+                                *ngFor="let g of grupos()"
+                                class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group"
+                            >
+                                <span class="text-xs font-bold text-slate-700 group-hover:text-slate-900">{{ g.nombre_grupo }}</span>
+                                <div class="relative flex items-center justify-center">
+                                    <input 
+                                        type="checkbox" 
+                                        [checked]="selectedGruposFilter().includes(g.id_grupo)"
+                                        (change)="toggleGrupoFilter(g.id_grupo)"
+                                        class="peer sr-only"
+                                    >
+                                    <div class="w-4 h-4 border-2 border-slate-200 rounded transition-all peer-checked:bg-brand-orange peer-checked:border-brand-orange peer-checked:ring-2 peer-checked:ring-brand-orange/20"></div>
+                                    <svg class="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1166,7 +1218,11 @@ export class PublicadoresListComponent implements OnInit {
 
   // Advanced Filters
   showAdvancedFilters = signal(false);
-  selectedGrupoFilter = signal<number | null>(null);
+  selectedGruposFilter = signal<number[]>([]);
+  selectedPrivilegiosFilter = signal<number[]>([]);
+
+  activeFiltersCount = computed(() => this.selectedGruposFilter().length + this.selectedPrivilegiosFilter().length);
+
 
   // Auxiliary Data
   estados = signal<Estado[]>([]);
@@ -1270,14 +1326,49 @@ export class PublicadoresListComponent implements OnInit {
       list = list.filter(p => p.id_estado_publicador === estadoId);
     }
 
-    // Filter by Grupo
-    const grupoId = this.selectedGrupoFilter();
-    if (grupoId !== null) {
-      list = list.filter(p => p.id_grupo_publicador == grupoId);
+    // Filter by Grupo (Multi-select)
+    const grupoIds = this.selectedGruposFilter();
+    if (grupoIds.length > 0) {
+      list = list.filter(p => p.id_grupo_publicador && grupoIds.includes(p.id_grupo_publicador));
+    }
+
+    // Filter by Privileges (Multi-select)
+    const privIds = this.selectedPrivilegiosFilter();
+    if (privIds.length > 0) {
+      const map = this.publicadorPrivilegiosMap();
+      list = list.filter(p => {
+        const userPrivs = map.get(p.id_publicador) || [];
+        // Check if user has ANY of the selected privileges
+        return privIds.some(id => userPrivs.includes(id));
+      });
     }
 
     return list;
   });
+
+  // Filter Helpers
+  toggleGrupoFilter(id: number) {
+    this.selectedGruposFilter.update(current => {
+      if (current.includes(id)) return current.filter(x => x !== id);
+      return [...current, id];
+    });
+    this.currentPage.set(1);
+  }
+
+  togglePrivilegioFilter(id: number) {
+    this.selectedPrivilegiosFilter.update(current => {
+      if (current.includes(id)) return current.filter(x => x !== id);
+      return [...current, id];
+    });
+    this.currentPage.set(1);
+  }
+
+  clearFilters() {
+    this.selectedGruposFilter.set([]);
+    this.selectedPrivilegiosFilter.set([]);
+    this.showAdvancedFilters.set(false);
+    this.currentPage.set(1);
+  }
 
   // Pagination Logic
   pagedList = computed(() => {
