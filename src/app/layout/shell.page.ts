@@ -251,16 +251,15 @@ import { ThemeService } from '../core/services/theme.service';
             </div>
 
             <!-- Extras Section -->
-            <!-- Extras Section -->
-            <div *ngIf="hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador')" class="mt-8">
+            <div *ngIf="hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Administrador')" class="mt-8">
               <p 
                 *ngIf="!collapsed()"
                 class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
               >Extras</p>
               
-              <!-- Configuracion -->
+              <!-- Configuracion Normal (NO ADMIN) -->
               <a 
-                *ngIf="hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador')"
+                *ngIf="!hasRole('Administrador') && (hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador'))"
                 routerLink="/configuracion" 
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
@@ -269,6 +268,27 @@ import { ThemeService } from '../core/services/theme.service';
                   'gap-3.5 px-3.5 py-3': !collapsed()
                 }"
                 title="Configuración"
+              >
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Configuración</span>
+              </a>
+
+              <!-- Configuracion Admin -->
+              <a 
+                *ngIf="hasRole('Administrador')"
+                routerLink="/admin/configuracion" 
+                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
+                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                [ngClass]="{
+                  'justify-center p-2.5': collapsed(),
+                  'gap-3.5 px-3.5 py-3': !collapsed()
+                }"
+                title="Configuración del Sistema"
               >
                 <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -562,6 +582,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Exhibidores', subtitle: 'Gestión de puntos de predicación pública.' });
     } else if (url.includes('/reuniones')) {
       this.pageTitle.set({ title: 'Reuniones', subtitle: 'Seguimiento de Asistencia' });
+    } else if (url.includes('/admin/configuracion')) {
+      this.pageTitle.set({ title: 'Configuración del Sistema', subtitle: 'Administración global de la plataforma' });
     } else if (url.includes('/configuracion')) {
       this.pageTitle.set({ title: 'Configuración', subtitle: 'Ajustes generales de la congregación' });
     } else {

@@ -59,6 +59,13 @@ export const routes: Routes = [
         loadChildren: () => import('./features/secretario/routes').then(m => m.SECRETARIO_ROUTES)
       },
       {
+        path: 'admin/configuracion',
+        title: 'Configuración del Sistema',
+        canActivate: [roleGuard],
+        data: { roles: ['Administrador'] },
+        loadComponent: () => import('./features/configuracion/admin/admin-config.page').then(m => m.AdminConfigPage),
+      },
+      {
         path: 'configuracion',
         title: 'Configuración',
         canActivate: [roleGuard],
