@@ -1474,7 +1474,20 @@ export class PublicadoresListComponent implements OnInit {
 
   loadPublicadorPrivilegios(id: number) {
     this.privilegiosService.getPublicadorPrivilegios(id).subscribe({
-      next: (data) => this.publicadorPrivilegios.set(data),
+      next: (data) => {
+        this.publicadorPrivilegios.set(data);
+
+        // Update GLOBAL MAP so the list updates immediately
+        const today = new Date().toISOString().split('T')[0];
+        const activePrivs = data
+          .filter(pp => !pp.fecha_fin || pp.fecha_fin >= today)
+          .map(pp => pp.id_privilegio);
+
+        this.publicadorPrivilegiosMap.update(map => {
+          map.set(id, activePrivs);
+          return new Map(map); // Force signal update
+        });
+      },
       error: (err) => console.error('Error cargando privilegios de publicador', err)
     });
   }
