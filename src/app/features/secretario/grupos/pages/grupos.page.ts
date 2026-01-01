@@ -80,8 +80,67 @@ export class GruposListComponent implements OnInit {
 
    loading = signal(false);
    saving = signal(false);
+   exporting = signal(false);
    panelOpen = signal(false);
    editingGrupo = signal<Grupo | null>(null);
+
+   showExportMenu = signal(false);
+
+   toggleExportMenu() {
+      this.showExportMenu.update(v => !v);
+   }
+
+   closeExportMenu() {
+      this.showExportMenu.set(false);
+   }
+
+   async confirmExport(type: 'all' | 'active') {
+      this.showExportMenu.set(false);
+      this.exporting.set(true);
+      try {
+         const params: any = {};
+         if (type === 'active') {
+            params.solo_activos = true;
+         }
+
+         const response = await lastValueFrom(
+            this.http.get('/api/grupos/exportar-pdf', {
+               params,
+               responseType: 'blob',
+               observe: 'response'
+            })
+         );
+
+         const blob = response.body;
+         if (!blob) throw new Error('No se recibió archivo');
+
+         const url = window.URL.createObjectURL(blob);
+         const a = document.createElement('a');
+         a.href = url;
+
+         // Extract filename from header if possible, else default
+         const contentDisposition = response.headers.get('content-disposition');
+         let filename = 'Reporte_Grupos.pdf';
+         if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+            if (filenameMatch && filenameMatch.length > 1) {
+               filename = filenameMatch[1];
+            }
+         }
+         a.download = filename;
+
+         document.body.appendChild(a);
+         a.click();
+         window.URL.revokeObjectURL(url);
+         document.body.removeChild(a);
+
+      } catch (err) {
+         console.error('Error exportando PDF', err);
+         alert('Error al generar el reporte PDF.');
+      } finally {
+         this.exporting.set(false);
+      }
+   }
 
    // Autocomplete for Capitán and Auxiliar
    publicadores = signal<any[]>([]);
