@@ -104,11 +104,13 @@ export class InformesTableComponent {
       const local = this.localChanges.get(pub.id_publicador);
       if (local) {
          if (field === 'participo') return local.participo ?? pub.participo ?? false;
+         if (field === 'es_paux') return local.es_paux_mes ?? pub.es_paux_mes ?? false;
          if (field === 'cursos') return local.cursos_biblicos ?? pub.cursos_biblicos ?? 0;
          if (field === 'horas') return local.horas ?? pub.horas ?? 0;
          if (field === 'notas') return local.observaciones ?? pub.observaciones ?? '';
       }
       if (field === 'participo') return pub.participo ?? false;
+      if (field === 'es_paux') return pub.es_paux_mes ?? false;
       if (field === 'cursos') return pub.cursos_biblicos ?? 0;
       if (field === 'horas') return pub.horas ?? 0;
       if (field === 'notas') return pub.observaciones ?? '';
@@ -117,7 +119,19 @@ export class InformesTableComponent {
 
    onUpdateInforme(pub: InformeConPublicador, field: string, event: Event) {
       let value: any;
-      if (field === 'participo') value = (event.target as HTMLInputElement).checked;
+      if (field === 'participo') {
+         value = (event.target as HTMLInputElement).checked;
+         // Auto-focus logic: If participating AND (Precursor or Paux)
+         if (value) {
+            const roles = this.getRoles(pub);
+            const isPioneer = roles.some(r => r.label.includes('PRECURSOR'));
+            const isPaux = this.getInformeValue(pub, 'es_paux');
+
+            if (isPioneer || isPaux) {
+               setTimeout(() => this.focusHours(pub.id_publicador), 50);
+            }
+         }
+      }
       else if (field === 'cursos') value = parseInt((event.target as HTMLInputElement).value) || 0;
       else if (field === 'horas') value = parseInt((event.target as HTMLInputElement).value) || 0;
       else if (field === 'notas') value = (event.target as HTMLInputElement).value || null;
@@ -126,35 +140,47 @@ export class InformesTableComponent {
    }
 
    getBonusHours(pub: InformeConPublicador): number | null {
-      // 1. Check if Precursor Regular
-      // Use existing logic or helper. Since getRoles returns visual pills, let's reuse the logic but cleaner
-      // or just call getRoles and check label. A bit inefficient but simplest given separation.
       const roles = this.getRoles(pub);
       const isRegular = roles.some(r => r.label === 'PRECURSOR REGULAR');
       if (!isRegular) return null;
 
-      // 2. Get values
       const hours = this.getInformeValue(pub, 'horas') || 0;
       const notes = this.getInformeValue(pub, 'notas') || '';
 
-      // 3. Parse first number in notes
-      // Match integer number.
       const match = notes.match(/(\d+)/);
       if (!match) return null;
 
       const obsHours = parseInt(match[1], 10);
       if (isNaN(obsHours) || obsHours <= 0) return null;
 
-      // 4. Calculate gap to fill up to 55
       const target = 55;
-      if (hours >= target) return null; // Already reached target
+      if (hours >= target) return null;
 
       const gap = target - hours;
-
-      // 5. Bonus is min(obsHours, gap)
       const bonus = Math.min(obsHours, gap);
 
       return bonus > 0 ? bonus : null;
    }
 
+   togglePaux(pub: InformeConPublicador) {
+      const current = this.getInformeValue(pub, 'es_paux');
+      const newValue = !current;
+      this.informeChange.emit({ pub, field: 'es_paux', value: newValue });
+
+      if (newValue && this.getInformeValue(pub, 'participo')) {
+         setTimeout(() => this.focusHours(pub.id_publicador), 50);
+      }
+   }
+
+   private focusHours(id: number) {
+      const el = document.getElementById(`horas-${id}`);
+      if (el) {
+         el.focus();
+         // Optional: Select all content
+         (el as HTMLInputElement).select?.();
+      }
+   }
+
 }
+
+

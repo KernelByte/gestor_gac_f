@@ -11,6 +11,9 @@
                class="px-4 py-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-28 border-b border-slate-100">
                Participó</th>
             <th
+               class="px-4 py-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-24 border-b border-slate-100">
+               Auxiliar</th>
+            <th
                class="px-4 py-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-center w-48 border-b border-slate-100">
                Horas</th>
             <th
@@ -44,7 +47,7 @@
                   </div>
                   <div>
                      <p class="font-bold text-slate-900 text-sm">{{ pub.nombre_completo }}</p>
-                     <div class="flex flex-wrap gap-1 items-center">
+                     <div class="flex flex-wrap gap-1 items-center mt-0.5">
                         <ng-container *ngFor="let role of getRoles(pub)">
                            <span *ngIf="role.type === 'pill'"
                               class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
@@ -81,12 +84,35 @@
                </div>
             </td>
 
+            <!-- Auxiliar PAUX (Checkbox Column) -->
+            <td class="px-4 py-3 text-center align-middle">
+               <div class="flex justify-center">
+                  <label class="relative flex items-center justify-center cursor-pointer p-1"
+                     title="Marcar como Precursor Auxiliar este mes">
+                     <input type="checkbox" [checked]="getInformeValue(pub, 'es_paux')" (change)="togglePaux(pub)"
+                        class="peer sr-only">
+                     <!-- Amber styled toggle -->
+                     <div
+                        class="w-10 h-6 bg-slate-200 rounded-full peer-checked:bg-amber-400 transition-all duration-300">
+                     </div>
+                     <div
+                        class="absolute w-4 h-4 bg-white rounded-full shadow-sm left-2 peer-checked:translate-x-4 transition-transform duration-300 flex items-center justify-center">
+                        <span
+                           class="text-[9px] font-extrabold text-amber-500 opacity-0 peer-checked:opacity-100 transition-opacity">P</span>
+                     </div>
+                  </label>
+               </div>
+            </td>
+
+            <!-- Horas -->
             <!-- Horas -->
             <!-- Horas -->
             <td class="px-4 py-3 text-center">
-               <div *ngIf="pub.requiere_horas" class="flex items-center justify-center gap-3">
+               <div *ngIf="pub.requiere_horas || getInformeValue(pub, 'es_paux')"
+                  class="flex items-center justify-center gap-3">
                   <input type="number" min="0" placeholder="0" [value]="getInformeValue(pub, 'horas') || ''"
-                     [disabled]="!getInformeValue(pub, 'participo')" (input)="onUpdateInforme(pub, 'horas', $event)"
+                     [id]="'horas-' + pub.id_publicador" [disabled]="!getInformeValue(pub, 'participo')"
+                     (input)="onUpdateInforme(pub, 'horas', $event)"
                      class="w-16 px-2 py-1.5 rounded-lg bg-orange-50/50 border border-orange-100 text-center text-sm font-bold text-brand-orange placeholder:text-orange-200/50 focus:bg-white focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:border-slate-200 disabled:text-slate-400">
 
                   <!-- Bonus Pill (Static) -->
@@ -98,7 +124,8 @@
                      <span class="text-[10px] font-extrabold whitespace-nowrap">{{ bonus }} Crédito</span>
                   </div>
                </div>
-               <div *ngIf="!pub.requiere_horas" class="flex justify-center opacity-30">
+               <div *ngIf="!pub.requiere_horas && !getInformeValue(pub, 'es_paux')"
+                  class="flex justify-center opacity-30">
                   <div class="h-0.5 w-4 bg-slate-400 rounded-full"></div>
                </div>
             </td>
@@ -148,7 +175,15 @@
 
                <div class="flex flex-col min-w-0">
                   <p class="font-bold text-slate-900 text-sm truncate leading-tight">{{ pub.nombre_completo }}</p>
-                  <div class="flex flex-wrap gap-1 mt-1">
+                  <div class="flex flex-wrap gap-1 mt-1 items-center">
+
+                     <!-- Toggle PAUX Badge (Mobile) -->
+                     <button (click)="togglePaux(pub)"
+                        class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all border border-slate-200"
+                        [ngClass]="getInformeValue(pub, 'es_paux') ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-white text-slate-300'">
+                        PAUX
+                     </button>
+
                      <ng-container *ngFor="let role of getRoles(pub)">
                         <span *ngIf="role.type === 'pill'"
                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"

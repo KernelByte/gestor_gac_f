@@ -45,20 +45,11 @@
 
       <!-- Tab 2: Historial (Placeholder) -->
       <ng-container *ngIf="activeTab() === 'historial'">
-         <div
-            class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/60 h-full flex items-center justify-center">
-            <div class="text-center">
-               <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg class="w-10 h-10 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-               </div>
-               <h3 class="text-xl font-bold text-slate-900">Historial Anual de Informes</h3>
-               <p class="text-slate-500 mt-2">Próximamente disponible</p>
-            </div>
-         </div>
+         <app-informes-historial [selectedAno]="+selectedAno" [congregacionId]="authStore.user()?.id_congregacion || 0"
+            [grupos]="grupos()">
+         </app-informes-historial>
       </ng-container>
+
 
       <!-- Tab 3: Resumen Sucursal (Placeholder) -->
       <ng-container *ngIf="activeTab() === 'sucursal'">

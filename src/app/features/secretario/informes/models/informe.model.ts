@@ -29,6 +29,7 @@ export interface InformeConPublicador {
    cursos_biblicos: number | null;
    horas: number | null;
    observaciones: string | null;
+   es_paux_mes: boolean; // Managed by frontend toggle
    tiene_informe: boolean;
 }
 
@@ -51,6 +52,7 @@ export interface InformeLoteItem {
    cursos_biblicos: number;
    horas: number;
    observaciones: string | null;
+   es_paux_mes?: boolean;
 }
 
 export interface InformeLoteCreate {
@@ -126,3 +128,36 @@ export interface ResumenSucursal {
    asistencia_entre_semana: AsistenciaReunion | null;
    asistencia_fin_semana: AsistenciaReunion | null;
 }
+
+// --- Historial Anual ---
+export interface InformeHistorialItem {
+   mes_numero: number;
+   mes_nombre: string;
+   id_informe?: number;
+   participo?: boolean;
+   horas?: number;
+   cursos_biblicos?: number;
+   observaciones?: string;
+   credito?: number;
+   paux: boolean; // Precursor Auxiliar en ese mes
+   es_regular?: boolean; // Precursor Regular en ese mes
+}
+
+
+export interface PublicadorHistorial {
+   id_publicador: number;
+   nombre_completo: string;
+   grupo_numero?: number;
+   es_precursor_regular: boolean;
+   informes: InformeHistorialItem[];
+   // Totales anuales
+   total_horas: number;
+   total_cursos: number;
+   total_meses_participo: number;
+}
+
+export interface HistorialAnualOut {
+   ano: number;
+   publicadores: PublicadorHistorial[];
+}
+

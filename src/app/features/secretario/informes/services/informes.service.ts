@@ -8,8 +8,10 @@ import {
    InformeLoteCreate,
    InformeLoteResult,
    HistorialAnual,
+   HistorialAnualOut,
    ResumenSucursal
 } from '../models/informe.model';
+
 
 @Injectable({ providedIn: 'root' })
 export class InformesService {
@@ -59,13 +61,20 @@ export class InformesService {
    }
 
    // --- Historial Anual ---
-   getHistorialAnual(publicadorId: number, anoServicio: number): Observable<HistorialAnual> {
-      const params = new HttpParams()
-         .set('publicador_id', publicadorId.toString())
-         .set('ano_servicio', anoServicio.toString());
+   // --- Historial Anual ---
+   getHistorialAnual(congregacionId: number, anoServicio: number, grupoId?: number, tipoVista: string = 'ano_servicio'): Observable<HistorialAnualOut> {
+      let params = new HttpParams()
+         .set('congregacion_id', congregacionId.toString())
+         .set('ano_servicio', anoServicio.toString())
+         .set('tipo_vista', tipoVista);
 
-      return this.http.get<HistorialAnual>(`${this.apiUrl}/historial-anual`, { params });
+      if (grupoId) {
+         params = params.set('grupo_id', grupoId.toString());
+      }
+
+      return this.http.get<HistorialAnualOut>(`${this.apiUrl}/historial-anual`, { params });
    }
+
 
    // --- Resumen Sucursal ---
    getResumenSucursal(periodoId: number, congregacionId: number): Observable<ResumenSucursal> {

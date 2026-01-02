@@ -8,6 +8,8 @@ import { ResumenMensual, InformeConPublicador, InformeLoteItem, Periodo, Histori
 import { InformesStatsComponent } from './components/informes-stats/informes-stats.component';
 import { InformesFiltersComponent } from './components/informes-filters/informes-filters.component';
 import { InformesTableComponent } from './components/informes-table/informes-table.component';
+import { InformesHistorialComponent } from './components/informes-historial/informes-historial.component';
+
 
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
@@ -19,7 +21,7 @@ import { saveAs } from 'file-saver';
 @Component({
   standalone: true,
   selector: 'app-informes-main',
-  imports: [CommonModule, FormsModule, InformesStatsComponent, InformesFiltersComponent, InformesTableComponent],
+  imports: [CommonModule, FormsModule, InformesStatsComponent, InformesFiltersComponent, InformesTableComponent, InformesHistorialComponent],
   templateUrl: './informes-main.page.html',
   styles: [`:host { display: flex; flex-direction: column; height: 100%; overflow: hidden; }`]
 })
@@ -27,8 +29,9 @@ export class InformesMainPage implements OnInit {
   private informesService = inject(InformesService);
   private gruposService = inject(GruposService);
 
-  private authStore = inject(AuthStore);
+  public authStore = inject(AuthStore);
   private http = inject(HttpClient);
+
   private privilegiosService = inject(PrivilegiosService);
 
   tabs = [
@@ -248,6 +251,7 @@ export class InformesMainPage implements OnInit {
         existing.observaciones = null;
       }
     }
+    else if (field === 'es_paux') existing.es_paux_mes = value;
     else if (field === 'cursos') existing.cursos_biblicos = value;
     else if (field === 'horas') existing.horas = value;
     else if (field === 'notas') existing.observaciones = value;
@@ -264,7 +268,8 @@ export class InformesMainPage implements OnInit {
       participo: c.participo ?? false,
       cursos_biblicos: c.cursos_biblicos ?? 0,
       horas: c.horas ?? 0,
-      observaciones: c.observaciones ?? null
+      observaciones: c.observaciones ?? null,
+      es_paux_mes: c.es_paux_mes // Nuevo campo opcional
     }));
 
     this.informesService.guardarInformesLote({ periodo_id: this.getPeriodoId(), informes: items }).subscribe({
