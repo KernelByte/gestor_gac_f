@@ -33,7 +33,17 @@ interface ContactoEmergencia {
             
             <!-- Floating Header -->
             <div class="p-5 border-b border-slate-100 bg-white/95 backdrop-blur-sm sticky top-0 z-10">
-                <h3 class="font-display font-bold text-slate-800 text-lg mb-4 hidden lg:block">Directorio</h3>
+                <div class="flex items-center justify-between mb-4 hidden lg:flex">
+                    <h3 class="font-display font-bold text-slate-800 text-lg">Directorio</h3>
+                    <button 
+                        (click)="exportarPDF()" 
+                        [disabled]="downloadingPdf()"
+                        class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors relative disabled:opacity-50 disabled:cursor-not-allowed" 
+                        title="Exportar Lista de Contactos (PDF)">
+                        <svg *ngIf="!downloadingPdf()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <div *ngIf="downloadingPdf()" class="w-5 h-5 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin"></div>
+                    </button>
+                </div>
                 
                 <!-- Search Bar -->
                 <div class="relative group">
@@ -210,60 +220,50 @@ interface ContactoEmergencia {
                                  </button>
                             </div>
                             <!-- Reusing form logic with improved classes -->
-                            <div class="p-6 md:p-8 flex-1 overflow-y-auto" [formGroup]="form">
-                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                     <div class="space-y-2">
-                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Nombre Completo <span class="text-red-400">*</span></label>
-                                         <input formControlName="nombre" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal" placeholder="Nombre del contacto">
+                             <div class="p-4 flex-1 overflow-y-auto max-h-[70vh] md:max-h-none" [formGroup]="form">
+                                 <div class="grid grid-cols-12 gap-3 mb-4">
+                                     <!-- Name Full Width -->
+                                     <div class="col-span-12 space-y-1">
+                                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Nombre <span class="text-red-400">*</span></label>
+                                         <input formControlName="nombre" class="w-full h-8 px-2 bg-slate-50 border-slate-200 rounded text-sm focus:bg-white focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300" placeholder="Nombre del contacto">
                                      </div>
-                                     <div class="space-y-2">
-                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Parentesco</label>
-                                         <input formControlName="parentesco" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal" placeholder="Ej: Madre, Esposo">
+                                     
+                                     <!-- Parentesco & Phone on same line (6 cols each on mobile too if space allows, otherwise 12) -->
+                                     <div class="col-span-6 space-y-1">
+                                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Parentesco</label>
+                                         <input formControlName="parentesco" class="w-full h-8 px-2 bg-slate-50 border-slate-200 rounded text-sm focus:bg-white focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300" placeholder="Ej: Madre">
                                      </div>
-                                     <div class="space-y-2">
-                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Teléfono</label>
-                                         <input formControlName="telefono" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal" placeholder="+57...">
+                                     
+                                     <div class="col-span-6 space-y-1">
+                                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Teléfono</label>
+                                         <input formControlName="telefono" class="w-full h-8 px-2 bg-slate-50 border-slate-200 rounded text-sm focus:bg-white focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300" placeholder="Teléfono">
                                      </div>
-                                     <div class="space-y-2">
-                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Etiqueta Visual</label>
-                                         <div class="relative">
-                                            <select formControlName="etiqueta" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
-                                                <option value="">-- Seleccionar --</option>
-                                                <option value="Esposa/o">Esposa/o</option>
-                                                <option value="Hijo/a">Hijo/a</option>
-                                                <option value="Padre/Madre">Padre/Madre</option>
-                                                <option value="Trabajo">Trabajo</option>
-                                            </select>
-                                            <svg class="w-4 h-4 text-slate-400 absolute right-4 top-4 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                                         </div>
-                                     </div>
-                                     <div class="md:col-span-2 space-y-2">
-                                         <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Dirección / Notas</label>
-                                         <textarea formControlName="direccion" class="w-full h-24 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none resize-none placeholder:text-slate-400 placeholder:font-normal" placeholder="Dirección física o indicaciones especiales..."></textarea>
+
+                                     <!-- Address Full Width -->
+                                     <div class="col-span-12 space-y-1">
+                                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Dirección</label>
+                                         <input formControlName="direccion" class="w-full h-8 px-2 bg-slate-50 border-slate-200 rounded text-sm focus:bg-white focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300" placeholder="Dirección o notas...">
                                      </div>
                                  </div>
                                  
-                                 <div class="flex flex-wrap gap-6 pt-6 border-t border-slate-100">
-                                     <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
-                                         <input formControlName="es_principal" type="checkbox" class="w-5 h-5 rounded text-brand-orange focus:ring-brand-orange border-slate-300">
-                                         <div class="flex flex-col">
-                                            <span class="font-bold text-sm text-slate-700">Contacto Principal</span>
-                                            <span class="text-[10px] text-slate-400">Llamar primero en emergencia</span>
-                                         </div>
+                                 <!-- Checkboxes Compact Row -->
+                                 <div class="flex items-center justify-between gap-2 p-3 bg-slate-50/80 rounded-lg border border-slate-100 mb-4">
+                                     <label class="flex items-center gap-2 cursor-pointer">
+                                         <input formControlName="es_principal" type="checkbox" class="w-3.5 h-3.5 rounded text-brand-orange focus:ring-brand-orange border-slate-300">
+                                         <span class="text-xs font-bold text-slate-600">Principal</span>
                                      </label>
-                                     <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
-                                         <input formControlName="solo_urgencias" type="checkbox" class="w-5 h-5 rounded text-slate-600 focus:ring-slate-500 border-slate-300">
-                                         <div class="flex flex-col">
-                                            <span class="font-bold text-sm text-slate-700">Solo Urgencias</span>
-                                            <span class="text-[10px] text-slate-400">No contactar por otros motivos</span>
-                                         </div>
+                                     <div class="h-4 w-px bg-slate-200"></div>
+                                     <label class="flex items-center gap-2 cursor-pointer">
+                                         <input formControlName="solo_urgencias" type="checkbox" class="w-3.5 h-3.5 rounded text-slate-600 focus:ring-slate-500 border-slate-300">
+                                         <span class="text-xs font-bold text-slate-600">Solo Urgencias</span>
                                      </label>
                                  </div>
 
-                                 <div class="flex justify-end gap-3 mt-8">
-                                     <button (click)="showForm.set(false)" class="px-6 h-12 rounded-xl text-slate-500 font-bold hover:bg-slate-100 transition-all">Cancelar</button>
-                                     <button (click)="save()" class="px-8 h-12 rounded-xl bg-slate-900 text-white font-bold shadow-lg hover:bg-slate-800 hover:shadow-xl active:scale-95 transition-all">
-                                        {{ editingContacto() ? 'Guardar Cambios' : 'Crear Contacto' }}
+                                 <!-- Single Action Buttons Row -->
+                                 <div class="flex gap-2">
+                                     <button (click)="showForm.set(false)" class="flex-1 h-9 rounded-lg border border-slate-200 text-slate-500 font-bold text-xs hover:bg-slate-50 transition-all">Cancelar</button>
+                                     <button (click)="save()" class="flex-[2] h-9 rounded-lg bg-slate-900 text-white font-bold text-xs shadow hover:bg-slate-800 active:scale-95 transition-all">
+                                        {{ editingContacto() ? 'Guardar Cambios' : 'Guardar Contacto' }}
                                      </button>
                                  </div>
                             </div>
@@ -328,7 +328,6 @@ interface ContactoEmergencia {
                              <div class="flex flex-wrap gap-2 mt-5 pt-4 border-t border-slate-50">
                                  <span *ngIf="c.es_principal" class="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[10px] uppercase font-black tracking-wide border border-emerald-100">Principal</span>
                                  <span *ngIf="c.solo_urgencias" class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[10px] uppercase font-black tracking-wide">Solo Urgencias</span>
-                                 <span *ngIf="c.etiqueta" class="px-2.5 py-1 rounded-md bg-orange-50 text-orange-700 text-[10px] uppercase font-black tracking-wide">{{ c.etiqueta }}</span>
                              </div>
                         </div>
 
@@ -378,6 +377,7 @@ export class PublicadoresContactosComponent {
     // 'all' is represented by empty set or specific check
     activeFilters = signal<Set<string>>(new Set(['all']));
     selectedPublicador = signal<Publicador | null>(null);
+    downloadingPdf = signal(false);
 
     // Contacts Data
     contactos = signal<ContactoEmergencia[]>([]);
@@ -458,7 +458,7 @@ export class PublicadoresContactosComponent {
             nombre: ['', Validators.required],
             parentesco: [''],
             telefono: [''],
-            etiqueta: [''],
+            // etiqueta removed
             direccion: [''],
             es_principal: [false],
             solo_urgencias: [false]
@@ -614,6 +614,33 @@ export class PublicadoresContactosComponent {
             'bg-indigo-50 text-indigo-600'
         ];
         return COLORS[Math.abs(id) % COLORS.length];
+    }
+
+    async exportarPDF() {
+        const user = this.authStore.user();
+        if (!user?.id_congregacion) return;
+
+        this.downloadingPdf.set(true);
+        try {
+            const blob = await lastValueFrom(this.http.get('/api/export/contactos-emergencia/pdf', {
+                params: { id_congregacion: user.id_congregacion },
+                responseType: 'blob'
+            }));
+
+            if (blob) {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Contactos_Emergencia.pdf`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error al exportar PDF');
+        } finally {
+            this.downloadingPdf.set(false);
+        }
     }
 
     // --- CRUD Contacts ---
