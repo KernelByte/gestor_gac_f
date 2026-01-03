@@ -94,7 +94,9 @@
             class="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none">
          </div>
 
-         <div class="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar snap-x snap-mandatory scroll-smooth"
+         <div #scrollContainer class="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar"
+            [class.snap-x]="!isDraggingContent()" [class.snap-mandatory]="!isDraggingContent()"
+            [class.scroll-smooth]="!isDraggingContent()" (dragover)="onContainerDragOver($event)"
             [class.p-4]="!isFullScreen()" [class.sm:p-6]="!isFullScreen()" [class.px-2]="isFullScreen()"
             [class.pt-16]="isFullScreen()" [class.pb-2]="isFullScreen()" [class.sm:px-4]="isFullScreen()"
             [class.sm:pt-20]="isFullScreen()">
@@ -453,7 +455,8 @@
       [class.bg-white]="!isSelected(p.id_publicador)" [class.bg-orange-50]="isSelected(p.id_publicador)"
       [class.border-orange-200]="isSelected(p.id_publicador)" [class.ring-2]="isSelected(p.id_publicador)"
       [class.ring-brand-orange]="isSelected(p.id_publicador)" [class.z-10]="isSelected(p.id_publicador)"
-      draggable="true" (dragstart)="onDragStart($event, p)" (click)="togglePublisherSelection(p, $event)">
+      draggable="true" (dragstart)="onDragStart($event, p)" (dragend)="onDragEnd()"
+      (click)="togglePublisherSelection(p, $event)">
 
       <!-- Selection Indicator (Check circle) -->
       <div class="absolute -top-1.5 -right-1.5 z-20 transition-all duration-200" *ngIf="isSelected(p.id_publicador)">

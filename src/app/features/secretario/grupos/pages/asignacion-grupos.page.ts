@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal, OnDestroy, Renderer2 } from '@angular/core';
+import { Component, computed, inject, OnInit, signal, OnDestroy, Renderer2, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -101,6 +101,73 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   // Selection State
   selectedPublishersIds = signal<Set<number>>(new Set());
+
+  // Auto-Scroll Logic
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLDivElement>;
+  private ngZone = inject(NgZone);
+  private autoScrollFrameId: number | null = null;
+  private currentDragX = 0;
+  private isAutoScrolling = false;
+  isDraggingContent = signal(false);
+
+  onContainerDragOver(e: DragEvent) {
+    e.preventDefault();
+    if (this.draggedPublishers.length === 0 && !this.draggedLeader) return;
+    this.currentDragX = e.clientX;
+    this.checkAutoScroll();
+  }
+
+  checkAutoScroll() {
+    if (this.isAutoScrolling) return;
+
+    this.isAutoScrolling = true;
+    this.ngZone.runOutsideAngular(() => {
+      const loop = () => {
+        if (!this.draggedPublishers.length && !this.draggedLeader) {
+          this.isAutoScrolling = false;
+          return;
+        }
+
+        const container = this.scrollContainer?.nativeElement;
+        if (!container) {
+          this.isAutoScrolling = false;
+          return;
+        }
+
+        const rect = container.getBoundingClientRect();
+        const edgeZone = 100;
+        const speed = 12;
+
+        if (this.currentDragX < rect.left + edgeZone) {
+          container.scrollLeft -= speed;
+        } else if (this.currentDragX > rect.right - edgeZone) {
+          container.scrollLeft += speed;
+        }
+
+        if ((this.draggedPublishers.length > 0 || this.draggedLeader) && this.isAutoScrolling) {
+          this.autoScrollFrameId = requestAnimationFrame(loop);
+        } else {
+          this.isAutoScrolling = false;
+        }
+      };
+      loop();
+    });
+  }
+
+  onDragEnd() {
+    this.isDraggingContent.set(false);
+    this.isAutoScrolling = false;
+    if (this.autoScrollFrameId) {
+      cancelAnimationFrame(this.autoScrollFrameId);
+      this.autoScrollFrameId = null;
+    }
+    // Clean up drag state if not handled by drop
+    this.draggedPublishers = [];
+    this.draggedLeader = null;
+    this.selectedPublishersIds.set(new Set());
+    this.isDraggingOver.set(null);
+    this.isDraggingOverLeader.set(null);
+  }
 
   toggleFullScreen() {
     this.isFullScreen.update(v => !v);
@@ -438,6 +505,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
         // Attempt to show count? For now default.
       }
     }
+    this.isDraggingContent.set(true);
   }
 
   onDragOver(e: DragEvent, targetId: number | 'unassigned') {
