@@ -187,7 +187,7 @@ export class GruposListComponent implements OnInit {
 
    loadSinAsignar() {
       const user = this.authStore.user();
-      const params: any = {};
+      const params: any = { limit: 1000 };
 
       if (user?.id_congregacion) {
          params.id_congregacion = user.id_congregacion;
@@ -211,6 +211,7 @@ export class GruposListComponent implements OnInit {
          if (user?.id_congregacion) {
             params.id_congregacion = user.id_congregacion;
          }
+         params.limit = 1000;
 
          const data = await lastValueFrom(this.gruposService.getGrupos(params));
          console.log('Grupos cargados:', data);
@@ -243,7 +244,7 @@ export class GruposListComponent implements OnInit {
 
    // Load publicadores for autocomplete
    loadPublicadoresForAutocomplete(idCongregacion?: number) {
-      const params: any = {};
+      const params: any = { limit: 1000 };
       if (idCongregacion) {
          params.id_congregacion = idCongregacion;
       }

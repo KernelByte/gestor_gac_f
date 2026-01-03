@@ -6,14 +6,16 @@ import { lastValueFrom, forkJoin } from 'rxjs';
 import { PrivilegiosService } from '../../privilegios/infrastructure/privilegios.service';
 import { Privilegio } from '../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../privilegios/domain/models/publicador-privilegio';
+import { AuthStore } from '../../../../core/auth/auth.store';
 
 // Interfaces simplificadas para la vista
 interface Grupo {
   id_grupo: number;
   nombre_grupo: string;
-  capitan_grupo?: string;
-  auxiliar_grupo?: string;
+  capitan_grupo?: string | null;
+  auxiliar_grupo?: string | null;
   cantidad_publicadores?: number;
+  id_congregacion_grupo?: number;
 }
 
 interface Publicador {
@@ -23,6 +25,7 @@ interface Publicador {
   primer_apellido: string;
   segundo_apellido?: string | null;
   id_grupo_publicador?: number | null;
+  id_congregacion_publicador?: number;
   sexo?: string;
   // Ajustar según la respuesta real de tu API si hay privilegio/rol
   rol?: any;
@@ -77,6 +80,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
   private privilegiosService = inject(PrivilegiosService);
   private renderer = inject(Renderer2);
   private document = inject(DOCUMENT);
+  private authStore = inject(AuthStore);
 
   // Data
   grupos = signal<Grupo[]>([]);
@@ -114,8 +118,8 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   // Convertimos los estados iniciales a señales para que pendingChangesCount reaccione a sus cambios
   initialState = signal(new Map<number, number | null>());
-  initialLeaderState = signal(new Map<number, { capitan: string | undefined, auxiliar: string | undefined }>());
-  pendingLeaderChanges = new Map<number, { capitan?: string, auxiliar?: string }>();
+  initialLeaderState = signal(new Map<number, { capitan: string | null | undefined, auxiliar: string | null | undefined }>());
+  pendingLeaderChanges = new Map<number, { capitan?: string | null, auxiliar?: string | null }>();
 
   // Computed
   pendingChangesCount = computed(() => {
@@ -157,26 +161,48 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   async loadData() {
     try {
+      const user = this.authStore.user();
+      const congId = user?.id_congregacion;
+
+      let params = '?limit=1000';
+      if (congId) {
+        params += `&id_congregacion=${congId}`;
+      }
+
       const [gruposData, pubsData, privilegiosData] = await Promise.all([
-        lastValueFrom(this.http.get<Grupo[]>('/api/grupos/')),
-        lastValueFrom(this.http.get<Publicador[]>('/api/publicadores/')),
+        lastValueFrom(this.http.get<Grupo[]>(`/api/grupos/${params}`)),
+        lastValueFrom(this.http.get<Publicador[]>(`/api/publicadores/${params}`)),
         lastValueFrom(this.privilegiosService.getPrivilegios())
       ]);
 
-      this.grupos.set(gruposData || []);
+      let gruposFiltrados = gruposData || [];
+      let publicadoresFiltrados = pubsData || [];
+
+      // Filtrado adicional en cliente por seguridad (si el backend devolvió de más)
+      if (congId) {
+        gruposFiltrados = gruposFiltrados.filter(g => g.id_congregacion_grupo === congId);
+        publicadoresFiltrados = publicadoresFiltrados.filter(p => p.id_congregacion_publicador === congId);
+      } else {
+        // En caso de estar en una vista "global" sin tener id_congregacion (raro en produccion, pero posible en dev)
+        // intentamos filtrar si hay publicadores que no coincidan con los grupos visibles
+        const gruposIds = new Set(gruposFiltrados.map(g => g.id_grupo));
+        // Opcional: filtrar publicadores que pertenezcan a grupos que no tenemos, o dejarlos como "sin asignar"
+      }
+
+      this.grupos.set(gruposFiltrados);
       this.privilegiosCatalogo.set(privilegiosData || []);
 
       // Guardar estado inicial para detectar cambios
       const newInitialState = new Map<number, number | null>();
-      (pubsData || []).forEach(p => {
+      publicadoresFiltrados.forEach(p => {
         newInitialState.set(p.id_publicador, p.id_grupo_publicador || null);
       });
       this.initialState.set(newInitialState);
 
       // Guardar estado inicial de líderes
-      const newInitialLeaderState = new Map<number, { capitan: string | undefined, auxiliar: string | undefined }>();
+      const newInitialLeaderState = new Map<number, { capitan: string | null | undefined, auxiliar: string | null | undefined }>();
       this.pendingLeaderChanges.clear();
-      (gruposData || []).forEach(g => {
+      gruposFiltrados.forEach(g => {
         newInitialLeaderState.set(g.id_grupo, {
           capitan: g.capitan_grupo,
           auxiliar: g.auxiliar_grupo
@@ -184,8 +210,8 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
       });
       this.initialLeaderState.set(newInitialLeaderState);
 
-      await this.loadAllPublicadorPrivilegios(pubsData || []);
-      this.publicadores.set(pubsData || []);
+      await this.loadAllPublicadorPrivilegios(publicadoresFiltrados);
+      this.publicadores.set(publicadoresFiltrados);
 
     } catch (err) {
       console.error('Error cargando datos', err);
@@ -292,7 +318,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     return tags;
   }
 
-  getPrivilegioTagsByName(nombreCompleto: string | undefined): { label: string; class: string }[] {
+  getPrivilegioTagsByName(nombreCompleto: string | null | undefined): { label: string; class: string }[] {
     if (!nombreCompleto) return [];
 
     const nombreBuscado = nombreCompleto.toLowerCase().trim();
@@ -355,6 +381,38 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   isSelected(id: number): boolean {
     return this.selectedPublishersIds().has(id);
+  }
+
+  togglePublisherSelection(p: Publicador, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    const current = new Set(this.selectedPublishersIds());
+    if (current.has(p.id_publicador)) {
+      current.delete(p.id_publicador);
+    } else {
+      current.add(p.id_publicador);
+    }
+    this.selectedPublishersIds.set(current);
+  }
+
+  moveSelectedToGroup(targetGroupId: number | null) {
+    const selectedIds = this.selectedPublishersIds();
+    if (selectedIds.size === 0) return;
+
+    this.publicadores.update(current => {
+      return current.map(p => {
+        if (selectedIds.has(p.id_publicador)) {
+          if (p.id_grupo_publicador !== targetGroupId) {
+            return { ...p, id_grupo_publicador: targetGroupId };
+          }
+        }
+        return p;
+      });
+    });
+
+    // Clear selection after move
+    this.selectedPublishersIds.set(new Set());
   }
 
   // Drag & Drop Logic
@@ -471,9 +529,9 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
       return currentGrupos.map(g => {
         if (g.id_grupo === groupId) {
           if (role === 'capitan') {
-            return { ...g, capitan_grupo: undefined };
+            return { ...g, capitan_grupo: null };
           } else {
-            return { ...g, auxiliar_grupo: undefined };
+            return { ...g, auxiliar_grupo: null };
           }
         }
         return g;
@@ -559,7 +617,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
       });
       this.initialState.set(newInitialState);
 
-      const newInitialLeaderState = new Map<number, { capitan: string | undefined, auxiliar: string | undefined }>();
+      const newInitialLeaderState = new Map<number, { capitan: string | null | undefined, auxiliar: string | null | undefined }>();
       this.grupos().forEach(g => {
         newInitialLeaderState.set(g.id_grupo, {
           capitan: g.capitan_grupo,
