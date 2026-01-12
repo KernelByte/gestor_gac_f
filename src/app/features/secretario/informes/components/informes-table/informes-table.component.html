@@ -108,7 +108,7 @@
             <!-- Horas -->
             <!-- Horas -->
             <td class="px-4 py-3 text-center">
-               <div *ngIf="pub.requiere_horas || getInformeValue(pub, 'es_paux')"
+               <div *ngIf="pub.requiere_horas || getInformeValue(pub, 'es_paux') || isRegular(pub)"
                   class="flex items-center justify-center gap-3">
                   <input type="number" min="0" placeholder="0" [value]="getInformeValue(pub, 'horas') || ''"
                      [id]="'horas-' + pub.id_publicador" [disabled]="!getInformeValue(pub, 'participo')"
@@ -124,7 +124,7 @@
                      <span class="text-[10px] font-extrabold whitespace-nowrap">{{ bonus }} Crédito</span>
                   </div>
                </div>
-               <div *ngIf="!pub.requiere_horas && !getInformeValue(pub, 'es_paux')"
+               <div *ngIf="!pub.requiere_horas && !getInformeValue(pub, 'es_paux') && !isRegular(pub)"
                   class="flex justify-center opacity-30">
                   <div class="h-0.5 w-4 bg-slate-400 rounded-full"></div>
                </div>
@@ -285,7 +285,16 @@
          <!-- Excel buttons row (hidden on mobile to save space) -->
          <div class="hidden sm:flex gap-2">
             <button (click)="exportExcel.emit()"
-               class="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs sm:text-sm hover:bg-white transition-all flex items-center justify-center gap-1.5 sm:gap-2">
+               class="group relative px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs sm:text-sm hover:bg-white hover:border-slate-300 transition-all flex items-center justify-center gap-1.5 sm:gap-2">
+               <!-- Tooltip -->
+               <div
+                  class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-slate-800 text-white text-[10px] font-medium rounded-lg opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                  Descargar plantilla Excel
+                  <div
+                     class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800">
+                  </div>
+               </div>
+
                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -294,7 +303,16 @@
             </button>
             <input type="file" #fileInput accept=".xlsx" (change)="importExcel.emit($event)" class="hidden">
             <button (click)="fileInput.click()" [disabled]="saving"
-               class="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs sm:text-sm hover:bg-white transition-all flex items-center justify-center gap-1.5 sm:gap-2 disabled:opacity-50">
+               class="group relative px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs sm:text-sm hover:bg-white hover:border-slate-300 transition-all flex items-center justify-center gap-1.5 sm:gap-2 disabled:opacity-50">
+               <!-- Tooltip -->
+               <div
+                  class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-slate-800 text-white text-[10px] font-medium rounded-lg opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                  Subir informe completado
+                  <div
+                     class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800">
+                  </div>
+               </div>
+
                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l4-4m0 0l4 4m-4-4v12" />
