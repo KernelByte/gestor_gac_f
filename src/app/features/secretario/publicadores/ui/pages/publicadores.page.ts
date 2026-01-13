@@ -1306,20 +1306,30 @@ export class PublicadoresListComponent implements OnInit {
 
   rawList = computed(() => this.vm().list);
 
+  // Modern Search Helper: Multi-term, full-text match
+  matchesSearch(p: Publicador, q: string): boolean {
+    const terms = q.toLowerCase().trim().split(/\s+/).filter(t => t.length > 0);
+    if (terms.length === 0) return true;
+
+    const searchableText = [
+      p.primer_nombre, 
+      p.segundo_nombre, 
+      p.primer_apellido, 
+      p.segundo_apellido,
+      p.telefono
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return terms.every(term => searchableText.includes(term));
+  }
+
   // Filter Logic
   filteredList = computed(() => {
     let list = this.rawList();
-    const q = this.searchQuery().toLowerCase().trim();
+    const q = this.searchQuery();
     const estadoId = this.selectedEstado();
 
-    if (q) {
-      list = list.filter(p =>
-        p.primer_nombre.toLowerCase().includes(q) ||
-        p.primer_apellido.toLowerCase().includes(q) ||
-        p.segundo_nombre?.toLowerCase().includes(q) ||
-        p.segundo_apellido?.toLowerCase().includes(q) ||
-        (p.telefono && p.telefono.includes(q))
-      );
+    if (q && q.trim()) {
+      list = list.filter(p => this.matchesSearch(p, q));
     }
 
     if (estadoId !== null) {
@@ -1381,15 +1391,9 @@ export class PublicadoresListComponent implements OnInit {
   estadosWithCounts = computed(() => {
     // Base list for counting: apply search but NOT estado filter
     let baseList = this.rawList();
-    const q = this.searchQuery().toLowerCase().trim();
-    if (q) {
-      baseList = baseList.filter(p =>
-        p.primer_nombre.toLowerCase().includes(q) ||
-        p.primer_apellido.toLowerCase().includes(q) ||
-        p.segundo_nombre?.toLowerCase().includes(q) ||
-        p.segundo_apellido?.toLowerCase().includes(q) ||
-        (p.telefono && p.telefono.includes(q))
-      );
+    const q = this.searchQuery();
+    if (q && q.trim()) {
+      baseList = baseList.filter(p => this.matchesSearch(p, q));
     }
     return this.estadosPublicador().map(e => ({
       ...e,
@@ -1400,15 +1404,9 @@ export class PublicadoresListComponent implements OnInit {
   // Total filtered count for "Todos" chip
   totalFilteredCount = computed(() => {
     let baseList = this.rawList();
-    const q = this.searchQuery().toLowerCase().trim();
-    if (q) {
-      baseList = baseList.filter(p =>
-        p.primer_nombre.toLowerCase().includes(q) ||
-        p.primer_apellido.toLowerCase().includes(q) ||
-        p.segundo_nombre?.toLowerCase().includes(q) ||
-        p.segundo_apellido?.toLowerCase().includes(q) ||
-        (p.telefono && p.telefono.includes(q))
-      );
+    const q = this.searchQuery();
+    if (q && q.trim()) {
+      baseList = baseList.filter(p => this.matchesSearch(p, q));
     }
     return baseList.length;
   });
