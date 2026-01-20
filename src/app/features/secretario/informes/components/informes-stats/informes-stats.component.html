@@ -1,21 +1,35 @@
-<div class="shrink-0 hidden sm:grid sm:grid-cols-3 gap-2 sm:gap-4">
-   <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
-      <div class="flex items-center justify-between">
-         <div>
-            <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Informes Recibidos</p>
-            <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">
-               {{ resumen?.informes_recibidos || 0 }}<span class="text-base sm:text-lg text-slate-400">/ {{
-                  resumen?.total_publicadores || 0 }}</span>
+<div class="shrink-0 hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+
+   <!-- Informes Status (Combined Split Card) -->
+   <div
+      class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60 flex flex-col justify-center">
+      <div class="flex items-center justify-between sm:gap-4 divide-x divide-slate-100 h-full">
+
+         <!-- Recibidos Section -->
+         <div class="flex-1 flex flex-col items-start pr-2">
+            <div class="flex items-center gap-2 mb-1">
+               <span class="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-sm shadow-purple-500/50"></span>
+               <p class="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recibidos</p>
+            </div>
+            <p class="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
+               {{ resumen?.informes_recibidos || 0 }}<span
+                  class="text-sm sm:text-lg text-slate-300 font-bold ml-0.5">/{{ resumen?.total_publicadores || 0
+                  }}</span>
             </p>
          </div>
-         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-100 flex items-center justify-center">
-            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+
+         <!-- Pendientes Section -->
+         <div class="flex-1 flex flex-col items-start pl-5">
+            <div class="flex items-center gap-2 mb-1">
+               <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span>
+               <p class="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sin Informe</p>
+            </div>
+            <p class="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">{{ missingReportsCount }}</p>
          </div>
+
       </div>
    </div>
+
    <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
       <div class="flex items-center justify-between">
          <div>
@@ -32,15 +46,40 @@
          </div>
       </div>
    </div>
+
+   <!-- Horas Regulares -->
    <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
       <div class="flex items-center justify-between">
          <div>
-            <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Horas (Precursores)</p>
-            <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{{ resumen?.total_horas_precursores
-               || 0 | number }}</p>
+            <div class="flex items-center gap-2 mb-1">
+               <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></span>
+               <p class="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Horas Regulares
+               </p>
+            </div>
+            <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{{ regularHours | number }}</p>
          </div>
-         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-orange-100 flex items-center justify-center">
-            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-brand-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-100 flex items-center justify-center">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+         </div>
+      </div>
+   </div>
+
+   <!-- Horas Auxiliares -->
+   <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-200/60">
+      <div class="flex items-center justify-between">
+         <div>
+            <div class="flex items-center gap-2 mb-1">
+               <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span>
+               <p class="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Horas Auxiliares
+               </p>
+            </div>
+            <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{{ auxiliaryHours | number }}</p>
+         </div>
+         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-amber-100 flex items-center justify-center">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

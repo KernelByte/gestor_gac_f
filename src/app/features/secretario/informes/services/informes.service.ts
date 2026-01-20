@@ -113,4 +113,23 @@ export class InformesService {
          responseType: 'blob'
       });
    }
+
+   // --- Export Historial PDF ---
+   exportHistorialPdf(
+      congregacionId: number,
+      anoServicio: number,
+      viewType: string,
+      filters: { grupoId?: number | null, soloPrecursores?: boolean, publicadorId?: number }
+   ): Observable<Blob> {
+      let params = new HttpParams()
+         .set('congregacion_id', congregacionId.toString())
+         .set('ano_servicio', anoServicio.toString())
+         .set('tipo_vista', viewType);
+
+      if (filters.grupoId) params = params.set('grupo_id', filters.grupoId.toString());
+      if (filters.soloPrecursores) params = params.set('solo_precursores', 'true');
+      if (filters.publicadorId) params = params.set('publicador_id', filters.publicadorId.toString());
+
+      return this.http.get(`${this.apiUrl}/export-historial-pdf`, { params, responseType: 'blob' });
+   }
 }

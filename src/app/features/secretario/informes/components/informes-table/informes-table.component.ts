@@ -172,6 +172,11 @@ export class InformesTableComponent {
       }
    }
 
+   isRegular(pub: InformeConPublicador): boolean {
+      const roles = this.getRoles(pub);
+      return roles.some(r => r.label === 'PRECURSOR REGULAR' || r.label.includes('REGULAR'));
+   }
+
    private focusHours(id: number) {
       const el = document.getElementById(`horas-${id}`);
       if (el) {
@@ -182,5 +187,3 @@ export class InformesTableComponent {
    }
 
 }
-
-

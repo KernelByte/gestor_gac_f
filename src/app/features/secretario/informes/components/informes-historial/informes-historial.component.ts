@@ -24,6 +24,10 @@ export class InformesHistorialComponent implements OnChanges {
    @Input() congregacionId: number = 0;
    @Input() grupos: Grupo[] = [];
 
+   get sortedGrupos(): Grupo[] {
+      return [...this.grupos].sort((a, b) => a.id_grupo - b.id_grupo);
+   }
+
    // State
    historial = signal<HistorialAnualOut | null>(null);
    loading = signal<boolean>(false);
@@ -34,6 +38,9 @@ export class InformesHistorialComponent implements OnChanges {
    searchQuery = signal<string>('');
    viewType = signal<'ano_servicio' | 'ultimos_12' | 'ultimos_6'>('ano_servicio');
 
+   // UI Filter State
+   activeFilter = signal<'all' | 'precursores' | number>('all');
+
    // Computed
    filteredPublicadores = computed(() => {
       const data = this.historial();
@@ -41,11 +48,12 @@ export class InformesHistorialComponent implements OnChanges {
 
       let pubs = data.publicadores;
 
-      // Filter by Group (logic might need adjustment if backend doesn't return group_id in PublicadorHistorial yet, 
-      // but assuming backend filters or we filter here if we had group info)
-      // Note: Backend endpoint accepts group_id, so usually best to reload data on group change.
-      // However, for search/client-side filtering:
+      // Filter by "Precursores Only" mode
+      if (this.activeFilter() === 'precursores') {
+         pubs = pubs.filter(p => p.es_precursor_regular);
+      }
 
+      // Filter by Search
       if (this.searchQuery()) {
          const q = this.searchQuery().toLowerCase();
          pubs = pubs.filter(p => p.nombre_completo.toLowerCase().includes(q));
@@ -76,9 +84,13 @@ export class InformesHistorialComponent implements OnChanges {
       }
    }
 
-   onGrupoChange(grupoId: number | null) {
-      this.filterGrupoId.set(grupoId);
-      // Reload from backend to filter by group efficiently
+   setFilter(filter: 'all' | 'precursores' | number) {
+      this.activeFilter.set(filter);
+
+      // If filtering by specific group, set ID for backend. Otherwise null (fetch all).
+      const groupId = typeof filter === 'number' ? filter : null;
+      this.filterGrupoId.set(groupId);
+
       this.loadData();
    }
 
@@ -114,5 +126,86 @@ export class InformesHistorialComponent implements OnChanges {
 
    selectPublicador(id: number) {
       this.selectedPublicadorId.set(id);
+   }
+
+   // --- Export Logic ---
+   exporting = signal(false);
+
+   // --- Groups Dropdown Logic ---
+   showGroupsDropdown = signal(false);
+
+   toggleGroupsDropdown() {
+      this.showGroupsDropdown.update(v => !v);
+   }
+
+   selectGroupFilter(groupId: number) {
+      this.setFilter(groupId);
+      this.showGroupsDropdown.set(false);
+   }
+
+   isGroupFilterActive(): boolean {
+      return typeof this.activeFilter() === 'number';
+   }
+
+   getActiveGroupLabel(): string {
+      const filter = this.activeFilter();
+      if (typeof filter === 'number') {
+         return `Grupo ${filter}`;
+      }
+      return 'Grupos';
+   }
+
+   // Dynamic Label for Global Export
+   globalExportLabel = computed(() => {
+      const filter = this.activeFilter();
+      if (filter === 'all') return 'Exportar Todos';
+      if (filter === 'precursores') return 'Exportar Precursores';
+      if (typeof filter === 'number') return `Exportar Grupo ${filter}`;
+      return 'Exportar Lista';
+   });
+
+   onExport(scope: 'global' | 'single') {
+      if (this.exporting()) return;
+      if (scope === 'single' && !this.selectedPublicadorId()) return;
+
+      this.exporting.set(true);
+
+      const filters: any = {};
+
+      if (scope === 'single') {
+         filters.publicadorId = this.selectedPublicadorId();
+      } else {
+         // Global scope - respect active filters
+         const filter = this.activeFilter();
+         if (filter === 'precursores') {
+            filters.soloPrecursores = true;
+         } else if (typeof filter === 'number') {
+            filters.grupoId = filter;
+         }
+      }
+
+      this.informesService.exportHistorialPdf(
+         this.congregacionId,
+         this.selectedAno,
+         this.viewType(),
+         filters
+      ).subscribe({
+         next: (blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const filename = scope === 'single'
+               ? `Historial_${this.selectedPublicador()?.nombre_completo || 'Publicador'}.pdf`
+               : `Historial_General_${this.selectedAno}.pdf`;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            this.exporting.set(false);
+         },
+         error: (err) => {
+            console.error('Error exporting PDF', err);
+            this.exporting.set(false);
+         }
+      });
    }
 }
