@@ -384,15 +384,15 @@ import { ThemeService } from '../core/services/theme.service';
               
               <div 
                 *ngIf="notificationsOpen()" 
-                class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100 z-50 overflow-hidden animate-fadeIn origin-top-right transform transition-all"
+                class="absolute right-0 mt-3 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-slate-100 dark:border-slate-800 z-50 overflow-hidden animate-fadeIn origin-top-right transform transition-all"
               >
-                <div class="p-4 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
-                  <h3 class="font-bold text-slate-800">Notificaciones</h3>
-                  <span class="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full uppercase tracking-wide">{{ notificationCount() }} nuevas</span>
+                <div class="p-4 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                  <h3 class="font-bold text-slate-800 dark:text-white">Notificaciones</h3>
+                  <span class="text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded-full uppercase tracking-wide">{{ notificationCount() }} nuevas</span>
                 </div>
                 <div class="p-8 text-sm text-slate-400 text-center flex flex-col items-center gap-3">
-                   <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center">
-                      <svg class="w-6 h-6 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                   <div class="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center">
+                      <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
                    </div>
                    <p>¡Estás al día!</p>
                 </div>
@@ -410,8 +410,8 @@ import { ThemeService } from '../core/services/theme.service';
                   {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
                 </div>
                 <div class="hidden sm:block text-left">
-                  <p class="text-sm font-bold text-slate-700 group-hover:text-purple-700 transition-colors whitespace-nowrap">{{ u.nombre || u.username }}</p>
-                  <p *ngIf="u.roles?.[0]" class="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-none mt-0.5">{{ u.roles?.[0] }}</p>
+                  <p class="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors whitespace-nowrap">{{ u.nombre || u.username }}</p>
+                  <p *ngIf="u.roles?.[0]" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide leading-none mt-0.5">{{ u.roles?.[0] }}</p>
                 </div>
                 <svg class="w-4 h-4 text-slate-400 hidden sm:block transition-transform duration-200 group-hover:text-purple-500" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -421,13 +421,13 @@ import { ThemeService } from '../core/services/theme.service';
               <div 
                 *ngIf="userMenuOpen()" 
                 id="user-menu-panel" 
-                class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl ring-1 ring-slate-900/5 z-50 overflow-hidden animate-fadeIn origin-top-right scale-100"
+                class="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl dark:shadow-black/50 ring-1 ring-slate-900/5 dark:ring-white/10 z-50 overflow-hidden animate-fadeIn origin-top-right scale-100"
               >
                 <!-- User Header (Premium) -->
-                <div class="py-6 px-5 bg-gradient-to-br from-brand-purple to-[#4C1D95] border-b border-purple-800/20">
+                <div class="py-6 px-5 bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-900 dark:to-slate-900 border-b border-purple-800/20 dark:border-white/10">
                    <div class="flex flex-col relative z-10">
                       <h3 class="font-display font-bold text-white text-lg leading-tight tracking-tight">{{ u.nombre || u.username }}</h3>
-                      <p class="font-sans text-purple-200 text-xs font-medium mt-0.5 truncate">{{ u.correo }}</p>
+                      <p class="font-sans text-purple-200 dark:text-slate-400 text-xs font-medium mt-0.5 truncate">{{ u.correo }}</p>
                       <div class="mt-3">
                         <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-white text-[10px] font-bold border border-white/10 uppercase tracking-wider backdrop-blur-md shadow-sm">
                           {{ u.roles?.[0] || 'Usuario' }}
@@ -439,20 +439,20 @@ import { ThemeService } from '../core/services/theme.service';
                 <!-- Menu Items -->
                 <div class="p-2 space-y-1">
                   <button 
-                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-600 font-medium text-sm transition-all duration-200 group" 
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-sm transition-all duration-200 group" 
                     (click)="editProfile()"
                   >
-                    <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-purple-100 group-hover:text-purple-600 transition-colors">
+                    <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                         <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                     </div>
                     <span>Mi perfil</span>
                   </button>
                   
                   <button 
-                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-600 font-medium text-sm transition-all duration-200 group" 
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-sm transition-all duration-200 group" 
                     (click)="openSettings()"
                   >
-                     <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-purple-100 group-hover:text-purple-600 transition-colors">
+                     <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                         <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                      </div>
                     <span>Configuración</span>
@@ -461,10 +461,10 @@ import { ThemeService } from '../core/services/theme.service';
 
                 <div class="p-2 border-t border-slate-100 mt-1">
                   <button 
-                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 text-slate-600 hover:text-red-600 font-medium text-sm transition-all duration-200 group" 
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 font-medium text-sm transition-all duration-200 group" 
                     (click)="logout()"
                   >
-                     <div class="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-400 group-hover:bg-red-100 group-hover:text-red-500 transition-colors">
+                     <div class="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-900/10 flex items-center justify-center text-red-400 dark:text-red-500 group-hover:bg-red-100 dark:group-hover:bg-red-900/30 group-hover:text-red-500 transition-colors">
                         <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                      </div>
                     <span>Cerrar sesión</span>
