@@ -10,7 +10,7 @@ import { ThemeService } from '../core/services/theme.service';
   selector: 'app-shell',
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="flex h-screen overflow-hidden bg-[#f3f4f6]" [class.dark]="themeService.darkMode()">
+    <div class="flex h-screen overflow-hidden bg-[#f3f4f6] dark:bg-slate-950 transition-colors duration-300" [class.dark]="themeService.darkMode()">
       
       <!-- Mobile Overlay -->
       <div 
@@ -22,7 +22,7 @@ import { ThemeService } from '../core/services/theme.service';
       
       <!-- Sidebar -->
       <aside
-        class="fixed top-0 left-0 lg:top-6 lg:left-6 h-screen lg:h-[calc(100vh-3rem)] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)] lg:rounded-3xl flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] overflow-hidden"
+        class="fixed top-0 left-0 lg:top-6 lg:left-6 h-screen lg:h-[calc(100vh-3rem)] bg-white dark:bg-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-slate-950/50 lg:rounded-3xl flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] overflow-hidden ring-1 ring-transparent dark:ring-white/5"
         [ngClass]="{
           'w-[272px]': !collapsed(),
           'w-[72px]': collapsed(),
@@ -31,7 +31,7 @@ import { ThemeService } from '../core/services/theme.service';
         }"
       >
         <!-- Sidebar Header -->
-        <div class="flex flex-col items-center justify-center py-6 px-4 border-b border-gray-100/50 transition-all duration-300">
+        <div class="flex flex-col items-center justify-center py-6 px-4 border-b border-gray-100/50 dark:border-white/5 transition-all duration-300">
              <!-- Logo Image - Minimalist & Interactive -->
              <div 
                class="relative w-14 h-14 shrink-0 mb-3 group cursor-pointer"
@@ -39,7 +39,7 @@ import { ThemeService } from '../core/services/theme.service';
                [title]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
              >
                 <!-- Simple Background -->
-                <div class="relative w-full h-full bg-white rounded-2xl p-2.5 shadow-sm group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 ring-1 ring-gray-100 group-hover:ring-purple-200">
+                <div class="relative w-full h-full bg-white dark:bg-slate-800 rounded-2xl p-2.5 shadow-sm group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 ring-1 ring-gray-100 dark:ring-white/10 group-hover:ring-purple-200 dark:group-hover:ring-purple-500/30">
                   <img 
                     src="images/LogoAppMorado.png" 
                     alt="Sistema GAC" 
@@ -78,7 +78,7 @@ import { ThemeService } from '../core/services/theme.service';
                 routerLink="/"
                                                                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 [routerLinkActiveOptions]="{ exact: true }"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -316,11 +316,11 @@ import { ThemeService } from '../core/services/theme.service';
         
         
         <!-- Top Header - Floating Island -->
-        <header class="mx-4 md:mx-6 mt-4 md:mt-6 mb-4 md:mb-6 h-[72px] bg-white/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-8 sticky top-4 md:top-6 z-30 transition-all duration-300 rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)] border border-gray-100/50">
+        <header class="mx-4 md:mx-6 mt-4 md:mt-6 mb-4 md:mb-6 h-[72px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-8 sticky top-4 md:top-6 z-30 transition-all duration-300 rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)] dark:shadow-black/20 border border-gray-100/50 dark:border-white/5">
           <div class="flex items-center gap-4">
             <!-- Mobile Menu Toggle -->
             <button 
-              class="p-2.5 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors lg:hidden active:scale-95" 
+              class="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors lg:hidden active:scale-95" 
               (click)="openMobileMenu()"
             >
               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -335,7 +335,7 @@ import { ThemeService } from '../core/services/theme.service';
           <div class="flex items-center gap-2 sm:gap-4">
             <!-- Search -->
             <div 
-              class="hidden md:flex items-center bg-slate-50/80 backdrop-blur-sm border border-slate-200/70 rounded-full px-4 py-2.5 w-64 focus-within:w-80 focus-within:ring-2 focus-within:ring-purple-100 focus-within:border-purple-300 transition-all duration-300 group cursor-text"
+              class="hidden md:flex items-center bg-slate-50/80 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/50 rounded-full px-4 py-2.5 w-64 focus-within:w-80 focus-within:ring-2 focus-within:ring-purple-100 dark:focus-within:ring-purple-900/30 focus-within:border-purple-300 dark:focus-within:border-purple-600 transition-all duration-300 group cursor-text"
               (click)="searchInput.focus()"
             >
               <svg class="w-4 h-4 text-slate-400 group-focus-within:text-purple-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -345,10 +345,10 @@ import { ThemeService } from '../core/services/theme.service';
                 #searchInput
                 type="text" 
                 placeholder="Buscar..." 
-                class="bg-transparent border-none outline-none ml-2 text-sm text-slate-700 w-full placeholder:text-slate-400"
+                class="bg-transparent border-none outline-none ml-2 text-sm text-slate-700 dark:text-slate-200 w-full placeholder:text-slate-400 dark:placeholder:text-slate-500"
               >
               <div class="hidden lg:flex items-center gap-1">
-                <kbd class="hidden sm:inline-block min-h-[20px] px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white border border-slate-200 rounded-md shadow-[0_1px_1px_rgba(0,0,0,0.05)]">⌘K</kbd>
+                <kbd class="hidden sm:inline-block min-h-[20px] px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white dark:bg-slate-700 dark:border-slate-600 border border-slate-200 rounded-md shadow-[0_1px_1px_rgba(0,0,0,0.05)]">⌘K</kbd>
               </div>
             </div>
 

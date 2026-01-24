@@ -1,19 +1,20 @@
-@use "tailwindcss";
+@use 'tailwindcss';
+@variant dark (&:where(.dark, .dark *));
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
 @theme {
   --color-brand-purple: #6d28d9;
-  --color-brand-orange: #F97316;
+  --color-brand-orange: #f97316;
   --color-brand-green: #059669;
-  --color-brand-blue: #2563EB;
+  --color-brand-blue: #2563eb;
 
   --color-brand-purple-soft: #faf5ff;
   --color-brand-orange-soft: #fff7ed;
   --color-brand-green-soft: #ecfdf5;
   --color-brand-blue-soft: #eff6ff;
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
 
   --animate-blob: blob 8s ease-in-out infinite;
   --animate-fadeIn: fadeIn 0.2s ease-out forwards;
@@ -96,7 +97,6 @@
 
 /* Blob floating animation for mesh gradient background */
 @keyframes blob {
-
   0%,
   100% {
     transform: translate(0, 0) scale(1);
