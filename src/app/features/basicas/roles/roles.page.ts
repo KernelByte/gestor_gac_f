@@ -30,10 +30,10 @@ import { HttpClient } from '@angular/common/http';
     ])
   ],
   template: `
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-6 h-full">
       
       <!-- 1. Header Section -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
           <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight">Gestión de Roles</h1>
           <p class="text-slate-500 mt-1 text-base">Configure los niveles de acceso y permisos.</p>
@@ -46,7 +46,7 @@ import { HttpClient } from '@angular/common/http';
       </div>
 
       <!-- 2. Filters -->
-      <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center gap-2">
+      <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center gap-2 shrink-0">
          <div class="relative flex-1 w-full group">
             <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input 
@@ -64,7 +64,7 @@ import { HttpClient } from '@angular/common/http';
       </div>
 
       <!-- 3. Roles Table (Pro Standard) -->
-      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm relative min-h-[400px]">
+      <div class="flex-1 overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm relative min-h-0">
         
         <!-- Loading Skeleton -->
         <div *ngIf="loading()" class="absolute inset-0 bg-white z-10 p-6 space-y-4">
