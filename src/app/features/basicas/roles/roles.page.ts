@@ -35,8 +35,8 @@ import { HttpClient } from '@angular/common/http';
       <!-- 1. Header Section -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
-          <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight">Gestión de Roles</h1>
-          <p class="text-slate-500 mt-1 text-base">Configure los niveles de acceso y permisos.</p>
+          <h1 class="text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight">Gestión de Roles</h1>
+          <p class="text-slate-500 dark:text-slate-400 mt-1 text-base">Configure los niveles de acceso y permisos.</p>
         </div>
         <button (click)="openCreatePanel()" 
            class="group relative inline-flex items-center justify-center gap-2 px-6 h-12 bg-[#6D28D9] hover:bg-[#5b21b6] text-white font-display font-bold rounded-xl transition-all shadow-lg shadow-purple-900/20 active:scale-95">
@@ -46,7 +46,7 @@ import { HttpClient } from '@angular/common/http';
       </div>
 
       <!-- 2. Filters -->
-      <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center gap-2 shrink-0">
+      <div class="bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center gap-2 shrink-0">
          <div class="relative flex-1 w-full group">
             <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input 
@@ -54,39 +54,39 @@ import { HttpClient } from '@angular/common/http';
               [value]="searchTerm()"
               (input)="updateSearch($event)"
               placeholder="Buscar rol..." 
-              class="w-full pl-12 pr-4 py-3 bg-transparent border-none outline-none text-slate-700 placeholder:text-slate-400 font-medium"
+              class="w-full pl-12 pr-4 py-3 bg-transparent border-none outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium"
             >
          </div>
-         <div class="h-8 w-px bg-slate-100 hidden sm:block"></div>
-         <button class="w-full sm:w-auto px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl font-bold text-sm transition-colors border border-transparent hover:border-slate-200">
+         <div class="h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block"></div>
+         <button class="w-full sm:w-auto px-4 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-sm transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
             Filtros
          </button>
       </div>
 
       <!-- 3. Roles Table (Pro Standard) -->
-      <div class="flex-1 overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm relative min-h-0">
+      <div class="flex-1 overflow-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm relative min-h-0">
         
         <!-- Loading Skeleton -->
-        <div *ngIf="loading()" class="absolute inset-0 bg-white z-10 p-6 space-y-4">
+        <div *ngIf="loading()" class="absolute inset-0 bg-white dark:bg-slate-900 z-10 p-6 space-y-4">
            <div class="flex items-center gap-4 animate-pulse" *ngFor="let i of [1,2,3,4,5]">
-              <div class="h-10 w-10 bg-slate-100 rounded-lg"></div>
-              <div class="flex-1 h-4 bg-slate-100 rounded"></div>
-              <div class="w-24 h-4 bg-slate-100 rounded"></div>
+              <div class="h-10 w-10 bg-slate-100 dark:bg-slate-800 rounded-lg"></div>
+              <div class="flex-1 h-4 bg-slate-100 dark:bg-slate-800 rounded"></div>
+              <div class="w-24 h-4 bg-slate-100 dark:bg-slate-800 rounded"></div>
            </div>
         </div>
 
         <table class="w-full border-collapse text-left" *ngIf="!loading()">
-          <thead class="bg-slate-50/80 border-b border-slate-200 sticky top-0 z-10 backdrop-blur-md">
+          <thead class="bg-slate-50/80 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur-md">
             <tr>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Rol</th>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 hidden lg:table-cell">Descripción</th>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Usuarios</th>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Estado</th>
-              <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-400"></th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Rol</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 hidden lg:table-cell">Descripción</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 text-center">Usuarios</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 text-center">Estado</th>
+              <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr *ngFor="let rol of filteredRoles()" class="group transition-colors duration-200 hover:bg-slate-50">
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr *ngFor="let rol of filteredRoles()" class="group transition-colors duration-200 hover:bg-slate-50 dark:hover:bg-slate-800/30">
               <!-- Name & Avatar -->
               <td class="px-6 py-4">
                 <div class="flex items-center gap-4">
@@ -96,15 +96,15 @@ import { HttpClient } from '@angular/common/http';
                     {{ rol.nombre_rol.charAt(0).toUpperCase() }}
                   </div>
                   <div>
-                    <p class="text-sm font-bold text-slate-800 tracking-tight">{{ rol.nombre_rol }}</p>
-                    <p class="text-[11px] font-medium text-slate-400 mt-0.5">ID: {{ rol.id_rol }}</p>
+                    <p class="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ rol.nombre_rol }}</p>
+                    <p class="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-0.5">ID: {{ rol.id_rol }}</p>
                   </div>
                 </div>
               </td>
 
               <!-- Description (Separate Column) -->
               <td class="px-6 py-4 hidden lg:table-cell">
-                <p class="text-sm text-slate-600 font-medium max-w-xs truncate" [title]="rol.descripcion_rol">
+                <p class="text-sm text-slate-600 dark:text-slate-400 font-medium max-w-xs truncate" [title]="rol.descripcion_rol">
                   {{ rol.descripcion_rol || '—' }}
                 </p>
               </td>
@@ -113,7 +113,7 @@ import { HttpClient } from '@angular/common/http';
               <td class="px-6 py-4 text-center">
                  <button 
                     (click)="navigateToUsers(rol.id_rol)" 
-                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 text-slate-600 text-xs font-bold border border-slate-200 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700 transition-all active:scale-95 group/btn"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 hover:border-purple-200 dark:hover:border-purple-500/30 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 dark:hover:text-purple-400 transition-all active:scale-95 group/btn"
                     title="Ver usuarios con este rol"
                  >
                     <svg class="w-3.5 h-3.5 opacity-70 group-hover/btn:text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
@@ -123,7 +123,7 @@ import { HttpClient } from '@angular/common/http';
 
               <!-- Status -->
               <td class="px-6 py-4 text-center">
-                <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 border border-emerald-100/50">
+                <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/30">
                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                    Activo
                 </div>
@@ -146,11 +146,11 @@ import { HttpClient } from '@angular/common/http';
 
         <!-- Empty State -->
         <div *ngIf="filteredRoles().length === 0 && !loading()" class="flex flex-col items-center justify-center py-16 text-center">
-           <div class="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center mb-3">
+           <div class="h-12 w-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-3">
               <svg class="w-6 h-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
            </div>
-           <p class="text-slate-900 font-medium">No hay registros</p>
-           <p class="text-slate-500 text-sm mt-1">No se encontraron roles coincidentes.</p>
+           <p class="text-slate-900 dark:text-white font-medium">No hay registros</p>
+           <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">No se encontraron roles coincidentes.</p>
         </div>
       </div>
 
@@ -161,43 +161,43 @@ import { HttpClient } from '@angular/common/http';
          <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closePanel()"></div>
          
          <!-- Slide-over Panel -->
-         <div @slidePanel class="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-slate-100">
+         <div @slidePanel class="relative w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-100 dark:border-slate-800">
             
             <!-- Header -->
-            <div class="px-8 py-6 border-b border-slate-100 bg-white flex items-center justify-between shrink-0 z-10">
+            <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0 z-10">
                <div class="flex items-center gap-4">
-                  <div class="h-12 w-12 rounded-2xl bg-purple-50 flex items-center justify-center text-[#6D28D9] border border-purple-100">
+                  <div class="h-12 w-12 rounded-2xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-[#6D28D9] dark:text-purple-400 border border-purple-100 dark:border-purple-800/30">
                      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
                   </div>
                   <div>
-                     <h2 class="text-xl font-display font-black text-slate-900 tracking-tight">{{ editingRol() ? 'Editar Rol' : 'Crear Nuevo Rol' }}</h2>
-                     <p class="text-sm text-slate-500 font-medium mt-0.5">Defina los datos del rol de usuario.</p>
+                     <h2 class="text-xl font-display font-black text-slate-900 dark:text-white tracking-tight">{{ editingRol() ? 'Editar Rol' : 'Crear Nuevo Rol' }}</h2>
+                     <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Defina los datos del rol de usuario.</p>
                   </div>
                </div>
-               <button (click)="closePanel()" class="p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+               <button (click)="closePanel()" class="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                   <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                </button>
             </div>
             
             <!-- Body -->
-            <div class="flex-1 overflow-y-auto p-8 bg-white relative">
+            <div class="flex-1 overflow-y-auto p-8 bg-white dark:bg-slate-900 relative">
                <form [formGroup]="rolForm" (ngSubmit)="save()" class="space-y-6">
                   
                   <!-- Name Input -->
                   <div class="space-y-2 group">
-                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nombre del Rol</label>
+                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Nombre del Rol</label>
                      <div class="relative">
                         <input type="text" formControlName="nombre_rol" 
-                           class="peer w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 font-bold focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal"
+                           class="peer w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3.5 text-slate-900 dark:text-white font-bold focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none placeholder:text-slate-400 placeholder:font-normal"
                            placeholder="Ej: Administrador">
                      </div>
                   </div>
 
                   <!-- Description Input -->
                   <div class="space-y-2 group">
-                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Descripción</label>
+                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Descripción</label>
                      <textarea formControlName="descripcion_rol" rows="3" 
-                        class="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 text-sm font-medium resize-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all placeholder:text-slate-400"
+                        class="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white text-sm font-medium resize-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all placeholder:text-slate-400"
                         placeholder="Descripción breve del rol..."></textarea>
                   </div>
 
@@ -205,8 +205,8 @@ import { HttpClient } from '@angular/common/http';
             </div>
 
             <!-- Footer -->
-            <div class="p-8 border-t border-slate-100 bg-slate-50/50 flex items-center gap-3 shrink-0 backdrop-blur-sm z-10">
-                 <button (click)="closePanel()" class="flex-1 py-3.5 px-6 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-sm">
+            <div class="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/10 flex items-center gap-3 shrink-0 backdrop-blur-sm z-10">
+                 <button (click)="closePanel()" class="flex-1 py-3.5 px-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-colors shadow-sm">
                     Cancelar
                  </button>
                  <button (click)="save()" [disabled]="rolForm.invalid || saving()" 
