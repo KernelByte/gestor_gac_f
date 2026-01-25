@@ -228,11 +228,11 @@ export class UsuariosPage implements OnInit {
       const char = n.charCodeAt(0);
 
       // Deterministic pastel color mapping based on first char
-      if (char % 5 === 0) return 'bg-purple-100 text-purple-700 ring-purple-600/20';
-      if (char % 5 === 1) return 'bg-blue-100 text-blue-700 ring-blue-600/20';
-      if (char % 5 === 2) return 'bg-emerald-100 text-emerald-700 ring-emerald-600/20';
-      if (char % 5 === 3) return 'bg-orange-100 text-orange-700 ring-orange-600/20';
-      return 'bg-cyan-100 text-cyan-700 ring-cyan-600/20';
+      if (char % 5 === 0) return 'bg-purple-100 text-purple-700 ring-purple-600/20 dark:bg-purple-900/40 dark:text-purple-300 dark:ring-purple-400/30';
+      if (char % 5 === 1) return 'bg-blue-100 text-blue-700 ring-blue-600/20 dark:bg-blue-900/40 dark:text-blue-300 dark:ring-blue-400/30';
+      if (char % 5 === 2) return 'bg-emerald-100 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/40 dark:text-emerald-300 dark:ring-emerald-400/30';
+      if (char % 5 === 3) return 'bg-orange-100 text-orange-700 ring-orange-600/20 dark:bg-orange-900/40 dark:text-orange-300 dark:ring-orange-400/30';
+      return 'bg-cyan-100 text-cyan-700 ring-cyan-600/20 dark:bg-cyan-900/40 dark:text-cyan-300 dark:ring-cyan-400/30';
    }
 
    // -----------------------------
@@ -499,32 +499,32 @@ export class UsuariosPage implements OnInit {
 
       // Specific color mapping based on role name keywords
       if (rolName.includes('admin')) {
-         return 'bg-emerald-50 text-emerald-700 border border-emerald-100/50';
+         return 'bg-emerald-50 text-emerald-700 border border-emerald-100/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30';
       }
       if (rolName.includes('secret')) {
-         return 'bg-indigo-50 text-indigo-700 border border-indigo-100/50';
+         return 'bg-indigo-50 text-indigo-700 border border-indigo-100/50 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800/30';
       }
       if (rolName.includes('super')) {
-         return 'bg-blue-50 text-blue-700 border border-blue-100/50';
+         return 'bg-blue-50 text-blue-700 border border-blue-100/50 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/30';
       }
       if (rolName.includes('coord')) {
-         return 'bg-amber-50 text-amber-700 border border-amber-100/50';
+         return 'bg-amber-50 text-amber-700 border border-amber-100/50 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/30';
       }
       if (rolName.includes('gestor')) {
-         return 'bg-purple-50 text-purple-700 border border-purple-100/50';
+         return 'bg-purple-50 text-purple-700 border border-purple-100/50 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800/30';
       }
       if (rolName.includes('public')) {
-         return 'bg-cyan-50 text-cyan-700 border border-cyan-100/50';
+         return 'bg-cyan-50 text-cyan-700 border border-cyan-100/50 dark:bg-cyan-900/20 dark:text-cyan-400 dark:border-cyan-800/30';
       }
 
       // Fallback: Use ID-based color if available
       const id = u.id_rol_usuario || 0;
       const colors = [
-         'bg-rose-50 text-rose-700 border border-rose-100/50',
-         'bg-teal-50 text-teal-700 border border-teal-100/50',
-         'bg-orange-50 text-orange-700 border border-orange-100/50',
-         'bg-pink-50 text-pink-700 border border-pink-100/50',
-         'bg-sky-50 text-sky-700 border border-sky-100/50'
+         'bg-rose-50 text-rose-700 border border-rose-100/50 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800/30',
+         'bg-teal-50 text-teal-700 border border-teal-100/50 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-800/30',
+         'bg-orange-50 text-orange-700 border border-orange-100/50 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800/30',
+         'bg-pink-50 text-pink-700 border border-pink-100/50 dark:bg-pink-900/20 dark:text-pink-400 dark:border-pink-800/30',
+         'bg-sky-50 text-sky-700 border border-sky-100/50 dark:bg-sky-900/20 dark:text-sky-400 dark:border-sky-800/30'
       ];
       return colors[id % colors.length];
    }

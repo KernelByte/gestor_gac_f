@@ -53,6 +53,7 @@ import { HttpClient } from '@angular/common/http';
               type="text" 
               [value]="searchTerm()"
               (input)="updateSearch($event)"
+              (keydown.escape)="clearSearch()"
               placeholder="Buscar rol..." 
               class="w-full pl-12 pr-4 py-3 bg-transparent border-none outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium"
             >
@@ -258,6 +259,10 @@ export class RolesPage implements OnInit {
 
   updateSearch(event: any) {
     this.searchTerm.set(event.target.value);
+  }
+
+  clearSearch() {
+    this.searchTerm.set('');
   }
 
   // --- Mock Helpers for UI ---
