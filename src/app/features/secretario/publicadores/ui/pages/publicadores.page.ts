@@ -61,7 +61,7 @@ interface ContactoEmergencia {
                 [ngModel]="searchQuery()"
                 (ngModelChange)="onSearch($event)"
                 placeholder="Buscar..." 
-                class="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none"
+                class="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-800/50 border border-transparent dark:border-slate-700/50 rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none"
             >
         </div>
 
@@ -75,7 +75,7 @@ interface ContactoEmergencia {
                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
                 [ngClass]="selectedEstado() === null 
                   ? 'bg-brand-orange text-white shadow-sm' 
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'"
+                  : 'bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200'"
             >
                 Todos <span class="text-[10px] opacity-80">{{ totalFilteredCount() }}</span>
             </button>
@@ -86,7 +86,7 @@ interface ContactoEmergencia {
                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
                 [ngClass]="selectedEstado() === e.id_estado 
                   ? 'bg-brand-orange text-white shadow-sm' 
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'"
             >
                 {{ e.nombre_estado }} <span class="text-[10px] opacity-60">{{ e.count }}</span>
             </button>
@@ -103,7 +103,7 @@ interface ContactoEmergencia {
                 class="flex items-center gap-2 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all border outline-none"
                 [ngClass]="activeFiltersCount() > 0 
                   ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-brand-orange shadow-sm' 
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600'"
+                  : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-slate-200'"
             >
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="hidden sm:inline">Filtros</span>
@@ -292,7 +292,7 @@ interface ContactoEmergencia {
              <!-- 2. Desktop Table View (Visible md+) -->
              <div class="hidden md:block">
                 <table class="w-full text-left border-collapse">
-                   <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-800/90 backdrop-blur-md shadow-sm">
+                   <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
                       <tr class="border-b border-slate-200 dark:border-slate-700">
                          <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre</th>
                          <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Grupo</th>
@@ -304,7 +304,7 @@ interface ContactoEmergencia {
                       </tr>
                    </thead>
                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                      <tr *ngFor="let p of pagedList(); trackBy: trackById" class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
+                      <tr *ngFor="let p of pagedList(); trackBy: trackById" class="group hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-transparent dark:border-slate-800/50 transition-all">
                          
                          <!-- Nombre -->
                          <td class="px-8 py-4 relative">
@@ -415,23 +415,23 @@ interface ContactoEmergencia {
         </div>
 
         <!-- Pagination Footer (Matches Grupos Module) -->
-        <div class="shrink-0 z-20 px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/90 backdrop-blur-sm flex items-center justify-between md:rounded-b-2xl transition-all duration-300">
-             <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Mostrando {{ (currentPage() - 1) * pageSize + 1 }} - {{ Math.min(currentPage() * pageSize, filteredList().length) }} 
+        <div class="shrink-0 z-20 px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between md:rounded-b-2xl transition-all duration-300 shadow-[0_-1px_2px_rgba(0,0,0,0.02)] dark:shadow-none">
+             <p class="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Mostrando <span class="font-bold text-slate-800 dark:text-slate-200">{{ (currentPage() - 1) * pageSize + 1 }} - {{ Math.min(currentPage() * pageSize, filteredList().length) }}</span> 
                 de <span class="font-bold text-slate-800 dark:text-white">{{ filteredList().length }}</span> publicadores
-             </span>
+             </p>
              <div class="flex gap-2">
                   <button 
                    (click)="prevPage()" 
                    [disabled]="currentPage() === 1"
-                   class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-50 transition-all font-bold"
+                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                   </button>
                   <button 
                    (click)="nextPage()" 
                    [disabled]="currentPage() * pageSize >= filteredList().length"
-                   class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-50 transition-all font-bold"
+                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                   </button>
@@ -452,38 +452,41 @@ interface ContactoEmergencia {
       <div class="h-full flex flex-col bg-white dark:bg-slate-900 rounded-none md:rounded-l-3xl shadow-2xl shadow-slate-900/10 dark:shadow-black/50 border-l border-slate-100 dark:border-slate-800 overflow-hidden">
         
         <!-- Premium Gradient Header (Always Light as per design) -->
-        <div class="shrink-0 relative overflow-hidden bg-white">
+        <!-- Premium Gradient Header -->
+        <div class="shrink-0 relative overflow-hidden bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
              <!-- Background gradient -->
-             <div class="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50/50"></div>
-             <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-orange-100/40 to-transparent rounded-full -mr-16 -mt-16 blur-3xl"></div>
+             <div class="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-orange-900/10 transition-colors duration-500"></div>
+             <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-orange-100/40 to-transparent dark:from-orange-500/10 dark:to-transparent rounded-full -mr-16 -mt-16 blur-3xl"></div>
              
              <div class="relative px-4 pt-4 pb-2 md:px-8 md:pt-8 md:pb-4">
                 <div class="flex items-start justify-between">
                      <div class="flex gap-4">
                          <!-- Icon with gradient background -->
-                         <div class="hidden md:flex w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-orange to-orange-500 text-white items-center justify-center shrink-0 shadow-lg shadow-orange-500/20 ring-4 ring-white relative z-10">
+                         <div class="hidden md:flex w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-orange to-orange-500 text-white items-center justify-center shrink-0 shadow-lg shadow-orange-500/20 ring-4 ring-white dark:ring-slate-800 relative z-10 transition-shadow duration-300">
                               <svg *ngIf="!editingPublicador()" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                               <svg *ngIf="editingPublicador()" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                          </div>
                          <div>
                              <div class="flex items-center gap-2 mb-1.5">
-                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest"
-                                      [ngClass]="editingPublicador() ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'">
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border border-transparent"
+                                      [ngClass]="editingPublicador() 
+                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/30' 
+                                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/30'">
                                   {{ editingPublicador() ? 'Modo Edición' : 'Nuevo Registro' }}
                                 </span>
                              </div>
-                             <h2 class="text-2xl font-display font-black text-slate-900 tracking-tight">
+                             <h2 class="text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight drop-shadow-sm">
                                  {{ editingPublicador() ? 'Editar Publicador' : 'Nuevo Publicador' }}
                              </h2>
-                             <p class="text-sm text-slate-500 mt-0.5" *ngIf="editingPublicador()">
+                             <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-medium" *ngIf="editingPublicador()">
                                {{ getFullName(editingPublicador()!) }}
                              </p>
-                             <p class="text-sm text-slate-500 mt-0.5" *ngIf="!editingPublicador()">
+                             <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-medium" *ngIf="!editingPublicador()">
                                Complete la información requerida
                              </p>
                          </div>
                      </div>
-                    <button (click)="tryClosePanel()" class="p-2.5 -mr-2 text-slate-400 hover:text-slate-600 transition-all rounded-xl hover:bg-white/80 hover:shadow-sm group">
+                    <button (click)="tryClosePanel()" class="p-2.5 -mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-xl hover:bg-white/80 dark:hover:bg-slate-800 hover:shadow-sm group">
                         <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
@@ -491,13 +494,13 @@ interface ContactoEmergencia {
 
              <!-- Tabs Navigation (Dark Bar Style) -->
              <div class="px-8 pb-8 relative z-10">
-                <div class="flex p-1.5 bg-slate-700/50 rounded-xl border border-slate-600/30 backdrop-blur-md">
+                <div class="flex p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 backdrop-blur-md">
                   <button 
                     (click)="activeTab.set('personal')" 
                     class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
                     [ngClass]="activeTab() === 'personal' 
-                      ? 'bg-white text-brand-orange shadow-md' 
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-600/50'"
+                      ? 'bg-white dark:bg-slate-700 text-brand-orange shadow-sm' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5'"
                   >
                     Personal
                   </button>
@@ -505,8 +508,8 @@ interface ContactoEmergencia {
                     (click)="activeTab.set('teocratico')" 
                     class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
                     [ngClass]="activeTab() === 'teocratico' 
-                      ? 'bg-white text-brand-orange shadow-md' 
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-600/50'"
+                      ? 'bg-white dark:bg-slate-700 text-brand-orange shadow-sm' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5'"
                   >
                     Teocrático
                   </button>
@@ -515,8 +518,8 @@ interface ContactoEmergencia {
                     (click)="activeTab.set('emergencia')" 
                     class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
                     [ngClass]="activeTab() === 'emergencia' 
-                      ? 'bg-white text-brand-orange shadow-md' 
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-600/50'"
+                      ? 'bg-white dark:bg-slate-700 text-brand-orange shadow-sm' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5'"
                   >
                     Emergencia
                   </button>
@@ -591,7 +594,7 @@ interface ContactoEmergencia {
                                   <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></span>
                                   Teléfono
                                </label>
-                               <input formControlName="telefono" placeholder="+57 300..." class="w-full h-11 px-4 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm font-medium text-white shadow-sm hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none placeholder:text-slate-600 placeholder:font-normal backdrop-blur-sm">
+                               <input formControlName="telefono" placeholder="+57 300..." class="w-full h-11 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                             </div>
                              <div class="col-span-1 space-y-2">
                                 <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
@@ -603,9 +606,11 @@ interface ContactoEmergencia {
                                     <button
                                       type="button"
                                       (click)="sexoDropdownOpen.set(!sexoDropdownOpen())"
-                                      class="w-full h-11 px-4 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm font-medium text-left shadow-sm hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none flex items-center justify-between backdrop-blur-sm"
+                                      class="w-full h-11 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-left shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none flex items-center justify-between"
                                       [class.text-slate-500]="!publicadorForm.get('sexo')?.value"
-                                      [class.text-white]="publicadorForm.get('sexo')?.value"
+                                      [class.dark:text-slate-400]="!publicadorForm.get('sexo')?.value"
+                                      [class.text-slate-800]="publicadorForm.get('sexo')?.value"
+                                      [class.dark:text-white]="publicadorForm.get('sexo')?.value"
                                     >
                                         {{ getSexoDisplayName() }}
                                         <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="sexoDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
@@ -614,14 +619,14 @@ interface ContactoEmergencia {
                                     <!-- Dropdown Menu -->
                                    <div 
                                      *ngIf="sexoDropdownOpen()"
-                                     class="absolute z-50 top-full left-0 right-0 mt-2 bg-slate-800 rounded-xl shadow-xl shadow-black/50 border border-slate-700 overflow-hidden animate-fadeIn"
+                                     class="absolute z-50 top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-700 overflow-hidden animate-fadeIn"
                                    >
                                         <div class="p-1">
                                             <button 
                                               type="button"
                                               (click)="publicadorForm.get('sexo')?.setValue('M'); sexoDropdownOpen.set(false)"
                                               class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-between group"
-                                               [ngClass]="publicadorForm.get('sexo')?.value === 'M' ? 'bg-orange-500/10 text-brand-orange' : 'text-slate-400 hover:bg-slate-700 hover:text-white'"
+                                               [ngClass]="publicadorForm.get('sexo')?.value === 'M' ? 'bg-orange-50 dark:bg-orange-500/10 text-brand-orange' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'"
                                             >
                                                 Masculino
                                                 <svg *ngIf="publicadorForm.get('sexo')?.value === 'M'" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -630,7 +635,7 @@ interface ContactoEmergencia {
                                               type="button"
                                               (click)="publicadorForm.get('sexo')?.setValue('F'); sexoDropdownOpen.set(false)"
                                               class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-between group"
-                                              [ngClass]="publicadorForm.get('sexo')?.value === 'F' ? 'bg-orange-500/10 text-brand-orange' : 'text-slate-400 hover:bg-slate-700 hover:text-white'"
+                                              [ngClass]="publicadorForm.get('sexo')?.value === 'F' ? 'bg-orange-50 dark:bg-orange-500/10 text-brand-orange' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'"
                                             >
                                                 Femenino
                                                 <svg *ngIf="publicadorForm.get('sexo')?.value === 'F'" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -1052,7 +1057,7 @@ interface ContactoEmergencia {
            </div>
 
            <!-- Panel Footer -->
-           <div class="px-8 py-6 border-t border-slate-800 bg-slate-900 flex items-center justify-between gap-4 shrink-0 z-20">
+           <div class="px-8 py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-4 shrink-0 z-20">
                <div class="hidden sm:block">
                   <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                      <span class="text-red-400">*</span> Campo obligatorio
@@ -1756,7 +1761,7 @@ export class PublicadoresListComponent implements OnInit {
 
     // Default if no specific roles
     if (roles.length === 0) {
-      roles.push({ label: 'PUBLICADOR', type: 'text', class: 'text-slate-400 font-medium text-[10px] uppercase tracking-wide' });
+       // No mostrar nada si no tiene privilegios especiales (es publicador por defecto)
     }
 
     return roles;

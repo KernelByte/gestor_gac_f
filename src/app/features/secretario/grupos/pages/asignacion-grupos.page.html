@@ -72,39 +72,54 @@
          class="w-full h-full rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-black/20 overflow-hidden flex flex-col relative transition-all duration-300 bg-[#f1f2f4] dark:bg-slate-900"
          [ngClass]="{'fixed inset-0 z-[9999] rounded-none border-0': isFullScreen()}">
 
-         <!-- Controls Overlay for FullScreen Mode -->
-         <div *ngIf="isFullScreen()"
-            class="absolute top-2 right-4 sm:right-1/2 sm:translate-x-1/2 z-50 animate-fade-in-down">
-            <button (click)="toggleFullScreen()"
-               class="flex items-center gap-2 px-4 py-2 bg-slate-900/90 hover:bg-slate-800 text-white backdrop-blur-md rounded-full shadow-xl border border-white/10 transition-all active:scale-95 group">
-               <span class="text-xs font-bold tracking-wide">Salir de Pantalla Completa</span>
-               <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-               </svg>
-            </button>
+         <!-- Header Full Screen Mode -->
+         <div *ngIf="isFullScreen()" class="shrink-0 px-6 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-50">
+             <div class="flex items-center gap-3">
+                 <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-brand-orange border border-slate-700/50">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                 </div>
+                 <div>
+                    <h2 class="text-white font-bold text-lg leading-none">Modo Inmersivo</h2>
+                    <p class="text-slate-400 text-xs mt-1 font-medium">Gestiona la asignación sin distracciones</p>
+                 </div>
+             </div>
+             
+             <div class="flex items-center gap-4">
+                 <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-bold text-slate-300">En vivo</span>
+                 </div>
+                 <button (click)="toggleFullScreen()"
+                    class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700/50 transition-all active:scale-95 group shadow-sm hover:shadow-md">
+                    <span class="text-xs font-bold tracking-wide">Salir</span>
+                    <svg class="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" viewBox="0 0 24 24"
+                       fill="none" stroke="currentColor" stroke-width="2">
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                 </button>
+             </div>
          </div>
 
          <!-- Sombras decorativas laterales (Fade effect manual) -->
          <div *ngIf="!isFullScreen()"
-            class="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none">
+            class="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white dark:from-slate-900 to-transparent z-10 pointer-events-none">
          </div>
          <div *ngIf="!isFullScreen()"
-            class="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none">
+            class="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white dark:from-slate-900 to-transparent z-10 pointer-events-none">
          </div>
 
          <div #scrollContainer class="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar"
             [class.snap-x]="!isDraggingContent()" [class.snap-mandatory]="!isDraggingContent()"
             [class.scroll-smooth]="!isDraggingContent()" (dragover)="onContainerDragOver($event)"
-            [class.p-4]="!isFullScreen()" [class.sm:p-6]="!isFullScreen()" [class.px-2]="isFullScreen()"
-            [class.pt-16]="isFullScreen()" [class.pb-2]="isFullScreen()" [class.sm:px-4]="isFullScreen()"
-            [class.sm:pt-20]="isFullScreen()">
-            <div class="flex h-full pb-4 min-w-max px-2" [class.gap-4]="!isFullScreen()"
-               [class.sm:gap-6]="!isFullScreen()" [class.gap-3]="isFullScreen()" [class.sm:gap-4]="isFullScreen()">
+            [class.p-4]="!isFullScreen()" [class.sm:p-6]="!isFullScreen()" 
+            [class.px-4]="isFullScreen()" [class.py-4]="isFullScreen()">
+            <div class="flex h-full pb-2 px-2" 
+               [ngClass]="isFullScreen() ? 'w-full gap-6' : 'min-w-max gap-4 sm:gap-6'">
 
                <!-- Columna: Sin Asignar (Staging Area) -->
                <div
-                  class="w-[85vw] sm:w-80 shrink-0 flex flex-col rounded-2xl bg-gradient-to-b from-slate-100 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/80 dark:border-slate-700 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-black/20 max-h-full transition-all duration-300 snap-center group/column"
+                  class="shrink-0 flex flex-col rounded-2xl bg-gradient-to-b from-slate-100 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/80 dark:border-slate-700 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-black/20 max-h-full transition-all duration-300 snap-center group/column"
+                  [ngClass]="isFullScreen() ? 'w-[340px] xl:w-[380px] flex-none' : 'w-[85vw] sm:w-80'"
                   [class.bg-orange-50]="isDraggingOver() === 'unassigned'"
                   [class.border-brand-orange]="isDraggingOver() === 'unassigned'"
                   [class.shadow-2xl]="isDraggingOver() === 'unassigned'" (dragover)="onDragOver($event, 'unassigned')"
@@ -179,7 +194,8 @@
 
                <!-- Columnas: Grupos - Diseño Profesional -->
                <div *ngFor="let grupo of grupos()"
-                  class="w-[85vw] sm:w-80 shrink-0 flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-black/30 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-300 snap-center group/column"
+                  class="shrink-0 flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-black/30 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-300 snap-center group/column"
+                  [ngClass]="isFullScreen() ? 'flex-1 min-w-[340px] max-w-[450px]' : 'w-[85vw] sm:w-80'"
                   [class.ring-2]="isDraggingOver() === grupo.id_grupo"
                   [class.ring-brand-orange]="isDraggingOver() === grupo.id_grupo"
                   [class.shadow-2xl]="isDraggingOver() === grupo.id_grupo"
@@ -488,19 +504,13 @@
          </p>
          <div class="flex items-center gap-1.5 mt-1 flex-wrap">
             <!-- Privilegios Tags con iconos -->
-            <ng-container *ngIf="getPrivilegioTags(p).length > 0; else noPrivilegio">
+            <ng-container *ngIf="getPrivilegioTags(p).length > 0">
                <span *ngFor="let tag of getPrivilegioTags(p)"
                   class="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap"
                   [ngClass]="tag.class" [title]="tag.label">
                   {{ tag.label }}
                </span>
             </ng-container>
-            <ng-template #noPrivilegio>
-               <span
-                  class="text-[9px] text-slate-400 font-medium bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100/50">
-                  Publicador
-               </span>
-            </ng-template>
          </div>
       </div>
 

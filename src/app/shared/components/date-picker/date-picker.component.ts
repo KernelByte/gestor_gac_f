@@ -21,14 +21,15 @@ type ViewMode = 'calendar' | 'months' | 'years';
       <div *ngIf="isOpen()" (click)="close()" class="fixed inset-0 z-40"></div>
       
       <!-- Trigger Button -->
+      <!-- Trigger Button -->
       <button
         type="button"
         [disabled]="disabled"
         (click)="toggle()"
-        class="w-full h-11 px-3 bg-white border rounded-xl text-sm font-medium shadow-sm transition-all outline-none flex items-center gap-3 group"
+        class="w-full h-11 px-3 bg-white dark:bg-slate-800 border rounded-xl text-sm font-medium shadow-sm transition-all outline-none flex items-center gap-3 group"
         [ngClass]="{
-          'border-slate-200 hover:border-slate-300 focus:border-brand-orange': !disabled,
-          'border-slate-100 bg-slate-50 cursor-not-allowed': disabled
+          'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:border-brand-orange dark:focus:border-brand-orange': !disabled,
+          'border-slate-100 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-800 cursor-not-allowed': disabled
         }"
       >
         <svg class="w-4 h-4 text-slate-400 group-hover:text-brand-orange transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -37,17 +38,17 @@ type ViewMode = 'calendar' | 'months' | 'years';
           <line x1="8" y1="2" x2="8" y2="6"></line>
           <line x1="3" y1="10" x2="21" y2="10"></line>
         </svg>
-        <span [ngClass]="selectedDate() ? 'text-slate-800' : 'text-slate-400'">
+        <span [ngClass]="selectedDate() ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'">
           {{ displayValue() }}
         </span>
       </button>
 
       <!-- Calendar Dropdown -->
-      <div *ngIf="isOpen()" class="absolute top-full left-0 mt-1.5 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden w-[280px]" style="animation: fadeIn 0.15s ease-out;">
+      <div *ngIf="isOpen()" class="absolute top-full left-0 mt-1.5 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 z-50 overflow-hidden w-[280px]" style="animation: fadeIn 0.15s ease-out;">
         
         <!-- Header -->
-        <div class="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
-          <button type="button" (click)="prev()" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors">
+        <div class="px-3 py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+          <button type="button" (click)="prev()" class="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
             </svg>
@@ -56,9 +57,9 @@ type ViewMode = 'calendar' | 'months' | 'years';
           <button 
             type="button" 
             (click)="toggleViewMode()"
-            class="px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1"
+            class="px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1"
           >
-            <span class="text-sm font-semibold text-slate-700">
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {{ viewMode() === 'years' ? 'Seleccionar año' : viewMode() === 'months' ? currentYear() : monthNames[currentMonth()] + ' ' + currentYear() }}
             </span>
             <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -66,7 +67,7 @@ type ViewMode = 'calendar' | 'months' | 'years';
             </svg>
           </button>
           
-          <button type="button" (click)="next()" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors">
+          <button type="button" (click)="next()" class="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
@@ -83,7 +84,7 @@ type ViewMode = 'calendar' | 'months' | 'years';
               class="h-9 rounded-lg text-xs font-medium transition-all"
               [ngClass]="{
                 'bg-brand-orange text-white': year === currentYear(),
-                'hover:bg-slate-100 text-slate-600': year !== currentYear()
+                'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300': year !== currentYear()
               }"
             >
               {{ year }}
@@ -101,7 +102,7 @@ type ViewMode = 'calendar' | 'months' | 'years';
               class="h-9 rounded-lg text-xs font-medium transition-all"
               [ngClass]="{
                 'bg-brand-orange text-white': i === currentMonth(),
-                'hover:bg-slate-100 text-slate-600': i !== currentMonth()
+                'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300': i !== currentMonth()
               }"
             >
               {{ month.slice(0, 3) }}
@@ -113,7 +114,7 @@ type ViewMode = 'calendar' | 'months' | 'years';
         <div *ngIf="viewMode() === 'calendar'">
           <!-- Days of Week -->
           <div class="grid grid-cols-7 px-2 pt-1">
-            <div *ngFor="let day of dayNames" class="text-center text-[10px] font-semibold text-slate-400 py-1">
+            <div *ngFor="let day of dayNames" class="text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500 py-1">
               {{ day }}
             </div>
           </div>
@@ -128,8 +129,8 @@ type ViewMode = 'calendar' | 'months' | 'years';
                 class="w-8 h-8 mx-auto rounded-lg text-xs font-medium transition-all"
                 [ngClass]="{
                   'bg-brand-orange text-white': isSelected(day),
-                  'hover:bg-slate-100 text-slate-700': !isSelected(day) && !isToday(day),
-                  'text-brand-orange font-bold': isToday(day) && !isSelected(day)
+                  'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200': !isSelected(day) && !isToday(day),
+                  'text-brand-orange font-bold hover:bg-slate-50 dark:hover:bg-slate-800': isToday(day) && !isSelected(day)
                 }"
               >
                 {{ day }}
@@ -140,7 +141,7 @@ type ViewMode = 'calendar' | 'months' | 'years';
         </div>
 
         <!-- Footer -->
-        <div class="px-3 py-2 border-t border-slate-100 flex items-center justify-between">
+        <div class="px-3 py-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
           <button type="button" (click)="clear()" class="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors">
             Borrar
           </button>

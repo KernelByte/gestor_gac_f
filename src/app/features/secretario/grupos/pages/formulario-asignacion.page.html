@@ -127,17 +127,13 @@
                         </div>
                         <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                            <!-- Privilegios Tags -->
-                           <ng-container *ngIf="getPrivilegioTags(p).length > 0; else noPrivilegioSimple">
+                           <ng-container *ngIf="getPrivilegioTags(p).length > 0">
                               <span *ngFor="let tag of getPrivilegioTags(p)"
                                  class="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap shadow-sm"
                                  [ngClass]="tag.class" [title]="tag.label">
                                  {{ tag.label }}
                               </span>
                            </ng-container>
-                           <ng-template #noPrivilegioSimple>
-                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
-                                 Publicador</p>
-                           </ng-template>
                         </div>
                      </div>
 
@@ -280,17 +276,13 @@
                         </div>
                         <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                            <!-- Privilegios Tags -->
-                           <ng-container *ngIf="getPrivilegioTags(p).length > 0; else noPrivilegioGroup">
+                           <ng-container *ngIf="getPrivilegioTags(p).length > 0">
                               <span *ngFor="let tag of getPrivilegioTags(p)"
                                  class="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap shadow-sm"
                                  [ngClass]="tag.class" [title]="tag.label">
                                  {{ tag.label }}
                               </span>
                            </ng-container>
-                           <ng-template #noPrivilegioGroup>
-                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
-                                 Publicador</p>
-                           </ng-template>
                         </div>
                      </div>
 

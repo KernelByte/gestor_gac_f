@@ -70,7 +70,7 @@ import { ThemeService } from '../core/services/theme.service';
             <div class="mb-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 mt-2 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
+                class="px-4 mb-3 mt-2 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-widest pl-2"
               >Principal</p>
               
               <!-- Inicio -->
@@ -78,7 +78,7 @@ import { ThemeService } from '../core/services/theme.service';
                 routerLink="/"
                                                                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
                 [routerLinkActiveOptions]="{ exact: true }"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -87,7 +87,7 @@ import { ThemeService } from '../core/services/theme.service';
               >
                 <!-- Hover Effect Background handled by CSS or utility if simple, but here handled by standard hover:bg -->
                 
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" />
                   </svg>
@@ -109,7 +109,7 @@ import { ThemeService } from '../core/services/theme.service';
                 }"
                 title="Roles"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                   </svg>
@@ -129,7 +129,7 @@ import { ThemeService } from '../core/services/theme.service';
                 }"
                 title="Usuarios"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -147,7 +147,7 @@ import { ThemeService } from '../core/services/theme.service';
                 }"
                 title="Reuniones"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -160,7 +160,7 @@ import { ThemeService } from '../core/services/theme.service';
             <div *ngIf="hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador')">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
+                class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-widest pl-2"
               >Módulos</p>
               
               <!-- Publicadores -->
@@ -176,7 +176,7 @@ import { ThemeService } from '../core/services/theme.service';
                 }"
                 title="Publicadores"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
@@ -197,7 +197,7 @@ import { ThemeService } from '../core/services/theme.service';
                 }"
                 title="Informes"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -218,7 +218,7 @@ import { ThemeService } from '../core/services/theme.service';
                 }"
                 title="Territorios"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
@@ -239,7 +239,7 @@ import { ThemeService } from '../core/services/theme.service';
                 }"
                 title="Exhibidores"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
@@ -254,7 +254,7 @@ import { ThemeService } from '../core/services/theme.service';
             <div *ngIf="hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Administrador')" class="mt-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 uppercase tracking-widest pl-2"
+                class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-widest pl-2"
               >Extras</p>
               
               <!-- Configuracion Normal (NO ADMIN) -->
@@ -269,7 +269,7 @@ import { ThemeService } from '../core/services/theme.service';
                 }"
                 title="Configuración"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -290,7 +290,7 @@ import { ThemeService } from '../core/services/theme.service';
                 }"
                 title="Configuración del Sistema"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-105 group-hover:bg-slate-100/80">
+                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
                   <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
