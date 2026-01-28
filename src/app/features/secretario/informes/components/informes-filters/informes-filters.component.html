@@ -1,5 +1,5 @@
 <div
-   class="shrink-0 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 bg-white p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 relative z-20">
+   class="shrink-0 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800 relative z-20">
 
    <!-- Backdrop para cerrar dropdowns al hacer click fuera -->
    <div *ngIf="activeDropdown" (click)="closeDropdown.emit()" class="fixed inset-0 z-10 cursor-default"></div>
@@ -10,7 +10,7 @@
       <div class="relative z-20 hidden sm:block" [class.pointer-events-none]="isRestrictedUser"
          [class.opacity-50]="isRestrictedUser">
          <button (click)="!isRestrictedUser && toggleDropdown.emit('mes')"
-            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[140px] justify-between"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[140px] justify-between"
             [class.cursor-not-allowed]="isRestrictedUser">
             <span>{{ getMesLabel(selectedMes) }}</span>
             <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
@@ -20,11 +20,11 @@
          </button>
          <!-- Dropdown Menu -->
          <div *ngIf="activeDropdown === 'mes'"
-            class="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-fadeInOriginTop">
+            class="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-fadeInOriginTop">
             <div class="max-h-64 overflow-y-auto simple-scrollbar p-1.5">
                <button *ngFor="let m of meses" (click)="selectMes.emit(m.value)"
                   class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-between group"
-                  [ngClass]="selectedMes === m.value ? 'bg-brand-purple/10 text-brand-purple' : 'text-slate-600 hover:bg-slate-50'">
+                  [ngClass]="selectedMes === m.value ? 'bg-brand-purple/10 text-brand-purple' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'">
                   {{ m.label }}
                   <svg *ngIf="selectedMes === m.value" class="w-4 h-4 text-brand-purple" fill="none" viewBox="0 0 24 24"
                      stroke="currentColor">
@@ -39,7 +39,7 @@
       <div class="relative z-20 hidden sm:block" [class.pointer-events-none]="isRestrictedUser"
          [class.opacity-50]="isRestrictedUser">
          <button (click)="!isRestrictedUser && toggleDropdown.emit('ano')"
-            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[100px] justify-between"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[100px] justify-between"
             [class.cursor-not-allowed]="isRestrictedUser">
             <span>{{ selectedAno }}</span>
             <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
@@ -49,11 +49,11 @@
          </button>
          <!-- Dropdown Menu -->
          <div *ngIf="activeDropdown === 'ano'"
-            class="absolute top-full left-0 mt-2 w-32 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-fadeInOriginTop">
+            class="absolute top-full left-0 mt-2 w-32 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-fadeInOriginTop">
             <div class="max-h-64 overflow-y-auto simple-scrollbar p-1.5">
                <button *ngFor="let a of anos" (click)="selectAno.emit(a)"
                   class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-between"
-                  [ngClass]="selectedAno === a ? 'bg-brand-purple/10 text-brand-purple' : 'text-slate-600 hover:bg-slate-50'">
+                  [ngClass]="selectedAno === a ? 'bg-brand-purple/10 text-brand-purple' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'">
                   {{ a }}
                   <svg *ngIf="selectedAno === a" class="w-4 h-4 text-brand-purple" fill="none" viewBox="0 0 24 24"
                      stroke="currentColor">
@@ -76,7 +76,7 @@
       <!-- Selector GRUPO (Condicional - oculto para usuarios restringidos si ya tiene grupo asignado) -->
       <div *ngIf="vistaGrupo && !isRestrictedUser" class="relative z-20">
          <button (click)="toggleDropdown.emit('grupo')"
-            class="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 text-xs sm:text-sm font-bold text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[120px] sm:min-w-[180px] justify-between">
+            class="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[120px] sm:min-w-[180px] justify-between">
             <span class="truncate max-w-[140px]">{{ getGrupoLabel(selectedGrupo) }}</span>
             <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
                [class.rotate-180]="activeDropdown === 'grupo'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -85,16 +85,16 @@
          </button>
          <!-- Dropdown Menu -->
          <div *ngIf="activeDropdown === 'grupo'"
-            class="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-fadeInOriginTop">
+            class="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-fadeInOriginTop">
             <div class="max-h-64 overflow-y-auto simple-scrollbar p-1.5">
                <button (click)="selectGrupo.emit(null)"
                   class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors mb-1"
-                  [ngClass]="selectedGrupo === null ? 'bg-brand-purple/10 text-brand-purple' : 'text-slate-600 hover:bg-slate-50'">
+                  [ngClass]="selectedGrupo === null ? 'bg-brand-purple/10 text-brand-purple' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'">
                   Todos los grupos
                </button>
                <button *ngFor="let g of grupos" (click)="selectGrupo.emit(g.id_grupo)"
                   class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-between"
-                  [ngClass]="selectedGrupo === g.id_grupo ? 'bg-brand-purple/10 text-brand-purple' : 'text-slate-600 hover:bg-slate-50'">
+                  [ngClass]="selectedGrupo === g.id_grupo ? 'bg-brand-purple/10 text-brand-purple' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'">
                   <span>{{ g.nombre_grupo }}</span>
                   <svg *ngIf="selectedGrupo === g.id_grupo" class="w-4 h-4 text-brand-purple" fill="none"
                      viewBox="0 0 24 24" stroke="currentColor">
@@ -112,7 +112,7 @@
       <div class="relative group flex-1 sm:flex-none">
          <input type="text" [ngModel]="searchQuery" (ngModelChange)="onSearchQueryChange($event)"
             placeholder="Buscar..."
-            class="pl-9 pr-3 py-2 sm:py-2.5 rounded-xl bg-slate-50 border border-transparent hover:bg-white hover:border-slate-200 focus:bg-white focus:border-brand-purple/30 text-sm w-full sm:w-56 lg:w-64 focus:ring-4 focus:ring-brand-purple/5 transition-all outline-none">
+            class="pl-9 pr-3 py-2 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-transparent hover:bg-white dark:hover:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-purple/30 text-sm w-full sm:w-56 lg:w-64 focus:ring-4 focus:ring-brand-purple/5 transition-all outline-none dark:text-white dark:placeholder-slate-500">
          <svg
             class="w-4 h-4 text-slate-400 group-hover:text-brand-purple absolute left-3 top-1/2 -translate-y-1/2 transition-colors"
             fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,8 +124,8 @@
       <label
          class="group flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl cursor-pointer select-none transition-all duration-300 ring-2"
          [ngClass]="soloSinInforme 
-             ? 'bg-brand-purple/10 ring-brand-purple/30 shadow-lg shadow-purple-500/10' 
-             : 'bg-slate-50 hover:bg-slate-100 ring-transparent hover:ring-slate-200'">
+         ? 'bg-brand-purple/10 ring-brand-purple/30 shadow-lg shadow-purple-500/10' 
+         : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 ring-transparent hover:ring-slate-200 dark:hover:ring-slate-700'">
          <div class="relative">
             <input type="checkbox" [ngModel]="soloSinInforme" (ngModelChange)="onSoloSinInformeChange($event)"
                class="peer sr-only">
@@ -149,7 +149,7 @@
                   d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span class="text-xs sm:text-sm font-bold transition-colors duration-300"
-               [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-600'">Sin informe</span>
+               [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-600 dark:text-slate-300'">Sin informe</span>
          </div>
       </label>
    </div> <!-- Cierre Fila 2 -->

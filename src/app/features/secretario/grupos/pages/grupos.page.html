@@ -10,25 +10,25 @@
             <div></div>
 
             <div class="flex gap-3">
-               <button (click)="goToDynamicAssignment()"
-                  class="inline-flex items-center gap-2 px-5 h-11 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl font-display font-bold text-sm shadow-sm transition-all active:scale-95">
-                  <svg class="w-5 h-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2">
-                     <rect x="3" y="3" width="7" height="7"></rect>
-                     <rect x="14" y="3" width="7" height="7"></rect>
-                     <rect x="14" y="14" width="7" height="7"></rect>
-                     <rect x="3" y="14" width="7" height="7"></rect>
-                  </svg>
-                  Asignación Dinámica
-               </button>
+              <button (click)="goToDynamicAssignment()"
+                 class="inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-display font-bold text-sm shadow-sm transition-all active:scale-95">
+                 <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                 </svg>
+                 Asignación Dinámica
+              </button>
                <div class="relative">
                   <!-- Invisible backdrop for clicking outside -->
                   <div *ngIf="showExportMenu()" class="fixed inset-0 z-40 bg-transparent" (click)="closeExportMenu()">
                   </div>
 
                   <button (click)="toggleExportMenu()" [disabled]="exporting()"
-                     class="relative z-50 inline-flex items-center gap-2 px-5 h-11 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl font-display font-bold text-sm shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-wait">
-                     <svg *ngIf="!exporting()" class="w-5 h-5 text-slate-500" viewBox="0 0 24 24" fill="none"
+                     class="relative z-50 inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-display font-bold text-sm shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-wait">
+                     <svg *ngIf="!exporting()" class="w-5 h-5 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -52,17 +52,17 @@
 
                   <!-- Modern Dropdown Menu -->
                   <div *ngIf="showExportMenu()"
-                     class="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl shadow-slate-200/50 ring-1 ring-black/5 z-50 transform origin-top-right transition-all animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
-                     <div class="px-4 py-3 bg-slate-50/50 border-b border-slate-100">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Opciones de
+                     class="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 ring-1 ring-black/5 dark:ring-white/10 z-50 transform origin-top-right transition-all animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
+                     <div class="px-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Opciones de
                            Exportación
                         </p>
                      </div>
                      <div class="p-1.5 space-y-1">
                         <button (click)="confirmExport('all')"
-                           class="w-full flex items-start gap-3 p-3 text-left rounded-lg hover:bg-slate-50 transition-colors group">
+                           class="w-full flex items-start gap-3 p-3 text-left rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
                            <div
-                              class="w-8 h-8 rounded-lg bg-orange-50 text-brand-orange flex items-center justify-center shrink-0 group-hover:bg-white group-hover:shadow-sm group-hover:ring-1 group-hover:ring-orange-100 transition-all">
+                              class="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-brand-orange flex items-center justify-center shrink-0 group-hover:bg-white dark:group-hover:bg-slate-800 group-hover:shadow-sm group-hover:ring-1 group-hover:ring-orange-100 dark:group-hover:ring-orange-900 transition-all">
                               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2">
                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -72,7 +72,7 @@
                               </svg>
                            </div>
                            <div>
-                              <p class="text-sm font-bold text-slate-700">Todos los publicadores</p>
+                              <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Todos los publicadores</p>
                               <p class="text-[11px] text-slate-400 font-medium leading-snug">Incluye activos, inactivos
                                  y
                                  otros.</p>
@@ -80,9 +80,9 @@
                         </button>
 
                         <button (click)="confirmExport('active')"
-                           class="w-full flex items-start gap-3 p-3 text-left rounded-lg hover:bg-slate-50 transition-colors group">
+                           class="w-full flex items-start gap-3 p-3 text-left rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group">
                            <div
-                              class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-white group-hover:shadow-sm group-hover:ring-1 group-hover:ring-emerald-100 transition-all">
+                              class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:bg-white dark:group-hover:bg-slate-800 group-hover:shadow-sm group-hover:ring-1 group-hover:ring-emerald-100 dark:group-hover:ring-emerald-900 transition-all">
                               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2">
                                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -90,7 +90,7 @@
                               </svg>
                            </div>
                            <div>
-                              <p class="text-sm font-bold text-slate-700">Solo Activos</p>
+                              <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Solo Activos</p>
                               <p class="text-[11px] text-slate-400 font-medium leading-snug">Únicamente con estado
                                  "Activo".</p>
                            </div>
@@ -113,51 +113,51 @@
          <div class="shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Total Grupos -->
             <div
-               class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all">
+               class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all">
                <div
-                  class="absolute right-0 top-0 w-24 h-24 bg-orange-50/50 rounded-full -mr-8 -mt-8 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
+                  class="absolute right-0 top-0 w-24 h-24 bg-orange-50/50 dark:bg-orange-900/10 rounded-full -mr-8 -mt-8 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
                </div>
                <div
-                  class="w-12 h-12 rounded-xl bg-orange-50 text-brand-orange flex items-center justify-center shrink-0 relative z-10 ring-1 ring-orange-100">
+                  class="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-brand-orange flex items-center justify-center shrink-0 relative z-10 ring-1 ring-orange-100 dark:ring-orange-900/30">
                   <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round"
                         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                </div>
                <div class="relative z-10">
-                  <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-0.5">Total Grupos</p>
-                  <h3 class="text-2xl font-display font-black text-slate-800 tracking-tight">{{ grupos().length }}</h3>
+                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Total Grupos</p>
+                  <h3 class="text-2xl font-display font-black text-slate-800 dark:text-white tracking-tight">{{ grupos().length }}</h3>
                </div>
             </div>
 
             <!-- Publicadores Asignados -->
             <div
-               class="hidden md:flex bg-white rounded-2xl p-5 shadow-sm border border-slate-100 items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all">
+               class="hidden md:flex bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all">
                <div
-                  class="absolute right-0 top-0 w-24 h-24 bg-emerald-50/50 rounded-full -mr-8 -mt-8 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
+                  class="absolute right-0 top-0 w-24 h-24 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-full -mr-8 -mt-8 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
                </div>
                <div
-                  class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 relative z-10 ring-1 ring-emerald-100">
+                  class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 relative z-10 ring-1 ring-emerald-100 dark:ring-emerald-900/30">
                   <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round"
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                </div>
                <div class="relative z-10">
-                  <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-0.5">Asignados</p>
-                  <h3 class="text-2xl font-display font-black text-slate-800 tracking-tight">{{ totalAsignados() }}</h3>
+                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Asignados</p>
+                  <h3 class="text-2xl font-display font-black text-slate-800 dark:text-white tracking-tight">{{ totalAsignados() }}</h3>
                </div>
             </div>
 
             <!-- Sin Asignar -->
             <div
-               class="hidden md:flex bg-white rounded-2xl p-5 shadow-sm border border-slate-100 items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all">
+               class="hidden md:flex bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all">
                <div
                   class="absolute right-0 top-0 w-24 h-24 rounded-full -mr-8 -mt-8 blur-2xl transition-opacity opacity-50 group-hover:opacity-100"
-                  [ngClass]="totalSinAsignar() > 0 ? 'bg-red-50/50' : 'bg-slate-100/50'"></div>
+                  [ngClass]="totalSinAsignar() > 0 ? 'bg-red-50/50 dark:bg-red-900/10' : 'bg-slate-100/50 dark:bg-slate-700/10'"></div>
 
                <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 relative z-10 ring-1"
-                  [ngClass]="totalSinAsignar() > 0 ? 'bg-red-50 text-red-500 ring-red-100' : 'bg-emerald-50 text-emerald-500 ring-emerald-100'">
+                  [ngClass]="totalSinAsignar() > 0 ? 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 ring-red-100 dark:ring-red-900/30' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-900/30'">
                   <svg *ngIf="totalSinAsignar() > 0" class="w-6 h-6" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round"
@@ -171,13 +171,13 @@
                </div>
 
                <div class="relative z-10">
-                  <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-0.5">Sin Asignar</p>
+                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Sin Asignar</p>
                   <h3 class="text-2xl font-display font-black tracking-tight"
-                     [ngClass]="totalSinAsignar() > 0 ? 'text-red-900' : 'text-slate-700'">
+                     [ngClass]="totalSinAsignar() > 0 ? 'text-red-900 dark:text-red-400' : 'text-slate-700 dark:text-slate-200'">
                      {{ totalSinAsignar() }}
                   </h3>
                   <p *ngIf="totalSinAsignar() === 0"
-                     class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                     class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full inline-block mt-0.5">
                      ¡Todo en orden!
                   </p>
                </div>
@@ -186,7 +186,7 @@
 
          <!-- Main Table Area (flex-1) -->
          <div *ngIf="filteredGrupos().length > 0; else emptyState"
-            class="flex-1 min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col transition-all duration-300">
+            class="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-all duration-300">
 
             <!-- Scrollable Table Container -->
             <div class="flex-1 overflow-y-auto overflow-x-auto simple-scrollbar">
@@ -194,12 +194,12 @@
                <!-- MOBILE VIEW: Card List -->
                <div class="md:hidden p-4 space-y-4 pb-20">
                   <div *ngFor="let grupo of pagedList(); let i = index"
-                     class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm relative group">
+                     class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm relative group">
                      <!-- Header -->
                      <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center gap-3">
                            <div
-                              class="w-12 h-12 rounded-2xl bg-orange-50 text-brand-orange flex items-center justify-center shrink-0 shadow-sm ring-1 ring-orange-100">
+                              class="w-12 h-12 rounded-2xl bg-orange-50 dark:bg-orange-900/20 text-brand-orange flex items-center justify-center shrink-0 shadow-sm ring-1 ring-orange-100 dark:ring-orange-900/30">
                               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -226,11 +226,11 @@
                      </div>
 
                      <!-- Info -->
-                     <div class="space-y-3 mb-6 bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+                     <div class="space-y-3 mb-6 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
                         <!-- Capitan -->
                         <div class="flex items-center gap-3">
                            <div
-                              class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-orange-600 ring-1 ring-slate-200 shrink-0 shadow-sm">
+                              class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center text-orange-600 dark:text-orange-400 ring-1 ring-slate-200 dark:ring-slate-600 shrink-0 shadow-sm">
                               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2">
                                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -238,16 +238,16 @@
                               </svg>
                            </div>
                            <div class="flex-1 min-w-0">
-                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Capitán</p>
-                              <p class="text-sm font-bold text-slate-700 truncate">{{ grupo.capitan_grupo || 'Sin
+                              <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Capitán</p>
+                              <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{{ grupo.capitan_grupo || 'Sin
                                  asignar' }}</p>
                            </div>
                         </div>
                         <!-- Auxiliar (Only if exists) -->
                         <div *ngIf="grupo.auxiliar_grupo"
-                           class="flex items-center gap-3 pt-2 border-t border-slate-100">
+                           class="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-700">
                            <div
-                              class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-500 ring-1 ring-slate-200 shrink-0 shadow-sm">
+                              class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-600 shrink-0 shadow-sm">
                               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2">
                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -255,8 +255,8 @@
                               </svg>
                            </div>
                            <div class="flex-1 min-w-0">
-                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Auxiliar</p>
-                              <p class="text-sm font-medium text-slate-600 truncate">{{ grupo.auxiliar_grupo }}</p>
+                              <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Auxiliar</p>
+                              <p class="text-sm font-medium text-slate-600 dark:text-slate-300 truncate">{{ grupo.auxiliar_grupo }}</p>
                            </div>
                         </div>
                      </div>
@@ -274,7 +274,7 @@
                            Asignar Miembros
                         </button>
                         <button (click)="editGrupo(grupo)"
-                           class="flex items-center justify-center gap-2 h-10 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-xs hover:bg-slate-50 active:scale-95 transition-all">
+                           class="flex items-center justify-center gap-2 h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all">
                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -282,7 +282,7 @@
                            Editar
                         </button>
                         <button (click)="confirmDelete(grupo)"
-                           class="flex items-center justify-center gap-2 h-10 bg-red-50 text-red-500 rounded-lg font-bold text-xs hover:bg-red-100 active:scale-95 transition-all">
+                           class="flex items-center justify-center gap-2 h-10 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 rounded-lg font-bold text-xs hover:bg-red-100 dark:hover:bg-red-900/20 active:scale-95 transition-all">
                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <polyline points="3 6 5 6 21 6"></polyline>
                               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
@@ -297,29 +297,29 @@
                <!-- DESKTOP VIEW: Table -->
                <table class="hidden md:table w-full min-w-[800px]">
                   <thead class="sticky top-0 z-10">
-                     <tr class="border-b border-slate-200 bg-slate-50/95 backdrop-blur-md">
-                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre
+                     <tr class="border-b border-slate-200 dark:border-slate-700 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md">
+                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nombre
                            del Grupo</th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                            Capitán</th>
                         <th
-                           class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">
+                           class="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider hidden lg:table-cell">
                            Auxiliar</th>
-                        <th class="px-6 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <th class="px-6 py-4 text-center text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                            Miembros</th>
-                        <th class="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <th class="px-6 py-4 text-right text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                            Acciones</th>
                      </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100">
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                      <tr *ngFor="let grupo of pagedList(); let i = index"
-                        class="group hover:bg-slate-50/80 transition-colors">
+                        class="group hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
 
                         <!-- Nombre -->
                         <td class="px-6 py-4">
                            <div class="flex items-center gap-3">
                               <div
-                                 class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center shrink-0 shadow-sm text-brand-orange ring-1 ring-orange-200/50">
+                                 class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20 flex items-center justify-center shrink-0 shadow-sm text-brand-orange ring-1 ring-orange-200/50 dark:ring-orange-700/30">
                                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -329,8 +329,8 @@
                                  </svg>
                               </div>
                               <div>
-                                 <p class="font-bold text-slate-800 text-sm">{{ grupo.nombre_grupo }}</p>
-                                 <p *ngIf="isAdminOrGestor()" class="text-[11px] text-slate-400 font-medium">ID: #{{
+                                 <p class="font-bold text-slate-800 dark:text-slate-200 text-sm">{{ grupo.nombre_grupo }}</p>
+                                 <p *ngIf="isAdminOrGestor()" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">ID: #{{
                                     grupo.id_grupo }}</p>
                               </div>
                            </div>
@@ -340,18 +340,18 @@
                         <td class="px-6 py-4">
                            <div class="flex items-center gap-2" *ngIf="grupo.capitan_grupo; else noCapitan">
                               <div
-                                 class="w-7 h-7 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center text-orange-600 ring-1 ring-orange-200/50">
+                                 class="w-7 h-7 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20 flex items-center justify-center text-orange-600 dark:text-orange-400 ring-1 ring-orange-200/50 dark:ring-orange-700/30">
                                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.5">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="12" cy="7" r="4"></circle>
                                  </svg>
                               </div>
-                              <span class="text-sm font-medium text-slate-700">{{ grupo.capitan_grupo }}</span>
+                              <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ grupo.capitan_grupo }}</span>
                            </div>
                            <ng-template #noCapitan>
                               <span
-                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 text-[11px] font-bold border border-dashed border-slate-200">
+                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 text-[11px] font-bold border border-dashed border-slate-200 dark:border-slate-700">
                                  Sin Asignar
                               </span>
                            </ng-template>
@@ -361,7 +361,7 @@
                         <td class="px-6 py-4 hidden lg:table-cell">
                            <div class="flex items-center gap-2" *ngIf="grupo.auxiliar_grupo; else noAuxiliar">
                               <div
-                                 class="w-7 h-7 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-200/50">
+                                 class="w-7 h-7 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 ring-1 ring-slate-200/50 dark:ring-slate-600/50">
                                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -370,11 +370,11 @@
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                  </svg>
                               </div>
-                              <span class="text-sm font-medium text-slate-600">{{ grupo.auxiliar_grupo }}</span>
+                              <span class="text-sm font-medium text-slate-600 dark:text-slate-300">{{ grupo.auxiliar_grupo }}</span>
                            </div>
                            <ng-template #noAuxiliar>
                               <span
-                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 text-[11px] font-bold border border-dashed border-slate-200">
+                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 text-[11px] font-bold border border-dashed border-slate-200 dark:border-slate-700">
                                  Sin Asignar
                               </span>
                            </ng-template>
@@ -385,8 +385,8 @@
                            <span
                               class="inline-flex items-center justify-center min-w-[80px] gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold"
                               [ngClass]="{
-                                     'bg-cyan-50 border border-cyan-200 text-cyan-700': (grupo.cantidad_publicadores || 0) > 0,
-                                     'bg-slate-50 border border-slate-200 text-slate-400': (grupo.cantidad_publicadores || 0) === 0
+                                     'bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-400': (grupo.cantidad_publicadores || 0) > 0,
+                                     'bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500': (grupo.cantidad_publicadores || 0) === 0
                                   }">
                               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2">
@@ -401,7 +401,7 @@
                         <td class="px-6 py-4 text-right">
                            <div class="flex items-center justify-end gap-1">
                               <button (click)="goToAssignment(grupo)"
-                                 class="p-2 rounded-lg bg-orange-50 text-brand-orange hover:bg-brand-orange hover:text-white transition-all shadow-sm"
+                                 class="p-2 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-brand-orange hover:bg-brand-orange hover:text-white transition-all shadow-sm"
                                  title="Asignar Miembros">
                                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.5">
@@ -412,7 +412,7 @@
                                  </svg>
                               </button>
                               <button (click)="editGrupo(grupo)"
-                                 class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-600 transition-all"
+                                 class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-600 dark:hover:bg-slate-700 transition-all"
                                  title="Editar">
                                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
@@ -440,21 +440,21 @@
 
             <!-- Footer with Pagination -->
             <div
-               class="shrink-0 px-6 py-4 border-t border-slate-100 bg-slate-50/80 backdrop-blur-sm flex items-center justify-between">
-               <span class="text-xs font-medium text-slate-500">
+               class="shrink-0 px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/90 backdrop-blur-sm flex items-center justify-between">
+               <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
                   Mostrando {{ (currentPage() - 1) * pageSize + 1 }} - {{ Math.min(currentPage() * pageSize,
                   filteredGrupos().length) }}
-                  de <span class="font-bold text-slate-800">{{ filteredGrupos().length }}</span> grupos
+                  de <span class="font-bold text-slate-800 dark:text-white">{{ filteredGrupos().length }}</span> grupos
                </span>
                <div class="flex gap-2">
                   <button (click)="prevPage()" [disabled]="currentPage() === 1"
-                     class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-50 transition-all font-bold">
+                     class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-50 transition-all font-bold">
                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                      </svg>
                   </button>
                   <button (click)="nextPage()" [disabled]="currentPage() * pageSize >= filteredGrupos().length"
-                     class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-50 transition-all font-bold">
+                     class="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange hover:border-brand-orange/30 disabled:opacity-50 transition-all font-bold">
                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                      </svg>
@@ -467,9 +467,9 @@
          <ng-template #emptyState>
             <div class="flex-1 min-h-0 flex items-center justify-center">
                <div
-                  class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-12 flex flex-col items-center justify-center text-center max-w-md">
-                  <div class="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
-                     <svg class="w-8 h-8 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-800/30 p-12 flex flex-col items-center justify-center text-center max-w-md">
+                  <div class="w-16 h-16 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center mb-4">
+                     <svg class="w-8 h-8 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                         <circle cx="9" cy="7" r="4"></circle>
@@ -477,8 +477,8 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                      </svg>
                   </div>
-                  <h3 class="text-lg font-bold text-slate-900 mb-1">No hay grupos creados</h3>
-                  <p class="text-slate-500 text-sm max-w-sm mb-6">Comienza creando tu primer grupo de predicación para
+                  <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">No hay grupos creados</h3>
+                  <p class="text-slate-500 dark:text-slate-400 text-sm max-w-sm mb-6">Comienza creando tu primer grupo de predicación para
                      asignar publicadores.</p>
                   <button (click)="openCreatePanel()"
                      class="inline-flex items-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-all active:scale-95">
@@ -504,14 +504,14 @@
 
       <!-- Inner container with rounded corners and shadow -->
       <div
-         class="h-full flex flex-col bg-white rounded-none md:rounded-l-3xl shadow-2xl shadow-slate-900/10 border-l border-slate-100 overflow-hidden">
+         class="h-full flex flex-col bg-white dark:bg-slate-900 rounded-none md:rounded-l-3xl shadow-2xl shadow-slate-900/10 dark:shadow-black/50 border-l border-slate-100 dark:border-slate-800 overflow-hidden">
 
          <!-- Premium Gradient Header -->
          <div class="shrink-0 relative overflow-hidden">
             <!-- Background gradient -->
-            <div class="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50/30"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50/30 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900"></div>
             <div
-               class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-100/50 to-transparent rounded-full -mr-16 -mt-16 blur-2xl">
+               class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-100/50 to-transparent dark:from-orange-500/10 rounded-full -mr-16 -mt-16 blur-2xl">
             </div>
 
             <div class="relative px-8 pt-8 pb-6">
@@ -519,7 +519,7 @@
                   <div class="flex gap-4">
                      <!-- Icon with gradient background -->
                      <div
-                        class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-orange to-orange-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/30 ring-4 ring-white">
+                        class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-orange to-orange-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/30 ring-4 ring-white dark:ring-slate-800">
                         <svg *ngIf="!editingGrupo()" class="w-7 h-7" viewBox="0 0 24 24" fill="none"
                            stroke="currentColor" stroke-width="2.5">
                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
@@ -533,19 +533,19 @@
                      <div>
                         <div class="flex items-center gap-2 mb-1.5">
                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest"
-                              [ngClass]="editingGrupo() ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'">
+                              [ngClass]="editingGrupo() ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'">
                               {{ editingGrupo() ? 'Modo Edición' : 'Nuevo Registro' }}
                            </span>
                         </div>
-                        <h2 class="text-2xl font-display font-black text-slate-900 tracking-tight">
+                        <h2 class="text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight">
                            {{ editingGrupo() ? 'Editar Grupo' : 'Nuevo Grupo' }}
                         </h2>
-                        <p class="text-sm text-slate-500 mt-0.5">{{ editingGrupo() ? 'Modifica los datos del grupo' :
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ editingGrupo() ? 'Modifica los datos del grupo' :
                            'Completa los datos del grupo' }}</p>
                      </div>
                   </div>
                   <button (click)="closePanel()"
-                     class="p-2.5 -mr-2 text-slate-400 hover:text-slate-600 transition-all rounded-xl hover:bg-white/80 hover:shadow-sm group">
+                     class="p-2.5 -mr-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-all rounded-xl hover:bg-white/80 dark:hover:bg-slate-800/80 hover:shadow-sm group">
                      <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -556,21 +556,21 @@
          </div>
 
          <!-- Form Body -->
-         <div class="flex-1 overflow-y-auto simple-scrollbar bg-white">
+         <div class="flex-1 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900">
             <div class="p-8">
                <form [formGroup]="grupoForm" (ngSubmit)="save()" class="space-y-6">
 
                   <!-- Nombre del Grupo - Featured Input -->
                   <div class="space-y-2">
                      <label
-                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                         Nombre del Grupo
                         <span class="text-red-400 text-[10px]">*</span>
                      </label>
                      <div class="relative group">
                         <input formControlName="nombre_grupo" type="text" placeholder="Ej: Grupo Centro"
-                           class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                           class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500">
                         <div
                            class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity">
                            <svg class="w-5 h-5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -592,22 +592,22 @@
 
                   <!-- Divider -->
                   <div class="flex items-center gap-3 py-2">
-                     <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Liderazgo</span>
-                     <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                     <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                     <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Liderazgo</span>
+                     <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                   </div>
 
                   <!-- Capitán Input with Autocomplete -->
                   <div class="space-y-2">
                      <label
-                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
                         Capitán </label>
                      <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                            <div
-                              class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center ring-1 ring-orange-200/50">
-                              <svg class="w-4 h-4 text-orange-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20 flex items-center justify-center ring-1 ring-orange-200/50 dark:ring-orange-700/30">
+                              <svg class="w-4 h-4 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2">
                                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                  <circle cx="12" cy="7" r="4"></circle>
@@ -617,7 +617,7 @@
                         <input formControlName="capitan_grupo" type="text"
                            placeholder="Escribe para buscar publicador..." (input)="onCapitanInput($event)"
                            (focus)="capitanDropdownOpen.set(true)" (blur)="closeCapitanDropdown()" autocomplete="off"
-                           class="w-full h-10 pl-10 pr-10 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                           class="w-full h-10 pl-10 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
 
                         <!-- Dropdown indicator -->
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -629,13 +629,13 @@
 
                         <!-- Autocomplete Dropdown -->
                         <div *ngIf="capitanDropdownOpen() && filteredCapitanes().length > 0"
-                           class="absolute z-50 left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 overflow-hidden">
+                           class="absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden">
                            <div class="max-h-48 overflow-y-auto simple-scrollbar">
                               <button *ngFor="let pub of filteredCapitanes()" type="button"
                                  (mousedown)="selectCapitan(pub)"
-                                 class="w-full px-4 py-2.5 text-left text-sm transition-all flex items-center gap-3 hover:bg-slate-50 group">
+                                 class="w-full px-4 py-2.5 text-left text-sm transition-all flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 group">
                                  <div
-                                    class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center text-orange-600 ring-1 ring-orange-200/50 shrink-0">
+                                    class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20 flex items-center justify-center text-orange-600 dark:text-orange-400 ring-1 ring-orange-200/50 dark:ring-orange-700/30 shrink-0">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                        stroke-width="2">
                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -643,13 +643,13 @@
                                     </svg>
                                  </div>
                                  <div class="flex-1 min-w-0">
-                                    <p class="font-medium text-slate-700 group-hover:text-slate-900 truncate">{{
+                                    <p class="font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{
                                        getFullName(pub) }}</p>
                                  </div>
                               </button>
                            </div>
-                           <div class="px-4 py-2 bg-slate-50 border-t border-slate-100">
-                              <p class="text-[10px] text-slate-400 font-medium">{{ filteredCapitanes().length }}
+                           <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700">
+                              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{{ filteredCapitanes().length }}
                                  publicador(es) encontrado(s)</p>
                            </div>
                         </div>
@@ -659,15 +659,15 @@
                   <!-- Auxiliar Input with Autocomplete -->
                   <div class="space-y-2">
                      <label
-                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                         Auxiliar
                      </label>
                      <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                            <div
-                              class="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center ring-1 ring-slate-200/50">
-                              <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              class="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center ring-1 ring-slate-200/50 dark:ring-slate-600/50">
+                              <svg class="w-4 h-4 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2">
                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                  <circle cx="9" cy="7" r="4"></circle>
@@ -679,7 +679,7 @@
                         <input formControlName="auxiliar_grupo" type="text"
                            placeholder="Escribe para buscar publicador..." (input)="onAuxiliarInput($event)"
                            (focus)="auxiliarDropdownOpen.set(true)" (blur)="closeAuxiliarDropdown()" autocomplete="off"
-                           class="w-full h-10 pl-10 pr-10 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 placeholder:font-normal">
+                           class="w-full h-10 pl-10 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
 
                         <!-- Dropdown indicator -->
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -691,13 +691,13 @@
 
                         <!-- Autocomplete Dropdown -->
                         <div *ngIf="auxiliarDropdownOpen() && filteredAuxiliares().length > 0"
-                           class="absolute z-50 left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 overflow-hidden">
+                           class="absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden">
                            <div class="max-h-48 overflow-y-auto simple-scrollbar">
                               <button *ngFor="let pub of filteredAuxiliares()" type="button"
                                  (mousedown)="selectAuxiliar(pub)"
-                                 class="w-full px-4 py-2.5 text-left text-sm transition-all flex items-center gap-3 hover:bg-slate-50 group">
+                                 class="w-full px-4 py-2.5 text-left text-sm transition-all flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 group">
                                  <div
-                                    class="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center text-slate-500 ring-1 ring-slate-200/50 shrink-0">
+                                    class="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 ring-1 ring-slate-200/50 dark:ring-slate-600/50 shrink-0">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                        stroke-width="2">
                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -705,13 +705,13 @@
                                     </svg>
                                  </div>
                                  <div class="flex-1 min-w-0">
-                                    <p class="font-medium text-slate-700 group-hover:text-slate-900 truncate">{{
+                                    <p class="font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{
                                        getFullName(pub) }}</p>
                                  </div>
                               </button>
                            </div>
-                           <div class="px-4 py-2 bg-slate-50 border-t border-slate-100">
-                              <p class="text-[10px] text-slate-400 font-medium">{{ filteredAuxiliares().length }}
+                           <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700">
+                              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{{ filteredAuxiliares().length }}
                                  publicador(es) encontrado(s)</p>
                            </div>
                         </div>
@@ -723,14 +723,14 @@
          </div>
 
          <!-- Premium Footer -->
-         <div class="shrink-0 px-8 py-5 border-t border-slate-100 bg-white">
+         <div class="shrink-0 px-8 py-5 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
             <div class="flex items-center justify-between">
                <p class="text-xs text-slate-400 hidden sm:block">
                   <span class="text-red-400">*</span> Campo obligatorio
                </p>
                <div class="flex items-center gap-3 ml-auto">
                   <button (click)="closePanel()"
-                     class="px-5 h-11 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-200 active:scale-95">
+                     class="px-5 h-11 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200 font-bold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-200 active:scale-95">
                      Cancelar
                   </button>
                   <button (click)="save()" [disabled]="grupoForm.invalid || saving()"

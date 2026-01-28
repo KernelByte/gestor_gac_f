@@ -20,16 +20,16 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
           
           <!-- Title & Description -->
           <div class="px-8">
-            <h1 class="text-3xl font-display font-black text-slate-900 tracking-tight mb-2">{{ pageTitle() }}</h1>
-            <p class="text-slate-500 text-lg leading-relaxed max-w-3xl hidden md:block">{{ pageDescription() }}</p>
+            <h1 class="text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight mb-2">{{ pageTitle() }}</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-lg leading-relaxed max-w-3xl hidden md:block">{{ pageDescription() }}</p>
           </div>
 
           <!-- Modern Tab Navigation (Segmented Control) -->
-          <div class="bg-slate-100/80 p-1.5 rounded-2xl flex flex-wrap md:flex-nowrap gap-1 w-full md:w-fit">
+          <div class="bg-slate-100/80 dark:bg-slate-800/80 p-1.5 rounded-2xl flex flex-wrap md:flex-nowrap gap-1 w-full md:w-fit">
               <button 
                 (click)="currentTab.set('listado')" 
                 class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
-                [ngClass]="currentTab() === 'listado' ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'"
+                [ngClass]="currentTab() === 'listado' ? 'bg-white dark:bg-slate-700 text-brand-orange shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'"
               >
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 <span class="hidden md:inline">Listado</span>
@@ -38,7 +38,7 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
               <button 
                 (click)="currentTab.set('grupos')" 
                 class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
-                [ngClass]="currentTab() === 'grupos' ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'"
+                [ngClass]="currentTab() === 'grupos' ? 'bg-white dark:bg-slate-700 text-brand-orange shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'"
               >
                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                  <!-- Icono distinguido para Grupos -->
@@ -51,7 +51,7 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
               <button 
                 (click)="currentTab.set('contactos')" 
                 class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
-                [ngClass]="currentTab() === 'contactos' ? 'bg-white text-brand-orange shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'"
+                [ngClass]="currentTab() === 'contactos' ? 'bg-white dark:bg-slate-700 text-brand-orange shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'"
               >
                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                 <span class="hidden md:inline">Contactos</span>
@@ -117,3 +117,4 @@ export class PublicadoresMainPage implements OnInit {
     }
   });
 }
+

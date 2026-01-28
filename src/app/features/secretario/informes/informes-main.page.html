@@ -1,12 +1,12 @@
 <div class="flex flex-col gap-4 h-full overflow-hidden p-1">
    <!-- Tabs Navigation -->
    <div
-      class="shrink-0 flex items-center gap-1 sm:gap-2 bg-white rounded-2xl p-1.5 sm:p-2 shadow-sm border border-slate-200/60 overflow-x-auto">
+      class="shrink-0 flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 rounded-2xl p-1.5 sm:p-2 shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-x-auto">
       <button *ngFor="let tab of visibleTabs()" (click)="activeTab.set(tab.id)"
          class="px-3 py-2 sm:px-5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0"
          [ngClass]="activeTab() === tab.id 
         ? 'bg-brand-purple text-white shadow-lg shadow-purple-500/20' 
-        : 'text-slate-500 hover:bg-slate-50'">
+        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
          <span class="flex items-center gap-1.5 sm:gap-2">
             <span [innerHTML]="tab.icon"></span>
             <span class="hidden xs:inline">{{ tab.label }}</span>
@@ -54,16 +54,16 @@
       <!-- Tab 3: Resumen Sucursal (Placeholder) -->
       <ng-container *ngIf="activeTab() === 'sucursal'">
          <div
-            class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/60 h-full flex items-center justify-center">
+            class="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-sm border border-slate-200/60 dark:border-slate-800 h-full flex items-center justify-center">
             <div class="text-center">
-               <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+               <div class="w-20 h-20 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg class="w-10 h-10 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                </div>
-               <h3 class="text-xl font-bold text-slate-900">Resumen para Sucursal</h3>
-               <p class="text-slate-500 mt-2">Próximamente disponible</p>
+               <h3 class="text-xl font-bold text-slate-900 dark:text-white">Resumen para Sucursal</h3>
+               <p class="text-slate-500 dark:text-slate-400 mt-2">Próximamente disponible</p>
             </div>
          </div>
       </ng-container>
