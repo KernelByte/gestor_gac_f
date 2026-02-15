@@ -38,6 +38,10 @@ export class InformesFiltersComponent {
    @Output() searchQueryChange = new EventEmitter<string>();
    @Output() soloSinInformeChange = new EventEmitter<boolean>();
 
+   @Input() saving: boolean = false;
+   @Output() exportExcel = new EventEmitter<void>();
+   @Output() importExcel = new EventEmitter<Event>();
+
    getMesLabel(mesValue: string): string {
       return this.meses.find(m => m.value === mesValue)?.label || mesValue;
    }

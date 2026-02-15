@@ -41,9 +41,8 @@ export class ThemeService {
       if (storedTheme) {
          this.darkMode.set(storedTheme === 'dark');
       } else {
-         // Check OS preference
-         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-         this.darkMode.set(prefersDark);
+         // Default to Light Mode regardless of OS preference
+         this.darkMode.set(false);
       }
    }
 

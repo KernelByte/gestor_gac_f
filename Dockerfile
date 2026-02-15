@@ -17,8 +17,11 @@ FROM base AS builder
 COPY . .
 RUN npm run build -- --configuration production
 
-# Stage 4: Production (Nginx) - Optional for future use
-# FROM nginx:alpine AS prod
-# COPY --from=builder /app/dist/*/browser /usr/share/nginx/html
-# EXPOSE 80
-# CMD ["nginx", "-g", "daemon off;"]
+# Stage 4: Production (Nginx)
+FROM nginx:alpine AS prod
+# Copy custom Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy built Angular app from builder stage
+COPY --from=builder /app/dist/*/browser /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

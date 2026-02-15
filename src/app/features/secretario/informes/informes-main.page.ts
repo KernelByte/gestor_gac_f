@@ -66,8 +66,8 @@ export class InformesMainPage implements OnInit {
     if (!user) return true;
     const roles = user.roles ?? (user.rol ? [user.rol] : []);
     const rolesLower = roles.map(r => (r || '').toLowerCase());
-    // Si tiene Administrador, Coordinador o Secretario -> NO restringido
-    if (rolesLower.includes('administrador') || rolesLower.includes('coordinador') || rolesLower.includes('secretario')) {
+    // Si tiene Administrador o Secretario -> NO restringido
+    if (rolesLower.includes('administrador') || rolesLower.includes('secretario')) {
       return false;
     }
 
@@ -286,41 +286,50 @@ export class InformesMainPage implements OnInit {
     });
   }
 
-  async exportarExcel() {
+   async exportarExcel() {
     this.saving.set(true);
-    const periodo = `${this.selectedAno}-${this.getMesLabel(this.selectedMes)}`;
-    const congregacionId = this.authStore.user()?.id_congregacion;
+    try {
+      const periodo = `${this.selectedAno}-${this.getMesLabel(this.selectedMes)}`;
+      const congregacionId = this.authStore.user()?.id_congregacion || 1; // Fallback to 1 if missing
 
-    if (this.selectedGrupo) {
-      // Descargar por grupo
-      const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
-      const nombreGrupo = g ? g.nombre_grupo : 'Grupo';
-      this.informesService.exportTemplate(this.getPeriodoId(), this.selectedGrupo).subscribe({
-        next: (blob) => {
-          const filename = `Informe_${nombreGrupo}_${periodo}.xlsx`;
-          saveAs(blob, filename);
-          this.saving.set(false);
-        },
-        error: (err) => {
-          console.error('Error descargando plantilla', err);
-          alert('Error al descargar la plantilla desde el servidor.');
-          this.saving.set(false);
+      if (this.selectedGrupo) {
+        // Descargar por grupo
+        const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
+        const nombreGrupo = g ? g.nombre_grupo : 'Grupo';
+        this.informesService.exportTemplate(this.getPeriodoId(), this.selectedGrupo).subscribe({
+          next: (blob) => {
+            const filename = `Informe_${nombreGrupo}_${periodo}.xlsx`;
+            saveAs(blob, filename);
+            this.saving.set(false);
+          },
+          error: (err) => {
+            console.error('Error descargando plantilla', err);
+            this.showToast('Error', 'error', 'Error al descargar la plantilla desde el servidor.');
+            this.saving.set(false);
+          }
+        });
+      } else {
+        // Descargar toda la congregación
+        if (!congregacionId) {
+             throw new Error("No se pudo identificar la congregación del usuario.");
         }
-      });
-    } else {
-      // Descargar toda la congregación
-      this.informesService.exportTemplateCongregacion(this.getPeriodoId(), congregacionId!).subscribe({
-        next: (blob) => {
-          const filename = `Informe_Congregacion_${periodo}.xlsx`;
-          saveAs(blob, filename);
-          this.saving.set(false);
-        },
-        error: (err) => {
-          console.error('Error descargando plantilla', err);
-          alert('Error al descargar la plantilla desde el servidor.');
-          this.saving.set(false);
-        }
-      });
+        this.informesService.exportTemplateCongregacion(this.getPeriodoId(), congregacionId).subscribe({
+          next: (blob) => {
+            const filename = `Informe_Congregacion_${periodo}.xlsx`;
+            saveAs(blob, filename);
+            this.saving.set(false);
+          },
+          error: (err) => {
+            console.error('Error descargando plantilla', err);
+            this.showToast('Error', 'error', 'Error al descargar la plantilla desde el servidor.');
+            this.saving.set(false);
+          }
+        });
+      }
+    } catch (e: any) {
+      console.error("Error en exportarExcel:", e);
+      this.showToast('Error', 'error', e.message || 'Ocurrió un error inesperado al exportar.');
+      this.saving.set(false);
     }
   }
 

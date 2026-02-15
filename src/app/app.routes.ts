@@ -7,7 +7,7 @@ export const routes: Routes = [
   { path: 'auth/forgot-password', title: 'Recuperar Contraseña', loadComponent: () => import('./features/auth/forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage) },
   { path: 'auth/reset-password', title: 'Restablecer Contraseña', loadComponent: () => import('./features/auth/reset-password/reset-password.page').then(m => m.ResetPasswordPage) },
 
-  // Shell protegido: adentro va el dashboard y demás menús
+  // Shell protegido
   {
     path: '',
     canActivate: [authGuard],
@@ -38,8 +38,6 @@ export const routes: Routes = [
       {
         path: 'territorios',
         title: 'Territorios',
-        // canActivate: [roleGuard],
-        // data: { roles: [...] }, 
         loadComponent: () => import('./features/territorios/pages/territorios.page').then(m => m.TerritoriosPage),
       },
       {

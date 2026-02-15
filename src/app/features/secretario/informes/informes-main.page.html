@@ -27,11 +27,12 @@
             <app-informes-filters [activeDropdown]="activeDropdown()" [isRestrictedUser]="isRestrictedUser()"
                [selectedMes]="selectedMes" [selectedAno]="selectedAno" [selectedGrupo]="selectedGrupo" [meses]="meses"
                [anos]="anos" [grupos]="grupos()" [vistaGrupo]="vistaGrupo()" [searchQuery]="searchQuery"
-               [soloSinInforme]="soloSinInforme" (toggleDropdown)="toggleDropdown($event)"
+               [soloSinInforme]="soloSinInforme" [saving]="saving()" (toggleDropdown)="toggleDropdown($event)"
                (closeDropdown)="closeDropdown()" (selectMes)="selectMes($event)" (selectAno)="selectAno($event)"
                (selectGrupo)="selectGrupo($event)" (setVista)="setVista($event)"
                (searchQueryChange)="searchQuery = $event; loadResumen()"
-               (soloSinInformeChange)="onSoloSinInformeChange($event)">
+               (soloSinInformeChange)="onSoloSinInformeChange($event)"
+               (exportExcel)="exportarExcel()" (importExcel)="importarExcel($event)">
             </app-informes-filters>
 
             <!-- Data List/Table Container -->
