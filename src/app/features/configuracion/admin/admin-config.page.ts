@@ -1,16 +1,17 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 interface CongregacionAdmin {
    id_congregacion: number;
    nombre_congregacion: string;
    circuito: string;
-   ciudad: string;
-   miembros: number;
-   direccion?: string;
+   direccion: string;
+   codigo_seguridad: string;
+   miembros: number; // Computed field from backend?
 }
 
 interface SystemVars {
@@ -40,12 +41,30 @@ interface ImportResult {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule],
    templateUrl: './admin-config.page.html',
-   styles: []
+   styles: [],
+   animations: [
+      trigger('slidePanel', [
+         transition(':enter', [
+            style({ opacity: 0, transform: 'translateX(100%)' }),
+            animate('500ms cubic-bezier(0.16, 1, 0.3, 1)', style({ opacity: 1, transform: 'translateX(0)' }))
+         ]),
+         transition(':leave', [
+            animate('300ms cubic-bezier(0.4, 0, 0.2, 1)', style({ opacity: 0, transform: 'translateX(100%)' }))
+         ])
+      ]),
+      trigger('fadeIn', [
+         transition(':enter', [
+            style({ opacity: 0, transform: 'translateY(10px)' }),
+            animate('400ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+         ])
+      ])
+   ]
 })
 export class AdminConfigPage implements OnInit {
    private http = inject(HttpClient);
+   private fb = inject(FormBuilder);
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
    activeTab = signal<'congregaciones' | 'variables' | 'auditoria' | 'api' | 'seguridad'>('congregaciones');
@@ -72,12 +91,32 @@ export class AdminConfigPage implements OnInit {
    selectedFileName = signal<string | null>(null);
    isDragOver = signal(false);
 
+   // Create/Edit Panel Signals
+   panelOpen = signal(false);
+   creating = signal(false);
+   editingCongregation = signal<CongregacionAdmin | null>(null);
+
+   congregationForm!: FormGroup;
+
+   // Notification Signal
+   notification = signal<{ message: string, type: 'success' | 'error' } | null>(null);
+
    // Export signal
    exportingId = signal<number | null>(null);
 
    ngOnInit() {
+      this.initForm();
       this.loadCongregaciones();
       this.loadSystemVars();
+   }
+
+   initForm() {
+      this.congregationForm = this.fb.group({
+         nombre_congregacion: ['', [Validators.required]],
+         circuito: ['', [Validators.required]],
+         direccion: ['', [Validators.required]],
+         codigo_seguridad: ['']
+      });
    }
 
    setTab(tab: 'congregaciones' | 'variables' | 'auditoria' | 'api' | 'seguridad') {
@@ -94,7 +133,7 @@ export class AdminConfigPage implements OnInit {
                this.congregaciones.set(data);
                this.loading.set(false);
             },
-            error: (err) => {
+            error: (err: any) => {
                console.error(err);
                this.loading.set(false);
             }
@@ -119,14 +158,23 @@ export class AdminConfigPage implements OnInit {
       const term = this.searchTerm().toLowerCase();
       return this.congregaciones().filter(c =>
          c.nombre_congregacion.toLowerCase().includes(term) ||
-         (c.ciudad || '').toLowerCase().includes(term) ||
+         (c.direccion || '').toLowerCase().includes(term) ||
          (c.circuito || '').toLowerCase().includes(term)
       );
    }
 
    editCongregation(id: number) {
-      console.log('Edit congregation', id);
-      // TODO: Implement navigation to edit detail if needed
+      const cong = this.congregaciones().find(c => c.id_congregacion === id);
+      if (cong) {
+         this.editingCongregation.set(cong);
+         this.congregationForm.patchValue({
+            nombre_congregacion: cong.nombre_congregacion,
+            circuito: cong.circuito,
+            direccion: cong.direccion || '',
+            codigo_seguridad: cong.codigo_seguridad
+         });
+         this.panelOpen.set(true);
+      }
    }
 
    saveVariables() {
@@ -138,7 +186,7 @@ export class AdminConfigPage implements OnInit {
                alert('Configuración del sistema actualizada correctamente.');
                this.loading.set(false);
             },
-            error: (err) => {
+            error: (err: any) => {
                console.error(err);
                alert('Error al guardar configuración.');
                this.loading.set(false);
@@ -233,13 +281,82 @@ export class AdminConfigPage implements OnInit {
                   this.loadCongregaciones();
                }
             },
-            error: (err) => {
+            error: (err: any) => {
                console.error('Import error:', err);
                const message = err.error?.detail || err.message || 'Error inesperado al procesar el archivo';
                this.importError.set(message);
                this.importing.set(false);
             }
          });
+   }
+
+
+
+   // ===== Panel Methods =====
+   openCreatePanel() {
+      this.editingCongregation.set(null);
+      this.congregationForm.reset();
+      this.panelOpen.set(true);
+   }
+
+   closePanel() {
+      this.panelOpen.set(false);
+      this.congregationForm.reset();
+      this.editingCongregation.set(null);
+   }
+
+   saveCongregation() {
+      if (this.congregationForm.invalid) return;
+
+      this.creating.set(true);
+      const data = this.congregationForm.value;
+
+      // Prepare payload
+      const payload = {
+         nombre_congregacion: data.nombre_congregacion,
+         circuito: data.circuito,
+         direccion: data.direccion,
+         codigo_seguridad: data.codigo_seguridad
+      };
+
+      let req;
+      if (this.editingCongregation()) {
+         // Update
+         const id = this.editingCongregation()!.id_congregacion;
+         req = this.http.put(`${this.API_URL}/congregaciones/${id}`, payload);
+      } else {
+         // Create
+         req = this.http.post(`${this.API_URL}/congregaciones`, payload);
+      }
+
+      const isEditing = !!this.editingCongregation();
+
+      req.subscribe({
+         next: () => {
+            this.creating.set(false);
+            this.closePanel();
+            this.loadCongregaciones();
+            this.showNotification(
+               isEditing ? 'Congregación actualizada exitosamente' : 'Congregación creada exitosamente',
+               'success'
+            );
+         },
+         error: (err: any) => {
+            console.error(err);
+            this.creating.set(false);
+            this.showNotification(
+               err.error?.detail || 'Error al guardar la congregación',
+               'error'
+            );
+         }
+      });
+   }
+
+   showNotification(message: string, type: 'success' | 'error') {
+      this.notification.set({ message, type });
+      setTimeout(() => {
+         this.notification.set(null);
+      }, 3000);
    }
 
    // ===== Export Method =====
@@ -261,10 +378,31 @@ export class AdminConfigPage implements OnInit {
             window.URL.revokeObjectURL(url);
             this.exportingId.set(null);
          },
-         error: (err) => {
+         error: (err: any) => {
             console.error('Export error:', err);
             alert('Error al exportar la congregación');
             this.exportingId.set(null);
+         }
+      });
+   }
+
+   downloadTemplate() {
+      this.http.get(`${environment.apiUrl}/export/plantilla`, {
+         responseType: 'blob'
+      }).subscribe({
+         next: (blob: Blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Plantilla_Importacion_GAC.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+         },
+         error: (err: any) => {
+            console.error('Template download error:', err);
+            alert('Error al descargar la plantilla');
          }
       });
    }

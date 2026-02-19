@@ -50,9 +50,10 @@ export class UsuariosService {
       return this.http.get<Congregacion[]>(this.CONGREGACIONES_URL);
    }
 
-   getPublicadores(idCongregacion?: number): Observable<any[]> {
+   getPublicadores(idCongregacion?: number, soloDisponibles: boolean = false): Observable<any[]> {
       let params: any = { limit: 1000 }; // Increase limit to fetch all publishers
       if (idCongregacion) params.id_congregacion = idCongregacion;
+      if (soloDisponibles) params.solo_disponibles = true;
       return this.http.get<any[]>('/api/publicadores/', { params });
    }
 

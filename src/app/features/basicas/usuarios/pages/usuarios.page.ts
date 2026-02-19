@@ -167,7 +167,8 @@ export class UsuariosPage implements OnInit {
          id_usuario_publicador: null // Reset publisher when changing congregation
       });
       this.congDropdownOpen.set(false);
-      this.loadPublicadores(id);
+      this.congDropdownOpen.set(false);
+      this.loadPublicadores(id, true); // Crear: Solo disponibles
    }
 
    isCongSelected(id: number): boolean {
@@ -310,9 +311,9 @@ export class UsuariosPage implements OnInit {
       }
    }
 
-   async loadPublicadores(congId: number) {
+   async loadPublicadores(congId: number, soloDisponibles: boolean = false) {
       try {
-         const pubs = await lastValueFrom(this.service.getPublicadores(congId));
+         const pubs = await lastValueFrom(this.service.getPublicadores(congId, soloDisponibles));
          this.publicadores.set(pubs || []);
       } catch (err) {
          console.error('Error loading publicadores', err);
@@ -321,6 +322,7 @@ export class UsuariosPage implements OnInit {
    }
 
    openCreatePanel() {
+      console.log('openCreatePanel clicked');
       this.editingUser.set(null);
       this.userForm.reset();
 
@@ -328,26 +330,29 @@ export class UsuariosPage implements OnInit {
       this.userForm.get('contrasena')?.setValidators([Validators.required, Validators.minLength(6)]);
       this.userForm.get('confirmPassword')?.setValidators([Validators.required]);
 
-      if (this.isAdmin()) {
-         // Admin: opcional hasta que seleccione rol que lo requiera
-         this.userForm.get('id_congregacion')?.clearValidators();
-         this.userForm.get('id_usuario_publicador')?.clearValidators();
-         this.userForm.get('id_rol_usuario')?.setValidators([Validators.required]);
-      } else {
-         // Coordinador/Secretario: publicador requerido, rol NO requerido (forzado en servidor)
-         this.userForm.get('id_rol_usuario')?.clearValidators();
-         this.userForm.get('id_congregacion')?.clearValidators();
-         this.userForm.get('id_usuario_publicador')?.setValidators([Validators.required]);
+      try {
+         if (this.isAdmin()) {
+            // Admin: opcional hasta que seleccione rol que lo requiera
+            this.userForm.get('id_congregacion')?.clearValidators();
+            this.userForm.get('id_usuario_publicador')?.clearValidators();
+            this.userForm.get('id_rol_usuario')?.setValidators([Validators.required]);
+         } else {
+            // Coordinador/Secretario: publicador requerido, rol NO requerido (forzado en servidor)
+            this.userForm.get('id_rol_usuario')?.clearValidators();
+            this.userForm.get('id_congregacion')?.clearValidators();
+            this.userForm.get('id_usuario_publicador')?.setValidators([Validators.required]);
 
-         // Auto-cargar publicadores de su congregación
-         const congId = this.currentUserCongregacion();
-         if (congId) {
-            this.loadPublicadores(congId);
+            // Auto-cargar publicadores de su congregación
+            const congId = this.currentUserCongregacion();
+            if (congId) {
+               this.loadPublicadores(congId, true); // Crear: Solo disponibles
+            }
          }
+      } catch (e) {
+         console.error('Error in openCreatePanel logic', e);
       }
 
       this.userForm.updateValueAndValidity();
-
       this.panelOpen.set(true);
    }
 
@@ -371,7 +376,7 @@ export class UsuariosPage implements OnInit {
       });
 
       if (u.id_congregacion) {
-         this.loadPublicadores(u.id_congregacion);
+         this.loadPublicadores(u.id_congregacion, false); // Editar: Todos (incluyendo asignado actual)
       } else {
          this.publicadores.set([]);
       }

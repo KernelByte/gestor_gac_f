@@ -45,7 +45,7 @@ interface Publicador {
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    
+
     @keyframes slideInBottom {
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
@@ -54,23 +54,58 @@ interface Publicador {
       animation: slideInBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    /* Global FullScreen Override Styles */
+    /* ═══════════════════════════════════════
+       ANIMACIÓN INMERSIVA - Efecto "Foco"
+       Zoom suave + desenfoque que aclara
+    ═══════════════════════════════════════ */
+    @keyframes immersiveEnter {
+      0%   { opacity: 0; transform: scale(1.06); filter: blur(16px) brightness(1.3); }
+      40%  { opacity: 0.9; filter: blur(2px) brightness(1.05); }
+      100% { opacity: 1; transform: scale(1); filter: blur(0) brightness(1); }
+    }
+    ::ng-deep .immersive-in {
+      animation: immersiveEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    }
+
+    /* Scrollbar oscuro para columnas en modo inmersivo */
+    .immersive-scroll::-webkit-scrollbar { height: 4px; width: 4px; }
+    .immersive-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
+    .immersive-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+    .immersive-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+    /* ═══════════════════════════════════════
+       OVERRIDES GLOBALES - Modo Pantalla Completa
+       Elimina todos los márgenes/padding/overflow
+       del shell para que el fixed llene el viewport
+    ═══════════════════════════════════════ */
     ::ng-deep body.gac-fullscreen-active app-shell aside,
     ::ng-deep body.gac-fullscreen-active app-shell header {
       display: none !important;
     }
-    
+
+    /* Quitar margen del sidebar en el wrapper de contenido */
     ::ng-deep body.gac-fullscreen-active app-shell aside + div {
       margin-left: 0 !important;
     }
-    
+
+    /* Quitar márgenes laterales y bottom del main */
     ::ng-deep body.gac-fullscreen-active app-shell main {
+      margin: 0 !important;
       padding: 0 !important;
       height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: visible !important;
     }
-    
+
+    /* Quitar overflow-hidden del router-container para no recortar el fixed */
     ::ng-deep body.gac-fullscreen-active app-shell .router-container {
       height: 100vh !important;
+      overflow: visible !important;
+    }
+
+    /* Asegurar que el contenedor del shell no oculte contenido */
+    ::ng-deep body.gac-fullscreen-active app-shell > div {
+      overflow: visible !important;
     }
   `]
 })
@@ -169,17 +204,30 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     this.isDraggingOverLeader.set(null);
   }
 
+  private escKeyHandler: ((e: KeyboardEvent) => void) | null = null;
+
   toggleFullScreen() {
     this.isFullScreen.update(v => !v);
     if (this.isFullScreen()) {
       this.renderer.addClass(this.document.body, 'gac-fullscreen-active');
+      this.escKeyHandler = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') this.toggleFullScreen();
+      };
+      this.document.addEventListener('keydown', this.escKeyHandler);
     } else {
       this.renderer.removeClass(this.document.body, 'gac-fullscreen-active');
+      if (this.escKeyHandler) {
+        this.document.removeEventListener('keydown', this.escKeyHandler);
+        this.escKeyHandler = null;
+      }
     }
   }
 
   ngOnDestroy() {
     this.renderer.removeClass(this.document.body, 'gac-fullscreen-active');
+    if (this.escKeyHandler) {
+      this.document.removeEventListener('keydown', this.escKeyHandler);
+    }
   }
   isDraggingOverLeader = signal<{ groupId: number, role: 'capitan' | 'auxiliar' } | null>(null);
 

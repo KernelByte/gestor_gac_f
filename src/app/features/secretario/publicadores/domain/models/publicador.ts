@@ -26,6 +26,7 @@ export interface Publicador {
   sexo?: string | null;
   consentimiento_datos?: boolean;
   id_congregacion_publicador?: number | null;
+  nombre_congregacion?: string | null;
   id_grupo_publicador?: number | null;
   id_estado_publicador?: number | null;
   fecha_creacion?: string;

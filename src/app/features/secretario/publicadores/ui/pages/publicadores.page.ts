@@ -37,6 +37,19 @@ interface ContactoEmergencia {
   solo_urgencias?: boolean;
 }
 
+interface Congregacion {
+  id_congregacion: number;
+  nombre_congregacion: string;
+}
+
+interface TableColumn {
+  id: string;
+  label: string;
+  visible: boolean;
+  adminOnly?: boolean;
+  optional?: boolean;
+}
+
 @Component({
   standalone: true,
   selector: 'app-publicadores-list',
@@ -135,63 +148,278 @@ interface ContactoEmergencia {
 
                 <!-- Scrollable Content -->
                 <div class="overflow-y-auto p-2 simple-scrollbar">
-                    
-                    <!-- Section: Privilegios -->
-                    <div class="mb-4">
+
+                    <!-- Section: Sexo -->
+                    <div class="mb-1">
                         <div class="px-2 py-1.5 flex items-center gap-2">
-                             <span class="w-1 h-3 rounded-full bg-indigo-500"></span>
-                             <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Privilegios</span>
+                            <span class="w-1 h-3 rounded-full bg-blue-400"></span>
+                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sexo</span>
                         </div>
-                        <div class="space-y-0.5">
-                            <label 
-                                *ngFor="let p of privilegios()"
-                                class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors group"
+                        <div class="grid grid-cols-2 gap-1.5 px-2">
+                            <button type="button" (click)="toggleSexoFilter('M')"
+                                class="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all border"
+                                [ngClass]="selectedSexoFilter().includes('M')
+                                  ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-blue-300 hover:text-blue-600'"
                             >
-                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">{{ p.nombre_privilegio }}</span>
-                                <div class="relative flex items-center justify-center">
-                                    <input 
-                                        type="checkbox" 
-                                        [checked]="selectedPrivilegiosFilter().includes(p.id_privilegio)"
-                                        (change)="togglePrivilegioFilter(p.id_privilegio)"
-                                        class="peer sr-only"
-                                    >
-                                    <div class="w-4 h-4 border-2 border-slate-200 dark:border-slate-600 rounded transition-all peer-checked:bg-indigo-500 peer-checked:border-indigo-500 peer-checked:ring-2 peer-checked:ring-indigo-500/20"></div>
-                                    <svg class="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </div>
-                            </label>
+                                <span class="text-sm leading-none">♂</span> Masculino
+                            </button>
+                            <button type="button" (click)="toggleSexoFilter('F')"
+                                class="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all border"
+                                [ngClass]="selectedSexoFilter().includes('F')
+                                  ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
+                                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-rose-300 hover:text-rose-600'"
+                            >
+                                <span class="text-sm leading-none">♀</span> Femenino
+                            </button>
                         </div>
                     </div>
 
-                    <div class="h-px bg-slate-100 mx-2 my-2"></div>
+                    <div class="h-px bg-slate-100 dark:bg-slate-700/50 mx-2 my-2"></div>
 
-                    <!-- Section: Grupos -->
-                    <div class="mb-2">
+                    <!-- Section: Consentimiento -->
+                    <div class="mb-1">
+                        <div class="px-2 py-1.5 flex items-center gap-2">
+                            <span class="w-1 h-3 rounded-full bg-emerald-400"></span>
+                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Consentimiento</span>
+                        </div>
+                        <div class="space-y-0.5">
+                            <button type="button" (click)="setConsentimientoFilter(true)"
+                                class="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors group text-left"
+                                [ngClass]="selectedConsentimientoFilter() === true ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all"
+                                        [ngClass]="selectedConsentimientoFilter() === true ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'">
+                                        <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    </span>
+                                    <span class="text-xs font-bold transition-colors"
+                                        [ngClass]="selectedConsentimientoFilter() === true ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'">Con consentimiento</span>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all shrink-0"
+                                    [ngClass]="selectedConsentimientoFilter() === true ? 'border-emerald-500' : 'border-slate-200 dark:border-slate-600'">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-500 transition-all"
+                                        [class.opacity-0]="selectedConsentimientoFilter() !== true"></div>
+                                </div>
+                            </button>
+                            <button type="button" (click)="setConsentimientoFilter(false)"
+                                class="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors group text-left"
+                                [ngClass]="selectedConsentimientoFilter() === false ? 'bg-slate-100 dark:bg-slate-800/80' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'"
+                            >
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all"
+                                        [ngClass]="selectedConsentimientoFilter() === false ? 'bg-slate-600 dark:bg-slate-400 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'">
+                                        <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                                    </span>
+                                    <span class="text-xs font-bold transition-colors"
+                                        [ngClass]="selectedConsentimientoFilter() === false ? 'text-slate-800 dark:text-slate-200' : 'text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'">Sin consentimiento</span>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all shrink-0"
+                                    [ngClass]="selectedConsentimientoFilter() === false ? 'border-slate-500 dark:border-slate-400' : 'border-slate-200 dark:border-slate-600'">
+                                    <div class="w-2 h-2 rounded-full bg-slate-600 dark:bg-slate-400 transition-all"
+                                        [class.opacity-0]="selectedConsentimientoFilter() !== false"></div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="h-px bg-slate-100 dark:bg-slate-700/50 mx-2 my-2"></div>
+
+                    <!-- Section: Grupos (grid 2 columnas) -->
+                    <div class="mb-3">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                              <span class="w-1 h-3 rounded-full bg-brand-orange"></span>
                              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grupos</span>
                         </div>
-                        <div class="space-y-0.5">
-                            <label 
+                        <div class="grid grid-cols-2 gap-x-0.5 gap-y-0">
+                            <label
                                 *ngFor="let g of grupos()"
-                                class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors group"
+                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors group"
                             >
-                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">{{ g.nombre_grupo }}</span>
-                                <div class="relative flex items-center justify-center">
-                                    <input 
-                                        type="checkbox" 
+                                <div class="relative flex items-center justify-center shrink-0">
+                                    <input
+                                        type="checkbox"
                                         [checked]="selectedGruposFilter().includes(g.id_grupo)"
                                         (change)="toggleGrupoFilter(g.id_grupo)"
                                         class="peer sr-only"
                                     >
-                                    <div class="w-4 h-4 border-2 border-slate-200 dark:border-slate-600 rounded transition-all peer-checked:bg-brand-orange peer-checked:border-brand-orange peer-checked:ring-2 peer-checked:ring-brand-orange/20"></div>
-                                    <svg class="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <div class="w-3.5 h-3.5 border-2 border-slate-200 dark:border-slate-600 rounded transition-all peer-checked:bg-brand-orange peer-checked:border-brand-orange peer-checked:ring-1 peer-checked:ring-brand-orange/20"></div>
+                                    <svg class="absolute w-2 h-2 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 </div>
+                                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{ g.nombre_grupo }}</span>
                             </label>
+                        </div>
+                    </div>
+
+                    <div class="h-px bg-slate-100 dark:bg-slate-700/50 mx-2 my-2"></div>
+
+                    <!-- Section: Privilegios (grid 2 columnas) -->
+                    <div class="mb-3">
+                        <div class="px-2 py-1.5 flex items-center gap-2">
+                             <span class="w-1 h-3 rounded-full bg-indigo-500"></span>
+                             <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Privilegios</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-x-0.5 gap-y-0">
+                            <label
+                                *ngFor="let p of privilegios()"
+                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors group"
+                            >
+                                <div class="relative flex items-center justify-center shrink-0">
+                                    <input
+                                        type="checkbox"
+                                        [checked]="selectedPrivilegiosFilter().includes(p.id_privilegio)"
+                                        (change)="togglePrivilegioFilter(p.id_privilegio)"
+                                        class="peer sr-only"
+                                    >
+                                    <div class="w-3.5 h-3.5 border-2 border-slate-200 dark:border-slate-600 rounded transition-all peer-checked:bg-indigo-500 peer-checked:border-indigo-500 peer-checked:ring-1 peer-checked:ring-indigo-500/20"></div>
+                                    <svg class="absolute w-2 h-2 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </div>
+                                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{ p.nombre_privilegio }}</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Section: Barrio (solo si hay barrios registrados, grid 2 columnas) -->
+                    <ng-container *ngIf="uniqueBarrios().length > 0">
+                        <div class="h-px bg-slate-100 dark:bg-slate-700/50 mx-2 my-2"></div>
+                        <div class="mb-2">
+                            <div class="px-2 py-1.5 flex items-center gap-2">
+                                <span class="w-1 h-3 rounded-full bg-teal-400"></span>
+                                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Barrio</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-0.5 gap-y-0 max-h-32 overflow-y-auto simple-scrollbar">
+                                <label
+                                    *ngFor="let b of uniqueBarrios()"
+                                    class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors group"
+                                >
+                                    <div class="relative flex items-center justify-center shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            [checked]="selectedBarriosFilter().includes(b)"
+                                            (change)="toggleBarrioFilter(b)"
+                                            class="peer sr-only"
+                                        >
+                                        <div class="w-3.5 h-3.5 border-2 border-slate-200 dark:border-slate-600 rounded transition-all peer-checked:bg-teal-500 peer-checked:border-teal-500 peer-checked:ring-1 peer-checked:ring-teal-500/20"></div>
+                                        <svg class="absolute w-2 h-2 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    </div>
+                                    <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{ b }}</span>
+                                </label>
+                            </div>
+                        </div>
+                    </ng-container>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Separator -->
+        <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden lg:block shrink-0"></div>
+
+        <!-- Column Manager -->
+        <div class="relative shrink-0 hidden md:block">
+            <button
+                (click)="showColumnManager.set(!showColumnManager())"
+                class="flex items-center gap-2 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all border outline-none"
+                [ngClass]="hasOptionalColumnsVisible()
+                  ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 shadow-sm'
+                  : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-slate-200'"
+            >
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                <span class="hidden sm:inline">Columnas</span>
+                <svg class="w-3 h-3 opacity-50 transition-transform duration-200" [class.rotate-180]="showColumnManager()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+
+            <!-- Backdrop -->
+            <div *ngIf="showColumnManager()" (click)="showColumnManager.set(false)" class="fixed inset-0 z-40 bg-transparent"></div>
+
+            <!-- Dropdown -->
+            <div *ngIf="showColumnManager()" class="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fadeInUp flex flex-col" style="max-height: 80vh;">
+
+                <!-- Header -->
+                <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Configurar Columnas</span>
+                    <button (click)="resetColumns()" class="text-[10px] font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors uppercase tracking-wider">Restablecer</button>
+                </div>
+
+                <!-- Fixed Columns (Locked Info) -->
+                <div class="px-3 py-2.5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-900/20 shrink-0">
+                    <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Columnas Fijas</p>
+                    <div class="space-y-0.5">
+                        <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg opacity-50 cursor-not-allowed select-none">
+                            <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex-1">Nombre</span>
+                            <div class="rounded-full bg-brand-orange relative shrink-0" style="width:32px;height:18px;"><div class="bg-white rounded-full absolute shadow-sm" style="width:14px;height:14px;top:2px;right:2px;"></div></div>
+                        </div>
+                        <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg opacity-50 cursor-not-allowed select-none">
+                            <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex-1">Estado</span>
+                            <div class="rounded-full bg-brand-orange relative shrink-0" style="width:32px;height:18px;"><div class="bg-white rounded-full absolute shadow-sm" style="width:14px;height:14px;top:2px;right:2px;"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configurable Columns -->
+                <div class="overflow-y-auto flex-1 simple-scrollbar">
+                    <div class="p-2">
+                        <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2 pt-1 mb-0.5">Columnas Configurables</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 px-2 mb-2.5">Arrastra <span class="font-bold">⠿</span> para reordenar</p>
+                        <div class="space-y-0.5">
+                            <div
+                                *ngFor="let col of columnManagerList(); let i = index; trackBy: trackColById"
+                                draggable="true"
+                                (dragstart)="onColDragStart(i, $event)"
+                                (dragover)="onColDragOver(i, $event)"
+                                (drop)="onColDrop(i)"
+                                (dragend)="onColDragEnd()"
+                                class="flex items-center gap-2.5 px-2 py-2 rounded-xl transition-all select-none group"
+                                [ngClass]="draggedColId() === col.id
+                                  ? 'opacity-40 bg-violet-50 dark:bg-violet-900/20 border border-dashed border-violet-300 dark:border-violet-700 cursor-grabbing'
+                                  : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-grab active:cursor-grabbing'"
+                            >
+                                <!-- Drag Handle -->
+                                <svg class="w-3.5 h-5 shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-400 transition-colors" viewBox="0 0 10 20" fill="currentColor" aria-hidden="true">
+                                    <circle cx="3" cy="4" r="1.5"/><circle cx="7" cy="4" r="1.5"/>
+                                    <circle cx="3" cy="10" r="1.5"/><circle cx="7" cy="10" r="1.5"/>
+                                    <circle cx="3" cy="16" r="1.5"/><circle cx="7" cy="16" r="1.5"/>
+                                </svg>
+                                <!-- Label -->
+                                <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex-1 truncate">{{ col.label }}</span>
+                                <span *ngIf="col.optional" class="shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 uppercase tracking-wide">Extra</span>
+                                <!-- Toggle Switch -->
+                                <button
+                                    type="button"
+                                    (click)="toggleColumnVisibility(col.id)"
+                                    draggable="false"
+                                    class="rounded-full shrink-0 relative transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-orange/30"
+                                    [ngClass]="col.visible ? 'bg-brand-orange' : 'bg-slate-200 dark:bg-slate-600'"
+                                    style="width:32px;height:18px;"
+                                >
+                                    <div
+                                        class="bg-white rounded-full absolute shadow-sm transition-all duration-200"
+                                        style="width:14px;height:14px;top:2px;"
+                                        [ngStyle]="{'left': col.visible ? 'calc(100% - 16px)' : '2px'}"
+                                    ></div>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Reset All Button (aparece solo cuando hay filtros o columnas personalizadas) -->
+        <button
+            *ngIf="hasCustomView()"
+            (click)="resetAll()"
+            title="Restablecer filtros y columnas"
+            class="shrink-0 hidden md:flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap border border-rose-200 dark:border-rose-800/60 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all animate-fadeIn"
+        >
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+            </svg>
+            <span class="hidden sm:inline">Restablecer</span>
+        </button>
 
         <!-- Spacer -->
         <div class="flex-1 hidden lg:block"></div>
@@ -215,7 +443,7 @@ interface ContactoEmergencia {
         </div>
 
         <!-- Scrollable Content Container (Primary Scroll) -->
-        <div class="flex-1 overflow-y-auto min-h-0 relative simple-scrollbar">
+        <div class="flex-1 overflow-auto min-h-0 relative simple-scrollbar">
              
              <!-- 1. Mobile Card View (Visible < md) -->
              <div class="md:hidden p-4 space-y-4 pb-4">
@@ -250,7 +478,7 @@ interface ContactoEmergencia {
                      </div>
 
                      <!-- Info Grid -->
-                     <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+                     <div class="grid grid-cols-2 gap-3 text-sm mb-3">
                          <div class="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">
                              <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Grupo</span>
                              <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ getGrupoNombre(p.id_grupo_publicador) }}</span>
@@ -263,6 +491,29 @@ interface ContactoEmergencia {
                               <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                               <span class="font-medium text-slate-600">{{ p.telefono || 'Sin teléfono' }}</span>
                          </div>
+                     </div>
+
+                     <!-- Optional Columns (Mobile Chips) -->
+                     <div class="flex flex-wrap gap-1.5 mb-3" *ngIf="isMobileColVisible('sexo') && p.sexo || isMobileColVisible('direccion') && p.direccion || isMobileColVisible('barrio') && p.barrio || isMobileColVisible('consentimiento_datos')">
+                         <span *ngIf="isMobileColVisible('sexo') && p.sexo"
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold border"
+                             [ngClass]="p.sexo === 'M' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-rose-50 text-rose-700 border-rose-100'">
+                             {{ p.sexo === 'M' ? '♂ Masculino' : '♀ Femenino' }}
+                         </span>
+                         <span *ngIf="isMobileColVisible('direccion') && p.direccion"
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 border border-slate-100 text-slate-600 max-w-[200px] truncate">
+                             <svg class="w-3 h-3 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                             <span class="truncate">{{ p.direccion }}</span>
+                         </span>
+                         <span *ngIf="isMobileColVisible('barrio') && p.barrio && !isMobileColVisible('direccion')"
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 border border-slate-100 text-slate-600">
+                             Barrio: {{ p.barrio }}
+                         </span>
+                         <span *ngIf="isMobileColVisible('consentimiento_datos')"
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold border"
+                             [ngClass]="p.consentimiento_datos ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'">
+                             {{ p.consentimiento_datos ? '✓ Con consentimiento' : '✗ Sin consentimiento' }}
+                         </span>
                      </div>
 
                      <!-- Actions -->
@@ -291,15 +542,87 @@ interface ContactoEmergencia {
 
              <!-- 2. Desktop Table View (Visible md+) -->
              <div class="hidden md:block">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full min-w-max text-left border-collapse">
                    <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
+                      <!-- Sort chips strip (visible solo cuando hay ordenamientos activos) -->
+                      <tr *ngIf="sortOrder().length > 0" class="border-b border-brand-orange/10 bg-orange-50/60 dark:bg-orange-900/10">
+                        <td [attr.colspan]="totalVisibleColCount()" class="px-4 py-2">
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <!-- Chips de criterios -->
+                            <div class="flex items-center gap-1 flex-wrap flex-1">
+                              <ng-container *ngFor="let s of sortOrder(); let i = index; let last = last">
+                                <!-- Chip de criterio -->
+                                <div class="flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+                                  <span class="w-3.5 h-3.5 rounded-full bg-brand-orange text-white text-[8px] font-black flex items-center justify-center shrink-0">{{ i + 1 }}</span>
+                                  <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 pl-0.5">{{ getSortColLabel(s.col) }}</span>
+                                  <svg class="w-2.5 h-2.5 text-brand-orange transition-transform duration-200" [class.rotate-180]="s.dir === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                                  <button (click)="removeSortCriteria(i)" title="Quitar este criterio"
+                                    class="w-3.5 h-3.5 flex items-center justify-center rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/30 text-slate-300 hover:text-rose-500 transition-colors">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-2 h-2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                  </button>
+                                </div>
+                                <!-- Flecha de anidado entre chips -->
+                                <svg *ngIf="!last" class="w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                              </ng-container>
+                            </div>
+                            <!-- Hint + limpiar -->
+                            <div class="flex items-center gap-2 shrink-0">
+                              <span class="text-[10px] text-slate-400 dark:text-slate-500 hidden lg:inline">
+                                <kbd class="font-mono bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-1 py-0.5 rounded text-[9px]">Shift</kbd>+clic para añadir
+                              </span>
+                              <button (click)="resetSort()" class="text-[10px] font-bold text-rose-400 hover:text-rose-600 transition-colors uppercase tracking-wider">Limpiar orden</button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
                       <tr class="border-b border-slate-200 dark:border-slate-700">
-                         <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre</th>
-                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Grupo</th>
-                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Fecha Nac.</th>
-                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider hidden xl:table-cell">Fecha Bau.</th>
-                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Teléfono</th>
-                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                         <!-- Columna fija: Nombre -->
+                         <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                           <button (click)="toggleSort('nombre', $event)" title="Clic para ordenar · Shift+Clic para anidar" class="flex items-center gap-1 group/sort hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                             Nombre
+                             <ng-container *ngIf="getSortIndex('nombre') >= 0; else noSortNombre">
+                               <span class="flex items-center gap-0.5">
+                                 <svg class="w-3 h-3 text-brand-orange transition-transform duration-200" [class.rotate-180]="getSortDir('nombre') === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                                 <span *ngIf="sortOrder().length > 1" class="w-3.5 h-3.5 rounded-full bg-brand-orange text-white text-[8px] font-black flex items-center justify-center">{{ getSortIndex('nombre') + 1 }}</span>
+                               </span>
+                             </ng-container>
+                             <ng-template #noSortNombre>
+                               <svg class="w-3 h-3 opacity-0 group-hover/sort:opacity-30 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                             </ng-template>
+                           </button>
+                         </th>
+                         <!-- Columnas configurables dinámicas -->
+                         <ng-container *ngFor="let col of visibleMoveableColumns()">
+                           <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                             <button (click)="toggleSort(col.id, $event)" title="Clic para ordenar · Shift+Clic para anidar" class="flex items-center gap-1 group/sort hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                               {{ col.label }}
+                               <ng-container *ngIf="getSortIndex(col.id) >= 0; else noSortDyn">
+                                 <span class="flex items-center gap-0.5">
+                                   <svg class="w-3 h-3 text-brand-orange transition-transform duration-200" [class.rotate-180]="getSortDir(col.id) === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                                   <span *ngIf="sortOrder().length > 1" class="w-3.5 h-3.5 rounded-full bg-brand-orange text-white text-[8px] font-black flex items-center justify-center">{{ getSortIndex(col.id) + 1 }}</span>
+                                 </span>
+                               </ng-container>
+                               <ng-template #noSortDyn>
+                                 <svg class="w-3 h-3 opacity-0 group-hover/sort:opacity-30 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                               </ng-template>
+                             </button>
+                           </th>
+                         </ng-container>
+                         <!-- Columna fija: Estado -->
+                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                           <button (click)="toggleSort('estado', $event)" title="Clic para ordenar · Shift+Clic para anidar" class="flex items-center gap-1 group/sort hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                             Estado
+                             <ng-container *ngIf="getSortIndex('estado') >= 0; else noSortEstado">
+                               <span class="flex items-center gap-0.5">
+                                 <svg class="w-3 h-3 text-brand-orange transition-transform duration-200" [class.rotate-180]="getSortDir('estado') === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                                 <span *ngIf="sortOrder().length > 1" class="w-3.5 h-3.5 rounded-full bg-brand-orange text-white text-[8px] font-black flex items-center justify-center">{{ getSortIndex('estado') + 1 }}</span>
+                               </span>
+                             </ng-container>
+                             <ng-template #noSortEstado>
+                               <svg class="w-3 h-3 opacity-0 group-hover/sort:opacity-30 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                             </ng-template>
+                           </button>
+                         </th>
                          <th class="px-4 py-4 w-10"></th>
                       </tr>
                    </thead>
@@ -330,35 +653,73 @@ interface ContactoEmergencia {
                                       </div>
                                   </div>
                             </div>
-                         </td>
+                          </td>
 
-                         <!-- Grupo -->
-                         <td class="px-6 py-4">
-                            <div class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                               <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                               <span class="text-sm font-medium">{{ getGrupoNombre(p.id_grupo_publicador) || 'Sin Grupo' }}</span>
-                            </div>
-                         </td>
+                         <!-- Dynamic Columns -->
+                         <ng-container *ngFor="let col of visibleMoveableColumns()">
+                           <td class="px-6 py-4 whitespace-nowrap">
+                             <ng-container [ngSwitch]="col.id">
 
-                         <!-- Fecha Nacimiento (LG+) -->
-                         <td class="px-6 py-4 hidden lg:table-cell">
-                            <span class="text-sm text-slate-600 dark:text-slate-400 font-medium">{{ formatDate(p.fecha_nacimiento) }}</span>
-                         </td>
+                               <ng-container *ngSwitchCase="'congregacion'">
+                                 <span class="text-sm font-medium text-slate-600 dark:text-slate-400 truncate block max-w-[200px]">{{ p.nombre_congregacion || '—' }}</span>
+                               </ng-container>
 
-                         <!-- Fecha Bautismo (XL+) -->
-                         <td class="px-6 py-4 hidden xl:table-cell">
-                            <span class="text-sm text-slate-600 dark:text-slate-400 font-medium">{{ formatDate(p.fecha_bautismo) }}</span>
-                         </td>
+                               <ng-container *ngSwitchCase="'grupo'">
+                                 <div class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                   <svg class="w-4 h-4 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                   <span class="text-sm font-medium truncate max-w-[140px]">{{ getGrupoNombre(p.id_grupo_publicador) }}</span>
+                                 </div>
+                               </ng-container>
 
-                         <!-- Teléfono (LG+) -->
-                         <td class="px-6 py-4 hidden lg:table-cell">
-                            <a 
-                               *ngIf="p.telefono" 
-                               [href]="'tel:' + p.telefono" 
-                               class="text-sm text-slate-600 dark:text-slate-400 font-mono hover:text-brand-orange hover:underline transition-colors"
-                            >{{ p.telefono }}</a>
-                            <span *ngIf="!p.telefono" class="text-sm text-slate-400">—</span>
-                         </td>
+                               <ng-container *ngSwitchCase="'fecha_nacimiento'">
+                                 <span class="text-sm text-slate-600 dark:text-slate-400 font-medium font-mono">{{ formatDate(p.fecha_nacimiento) }}</span>
+                               </ng-container>
+
+                               <ng-container *ngSwitchCase="'fecha_bautismo'">
+                                 <span class="text-sm text-slate-600 dark:text-slate-400 font-medium font-mono">{{ formatDate(p.fecha_bautismo) }}</span>
+                               </ng-container>
+
+                               <ng-container *ngSwitchCase="'telefono'">
+                                 <a *ngIf="p.telefono" [href]="'tel:' + p.telefono" class="text-sm text-slate-600 dark:text-slate-400 font-mono hover:text-brand-orange hover:underline transition-colors">{{ p.telefono }}</a>
+                                 <span *ngIf="!p.telefono" class="text-sm text-slate-400">—</span>
+                               </ng-container>
+
+                               <ng-container *ngSwitchCase="'sexo'">
+                                 <span class="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                                   <span class="w-4 h-4 rounded-full inline-flex items-center justify-center text-[10px] font-black"
+                                     [ngClass]="p.sexo === 'M' ? 'bg-blue-100 text-blue-600' : p.sexo === 'F' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-400'">
+                                     {{ p.sexo === 'M' ? 'M' : p.sexo === 'F' ? 'F' : '?' }}
+                                   </span>
+                                   {{ p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Femenino' : '—' }}
+                                 </span>
+                               </ng-container>
+
+                               <ng-container *ngSwitchCase="'direccion'">
+                                 <span class="text-sm text-slate-600 dark:text-slate-400 font-medium truncate block max-w-[180px]" [title]="p.direccion || ''">{{ p.direccion || '—' }}</span>
+                               </ng-container>
+
+                               <ng-container *ngSwitchCase="'barrio'">
+                                 <span class="text-sm text-slate-600 dark:text-slate-400 font-medium truncate block max-w-[140px]" [title]="p.barrio || ''">{{ p.barrio || '—' }}</span>
+                               </ng-container>
+
+                               <ng-container *ngSwitchCase="'consentimiento_datos'">
+                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border"
+                                   [ngClass]="p.consentimiento_datos ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'">
+                                   <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                     <ng-container *ngIf="p.consentimiento_datos"><polyline points="20 6 9 17 4 12"></polyline></ng-container>
+                                     <ng-container *ngIf="!p.consentimiento_datos"><path d="M18 6L6 18M6 6l12 12"></path></ng-container>
+                                   </svg>
+                                   {{ p.consentimiento_datos ? 'Sí' : 'No' }}
+                                 </span>
+                               </ng-container>
+
+                               <ng-container *ngSwitchDefault>
+                                 <span class="text-sm text-slate-400">—</span>
+                               </ng-container>
+
+                             </ng-container>
+                           </td>
+                         </ng-container>
 
                          <!-- Estado -->
                          <td class="px-6 py-4">
@@ -390,7 +751,7 @@ interface ContactoEmergencia {
 
                       <!-- Empty State -->
                       <tr *ngIf="pagedList().length === 0 && !vm().loading">
-                         <td colspan="7" class="py-24 text-center">
+                         <td [attr.colspan]="totalVisibleColCount()" class="py-24 text-center">
                              <div class="flex flex-col items-center">
                                  <div class="w-20 h-20 bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800/50 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-orange-100/50 dark:border-slate-700 ring-4 ring-orange-50/50 dark:ring-slate-800">
                                     <svg class="w-10 h-10 text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -707,6 +1068,24 @@ interface ContactoEmergencia {
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Servicio</span>
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                       </div>
+
+
+
+                       <div *ngIf="isAdminOrGestor()" class="space-y-2">
+                            <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                               <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                               Congregación
+                            </label>
+                            <div class="relative">
+                                <select formControlName="id_congregacion_publicador" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
+                                    <option [ngValue]="null">Seleccionar</option>
+                                    <option *ngFor="let c of congregaciones()" [ngValue]="c.id_congregacion">{{ c.nombre_congregacion }}</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                            </div>
                        </div>
 
                        <div class="space-y-2">
@@ -1227,13 +1606,77 @@ export class PublicadoresListComponent implements OnInit {
   showAdvancedFilters = signal(false);
   selectedGruposFilter = signal<number[]>([]);
   selectedPrivilegiosFilter = signal<number[]>([]);
+  selectedSexoFilter = signal<string[]>([]);
+  selectedConsentimientoFilter = signal<boolean | null>(null);
+  selectedBarriosFilter = signal<string[]>([]);
 
-  activeFiltersCount = computed(() => this.selectedGruposFilter().length + this.selectedPrivilegiosFilter().length);
+  sortOrder = signal<{ col: string; dir: 'asc' | 'desc' }[]>([]);
 
+  activeFiltersCount = computed(() =>
+    this.selectedGruposFilter().length +
+    this.selectedPrivilegiosFilter().length +
+    this.selectedSexoFilter().length +
+    (this.selectedConsentimientoFilter() !== null ? 1 : 0) +
+    this.selectedBarriosFilter().length
+  );
+
+  hasCustomView = computed(() => {
+    if (this.activeFiltersCount() > 0) return true;
+    if (this.sortOrder().length > 0) return true;
+    const current = this.columnConfig();
+    const defaults = this.MOVEABLE_COLUMNS_DEFAULT;
+    if (current.length !== defaults.length) return true;
+    return current.some((col, i) => col.id !== defaults[i].id || col.visible !== defaults[i].visible);
+  });
+
+  uniqueBarrios = computed(() => {
+    const barrios = this.rawList()
+      .map(p => p.barrio)
+      .filter((b): b is string => !!b && b.trim().length > 0);
+    return [...new Set(barrios)].sort((a, b) => a.localeCompare(b, 'es'));
+  });
+
+  // ─── Column Manager ──────────────────────────────────────────────────────
+  private readonly COL_STORAGE_KEY = 'gac_pub_col_v1';
+  private _draggedColIdx: number | null = null;
+  draggedColId = signal<string | null>(null);
+  showColumnManager = signal(false);
+  columnConfig = signal<TableColumn[]>([]);
+
+  readonly MOVEABLE_COLUMNS_DEFAULT: TableColumn[] = [
+    { id: 'congregacion', label: 'Congregación', visible: true, adminOnly: true },
+    { id: 'grupo', label: 'Grupo', visible: true },
+    { id: 'fecha_nacimiento', label: 'Fecha Nac.', visible: true },
+    { id: 'fecha_bautismo', label: 'Fecha Bau.', visible: true },
+    { id: 'telefono', label: 'Teléfono', visible: true },
+    { id: 'sexo', label: 'Sexo', visible: false, optional: true },
+    { id: 'direccion', label: 'Dirección', visible: false, optional: true },
+    { id: 'barrio', label: 'Barrio', visible: false, optional: true },
+    { id: 'consentimiento_datos', label: 'Consentimiento', visible: false, optional: true },
+  ];
+
+  visibleMoveableColumns = computed(() => {
+    const isAdmin = this.isAdminOrGestor();
+    return this.columnConfig().filter(col => col.visible && (!col.adminOnly || isAdmin));
+  });
+
+  columnManagerList = computed(() => {
+    const isAdmin = this.isAdminOrGestor();
+    return this.columnConfig().filter(col => !col.adminOnly || isAdmin);
+  });
+
+  hasOptionalColumnsVisible = computed(() =>
+    this.columnConfig().some(col => col.optional && col.visible)
+  );
+
+  totalVisibleColCount = computed(() =>
+    1 + this.visibleMoveableColumns().length + 1 + 1
+  );
 
   // Auxiliary Data
   estados = signal<Estado[]>([]);
   grupos = signal<Grupo[]>([]);
+  congregaciones = signal<Congregacion[]>([]);
   contactos = signal<ContactoEmergencia[]>([]);
   showContactoForm = signal(false);
   startEditingContacto = signal(false);
@@ -1286,6 +1729,7 @@ export class PublicadoresListComponent implements OnInit {
       fecha_bautismo: [null],
       ungido: [false],
       id_grupo_publicador: [null],
+      id_congregacion_publicador: [null],
       id_estado_publicador: [null, Validators.required],
       consentimiento_datos: [false]
     });
@@ -1302,6 +1746,7 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.initColumnConfig();
     this.loadData();
     this.loadAuxiliaryData();
   }
@@ -1319,9 +1764,9 @@ export class PublicadoresListComponent implements OnInit {
     if (terms.length === 0) return true;
 
     const searchableText = [
-      p.primer_nombre, 
-      p.segundo_nombre, 
-      p.primer_apellido, 
+      p.primer_nombre,
+      p.segundo_nombre,
+      p.primer_apellido,
       p.segundo_apellido,
       p.telefono
     ].filter(Boolean).join(' ').toLowerCase();
@@ -1360,6 +1805,24 @@ export class PublicadoresListComponent implements OnInit {
       });
     }
 
+    // Filter by Sexo (Multi-select: M / F)
+    const sexos = this.selectedSexoFilter();
+    if (sexos.length > 0) {
+      list = list.filter(p => p.sexo && sexos.includes(p.sexo));
+    }
+
+    // Filter by Barrio (Multi-select)
+    const barrios = this.selectedBarriosFilter();
+    if (barrios.length > 0) {
+      list = list.filter(p => p.barrio && barrios.includes(p.barrio));
+    }
+
+    // Filter by Consentimiento (true / false / null=sin filtro)
+    const consent = this.selectedConsentimientoFilter();
+    if (consent !== null) {
+      list = list.filter(p => !!p.consentimiento_datos === consent);
+    }
+
     return list;
   });
 
@@ -1383,15 +1846,197 @@ export class PublicadoresListComponent implements OnInit {
   clearFilters() {
     this.selectedGruposFilter.set([]);
     this.selectedPrivilegiosFilter.set([]);
+    this.selectedSexoFilter.set([]);
+    this.selectedConsentimientoFilter.set(null);
+    this.selectedBarriosFilter.set([]);
     this.showAdvancedFilters.set(false);
     this.currentPage.set(1);
   }
 
+  toggleSexoFilter(sexo: string) {
+    this.selectedSexoFilter.update(current =>
+      current.includes(sexo) ? current.filter(s => s !== sexo) : [...current, sexo]
+    );
+    this.currentPage.set(1);
+  }
+
+  setConsentimientoFilter(value: boolean) {
+    const current = this.selectedConsentimientoFilter();
+    this.selectedConsentimientoFilter.set(current === value ? null : value);
+    this.currentPage.set(1);
+  }
+
+  toggleBarrioFilter(barrio: string) {
+    this.selectedBarriosFilter.update(current =>
+      current.includes(barrio) ? current.filter(b => b !== barrio) : [...current, barrio]
+    );
+    this.currentPage.set(1);
+  }
+
+  // ─── Sort Helpers ────────────────────────────────────────────────────────
+  getSortIndex(col: string): number {
+    return this.sortOrder().findIndex(s => s.col === col);
+  }
+
+  getSortDir(col: string): 'asc' | 'desc' {
+    return this.sortOrder().find(s => s.col === col)?.dir ?? 'asc';
+  }
+
+  getSortColLabel(col: string): string {
+    const all: { id: string; label: string }[] = [
+      { id: 'nombre', label: 'Nombre' },
+      { id: 'estado', label: 'Estado' },
+      ...this.MOVEABLE_COLUMNS_DEFAULT,
+    ];
+    return all.find(c => c.id === col)?.label ?? col;
+  }
+
+  toggleSort(col: string, event: MouseEvent) {
+    const isShift = event.shiftKey;
+    const current = this.sortOrder();
+    const idx = current.findIndex(s => s.col === col);
+
+    if (idx >= 0) {
+      const updated = [...current];
+      updated[idx] = { col, dir: updated[idx].dir === 'asc' ? 'desc' : 'asc' };
+      this.sortOrder.set(updated);
+    } else if (isShift && current.length > 0) {
+      this.sortOrder.set([...current, { col, dir: 'asc' }]);
+    } else {
+      this.sortOrder.set([{ col, dir: 'asc' }]);
+    }
+    this.currentPage.set(1);
+  }
+
+  resetSort() {
+    this.sortOrder.set([]);
+    this.currentPage.set(1);
+  }
+
+  removeSortCriteria(index: number) {
+    this.sortOrder.set(this.sortOrder().filter((_, j) => j !== index));
+    this.currentPage.set(1);
+  }
+
+  // ─── Column Manager Methods ───────────────────────────────────────────────
+  initColumnConfig() {
+    try {
+      const stored = localStorage.getItem(this.COL_STORAGE_KEY);
+      if (stored) {
+        const parsed: TableColumn[] = JSON.parse(stored);
+        const merged = this.MOVEABLE_COLUMNS_DEFAULT.map(def => {
+          const found = parsed.find(p => p.id === def.id);
+          return found ? { ...def, visible: found.visible } : def;
+        });
+        const storedIds = parsed.map(p => p.id);
+        const ordered = [
+          ...parsed.filter(p => merged.some(m => m.id === p.id)).map(p => merged.find(m => m.id === p.id)!),
+          ...merged.filter(m => !storedIds.includes(m.id))
+        ];
+        this.columnConfig.set(ordered);
+      } else {
+        this.columnConfig.set([...this.MOVEABLE_COLUMNS_DEFAULT]);
+      }
+    } catch {
+      this.columnConfig.set([...this.MOVEABLE_COLUMNS_DEFAULT]);
+    }
+  }
+
+  saveColumnConfig() {
+    try { localStorage.setItem(this.COL_STORAGE_KEY, JSON.stringify(this.columnConfig())); } catch {}
+  }
+
+  toggleColumnVisibility(id: string) {
+    this.columnConfig.update(cols => cols.map(col => col.id === id ? { ...col, visible: !col.visible } : col));
+    this.saveColumnConfig();
+  }
+
+  resetColumns() {
+    this.columnConfig.set([...this.MOVEABLE_COLUMNS_DEFAULT]);
+    this.saveColumnConfig();
+  }
+
+  resetAll() {
+    this.clearFilters();
+    this.resetColumns();
+    this.resetSort();
+  }
+
+  onColDragStart(index: number, event: DragEvent) {
+    this._draggedColIdx = index;
+    this.draggedColId.set(this.columnConfig()[index]?.id ?? null);
+    if (event.dataTransfer) { event.dataTransfer.effectAllowed = 'move'; }
+  }
+
+  onColDragOver(index: number, event: DragEvent) {
+    event.preventDefault();
+    if (event.dataTransfer) { event.dataTransfer.dropEffect = 'move'; }
+  }
+
+  onColDrop(targetIndex: number) {
+    if (this._draggedColIdx === null || this._draggedColIdx === targetIndex) {
+      this._draggedColIdx = null;
+      this.draggedColId.set(null);
+      return;
+    }
+    const cols = [...this.columnConfig()];
+    const [moved] = cols.splice(this._draggedColIdx, 1);
+    cols.splice(targetIndex, 0, moved);
+    this.columnConfig.set(cols);
+    this.saveColumnConfig();
+    this._draggedColIdx = null;
+    this.draggedColId.set(null);
+  }
+
+  onColDragEnd() {
+    this._draggedColIdx = null;
+    this.draggedColId.set(null);
+  }
+
+  trackColById(_: number, col: TableColumn) { return col.id; }
+
+  isMobileColVisible(colId: string): boolean {
+    return this.columnConfig().some(col => col.id === colId && col.visible);
+  }
+
   // Pagination Logic
+  private getSortValue(p: Publicador, col: string): string | number {
+    switch (col) {
+      case 'nombre':         return this.getFullName(p).toLowerCase();
+      case 'congregacion':   return p.nombre_congregacion?.toLowerCase() ?? '';
+      case 'grupo':          return this.getGrupoNombre(p.id_grupo_publicador).toLowerCase();
+      case 'fecha_nacimiento': return p.fecha_nacimiento ? new Date(p.fecha_nacimiento).getTime() : 0;
+      case 'fecha_bautismo': return p.fecha_bautismo ? new Date(p.fecha_bautismo).getTime() : 0;
+      case 'telefono':       return (p.telefono ?? '').toLowerCase();
+      case 'sexo':           return (p.sexo ?? '').toLowerCase();
+      case 'direccion':      return (p.direccion ?? '').toLowerCase();
+      case 'barrio':         return (p.barrio ?? '').toLowerCase();
+      case 'consentimiento_datos': return p.consentimiento_datos ? 1 : 0;
+      case 'estado':         return this.getEstadoNombre(p.id_estado_publicador).toLowerCase();
+      default:               return '';
+    }
+  }
+
+  sortedList = computed(() => {
+    const order = this.sortOrder();
+    const list = [...this.filteredList()];
+    if (order.length === 0) return list;
+
+    return list.sort((a, b) => {
+      for (const { col, dir } of order) {
+        const valA = this.getSortValue(a, col);
+        const valB = this.getSortValue(b, col);
+        if (valA < valB) return dir === 'asc' ? -1 : 1;
+        if (valA > valB) return dir === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  });
+
   pagedList = computed(() => {
     const start = (this.currentPage() - 1) * this.pageSize;
     const end = start + this.pageSize;
-    return this.filteredList().slice(start, end);
+    return this.sortedList().slice(start, end);
   });
 
   // Stats Logic for Chips (Dynamic - based on search-filtered list)
@@ -1440,11 +2085,25 @@ export class PublicadoresListComponent implements OnInit {
       }
 
       // Added trailing slashes to match service configuration
-      const [estados, grupos, allPrivilegios] = await Promise.all([
+      const requests: any[] = [
         lastValueFrom(this.http.get<Estado[]>('/api/estados/')),
         lastValueFrom(this.http.get<Grupo[]>('/api/grupos/', { params })),
         lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/'))
-      ]);
+      ];
+
+      if (this.isAdminOrGestor()) {
+        requests.push(lastValueFrom(this.http.get<Congregacion[]>('/api/congregaciones/')));
+      }
+
+      const results = await Promise.all(requests);
+
+      const estados = results[0];
+      const grupos = results[1];
+      const allPrivilegios = results[2];
+
+      if (this.isAdminOrGestor() && results[3]) {
+        this.congregaciones.set(results[3]);
+      }
 
       this.estados.set(estados || []);
       this.grupos.set(grupos || []);
@@ -1527,6 +2186,7 @@ export class PublicadoresListComponent implements OnInit {
       consentimiento_datos: false,
       ungido: false,
       id_grupo_publicador: null,
+      id_congregacion_publicador: null,
       id_estado_publicador: estadoActivo ? estadoActivo.id_estado : null
     });
     this.publicadorPrivilegios.set([]); // Clear privileges for new form
@@ -1550,6 +2210,7 @@ export class PublicadoresListComponent implements OnInit {
       fecha_bautismo: p.fecha_bautismo || null,
       ungido: p.ungido ?? false,
       id_grupo_publicador: p.id_grupo_publicador || null,
+      id_congregacion_publicador: p.id_congregacion_publicador || null,
       id_estado_publicador: p.id_estado_publicador || null,
       consentimiento_datos: p.consentimiento_datos || false
     });
@@ -1761,7 +2422,7 @@ export class PublicadoresListComponent implements OnInit {
 
     // Default if no specific roles
     if (roles.length === 0) {
-       // No mostrar nada si no tiene privilegios especiales (es publicador por defecto)
+      // No mostrar nada si no tiene privilegios especiales (es publicador por defecto)
     }
 
     return roles;
