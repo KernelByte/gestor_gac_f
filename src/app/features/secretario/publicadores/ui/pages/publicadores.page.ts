@@ -424,6 +424,69 @@ interface TableColumn {
         <!-- Spacer -->
         <div class="flex-1 hidden lg:block"></div>
 
+        <!-- Export Dropdown -->
+        <div class="relative shrink-0 hidden md:block">
+            <!-- Backdrop -->
+            <div *ngIf="showExportMenu()" (click)="showExportMenu.set(false)" class="fixed inset-0 z-40 bg-transparent"></div>
+
+            <!-- Trigger -->
+            <button
+                (click)="showExportMenu.set(!showExportMenu())"
+                [disabled]="exporting()"
+                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 hover:text-slate-900 dark:hover:text-slate-200 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+                <!-- Spinner cuando exporta -->
+                <svg *ngIf="exporting()" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
+                <!-- Icono normal -->
+                <svg *ngIf="!exporting()" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span class="hidden sm:inline">{{ exporting() ? 'Exportando...' : 'Exportar' }}</span>
+                <svg *ngIf="!exporting()" class="w-3 h-3 opacity-50 transition-transform duration-200" [class.rotate-180]="showExportMenu()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+
+            <!-- Menú dropdown -->
+            <div
+                *ngIf="showExportMenu()"
+                class="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg shadow-slate-200/60 dark:shadow-black/40 border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fadeInUp"
+            >
+                <!-- Cabecera del menú -->
+                <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exportar vista actual</p>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{{ sortedList().length }} registros · {{ visibleMoveableColumns().length + 2 }} columnas</p>
+                </div>
+
+                <!-- Opción Excel -->
+                <button
+                    (click)="exportData('excel')"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors group text-left"
+                >
+                    <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50 transition-colors">
+                        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Excel (.xlsx)</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500">Con filtros y columnas visibles</p>
+                    </div>
+                </button>
+
+                <!-- Opción PDF -->
+                <button
+                    (click)="exportData('pdf')"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors group text-left"
+                >
+                    <div class="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0 group-hover:bg-rose-200 dark:group-hover:bg-rose-900/50 transition-colors">
+                        <svg class="w-4 h-4 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-700 dark:text-slate-200">PDF</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500">Orientación automática por columnas</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Separador antes del botón Nuevo -->
+        <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+
         <!-- Action Button (Compact, inside toolbar) -->
         <button 
             (click)="openCreateForm()"
@@ -1590,6 +1653,8 @@ export class PublicadoresListComponent implements OnInit {
   panelOpen = signal(false);
   deleteModalOpen = signal(false);
   saving = signal(false);
+  exporting = signal(false);
+  showExportMenu = signal(false);
   editingPublicador = signal<Publicador | null>(null);
   publicadorToDelete = signal<Publicador | null>(null);
   activeTab = signal<TabType>('personal');
@@ -1960,6 +2025,74 @@ export class PublicadoresListComponent implements OnInit {
     this.clearFilters();
     this.resetColumns();
     this.resetSort();
+  }
+
+  // ─── Exportación ─────────────────────────────────────────────────────────
+  exportData(format: 'excel' | 'pdf') {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.showExportMenu.set(false);
+
+    // Columnas visibles en el mismo orden que la tabla: Nombre, [dinámicas], Estado
+    const allColumns = [
+      { id: 'nombre', label: 'Nombre' },
+      ...this.visibleMoveableColumns().map(c => ({ id: c.id, label: c.label })),
+      { id: 'estado', label: 'Estado' },
+    ];
+
+    // Serializar cada fila con los valores ya formateados (igual a como se muestran en pantalla)
+    const rows = this.sortedList().map(p => {
+      const row: Record<string, string> = {};
+      for (const col of allColumns) {
+        row[col.id] = this.getExportCellValue(p, col.id);
+      }
+      return row;
+    });
+
+    const titulo = 'Listado de Publicadores';
+    const endpoint = `/api/publicadores/export/${format}`;
+
+    this.http.post(endpoint, { columns: allColumns, rows, titulo }, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const ext = format === 'excel' ? 'xlsx' : 'pdf';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${titulo.replace(/ /g, '_')}.${ext}`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+      },
+    });
+  }
+
+  private getExportCellValue(p: Publicador, colId: string): string {
+    switch (colId) {
+      case 'nombre':             return this.getFullName(p);
+      case 'congregacion':       return p.nombre_congregacion ?? '';
+      case 'grupo':              return this.getGrupoNombre(p.id_grupo_publicador);
+      case 'fecha_nacimiento':   return p.fecha_nacimiento ? this.formatDateExport(p.fecha_nacimiento) : '';
+      case 'fecha_bautismo':     return p.fecha_bautismo ? this.formatDateExport(p.fecha_bautismo) : '';
+      case 'telefono':           return p.telefono ?? '';
+      case 'sexo':               return p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Femenino' : (p.sexo ?? '');
+      case 'direccion':          return p.direccion ?? '';
+      case 'barrio':             return p.barrio ?? '';
+      case 'consentimiento_datos': return p.consentimiento_datos ? 'Sí' : 'No';
+      case 'estado':             return this.getEstadoNombre(p.id_estado_publicador);
+      default:                   return '';
+    }
+  }
+
+  private formatDateExport(dateStr: string): string {
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
   }
 
   onColDragStart(index: number, event: DragEvent) {
