@@ -132,6 +132,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
   isSaving = signal(false);
   showSuccessMessage = signal(false);
   showExitConfirmation = signal(false); // Modal state
+  removeLeaderConfirm = signal<{ groupId: number; role: 'capitan' | 'auxiliar' } | null>(null); // Modal quitar encargado
   isFullScreen = signal(false); // Estado para pantalla completa
 
   // Selection State
@@ -639,7 +640,14 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
   }
 
   removeLeader(groupId: number, role: 'capitan' | 'auxiliar') {
-    if (!confirm(`¿Estás seguro de quitar al ${role} de este grupo ? `)) return;
+    this.removeLeaderConfirm.set({ groupId, role });
+  }
+
+  confirmRemoveLeader() {
+    const data = this.removeLeaderConfirm();
+    if (!data) return;
+    const { groupId, role } = data;
+    this.removeLeaderConfirm.set(null);
 
     this.grupos.update(currentGrupos => {
       return currentGrupos.map(g => {
@@ -653,6 +661,19 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
         return g;
       });
     });
+  }
+
+  getRemoveLeaderConfirmRoleLabel(): string {
+    const data = this.removeLeaderConfirm();
+    if (!data) return '';
+    return data.role === 'capitan' ? 'Capitán' : 'Auxiliar';
+  }
+
+  getRemoveLeaderConfirmGroupName(): string {
+    const data = this.removeLeaderConfirm();
+    if (!data) return '';
+    const g = this.grupos().find(gr => gr.id_grupo === data.groupId);
+    return g?.nombre_grupo ?? '';
   }
 
   isLeaderModified(groupId: number, role: 'capitan' | 'auxiliar'): boolean {

@@ -81,9 +81,10 @@
          [style.border-width]="isFullScreen() ? '0' : null"
          [style.overflow]="isFullScreen() ? 'visible' : null">
 
-         <!-- Header Full Screen Mode - Tema-aware -->
+         <!-- Header Full Screen Mode - Tema-aware (z-alto para que no quede debajo de columnas) -->
          <div *ngIf="isFullScreen()"
-            class="shrink-0 z-50 relative bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-white/5">
+            class="shrink-0 relative bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-white/5 isolate"
+            style="z-index: 100;">
             <!-- Línea decorativa superior con gradiente naranja -->
             <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent"></div>
 
@@ -196,7 +197,8 @@
          <div *ngIf="!isFullScreen()" class="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#f1f2f4] dark:from-slate-900 to-transparent z-10 pointer-events-none"></div>
          <div *ngIf="!isFullScreen()" class="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#f1f2f4] dark:from-slate-900 to-transparent z-10 pointer-events-none"></div>
 
-         <div #scrollContainer class="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar"
+         <div #scrollContainer class="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar relative"
+            [style.z-index]="isFullScreen() ? '0' : null"
             [class.immersive-scroll]="isFullScreen()"
             [class.snap-x]="!isDraggingContent()" [class.snap-mandatory]="!isDraggingContent()"
             [class.scroll-smooth]="!isDraggingContent()" (dragover)="onContainerDragOver($event)"
@@ -490,8 +492,8 @@
                      </div>
                   </div>
 
-                  <!-- Listado de Publicadores -->
-                  <div class="px-2.5 py-2 flex-1 overflow-y-auto custom-scrollbar"
+                  <!-- Listado de Publicadores (fondo diferenciado para resaltar las cards) -->
+                  <div class="px-2.5 py-2 flex-1 overflow-y-auto custom-scrollbar rounded-b-2xl bg-slate-50/80 dark:bg-slate-800/40"
                      [class.immersive-scroll]="isFullScreen()">
                      <div class="mb-1.5 px-1">
                         <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em]">Publicadores</span>
@@ -545,14 +547,47 @@
             </p>
          </div>
 
-         <div class="bg-slate-50 p-4 flex gap-3">
+         <div class="bg-slate-50 dark:bg-slate-700/30 p-4 flex gap-3">
             <button (click)="showExitConfirmation.set(false)"
-               class="flex-1 py-2.5 px-4 rounded-xl text-slate-600 font-bold text-sm hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all">
+               class="flex-1 py-2.5 px-4 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-white dark:hover:bg-slate-600 hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-500 transition-all">
                Cancelar
             </button>
             <button (click)="confirmExit()"
                class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm shadow-lg shadow-red-500/30 hover:shadow-red-500/40 hover:from-red-600 hover:to-red-700 transition-all active:scale-95">
                Salir de todas formas
+            </button>
+         </div>
+      </div>
+   </div>
+
+   <!-- Modal Confirmar quitar Capitán/Auxiliar -->
+   <div *ngIf="removeLeaderConfirm()" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm"
+         (click)="removeLeaderConfirm.set(null)"></div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden border border-slate-100 dark:border-slate-700 animate-fade-in-up">
+         <div class="p-6 text-center">
+            <div class="w-14 h-14 bg-orange-50 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+               <svg class="w-7 h-7 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <line x1="23" y1="11" x2="17" y2="11"/>
+                  <path d="M23 18v2a2 2 0 0 1-2 2h-4"/>
+               </svg>
+            </div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Quitar encargado</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+               ¿Quitar al <span class="font-bold text-slate-700 dark:text-slate-200">{{ getRemoveLeaderConfirmRoleLabel() }}</span> de <span class="font-bold text-orange-600 dark:text-orange-400">{{ getRemoveLeaderConfirmGroupName() }}</span>?
+            </p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Podrás volver a asignarlo después.</p>
+         </div>
+         <div class="bg-slate-50 dark:bg-slate-700/30 p-4 flex gap-3">
+            <button (click)="removeLeaderConfirm.set(null)"
+               class="flex-1 py-2.5 px-4 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-white dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 transition-all">
+               Cancelar
+            </button>
+            <button (click)="confirmRemoveLeader()"
+               class="flex-1 py-2.5 px-4 rounded-xl bg-brand-orange hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:shadow-orange-500/35 transition-all active:scale-95">
+               Quitar
             </button>
          </div>
       </div>
