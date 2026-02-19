@@ -401,19 +401,19 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     const privilegioConfig: { [key: string]: { label: string; class: string } } = {
       'anciano': {
         label: 'Anciano',
-        class: 'text-indigo-700 bg-indigo-100 shadow-sm'
+        class: 'text-indigo-700 bg-indigo-100/90 border border-indigo-200/60 dark:bg-indigo-900/40 dark:text-indigo-200 dark:border-indigo-500/40 rounded-full'
       },
       'siervo ministerial': {
         label: 'Siervo Ministerial',
-        class: 'text-yellow-800 bg-yellow-100 shadow-sm'
+        class: 'text-amber-800 bg-amber-100/90 border border-amber-200/60 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-500/40 rounded-full'
       },
       'precursor regular': {
         label: 'Precursor Regular',
-        class: 'text-purple-700 bg-purple-100 shadow-sm'
+        class: 'text-purple-700 bg-purple-100/90 border border-purple-200/60 dark:bg-purple-900/40 dark:text-purple-200 dark:border-purple-500/40 rounded-full'
       },
       'precursor auxiliar': {
         label: 'Precursor Auxiliar',
-        class: 'text-amber-700 bg-amber-100 shadow-sm'
+        class: 'text-amber-700 bg-amber-100/90 border border-amber-200/50 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-500/40 rounded-full'
       },
     };
 

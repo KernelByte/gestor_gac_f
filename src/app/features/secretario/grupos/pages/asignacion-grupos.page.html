@@ -405,9 +405,9 @@
                                     }">
                                     {{ grupo.capitan_grupo || 'Arrastra aquí...' }}
                                  </p>
-                                 <div class="flex flex-wrap gap-0.5 mt-0.5" *ngIf="getPrivilegioTagsByName(grupo.capitan_grupo).length > 0">
+                                 <div class="flex flex-wrap gap-1 mt-0.5" *ngIf="getPrivilegioTagsByName(grupo.capitan_grupo).length > 0">
                                     <span *ngFor="let tag of getPrivilegioTagsByName(grupo.capitan_grupo)"
-                                       class="text-[8px] font-bold px-1 py-px rounded-md whitespace-nowrap"
+                                       class="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold whitespace-nowrap tracking-tight"
                                        [ngClass]="tag.class">
                                        {{ tag.label }}
                                     </span>
@@ -467,9 +467,9 @@
                                     }">
                                     {{ grupo.auxiliar_grupo || 'Arrastra aquí...' }}
                                  </p>
-                                 <div class="flex flex-wrap gap-0.5 mt-0.5" *ngIf="getPrivilegioTagsByName(grupo.auxiliar_grupo).length > 0">
+                                 <div class="flex flex-wrap gap-1 mt-0.5" *ngIf="getPrivilegioTagsByName(grupo.auxiliar_grupo).length > 0">
                                     <span *ngFor="let tag of getPrivilegioTagsByName(grupo.auxiliar_grupo)"
-                                       class="text-[8px] font-bold px-1 py-px rounded-md whitespace-nowrap"
+                                       class="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold whitespace-nowrap tracking-tight"
                                        [ngClass]="tag.class">
                                        {{ tag.label }}
                                     </span>
@@ -643,9 +643,9 @@
             [class.dark:text-orange-300]="isSelected(p.id_publicador)">
             {{ p.primer_nombre }} {{ p.primer_apellido }}
          </p>
-         <div class="flex gap-0.5 mt-0.5 flex-wrap min-h-[14px]" *ngIf="getPrivilegioTags(p).length > 0">
+         <div class="flex gap-1 mt-0.5 flex-wrap min-h-[14px]" *ngIf="getPrivilegioTags(p).length > 0">
             <span *ngFor="let tag of getPrivilegioTags(p)"
-               class="text-[8px] font-bold px-1.5 py-px rounded-md whitespace-nowrap"
+               class="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold whitespace-nowrap tracking-tight"
                [ngClass]="tag.class">
                {{ tag.label }}
             </span>
