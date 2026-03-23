@@ -103,7 +103,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 *ngIf="hasRole('Administrador')"
                 routerLink="/roles"
                                                                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -123,7 +123,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 *ngIf="hasRole('Administrador') || hasRole('Coordinador') || hasRole('Secretario')"
                 routerLink="/usuarios"
                                                                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -141,7 +141,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 *ngIf="hasPermission('reuniones.ver') || hasRole('Secretario')"
                 routerLink="/reuniones"
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -170,7 +170,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 *ngIf="hasPermission('publicadores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
                 routerLink="/secretario/publicadores"
                 routerLinkActive="bg-brand-orange text-white shadow-lg shadow-orange-500/30 ring-1 ring-orange-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-orange hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -191,7 +191,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 *ngIf="hasPermission('informes.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
                 routerLink="/secretario/informes"
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -212,7 +212,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 *ngIf="hasPermission('territorios.ver')"
                 routerLink="/territorios"
                 routerLinkActive="bg-brand-green text-white shadow-lg shadow-green-500/30 ring-1 ring-green-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-green hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -233,7 +233,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 *ngIf="hasPermission('exhibidores.ver')"
                 routerLink="/exhibidores"
                 routerLinkActive="bg-brand-blue text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-blue hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -263,7 +263,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 *ngIf="!hasRole('Administrador') && (hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador'))"
                 routerLink="/configuracion" 
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()
@@ -284,7 +284,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 *ngIf="hasRole('Administrador')"
                 routerLink="/admin/configuracion" 
                 routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-3': !collapsed()

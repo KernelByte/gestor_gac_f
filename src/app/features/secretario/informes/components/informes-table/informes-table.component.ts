@@ -11,7 +11,7 @@ import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.ut
    imports: [CommonModule, FormsModule],
    templateUrl: './informes-table.component.html',
    host: {
-      'class': 'flex-1 min-h-0 bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 flex flex-col overflow-hidden'
+      'class': 'flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex flex-col overflow-hidden'
    }
 })
 export class InformesTableComponent {
