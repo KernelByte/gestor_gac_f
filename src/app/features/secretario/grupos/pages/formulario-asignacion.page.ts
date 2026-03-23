@@ -8,6 +8,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
 import { PrivilegiosService } from '../../privilegios/infrastructure/privilegios.service';
 import { Privilegio } from '../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../privilegios/domain/models/publicador-privilegio';
+import { getInitialAvatarStyle } from '../../../../core/utils/avatar-style.util';
 
 interface Publicador {
    id_publicador: number;
@@ -226,17 +227,8 @@ export class FormularioAsignacionPage implements OnInit {
       return (p.primer_nombre.charAt(0) + p.primer_apellido.charAt(0)).toUpperCase();
    }
 
-   getAvatarClass(id: number): string {
-      const COLORS = [
-         'bg-blue-50 text-blue-600',
-         'bg-emerald-50 text-emerald-600',
-         'bg-orange-50 text-orange-600',
-         'bg-purple-50 text-purple-600',
-         'bg-cyan-50 text-cyan-600',
-         'bg-rose-50 text-rose-600',
-         'bg-indigo-50 text-indigo-600'
-      ];
-      return COLORS[Math.abs(id) % COLORS.length];
+   getAvatarStyle(p: Publicador): string {
+      return getInitialAvatarStyle(this.getFullName(p));
    }
 
    goBack() {

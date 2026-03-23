@@ -179,7 +179,7 @@ type TabType = 'asistencia' | 'asignaciones' | 'resumen';
                               <th class="px-2 py-2 text-center text-brand-purple font-extrabold">Prom.</th>
                            </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-50">
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
                            <tr class="hover:bg-slate-50 transition-colors">
                               <td class="px-6 py-4 font-bold text-slate-700">Septiembre</td>
                               <td class="px-2 py-4 text-center text-slate-500 font-medium border-l border-slate-100">4</td>

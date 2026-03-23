@@ -8,6 +8,8 @@ import { lastValueFrom } from 'rxjs';
 import { UsuariosService, Rol, Congregacion, UsuarioCreatePublicador } from '../services/usuarios.service';
 import { Usuario } from '../models/usuario.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
+import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
+import { getInitialAvatarStyle } from '../../../../core/utils/avatar-style.util';
 
 @Component({
    standalone: true,
@@ -49,6 +51,7 @@ export class UsuariosPage implements OnInit {
    private route = inject(ActivatedRoute);
    private router = inject(Router);
    private authStore = inject(AuthStore);
+   private congregacionContext = inject(CongregacionContextService);
 
    usuarios = signal<Usuario[]>([]);
    roles = signal<Rol[]>([]);
@@ -105,7 +108,7 @@ export class UsuariosPage implements OnInit {
          id_congregacion: [null],
          id_usuario_publicador: [null],
          telefono: [''],
-         tipo_identificacion: [''],
+         tipo_identificacion: ['CC'],
          id_identificacion: ['']
       }, { validators: this.passwordMatchValidator });
    }
@@ -225,15 +228,7 @@ export class UsuariosPage implements OnInit {
    });
 
    getUserStyle(name: string): string {
-      const n = (name || '').toLowerCase();
-      const char = n.charCodeAt(0);
-
-      // Deterministic pastel color mapping based on first char
-      if (char % 5 === 0) return 'bg-purple-100 text-purple-700 ring-purple-600/20 dark:bg-purple-900/40 dark:text-purple-300 dark:ring-purple-400/30';
-      if (char % 5 === 1) return 'bg-blue-100 text-blue-700 ring-blue-600/20 dark:bg-blue-900/40 dark:text-blue-300 dark:ring-blue-400/30';
-      if (char % 5 === 2) return 'bg-emerald-100 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/40 dark:text-emerald-300 dark:ring-emerald-400/30';
-      if (char % 5 === 3) return 'bg-orange-100 text-orange-700 ring-orange-600/20 dark:bg-orange-900/40 dark:text-orange-300 dark:ring-orange-400/30';
-      return 'bg-cyan-100 text-cyan-700 ring-cyan-600/20 dark:bg-cyan-900/40 dark:text-cyan-300 dark:ring-cyan-400/30';
+      return getInitialAvatarStyle(name);
    }
 
    // -----------------------------
@@ -275,11 +270,13 @@ export class UsuariosPage implements OnInit {
    filteredUsuarios = computed(() => {
       const q = this.searchQuery().toLowerCase();
       const rolFilter = this.selectedRolFilter();
+      const congId = this.congregacionContext.effectiveCongregacionId();
 
       return this.usuarios().filter(u => {
          const matchesSearch = u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q);
          const matchesRol = rolFilter === null || u.id_rol_usuario === rolFilter;
-         return matchesSearch && matchesRol;
+         const matchesCong = congId === null || (u.id_congregacion != null && u.id_congregacion === congId);
+         return matchesSearch && matchesRol && matchesCong;
       });
    });
 
@@ -324,7 +321,7 @@ export class UsuariosPage implements OnInit {
    openCreatePanel() {
       console.log('openCreatePanel clicked');
       this.editingUser.set(null);
-      this.userForm.reset();
+      this.userForm.reset({ tipo_identificacion: 'CC' });
 
       // Re-enable password validators for new users
       this.userForm.get('contrasena')?.setValidators([Validators.required, Validators.minLength(6)]);
@@ -402,6 +399,7 @@ export class UsuariosPage implements OnInit {
    }
 
    async save() {
+      this.userForm.markAllAsTouched();
       if (this.userForm.invalid) return;
 
       this.saving.set(true);

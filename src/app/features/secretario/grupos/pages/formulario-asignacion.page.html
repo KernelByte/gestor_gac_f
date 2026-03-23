@@ -101,9 +101,9 @@
             </div>
  
             <!-- List Content -->
-            <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar bg-white dark:bg-slate-900 transition-colors duration-300">
+            <div class="flex-1 overflow-y-auto p-2 space-y-0 divide-y divide-slate-200 dark:divide-slate-800 custom-scrollbar bg-white dark:bg-slate-900 transition-colors duration-300">
                <div *ngFor="let p of filteredAvailable()"
-                  class="group relative flex items-center p-2.5 rounded-xl border transition-all cursor-pointer select-none mb-2"
+                  class="group relative flex items-center p-2.5 rounded-xl border transition-all cursor-pointer select-none py-3 first:pt-2"
                   [ngClass]="{
                         'bg-slate-50/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-sm': !p.selected,
                         'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-500/30 shadow-sm ring-1 ring-orange-200 dark:ring-orange-500/30': p.selected
@@ -113,8 +113,8 @@
                   <div class="flex items-center gap-3 min-w-0 flex-1">
                      <!-- Modern Avatar with Initials -->
                      <div
-                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-sm font-bold shrink-0 transition-transform duration-300 group-hover:scale-105"
-                        [ngClass]="getAvatarClass(p.id_publicador)">
+                        class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
+                        [ngClass]="getAvatarStyle(p)">
                         {{ getInitials(p) }}
                      </div>
 
@@ -249,9 +249,9 @@
             </div>
 
             <!-- List Content -->
-            <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar bg-white dark:bg-slate-900 transition-colors duration-300">
+            <div class="flex-1 overflow-y-auto p-2 space-y-0 divide-y divide-slate-200 dark:divide-slate-800 custom-scrollbar bg-white dark:bg-slate-900 transition-colors duration-300">
                <div *ngFor="let p of filteredGroupMembers()"
-                  class="group relative flex items-center p-2.5 rounded-xl border transition-all cursor-pointer select-none mb-2"
+                  class="group relative flex items-center p-2.5 rounded-xl border transition-all cursor-pointer select-none py-3 first:pt-2"
                   [ngClass]="{
                         'bg-orange-50/30 dark:bg-orange-900/10 border-orange-100 dark:border-orange-500/20 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-orange-200 dark:hover:border-orange-500/30 hover:shadow-sm': !p.selected,
                         'bg-orange-100 dark:bg-orange-500/20 border-orange-300 dark:border-orange-500/40 shadow-sm ring-1 ring-orange-300 dark:ring-orange-500/40': p.selected
@@ -261,8 +261,8 @@
                   <div class="flex items-center gap-3 min-w-0 flex-1">
                      <!-- Modern Avatar with Initials -->
                      <div
-                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-sm font-bold shrink-0 transition-transform duration-300 group-hover:scale-105"
-                        [ngClass]="getAvatarClass(p.id_publicador)">
+                        class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
+                        [ngClass]="getAvatarStyle(p)">
                         {{ getInitials(p) }}
                      </div>
 

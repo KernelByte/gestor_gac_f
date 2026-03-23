@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { InformesService } from '../../services/informes.service';
 import { HistorialAnualOut } from '../../models/informe.model';
 import { Grupo } from '../../../grupos/models/grupo.model';
+import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
 
 @Component({
    selector: 'app-informes-historial',
@@ -126,6 +127,10 @@ export class InformesHistorialComponent implements OnChanges {
 
    selectPublicador(id: number) {
       this.selectedPublicadorId.set(id);
+   }
+
+   getAvatarStyle(nombre: string): string {
+      return getInitialAvatarStyle(nombre || '');
    }
 
    // --- Export Logic ---

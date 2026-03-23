@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ResumenMensual, InformeConPublicador, InformeLoteItem } from '../../models/informe.model';
 import { Privilegio } from '../../../privilegios/domain/models/privilegio';
+import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
 
 @Component({
    selector: 'app-informes-table',
@@ -32,17 +33,8 @@ export class InformesTableComponent {
       return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
    }
 
-   getAvatarClass(id: number): string {
-      const COLORS = [
-         'bg-blue-50 text-blue-600',
-         'bg-emerald-50 text-emerald-600',
-         'bg-orange-50 text-orange-600',
-         'bg-purple-50 text-purple-600',
-         'bg-cyan-50 text-cyan-600',
-         'bg-rose-50 text-rose-600',
-         'bg-indigo-50 text-indigo-600'
-      ];
-      return COLORS[Math.abs(id) % COLORS.length];
+   getAvatarStyle(nombre: string): string {
+      return getInitialAvatarStyle(nombre || '');
    }
 
    getRoles(pub: InformeConPublicador): { label: string, type: 'pill' | 'text', class: string }[] {
@@ -119,8 +111,9 @@ export class InformesTableComponent {
 
    onUpdateInforme(pub: InformeConPublicador, field: string, event: Event) {
       let value: any;
+      const el = event.target as HTMLInputElement;
       if (field === 'participo') {
-         value = (event.target as HTMLInputElement).checked;
+         value = el.type === 'radio' ? el.value === 'true' : el.checked;
          // Auto-focus logic: If participating AND (Precursor or Paux)
          if (value) {
             const roles = this.getRoles(pub);
@@ -132,9 +125,9 @@ export class InformesTableComponent {
             }
          }
       }
-      else if (field === 'cursos') value = parseInt((event.target as HTMLInputElement).value) || 0;
-      else if (field === 'horas') value = parseInt((event.target as HTMLInputElement).value) || 0;
-      else if (field === 'notas') value = (event.target as HTMLInputElement).value || null;
+      else if (field === 'cursos') value = parseInt(el.value) || 0;
+      else if (field === 'horas') value = parseInt(el.value) || 0;
+      else if (field === 'notas') value = el.value || null;
 
       this.informeChange.emit({ pub, field, value });
    }

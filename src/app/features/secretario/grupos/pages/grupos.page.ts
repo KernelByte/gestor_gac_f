@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { GruposService } from '../services/grupos.service';
 import { Grupo } from '../models/grupo.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
+import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
 
 @Component({
    standalone: true,
@@ -39,9 +40,11 @@ import { AuthStore } from '../../../../core/auth/auth.store';
 export class GruposListComponent implements OnInit {
    private gruposService = inject(GruposService);
    private authStore = inject(AuthStore);
+   private congregacionContext = inject(CongregacionContextService);
    private fb = inject(FormBuilder);
    private router = inject(Router);
    private http = inject(HttpClient);
+
 
    grupos = signal<Grupo[]>([]);
    totalSinAsignar = signal(0);
@@ -71,7 +74,7 @@ export class GruposListComponent implements OnInit {
 
    totalAsignados = computed(() => this.grupos().reduce((acc, g) => acc + (g.cantidad_publicadores || 0), 0));
 
-   // Check if current user is Admin or Gestor Aplicación
+   // Check if current user is Admin or Gestor Aplicaci?n
    isAdminOrGestor = computed(() => {
       const user = this.authStore.user();
       const rol = user?.rol?.toLowerCase() || '';
@@ -85,6 +88,17 @@ export class GruposListComponent implements OnInit {
    editingGrupo = signal<Grupo | null>(null);
 
    showExportMenu = signal(false);
+   exportFormat = signal<'pdf' | 'excel'>('pdf');
+
+   @ViewChild('exportWrapper') exportWrapperRef?: ElementRef<HTMLElement>;
+
+   @HostListener('document:click', ['$event'])
+   onDocumentClick(event: MouseEvent) {
+      if (!this.showExportMenu()) return;
+      const el = this.exportWrapperRef?.nativeElement;
+      if (el?.contains(event.target as Node)) return;
+      this.closeExportMenu();
+   }
 
    toggleExportMenu() {
       this.showExportMenu.update(v => !v);
@@ -96,15 +110,30 @@ export class GruposListComponent implements OnInit {
 
    async confirmExport(type: 'all' | 'active') {
       this.showExportMenu.set(false);
+
+      // Para el admin: si no hay congregaci?n seleccionada no podemos generar el reporte
+      const idCongregacion = this.congregacionContext.effectiveCongregacionId();
+      if (this.congregacionContext.isAdmin() && !idCongregacion) {
+         alert('Selecciona una congregaci?n en el encabezado para exportar el reporte.');
+         return;
+      }
+
+      const format = this.exportFormat();
+      const params: any = {};
+      if (type === 'active') {
+         params.solo_activos = true;
+      }
+      if (idCongregacion) {
+         params.id_congregacion = idCongregacion;
+      }
+
+      const endpoint = format === 'pdf' ? '/api/grupos/exportar-pdf' : '/api/grupos/exportar-excel';
+      const defaultFilename = format === 'pdf' ? 'Reporte_Grupos.pdf' : 'Reporte_Grupos.xlsx';
+
       this.exporting.set(true);
       try {
-         const params: any = {};
-         if (type === 'active') {
-            params.solo_activos = true;
-         }
-
          const response = await lastValueFrom(
-            this.http.get('/api/grupos/exportar-pdf', {
+            this.http.get(endpoint, {
                params,
                responseType: 'blob',
                observe: 'response'
@@ -112,15 +141,14 @@ export class GruposListComponent implements OnInit {
          );
 
          const blob = response.body;
-         if (!blob) throw new Error('No se recibió archivo');
+         if (!blob) throw new Error('No se recibi? archivo');
 
          const url = window.URL.createObjectURL(blob);
          const a = document.createElement('a');
          a.href = url;
 
-         // Extract filename from header if possible, else default
          const contentDisposition = response.headers.get('content-disposition');
-         let filename = 'Reporte_Grupos.pdf';
+         let filename = defaultFilename;
          if (contentDisposition) {
             const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
             if (filenameMatch && filenameMatch.length > 1) {
@@ -135,14 +163,14 @@ export class GruposListComponent implements OnInit {
          document.body.removeChild(a);
 
       } catch (err) {
-         console.error('Error exportando PDF', err);
-         alert('Error al generar el reporte PDF.');
+         console.error(`Error exportando ${format.toUpperCase()}`, err);
+         alert(format === 'pdf' ? 'Error al generar el reporte PDF.' : 'Error al generar el reporte Excel.');
       } finally {
          this.exporting.set(false);
       }
    }
 
-   // Autocomplete for Capitán and Auxiliar
+   // Autocomplete for Capit?n and Auxiliar
    publicadores = signal<any[]>([]);
    capitanDropdownOpen = signal(false);
    auxiliarDropdownOpen = signal(false);
@@ -175,22 +203,23 @@ export class GruposListComponent implements OnInit {
          auxiliar_grupo: ['']
       });
 
-      // this.searchControl.valueChanges.subscribe(() => {
-      //    this.currentPage.set(1);
-      // });
+      // Recargar datos autom?ticamente cuando el admin cambia de congregaci?n en el header
+      effect(() => {
+         this.congregacionContext.effectiveCongregacionId();
+         this.loadGrupos();
+         this.loadSinAsignar();
+      });
    }
 
    ngOnInit() {
-      this.loadGrupos();
-      this.loadSinAsignar();
+      // La carga inicial ya la dispara el effect() del constructor
    }
 
    loadSinAsignar() {
-      const user = this.authStore.user();
       const params: any = { limit: 1000 };
-
-      if (user?.id_congregacion) {
-         params.id_congregacion = user.id_congregacion;
+      const idCongregacion = this.congregacionContext.effectiveCongregacionId();
+      if (idCongregacion) {
+         params.id_congregacion = idCongregacion;
       }
 
       this.http.get<any[]>('/api/publicadores/', { params }).subscribe({
@@ -205,11 +234,10 @@ export class GruposListComponent implements OnInit {
    async loadGrupos() {
       this.loading.set(true);
       try {
-         const user = this.authStore.user();
          const params: any = {};
-
-         if (user?.id_congregacion) {
-            params.id_congregacion = user.id_congregacion;
+         const idCongregacion = this.congregacionContext.effectiveCongregacionId();
+         if (idCongregacion) {
+            params.id_congregacion = idCongregacion;
          }
          params.limit = 1000;
 
@@ -297,10 +325,9 @@ export class GruposListComponent implements OnInit {
       this.grupoForm.reset();
       this.capitanSearch.set('');
       this.auxiliarSearch.set('');
-      // Load publicadores for current user's congregation
-      const user = this.authStore.user();
-      if (user?.id_congregacion) {
-         this.loadPublicadoresForAutocomplete(user.id_congregacion);
+      const idCongregacion = this.congregacionContext.effectiveCongregacionId();
+      if (idCongregacion) {
+         this.loadPublicadoresForAutocomplete(idCongregacion);
       }
       this.panelOpen.set(true);
    }
@@ -333,27 +360,23 @@ export class GruposListComponent implements OnInit {
       if (this.grupoForm.invalid) return;
 
       const user = this.authStore.user();
+      // ID de congregaci?n efectivo (respeta la selecci?n del admin en el header)
+      const effectiveId = this.congregacionContext.effectiveCongregacionId() ?? user?.id_congregacion;
 
-      // Validar si tiene congregación o es Admin/Gestor (que no tienen)
       const isAdminOrGestor = user?.rol?.toLowerCase().includes('admin') || user?.rol?.toLowerCase().includes('gestor');
 
-      if (!user?.id_congregacion && !isAdminOrGestor) {
-         alert('Error: No se ha detectado tu congregación.');
+      if (!effectiveId && !isAdminOrGestor) {
+         alert('Error: No se ha detectado tu congregaci?n.');
          return;
       }
 
       this.saving.set(true);
       const formVal = this.grupoForm.value;
 
-      // Determinar ID congregación
-      let idCongregacion = user?.id_congregacion;
-
-      // Si soy Admin y estoy editando, mantengo la congregación del grupo original
-      if (this.editingGrupo()) {
-         idCongregacion = this.editingGrupo()!.id_congregacion_grupo;
-      }
-      // Nota: Si soy Admin y creo uno nuevo, actualmente fallará si no hay selector.
-      // Pero el usuario pidió arreglar la EDICIÓN.
+      // Si estoy editando, conservo la congregaci?n original del grupo
+      let idCongregacion = this.editingGrupo()
+         ? this.editingGrupo()!.id_congregacion_grupo
+         : effectiveId;
 
       const payload = {
          ...formVal,
@@ -378,7 +401,7 @@ export class GruposListComponent implements OnInit {
    }
 
    confirmDelete(grupo: Grupo) {
-      if (confirm(`¿Estás seguro de eliminar el grupo "${grupo.nombre_grupo}"?`)) {
+      if (confirm(`?Est?s seguro de eliminar el grupo "${grupo.nombre_grupo}"?`)) {
          this.deleteGrupo(grupo.id_grupo);
       }
    }

@@ -1,148 +1,75 @@
 <div
-  class="shrink-0 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800 relative z-20"
+  class="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm relative z-20"
 >
-  <!-- Backdrop para cerrar dropdowns al hacer click fuera -->
-  <div
-    *ngIf="activeDropdown"
-    (click)="closeDropdown.emit()"
-    class="fixed inset-0 z-10 cursor-default"
-  ></div>
+  <!-- Backdrop para cerrar dropdowns -->
+  <div *ngIf="activeDropdown" (click)="closeDropdown.emit()" class="fixed inset-0 z-10 cursor-default" aria-hidden="true"></div>
 
-  <!-- Fila 1: Selectores de Periodo -->
+  <!-- Sección 1: Período y vista -->
   <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-    <!-- Selector AÑO -->
-    <div
-      class="relative z-20 hidden sm:block"
-      [class.pointer-events-none]="isRestrictedUser"
-      [class.opacity-50]="isRestrictedUser"
-    >
+    <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider hidden sm:inline">Período</span>
+
+    <!-- Año -->
+    <div class="relative z-20" [class.pointer-events-none]="isRestrictedUser" [class.opacity-50]="isRestrictedUser">
       <button
         (click)="!isRestrictedUser && toggleDropdown.emit('ano')"
-        class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[100px] justify-between"
+        class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 min-w-[88px] justify-between transition-colors"
         [class.cursor-not-allowed]="isRestrictedUser"
       >
         <span>{{ selectedAno }}</span>
-        <svg
-          class="w-4 h-4 text-slate-400 transition-transform duration-200"
-          [class.rotate-180]="activeDropdown === 'ano'"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
+        <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform" [class.rotate-180]="activeDropdown === 'ano'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      <!-- Dropdown Menu -->
-      <div
-        *ngIf="activeDropdown === 'ano'"
-        class="absolute top-full left-0 mt-2 w-32 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-fadeInOriginTop"
-      >
-        <div class="max-h-64 overflow-y-auto simple-scrollbar p-1.5">
+      <div *ngIf="activeDropdown === 'ano'" class="absolute top-full left-0 mt-1.5 w-28 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="max-h-56 overflow-y-auto p-1">
           <button
             *ngFor="let a of anos"
             (click)="selectAno.emit(a)"
-            class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-between"
-            [ngClass]="
-              selectedAno === a
-                ? 'bg-brand-purple/10 text-brand-purple'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-            "
+            class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            [ngClass]="selectedAno === a ? 'bg-brand-purple/15 text-brand-purple' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           >
             {{ a }}
-            <svg
-              *ngIf="selectedAno === a"
-              class="w-4 h-4 text-brand-purple"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Selector MES -->
-    <div
-      class="relative z-20 hidden sm:block"
-      [class.pointer-events-none]="isRestrictedUser"
-      [class.opacity-50]="isRestrictedUser"
-    >
+    <!-- Mes -->
+    <div class="relative z-20" [class.pointer-events-none]="isRestrictedUser" [class.opacity-50]="isRestrictedUser">
       <button
         (click)="!isRestrictedUser && toggleDropdown.emit('mes')"
-        class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[140px] justify-between"
+        class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 min-w-[120px] justify-between transition-colors"
         [class.cursor-not-allowed]="isRestrictedUser"
       >
         <span>{{ getMesLabel(selectedMes) }}</span>
-        <svg
-          class="w-4 h-4 text-slate-400 transition-transform duration-200"
-          [class.rotate-180]="activeDropdown === 'mes'"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
+        <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform" [class.rotate-180]="activeDropdown === 'mes'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      <!-- Dropdown Menu -->
-      <div
-        *ngIf="activeDropdown === 'mes'"
-        class="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-fadeInOriginTop"
-      >
-        <div class="max-h-64 overflow-y-auto simple-scrollbar p-1.5">
+      <div *ngIf="activeDropdown === 'mes'" class="absolute top-full left-0 mt-1.5 w-40 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="max-h-56 overflow-y-auto p-1">
           <button
             *ngFor="let m of meses"
             (click)="selectMes.emit(m.value)"
-            class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-between group"
-            [ngClass]="
-              selectedMes === m.value
-                ? 'bg-brand-purple/10 text-brand-purple'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-            "
+            class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            [ngClass]="selectedMes === m.value ? 'bg-brand-purple/15 text-brand-purple' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           >
             {{ m.label }}
-            <svg
-              *ngIf="selectedMes === m.value"
-              class="w-4 h-4 text-brand-purple"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- View Switcher (Hidden for restricted users) -->
-    <div *ngIf="!isRestrictedUser" class="flex rounded-xl bg-slate-100 p-0.5 sm:p-1">
+    <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden sm:block" aria-hidden="true"></div>
+
+    <!-- Vista: Congregación | Por grupos -->
+    <div *ngIf="!isRestrictedUser" class="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5">
       <button
         (click)="setVista.emit(false)"
         [class.bg-white]="!vistaGrupo"
         [class.shadow-sm]="!vistaGrupo"
-        class="px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all text-slate-600"
+        [class.text-slate-900]="!vistaGrupo"
+        class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all"
       >
         Congregación
       </button>
@@ -150,194 +77,93 @@
         (click)="setVista.emit(true)"
         [class.bg-white]="vistaGrupo"
         [class.shadow-sm]="vistaGrupo"
-        class="px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all text-slate-600"
+        [class.text-slate-900]="vistaGrupo"
+        class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all"
       >
-        Por Grupos
+        Por grupos
       </button>
     </div>
 
-    <!-- Selector GRUPO (Condicional - oculto para usuarios restringidos si ya tiene grupo asignado) -->
+    <!-- Grupo (si vista por grupos) -->
     <div *ngIf="vistaGrupo && !isRestrictedUser" class="relative z-20">
       <button
         (click)="toggleDropdown.emit('grupo')"
-        class="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-brand-purple/20 min-w-[120px] sm:min-w-[180px] justify-between"
+        class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 min-w-[140px] sm:min-w-[160px] justify-between transition-colors"
       >
-        <span class="truncate max-w-[140px]">{{ getGrupoLabel(selectedGrupo) }}</span>
-        <svg
-          class="w-4 h-4 text-slate-400 transition-transform duration-200"
-          [class.rotate-180]="activeDropdown === 'grupo'"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
+        <span class="truncate">{{ getGrupoLabel(selectedGrupo) }}</span>
+        <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform" [class.rotate-180]="activeDropdown === 'grupo'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      <!-- Dropdown Menu -->
-      <div
-        *ngIf="activeDropdown === 'grupo'"
-        class="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-fadeInOriginTop"
-      >
-        <div class="max-h-64 overflow-y-auto simple-scrollbar p-1.5">
+      <div *ngIf="activeDropdown === 'grupo'" class="absolute top-full left-0 mt-1.5 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="max-h-56 overflow-y-auto p-1">
           <button
             (click)="selectGrupo.emit(null)"
-            class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors mb-1"
-            [ngClass]="
-              selectedGrupo === null
-                ? 'bg-brand-purple/10 text-brand-purple'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-            "
+            class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-0.5"
+            [ngClass]="selectedGrupo === null ? 'bg-brand-purple/15 text-brand-purple' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           >
             Todos los grupos
           </button>
           <button
             *ngFor="let g of grupos"
             (click)="selectGrupo.emit(g.id_grupo)"
-            class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-between"
-            [ngClass]="
-              selectedGrupo === g.id_grupo
-                ? 'bg-brand-purple/10 text-brand-purple'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-            "
+            class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between"
+            [ngClass]="selectedGrupo === g.id_grupo ? 'bg-brand-purple/15 text-brand-purple' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
           >
-            <span>{{ g.nombre_grupo }}</span>
-            <svg
-              *ngIf="selectedGrupo === g.id_grupo"
-              class="w-4 h-4 text-brand-purple"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
+            {{ g.nombre_grupo }}
+            <svg *ngIf="selectedGrupo === g.id_grupo" class="w-4 h-4 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </button>
         </div>
       </div>
     </div>
   </div>
-  <!-- Cierre Fila 1 -->
 
-  <!-- Fila 2: Búsqueda y Filtro (en móvil aparece debajo) -->
-  <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto sm:ml-auto">
-      
-      <!-- Excel Actions (Desktop: visible, Mobile: hidden/in menu if needed, but keeping visible based on request) -->
-      <div class="flex items-center gap-2 mr-2 border-r border-slate-200 dark:border-slate-800 pr-4" *ngIf="!isRestrictedUser">
-          <!-- Download Button -->
-         <button (click)="exportExcel.emit()" class="p-2 rounded-xl text-slate-500 hover:text-brand-purple hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative group" title="Descargar Plantilla">
-             <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                 Descargar Plantilla
-             </div>
-             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-             </svg>
-         </button>
-
-         <!-- Upload Button -->
-         <div class="relative group">
-             <input type="file" #fileInput accept=".xlsx" (change)="importExcel.emit($event)" class="hidden" />
-             <button (click)="fileInput.click()" [disabled]="saving" class="p-2 rounded-xl text-slate-500 hover:text-brand-purple hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50">
-                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                    Subir Informe
-                </div>
-                <svg *ngIf="!saving" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l4-4m0 0l4 4m-4-4v12" />
-                </svg>
-                <svg *ngIf="saving" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-             </button>
-         </div>
+  <!-- Sección 2: Búsqueda, filtro y Excel -->
+  <div class="flex flex-wrap items-center gap-2 sm:gap-3 sm:ml-auto">
+    <div class="flex items-center gap-2 border-r border-slate-200 dark:border-slate-700 pr-3" *ngIf="!isRestrictedUser">
+      <button (click)="exportExcel.emit()" class="p-2 rounded-lg text-slate-500 hover:text-brand-purple hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Descargar plantilla Excel">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+      </button>
+      <div class="relative">
+        <input type="file" #fileInput accept=".xlsx" (change)="importExcel.emit($event)" class="hidden" />
+        <button (click)="fileInput.click()" [disabled]="saving" class="p-2 rounded-lg text-slate-500 hover:text-brand-purple hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50" title="Subir informe Excel">
+          <svg *ngIf="!saving" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l4-4m0 0l4 4m-4-4v12" />
+          </svg>
+          <svg *ngIf="saving" class="w-5 h-5 animate-spin text-brand-purple" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+        </button>
       </div>
+    </div>
 
-    <!-- Search -->
-    <div class="relative group flex-1 sm:flex-none">
+    <div class="relative flex-1 sm:flex-none min-w-[160px] sm:min-w-0 sm:w-56">
       <input
         type="text"
         [ngModel]="searchQuery"
         (ngModelChange)="onSearchQueryChange($event)"
         placeholder="Buscar por nombre..."
-        class="pl-9 pr-3 py-2 sm:py-2.5 rounded-xl bg-slate-100/50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-900 hover:border-brand-purple/50 dark:hover:border-brand-purple/50 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-purple text-sm w-full sm:w-64 lg:w-72 focus:ring-4 focus:ring-brand-purple/10 transition-all outline-none dark:text-white dark:placeholder-slate-400 placeholder-slate-500 shadow-sm"
+        class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple transition-colors"
       />
-      <svg
-        class="w-4 h-4 text-slate-500 group-hover:text-brand-purple absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-300"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-        />
+      <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
     </div>
-    <!-- Toggle Sin Informe -->
+
     <label
-      class="group flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl cursor-pointer select-none transition-all duration-300 ring-2"
-      [ngClass]="
-        soloSinInforme
-          ? 'bg-brand-purple/10 ring-brand-purple/30 shadow-lg shadow-purple-500/10'
-          : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 ring-transparent hover:ring-slate-200 dark:hover:ring-slate-700'
-      "
+      class="group flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer select-none transition-all border"
+      [ngClass]="soloSinInforme ? 'bg-brand-purple/10 border-brand-purple/30 text-brand-purple' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'"
     >
-      <div class="relative">
-        <input
-          type="checkbox"
-          [ngModel]="soloSinInforme"
-          (ngModelChange)="onSoloSinInformeChange($event)"
-          class="peer sr-only"
-        />
-        <div
-          class="w-9 sm:w-11 h-5 sm:h-6 bg-slate-300 rounded-full peer peer-checked:bg-brand-purple transition-colors duration-300 shadow-inner"
-        ></div>
-        <div
-          class="absolute top-0.5 left-0.5 w-4 sm:w-5 h-4 sm:h-5 bg-white rounded-full shadow-md transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] peer-checked:translate-x-4 sm:peer-checked:translate-x-5 flex items-center justify-center"
-        >
-          <svg
-            class="w-2.5 sm:w-3 h-2.5 sm:h-3 text-brand-purple opacity-0 peer-checked:opacity-100 transition-opacity duration-200"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="3"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
+      <input type="checkbox" [ngModel]="soloSinInforme" (ngModelChange)="onSoloSinInformeChange($event)" class="sr-only" />
+      <div class="relative w-9 h-5 rounded-full bg-slate-300 dark:bg-slate-600 transition-colors group-has-[:checked]:bg-brand-purple">
+        <div class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200" [class.translate-x-4]="soloSinInforme"></div>
       </div>
-      <div class="flex items-center gap-1.5 sm:gap-2">
-        <svg
-          class="w-3.5 sm:w-4 h-3.5 sm:h-4 transition-colors duration-300"
-          [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-400'"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span
-          class="text-xs sm:text-sm font-bold transition-colors duration-300"
-          [ngClass]="soloSinInforme ? 'text-brand-purple' : 'text-slate-600 dark:text-slate-300'"
-          >Sin informe</span
-        >
-      </div>
+      <span class="text-xs font-semibold">Solo pendientes</span>
     </label>
   </div>
-  <!-- Cierre Fila 2 -->
 </div>

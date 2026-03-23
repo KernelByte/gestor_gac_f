@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet, Router, NavigationEnd } fro
 import { AuthStore } from '../core/auth/auth.store';
 import { AuthService } from '../core/auth/auth.service';
 import { ThemeService } from '../core/services/theme.service';
+import { CongregacionContextService } from '../core/congregacion-context/congregacion-context.service';
 
 @Component({
   standalone: true,
@@ -352,9 +353,49 @@ import { ThemeService } from '../core/services/theme.service';
               </div>
             </div>
 
+            <!-- Congregación (solo Administrador) -->
+            <div *ngIf="hasRole('Administrador')" class="relative hidden sm:block">
+              <div *ngIf="congregacionDropdownOpen()" class="fixed inset-0 z-40" (click)="congregacionDropdownOpen.set(false)"></div>
+              <button 
+                type="button"
+                (click)="toggleCongregacionDropdown()"
+                class="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200/70 dark:border-slate-700/50 bg-slate-50/80 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm font-medium transition-all min-w-[180px] justify-between"
+              >
+                <span class="flex items-center gap-2 truncate">
+                  <svg class="w-4 h-4 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  <span class="truncate">{{ congregacionContext.selectedCongregacionName() || 'Todas las congregaciones' }}</span>
+                </span>
+                <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform" [class.rotate-180]="congregacionDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div 
+                *ngIf="congregacionDropdownOpen()" 
+                class="absolute right-0 mt-2 w-72 max-h-[60vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-xl shadow-xl dark:shadow-black/50 border border-slate-100 dark:border-slate-800 z-50 py-1"
+              >
+                <button 
+                  type="button"
+                  (click)="selectCongregacion(null, null)"
+                  class="w-full px-4 py-2.5 text-left text-sm font-medium transition-colors flex items-center gap-2"
+                  [ngClass]="congregacionContext.selectedCongregacionId() === null ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-300' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'"
+                >
+                  <span>Todas las congregaciones</span>
+                </button>
+                <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+                <button 
+                  *ngFor="let c of congregacionesList()"
+                  type="button"
+                  (click)="selectCongregacion(c.id_congregacion, c.nombre_congregacion)"
+                  class="w-full px-4 py-2.5 text-left text-sm font-medium truncate transition-colors flex items-center gap-2"
+                  [ngClass]="congregacionContext.selectedCongregacionId() === c.id_congregacion ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-300' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'"
+                >
+                  {{ c.nombre_congregacion }}
+                </button>
+              </div>
+            </div>
+            <div *ngIf="hasRole('Administrador')" class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+
             <!-- Theme Toggle -->
             <button 
-              class="p-2.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-amber-500 transition-all active:scale-95 hidden sm:flex" 
+              class="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-amber-500 transition-all active:scale-95 hidden sm:flex" 
               (click)="toggleTheme()"
               title="Cambiar tema"
             >
@@ -505,12 +546,15 @@ import { ThemeService } from '../core/services/theme.service';
 export class ShellPage implements OnInit, OnDestroy {
   private store = inject(AuthStore);
   private auth = inject(AuthService);
-  themeService = inject(ThemeService); // Inject public service
+  themeService = inject(ThemeService);
+  congregacionContext = inject(CongregacionContextService);
 
   collapsed = signal(false);
   mobileMenuOpen = signal(false);
   userMenuOpen = signal(false);
   notificationsOpen = signal(false);
+  congregacionDropdownOpen = signal(false);
+  congregacionesList = signal<{ id_congregacion: number; nombre_congregacion: string }[]>([]);
 
   // New Signals & Props
   // darkMode = signal(false); // Removed local signal
@@ -621,5 +665,22 @@ export class ShellPage implements OnInit, OnDestroy {
 
   openSettings() {
     this.userMenuOpen.set(false);
+  }
+
+  toggleCongregacionDropdown(): void {
+    const next = !this.congregacionDropdownOpen();
+    this.congregacionDropdownOpen.set(next);
+    if (next && this.congregacionesList().length === 0) {
+      this.congregacionContext.listCongregaciones().subscribe({
+        next: (list) => this.congregacionesList.set(list || []),
+        error: () => this.congregacionesList.set([])
+      });
+    }
+  }
+
+  selectCongregacion(id: number | null, name: string | null): void {
+    this.congregacionContext.setSelected(id, name);
+    this.congregacionDropdownOpen.set(false);
+    this.router.navigateByUrl(this.router.url, { replaceUrl: true });
   }
 }

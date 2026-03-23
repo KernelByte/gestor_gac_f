@@ -173,7 +173,7 @@ interface Turno {
                      <div class="col-span-2 text-right">Acciones</div>
                   </div>
 
-                  <div class="divide-y divide-slate-50">
+                  <div class="divide-y divide-slate-200 dark:divide-slate-800">
                      <div *ngFor="let t of mockTurnos" class="grid grid-cols-12 px-6 py-4 items-center hover:bg-slate-50 transition-colors group">
                         <!-- Time -->
                         <div class="col-span-2 flex items-center gap-2 font-bold text-slate-700 text-sm">
@@ -259,7 +259,7 @@ interface Turno {
                            <th class="px-6 py-4 text-right"></th>
                         </tr>
                      </thead>
-                     <tbody class="divide-y divide-slate-100 text-sm">
+                     <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
                         <tr class="hover:bg-slate-50 transition-colors">
                            <td class="px-6 py-4">
                               <div class="flex items-center gap-3">

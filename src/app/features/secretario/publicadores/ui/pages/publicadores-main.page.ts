@@ -1,6 +1,6 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PublicadoresListComponent } from './publicadores.page';
 import { GruposListComponent } from '../../../grupos/pages/grupos.page';
 import { AuthStore } from '../../../../../core/auth/auth.store';
@@ -28,7 +28,7 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
           <div class="bg-slate-100/80 dark:bg-slate-900 p-1.5 rounded-2xl flex flex-wrap md:flex-nowrap gap-1 w-full md:w-fit border border-transparent dark:border-slate-800">
               @for (tab of visibleTabs(); track tab.id) {
                 <button 
-                  (click)="currentTab.set(tab.id)" 
+                  (click)="setTab(tab.id)"
                   class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
                   [ngClass]="currentTab() === tab.id ? 'bg-white dark:bg-slate-800 text-brand-orange dark:text-orange-400 shadow-sm dark:shadow-lg dark:shadow-orange-900/10 ring-1 ring-black/5 dark:ring-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'"
                 >
@@ -78,7 +78,7 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
 })
 export class PublicadoresMainPage implements OnInit {
   private route = inject(ActivatedRoute);
-  
+  private router = inject(Router);
   public authStore = inject(AuthStore);
 
   tabs: { id: PublicadoresTab, label: string }[] = [
@@ -113,23 +113,34 @@ export class PublicadoresMainPage implements OnInit {
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
-      const tab = params['tab'];
-      if (tab && this.visibleTabs().some(t => t.id === tab)) {
-        this.currentTab.set(tab as PublicadoresTab);
+      const tab = params['tab'] as PublicadoresTab | undefined;
+      const visible = this.visibleTabs();
+      if (tab && visible.some(t => t.id === tab)) {
+        this.currentTab.set(tab);
       } else {
-        // Default to first visible tab
-         const first = this.visibleTabs()[0];
-         if (first) {
-             this.currentTab.set(first.id as PublicadoresTab);
-         }
+        // Sin param válido: activar la primera tab visible y escribirla en la URL
+        const first = visible[0];
+        if (first) {
+          this.currentTab.set(first.id);
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { tab: first.id },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+          });
+        }
       }
     });
-    
-    // Safety check on init if query param didn't trigger
-    if (!this.visibleTabs().some(t => t.id === this.currentTab())) {
-         const first = this.visibleTabs()[0];
-         if (first) this.currentTab.set(first.id as PublicadoresTab);
-    }
+  }
+
+  setTab(tab: PublicadoresTab) {
+    this.currentTab.set(tab);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,   // reemplaza en el historial, sin añadir entradas con "atrás"
+    });
   }
 
   pageTitle = computed(() => {

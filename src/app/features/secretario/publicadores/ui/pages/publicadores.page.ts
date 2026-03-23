@@ -1,15 +1,17 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PublicadoresFacade } from '../../application/publicadores.facade';
 import { Publicador } from '../../domain/models/publicador';
 import { AuthStore } from '../../../../../core/auth/auth.store';
+import { CongregacionContextService } from '../../../../../core/congregacion-context/congregacion-context.service';
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { PrivilegiosService } from '../../../privilegios/infrastructure/privilegios.service';
 import { Privilegio } from '../../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../../privilegios/domain/models/publicador-privilegio';
 import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
+import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
 
 interface Estado {
   id_estado: number;
@@ -229,7 +231,7 @@ interface TableColumn {
                     <div class="mb-3">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                              <span class="w-1 h-3 rounded-full bg-brand-orange"></span>
-                             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grupos</span>
+                             <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Grupos</span>
                         </div>
                         <div class="grid grid-cols-2 gap-x-0.5 gap-y-0">
                             <label
@@ -497,16 +499,16 @@ interface TableColumn {
         </button>
       </div>
 
-      <!-- Main Content Area: Flex Grow to Fill Space -->
-      <div class="flex-1 min-h-0 relative bg-transparent md:bg-white dark:md:bg-slate-900 md:rounded-2xl md:shadow-sm md:border md:border-slate-200 dark:md:border-slate-800 flex flex-col overflow-hidden">
+      <!-- Main Content Area: mismo patrón que usuarios (tarjeta + scroll) -->
+      <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-transparent md:bg-white dark:md:bg-slate-900 md:rounded-2xl md:shadow-sm md:border md:border-slate-200 dark:md:border-slate-700 transition-all duration-300">
         
         <!-- Loading Overlay -->
-        <div *ngIf="vm().loading" class="absolute inset-0 z-20 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-2xl">
+        <div *ngIf="vm().loading" class="absolute inset-0 z-20 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center rounded-2xl">
            <div class="w-8 h-8 rounded-full border-2 border-slate-100 border-t-brand-orange animate-spin"></div>
         </div>
 
-        <!-- Scrollable Content Container (Primary Scroll) -->
-        <div class="flex-1 overflow-auto min-h-0 relative simple-scrollbar">
+        <!-- Scrollable Content Container (igual que usuarios: overflow-x/y + simple-scrollbar) -->
+        <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto simple-scrollbar relative">
              
              <!-- 1. Mobile Card View (Visible < md) -->
              <div class="md:hidden p-4 space-y-4 pb-4">
@@ -514,8 +516,8 @@ interface TableColumn {
                      <div class="flex items-start justify-between mb-4">
                          <div class="flex items-center gap-3">
                              <div 
-                                class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-sm font-bold shadow-sm"
-                                [ngClass]="getAvatarClass(p.id_publicador)"
+                                class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
+                                [ngClass]="getAvatarStyle(getFullName(p))"
                             >
                                {{ getInitials(p) }}
                             </div>
@@ -552,7 +554,7 @@ interface TableColumn {
                          </div>
                          <div class="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg col-span-2 flex items-center gap-2">
                               <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                              <span class="font-medium text-slate-600">{{ p.telefono || 'Sin teléfono' }}</span>
+                              <span class="font-medium text-slate-600 dark:text-slate-300">{{ p.telefono || 'Sin teléfono' }}</span>
                          </div>
                      </div>
 
@@ -560,21 +562,21 @@ interface TableColumn {
                      <div class="flex flex-wrap gap-1.5 mb-3" *ngIf="isMobileColVisible('sexo') && p.sexo || isMobileColVisible('direccion') && p.direccion || isMobileColVisible('barrio') && p.barrio || isMobileColVisible('consentimiento_datos')">
                          <span *ngIf="isMobileColVisible('sexo') && p.sexo"
                              class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold border"
-                             [ngClass]="p.sexo === 'M' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-rose-50 text-rose-700 border-rose-100'">
+                             [ngClass]="p.sexo === 'M' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800/50' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800/50'">
                              {{ p.sexo === 'M' ? '♂ Masculino' : '♀ Femenino' }}
                          </span>
                          <span *ngIf="isMobileColVisible('direccion') && p.direccion"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 border border-slate-100 text-slate-600 max-w-[200px] truncate">
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 max-w-[200px] truncate">
                              <svg class="w-3 h-3 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                              <span class="truncate">{{ p.direccion }}</span>
                          </span>
                          <span *ngIf="isMobileColVisible('barrio') && p.barrio && !isMobileColVisible('direccion')"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 border border-slate-100 text-slate-600">
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300">
                              Barrio: {{ p.barrio }}
                          </span>
                          <span *ngIf="isMobileColVisible('consentimiento_datos')"
                              class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold border"
-                             [ngClass]="p.consentimiento_datos ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'">
+                             [ngClass]="p.consentimiento_datos ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'">
                              {{ p.consentimiento_datos ? '✓ Con consentimiento' : '✗ Sin consentimiento' }}
                          </span>
                      </div>
@@ -584,18 +586,18 @@ interface TableColumn {
                          <button (click)="openEditForm(p)" class="flex-1 py-2.5 rounded-xl bg-brand-orange/10 text-brand-orange font-bold text-xs hover:bg-brand-orange hover:text-white transition-colors">
                              Editar
                          </button>
-                         <button (click)="confirmDelete(p)" class="py-2.5 px-4 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors">
+                         <button (click)="confirmDelete(p)" class="py-2.5 px-4 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
                              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                          </button>
                      </div>
                  </div>
                   <!-- Empty State Mobile -->
                   <div *ngIf="pagedList().length === 0 && !vm().loading" class="text-center py-16 px-4">
-                      <div class="w-16 h-16 mx-auto bg-gradient-to-br from-orange-50 via-white to-amber-50 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-orange-100/50">
-                         <svg class="w-8 h-8 text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                      <div class="w-16 h-16 mx-auto bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-orange-900/20 dark:via-slate-800 dark:to-amber-900/10 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-orange-100/50 dark:border-orange-800/30">
+                         <svg class="w-8 h-8 text-orange-300 dark:text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                       </div>
                       <h3 class="text-slate-800 dark:text-white font-bold mb-1">No se encontraron publicadores</h3>
-                      <p class="text-slate-400 text-sm mb-4">Ajusta los filtros o búsqueda</p>
+                      <p class="text-slate-400 dark:text-slate-500 text-sm mb-4">Ajusta los filtros o búsqueda</p>
                       <button (click)="openCreateForm()" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-orange text-white rounded-lg text-sm font-bold shadow-md shadow-orange-500/20">
                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                          Agregar
@@ -689,15 +691,15 @@ interface TableColumn {
                          <th class="px-4 py-4 w-10"></th>
                       </tr>
                    </thead>
-                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                   <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
                       <tr *ngFor="let p of pagedList(); trackBy: trackById" class="group hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-transparent dark:border-slate-800/50 transition-all">
                          
                          <!-- Nombre -->
                          <td class="px-8 py-4 relative">
                             <div class="flex items-center gap-4">
                                <div 
-                                   class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-sm font-bold shadow-sm"
-                                   [ngClass]="getAvatarClass(p.id_publicador)"
+                                   class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
+                                   [ngClass]="getAvatarStyle(getFullName(p))"
                                >
                                   {{ getInitials(p) }}
                                </div>
@@ -750,7 +752,7 @@ interface TableColumn {
                                <ng-container *ngSwitchCase="'sexo'">
                                  <span class="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 font-medium">
                                    <span class="w-4 h-4 rounded-full inline-flex items-center justify-center text-[10px] font-black"
-                                     [ngClass]="p.sexo === 'M' ? 'bg-blue-100 text-blue-600' : p.sexo === 'F' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-400'">
+                                     [ngClass]="p.sexo === 'M' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : p.sexo === 'F' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'">
                                      {{ p.sexo === 'M' ? 'M' : p.sexo === 'F' ? 'F' : '?' }}
                                    </span>
                                    {{ p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Femenino' : '—' }}
@@ -789,8 +791,8 @@ interface TableColumn {
                               <span 
                                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
                                  [ngClass]="{
-                                     'bg-emerald-50 text-emerald-700 border-emerald-100': getEstadoNombre(p.id_estado_publicador).includes('Activo'),
-                                     'bg-red-50 text-red-700 border-red-100': getEstadoNombre(p.id_estado_publicador).includes('Inactivo'),
+                                     'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50': getEstadoNombre(p.id_estado_publicador).includes('Activo'),
+                                     'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50': getEstadoNombre(p.id_estado_publicador).includes('Inactivo'),
                                      'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600': !getEstadoNombre(p.id_estado_publicador).includes('Activo') && !getEstadoNombre(p.id_estado_publicador).includes('Inactivo')
                                  }"
                              >
@@ -802,6 +804,9 @@ interface TableColumn {
                          <!-- Actions -->
                          <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
+                               <button (click)="openQuickView(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-sky-500 transition-all shadow-sm hover:shadow-md hover:shadow-sky-200" title="Ver detalles">
+                                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                               </button>
                                <button (click)="openEditForm(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-brand-orange transition-all shadow-sm hover:shadow-md hover:shadow-orange-200" title="Editar">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                </button>
@@ -817,7 +822,7 @@ interface TableColumn {
                          <td [attr.colspan]="totalVisibleColCount()" class="py-24 text-center">
                              <div class="flex flex-col items-center">
                                  <div class="w-20 h-20 bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800/50 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-orange-100/50 dark:border-slate-700 ring-4 ring-orange-50/50 dark:ring-slate-800">
-                                    <svg class="w-10 h-10 text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="w-10 h-10 text-orange-300 dark:text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                        <circle cx="9" cy="7" r="4"></circle>
                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -825,7 +830,7 @@ interface TableColumn {
                                     </svg>
                                  </div>
                                  <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">No se encontraron publicadores</h3>
-                                 <p class="text-slate-500 text-sm max-w-xs">Intenta ajustando los filtros o términos de búsqueda.</p>
+                                 <p class="text-slate-500 dark:text-slate-400 text-sm max-w-xs">Intenta ajustando los filtros o términos de búsqueda.</p>
                                  <button (click)="openCreateForm()" class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-xl text-sm font-bold shadow-md shadow-orange-500/20 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30 transition-all active:scale-95">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
                                     Agregar Publicador
@@ -1081,42 +1086,12 @@ interface TableColumn {
                             <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="col-span-1 space-y-2">
+                        <div class="space-y-2">
                             <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
                                <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
                                Fecha Nacimiento
                             </label>
-                                <app-date-picker formControlName="fecha_nacimiento" placeholder="Seleccionar fecha"></app-date-picker>
-                            </div>
-                            
-                            <!-- Estado (Radio Group Styled) -->
-                            <div class="col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                   Estado Inicial
-                                </label>
-                                <div class="flex items-center gap-2 h-12">
-                                     <button type="button" 
-                                             (click)="setEstado('Activo')"
-                                             class="flex-1 h-10 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2"
-                                             [ngClass]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Activo') 
-                                                ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' 
-                                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
-                                         <div class="w-2 h-2 rounded-full" [ngClass]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Activo') ? 'bg-emerald-500' : 'bg-slate-300'"></div>
-                                         Activo
-                                     </button>
-                                     <button type="button" 
-                                             (click)="setEstado('Inactivo')"
-                                             class="flex-1 h-10 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2"
-                                             [ngClass]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Inactivo') 
-                                                ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' 
-                                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
-                                         <div class="w-2 h-2 rounded-full" [ngClass]="getEstadoNombre(publicadorForm.get('id_estado_publicador')?.value).includes('Inactivo') ? 'bg-red-500' : 'bg-slate-300'"></div>
-                                         Inactivo
-                                     </button>
-                                 </div>
-                            </div>
+                            <app-date-picker formControlName="fecha_nacimiento" placeholder="Seleccionar fecha"></app-date-picker>
                         </div>
                      </div>
                 </div>
@@ -1527,6 +1502,158 @@ interface TableColumn {
       </div> <!-- End Inner Container -->
     </div> <!-- End Detail Panel Outer -->
 
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- QUICK VIEW MODAL                                              -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div *ngIf="viewingPublicador()" class="fixed inset-0 z-[55] flex items-center justify-center p-4 md:p-6">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="closeQuickView()"></div>
+
+        <!-- Card -->
+        <div class="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl shadow-slate-900/20 dark:shadow-black/60 border border-slate-100 dark:border-slate-800 overflow-hidden animate-fadeInUp">
+
+          <!-- ── Header ─────────────────────────────────────────────── -->
+          <div class="relative shrink-0 px-6 pt-6 pb-5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800">
+            <button (click)="closeQuickView()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+            <div class="flex items-center gap-4">
+              <!-- Avatar -->
+              <div class="w-14 h-14 rounded-full flex items-center justify-center shrink-0 font-semibold text-base shadow-sm ring-1 ring-white border border-white/50"
+                [ngClass]="getAvatarStyle(getFullName(viewingPublicador()!))">
+                {{ getInitials(viewingPublicador()) }}
+              </div>
+              <div class="min-w-0">
+                <h2 class="text-lg font-black text-slate-900 dark:text-white leading-tight truncate">{{ getFullName(viewingPublicador()!) }}</h2>
+                <!-- Estado badge -->
+                <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border"
+                    [ngClass]="{
+                      'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Activo'),
+                      'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Inactivo'),
+                      'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700': !getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Activo') && !getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Inactivo')
+                    }">
+                    <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getEstadoDotClass(viewingPublicador()!.id_estado_publicador)"></span>
+                    {{ getEstadoNombre(viewingPublicador()!.id_estado_publicador) }}
+                  </span>
+                  <span *ngIf="viewingPublicador()!.sexo" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-800/50">
+                    {{ viewingPublicador()!.sexo === 'M' ? '♂ Masculino' : '♀ Femenino' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Scrollable Body ─────────────────────────────────────── -->
+          <div class="flex-1 overflow-y-auto simple-scrollbar px-6 py-5 space-y-5">
+
+            <!-- Sección: Contacto -->
+            <div>
+              <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Contacto</p>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
+                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Teléfono</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.telefono || '—' }}</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
+                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nacimiento</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.fecha_nacimiento ? formatDateExport(viewingPublicador()!.fecha_nacimiento!) : '—' }}</p>
+                  </div>
+                </div>
+                <div class="col-span-2 flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
+                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dirección</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{{ viewingPublicador()!.direccion || '—' }}
+                      <span *ngIf="viewingPublicador()!.barrio" class="ml-1 text-[11px] font-bold text-slate-400">· {{ viewingPublicador()!.barrio }}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección: Teocrático -->
+            <div>
+              <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Servicio</p>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
+                    <svg class="w-3.5 h-3.5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grupo</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ getGrupoNombre(viewingPublicador()!.id_grupo_publicador) }}</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
+                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bautismo</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.fecha_bautismo ? formatDateExport(viewingPublicador()!.fecha_bautismo!) : '—' }}</p>
+                  </div>
+                </div>
+                <!-- Consentimiento -->
+                <div class="col-span-2 flex items-center gap-2.5 p-3 rounded-xl"
+                  [ngClass]="viewingPublicador()!.consentimiento_datos ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-800/50'">
+                  <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    [ngClass]="viewingPublicador()!.consentimiento_datos ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'">
+                    <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <ng-container *ngIf="viewingPublicador()!.consentimiento_datos"><polyline points="20 6 9 17 4 12"/></ng-container>
+                      <ng-container *ngIf="!viewingPublicador()!.consentimiento_datos"><path d="M18 6L6 18M6 6l12 12"/></ng-container>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-bold uppercase tracking-wider" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'">Consentimiento de datos</p>
+                    <p class="text-sm font-bold mt-0.5" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">
+                      {{ viewingPublicador()!.consentimiento_datos ? 'Ha dado consentimiento' : 'Sin consentimiento' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección: Privilegios -->
+            <div *ngIf="publicadorPrivilegios().length > 0">
+              <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Privilegios</p>
+              <div class="flex flex-wrap gap-2">
+                <span *ngFor="let pp of publicadorPrivilegios()"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800">
+                  <svg class="w-3 h-3 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  {{ getPrivilegioNombre(pp.id_privilegio) }}
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ── Footer ─────────────────────────────────────────────── -->
+          <div class="shrink-0 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-3">
+            <button (click)="closeQuickView()" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+              Cerrar
+            </button>
+            <button (click)="editFromQuickView()"
+              class="px-5 py-2 rounded-xl text-sm font-bold bg-brand-orange hover:bg-orange-600 text-white shadow-sm shadow-orange-500/20 hover:shadow-md hover:shadow-orange-500/30 transition-all active:scale-95 flex items-center gap-2">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Editar
+            </button>
+          </div>
+
+        </div>
+      </div>
+
        <!-- Delete Modal (Clean) -->
       <!-- Delete Modal (Refined & Clean) -->
       <div *ngIf="deleteModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -1556,7 +1683,7 @@ interface TableColumn {
 
              <!-- Actions -->
              <div class="flex items-center gap-3">
-                <button (click)="closeDeleteModal()" [disabled]="isDeleting()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:text-slate-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <button (click)="closeDeleteModal()" [disabled]="isDeleting()" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Cancelar
                 </button>
                 <button (click)="executeDelete()" [disabled]="isDeleting()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm shadow-md shadow-red-600/20 hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none">
@@ -1575,8 +1702,8 @@ interface TableColumn {
         <div 
           class="flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border backdrop-blur-sm"
           [ngClass]="toastMessage()?.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
-            : 'bg-red-50 border-red-200 text-red-800'"
+            ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' 
+            : 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'"
         >
           <div 
             class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
@@ -1614,6 +1741,12 @@ interface TableColumn {
     .simple-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #cbd5e1;
     }
+    :host-context(.dark) .simple-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+    }
+    :host-context(.dark) .simple-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
     .animate-fadeIn {
         animation: fadeIn 0.3s ease-out forwards;
     }
@@ -1643,6 +1776,7 @@ interface TableColumn {
 export class PublicadoresListComponent implements OnInit {
   private facade = inject(PublicadoresFacade);
   private authStore = inject(AuthStore);
+  private congregacionContext = inject(CongregacionContextService);
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
   private privilegiosService = inject(PrivilegiosService);
@@ -1655,6 +1789,7 @@ export class PublicadoresListComponent implements OnInit {
   saving = signal(false);
   exporting = signal(false);
   showExportMenu = signal(false);
+  viewingPublicador = signal<Publicador | null>(null);
   editingPublicador = signal<Publicador | null>(null);
   publicadorToDelete = signal<Publicador | null>(null);
   activeTab = signal<TabType>('personal');
@@ -1780,6 +1915,13 @@ export class PublicadoresListComponent implements OnInit {
   });
 
   constructor() {
+    effect(() => {
+      this.congregacionContext.effectiveCongregacionId();
+      untracked(() => {
+        this.loadData();
+        this.loadAuxiliaryData();
+      });
+    });
     // Configurar validaciones de contraseña si fuera necesario
     this.publicadorForm = this.fb.group({
       primer_nombre: ['', [Validators.required, Validators.maxLength(100)]],
@@ -1812,8 +1954,6 @@ export class PublicadoresListComponent implements OnInit {
 
   ngOnInit(): void {
     this.initColumnConfig();
-    this.loadData();
-    this.loadAuxiliaryData();
   }
 
   // Computed values
@@ -2027,6 +2167,23 @@ export class PublicadoresListComponent implements OnInit {
     this.resetSort();
   }
 
+  // ─── Vista Rápida ────────────────────────────────────────────────────────
+  openQuickView(p: Publicador) {
+    this.viewingPublicador.set(p);
+    this.loadPublicadorPrivilegios(p.id_publicador);
+  }
+
+  closeQuickView() {
+    this.viewingPublicador.set(null);
+  }
+
+  editFromQuickView() {
+    const p = this.viewingPublicador();
+    if (!p) return;
+    this.closeQuickView();
+    this.openEditForm(p);
+  }
+
   // ─── Exportación ─────────────────────────────────────────────────────────
   exportData(format: 'excel' | 'pdf') {
     if (this.exporting()) return;
@@ -2086,7 +2243,7 @@ export class PublicadoresListComponent implements OnInit {
     }
   }
 
-  private formatDateExport(dateStr: string): string {
+  formatDateExport(dateStr: string): string {
     try {
       const d = new Date(dateStr);
       return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -2198,11 +2355,10 @@ export class PublicadoresListComponent implements OnInit {
 
   // Data Loading
   loadData() {
-    const user = this.authStore.user();
-    // Load ALL items (limit 1000) for client-side functionality
+    const effectiveId = this.congregacionContext.effectiveCongregacionId();
     const params: any = { limit: 1000, offset: 0 };
-    if (user?.id_congregacion) {
-      params.id_congregacion = user.id_congregacion;
+    if (effectiveId != null) {
+      params.id_congregacion = effectiveId;
     }
     this.facade.load(params);
   }
@@ -2211,10 +2367,10 @@ export class PublicadoresListComponent implements OnInit {
     this.loadPrivilegiosCatalog(); // Cargar catálogo de privilegios
 
     try {
-      const user = this.authStore.user();
+      const effectiveId = this.congregacionContext.effectiveCongregacionId();
       const params: any = {};
-      if (user?.id_congregacion) {
-        params.id_congregacion = user.id_congregacion;
+      if (effectiveId != null) {
+        params.id_congregacion = effectiveId;
       }
 
       // Added trailing slashes to match service configuration
@@ -2424,21 +2580,19 @@ export class PublicadoresListComponent implements OnInit {
     };
 
     const user = this.authStore.user();
-    const id_congregacion = user?.id_congregacion;
     const isAdminOrGestor = user?.rol?.toLowerCase().includes('admin') || user?.rol?.toLowerCase().includes('gestor');
+    const id_congregacion = this.congregacionContext.effectiveCongregacionId();
 
     // Validación: Si NO es admin, necesita ID congregación siempre.
-    // Si ES admin, puede no tener ID, pero si CREA uno nuevo, necesita contexto (pendiente UI).
-    // Si ES admin y EDITA, todo bien.
-
-    if (!id_congregacion && !isAdminOrGestor) {
+    // Si ES admin, usa la congregación seleccionada en el navbar (contexto).
+    if (id_congregacion == null && !isAdminOrGestor) {
       alert('Error: No se ha detectado tu congregación.');
       this.saving.set(false);
       return;
     }
 
-    if (!id_congregacion && isAdminOrGestor && !this.editingPublicador()) {
-      alert('Aviso: Como administrador, debes seleccionar una congregación para crear miembros (Función pendiente en UI).');
+    if (id_congregacion == null && isAdminOrGestor && !this.editingPublicador()) {
+      alert('Aviso: Como administrador, debes seleccionar una congregación en la barra superior para crear miembros.');
       this.saving.set(false);
       return;
     }
@@ -2447,7 +2601,7 @@ export class PublicadoresListComponent implements OnInit {
       if (this.editingPublicador()) {
         await this.facade.update(this.editingPublicador()!.id_publicador, data);
       } else {
-        await this.facade.create({ ...data, id_congregacion_publicador: id_congregacion });
+        await this.facade.create({ ...data, id_congregacion_publicador: id_congregacion! });
       }
       this.closePanel();
     } catch (error) {
@@ -2517,17 +2671,8 @@ export class PublicadoresListComponent implements OnInit {
     return (first + last).toUpperCase();
   }
 
-  getAvatarClass(id: number): string {
-    const COLORS = [
-      'bg-blue-50 text-blue-600',
-      'bg-emerald-50 text-emerald-600',
-      'bg-orange-50 text-orange-600',
-      'bg-purple-50 text-purple-600',
-      'bg-cyan-50 text-cyan-600',
-      'bg-rose-50 text-rose-600',
-      'bg-indigo-50 text-indigo-600'
-    ];
-    return COLORS[Math.abs(id) % COLORS.length];
+  getAvatarStyle(name: string): string {
+    return getInitialAvatarStyle(name || '');
   }
 
   getRoles(p: Publicador): { label: string, type: 'pill' | 'text', class: string }[] {
@@ -2541,16 +2686,16 @@ export class PublicadoresListComponent implements OnInit {
     const roles: { label: string, type: 'pill' | 'text', class: string }[] = [];
 
     if (roleNames.some(r => r.includes('precursor regular'))) {
-      roles.push({ label: 'PRECURSOR REGULAR', type: 'pill', class: 'bg-purple-100 text-purple-700' });
+      roles.push({ label: 'PRECURSOR REGULAR', type: 'pill', class: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' });
     }
     if (roleNames.some(r => r.includes('precursor auxiliar'))) {
-      roles.push({ label: 'PRECURSOR AUXILIAR', type: 'pill', class: 'bg-amber-100 text-amber-700' });
+      roles.push({ label: 'PRECURSOR AUXILIAR', type: 'pill', class: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' });
     }
     if (roleNames.some(r => r.includes('anciano'))) {
-      roles.push({ label: 'ANCIANO', type: 'pill', class: 'bg-indigo-100 text-indigo-700' });
+      roles.push({ label: 'ANCIANO', type: 'pill', class: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' });
     }
     if (roleNames.some(r => r.includes('siervo'))) {
-      roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-yellow-100 text-yellow-800' });
+      roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' });
     }
 
     // Default if no specific roles

@@ -21,13 +21,13 @@
                  </svg>
                  Asignación Dinámica
               </button>
-               <div class="relative">
-                  <!-- Invisible backdrop for clicking outside -->
-                  <div *ngIf="showExportMenu()" class="fixed inset-0 z-40 bg-transparent" (click)="closeExportMenu()">
-                  </div>
+               <div #exportWrapper class="relative">
+                  <!-- Backdrop: clic fuera cierra el menú (z-index alto para quedar sobre el resto) -->
+                  <div *ngIf="showExportMenu()" class="fixed inset-0 z-[9998]" (click)="closeExportMenu()"
+                     aria-hidden="true"></div>
 
                   <button (click)="toggleExportMenu()" [disabled]="exporting()"
-                     class="relative z-50 inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-display font-bold text-sm shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-wait">
+                     class="relative z-[9999] inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-display font-bold text-sm shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-wait">
                      <svg *ngIf="!exporting()" class="w-5 h-5 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -41,7 +41,8 @@
                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                      </svg>
-                     Exportar PDF
+                     Exportar
+                     <span class="text-slate-400 dark:text-slate-500 font-normal text-xs">({{ exportFormat() === 'pdf' ? 'PDF' : 'Excel' }})</span>
                      <!-- Chevron Indicator -->
                      <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
                         [ngClass]="{'rotate-180': showExportMenu()}" viewBox="0 0 24 24" fill="none"
@@ -52,11 +53,27 @@
 
                   <!-- Modern Dropdown Menu -->
                   <div *ngIf="showExportMenu()"
-                     class="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 ring-1 ring-black/5 dark:ring-white/10 z-50 transform origin-top-right transition-all animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
+                     class="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 ring-1 ring-black/5 dark:ring-white/10 z-[9999] transform origin-top-right transition-all animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
                      <div class="px-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
                         <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Opciones de
                            Exportación
                         </p>
+                        <div class="flex gap-2 mt-2">
+                           <button type="button" (click)="exportFormat.set('pdf')"
+                              class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                              [ngClass]="exportFormat() === 'pdf'
+                                 ? 'bg-slate-700 dark:bg-slate-600 text-white shadow-sm'
+                                 : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500'">
+                              PDF
+                           </button>
+                           <button type="button" (click)="exportFormat.set('excel')"
+                              class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                              [ngClass]="exportFormat() === 'excel'
+                                 ? 'bg-emerald-600 text-white shadow-sm'
+                                 : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500'">
+                              Excel
+                           </button>
+                        </div>
                      </div>
                      <div class="p-1.5 space-y-1">
                         <button (click)="confirmExport('all')"
@@ -311,7 +328,7 @@
                            Acciones</th>
                      </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                  <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                      <tr *ngFor="let grupo of pagedList(); let i = index"
                         class="group hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
 

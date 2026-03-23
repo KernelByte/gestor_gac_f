@@ -144,7 +144,7 @@ interface Territorio {
                        <th class="px-4 py-4 w-10"></th>
                     </tr>
                  </thead>
-                 <tbody class="divide-y divide-slate-50">
+                 <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
                     <tr 
                       *ngFor="let t of filteredTerritorios()" 
                       (click)="selectTerritorio(t)"

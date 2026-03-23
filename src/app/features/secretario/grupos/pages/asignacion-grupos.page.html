@@ -22,6 +22,20 @@
 
          <!-- Right Section: Actions -->
          <div class="flex items-center gap-3 shrink-0">
+            <!-- Toggle Inactivos -->
+            <button (click)="toggleShowInactivePublishers()"
+               class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800 transition-all active:scale-95 border border-slate-200/60 dark:border-slate-700"
+               [title]="showInactivePublishers() ? 'Ocultar publicadores inactivos' : 'Mostrar publicadores inactivos'">
+               <svg *ngIf="showInactivePublishers()" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+               </svg>
+               <svg *ngIf="!showInactivePublishers()" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+               </svg>
+               <span class="text-xs font-bold hidden lg:inline">{{ showInactivePublishers() ? 'Ocultar inactivos' : 'Mostrar inactivos' }}</span>
+            </button>
+
             <!-- Full Screen Toggle (Minimal) -->
             <button (click)="toggleFullScreen()"
                class="hidden sm:flex items-center justify-center w-10 h-10 rounded-full text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800 transition-all active:scale-95"
@@ -148,6 +162,20 @@
 
                <!-- Derecha: Indicadores + Acciones -->
                <div class="flex items-center gap-2 shrink-0">
+                  <!-- Toggle Inactivos (modo inmersivo) -->
+                  <button (click)="toggleShowInactivePublishers()"
+                     class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 transition-all active:scale-95"
+                     [title]="showInactivePublishers() ? 'Ocultar publicadores inactivos' : 'Mostrar publicadores inactivos'">
+                     <svg *ngIf="showInactivePublishers()" class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                     </svg>
+                     <svg *ngIf="!showInactivePublishers()" class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                     </svg>
+                     <span>{{ showInactivePublishers() ? 'Ocultar inactivos' : 'Mostrar inactivos' }}</span>
+                  </button>
+
                   <!-- En vivo -->
                   <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
@@ -197,11 +225,28 @@
          <div *ngIf="!isFullScreen()" class="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#f1f2f4] dark:from-slate-900 to-transparent z-10 pointer-events-none"></div>
          <div *ngIf="!isFullScreen()" class="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#f1f2f4] dark:from-slate-900 to-transparent z-10 pointer-events-none"></div>
 
+         <!-- Botones de navegación horizontal (anterior / siguiente) -->
+         <button *ngIf="canScrollLeft()" (click)="scrollHorizontal('left')" type="button"
+            class="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-lg shadow-slate-900/10 dark:shadow-black/30 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 hover:border-orange-300 dark:hover:border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+            title="Ver columnas a la izquierda">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M15 18l-6-6 6-6"/>
+            </svg>
+         </button>
+         <button *ngIf="canScrollRight()" (click)="scrollHorizontal('right')" type="button"
+            class="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-lg shadow-slate-900/10 dark:shadow-black/30 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 hover:border-orange-300 dark:hover:border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+            title="Ver columnas a la derecha">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M9 18l6-6-6-6"/>
+            </svg>
+         </button>
+
          <div #scrollContainer class="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar relative"
             [style.z-index]="isFullScreen() ? '0' : null"
             [class.immersive-scroll]="isFullScreen()"
             [class.snap-x]="!isDraggingContent()" [class.snap-mandatory]="!isDraggingContent()"
             [class.scroll-smooth]="!isDraggingContent()" (dragover)="onContainerDragOver($event)"
+            (scroll)="updateScrollNavState()"
             [class.p-4]="!isFullScreen()" [class.sm:p-6]="!isFullScreen()"
             [style.padding]="isFullScreen() ? '0' : null">
             <div class="flex h-full"
@@ -209,217 +254,275 @@
 
                <!-- Columna: Sin Asignar (Staging Area) -->
                <div
-                  class="shrink-0 flex flex-col rounded-2xl bg-gradient-to-b from-slate-100 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/80 dark:border-slate-700 shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-black/20 max-h-full transition-all duration-300 snap-center group/column"
+                  class="shrink-0 flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 shadow-sm dark:shadow-black/20 max-h-full transition-all duration-200 snap-center group/column overflow-hidden"
                   [ngClass]="isFullScreen() ? 'w-[250px] flex-none' : 'w-[85vw] sm:w-80'"
-                  [class.bg-orange-50]="isDraggingOver() === 'unassigned'"
-                  [class.border-brand-orange]="isDraggingOver() === 'unassigned'"
-                  [class.shadow-2xl]="isDraggingOver() === 'unassigned'" (dragover)="onDragOver($event, 'unassigned')"
+                  [class.ring-2]="isDraggingOver() === 'unassigned'"
+                  [class.ring-blue-400]="isDraggingOver() === 'unassigned'"
+                  [class.dark:ring-blue-500]="isDraggingOver() === 'unassigned'"
+                  [class.shadow-lg]="isDraggingOver() === 'unassigned'"
+                  (dragover)="onDragOver($event, 'unassigned')"
                   (dragleave)="onDragLeave()" (drop)="onDrop($event, null)">
+
+                  <!-- Barra de acento superior – color neutro/azul para diferenciar de grupos -->
+                  <div class="h-1 w-full bg-gradient-to-r from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600 shrink-0"
+                     [class.from-blue-400]="isDraggingOver() === 'unassigned'"
+                     [class.to-blue-500]="isDraggingOver() === 'unassigned'"></div>
+
                   <!-- Header -->
-                  <div
-                     class="px-4 py-3 border-b border-slate-200/60 dark:border-slate-700 flex flex-col gap-2 rounded-t-2xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm sticky top-0 z-20">
-                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                           <div
-                              class="w-9 h-9 rounded-xl bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center shadow-inner">
-                              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2">
-                                 <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                              </svg>
-                           </div>
-                           <div>
-                              <p class="font-extrabold text-slate-800 dark:text-white text-sm">Sin Asignar</p>
-                              <p class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">Zona de espera</p>
-                           </div>
+                  <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-20">
+                     <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0">
+                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                           </svg>
                         </div>
-                        <div class="flex items-center gap-1">
-                           <button (click)="toggleSelectAll('unassigned')"
-                              class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                              title="Seleccionar todos">
-                              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2">
-                                 <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                           </button>
-                           <span
-                              class="bg-slate-800 dark:bg-slate-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold tabular-nums min-w-[28px] text-center shadow-sm">
-                              {{ unassignedPublishers().length }}
-                           </span>
+                        <div>
+                           <p class="font-bold text-slate-700 dark:text-slate-100 text-sm leading-tight">Sin Asignar</p>
+                           <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-tight">Zona de espera</p>
                         </div>
                      </div>
-
-                     <!-- Move Button (Non-Drag Mobile Interaction) -->
-                     <button *ngIf="selectedPublishersIds().size > 0" (click)="moveSelectedToGroup(null)"
-                        class="w-full mt-1 py-1.5 px-3 bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 animate-fade-in-down">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                        </svg>
-                        Mover {{ selectedPublishersIds().size }} aquí
-                     </button>
+                     <div class="flex items-center gap-1.5">
+                        <button (click)="toggleSelectAll('unassigned')"
+                           class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                           title="Seleccionar todos">
+                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                           </svg>
+                        </button>
+                        <span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md text-xs font-bold tabular-nums min-w-[26px] text-center border border-slate-200 dark:border-slate-700">
+                           {{ unassignedPublishers().length }}
+                        </span>
+                     </div>
                   </div>
 
                   <!-- List -->
-                  <div class="p-3 flex-1 overflow-y-auto space-y-2 custom-scrollbar"
+                  <div class="px-2.5 py-2.5 flex-1 overflow-y-auto space-y-1.5 custom-scrollbar bg-slate-50/60 dark:bg-slate-800/20"
                      [class.immersive-scroll]="isFullScreen()">
                      <ng-container *ngFor="let p of unassignedPublishers()">
                         <ng-container *ngTemplateOutlet="cardTemplate; context: { $implicit: p }"></ng-container>
                      </ng-container>
 
                      <div *ngIf="unassignedPublishers().length === 0"
-                        class="py-12 flex flex-col items-center justify-center text-slate-400 text-xs">
-                        <div class="w-12 h-12 rounded-xl bg-slate-100/80 dark:bg-slate-700/50 flex items-center justify-center mb-3">
-                           <svg class="w-6 h-6 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                              stroke-width="1.5">
-                              <path stroke-linecap="round" stroke-linejoin="round"
-                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        class="mt-4 py-10 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-white/60 dark:bg-slate-800/20">
+                        <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center mb-3">
+                           <svg class="w-5 h-5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                            </svg>
                         </div>
-                        <span class="font-medium">Sin publicadores pendientes</span>
-                        <span class="text-[10px] text-slate-300 mt-1">Todos están asignados</span>
+                        <span class="font-semibold text-slate-500 dark:text-slate-400">Todos asignados</span>
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">No hay publicadores en espera</span>
                      </div>
                   </div>
                </div>
 
 
-               <!-- Columnas: Grupos - Diseño Profesional -->
-               <div *ngFor="let grupo of grupos()"
-                  class="shrink-0 flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-black/30 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-300 snap-center group/column"
+               <!-- Columnas: Grupos -->
+               <ng-container *ngFor="let grupo of grupos()">
+
+               <div
+                  class="shrink-0 flex flex-col rounded-2xl bg-white dark:bg-slate-900 border shadow-sm dark:shadow-black/20 transition-[opacity,transform,border-color,box-shadow] duration-200 snap-center group/column overflow-hidden"
                   [ngClass]="isFullScreen() ? 'flex-1 min-w-[240px] max-w-[360px]' : 'w-[85vw] sm:w-80'"
+                  [class.border-slate-200]="!(draggingColumnId() === grupo.id_grupo)"
+                  [class.dark:border-slate-700/80]="!(draggingColumnId() === grupo.id_grupo)"
+                  [class.border-dashed]="draggingColumnId() === grupo.id_grupo"
+                  [class.border-slate-400]="draggingColumnId() === grupo.id_grupo"
+                  [class.dark:border-slate-500]="draggingColumnId() === grupo.id_grupo"
                   [class.ring-2]="isDraggingOver() === grupo.id_grupo"
                   [class.ring-brand-orange]="isDraggingOver() === grupo.id_grupo"
-                  [class.shadow-2xl]="isDraggingOver() === grupo.id_grupo"
-                  [class.scale-[1.01]]="isDraggingOver() === grupo.id_grupo"
-                  (dragover)="onDragOver($event, grupo.id_grupo)" (dragleave)="onDragLeave()"
+                  [class.shadow-lg]="isDraggingOver() === grupo.id_grupo"
+                  [class.opacity-50]="draggingColumnId() === grupo.id_grupo"
+                  [class.scale-[0.97]]="draggingColumnId() === grupo.id_grupo"
+                  [class.column-drop-target]="dragOverColumnId() === grupo.id_grupo"
+                  (dragover)="onDragOver($event, grupo.id_grupo)"
+                  (dragleave)="onDragLeave()"
                   (drop)="onDrop($event, grupo.id_grupo)">
-                  <!-- Header con color de marca (Naranja) -->
-                  <div
-                     class="px-5 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl relative overflow-hidden">
-                     <!-- Pattern Background Overlay -->
-                     <div
-                        class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')]">
-                     </div>
 
-                     <div class="flex flex-col gap-2 relative z-10">
-                        <div class="flex items-center justify-between gap-2">
-                           <div class="flex flex-col min-w-0">
-                              <h3 class="font-extrabold text-white text-lg tracking-tight truncate filter drop-shadow-sm"
-                                 [title]="grupo.nombre_grupo">{{
-                                 grupo.nombre_grupo }}</h3>
-                              <div class="flex items-center gap-3 mt-1">
-                                 <p
-                                    class="text-orange-50 text-[11px] font-semibold flex items-center gap-1.5 bg-white/10 px-2 py-0.5 rounded-full">
-                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                       <circle cx="9" cy="7" r="4"></circle>
-                                       <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                    </svg>
-                                    {{ getGroupMembers(grupo.id_grupo).length }} <span
-                                       class="hidden sm:inline">miembros</span>
-                                 </p>
-                                 <p
-                                    class="text-white text-[11px] font-bold flex items-center gap-1.5 bg-white/20 px-2 py-0.5 rounded-full">
-                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                       <path
-                                          d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
-                                       </path>
-                                    </svg>
-                                    {{ getPrecursoresCount(grupo.id_grupo) }} <span
-                                       class="hidden sm:inline">Precursores</span>
-                                 </p>
-                              </div>
-                           </div>
-                           <button (click)="toggleSelectAll(grupo.id_grupo)"
-                              class="p-1.5 rounded-lg text-orange-100 hover:text-white hover:bg-white/20 transition-all shrink-0 active:scale-90"
-                              title="Seleccionar todos">
-                              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2">
-                                 <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                           </button>
-                        </div>
-
-                        <!-- Move Button (Non-Drag Mobile Interaction) -->
-                        <button *ngIf="selectedPublishersIds().size > 0" (click)="moveSelectedToGroup(grupo.id_grupo)"
-                           class="w-full mt-1 py-1.5 px-3 bg-white text-orange-600 hover:bg-orange-50 text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 animate-fade-in-down">
-                           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                 d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  <!-- Header naranja sólido -->
+                  <div class="px-3 py-3 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 flex items-center justify-between gap-2 relative overflow-hidden">
+                     <!-- Patrón de textura sutil -->
+                     <div class="absolute inset-0 opacity-[0.07]" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 14px 14px;"></div>
+                     <div class="flex items-center gap-2 min-w-0 relative">
+                        <!-- Handle de arrastre de columna -->
+                        <div draggable="true"
+                           (dragstart)="onColumnDragStart($event, grupo.id_grupo)"
+                           (dragend)="onColumnDragEnd()"
+                           class="cursor-grab active:cursor-grabbing shrink-0 text-white/40 hover:text-white/80 transition-colors p-0.5 rounded touch-none select-none"
+                           title="Mover grupo">
+                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                              <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
+                              <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                              <circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
                            </svg>
-                           Mover {{ selectedPublishersIds().size }} aquí
+                        </div>
+                        <!-- Icono blanco sobre naranja -->
+                        <div class="w-8 h-8 rounded-lg bg-white/15 text-white flex items-center justify-center shrink-0 backdrop-blur-sm">
+                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                              <circle cx="9" cy="7" r="4"></circle>
+                              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                           </svg>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                           <!-- Modo visualización: nombre + botón lápiz -->
+                           <div *ngIf="editingGroupId() !== grupo.id_grupo"
+                              class="flex items-center gap-1.5 group/name cursor-pointer"
+                              (click)="startEditGroupName(grupo, $event)"
+                              [title]="'Editar nombre: ' + grupo.nombre_grupo">
+                              <h3 class="font-bold text-white text-sm tracking-tight truncate leading-tight drop-shadow-sm">
+                                 {{ grupo.nombre_grupo }}
+                              </h3>
+                              <svg class="w-3 h-3 text-orange-100/60 group-hover/name:text-white/90 transition-colors shrink-0 hidden group-hover/name:block"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                              </svg>
+                           </div>
+                           <!-- Modo edición: input inline -->
+                           <div *ngIf="editingGroupId() === grupo.id_grupo" class="flex items-center gap-1">
+                              <input
+                                 [id]="'group-name-input-' + grupo.id_grupo"
+                                 type="text"
+                                 [value]="editingGroupName()"
+                                 (input)="editingGroupName.set($any($event.target).value)"
+                                 (keydown)="onGroupNameKeydown($event, grupo)"
+                                 (blur)="saveGroupName(grupo)"
+                                 class="flex-1 min-w-0 bg-white/20 text-white placeholder:text-orange-100/60 font-bold text-sm rounded-md px-2 py-0.5 outline-none border border-white/30 focus:border-white/70 focus:bg-white/25 transition-all backdrop-blur-sm"
+                                 placeholder="Nombre del grupo">
+                              <button *ngIf="isSavingGroupName()" class="shrink-0" title="Guardando...">
+                                 <svg class="w-4 h-4 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                 </svg>
+                              </button>
+                              <button *ngIf="!isSavingGroupName()" (click)="cancelEditGroupName()" class="shrink-0 p-0.5 rounded hover:bg-white/20 text-orange-100/80 hover:text-white transition-colors" title="Cancelar (Esc)">
+                                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                 </svg>
+                              </button>
+                           </div>
+                           <!-- Stats siempre visibles -->
+                           <div class="flex items-center gap-2 mt-0.5">
+                              <span class="text-[10px] font-medium text-orange-100/90">
+                                 {{ getGroupMembers(grupo.id_grupo).length }} miembros
+                              </span>
+                              <span *ngIf="getPrecursoresCount(grupo.id_grupo) > 0" class="text-[10px] font-semibold text-white/80">
+                                 · {{ getPrecursoresCount(grupo.id_grupo) }} precursores
+                              </span>
+                           </div>
+                        </div>
+                     </div>
+                     <!-- Acciones del header -->
+                     <div class="flex items-center gap-1 shrink-0 relative">
+                        <button (click)="toggleSelectAll(grupo.id_grupo)"
+                           class="p-1.5 rounded-lg text-orange-100 hover:text-white hover:bg-white/20 transition-all active:scale-90"
+                           title="Seleccionar todos">
+                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                           </svg>
+                        </button>
+
+                        <!-- Botón eliminar grupo -->
+                        <button (click)="requestDeleteGroup(grupo.id_grupo)"
+                           class="p-1.5 rounded-lg transition-all active:scale-90 opacity-0 group-hover/column:opacity-100"
+                           [class.text-white/40]="!canDeleteGroup(grupo.id_grupo)"
+                           [class.hover:text-white/60]="!canDeleteGroup(grupo.id_grupo)"
+                           [class.cursor-not-allowed]="!canDeleteGroup(grupo.id_grupo)"
+                           [class.text-red-200]="canDeleteGroup(grupo.id_grupo)"
+                           [class.hover:text-white]="canDeleteGroup(grupo.id_grupo)"
+                           [class.hover:bg-red-500/30]="canDeleteGroup(grupo.id_grupo)"
+                           [title]="canDeleteGroup(grupo.id_grupo) ? 'Eliminar grupo' : 'El grupo ' + getDeleteBlockReason(grupo.id_grupo)">
+                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <polyline points="3 6 5 6 21 6"/>
+                              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                              <path d="M10 11v6M14 11v6"/>
+                              <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                           </svg>
                         </button>
                      </div>
                   </div>
 
-                  <!-- Sección de Encargados - Diseño Premium -->
-                  <div class="px-3 pt-2.5 pb-2 border-b border-slate-100 dark:border-slate-700/60 bg-gradient-to-b from-slate-50 to-white dark:from-slate-800/50 dark:to-slate-900/20">
-
-                     <!-- Header de sección (sin icono) -->
-                     <div class="mb-2">
-                        <span class="text-[9.5px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em]">Encargados</span>
+                  <!-- Sección de Encargados -->
+                  <div class="px-3 pt-2.5 pb-2.5 border-b border-t border-orange-100/60 dark:border-orange-900/20 bg-orange-50/40 dark:bg-orange-900/5">
+                     <!-- Etiqueta de sección -->
+                     <div class="flex items-center gap-1.5 mb-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-orange-400 dark:bg-orange-500 shrink-0"></span>
+                        <span class="text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-[0.1em]">Encargados</span>
                      </div>
 
                      <div class="grid gap-1.5">
 
-                        <!-- ── CAPITÁN ── (mismo alto siempre, color naranja de marca) -->
-                        <div class="rounded-xl overflow-hidden border transition-all duration-200 group/leader min-h-[3.5rem]"
-                           [ngClass]="{
-                              'bg-orange-50/70 dark:bg-orange-950/30 border-orange-100 dark:border-orange-900/40 shadow-sm hover:shadow-md': !isDraggingOverLeader() || isDraggingOverLeader()?.groupId !== grupo.id_grupo || isDraggingOverLeader()?.role !== 'capitan',
-                              'bg-orange-100/80 dark:bg-orange-900/30 border-orange-400 dark:border-orange-500/50 border-dashed shadow-lg scale-[1.02] z-10': isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'capitan',
-                              'border-orange-100/80 dark:border-orange-900/50 border-dashed': !grupo.capitan_grupo && (!isDraggingOverLeader() || isDraggingOverLeader()?.groupId !== grupo.id_grupo || isDraggingOverLeader()?.role !== 'capitan')
-                           }"
+                        <!-- ── CAPITÁN ── -->
+                        <div class="rounded-lg border transition-all duration-150 group/leader"
+                           [attr.draggable]="grupo.capitan_grupo ? 'true' : null"
+                           [class.cursor-grab]="grupo.capitan_grupo"
+                           [class.active:cursor-grabbing]="grupo.capitan_grupo"
+                           [class.bg-orange-50]="grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.dark:bg-orange-950/40]="grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.border-orange-200/80]="grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.dark:border-orange-800/30]="grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.shadow-sm]="grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.bg-white/60]="!grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.dark:bg-slate-800/30]="!grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.border-dashed]="!grupo.capitan_grupo || isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.border-orange-200]="!grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.dark:border-orange-800/40]="!grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.bg-orange-50]="isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.dark:bg-orange-900/20]="isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.border-orange-400]="isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.dark:border-orange-500/60]="isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.scale-[1.01]]="isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           [class.shadow-md]="isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                           (dragstart)="onDragStartLeaderCard($event, grupo, 'capitan')"
+                           (dragend)="onDragEnd()"
                            (dragover)="onDragOverLeader($event, grupo.id_grupo, 'capitan')"
                            (dragleave)="onDragLeaveLeader()"
                            (drop)="onDropLeader($event, grupo.id_grupo, 'capitan')">
 
-                           <div class="flex items-center gap-2 p-2 min-h-[2.75rem]">
-                              <!-- Avatar (sin badge) -->
-                              <div class="shrink-0">
-                                 <div class="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-                                    [ngClass]="{
-                                       'bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-300 shadow-sm': grupo.capitan_grupo || (isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'capitan'),
-                                       'bg-orange-50 dark:bg-orange-900/30 text-orange-400/80 dark:text-orange-500/80': !grupo.capitan_grupo && !(isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'capitan')
-                                    }">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                       <circle cx="12" cy="7" r="4"/>
-                                    </svg>
-                                 </div>
+                           <div class="flex items-center gap-2 px-2.5 py-2">
+                              <!-- Avatar -->
+                              <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all"
+                                 [class.bg-orange-100]="grupo.capitan_grupo || isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                                 [class.dark:bg-orange-900/40]="grupo.capitan_grupo || isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                                 [class.text-orange-600]="grupo.capitan_grupo || isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                                 [class.dark:text-orange-300]="grupo.capitan_grupo || isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                                 [class.bg-slate-100]="!grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                                 [class.dark:bg-slate-700/50]="!grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                                 [class.text-slate-400]="!grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')"
+                                 [class.dark:text-slate-500]="!grupo.capitan_grupo && !isDraggingOverRole(grupo.id_grupo, 'capitan')">
+                                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                 </svg>
                               </div>
-
                               <!-- Contenido -->
-                              <div class="flex-1 min-w-0 flex flex-col justify-center min-h-[2rem]">
-                                 <span class="text-[8.5px] font-extrabold uppercase tracking-widest transition-colors"
-                                    [ngClass]="grupo.capitan_grupo ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400 dark:text-slate-500'">
-                                    Capitán
-                                 </span>
-                                 <p class="text-[11px] font-bold truncate leading-tight mt-px"
-                                    [ngClass]="{
-                                       'text-orange-700 dark:text-orange-300': isLeaderModified(grupo.id_grupo, 'capitan'),
-                                       'text-slate-800 dark:text-slate-200': !isLeaderModified(grupo.id_grupo, 'capitan') && grupo.capitan_grupo,
-                                       'text-slate-400 dark:text-slate-600 italic font-medium': !grupo.capitan_grupo
-                                    }">
-                                    {{ grupo.capitan_grupo || 'Arrastra aquí...' }}
+                              <div class="flex-1 min-w-0">
+                                 <p class="text-[9px] font-bold uppercase tracking-wider leading-none mb-0.5"
+                                    [class.text-orange-500]="grupo.capitan_grupo"
+                                    [class.dark:text-orange-400]="grupo.capitan_grupo"
+                                    [class.text-slate-400]="!grupo.capitan_grupo"
+                                    [class.dark:text-slate-600]="!grupo.capitan_grupo">Capitán</p>
+                                 <p class="text-[11px] font-semibold truncate leading-tight"
+                                    [class.text-orange-600]="isLeaderModified(grupo.id_grupo, 'capitan')"
+                                    [class.dark:text-orange-300]="isLeaderModified(grupo.id_grupo, 'capitan')"
+                                    [class.text-slate-700]="!isLeaderModified(grupo.id_grupo, 'capitan') && grupo.capitan_grupo"
+                                    [class.dark:text-slate-200]="!isLeaderModified(grupo.id_grupo, 'capitan') && grupo.capitan_grupo"
+                                    [class.text-slate-400]="!grupo.capitan_grupo"
+                                    [class.dark:text-slate-600]="!grupo.capitan_grupo"
+                                    [class.italic]="!grupo.capitan_grupo"
+                                    [class.font-normal]="!grupo.capitan_grupo"
+                                    [class.text-[10px]]="!grupo.capitan_grupo">
+                                    {{ grupo.capitan_grupo || 'Suelta aquí al capitán...' }}
                                  </p>
                                  <div class="flex flex-wrap gap-1 mt-0.5" *ngIf="getPrivilegioTagsByName(grupo.capitan_grupo).length > 0">
                                     <span *ngFor="let tag of getPrivilegioTagsByName(grupo.capitan_grupo)"
-                                       class="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold whitespace-nowrap tracking-tight"
-                                       [ngClass]="tag.class">
-                                       {{ tag.label }}
-                                    </span>
+                                       class="inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold whitespace-nowrap tracking-tight"
+                                       [ngClass]="tag.class">{{ tag.label }}</span>
                                  </div>
                               </div>
-
                               <!-- Quitar -->
                               <button *ngIf="grupo.capitan_grupo" (click)="removeLeader(grupo.id_grupo, 'capitan')"
-                                 class="opacity-0 group-hover/leader:opacity-100 p-1 rounded-lg text-slate-300 dark:text-slate-600 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shrink-0"
-                                 title="Quitar asignación">
+                                 class="opacity-0 group-hover/leader:opacity-100 p-1 rounded-md text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shrink-0"
+                                 title="Quitar capitán">
                                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                  </svg>
@@ -427,61 +530,80 @@
                            </div>
                         </div>
 
-                        <!-- ── AUXILIAR ── (mismo alto siempre, mismo color naranja de marca) -->
-                        <div class="rounded-xl overflow-hidden border transition-all duration-200 group/leader min-h-[3.5rem]"
-                           [ngClass]="{
-                              'bg-orange-50/70 dark:bg-orange-950/30 border-orange-100 dark:border-orange-900/40 shadow-sm hover:shadow-md': !isDraggingOverLeader() || isDraggingOverLeader()?.groupId !== grupo.id_grupo || isDraggingOverLeader()?.role !== 'auxiliar',
-                              'bg-orange-100/80 dark:bg-orange-900/30 border-orange-400 dark:border-orange-500/50 border-dashed shadow-lg scale-[1.02] z-10': isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'auxiliar',
-                              'border-orange-100/80 dark:border-orange-900/50 border-dashed': !grupo.auxiliar_grupo && (!isDraggingOverLeader() || isDraggingOverLeader()?.groupId !== grupo.id_grupo || isDraggingOverLeader()?.role !== 'auxiliar')
-                           }"
+                        <!-- ── AUXILIAR ── -->
+                        <div class="rounded-lg border transition-all duration-150 group/leader"
+                           [attr.draggable]="grupo.auxiliar_grupo ? 'true' : null"
+                           [class.cursor-grab]="grupo.auxiliar_grupo"
+                           [class.active:cursor-grabbing]="grupo.auxiliar_grupo"
+                           [class.bg-orange-50]="grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.dark:bg-orange-950/40]="grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.border-orange-200/80]="grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.dark:border-orange-800/30]="grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.shadow-sm]="grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.bg-white/60]="!grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.dark:bg-slate-800/30]="!grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.border-dashed]="!grupo.auxiliar_grupo || isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.border-orange-200]="!grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.dark:border-orange-800/40]="!grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.bg-orange-50]="isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.dark:bg-orange-900/20]="isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.border-orange-400]="isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.dark:border-orange-500/60]="isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.scale-[1.01]]="isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           [class.shadow-md]="isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                           (dragstart)="onDragStartLeaderCard($event, grupo, 'auxiliar')"
+                           (dragend)="onDragEnd()"
                            (dragover)="onDragOverLeader($event, grupo.id_grupo, 'auxiliar')"
                            (dragleave)="onDragLeaveLeader()"
                            (drop)="onDropLeader($event, grupo.id_grupo, 'auxiliar')">
 
-                           <div class="flex items-center gap-2 p-2 min-h-[2.75rem]">
-                              <!-- Avatar (sin badge) -->
-                              <div class="shrink-0">
-                                 <div class="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-                                    [ngClass]="{
-                                       'bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-300 shadow-sm': grupo.auxiliar_grupo || (isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'auxiliar'),
-                                       'bg-orange-50 dark:bg-orange-900/30 text-orange-400/80 dark:text-orange-500/80': !grupo.auxiliar_grupo && !(isDraggingOverLeader()?.groupId === grupo.id_grupo && isDraggingOverLeader()?.role === 'auxiliar')
-                                    }">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                       <circle cx="9" cy="7" r="4"/>
-                                       <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                       <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                    </svg>
-                                 </div>
+                           <div class="flex items-center gap-2 px-2.5 py-2">
+                              <!-- Avatar -->
+                              <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all"
+                                 [class.bg-orange-100]="grupo.auxiliar_grupo || isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                                 [class.dark:bg-orange-900/40]="grupo.auxiliar_grupo || isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                                 [class.text-orange-600]="grupo.auxiliar_grupo || isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                                 [class.dark:text-orange-300]="grupo.auxiliar_grupo || isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                                 [class.bg-slate-100]="!grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                                 [class.dark:bg-slate-700/50]="!grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                                 [class.text-slate-400]="!grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')"
+                                 [class.dark:text-slate-500]="!grupo.auxiliar_grupo && !isDraggingOverRole(grupo.id_grupo, 'auxiliar')">
+                                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                 </svg>
                               </div>
-
                               <!-- Contenido -->
-                              <div class="flex-1 min-w-0 flex flex-col justify-center min-h-[2rem]">
-                                 <span class="text-[8.5px] font-extrabold uppercase tracking-widest transition-colors"
-                                    [ngClass]="grupo.auxiliar_grupo ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400 dark:text-slate-500'">
-                                    Auxiliar
-                                 </span>
-                                 <p class="text-[11px] font-bold truncate leading-tight mt-px"
-                                    [ngClass]="{
-                                       'text-orange-700 dark:text-orange-300': isLeaderModified(grupo.id_grupo, 'auxiliar'),
-                                       'text-slate-800 dark:text-slate-200': !isLeaderModified(grupo.id_grupo, 'auxiliar') && grupo.auxiliar_grupo,
-                                       'text-slate-400 dark:text-slate-600 italic font-medium': !grupo.auxiliar_grupo
-                                    }">
-                                    {{ grupo.auxiliar_grupo || 'Arrastra aquí...' }}
+                              <div class="flex-1 min-w-0">
+                                 <p class="text-[9px] font-bold uppercase tracking-wider leading-none mb-0.5"
+                                    [class.text-orange-500]="grupo.auxiliar_grupo"
+                                    [class.dark:text-orange-400]="grupo.auxiliar_grupo"
+                                    [class.text-slate-400]="!grupo.auxiliar_grupo"
+                                    [class.dark:text-slate-600]="!grupo.auxiliar_grupo">Auxiliar</p>
+                                 <p class="text-[11px] font-semibold truncate leading-tight"
+                                    [class.text-orange-600]="isLeaderModified(grupo.id_grupo, 'auxiliar')"
+                                    [class.dark:text-orange-300]="isLeaderModified(grupo.id_grupo, 'auxiliar')"
+                                    [class.text-slate-700]="!isLeaderModified(grupo.id_grupo, 'auxiliar') && grupo.auxiliar_grupo"
+                                    [class.dark:text-slate-200]="!isLeaderModified(grupo.id_grupo, 'auxiliar') && grupo.auxiliar_grupo"
+                                    [class.text-slate-400]="!grupo.auxiliar_grupo"
+                                    [class.dark:text-slate-600]="!grupo.auxiliar_grupo"
+                                    [class.italic]="!grupo.auxiliar_grupo"
+                                    [class.font-normal]="!grupo.auxiliar_grupo"
+                                    [class.text-[10px]]="!grupo.auxiliar_grupo">
+                                    {{ grupo.auxiliar_grupo || 'Suelta aquí al auxiliar...' }}
                                  </p>
                                  <div class="flex flex-wrap gap-1 mt-0.5" *ngIf="getPrivilegioTagsByName(grupo.auxiliar_grupo).length > 0">
                                     <span *ngFor="let tag of getPrivilegioTagsByName(grupo.auxiliar_grupo)"
-                                       class="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold whitespace-nowrap tracking-tight"
-                                       [ngClass]="tag.class">
-                                       {{ tag.label }}
-                                    </span>
+                                       class="inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold whitespace-nowrap tracking-tight"
+                                       [ngClass]="tag.class">{{ tag.label }}</span>
                                  </div>
                               </div>
-
                               <!-- Quitar -->
                               <button *ngIf="grupo.auxiliar_grupo" (click)="removeLeader(grupo.id_grupo, 'auxiliar')"
-                                 class="opacity-0 group-hover/leader:opacity-100 p-1 rounded-lg text-slate-300 dark:text-slate-600 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shrink-0"
-                                 title="Quitar asignación">
+                                 class="opacity-0 group-hover/leader:opacity-100 p-1 rounded-md text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shrink-0"
+                                 title="Quitar auxiliar">
                                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                  </svg>
@@ -492,35 +614,140 @@
                      </div>
                   </div>
 
-                  <!-- Listado de Publicadores (fondo diferenciado para resaltar las cards) -->
-                  <div class="px-2.5 py-2 flex-1 overflow-y-auto custom-scrollbar rounded-b-2xl bg-slate-50/80 dark:bg-slate-800/40"
+                  <!-- Listado de Publicadores -->
+                  <div class="px-2.5 pt-2.5 pb-2 flex-1 overflow-y-auto custom-scrollbar bg-slate-50/70 dark:bg-slate-800/25"
                      [class.immersive-scroll]="isFullScreen()">
-                     <div class="mb-1.5 px-1">
-                        <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em]">Publicadores</span>
+                     <!-- Etiqueta de sección -->
+                     <div class="flex items-center gap-1.5 mb-2 px-0.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 shrink-0"></span>
+                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em]">Publicadores</span>
+                     </div>
+                     <!-- Búsqueda dentro del grupo -->
+                     <div class="mb-2">
+                        <div class="relative">
+                           <input type="text"
+                              [value]="getGroupSearch(grupo.id_grupo)"
+                              (input)="setGroupSearch(grupo.id_grupo, $any($event.target).value)"
+                              placeholder="Buscar..."
+                              class="w-full pl-7 pr-3 py-1.5 text-[11px] font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 dark:focus:border-orange-600 transition-all outline-none shadow-sm">
+                           <svg class="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 dark:text-slate-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="11" cy="11" r="8"/>
+                              <path d="m21 21-4.35-4.35"/>
+                           </svg>
+                        </div>
                      </div>
                      <div class="space-y-1">
-                        <ng-container *ngFor="let p of getGroupMembers(grupo.id_grupo)">
+                        <ng-container *ngFor="let p of getFilteredGroupMembers(grupo.id_grupo); let i = index">
                            <ng-container
-                              *ngTemplateOutlet="cardTemplate; context: { $implicit: p, inGroup: true }"></ng-container>
+                              *ngTemplateOutlet="cardTemplate; context: { $implicit: p, inGroup: true, groupId: grupo.id_grupo, index: i }"></ng-container>
                         </ng-container>
                      </div>
 
+                     <!-- Sin publicadores en el grupo -->
                      <div *ngIf="getGroupMembers(grupo.id_grupo).length === 0"
-                        class="py-8 flex flex-col items-center justify-center text-slate-300 dark:text-slate-500 text-xs border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-800/20 mt-2">
-                        <svg class="w-6 h-6 opacity-40 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                           stroke-width="1.5">
-                           <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        class="py-8 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs border border-dashed border-slate-300/60 dark:border-slate-600/40 rounded-xl bg-white/50 dark:bg-slate-800/20 mt-1">
+                        <div class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700/40 flex items-center justify-center mb-2.5">
+                           <svg class="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                           </svg>
+                        </div>
+                        <span class="font-semibold text-slate-500 dark:text-slate-400">Arrastra publicadores aquí</span>
+                     </div>
+                     <!-- Solo encargados -->
+                     <div *ngIf="getGroupMembers(grupo.id_grupo).length > 0 && getGroupMembersExcludingLeaders(grupo.id_grupo).length === 0"
+                        class="py-4 flex items-center justify-center text-slate-400 dark:text-slate-500 text-[11px] mt-1">
+                        <span>Solo encargados en este grupo</span>
+                     </div>
+                     <!-- Búsqueda sin resultados -->
+                     <div *ngIf="getGroupMembersExcludingLeaders(grupo.id_grupo).length > 0 && getFilteredGroupMembers(grupo.id_grupo).length === 0"
+                        class="py-5 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs mt-1">
+                        <svg class="w-4 h-4 opacity-50 mb-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                           <circle cx="11" cy="11" r="8"/>
+                           <path d="m21 21-4.35-4.35"/>
                         </svg>
-                        <span>Arrastra publicadores aquí</span>
+                        <span>Ningún publicador coincide</span>
                      </div>
                   </div>
                </div>
+
+               </ng-container>
 
             </div>
          </div>
       </div>
    </div>
+   <!-- Modal: Bloqueo eliminación por contenido -->
+   <div *ngIf="deleteGroupBlockReason()" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm"
+         (click)="cancelDeleteGroup()"></div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden border border-slate-100 dark:border-slate-700">
+         <div class="p-6 text-center">
+            <div class="w-14 h-14 bg-amber-50 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+               <svg class="w-7 h-7 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+               </svg>
+            </div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">No se puede eliminar</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+               Este grupo no se puede eliminar porque
+               <span class="font-semibold text-slate-700 dark:text-slate-200">{{ deleteGroupBlockReason() }}</span>.
+            </p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">
+               Primero retira todos los encargados y publicadores del grupo.
+            </p>
+         </div>
+         <div class="bg-slate-50 dark:bg-slate-700/30 p-4">
+            <button (click)="cancelDeleteGroup()"
+               class="w-full py-2.5 px-4 rounded-xl bg-slate-800 dark:bg-slate-600 text-white font-bold text-sm hover:bg-slate-700 dark:hover:bg-slate-500 transition-all active:scale-95">
+               Entendido
+            </button>
+         </div>
+      </div>
+   </div>
+
+   <!-- Modal: Confirmar eliminación de grupo -->
+   <div *ngIf="deleteGroupConfirm() !== null" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm"
+         (click)="cancelDeleteGroup()"></div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden border border-slate-100 dark:border-slate-700">
+         <div class="p-6 text-center">
+            <div class="w-14 h-14 bg-red-50 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+               <svg class="w-7 h-7 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+               </svg>
+            </div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-white mb-2">Eliminar grupo</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+               ¿Eliminar
+               <span class="font-bold text-slate-700 dark:text-slate-200">
+                  {{ getDeleteGroupName() }}
+               </span>?
+               Esta acción no se puede deshacer.
+            </p>
+         </div>
+         <div class="bg-slate-50 dark:bg-slate-700/30 p-4 flex gap-3">
+            <button (click)="cancelDeleteGroup()"
+               class="flex-1 py-2.5 px-4 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-white dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 transition-all"
+               [disabled]="isDeletingGroup()">
+               Cancelar
+            </button>
+            <button (click)="confirmDeleteGroup()"
+               class="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-lg shadow-red-500/25 transition-all active:scale-95 flex items-center justify-center gap-2"
+               [disabled]="isDeletingGroup()">
+               <svg *ngIf="isDeletingGroup()" class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+               </svg>
+               {{ isDeletingGroup() ? 'Eliminando...' : 'Eliminar' }}
+            </button>
+         </div>
+      </div>
+   </div>
+
    <!-- Modal de Confirmación de Salida -->
    <div *ngIf="showExitConfirmation()" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
       <!-- Backdrop -->
@@ -555,6 +782,81 @@
             <button (click)="confirmExit()"
                class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm shadow-lg shadow-red-500/30 hover:shadow-red-500/40 hover:from-red-600 hover:to-red-700 transition-all active:scale-95">
                Salir de todas formas
+            </button>
+         </div>
+      </div>
+   </div>
+
+   <!-- Modal Confirmar mover encargado a zona de publicadores -->
+   <div *ngIf="leaderToPubConfirm() && getLeaderToPubConfirmDetails() as d" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm"
+         (click)="cancelLeaderToPub()"></div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden border border-slate-100 dark:border-slate-700">
+         <div class="p-6 text-center">
+            <div class="w-14 h-14 bg-slate-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+               <svg class="w-7 h-7 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+               </svg>
+            </div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Quitar como encargado</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+               ¿Quitar a <span class="font-bold text-slate-700 dark:text-slate-200">{{ d.leaderName }}</span>
+               como <span class="font-bold text-orange-600 dark:text-orange-400">{{ d.fromRoleLabel }}</span>
+               de <span class="font-bold text-slate-700 dark:text-slate-200">{{ d.fromGroupName }}</span>?
+            </p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">
+               Pasará a publicadores de
+               <span class="font-semibold text-slate-600 dark:text-slate-300">{{ d.toGroupName }}</span>.
+            </p>
+         </div>
+         <div class="bg-slate-50 dark:bg-slate-700/30 p-4 flex gap-3">
+            <button (click)="cancelLeaderToPub()"
+               class="flex-1 py-2.5 px-4 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-white dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 transition-all">
+               Cancelar
+            </button>
+            <button (click)="confirmLeaderToPub()"
+               class="flex-1 py-2.5 px-4 rounded-xl bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-bold text-sm shadow-lg transition-all active:scale-95">
+               Confirmar
+            </button>
+         </div>
+      </div>
+   </div>
+
+   <!-- Modal Confirmar mover Capitán/Auxiliar -->
+   <div *ngIf="leaderMoveConfirm() && getLeaderMoveConfirmDetails() as d" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm"
+         (click)="cancelLeaderMove()"></div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden border border-slate-100 dark:border-slate-700 animate-fade-in-up">
+         <div class="p-6 text-center">
+            <div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+               <svg class="w-7 h-7 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+               </svg>
+            </div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-white mb-1">Mover encargado</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+               ¿Mover a <span class="font-bold text-slate-700 dark:text-slate-200">{{ d.leaderName }}</span>
+               como <span class="font-bold text-orange-600 dark:text-orange-400">{{ d.toRoleLabel }}</span>
+               a <span class="font-bold text-slate-700 dark:text-slate-200">{{ d.toGroupName }}</span>?
+            </p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
+               Quedará sin {{ d.fromRoleLabel.toLowerCase() }} en <span class="font-semibold">{{ d.fromGroupName }}</span>.
+            </p>
+            <p *ngIf="d.currentTargetName" class="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
+               ⚠ Reemplazará a <span class="font-bold">{{ d.currentTargetName }}</span> en ese rol.
+            </p>
+         </div>
+         <div class="bg-slate-50 dark:bg-slate-700/30 p-4 flex gap-3">
+            <button (click)="cancelLeaderMove()"
+               class="flex-1 py-2.5 px-4 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-white dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 transition-all">
+               Cancelar
+            </button>
+            <button (click)="confirmLeaderMove()"
+               class="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-500/25 hover:shadow-blue-500/35 transition-all active:scale-95">
+               Mover
             </button>
          </div>
       </div>
@@ -616,82 +918,104 @@
    </div>
 </div>
 
-<!-- Template de Card de Publicador - Material Design minimal, arrastrable -->
-<ng-template #cardTemplate let-p let-inGroup="inGroup">
+<!-- Template de Card de Publicador -->
+<ng-template #cardTemplate let-p let-inGroup="inGroup" let-groupId="groupId" let-index="index">
    <div
-      class="relative flex items-center gap-2.5 px-2 py-2 rounded-xl border select-none transition-all duration-200 group/card overflow-hidden min-h-[52px]"
-      [class.bg-white]="!isSelected(p.id_publicador)"
-      [class.dark:bg-slate-800/80]="!isSelected(p.id_publicador)"
-      [class.border-slate-200/80]="!isSelected(p.id_publicador)"
-      [class.dark:border-slate-600/50]="!isSelected(p.id_publicador)"
-      [class.hover:border-orange-400]="!isSelected(p.id_publicador)"
-      [class.dark:hover:border-orange-500]="!isSelected(p.id_publicador)"
+      class="relative flex items-center gap-2 px-2 py-1.5 rounded-lg border select-none transition-all duration-150 group/card overflow-hidden"
+      [class.bg-white]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+      [class.dark:bg-slate-800/70]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+      [class.border-slate-200/80]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+      [class.dark:border-slate-700/50]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+      [class.hover:border-orange-300]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+      [class.dark:hover:border-orange-600/50]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+      [class.shadow-sm]="!isSelected(p.id_publicador)"
+      [class.bg-red-50/60]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
+      [class.dark:bg-red-900/10]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
+      [class.border-red-200/60]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
+      [class.dark:border-red-800/30]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
       [class.cursor-grab]="!isSelected(p.id_publicador)"
-      [class.active:cursor-grabbing]="!isSelected(p.id_publicador)"
       [class.bg-orange-50]="isSelected(p.id_publicador)"
-      [class.dark:bg-orange-900/25]="isSelected(p.id_publicador)"
-      [class.border-orange-200]="isSelected(p.id_publicador)"
-      [class.dark:border-orange-700/50]="isSelected(p.id_publicador)"
+      [class.dark:bg-orange-900/20]="isSelected(p.id_publicador)"
+      [class.border-orange-300]="isSelected(p.id_publicador)"
+      [class.dark:border-orange-600/50]="isSelected(p.id_publicador)"
+      [class.shadow-md]="isSelected(p.id_publicador)"
       [class.cursor-pointer]="isSelected(p.id_publicador)"
       [class.z-10]="isSelected(p.id_publicador)"
-      draggable="true" (dragstart)="onDragStart($event, p)" (dragend)="onDragEnd()"
+      draggable="true"
+      (dragstart)="onDragStart($event, p, groupId, index)"
+      (dragend)="onDragEnd()"
+      (dragover)="inGroup && $event.preventDefault(); inGroup && $event.stopPropagation()"
+      (drop)="inGroup && onDropOnPublisherCard($event, groupId, index)"
       (click)="togglePublisherSelection(p, $event)">
 
-      <!-- Indicador lateral de modificado -->
-      <div *ngIf="isModified(p) && !isSelected(p.id_publicador)"
-         class="absolute left-0 inset-y-0 w-[3px] rounded-l bg-brand-orange opacity-90">
-      </div>
+      <!-- Indicador lateral: modificado (naranja) o inactivo (rojo) -->
+      <div *ngIf="isModified(p) && !isSelected(p.id_publicador) && !isInactivePublisher(p)"
+         class="absolute left-0 inset-y-0 w-[3px] rounded-l bg-orange-500 opacity-90"></div>
+      <div *ngIf="isInactivePublisher(p) && !isSelected(p.id_publicador)"
+         class="absolute left-0 inset-y-0 w-[3px] rounded-l bg-red-400 opacity-80"></div>
 
-      <!-- Handle de arrastre (Material: siempre visible para affordance) -->
-      <div class="shrink-0 flex flex-col gap-0.5 py-0.5 pr-0.5 touch-none"
-           [class.text-slate-300]="!isSelected(p.id_publicador)"
-           [class.dark:text-slate-500]="!isSelected(p.id_publicador)"
+      <!-- Handle de arrastre -->
+      <div class="shrink-0 touch-none pl-0.5"
+           [class.text-slate-300]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+           [class.dark:text-slate-600]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
            [class.group-hover/card:text-slate-400]="!isSelected(p.id_publicador)"
+           [class.text-red-300]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
+           [class.dark:text-red-800/60]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
            [class.text-orange-400]="isSelected(p.id_publicador)">
-         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <circle cx="9" cy="5" r="1.25"/><circle cx="15" cy="5" r="1.25"/>
-            <circle cx="9" cy="12" r="1.25"/><circle cx="15" cy="12" r="1.25"/>
-            <circle cx="9" cy="19" r="1.25"/><circle cx="15" cy="19" r="1.25"/>
+         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="9" cy="5" r="1.2"/><circle cx="15" cy="5" r="1.2"/>
+            <circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/>
+            <circle cx="9" cy="19" r="1.2"/><circle cx="15" cy="19" r="1.2"/>
          </svg>
       </div>
 
-      <!-- Avatar: icono de usuario -->
-      <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
-         [class.bg-slate-100]="!isSelected(p.id_publicador)"
-         [class.dark:bg-slate-700]="!isSelected(p.id_publicador)"
-         [class.text-slate-600]="!isSelected(p.id_publicador)"
-         [class.dark:text-slate-300]="!isSelected(p.id_publicador)"
+      <!-- Avatar circular -->
+      <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors"
+         [class.bg-slate-100]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+         [class.dark:bg-slate-700]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+         [class.text-slate-500]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+         [class.dark:text-slate-400]="!isSelected(p.id_publicador) && !isInactivePublisher(p)"
+         [class.bg-red-100]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
+         [class.dark:bg-red-900/30]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
+         [class.text-red-400]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
          [class.bg-orange-100]="isSelected(p.id_publicador)"
-         [class.dark:bg-orange-900/50]="isSelected(p.id_publicador)"
+         [class.dark:bg-orange-900/40]="isSelected(p.id_publicador)"
          [class.text-orange-600]="isSelected(p.id_publicador)"
          [class.dark:text-orange-300]="isSelected(p.id_publicador)">
-         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
          </svg>
       </div>
 
       <!-- Nombre + Tags -->
-      <div class="min-w-0 flex-1 flex flex-col justify-center">
-         <p class="text-[12px] font-semibold text-slate-800 dark:text-slate-200 truncate leading-tight transition-colors group-hover/card:text-orange-600 dark:group-hover/card:text-orange-400"
+      <div class="min-w-0 flex-1">
+         <p class="text-[11.5px] font-semibold truncate leading-tight transition-colors"
+            [class.text-slate-700]="!isInactivePublisher(p) && !isSelected(p.id_publicador)"
+            [class.dark:text-slate-200]="!isInactivePublisher(p) && !isSelected(p.id_publicador)"
+            [class.group-hover/card:text-orange-600]="!isInactivePublisher(p) && !isSelected(p.id_publicador)"
+            [class.dark:group-hover/card:text-orange-400]="!isInactivePublisher(p) && !isSelected(p.id_publicador)"
+            [class.text-red-500]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
+            [class.dark:text-red-400]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
             [class.text-orange-700]="isSelected(p.id_publicador)"
             [class.dark:text-orange-300]="isSelected(p.id_publicador)">
             {{ p.primer_nombre }} {{ p.primer_apellido }}
          </p>
-         <div class="flex gap-1 mt-0.5 flex-wrap min-h-[14px]" *ngIf="getPrivilegioTags(p).length > 0">
-            <span *ngFor="let tag of getPrivilegioTags(p)"
-               class="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold whitespace-nowrap tracking-tight"
-               [ngClass]="tag.class">
-               {{ tag.label }}
+         <div class="flex gap-1 mt-0.5 flex-wrap items-center" *ngIf="isInactivePublisher(p) || getPrivilegioTags(p).length > 0">
+            <span *ngIf="isInactivePublisher(p)"
+               class="inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold whitespace-nowrap rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800/40">
+               Inactivo
             </span>
+            <span *ngFor="let tag of getPrivilegioTags(p)"
+               class="inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold whitespace-nowrap tracking-tight"
+               [ngClass]="tag.class">{{ tag.label }}</span>
          </div>
-         <div *ngIf="getPrivilegioTags(p).length === 0" class="min-h-[14px]"></div>
       </div>
 
       <!-- Check al estar seleccionado -->
       <div *ngIf="isSelected(p.id_publicador)"
-         class="shrink-0 w-5 h-5 bg-brand-orange rounded-full flex items-center justify-center ring-2 ring-orange-200 dark:ring-orange-800">
-         <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
+         class="shrink-0 w-4.5 h-4.5 bg-orange-500 rounded-full flex items-center justify-center ring-2 ring-orange-200 dark:ring-orange-800">
+         <svg class="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
          </svg>
       </div>

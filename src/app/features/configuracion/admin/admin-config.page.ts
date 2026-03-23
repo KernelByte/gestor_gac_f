@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { trigger, transition, style, animate } from '@angular/animations';
+import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 
 interface CongregacionAdmin {
    id_congregacion: number;
@@ -43,7 +44,9 @@ interface ImportResult {
    standalone: true,
    imports: [CommonModule, FormsModule, ReactiveFormsModule],
    templateUrl: './admin-config.page.html',
-   styles: [],
+   styles: [`
+     .scrollbar-hide::-webkit-scrollbar { display: none; }
+   `],
    animations: [
       trigger('slidePanel', [
          transition(':enter', [
@@ -90,6 +93,9 @@ export class AdminConfigPage implements OnInit {
    importError = signal<string | null>(null);
    selectedFileName = signal<string | null>(null);
    isDragOver = signal(false);
+   // ID de congregación seleccionada para importar directamente (modo Admin por ID)
+   selectedImportCongregacionId = signal<number | null>(null);
+   selectedImportCongregacionName = signal<string | null>(null);
 
    // Create/Edit Panel Signals
    panelOpen = signal(false);
@@ -103,6 +109,10 @@ export class AdminConfigPage implements OnInit {
 
    // Export signal
    exportingId = signal<number | null>(null);
+
+   // Delete confirmation modal
+   congregationToDelete = signal<CongregacionAdmin | null>(null);
+   deletingCongregation = signal(false);
 
    ngOnInit() {
       this.initForm();
@@ -154,6 +164,10 @@ export class AdminConfigPage implements OnInit {
       return this.congregaciones().length;
    }
 
+   getCongregacionAvatarStyle(nombre: string): string {
+      return getInitialAvatarStyle(nombre);
+   }
+
    get filteredCongregations() {
       const term = this.searchTerm().toLowerCase();
       return this.congregaciones().filter(c =>
@@ -196,6 +210,17 @@ export class AdminConfigPage implements OnInit {
 
    // ===== Import Modal Methods =====
    openImportModal() {
+      this.selectedImportCongregacionId.set(null);
+      this.selectedImportCongregacionName.set(null);
+      this.showImportModal.set(true);
+      this.importResult.set(null);
+      this.importError.set(null);
+      this.selectedFileName.set(null);
+   }
+
+   openImportModalForCongregacion(id: number, nombre: string) {
+      this.selectedImportCongregacionId.set(id);
+      this.selectedImportCongregacionName.set(nombre);
       this.showImportModal.set(true);
       this.importResult.set(null);
       this.importError.set(null);
@@ -203,13 +228,15 @@ export class AdminConfigPage implements OnInit {
    }
 
    closeImportModal() {
+      const wasSuccess = this.importResult()?.success;
       this.showImportModal.set(false);
       this.importResult.set(null);
       this.importError.set(null);
       this.selectedFileName.set(null);
       this.isDragOver.set(false);
-      // Reload congregations if import was successful
-      if (this.importResult()?.success) {
+      this.selectedImportCongregacionId.set(null);
+      this.selectedImportCongregacionName.set(null);
+      if (wasSuccess) {
          this.loadCongregaciones();
       }
    }
@@ -271,12 +298,16 @@ export class AdminConfigPage implements OnInit {
       const formData = new FormData();
       formData.append('archivo', file);
 
-      this.http.post<ImportResult>(`${environment.apiUrl}/import/congregaciones`, formData)
+      const idCong = this.selectedImportCongregacionId();
+      const url = idCong
+         ? `${environment.apiUrl}/import/congregaciones?id_congregacion=${idCong}`
+         : `${environment.apiUrl}/import/congregaciones`;
+
+      this.http.post<ImportResult>(url, formData)
          .subscribe({
             next: (result) => {
                this.importResult.set(result);
                this.importing.set(false);
-               // Reload congregations on success
                if (result.success) {
                   this.loadCongregaciones();
                }
@@ -403,6 +434,36 @@ export class AdminConfigPage implements OnInit {
          error: (err: any) => {
             console.error('Template download error:', err);
             alert('Error al descargar la plantilla');
+         }
+      });
+   }
+
+   confirmDeleteCongregation(cong: CongregacionAdmin) {
+      this.congregationToDelete.set(cong);
+   }
+
+   closeDeleteModal() {
+      if (!this.deletingCongregation()) this.congregationToDelete.set(null);
+   }
+
+   executeDeleteCongregation() {
+      const cong = this.congregationToDelete();
+      if (!cong) return;
+      this.deletingCongregation.set(true);
+      this.http.delete(`${this.API_URL}/congregaciones/${cong.id_congregacion}`).subscribe({
+         next: () => {
+            this.congregationToDelete.set(null);
+            this.deletingCongregation.set(false);
+            this.loadCongregaciones();
+            this.showNotification('Congregación eliminada correctamente', 'success');
+         },
+         error: (err: any) => {
+            console.error('Delete congregation error:', err);
+            this.deletingCongregation.set(false);
+            this.showNotification(
+               err?.error?.detail || 'No se pudo eliminar la congregación',
+               'error'
+            );
          }
       });
    }

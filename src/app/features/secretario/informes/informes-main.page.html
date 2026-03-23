@@ -19,11 +19,11 @@
    <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
       <!-- Tab 1: Entrada Mensual -->
       <ng-container *ngIf="activeTab() === 'entrada'">
-         <div class="flex flex-col gap-4 flex-1 min-h-0">
-            <!-- Summary Cards (Hidden on mobile for more vertical space) -->
+         <div class="flex flex-col gap-5 flex-1 min-h-0">
+            <!-- Resumen del mes (informes recibidos + cursos/horas) -->
             <app-informes-stats [resumen]="resumen()"></app-informes-stats>
 
-            <!-- Filters Bar (Custom Dropdowns) -->
+            <!-- Período, vista, búsqueda y Excel -->
             <app-informes-filters [activeDropdown]="activeDropdown()" [isRestrictedUser]="isRestrictedUser()"
                [selectedMes]="selectedMes" [selectedAno]="selectedAno" [selectedGrupo]="selectedGrupo" [meses]="meses"
                [anos]="anos" [grupos]="grupos()" [vistaGrupo]="vistaGrupo()" [searchQuery]="searchQuery"
@@ -46,7 +46,7 @@
 
       <!-- Tab 2: Historial (Placeholder) -->
       <ng-container *ngIf="activeTab() === 'historial'">
-         <app-informes-historial [selectedAno]="+selectedAno" [congregacionId]="authStore.user()?.id_congregacion || 0"
+         <app-informes-historial [selectedAno]="+selectedAno" [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0"
             [grupos]="grupos()">
          </app-informes-historial>
       </ng-container>

@@ -1,12 +1,14 @@
-import { Component, computed, inject, OnInit, signal, OnDestroy, Renderer2, ViewChild, ElementRef, NgZone } from '@angular/core';
+import { Component, computed, inject, OnInit, OnDestroy, AfterViewInit, signal, Renderer2, ViewChild, ElementRef, NgZone, effect } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { lastValueFrom, forkJoin } from 'rxjs';
 import { PrivilegiosService } from '../../privilegios/infrastructure/privilegios.service';
+import { GruposService } from '../services/grupos.service';
 import { Privilegio } from '../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../privilegios/domain/models/publicador-privilegio';
 import { AuthStore } from '../../../../core/auth/auth.store';
+import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
 
 // Interfaces simplificadas para la vista
 interface Grupo {
@@ -18,6 +20,12 @@ interface Grupo {
   id_congregacion_grupo?: number;
 }
 
+interface Estado {
+  id_estado: number;
+  tipo: string;
+  nombre_estado: string;
+}
+
 interface Publicador {
   id_publicador: number;
   primer_nombre: string;
@@ -25,13 +33,13 @@ interface Publicador {
   primer_apellido: string;
   segundo_apellido?: string | null;
   id_grupo_publicador?: number | null;
+  orden_en_grupo?: number | null;
   id_congregacion_publicador?: number;
+  id_estado_publicador?: number | null;
   sexo?: string;
-  // Ajustar según la respuesta real de tu API si hay privilegio/rol
   rol?: any;
   privilegio?: any;
-  // Privilegios activos del publicador (cargados desde el frontend)
-  privilegios_activos?: number[]; // Array de id_privilegio
+  privilegios_activos?: number[];
 }
 
 @Component({
@@ -65,6 +73,11 @@ interface Publicador {
     }
     ::ng-deep .immersive-in {
       animation: immersiveEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    }
+
+    /* Indicador de inserción de columna: barra azul en el borde izquierdo sin mover el layout */
+    .column-drop-target {
+      box-shadow: -5px 0 0 0 #3b82f6, -10px 0 22px -2px rgba(59,130,246,0.35) !important;
     }
 
     /* Scrollbar oscuro para columnas en modo inmersivo */
@@ -109,13 +122,22 @@ interface Publicador {
     }
   `]
 })
-export class AsignacionGruposPage implements OnInit, OnDestroy {
+export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
   private http = inject(HttpClient);
   private router = inject(Router);
   private privilegiosService = inject(PrivilegiosService);
+  private gruposService = inject(GruposService);
   private renderer = inject(Renderer2);
   private document = inject(DOCUMENT);
   private authStore = inject(AuthStore);
+  private congregacionContext = inject(CongregacionContextService);
+
+  constructor() {
+    effect(() => {
+      this.congregacionContext.effectiveCongregacionId();
+      this.loadData();
+    });
+  }
 
   // Data
   grupos = signal<Grupo[]>([]);
@@ -132,8 +154,15 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
   isSaving = signal(false);
   showSuccessMessage = signal(false);
   showExitConfirmation = signal(false); // Modal state
-  removeLeaderConfirm = signal<{ groupId: number; role: 'capitan' | 'auxiliar' } | null>(null); // Modal quitar encargado
-  isFullScreen = signal(false); // Estado para pantalla completa
+  removeLeaderConfirm = signal<{ groupId: number; role: 'capitan' | 'auxiliar' } | null>(null);
+  isFullScreen = signal(false);
+  showInactivePublishers = signal(true);
+  estadosPublicador = signal<Estado[]>([]);
+  /** Término de búsqueda por grupo (solo para filtrar la lista mostrada en cada card). */
+  groupSearchTerms = signal<Record<number, string>>({});
+  canScrollLeft = signal(false);
+  canScrollRight = signal(false);
+  private resizeObserver: ResizeObserver | null = null;
 
   // Selection State
   selectedPublishersIds = signal<Set<number>>(new Set());
@@ -148,7 +177,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   onContainerDragOver(e: DragEvent) {
     e.preventDefault();
-    if (this.draggedPublishers.length === 0 && !this.draggedLeader) return;
+    if (this.draggedPublishers.length === 0 && !this.draggedLeader && !this.draggingLeaderCard) return;
     this.currentDragX = e.clientX;
     this.checkAutoScroll();
   }
@@ -159,7 +188,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     this.isAutoScrolling = true;
     this.ngZone.runOutsideAngular(() => {
       const loop = () => {
-        if (!this.draggedPublishers.length && !this.draggedLeader) {
+        if (!this.draggedPublishers.length && !this.draggedLeader && !this.draggingLeaderCard) {
           this.isAutoScrolling = false;
           return;
         }
@@ -180,7 +209,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
           container.scrollLeft += speed;
         }
 
-        if ((this.draggedPublishers.length > 0 || this.draggedLeader) && this.isAutoScrolling) {
+        if ((this.draggedPublishers.length > 0 || this.draggedLeader || this.draggingLeaderCard) && this.isAutoScrolling) {
           this.autoScrollFrameId = requestAnimationFrame(loop);
         } else {
           this.isAutoScrolling = false;
@@ -190,6 +219,10 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     });
   }
 
+  /** Origen del drag para reordenar dentro del grupo. */
+  dragSourceGroupId = signal<number | null>(null);
+  dragSourceIndex = signal<number | null>(null);
+
   onDragEnd() {
     this.isDraggingContent.set(false);
     this.isAutoScrolling = false;
@@ -197,15 +230,21 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
       cancelAnimationFrame(this.autoScrollFrameId);
       this.autoScrollFrameId = null;
     }
-    // Clean up drag state if not handled by drop
     this.draggedPublishers = [];
     this.draggedLeader = null;
+    this.draggingLeaderCard = null;
+    this.dragSourceGroupId.set(null);
+    this.dragSourceIndex.set(null);
     this.selectedPublishersIds.set(new Set());
     this.isDraggingOver.set(null);
     this.isDraggingOverLeader.set(null);
   }
 
   private escKeyHandler: ((e: KeyboardEvent) => void) | null = null;
+
+  toggleShowInactivePublishers() {
+    this.showInactivePublishers.update(v => !v);
+  }
 
   toggleFullScreen() {
     this.isFullScreen.update(v => !v);
@@ -225,12 +264,199 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     this.renderer.removeClass(this.document.body, 'gac-fullscreen-active');
     if (this.escKeyHandler) {
       this.document.removeEventListener('keydown', this.escKeyHandler);
     }
   }
+
+  /** Navegación horizontal: desplaza una "página" a izquierda o derecha. */
+  scrollHorizontal(direction: 'left' | 'right') {
+    const el = this.scrollContainer?.nativeElement;
+    if (!el) return;
+    const step = Math.max(200, el.clientWidth * 0.6);
+    el.scrollBy({ left: direction === 'left' ? -step : step, behavior: 'smooth' });
+  }
+
+  /** Actualiza si se puede scroll a izquierda/derecha (para mostrar/ocultar botones). */
+  updateScrollNavState() {
+    const el = this.scrollContainer?.nativeElement;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+    this.canScrollLeft.set(scrollLeft > 2);
+    this.canScrollRight.set(scrollLeft < maxScroll - 2);
+  }
+
   isDraggingOverLeader = signal<{ groupId: number, role: 'capitan' | 'auxiliar' } | null>(null);
+
+  // ── Eliminación de grupo ─────────────────────────────────────────────────
+  deleteGroupConfirm = signal<number | null>(null);
+  isDeletingGroup = signal(false);
+  deleteGroupBlockReason = signal<string | null>(null);
+
+  canDeleteGroup(groupId: number): boolean {
+    const group = this.grupos().find(g => g.id_grupo === groupId);
+    if (!group) return false;
+    if (group.capitan_grupo || group.auxiliar_grupo) return false;
+    return !this.publicadores().some(p => p.id_grupo_publicador === groupId);
+  }
+
+  getDeleteBlockReason(groupId: number): string | null {
+    const group = this.grupos().find(g => g.id_grupo === groupId);
+    if (!group) return null;
+    const reasons: string[] = [];
+    if (group.capitan_grupo) reasons.push('tiene un Capitán asignado');
+    if (group.auxiliar_grupo) reasons.push('tiene un Auxiliar asignado');
+    const count = this.publicadores().filter(p => p.id_grupo_publicador === groupId).length;
+    if (count > 0) reasons.push(`tiene ${count} publicador${count > 1 ? 'es' : ''} asignado${count > 1 ? 's' : ''}`);
+    if (reasons.length === 0) return null;
+    return reasons.join(', ');
+  }
+
+  requestDeleteGroup(groupId: number) {
+    const reason = this.getDeleteBlockReason(groupId);
+    if (reason) {
+      this.deleteGroupBlockReason.set(reason);
+      return;
+    }
+    this.deleteGroupConfirm.set(groupId);
+  }
+
+  async confirmDeleteGroup() {
+    const id = this.deleteGroupConfirm();
+    if (id === null) return;
+    this.deleteGroupConfirm.set(null);
+    this.isDeletingGroup.set(true);
+    try {
+      await lastValueFrom(this.gruposService.deleteGrupo(id));
+      this.grupos.update(list => list.filter(g => g.id_grupo !== id));
+      this.initialLeaderState.update(map => { const m = new Map(map); m.delete(id); return m; });
+    } catch (err) {
+      console.error('Error al eliminar el grupo', err);
+    } finally {
+      this.isDeletingGroup.set(false);
+    }
+  }
+
+  cancelDeleteGroup() {
+    this.deleteGroupConfirm.set(null);
+    this.deleteGroupBlockReason.set(null);
+  }
+
+  getDeleteGroupName(): string {
+    const id = this.deleteGroupConfirm();
+    if (id === null) return '';
+    return this.grupos().find(g => g.id_grupo === id)?.nombre_grupo ?? '';
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── Reordenamiento de columnas de grupo ──────────────────────────────────
+  draggingColumnId = signal<number | null>(null);
+  dragOverColumnId = signal<number | null>(null);
+  private columnDragLeaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+  onColumnDragStart(e: DragEvent, groupId: number) {
+    this.draggingColumnId.set(groupId);
+    this.isDraggingContent.set(true);
+
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', 'column-' + groupId);
+
+      // Ghost personalizado: tarjeta inclinada que sigue el cursor
+      const grupo = this.grupos().find(g => g.id_grupo === groupId);
+      const ghost = this.document.createElement('div');
+      ghost.style.cssText = [
+        'position:fixed', 'top:-9999px', 'left:-9999px',
+        'width:220px', 'padding:10px 14px 10px 12px',
+        'border-radius:14px',
+        'background:linear-gradient(135deg,#f97316,#ea580c)',
+        'color:white', 'font-weight:700', 'font-size:13px',
+        'font-family:system-ui,-apple-system,sans-serif',
+        'transform:rotate(-3deg) scale(1.04)',
+        'box-shadow:0 20px 50px rgba(0,0,0,0.4),0 4px 14px rgba(234,88,12,0.5)',
+        'letter-spacing:-0.01em', 'pointer-events:none',
+        'display:flex', 'align-items:center', 'gap:8px',
+      ].join(';');
+
+      // Icono grip dentro del ghost
+      ghost.innerHTML = `
+        <svg width="12" height="16" viewBox="0 0 12 16" fill="rgba(255,255,255,0.6)" style="flex-shrink:0">
+          <circle cx="4" cy="3" r="1.5"/><circle cx="8" cy="3" r="1.5"/>
+          <circle cx="4" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/>
+          <circle cx="4" cy="13" r="1.5"/><circle cx="8" cy="13" r="1.5"/>
+        </svg>
+        <span>${grupo?.nombre_grupo ?? 'Grupo'}</span>`;
+
+      this.document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, 110, 22);
+      setTimeout(() => {
+        if (this.document.body.contains(ghost)) this.document.body.removeChild(ghost);
+      }, 100);
+    }
+  }
+
+  onColumnDragEnd() {
+    if (this.columnDragLeaveTimer) { clearTimeout(this.columnDragLeaveTimer); this.columnDragLeaveTimer = null; }
+    this.draggingColumnId.set(null);
+    this.dragOverColumnId.set(null);
+    this.isDraggingContent.set(false);
+  }
+
+  onColumnDragOver(e: DragEvent, groupId: number) {
+    if (!this.draggingColumnId()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (groupId !== this.draggingColumnId()) {
+      this.dragOverColumnId.set(groupId);
+    }
+  }
+
+  onColumnDragLeave(groupId: number) {
+    if (this.dragOverColumnId() === groupId) {
+      this.dragOverColumnId.set(null);
+    }
+  }
+
+  onColumnDrop(e: DragEvent, targetGroupId: number) {
+    const fromId = this.draggingColumnId();
+    this.draggingColumnId.set(null);
+    this.dragOverColumnId.set(null);
+    this.isDraggingContent.set(false);
+    if (fromId === null || fromId === targetGroupId) return;
+    this.grupos.update(list => {
+      const arr = [...list];
+      const fromIdx = arr.findIndex(g => g.id_grupo === fromId);
+      const toIdx = arr.findIndex(g => g.id_grupo === targetGroupId);
+      if (fromIdx === -1 || toIdx === -1) return list;
+      const [removed] = arr.splice(fromIdx, 1);
+      arr.splice(toIdx, 0, removed);
+      return arr;
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Señal para el modal de confirmación al mover un encargado arrastrando su tarjeta. */
+  leaderMoveConfirm = signal<{
+    fromGroupId: number;
+    fromRole: 'capitan' | 'auxiliar';
+    toGroupId: number;
+    toRole: 'capitan' | 'auxiliar';
+    leaderName: string;
+  } | null>(null);
+  /** Datos del encargado que está siendo arrastrado en ese momento. */
+  private draggingLeaderCard: { fromGroupId: number; fromRole: 'capitan' | 'auxiliar'; name: string } | null = null;
+
+  /** Modal de confirmación cuando un encargado se mueve a la zona de publicadores. */
+  leaderToPubConfirm = signal<{
+    fromGroupId: number;
+    fromRole: 'capitan' | 'auxiliar';
+    targetGroupId: number | null;
+    leaderName: string;
+  } | null>(null);
 
   // Convertimos los estados iniciales a señales para que pendingChangesCount reaccione a sus cambios
   initialState = signal(new Map<number, number | null>());
@@ -262,8 +488,28 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     return count;
   });
 
+  // IDs de estados considerados "activos" (nombre contiene "activo" y no "inactivo")
+  activeEstadoIds = computed(() => {
+    const estados = this.estadosPublicador();
+    return new Set(
+      estados
+        .filter(e => {
+          const n = (e.nombre_estado || '').toLowerCase();
+          return n.includes('activo') && !n.includes('inactivo');
+        })
+        .map(e => e.id_estado)
+    );
+  });
+
+  visiblePublicadores = computed(() => {
+    const list = this.publicadores();
+    if (this.showInactivePublishers()) return list;
+    const activeIds = this.activeEstadoIds();
+    return list.filter(p => p.id_estado_publicador == null || activeIds.has(p.id_estado_publicador));
+  });
+
   unassignedPublishers = computed(() =>
-    this.publicadores().filter(p => !p.id_grupo_publicador).sort((a, b) => a.primer_nombre.localeCompare(b.primer_nombre))
+    this.visiblePublicadores().filter(p => !p.id_grupo_publicador).sort((a, b) => a.primer_nombre.localeCompare(b.primer_nombre))
   );
 
   draggingAvatars = computed(() => {
@@ -272,24 +518,33 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   ngOnInit() {
     console.log('AsignacionGruposPage loaded - Kanban Compact Version');
-    this.loadData();
+  }
+
+  ngAfterViewInit() {
+    this.updateScrollNavState();
+    const el = this.scrollContainer?.nativeElement;
+    if (el && typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.updateScrollNavState());
+      this.resizeObserver.observe(el);
+    }
   }
 
   async loadData() {
     try {
-      const user = this.authStore.user();
-      const congId = user?.id_congregacion;
+      const congId = this.congregacionContext.effectiveCongregacionId();
 
       let params = '?limit=1000';
-      if (congId) {
+      if (congId != null) {
         params += `&id_congregacion=${congId}`;
       }
 
-      const [gruposData, pubsData, privilegiosData] = await Promise.all([
+      const [gruposData, pubsData, privilegiosData, estadosData] = await Promise.all([
         lastValueFrom(this.http.get<Grupo[]>(`/api/grupos/${params}`)),
         lastValueFrom(this.http.get<Publicador[]>(`/api/publicadores/${params}`)),
-        lastValueFrom(this.privilegiosService.getPrivilegios())
+        lastValueFrom(this.privilegiosService.getPrivilegios()),
+        lastValueFrom(this.http.get<Estado[]>('/api/estados/')).catch(() => [])
       ]);
+      this.estadosPublicador.set(estadosData || []);
 
       let gruposFiltrados = gruposData || [];
       let publicadoresFiltrados = pubsData || [];
@@ -329,6 +584,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
       await this.loadAllPublicadorPrivilegios(publicadoresFiltrados);
       this.publicadores.set(publicadoresFiltrados);
 
+      setTimeout(() => this.updateScrollNavState(), 120);
     } catch (err) {
       console.error('Error cargando datos', err);
       alert('Error al cargar datos. Ver consola.');
@@ -367,15 +623,295 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   // Helpers
   getGroupMembers(groupId: number): Publicador[] {
-    return this.publicadores()
+    return this.visiblePublicadores()
       .filter(p => p.id_grupo_publicador === groupId)
-      .sort((a, b) => a.primer_nombre.localeCompare(b.primer_nombre));
+      .sort((a, b) => {
+        const oa = a.orden_en_grupo ?? 999999;
+        const ob = b.orden_en_grupo ?? 999999;
+        if (oa !== ob) return oa - ob;
+        return (a.primer_apellido || '').localeCompare(b.primer_apellido || '') || (a.primer_nombre || '').localeCompare(b.primer_nombre || '');
+      });
+  }
+
+  getGroupSearch(groupId: number): string {
+    return this.groupSearchTerms()[groupId] ?? '';
+  }
+
+  setGroupSearch(groupId: number, value: string): void {
+    this.groupSearchTerms.update(prev => ({ ...prev, [groupId]: value ?? '' }));
+  }
+
+  /** Nombre en el mismo formato que se guarda en capitan_grupo/auxiliar_grupo. */
+  getPublicadorLeaderName(p: Publicador): string {
+    return `${p.primer_nombre} ${p.primer_apellido}${p.segundo_apellido ? ' ' + p.segundo_apellido : ''}`.trim();
+  }
+
+  // ── Drag & Drop de tarjetas de encargados ────────────────────────────────
+
+  onDragStartLeaderCard(e: DragEvent, grupo: Grupo, role: 'capitan' | 'auxiliar') {
+    const name = role === 'capitan' ? grupo.capitan_grupo : grupo.auxiliar_grupo;
+    if (!name) return;
+    this.draggedPublishers = [];
+    this.draggingLeaderCard = { fromGroupId: grupo.id_grupo, fromRole: role, name };
+    this.isDraggingContent.set(true);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', 'leader-card');
+    }
+  }
+
+  getLeaderMoveConfirmDetails() {
+    const m = this.leaderMoveConfirm();
+    if (!m) return null;
+    const fromGroup = this.grupos().find(g => g.id_grupo === m.fromGroupId);
+    const toGroup = this.grupos().find(g => g.id_grupo === m.toGroupId);
+    const roleLabel = (r: 'capitan' | 'auxiliar') => r === 'capitan' ? 'Capitán' : 'Auxiliar';
+    const currentTarget = m.toRole === 'capitan' ? toGroup?.capitan_grupo : toGroup?.auxiliar_grupo;
+    return {
+      leaderName: m.leaderName,
+      fromGroupName: fromGroup?.nombre_grupo ?? '',
+      fromRoleLabel: roleLabel(m.fromRole),
+      toGroupName: toGroup?.nombre_grupo ?? '',
+      toRoleLabel: roleLabel(m.toRole),
+      currentTargetName: currentTarget || null,
+    };
+  }
+
+  async confirmLeaderMove() {
+    const m = this.leaderMoveConfirm();
+    if (!m) return;
+    this.leaderMoveConfirm.set(null);
+    const { fromGroupId, fromRole, toGroupId, toRole, leaderName } = m;
+
+    this.grupos.update(list => list.map(g => {
+      if (g.id_grupo === fromGroupId && g.id_grupo === toGroupId) {
+        // Mismo grupo, solo cambio de rol
+        const updated: Grupo = { ...g };
+        if (fromRole === 'capitan') updated.capitan_grupo = null; else updated.auxiliar_grupo = null;
+        if (toRole === 'capitan') updated.capitan_grupo = leaderName; else updated.auxiliar_grupo = leaderName;
+        return updated;
+      }
+      if (g.id_grupo === fromGroupId) {
+        return { ...g, [fromRole === 'capitan' ? 'capitan_grupo' : 'auxiliar_grupo']: null };
+      }
+      if (g.id_grupo === toGroupId) {
+        return { ...g, [toRole === 'capitan' ? 'capitan_grupo' : 'auxiliar_grupo']: leaderName };
+      }
+      return g;
+    }));
+
+    // Guardar inmediatamente los grupos afectados en la BD
+    try {
+      const affectedIds = [...new Set([fromGroupId, toGroupId])];
+      await Promise.all(affectedIds.map(id => {
+        const g = this.grupos().find(gr => gr.id_grupo === id);
+        if (!g) return Promise.resolve();
+        return lastValueFrom(this.http.put(`/api/grupos/${id}`, {
+          capitan_grupo: g.capitan_grupo || null,
+          auxiliar_grupo: g.auxiliar_grupo || null,
+        }));
+      }));
+      // Resetear el estado inicial para que los indicadores de "modificado" desaparezcan
+      this.initialLeaderState.update(map => {
+        const newMap = new Map(map);
+        [...new Set([fromGroupId, toGroupId])].forEach(id => {
+          const g = this.grupos().find(gr => gr.id_grupo === id);
+          if (g) newMap.set(id, { capitan: g.capitan_grupo, auxiliar: g.auxiliar_grupo });
+        });
+        return newMap;
+      });
+    } catch (err) {
+      console.error('Error al guardar el movimiento del encargado', err);
+    }
+  }
+
+  cancelLeaderMove() {
+    this.leaderMoveConfirm.set(null);
+  }
+
+  /** Busca un publicador cuyo nombre normalizado coincida con el nombre del encargado. */
+  private findPublicadorByLeaderName(leaderName: string): Publicador | undefined {
+    const norm = (s: string) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const target = norm(leaderName);
+    return this.publicadores().find(p => norm(this.getPublicadorLeaderName(p)) === target);
+  }
+
+  getLeaderToPubConfirmDetails() {
+    const m = this.leaderToPubConfirm();
+    if (!m) return null;
+    const fromGroup = this.grupos().find(g => g.id_grupo === m.fromGroupId);
+    const toGroup = m.targetGroupId != null ? this.grupos().find(g => g.id_grupo === m.targetGroupId) : null;
+    return {
+      leaderName: m.leaderName,
+      fromGroupName: fromGroup?.nombre_grupo ?? '',
+      fromRoleLabel: m.fromRole === 'capitan' ? 'Capitán' : 'Auxiliar',
+      toGroupName: toGroup?.nombre_grupo ?? 'Sin Asignar',
+    };
+  }
+
+  async confirmLeaderToPub() {
+    const m = this.leaderToPubConfirm();
+    if (!m) return;
+    this.leaderToPubConfirm.set(null);
+    const { fromGroupId, fromRole, targetGroupId, leaderName } = m;
+
+    // 1. Quitar del slot de encargado
+    this.grupos.update(list => list.map(g => {
+      if (g.id_grupo === fromGroupId) {
+        return { ...g, [fromRole === 'capitan' ? 'capitan_grupo' : 'auxiliar_grupo']: null };
+      }
+      return g;
+    }));
+
+    // 2. Mover al publicador al grupo destino (si lo encontramos por nombre)
+    const pub = this.findPublicadorByLeaderName(leaderName);
+    if (pub) {
+      this.publicadores.update(list =>
+        list.map(p => p.id_publicador === pub.id_publicador
+          ? { ...p, id_grupo_publicador: targetGroupId }
+          : p
+        )
+      );
+    }
+
+    // 3. Guardar en la BD inmediatamente
+    try {
+      const fromGroup = this.grupos().find(g => g.id_grupo === fromGroupId);
+      const saves: Promise<any>[] = [];
+
+      if (fromGroup) {
+        saves.push(lastValueFrom(this.http.put(`/api/grupos/${fromGroupId}`, {
+          capitan_grupo: fromGroup.capitan_grupo || null,
+          auxiliar_grupo: fromGroup.auxiliar_grupo || null,
+        })));
+      }
+
+      if (pub) {
+        saves.push(lastValueFrom(this.http.put(`/api/publicadores/${pub.id_publicador}`, {
+          id_grupo_publicador: targetGroupId,
+        })));
+      }
+
+      await Promise.all(saves);
+
+      // Resetear estado inicial para que los indicadores de "modificado" desaparezcan
+      this.initialLeaderState.update(map => {
+        const newMap = new Map(map);
+        const g = this.grupos().find(gr => gr.id_grupo === fromGroupId);
+        if (g) newMap.set(fromGroupId, { capitan: g.capitan_grupo, auxiliar: g.auxiliar_grupo });
+        return newMap;
+      });
+      if (pub) {
+        this.initialState.update(map => {
+          const newMap = new Map(map);
+          newMap.set(pub.id_publicador, targetGroupId);
+          return newMap;
+        });
+      }
+    } catch (err) {
+      console.error('Error al guardar el movimiento del encargado a publicadores', err);
+    }
+  }
+
+  cancelLeaderToPub() {
+    this.leaderToPubConfirm.set(null);
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── Edición inline del nombre del grupo ──────────────────────────────────
+  editingGroupId = signal<number | null>(null);
+  editingGroupName = signal<string>('');
+  isSavingGroupName = signal(false);
+
+  startEditGroupName(grupo: Grupo, event: Event) {
+    event.stopPropagation();
+    this.editingGroupId.set(grupo.id_grupo);
+    this.editingGroupName.set(grupo.nombre_grupo);
+    // Espera un tick para que el input esté en el DOM
+    setTimeout(() => {
+      const el = document.getElementById(`group-name-input-${grupo.id_grupo}`) as HTMLInputElement | null;
+      if (el) { el.focus(); el.select(); }
+    }, 50);
+  }
+
+  cancelEditGroupName() {
+    this.editingGroupId.set(null);
+    this.editingGroupName.set('');
+  }
+
+  async saveGroupName(grupo: Grupo) {
+    const newName = this.editingGroupName().trim();
+    if (!newName || newName === grupo.nombre_grupo) {
+      this.cancelEditGroupName();
+      return;
+    }
+    this.isSavingGroupName.set(true);
+    try {
+      await lastValueFrom(this.gruposService.updateGrupo(grupo.id_grupo, { nombre_grupo: newName }));
+      this.grupos.update(list =>
+        list.map(g => g.id_grupo === grupo.id_grupo ? { ...g, nombre_grupo: newName } : g)
+      );
+      this.cancelEditGroupName();
+    } catch (err) {
+      console.error('Error al guardar el nombre del grupo', err);
+    } finally {
+      this.isSavingGroupName.set(false);
+    }
+  }
+
+  onGroupNameKeydown(event: KeyboardEvent, grupo: Grupo) {
+    if (event.key === 'Enter') { event.preventDefault(); this.saveGroupName(grupo); }
+    if (event.key === 'Escape') { event.preventDefault(); this.cancelEditGroupName(); }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  isDraggingOverRole(groupId: number, role: 'capitan' | 'auxiliar'): boolean {
+    const d = this.isDraggingOverLeader();
+    return d?.groupId === groupId && d?.role === role;
+  }
+
+  /** True si el publicador es el capitán o auxiliar de este grupo (evita duplicado en lista). */
+  isPublicadorLeaderInGroup(p: Publicador, group: Grupo): boolean {
+    const norm = (s: string) => (s || '').replace(/\s+/g, ' ').trim();
+    const name = norm(this.getPublicadorLeaderName(p));
+    const cap = norm(group.capitan_grupo || '');
+    const aux = norm(group.auxiliar_grupo || '');
+    return (cap.length > 0 && name === cap) || (aux.length > 0 && name === aux);
+  }
+
+  /** Miembros del grupo excluyendo capitán y auxiliar (solo para mostrar en la lista de cards). */
+  getGroupMembersExcludingLeaders(groupId: number): Publicador[] {
+    const group = this.grupos().find(g => g.id_grupo === groupId);
+    if (!group) return [];
+    return this.getGroupMembers(groupId).filter(p => !this.isPublicadorLeaderInGroup(p, group));
+  }
+
+  /** Miembros del grupo (sin líderes) filtrados por el término de búsqueda de esa card. */
+  getFilteredGroupMembers(groupId: number): Publicador[] {
+    const members = this.getGroupMembersExcludingLeaders(groupId);
+    const term = (this.getGroupSearch(groupId) || '').trim().toLowerCase();
+    if (!term) return members;
+    return members.filter(p => {
+      const full = [
+        p.primer_nombre,
+        p.segundo_nombre ?? '',
+        p.primer_apellido,
+        p.segundo_apellido ?? ''
+      ].join(' ').toLowerCase();
+      return full.includes(term);
+    });
   }
 
   isModified(p: Publicador): boolean {
     const original = this.initialState().get(p.id_publicador);
     const current = p.id_grupo_publicador || null;
     return original !== current;
+  }
+
+  /** True si el publicador tiene estado y no es "activo" (p. ej. Inactivo). */
+  isInactivePublisher(p: Publicador): boolean {
+    if (p.id_estado_publicador == null) return false;
+    return !this.activeEstadoIds().has(p.id_estado_publicador);
   }
 
   getInitials(p: Publicador): string {
@@ -479,7 +1015,7 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     if (groupId === 'unassigned') {
       targets = this.unassignedPublishers().map(p => p.id_publicador);
     } else {
-      targets = this.getGroupMembers(groupId).map(p => p.id_publicador);
+      targets = this.getGroupMembersExcludingLeaders(groupId).map(p => p.id_publicador);
     }
 
     // Check if ALL targets are currently selected
@@ -532,33 +1068,92 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
   }
 
   // Drag & Drop Logic
-  onDragStart(e: DragEvent, p: Publicador) {
+  onDragStart(e: DragEvent, p: Publicador, sourceGroupId?: number | null, sourceIndex?: number) {
     let items: Publicador[] = [];
 
     if (this.isSelected(p.id_publicador)) {
       const ids = this.selectedPublishersIds();
       items = this.publicadores().filter(pub => ids.has(pub.id_publicador));
     } else {
-      this.selectedPublishersIds.set(new Set()); // Clear selection if dragging unselected
+      this.selectedPublishersIds.set(new Set());
       items = [p];
     }
 
     this.draggedPublishers = items;
+    this.dragSourceGroupId.set(sourceGroupId ?? null);
+    this.dragSourceIndex.set(sourceIndex ?? null);
 
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', JSON.stringify(items.map(i => i.id_publicador)));
-
-      // Optional: Set drag image customized if multiple
-      if (items.length > 1) {
-        // Attempt to show count? For now default.
-      }
     }
     this.isDraggingContent.set(true);
   }
 
+  /** Drop sobre una tarjeta de publicador: reordenar dentro del mismo grupo. */
+  async onDropOnPublisherCard(e: DragEvent, groupId: number, targetIndex: number) {
+    this.isDraggingOver.set(null);
+    if (this.draggedPublishers.length === 0) return;
+    const sourceGroupId = this.dragSourceGroupId();
+    const items = this.draggedPublishers;
+
+    // Reordenar dentro del mismo grupo (un solo publicador)
+    if (sourceGroupId === groupId && items.length === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+      const members = this.getGroupMembersExcludingLeaders(groupId);
+      const filtered = this.getFilteredGroupMembers(groupId);
+      const sourceIdx = members.findIndex(m => m.id_publicador === items[0].id_publicador);
+      if (sourceIdx === -1) return;
+      // targetIndex es el índice en la lista filtrada; mapear a posición en lista completa
+      const targetMember = filtered[targetIndex];
+      const insertAtInFull = targetMember
+        ? members.findIndex(m => m.id_publicador === targetMember.id_publicador)
+        : members.length;
+      const reordered = [...members];
+      const [removed] = reordered.splice(sourceIdx, 1);
+      let insertAt = insertAtInFull >= 0 ? insertAtInFull : members.length;
+      if (insertAt > sourceIdx) insertAt--;
+      reordered.splice(insertAt, 0, removed);
+
+      const idOrder = reordered.map(m => m.id_publicador);
+      this.publicadores.update(list =>
+        list.map(p => {
+          const pos = idOrder.indexOf(p.id_publicador);
+          if (pos === -1) return p;
+          return { ...p, orden_en_grupo: pos };
+        })
+      );
+      this.draggedPublishers = [];
+      this.dragSourceGroupId.set(null);
+      this.dragSourceIndex.set(null);
+      this.isDraggingContent.set(false);
+
+      try {
+        await lastValueFrom(this.http.put(`/api/grupos/${groupId}/orden-publicadores`, { id_publicadores: idOrder }));
+      } catch (err) {
+        console.error('Error al guardar el orden', err);
+      }
+      return;
+    }
+
+    // Mover entre grupos: dejar que el drop en la columna lo maneje (no hacer nada aquí para no duplicar)
+  }
+
   onDragOver(e: DragEvent, targetId: number | 'unassigned') {
     e.preventDefault();
+    // Si se está reordenando una columna, gestionar ese estado
+    if (this.draggingColumnId()) {
+      // Cancelar cualquier timer de dragleave pendiente
+      if (this.columnDragLeaveTimer) {
+        clearTimeout(this.columnDragLeaveTimer);
+        this.columnDragLeaveTimer = null;
+      }
+      if (targetId !== 'unassigned' && targetId !== this.draggingColumnId()) {
+        this.dragOverColumnId.set(targetId as number);
+      }
+      return;
+    }
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'move';
     }
@@ -567,11 +1162,37 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
 
   onDragLeave() {
     this.isDraggingOver.set(null);
+    // Para el reordenamiento de columnas usamos debounce para evitar parpadeos
+    // causados por entrar/salir de elementos hijos
+    if (this.draggingColumnId()) {
+      if (this.columnDragLeaveTimer) clearTimeout(this.columnDragLeaveTimer);
+      this.columnDragLeaveTimer = setTimeout(() => {
+        this.dragOverColumnId.set(null);
+        this.columnDragLeaveTimer = null;
+      }, 80);
+    } else {
+      this.dragOverColumnId.set(null);
+    }
   }
 
   onDrop(e: DragEvent, targetGroupId: number | null) {
     e.preventDefault();
     this.isDraggingOver.set(null);
+
+    // Si se está reordenando una columna
+    if (this.draggingColumnId()) {
+      this.onColumnDrop(e, targetGroupId as number);
+      return;
+    }
+
+    // Si se arrastra una tarjeta de encargado hacia la zona de publicadores
+    if (this.draggingLeaderCard) {
+      const { fromGroupId, fromRole, name } = this.draggingLeaderCard;
+      this.draggingLeaderCard = null;
+      this.isDraggingContent.set(false);
+      this.leaderToPubConfirm.set({ fromGroupId, fromRole, targetGroupId, leaderName: name });
+      return;
+    }
 
     if (this.draggedPublishers.length === 0) return;
 
@@ -618,12 +1239,24 @@ export class AsignacionGruposPage implements OnInit, OnDestroy {
     e.stopPropagation();
     this.isDraggingOverLeader.set(null);
 
-    if (this.draggedPublishers.length !== 1) return; // Only allow single drop
+    // Caso 1: se está arrastrando una tarjeta de encargado
+    if (this.draggingLeaderCard) {
+      const { fromGroupId, fromRole, name } = this.draggingLeaderCard;
+      this.draggingLeaderCard = null;
+      this.isDraggingContent.set(false);
+      // Sin cambio si se suelta en el mismo slot
+      if (fromGroupId === groupId && fromRole === role) return;
+      this.leaderMoveConfirm.set({ fromGroupId, fromRole, toGroupId: groupId, toRole: role, leaderName: name });
+      return;
+    }
+
+    // Caso 2: se arrastra un publicador al slot de encargado (comportamiento existente)
+    if (this.draggedPublishers.length !== 1) return;
 
     const p = this.draggedPublishers[0];
     this.draggedPublishers = [];
 
-    const fullName = `${p.primer_nombre} ${p.primer_apellido}${p.segundo_apellido ? ' ' + p.segundo_apellido : ''} `.trim();
+    const fullName = `${p.primer_nombre} ${p.primer_apellido}${p.segundo_apellido ? ' ' + p.segundo_apellido : ''}`.trim();
 
     this.grupos.update(currentGrupos => {
       return currentGrupos.map(g => {

@@ -1,9 +1,10 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InformesService } from './services/informes.service';
 import { GruposService } from '../grupos/services/grupos.service';
 import { AuthStore } from '../../../core/auth/auth.store';
+import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { ResumenMensual, InformeConPublicador, InformeLoteItem, Periodo, HistorialAnual, ResumenSucursal } from './models/informe.model';
 import { InformesStatsComponent } from './components/informes-stats/informes-stats.component';
 import { InformesFiltersComponent } from './components/informes-filters/informes-filters.component';
@@ -30,9 +31,18 @@ export class InformesMainPage implements OnInit {
   private gruposService = inject(GruposService);
 
   public authStore = inject(AuthStore);
+  public congregacionContext = inject(CongregacionContextService);
   private http = inject(HttpClient);
 
   private privilegiosService = inject(PrivilegiosService);
+
+  constructor() {
+    effect(() => {
+      this.congregacionContext.effectiveCongregacionId();
+      this.loadGrupos();
+      this.loadResumen();
+    });
+  }
 
   tabs = [
     { id: 'entrada', label: 'Entrada Mensual', icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>' },
@@ -103,9 +113,6 @@ export class InformesMainPage implements OnInit {
 
     // Primero inicializar para usuarios restringidos (precargar grupo)
     await this.initializeForRestrictedUser();
-    // Luego cargar datos (ya con el grupo correcto si es restringido)
-    this.loadResumen();
-    this.loadGrupos();
     this.loadPrivilegiosData();
   }
 
@@ -171,8 +178,9 @@ export class InformesMainPage implements OnInit {
   }
 
   loadGrupos() {
-    const congregacionId = this.authStore.user()?.id_congregacion;
-    this.gruposService.getGrupos({ congregacion_id: congregacionId }).subscribe({
+    const congregacionId = this.congregacionContext.effectiveCongregacionId();
+    const params = congregacionId != null ? { congregacion_id: congregacionId } : {};
+    this.gruposService.getGrupos(params).subscribe({
       next: (data) => this.grupos.set(data),
       error: (err) => console.error('Error loading groups:', err)
     });
@@ -221,7 +229,7 @@ export class InformesMainPage implements OnInit {
   }
 
   loadResumen() {
-    const congregacionId = this.authStore.user()?.id_congregacion || 1;
+    const congregacionId = this.congregacionContext.effectiveCongregacionId() ?? 0;
     const periodoId = this.getPeriodoId();
     if (!periodoId) return;
 
@@ -290,7 +298,7 @@ export class InformesMainPage implements OnInit {
     this.saving.set(true);
     try {
       const periodo = `${this.selectedAno}-${this.getMesLabel(this.selectedMes)}`;
-      const congregacionId = this.authStore.user()?.id_congregacion || 1; // Fallback to 1 if missing
+      const congregacionId = this.congregacionContext.effectiveCongregacionId() ?? 1;
 
       if (this.selectedGrupo) {
         // Descargar por grupo

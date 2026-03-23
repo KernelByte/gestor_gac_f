@@ -6,6 +6,8 @@ import { lastValueFrom } from 'rxjs';
 import { PublicadoresFacade } from '../../application/publicadores.facade'; // Reuse facade to get list
 import { Publicador } from '../../domain/models/publicador';
 import { AuthStore } from '../../../../../core/auth/auth.store';
+import { CongregacionContextService } from '../../../../../core/congregacion-context/congregacion-context.service';
+import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
 
 interface ContactoEmergencia {
     id_contacto_emergencia?: number;
@@ -93,7 +95,7 @@ interface ContactoEmergencia {
                     <span class="text-xs font-bold">Cargando directorio...</span>
                 </div>
 
-                <div class="space-y-px">
+                <div class="divide-y divide-slate-200 dark:divide-slate-800">
                     <button 
                         *ngFor="let p of filteredList()"
                         (click)="selectPublicador(p)"
@@ -103,8 +105,8 @@ interface ContactoEmergencia {
                             : 'bg-white dark:bg-slate-900'"
                     >
                         <!-- Avatar (Pastel Colors) -->
-                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-bold text-sm shadow-sm transition-colors"
-                            [ngClass]="getAvatarClass(p.id_publicador)">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
+                            [ngClass]="getAvatarStyle(p)">
                             {{ getInitials(p) }}
                         </div>
                         
@@ -173,8 +175,8 @@ interface ContactoEmergencia {
                      <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
                         <div class="flex items-center gap-4 md:gap-6">
                             <!-- Avatar Large -->
-                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-xl flex items-center justify-center text-xl md:text-2xl font-display font-black ring-4 ring-white shrink-0"
-                                 [ngClass]="getAvatarClass(p.id_publicador)">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full shadow-sm flex items-center justify-center text-base md:text-lg font-display font-semibold ring-1 ring-white border border-white/50 shrink-0"
+                                 [ngClass]="getAvatarStyle(p)">
                                 {{ getInitials(p) }}
                             </div>
                             <div>
@@ -366,6 +368,7 @@ interface ContactoEmergencia {
 export class PublicadoresContactosComponent {
     private facade = inject(PublicadoresFacade);
     private authStore = inject(AuthStore);
+    private congregacionContext = inject(CongregacionContextService);
     private http = inject(HttpClient);
     private fb = inject(FormBuilder);
 
@@ -466,26 +469,15 @@ export class PublicadoresContactosComponent {
 
         this.loadEstados();
 
-        // Auto load data on init - ONCE
-        let listLoaded = false;
+        // Load list and contacts map when user or effective congregation changes
         effect(() => {
             const user = this.authStore.user();
-            if (!listLoaded && this.vm().list.length === 0 && user) {
-                listLoaded = true;
-                const params: any = { limit: 100, offset: 0 };
-                if (user.id_congregacion) params.id_congregacion = user.id_congregacion;
-                this.facade.load(params);
-            }
-        }, { allowSignalWrites: true });
-
-        // Load ALL emergency contacts mapping for filtering - ONCE
-        let mapLoaded = false;
-        effect(() => {
-            const user = this.authStore.user();
-            if (!mapLoaded && user) {
-                mapLoaded = true;
-                this.loadEmergencyContactsMap();
-            }
+            const effectiveId = this.congregacionContext.effectiveCongregacionId();
+            if (!user) return;
+            const params: any = { limit: 100, offset: 0 };
+            if (effectiveId != null) params.id_congregacion = effectiveId;
+            this.facade.load(params);
+            this.loadEmergencyContactsMap();
         }, { allowSignalWrites: true });
 
         // Auto load contacts when selection changes
@@ -522,11 +514,11 @@ export class PublicadoresContactosComponent {
 
     async loadEmergencyContactsMap() {
         try {
-            const user = this.authStore.user();
+            const effectiveId = this.congregacionContext.effectiveCongregacionId();
             const params: any = { limit: 10000, offset: 0 };
 
-            if (user?.id_congregacion) {
-                params.id_congregacion = user.id_congregacion;
+            if (effectiveId != null) {
+                params.id_congregacion = effectiveId;
             }
 
             // Fetch ALL contacts to build the Index
@@ -603,27 +595,19 @@ export class PublicadoresContactosComponent {
         return (p.primer_nombre.charAt(0) + p.primer_apellido.charAt(0)).toUpperCase();
     }
 
-    getAvatarClass(id: number): string {
-        const COLORS = [
-            'bg-blue-50 text-blue-600',
-            'bg-emerald-50 text-emerald-600',
-            'bg-orange-50 text-orange-600',
-            'bg-purple-50 text-purple-600',
-            'bg-cyan-50 text-cyan-600',
-            'bg-rose-50 text-rose-600',
-            'bg-indigo-50 text-indigo-600'
-        ];
-        return COLORS[Math.abs(id) % COLORS.length];
+    getAvatarStyle(p: Publicador): string {
+        const name = [p.primer_nombre, p.primer_apellido].filter(Boolean).join(' ');
+        return getInitialAvatarStyle(name);
     }
 
     async exportarPDF() {
-        const user = this.authStore.user();
-        if (!user?.id_congregacion) return;
+        const idCong = this.congregacionContext.effectiveCongregacionId();
+        if (idCong == null) return;
 
         this.downloadingPdf.set(true);
         try {
             const blob = await lastValueFrom(this.http.get('/api/export/contactos-emergencia/pdf', {
-                params: { id_congregacion: user.id_congregacion },
+                params: { id_congregacion: idCong },
                 responseType: 'blob'
             }));
 
