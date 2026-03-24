@@ -131,6 +131,7 @@ export interface ResumenSucursal {
 
 // --- Historial Anual ---
 export interface InformeHistorialItem {
+   ano: number;
    mes_numero: number;
    mes_nombre: string;
    id_informe?: number;
@@ -160,4 +161,29 @@ export interface HistorialAnualOut {
    ano: number;
    publicadores: PublicadorHistorial[];
 }
+
+
+// --- Edición de Historial ---
+export interface InformeHistorialDetalle {
+   id_publicador: number;
+   ano: number;
+   mes: number;
+   participo: boolean;
+   horas: number;
+   cursos_biblicos: number;
+   observaciones: string | null;
+   privilegio: string | null;
+}
+
+export interface InformeHistorialEdit {
+   id_publicador: number;
+   ano: number;
+   mes: number;
+   participo: boolean;
+   horas: number;
+   cursos_biblicos: number;
+   observaciones: string | null;
+   privilegio: string | null;
+}
+
 

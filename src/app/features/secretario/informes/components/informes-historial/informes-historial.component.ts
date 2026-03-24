@@ -2,14 +2,15 @@ import { Component, Input, OnChanges, SimpleChanges, inject, signal, computed, e
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InformesService } from '../../services/informes.service';
-import { HistorialAnualOut } from '../../models/informe.model';
+import { HistorialAnualOut, InformeHistorialItem } from '../../models/informe.model';
 import { Grupo } from '../../../grupos/models/grupo.model';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
+import { InformesHistorialEditComponent } from '../informes-historial-edit/informes-historial-edit.component';
 
 @Component({
    selector: 'app-informes-historial',
    standalone: true,
-   imports: [CommonModule, FormsModule],
+   imports: [CommonModule, FormsModule, InformesHistorialEditComponent],
    templateUrl: './informes-historial.component.html',
    styles: [`
     :host {
@@ -37,7 +38,7 @@ export class InformesHistorialComponent implements OnChanges {
    // Filters
    filterGrupoId = signal<number | null>(null);
    searchQuery = signal<string>('');
-   viewType = signal<'ano_servicio' | 'ultimos_12' | 'ultimos_6'>('ano_servicio');
+   viewType = signal<'ano_servicio' | 'ultimos_12' | 'maximos_meses'>('ano_servicio');
 
    // UI Filter State
    activeFilter = signal<'all' | 'precursores' | number>('all');
@@ -69,6 +70,25 @@ export class InformesHistorialComponent implements OnChanges {
       return this.historial()?.publicadores.find(p => p.id_publicador === pid) || null;
    });
 
+   // Group informes by year for visual separation
+   groupedInformesByYear = computed(() => {
+      const pub = this.selectedPublicador();
+      if (!pub || !pub.informes?.length) return [];
+
+      const groups: { ano: number; meses: InformeHistorialItem[] }[] = [];
+      let currentGroup: { ano: number; meses: InformeHistorialItem[] } | null = null;
+
+      for (const informe of pub.informes) {
+         if (!currentGroup || currentGroup.ano !== informe.ano) {
+            currentGroup = { ano: informe.ano, meses: [] };
+            groups.push(currentGroup);
+         }
+         currentGroup.meses.push(informe);
+      }
+
+      return groups;
+   });
+
    constructor() {
       // Effect to auto-select first publisher when data loads if none selected
       effect(() => {
@@ -95,7 +115,7 @@ export class InformesHistorialComponent implements OnChanges {
       this.loadData();
    }
 
-   onViewTypeChange(type: 'ano_servicio' | 'ultimos_12' | 'ultimos_6') {
+   onViewTypeChange(type: 'ano_servicio' | 'ultimos_12' | 'maximos_meses') {
       this.viewType.set(type);
       this.loadData();
    }
@@ -114,9 +134,17 @@ export class InformesHistorialComponent implements OnChanges {
          next: (data) => {
             this.historial.set(data);
             this.loading.set(false);
-            // Reset selection if current selection is not in new list
-            /* Logic handled by effect or manual check */
-            this.selectedPublicadorId.set(null);
+            
+            // Retain selection if current selection is still in new list
+            const currentSelected = this.selectedPublicadorId();
+            if (currentSelected) {
+               const exists = data.publicadores.some(p => p.id_publicador === currentSelected);
+               if (!exists) {
+                  this.selectedPublicadorId.set(null);
+               }
+            } else {
+               this.selectedPublicadorId.set(null);
+            }
          },
          error: (err) => {
             console.error('Error loading history', err);
@@ -127,6 +155,28 @@ export class InformesHistorialComponent implements OnChanges {
 
    selectPublicador(id: number) {
       this.selectedPublicadorId.set(id);
+   }
+
+   // --- Edit Modal State ---
+   showEditModal = signal<boolean>(false);
+   editPublicadorId = signal<number>(0);
+   editPublicadorNombre = signal<string>('');
+   editInitialAno = signal<number>(new Date().getFullYear());
+   editInitialMes = signal<number>(new Date().getMonth() + 1);
+
+   abrirEditorHistorial(pubId: number, pubNombre: string) {
+      this.editPublicadorId.set(pubId);
+      this.editPublicadorNombre.set(pubNombre);
+      this.editInitialAno.set(this.selectedAno);
+      this.editInitialMes.set(new Date().getMonth() + 1); // Select current month or let modal handle it
+      this.showEditModal.set(true);
+   }
+
+   onEditorClosed(saved: boolean) {
+      this.showEditModal.set(false);
+      if (saved) {
+         this.loadData();
+      }
    }
 
    getAvatarStyle(nombre: string): string {

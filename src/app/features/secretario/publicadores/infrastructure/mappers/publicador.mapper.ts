@@ -21,5 +21,7 @@ export function dtoToModel(dto: any): Publicador {
     id_estado_publicador: dto.id_estado_publicador,
     fecha_creacion: dto.fecha_creacion,
     fecha_actualizacion: dto.fecha_actualizacion,
+    fecha_inactividad: dto.fecha_inactividad,
+    fecha_inicio_informe: dto.fecha_inicio_informe,
   };
 }

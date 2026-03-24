@@ -444,17 +444,13 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
             <div *ngIf="user() as u" class="relative">
               <button 
                 id="user-menu-button"
-                class="flex items-center gap-3 p-1.5 pl-2 pr-4 rounded-full hover:bg-slate-100 transition-all duration-200 group focus:outline-none" 
+                class="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 group focus:outline-none sm:pr-2" 
                 (click)="toggleUserMenu()"
               >
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] flex items-center justify-center text-white text-xs font-bold shrink-0 ring-2 ring-transparent group-hover:ring-purple-100 transition-all">
+                <div class="w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] flex items-center justify-center text-white text-sm font-bold shrink-0 ring-2 ring-transparent group-hover:ring-purple-200 dark:group-hover:ring-purple-900/50 transition-all shadow-sm">
                   {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
                 </div>
-                <div class="hidden sm:block text-left">
-                  <p class="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors whitespace-nowrap">{{ u.nombre || u.username }}</p>
-                  <p *ngIf="u.roles?.[0]" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide leading-none mt-0.5">{{ u.roles?.[0] }}</p>
-                </div>
-                <svg class="w-4 h-4 text-slate-400 hidden sm:block transition-transform duration-200 group-hover:text-purple-500" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <svg class="w-4 h-4 text-slate-400 hidden sm:block transition-transform duration-200 group-hover:text-purple-500 ml-0.5" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>

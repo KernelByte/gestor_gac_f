@@ -744,6 +744,14 @@ interface TableColumn {
                                  <span class="text-sm text-slate-600 dark:text-slate-400 font-medium font-mono">{{ formatDate(p.fecha_bautismo) }}</span>
                                </ng-container>
 
+                               <ng-container *ngSwitchCase="'fecha_inicio_informe'">
+                                 <span class="text-sm text-slate-600 dark:text-slate-400 font-medium font-mono">{{ p.fecha_inicio_informe ? formatDate(p.fecha_inicio_informe) : '—' }}</span>
+                               </ng-container>
+
+                               <ng-container *ngSwitchCase="'fecha_inactividad'">
+                                 <span class="text-sm font-medium font-mono" [ngClass]="p.fecha_inactividad ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-400'">{{ p.fecha_inactividad ? formatDate(p.fecha_inactividad) : '—' }}</span>
+                               </ng-container>
+
                                <ng-container *ngSwitchCase="'telefono'">
                                  <a *ngIf="p.telefono" [href]="'tel:' + p.telefono" class="text-sm text-slate-600 dark:text-slate-400 font-mono hover:text-brand-orange hover:underline transition-colors">{{ p.telefono }}</a>
                                  <span *ngIf="!p.telefono" class="text-sm text-slate-400">—</span>
@@ -1605,6 +1613,24 @@ interface TableColumn {
                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.fecha_bautismo ? formatDateExport(viewingPublicador()!.fecha_bautismo!) : '—' }}</p>
                   </div>
                 </div>
+                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50" *ngIf="viewingPublicador()!.fecha_inicio_informe">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100 dark:border-emerald-800/50">
+                    <svg class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inicio Inf.</p>
+                    <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-400 truncate mt-0.5">{{ formatDateExport(viewingPublicador()!.fecha_inicio_informe!) }}</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50" *ngIf="viewingPublicador()!.fecha_inactividad">
+                  <div class="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center shrink-0 shadow-sm border border-rose-100 dark:border-rose-800/50">
+                    <svg class="w-3.5 h-3.5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Inactividad</p>
+                    <p class="text-sm font-semibold text-rose-600 dark:text-rose-400 truncate mt-0.5">{{ formatDateExport(viewingPublicador()!.fecha_inactividad!) }}</p>
+                  </div>
+                </div>
                 <!-- Consentimiento -->
                 <div class="col-span-2 flex items-center gap-2.5 p-3 rounded-xl"
                   [ngClass]="viewingPublicador()!.consentimiento_datos ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-800/50'">
@@ -1853,6 +1879,8 @@ export class PublicadoresListComponent implements OnInit {
     { id: 'direccion', label: 'Dirección', visible: false, optional: true },
     { id: 'barrio', label: 'Barrio', visible: false, optional: true },
     { id: 'consentimiento_datos', label: 'Consentimiento', visible: false, optional: true },
+    { id: 'fecha_inicio_informe', label: 'Inicio Inf.', visible: false, optional: true },
+    { id: 'fecha_inactividad', label: 'Inactividad', visible: false, optional: true },
   ];
 
   visibleMoveableColumns = computed(() => {
@@ -2233,6 +2261,8 @@ export class PublicadoresListComponent implements OnInit {
       case 'grupo':              return this.getGrupoNombre(p.id_grupo_publicador);
       case 'fecha_nacimiento':   return p.fecha_nacimiento ? this.formatDateExport(p.fecha_nacimiento) : '';
       case 'fecha_bautismo':     return p.fecha_bautismo ? this.formatDateExport(p.fecha_bautismo) : '';
+      case 'fecha_inicio_informe': return p.fecha_inicio_informe ? this.formatDateExport(p.fecha_inicio_informe) : '';
+      case 'fecha_inactividad':  return p.fecha_inactividad ? this.formatDateExport(p.fecha_inactividad) : '';
       case 'telefono':           return p.telefono ?? '';
       case 'sexo':               return p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Femenino' : (p.sexo ?? '');
       case 'direccion':          return p.direccion ?? '';
@@ -2297,6 +2327,8 @@ export class PublicadoresListComponent implements OnInit {
       case 'grupo':          return this.getGrupoNombre(p.id_grupo_publicador).toLowerCase();
       case 'fecha_nacimiento': return p.fecha_nacimiento ? new Date(p.fecha_nacimiento).getTime() : 0;
       case 'fecha_bautismo': return p.fecha_bautismo ? new Date(p.fecha_bautismo).getTime() : 0;
+      case 'fecha_inicio_informe': return p.fecha_inicio_informe ? new Date(p.fecha_inicio_informe).getTime() : 0;
+      case 'fecha_inactividad': return p.fecha_inactividad ? new Date(p.fecha_inactividad).getTime() : 0;
       case 'telefono':       return (p.telefono ?? '').toLowerCase();
       case 'sexo':           return (p.sexo ?? '').toLowerCase();
       case 'direccion':      return (p.direccion ?? '').toLowerCase();

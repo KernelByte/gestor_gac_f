@@ -9,7 +9,9 @@ import {
    InformeLoteResult,
    HistorialAnual,
    HistorialAnualOut,
-   ResumenSucursal
+   ResumenSucursal,
+   InformeHistorialDetalle,
+   InformeHistorialEdit
 } from '../models/informe.model';
 
 
@@ -73,6 +75,19 @@ export class InformesService {
       }
 
       return this.http.get<HistorialAnualOut>(`${this.apiUrl}/historial-anual`, { params });
+   }
+
+   // --- Detalle y Edición de Historial ---
+   getDetalleHistorial(publicadorId: number, ano: number, mes: number): Observable<InformeHistorialDetalle> {
+      const params = new HttpParams()
+         .set('publicador_id', publicadorId.toString())
+         .set('ano', ano.toString())
+         .set('mes', mes.toString());
+      return this.http.get<InformeHistorialDetalle>(`${this.apiUrl}/historial/detalle`, { params });
+   }
+
+   editarHistorial(data: InformeHistorialEdit): Observable<InformeHistorialDetalle> {
+      return this.http.post<InformeHistorialDetalle>(`${this.apiUrl}/historial/editar`, data);
    }
 
 

@@ -1,0 +1,221 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-4xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+        
+        <!-- Header -->
+        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50 dark:bg-slate-900/50">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Editar Historial</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">{{ publicadorNombre }} &bull; {{ titleText }}</p>
+                </div>
+            </div>
+            <button (click)="cancelar()"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
+            
+            <!-- Left Panel: Mes y Año Selection -->
+            <div class="w-full md:w-64 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
+                <div class="p-4 border-b border-slate-200 dark:border-slate-800">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Seleccionar Año</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button *ngFor="let a of anos" 
+                            (click)="onAnoSelect(a)"
+                            [class.bg-indigo-50]="selectedAno() === a"
+                            [class.text-indigo-700]="selectedAno() === a"
+                            [class.border-indigo-200]="selectedAno() === a"
+                            [class.dark:bg-indigo-900]="selectedAno() === a"
+                            [class.dark:text-indigo-300]="selectedAno() === a"
+                            [class.dark:border-indigo-800]="selectedAno() === a"
+                            [class.bg-white]="selectedAno() !== a"
+                            [class.text-slate-600]="selectedAno() !== a"
+                            [class.border-slate-200]="selectedAno() !== a"
+                            [class.dark:bg-slate-800]="selectedAno() !== a"
+                            [class.dark:text-slate-400]="selectedAno() !== a"
+                            [class.dark:border-slate-700]="selectedAno() !== a"
+                            class="relative px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors disabled:opacity-50"
+                            [disabled]="loading() || saving()">
+                            {{ a }}
+                            <!-- Indicator of unsaved changes in this year -->
+                            <div *ngIf="hasChangesInYear(a)" class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border border-white dark:border-slate-800 shadow-sm animate-pulse"></div>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-4 flex-1 overflow-y-auto">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Seleccionar Mes</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button *ngFor="let m of meses" 
+                            (click)="onMesSelect(m.num)"
+                            [class.bg-indigo-50]="selectedMes() === m.num"
+                            [class.text-indigo-700]="selectedMes() === m.num"
+                            [class.border-indigo-200]="selectedMes() === m.num"
+                            [class.dark:bg-indigo-900]="selectedMes() === m.num"
+                            [class.dark:text-indigo-300]="selectedMes() === m.num"
+                            [class.dark:border-indigo-800]="selectedMes() === m.num"
+                            [class.bg-white]="selectedMes() !== m.num"
+                            [class.text-slate-600]="selectedMes() !== m.num"
+                            [class.border-slate-200]="selectedMes() !== m.num"
+                            [class.dark:bg-slate-800]="selectedMes() !== m.num"
+                            [class.dark:text-slate-400]="selectedMes() !== m.num"
+                            [class.dark:border-slate-700]="selectedMes() !== m.num"
+                            class="relative px-3 py-2 text-sm font-medium rounded-lg border text-left transition-colors flex items-center justify-between disabled:opacity-50"
+                            [disabled]="loading() || saving()">
+                            <span>{{ m.name }}</span>
+                            <!-- Indicator of unsaved changes in this month -->
+                            <div *ngIf="hasChanges(selectedAno(), m.num)" class="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                            <svg *ngIf="selectedMes() === m.num" class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Data Editor (Loading State) -->
+            <div *ngIf="loading()" class="flex-1 flex flex-col items-center justify-center p-8">
+                <svg class="animate-spin h-10 w-10 text-indigo-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-slate-500 dark:text-slate-400 font-medium">Cargando datos históricos...</p>
+            </div>
+
+            <!-- Right Panel: Data Editor -->
+            <div *ngIf="!loading()" class="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-[#0B1120]">
+                
+                <!-- Privilegios (Checkboxes Múltiples Excluyentes) -->
+                <div class="mb-8">
+                    <h4 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">Precursores en este mes</h4>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
+                            [class.border-indigo-500]="esAuxiliar()"
+                            [class.bg-indigo-50]="esAuxiliar()"
+                            [class.dark:bg-indigo-900/30]="esAuxiliar()"
+                            [class.border-slate-200]="!esAuxiliar()"
+                            [class.bg-white]="!esAuxiliar()"
+                            [class.dark:border-slate-700]="!esAuxiliar()"
+                            [class.dark:bg-slate-800]="!esAuxiliar()">
+                            <input type="checkbox"
+                                    [ngModel]="esAuxiliar()"
+                                    (ngModelChange)="togglePrivilegio('Auxiliar')"
+                                    class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-600 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600">
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Precursor Auxiliar</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
+                            [class.border-indigo-500]="esRegular()"
+                            [class.bg-indigo-50]="esRegular()"
+                            [class.dark:bg-indigo-900/30]="esRegular()"
+                            [class.border-slate-200]="!esRegular()"
+                            [class.bg-white]="!esRegular()"
+                            [class.dark:border-slate-700]="!esRegular()"
+                            [class.dark:bg-slate-800]="!esRegular()">
+                            <input type="checkbox"
+                                    [ngModel]="esRegular()"
+                                    (ngModelChange)="togglePrivilegio('Regular')"
+                                    class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-600 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600">
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Precursor Regular</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
+                            [class.border-indigo-500]="esEspecial()"
+                            [class.bg-indigo-50]="esEspecial()"
+                            [class.dark:bg-indigo-900/30]="esEspecial()"
+                            [class.border-slate-200]="!esEspecial()"
+                            [class.bg-white]="!esEspecial()"
+                            [class.dark:border-slate-700]="!esEspecial()"
+                            [class.dark:bg-slate-800]="!esEspecial()">
+                            <input type="checkbox"
+                                    [ngModel]="esEspecial()"
+                                    (ngModelChange)="togglePrivilegio('Especial')"
+                                    class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-600 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600">
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Precursor Especial</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Detalles Ministerio -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">Actividad</h4>
+                    
+                    <div class="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl mb-4 shadow-sm">
+                        <div>
+                            <p class="font-bold text-slate-800 dark:text-white">Participó en el ministerio</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Indica si tuvo participación este mes.</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox"
+                                   [ngModel]="participo()"
+                                   (ngModelChange)="participo.set($event)"
+                                   class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Cursos Bíblicos</label>
+                            <input type="number" 
+                                   min="0"
+                                   [ngModel]="cursosBiblicos()"
+                                   (ngModelChange)="cursosBiblicos.set($event)"
+                                   class="w-full bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Horas</label>
+                            <input type="number" 
+                                   min="0"
+                                   [ngModel]="horas()"
+                                   (ngModelChange)="horas.set($event)"
+                                   class="w-full bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Observaciones</label>
+                    <textarea 
+                        [ngModel]="observaciones()"
+                        (ngModelChange)="observaciones.set($event)"
+                        rows="2"
+                        class="w-full bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 resize-none"
+                        placeholder="Notas adicionales..."></textarea>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3 bg-slate-50 dark:bg-slate-900 shrink-0">
+            <button (click)="cancelar()"
+                    [disabled]="saving()"
+                    class="px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                Cancelar
+            </button>
+            <button (click)="guardar()"
+                    [disabled]="saving() || loading()"
+                    class="px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-75 flex items-center gap-2">
+                <svg *ngIf="saving()" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg *ngIf="!saving()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                Guardar Cambios
+            </button>
+        </div>
+
+    </div>
+</div>
