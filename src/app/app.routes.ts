@@ -47,8 +47,7 @@ export const routes: Routes = [
       },
       {
         path: 'reuniones',
-        title: 'Reuniones',
-        loadComponent: () => import('./features/reuniones/reuniones.page').then(m => m.ReunionesPageComponent),
+        loadChildren: () => import('./features/reuniones/reuniones.routes').then(m => m.REUNIONES_ROUTES),
       },
       {
         path: 'secretario',

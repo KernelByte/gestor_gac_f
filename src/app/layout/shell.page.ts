@@ -71,29 +71,29 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
             <div class="mb-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 mt-2 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-widest pl-2"
+                class="px-5 mb-2 mt-6 text-[13px] font-medium text-slate-400 dark:text-slate-500 relative"
               >Principal</p>
               
               <!-- Inicio -->
               <a
                 routerLink="/"
-                                                                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
+                                                                routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
                 [routerLinkActiveOptions]="{ exact: true }"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
+                  'gap-3.5 px-3.5 py-2.5': !collapsed()
                 }"
                 title="Inicio"
               >
                 <!-- Hover Effect Background handled by CSS or utility if simple, but here handled by standard hover:bg -->
                 
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Inicio</span>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10">Inicio</span>
                 
                 <!-- Active Indicator (Right Border) handled by ring in active class for now, or add specific span -->
               </a>
@@ -102,66 +102,108 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
               <a
                 *ngIf="hasRole('Administrador')"
                 routerLink="/roles"
-                                                                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                                                                routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
+                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
+                  'gap-3.5 px-3.5 py-2.5': !collapsed()
                 }"
                 title="Roles"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Roles</span>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10">Roles</span>
               </a>
 
               <!-- Usuarios (Admin, Coordinador, Secretario) -->
               <a
                 *ngIf="hasRole('Administrador') || hasRole('Coordinador') || hasRole('Secretario')"
                 routerLink="/usuarios"
-                                                                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                                                                routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
+                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
+                  'gap-3.5 px-3.5 py-2.5': !collapsed()
                 }"
                 title="Usuarios"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Usuarios</span>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10">Usuarios</span>
               </a>
-              <a
-                *ngIf="hasPermission('reuniones.ver') || hasRole('Secretario')"
-                routerLink="/reuniones"
-                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
-                [ngClass]="{
-                  'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
-                }"
-                title="Reuniones"
-              >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                           <!-- Reuniones Accordion -->
+              <div *ngIf="hasPermission('reuniones.ver') || hasRole('Secretario')" class="relative">
+                <button
+                  (click)="toggleReunionesMenu()"
+                  class="w-full group flex items-center justify-between text-[14px] transition-all duration-200 relative overflow-hidden rounded-lg"
+                  [ngClass]="{
+                    'p-2.5': collapsed(),
+                    'px-3.5 py-3': !collapsed(),
+                    '!text-brand-purple dark:!text-purple-400 font-semibold bg-brand-purple/[0.08] dark:bg-white/[0.02]': isReunionesActive(),
+                    'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]': !isReunionesActive()
+                  }"
+                  title="Reuniones"
+                >
+                  <div class="flex items-center" [ngClass]="{ 'justify-center w-full': collapsed(), 'gap-3.5': !collapsed() }">
+                    <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"
+                         [ngClass]="isReunionesActive() ? '!text-brand-purple dark:!text-purple-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
+                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <span *ngIf="!collapsed()" class="font-medium relative z-10">Reuniones</span>
+                  </div>
+                  <svg *ngIf="!collapsed()" class="w-4 h-4 transition-transform duration-300 ease-out" [ngClass]="{ 'rotate-180': reunionesMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                
+                <!-- Submenu -->
+                <div *ngIf="!collapsed() && reunionesMenuOpen()" class="relative mt-1 ml-[1.8rem] pl-4 pr-1 space-y-0.5 reuniones-submenu">
+                   <!-- Vertical connector line -->
+                   
+                   
+                   <a routerLink="/reuniones/resumen" routerLinkActive="sub-active" #rlaResumen="routerLinkActive"
+                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      [ngClass]="rlaResumen.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
+                      <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
+                            [ngClass]="rlaResumen.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
+                      <span class="truncate">Resumen Hoy</span>
+                   </a>
+                   <a routerLink="/reuniones/entre-semana" routerLinkActive="sub-active" #rlaEntre="routerLinkActive"
+                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      [ngClass]="rlaEntre.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
+                      <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
+                            [ngClass]="rlaEntre.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
+                      <span class="truncate">Entre Semana</span>
+                   </a>
+                   <a routerLink="/reuniones/fin-semana" routerLinkActive="sub-active" #rlaFin="routerLinkActive"
+                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      [ngClass]="rlaFin.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
+                      <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
+                            [ngClass]="rlaFin.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
+                      <span class="truncate">Fin de Semana</span>
+                   </a>
+                   <a routerLink="/reuniones/asistencia" routerLinkActive="sub-active" #rlaAsist="routerLinkActive"
+                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      [ngClass]="rlaAsist.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
+                      <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
+                            [ngClass]="rlaAsist.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
+                      <span class="truncate">Asistencia</span>
+                   </a>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Reuniones</span>
-              </a>
+              </div>
             </div>
-
+            
             <!-- Modules Section -->
             <div *ngIf="hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-widest pl-2"
+                class="px-5 mb-2 mt-6 text-[13px] font-medium text-slate-400 dark:text-slate-500 relative"
               >Módulos</p>
               
               <!-- Publicadores -->
@@ -169,20 +211,20 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
               <a 
                 *ngIf="hasPermission('publicadores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
                 routerLink="/secretario/publicadores"
-                routerLinkActive="bg-brand-orange text-white shadow-lg shadow-orange-500/30 ring-1 ring-orange-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-orange hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                routerLinkActive="!text-brand-orange dark:!text-orange-400 font-semibold [&_.nav-icon]:!text-brand-orange dark:[&_.nav-icon]:!text-orange-400 bg-brand-orange/10 dark:bg-white/[0.02]"
+                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
+                  'gap-3.5 px-3.5 py-2.5': !collapsed()
                 }"
                 title="Publicadores"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Publicadores</span>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10">Publicadores</span>
               </a>
 
               <!-- Informes -->
@@ -190,20 +232,20 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
               <a 
                 *ngIf="hasPermission('informes.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
                 routerLink="/secretario/informes"
-                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
+                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
+                  'gap-3.5 px-3.5 py-2.5': !collapsed()
                 }"
                 title="Informes"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Informes</span>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10">Informes</span>
               </a>
 
               <!-- Territorios -->
@@ -211,20 +253,20 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
               <a 
                 *ngIf="hasPermission('territorios.ver')"
                 routerLink="/territorios"
-                routerLinkActive="bg-brand-green text-white shadow-lg shadow-green-500/30 ring-1 ring-green-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-green hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                routerLinkActive="!text-brand-green dark:!text-green-400 font-semibold [&_.nav-icon]:!text-brand-green dark:[&_.nav-icon]:!text-green-400 bg-brand-green/10 dark:bg-white/[0.02]"
+                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
+                  'gap-3.5 px-3.5 py-2.5': !collapsed()
                 }"
                 title="Territorios"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Territorios</span>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10">Territorios</span>
               </a>
 
               <!-- Exhibidores -->
@@ -232,20 +274,20 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
               <a 
                 *ngIf="hasPermission('exhibidores.ver')"
                 routerLink="/exhibidores"
-                routerLinkActive="bg-brand-blue text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-blue hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                routerLinkActive="!text-brand-blue dark:!text-blue-400 font-semibold [&_.nav-icon]:!text-brand-blue dark:[&_.nav-icon]:!text-blue-400 bg-brand-blue/10 dark:bg-white/[0.02]"
+                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
+                  'gap-3.5 px-3.5 py-2.5': !collapsed()
                 }"
                 title="Exhibidores"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Exhibidores</span>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10">Exhibidores</span>
               </a>
 
 
@@ -255,49 +297,49 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
             <div *ngIf="hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Administrador')" class="mt-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-4 mb-3 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-widest pl-2"
+                class="px-5 mb-2 mt-6 text-[13px] font-medium text-slate-400 dark:text-slate-500 relative"
               >Extras</p>
               
               <!-- Configuracion Normal (NO ADMIN) -->
               <a 
                 *ngIf="!hasRole('Administrador') && (hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador'))"
                 routerLink="/configuracion" 
-                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
+                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
+                  'gap-3.5 px-3.5 py-2.5': !collapsed()
                 }"
                 title="Configuración"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Configuración</span>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10">Configuración</span>
               </a>
 
               <!-- Configuracion Admin -->
               <a 
                 *ngIf="hasRole('Administrador')"
                 routerLink="/admin/configuracion" 
-                routerLinkActive="bg-brand-purple text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-600 [&_.nav-icon]:text-white [&_.nav-icon]:bg-white/20 [&_.nav-icon]:group-hover:!bg-white/20 font-bold hover:!bg-brand-purple hover:!text-white"
-                class="group flex items-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] relative overflow-hidden"
+                routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
+                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
-                  'gap-3.5 px-3.5 py-3': !collapsed()
+                  'gap-3.5 px-3.5 py-2.5': !collapsed()
                 }"
                 title="Configuración del Sistema"
               >
-                <div class="nav-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-transparent transition-all duration-300 group-hover:scale-110 group-hover:bg-slate-100 dark:group-hover:bg-white/10">
-                  <svg class="w-5 h-5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <span *ngIf="!collapsed()" class="text-sm font-semibold relative z-10">Configuración</span>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10">Configuración</span>
               </a>
             </div>
           </nav>
@@ -527,7 +569,6 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
       display: block;
     }
     /* Ensure routed components fill the available space */
-    /* The router-outlet renders components as siblings, so we target them with + */
     .router-container ::ng-deep > router-outlet + * {
       flex: 1 1 0%;
       min-height: 0;
@@ -535,6 +576,25 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
       display: flex;
       flex-direction: column;
       overflow: hidden;
+    }
+    /* Reuniones submenu slide animation */
+    .reuniones-submenu {
+      animation: submenuSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reuniones-submenu > a {
+      animation: submenuItemFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .reuniones-submenu > a:nth-child(2) { animation-delay: 0.03s; }
+    .reuniones-submenu > a:nth-child(3) { animation-delay: 0.06s; }
+    .reuniones-submenu > a:nth-child(4) { animation-delay: 0.09s; }
+    .reuniones-submenu > a:nth-child(5) { animation-delay: 0.12s; }
+    @keyframes submenuSlide {
+      from { opacity: 0; max-height: 0; }
+      to   { opacity: 1; max-height: 300px; }
+    }
+    @keyframes submenuItemFade {
+      from { opacity: 0; transform: translateX(-8px); }
+      to   { opacity: 1; transform: translateX(0); }
     }
   `]
 })
@@ -551,6 +611,7 @@ export class ShellPage implements OnInit, OnDestroy {
   notificationsOpen = signal(false);
   congregacionDropdownOpen = signal(false);
   congregacionesList = signal<{ id_congregacion: number; nombre_congregacion: string }[]>([]);
+  reunionesMenuOpen = signal(false);
 
   // New Signals & Props
   // darkMode = signal(false); // Removed local signal
@@ -596,11 +657,20 @@ export class ShellPage implements OnInit, OnDestroy {
     // Initial Title update
     this.updateTitle(this.router.url);
 
+    // Auto-open the reuniones accordion if we're on a reuniones route
+    if (this.router.url.startsWith('/reuniones')) {
+      this.reunionesMenuOpen.set(true);
+    }
+
     // Listen to route changes
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.updateTitle(event.urlAfterRedirects);
         this.closeMobileMenu();
+        // Keep accordion open when navigating between reuniones sub-routes
+        if (event.urlAfterRedirects.startsWith('/reuniones')) {
+          this.reunionesMenuOpen.set(true);
+        }
       }
     });
   }
@@ -620,8 +690,16 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Territorios', subtitle: 'Gestión de mapas y asignaciones.' });
     } else if (url.includes('/exhibidores')) {
       this.pageTitle.set({ title: 'Exhibidores', subtitle: 'Gestión de puntos de predicación pública.' });
+    } else if (url.includes('/reuniones/entre-semana')) {
+      this.pageTitle.set({ title: 'Vida y Ministerio', subtitle: 'Programa y asignaciones de la reunión entre semana.' });
+    } else if (url.includes('/reuniones/fin-semana')) {
+      this.pageTitle.set({ title: 'Reunión Fin de Semana', subtitle: 'Discurso público y Atalaya.' });
+    } else if (url.includes('/reuniones/asistencia')) {
+      this.pageTitle.set({ title: 'Asistencia', subtitle: 'Registro y seguimiento de asistencia semanal.' });
+    } else if (url.includes('/reuniones/configuracion')) {
+      this.pageTitle.set({ title: 'Configuración Reuniones', subtitle: 'Ajustes del motor de asignación.' });
     } else if (url.includes('/reuniones')) {
-      this.pageTitle.set({ title: 'Reuniones', subtitle: 'Seguimiento de Asistencia' });
+      this.pageTitle.set({ title: 'Reuniones', subtitle: 'Resumen general de reuniones.' });
     } else if (url.includes('/admin/configuracion')) {
       this.pageTitle.set({ title: 'Configuración del Sistema', subtitle: 'Administración global de la plataforma' });
     } else if (url.includes('/configuracion')) {
@@ -644,6 +722,14 @@ export class ShellPage implements OnInit, OnDestroy {
   hasPermission = (p: string) => this.store.hasPermission(p);
 
   logout() { this.auth.logout(); }
+
+  toggleReunionesMenu() {
+    this.reunionesMenuOpen.update(v => !v);
+  }
+
+  isReunionesActive(): boolean {
+    return this.router.url.startsWith('/reuniones');
+  }
 
   toggleSidebar() {
     this.collapsed.update(v => !v);

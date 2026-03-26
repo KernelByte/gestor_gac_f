@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, signal, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InformesService } from '../../services/informes.service';
@@ -17,17 +17,38 @@ export class InformesHistorialEditComponent implements OnInit {
    @Input() initialAno!: number;
    @Input() initialMes!: number;
    
-   @Output() close = new EventEmitter<boolean>(); // Emitimos `true` si se guardó, `false` si se canceló
+   @Output() close = new EventEmitter<boolean>();
    
    informesService = inject(InformesService);
    
-   anos = Array.from({length: 10}, (_, i) => new Date().getFullYear() - i + 1);
-   meses = [
-      { num: 1, name: 'Enero' }, { num: 2, name: 'Febrero' }, { num: 3, name: 'Marzo' },
-      { num: 4, name: 'Abril' }, { num: 5, name: 'Mayo' }, { num: 6, name: 'Junio' },
-      { num: 7, name: 'Julio' }, { num: 8, name: 'Agosto' }, { num: 9, name: 'Septiembre' },
-      { num: 10, name: 'Octubre' }, { num: 11, name: 'Noviembre' }, { num: 12, name: 'Diciembre' }
-   ];
+   // All available periods from DB
+   allPeriodos = signal<{ ano: number; mes: number }[]>([]);
+   loadingPeriodos = signal<boolean>(true);
+
+   // Static month names lookup
+   mesesNombres: { [key: number]: string } = {
+      1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+      5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+      9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+   };
+
+   // Computed: distinct available years
+   availableAnos = computed(() => {
+      const periodos = this.allPeriodos();
+      const years = [...new Set(periodos.map(p => p.ano))];
+      return years.sort((a, b) => b - a);
+   });
+
+   // Computed: available months for currently selected year
+   availableMeses = computed(() => {
+      const periodos = this.allPeriodos();
+      const ano = this.selectedAno();
+      const months = periodos
+         .filter(p => p.ano === ano)
+         .map(p => p.mes)
+         .sort((a, b) => a - b);
+      return [...new Set(months)].map(m => ({ num: m, name: this.mesesNombres[m] || `Mes ${m}` }));
+   });
 
    selectedAno = signal<number>(new Date().getFullYear());
    selectedMes = signal<number>(1);
@@ -54,13 +75,48 @@ export class InformesHistorialEditComponent implements OnInit {
       if (this.initialAno) this.selectedAno.set(this.initialAno);
       if (this.initialMes) this.selectedMes.set(this.initialMes);
       
-      this.loadDetails();
+      this.loadPeriodosDisponibles();
+   }
+
+   private loadPeriodosDisponibles() {
+      this.loadingPeriodos.set(true);
+      this.informesService.getPeriodosDisponibles().subscribe({
+         next: (data) => {
+            this.allPeriodos.set(data.periodos);
+            this.loadingPeriodos.set(false);
+
+            // Validate that the initial selection exists; if not, pick the first available
+            const periodos = data.periodos;
+            const currentValid = periodos.some(p => p.ano === this.selectedAno() && p.mes === this.selectedMes());
+            if (!currentValid && periodos.length > 0) {
+               this.selectedAno.set(periodos[0].ano);
+               const mesInYear = periodos.find(p => p.ano === periodos[0].ano);
+               if (mesInYear) this.selectedMes.set(mesInYear.mes);
+            }
+
+            this.loadDetails();
+         },
+         error: (err) => {
+            console.error('Error loading periodos disponibles', err);
+            this.loadingPeriodos.set(false);
+         }
+      });
    }
    
    onAnoSelect(ano: number) {
       if (this.selectedAno() === ano || this.loading() || this.saving()) return;
       this.saveCurrentToPending();
       this.selectedAno.set(ano);
+
+      // Auto-select first available month in new year
+      const mesesInYear = this.availableMeses();
+      if (mesesInYear.length > 0) {
+         const currentMesExists = mesesInYear.some(m => m.num === this.selectedMes());
+         if (!currentMesExists) {
+            this.selectedMes.set(mesesInYear[0].num);
+         }
+      }
+
       this.loadDetails();
    }
    
@@ -83,7 +139,28 @@ export class InformesHistorialEditComponent implements OnInit {
          observaciones: this.observaciones() || null,
          privilegio: this.activoPrivilegio
       };
-      this.pendingChanges.set(key, data);
+
+      // Only store if actually different from original
+      const orig = this.originalValues.get(key);
+      if (orig) {
+         const changed =
+            data.participo !== orig.participo ||
+            (data.horas || 0) !== (orig.horas || 0) ||
+            (data.cursos_biblicos || 0) !== (orig.cursos_biblicos || 0) ||
+            (data.observaciones || null) !== (orig.observaciones || null) ||
+            data.privilegio !== orig.privilegio;
+
+         if (changed) {
+            this.pendingChanges.set(key, data);
+         } else {
+            this.pendingChanges.delete(key);
+         }
+      } else {
+         // No original loaded yet — only save if it looks like real data
+         if (data.participo || data.horas || data.cursos_biblicos || data.observaciones || data.privilegio) {
+            this.pendingChanges.set(key, data);
+         }
+      }
    }
    
    loadDetails() {
@@ -154,7 +231,7 @@ export class InformesHistorialEditComponent implements OnInit {
    }
    
    get titleText(): string {
-      const mesNombre = this.meses.find(m => m.num === this.selectedMes())?.name || '';
+      const mesNombre = this.mesesNombres[this.selectedMes()] || '';
       return `${mesNombre} ${this.selectedAno()}`;
    }
 
@@ -164,7 +241,7 @@ export class InformesHistorialEditComponent implements OnInit {
       if (!val) return false;
 
       const orig = this.originalValues.get(key);
-      if (!orig) return true; // If we don't have original, assume it's new/modified
+      if (!orig) return true;
 
       return val.participo !== orig.participo ||
              (val.horas || 0) !== (orig.horas || 0) ||
@@ -174,7 +251,8 @@ export class InformesHistorialEditComponent implements OnInit {
    }
 
    hasChangesInYear(ano: number): boolean {
-      return this.meses.some(m => this.hasChanges(ano, m.num));
+      const mesesInYear = this.allPeriodos().filter(p => p.ano === ano).map(p => p.mes);
+      return mesesInYear.some(m => this.hasChanges(ano, m));
    }
    
    guardar() {
@@ -182,16 +260,12 @@ export class InformesHistorialEditComponent implements OnInit {
       
       this.saving.set(true);
       
-      // 1. Ensure current form is in pending changes
       this.saveCurrentToPending();
 
-      // 2. Identify which ones actually changed compared to original
       const updates: InformeHistorialEdit[] = [];
       this.pendingChanges.forEach((val, key) => {
          const orig = this.originalValues.get(key);
          
-         // Simple check: if not in originalValues, it might be new. 
-         // If it is, compare values.
          if (!orig) {
             updates.push(val);
          } else {
@@ -214,7 +288,6 @@ export class InformesHistorialEditComponent implements OnInit {
          return;
       }
 
-      // 3. Send all updates
       const requests = updates.map(u => this.informesService.editarHistorial(u));
       
       forkJoin(requests).subscribe({

@@ -249,9 +249,15 @@ export class InformesHistorialComponent implements OnChanges {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            const filename = scope === 'single'
-               ? `Historial_${this.selectedPublicador()?.nombre_completo || 'Publicador'}.pdf`
-               : `Historial_General_${this.selectedAno}.pdf`;
+            let filename = `Historial_${this.selectedAno}.pdf`;
+            if (scope === 'single') {
+               filename = `Historial_${this.selectedPublicador()?.nombre_completo || 'Publicador'}.pdf`;
+            } else {
+               const filter = this.activeFilter();
+               if (filter === 'all') filename = `Historial_Todos_${this.selectedAno}.pdf`;
+               else if (filter === 'precursores') filename = `Historial_Precursores_${this.selectedAno}.pdf`;
+               else if (typeof filter === 'number') filename = `Historial_Grupo_${filter}_${this.selectedAno}.pdf`;
+            }
             a.download = filename;
             a.click();
             window.URL.revokeObjectURL(url);
@@ -262,5 +268,10 @@ export class InformesHistorialComponent implements OnChanges {
             this.exporting.set(false);
          }
       });
+   }
+
+   getShortPrivilegeLabel(priv: string | null | undefined): string {
+      if (!priv) return '';
+      return priv.replace('Precursor ', '');
    }
 }

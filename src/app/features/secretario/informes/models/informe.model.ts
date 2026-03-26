@@ -150,6 +150,7 @@ export interface PublicadorHistorial {
    nombre_completo: string;
    grupo_numero?: number;
    es_precursor_regular: boolean;
+   privilegio_actual?: string | null;
    informes: InformeHistorialItem[];
    // Totales anuales
    total_horas: number;

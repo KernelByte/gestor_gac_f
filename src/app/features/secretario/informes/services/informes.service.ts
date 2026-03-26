@@ -90,6 +90,10 @@ export class InformesService {
       return this.http.post<InformeHistorialDetalle>(`${this.apiUrl}/historial/editar`, data);
    }
 
+   getPeriodosDisponibles(): Observable<{ periodos: { ano: number; mes: number }[] }> {
+      return this.http.get<{ periodos: { ano: number; mes: number }[] }>(`${this.apiUrl}/periodos-disponibles`);
+   }
+
 
    // --- Resumen Sucursal ---
    getResumenSucursal(periodoId: number, congregacionId: number): Observable<ResumenSucursal> {
