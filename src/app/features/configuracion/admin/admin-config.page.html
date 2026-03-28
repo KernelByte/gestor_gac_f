@@ -59,6 +59,18 @@
          </div>
       </button>
 
+      <button (click)="setTab('ai')" type="button"
+         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
+         [ngClass]="activeTab() === 'ai' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
+         <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            Motores IA
+         </div>
+      </button>
+
       <button (click)="setTab('seguridad')" type="button"
          class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
          [ngClass]="activeTab() === 'seguridad' ? 'border-red-500 text-red-500 border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
@@ -463,6 +475,11 @@
          <p class="text-slate-500 dark:text-slate-400 max-w-sm mt-2">Próximamente</p>
       </div>
 
+      <!-- TAB: AI CONFIGURATION -->
+      <div *ngIf="activeTab() === 'ai'" class="flex flex-col flex-1 min-h-0">
+         <app-ai-config class="flex-1 min-h-0"></app-ai-config>
+      </div>
+
    </div>
 
    <!-- MODAL CONFIRMAR ELIMINAR CONGREGACIÓN -->
@@ -769,7 +786,20 @@
                         class="peer w-full rounded-xl border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3.5 text-slate-900 dark:text-slate-100 font-bold focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 transition-colors outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal"
                         placeholder="Opcional">
                   </div>
-                  <p class="text-slate-400 dark:text-slate-500 text-[10px] ml-1 font-medium">Para verificar autenticidad.</p>
+               </div>
+
+               <!-- Tiene Sala B (Half Width) -->
+               <div class="space-y-4 group flex flex-col justify-center">
+                  <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-600 transition-colors">
+                     <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" formControlName="tiene_sala_b" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-purple"></div>
+                     </label>
+                     <div>
+                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-200">¿Tiene Sala B?</span>
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-tight">Habilita asignaciones para sala secundaria.</span>
+                     </div>
+                  </div>
                </div>
 
             </form>

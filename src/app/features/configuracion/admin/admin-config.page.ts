@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
+import { AIConfigComponent } from './components/ai-config.component';
 
 interface CongregacionAdmin {
    id_congregacion: number;
@@ -12,6 +13,7 @@ interface CongregacionAdmin {
    circuito: string;
    direccion: string;
    codigo_seguridad: string;
+   tiene_sala_b: number;
    miembros: number; // Computed field from backend?
 }
 
@@ -42,7 +44,7 @@ interface ImportResult {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule, ReactiveFormsModule],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent],
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -70,7 +72,7 @@ export class AdminConfigPage implements OnInit {
    private fb = inject(FormBuilder);
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
-   activeTab = signal<'congregaciones' | 'variables' | 'auditoria' | 'api' | 'seguridad'>('congregaciones');
+   activeTab = signal<'congregaciones' | 'variables' | 'auditoria' | 'api' | 'seguridad' | 'ai'>('congregaciones');
    loading = signal(false);
 
    // Data Signals
@@ -125,11 +127,12 @@ export class AdminConfigPage implements OnInit {
          nombre_congregacion: ['', [Validators.required]],
          circuito: ['', [Validators.required]],
          direccion: ['', [Validators.required]],
-         codigo_seguridad: ['']
+         codigo_seguridad: [''],
+         tiene_sala_b: [0]
       });
    }
 
-   setTab(tab: 'congregaciones' | 'variables' | 'auditoria' | 'api' | 'seguridad') {
+   setTab(tab: 'congregaciones' | 'variables' | 'auditoria' | 'api' | 'seguridad' | 'ai') {
       this.activeTab.set(tab);
       if (tab === 'congregaciones') this.loadCongregaciones();
       if (tab === 'variables') this.loadSystemVars();
@@ -185,7 +188,8 @@ export class AdminConfigPage implements OnInit {
             nombre_congregacion: cong.nombre_congregacion,
             circuito: cong.circuito,
             direccion: cong.direccion || '',
-            codigo_seguridad: cong.codigo_seguridad
+            codigo_seguridad: cong.codigo_seguridad,
+            tiene_sala_b: cong.tiene_sala_b || 0
          });
          this.panelOpen.set(true);
       }
@@ -347,7 +351,8 @@ export class AdminConfigPage implements OnInit {
          nombre_congregacion: data.nombre_congregacion,
          circuito: data.circuito,
          direccion: data.direccion,
-         codigo_seguridad: data.codigo_seguridad
+         codigo_seguridad: data.codigo_seguridad,
+         tiene_sala_b: data.tiene_sala_b ? 1 : 0
       };
 
       let req;

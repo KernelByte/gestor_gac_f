@@ -95,18 +95,24 @@ export interface HistorialAnual {
 
 export interface DetalleActividadGrupo {
    titulo: string;
-   cantidad_activos: number;
+   cantidad_activos?: number;
    cantidad_informaron: number;
+   cursos_biblicos: number;
    horas_totales: number;
-   estudios_biblicos: number;
+   estudios_biblicos?: number;
+   promedio_horas: number;
+   promedio_horas_3m: number | null;
+   promedio_horas_6m: number | null;
 }
 
 export interface AsistenciaReunion {
    tipo: string;
    descripcion: string;
+   num_reuniones: number;
    total: number;
    promedio: number;
-   semanas_registradas: number;
+   porcentaje_publicadores: number;
+   semanas_registradas?: number;
 }
 
 export interface ResumenSucursal {
@@ -114,17 +120,25 @@ export interface ResumenSucursal {
    periodo_descripcion: string;
    congregacion_id: number;
    congregacion_nombre: string;
-   total_publicadores: number;
-   total_informes: number;
-   porcentaje_entregados: number;
-   total_horas: number;
-   variacion_horas_vs_anterior: number | null;
-   total_estudios: number;
-   promedio_estudios_por_publicador: number;
-   publicadores_inactivos: number;
+
    detalle_publicadores: DetalleActividadGrupo;
    detalle_auxiliares: DetalleActividadGrupo;
    detalle_regulares: DetalleActividadGrupo;
+
+   total_informaron: number;
+   total_cursos_biblicos: number;
+   total_horas: number;
+
+   total_publicadores_activos: number;
+   precursores_aux_count: number;
+   precursores_aux_porcentaje: number;
+   total_irregulares: number;
+   total_irregulares_porcentaje: number;
+   sin_informe_count: number;
+   sin_informe_porcentaje: number;
+   no_bautizados_count: number;
+   no_bautizados_porcentaje: number;
+
    asistencia_entre_semana: AsistenciaReunion | null;
    asistencia_fin_semana: AsistenciaReunion | null;
 }

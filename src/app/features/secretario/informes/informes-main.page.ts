@@ -10,6 +10,7 @@ import { InformesStatsComponent } from './components/informes-stats/informes-sta
 import { InformesFiltersComponent } from './components/informes-filters/informes-filters.component';
 import { InformesTableComponent } from './components/informes-table/informes-table.component';
 import { InformesHistorialComponent } from './components/informes-historial/informes-historial.component';
+import { ResumenSucursalComponent } from './components/resumen-sucursal/resumen-sucursal.component';
 
 
 import { HttpClient } from '@angular/common/http';
@@ -22,7 +23,7 @@ import { saveAs } from 'file-saver';
 @Component({
   standalone: true,
   selector: 'app-informes-main',
-  imports: [CommonModule, FormsModule, InformesStatsComponent, InformesFiltersComponent, InformesTableComponent, InformesHistorialComponent],
+  imports: [CommonModule, FormsModule, InformesStatsComponent, InformesFiltersComponent, InformesTableComponent, InformesHistorialComponent, ResumenSucursalComponent],
   templateUrl: './informes-main.page.html',
   styles: [`:host { display: flex; flex-direction: column; height: 100%; overflow: hidden; }`]
 })

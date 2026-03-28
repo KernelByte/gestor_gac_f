@@ -52,21 +52,13 @@
       </ng-container>
 
 
-      <!-- Tab 3: Resumen Sucursal (Placeholder) -->
+      <!-- Tab 3: Resumen Sucursal -->
       <ng-container *ngIf="activeTab() === 'sucursal'">
-         <div
-            class="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-sm border border-slate-200/60 dark:border-slate-800 h-full flex items-center justify-center">
-            <div class="text-center">
-               <div class="w-20 h-20 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg class="w-10 h-10 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-               </div>
-               <h3 class="text-xl font-bold text-slate-900 dark:text-white">Resumen para Sucursal</h3>
-               <p class="text-slate-500 dark:text-slate-400 mt-2">Próximamente disponible</p>
-            </div>
-         </div>
+         <app-resumen-sucursal
+            [selectedMes]="selectedMes"
+            [selectedAno]="selectedAno"
+            [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0">
+         </app-resumen-sucursal>
       </ng-container>
    </div>
 
