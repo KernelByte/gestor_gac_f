@@ -1,7 +1,7 @@
-<div class="w-full flex flex-col h-full bg-[#f3f4f6] dark:bg-slate-950 pt-4 px-4 sm:pt-6 sm:px-6 md:pt-10 md:px-10 animate-fadeIn font-sans overflow-hidden transition-colors duration-300">
+<div class="w-full flex flex-col h-full bg-[#f3f4f6] dark:bg-slate-950 pt-4 sm:pt-6 animate-fadeIn overflow-hidden transition-colors duration-300">
    <!-- Header Section -->
    <div class="mb-3 sm:mb-4 shrink-0">
-      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+      <h1 class="text-2xl sm:text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight">
          Administración del Sistema
       </h1>
       <p class="text-slate-500 dark:text-slate-400 font-medium mt-1.5 sm:mt-2 text-sm sm:text-base md:text-lg max-w-2xl">
@@ -23,20 +23,6 @@
          </div>
       </button>
 
-      <button (click)="setTab('variables')" type="button"
-         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'variables' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Variables
-         </div>
-      </button>
-
       <button (click)="setTab('auditoria')" type="button"
          class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
          [ngClass]="activeTab() === 'auditoria' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
@@ -46,16 +32,6 @@
                   d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
             </svg>
             Auditoría
-         </div>
-      </button>
-
-      <button (click)="setTab('api')" type="button" class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'api' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            API
          </div>
       </button>
 
@@ -368,77 +344,6 @@
          </div>
       </div>
 
-      <!-- TAB: VARIABLES -->
-      <div *ngIf="activeTab() === 'variables'" class="p-4 sm:p-6 md:p-8 lg:p-12 animate-fadeIn overflow-y-auto">
-         <div class="max-w-4xl mx-auto space-y-6 md:space-y-8">
-            <!-- Global Message -->
-            <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-600/60 transition-colors duration-300">
-               <label class="block text-sm font-bold text-slate-900 dark:text-white mb-2">Mensaje Global del Sistema</label>
-               <div class="relative">
-                  <input [(ngModel)]="systemVars().global_message" type="text"
-                     class="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 font-medium focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-colors placeholder:text-slate-300 dark:placeholder:text-slate-500"
-                     placeholder="Escribe un anuncio importante...">
-               </div>
-               <p class="text-xs font-medium text-slate-400 dark:text-slate-500 mt-2">Visible para todos los usuarios en el dashboard.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-               <!-- Maintenance Mode -->
-               <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                  <div
-                     class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
-                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                           d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                     </svg>
-                  </div>
-                  <div class="flex-1">
-                     <div class="flex items-center justify-between mb-1">
-                        <h3 class="font-bold text-slate-900 dark:text-white">Modo Mantenimiento</h3>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                           <input type="checkbox" [(ngModel)]="systemVars().maintenance_mode" class="sr-only peer">
-                           <div
-                              class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500">
-                           </div>
-                        </label>
-                     </div>
-                     <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">Bloquea el acceso a usuarios no administradores.
-                     </p>
-                  </div>
-               </div>
-
-               <!-- Backups -->
-               <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                  <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                           d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                     </svg>
-                  </div>
-                  <div class="flex-1">
-                     <div class="flex items-center justify-between mb-1">
-                        <h3 class="font-bold text-slate-900 dark:text-white">Copias Automáticas</h3>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                           <input type="checkbox" [(ngModel)]="systemVars().allow_backups" class="sr-only peer">
-                           <div
-                              class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500">
-                           </div>
-                        </label>
-                     </div>
-                     <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">Genera respaldos diarios de la base de datos.</p>
-                  </div>
-               </div>
-            </div>
-
-            <div class="flex justify-end pt-6 border-t border-slate-100 dark:border-slate-700">
-               <button (click)="saveVariables()"
-                  class="bg-brand-purple text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all">
-                  Guardar Cambios
-               </button>
-            </div>
-         </div>
-      </div>
-
       <!-- Other Tabs placeholders -->
       <div *ngIf="activeTab() === 'auditoria'"
          class="py-20 flex flex-col items-center justify-center text-center animate-fadeIn">
@@ -449,17 +354,6 @@
             </svg>
          </div>
          <h3 class="text-xl font-bold text-slate-900 dark:text-white">Auditoría</h3>
-         <p class="text-slate-500 dark:text-slate-400 max-w-sm mt-2">Próximamente</p>
-      </div>
-
-      <div *ngIf="activeTab() === 'api'"
-         class="py-20 flex flex-col items-center justify-center text-center animate-fadeIn">
-         <div class="w-20 h-20 bg-slate-50 dark:bg-slate-700/50 rounded-2xl flex items-center justify-center mb-6">
-            <svg class="w-10 h-10 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-         </div>
-         <h3 class="text-xl font-bold text-slate-900 dark:text-white">API</h3>
          <p class="text-slate-500 dark:text-slate-400 max-w-sm mt-2">Próximamente</p>
       </div>
 

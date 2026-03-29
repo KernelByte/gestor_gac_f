@@ -82,6 +82,7 @@ export interface PublicadorMatrizItem {
   sexo: string;
   privilegios: string[];  // ['Anciano', 'Precursor Regular'] — all active
   permisos: Record<string, boolean>;
+  nivel_oratoria?: number;
 }
 
 export interface MatrizConfigResponse {
@@ -92,6 +93,7 @@ export interface MatrizConfigResponse {
 export interface CambioPermisoPublicador {
   id_publicador: number;
   permisos: Record<string, boolean>;
+  nivel_oratoria?: number;
 }
 
 export interface UpdateMatrizRequest {
@@ -130,4 +132,28 @@ export interface SemanaConfirm {
 export interface MWBImportConfirmRequest {
   id_congregacion: number;
   semanas: SemanaConfirm[];
+}
+
+// ──────────────────────────────────────────────────────
+// PARÁMETROS DEL ALGORITMO
+// ──────────────────────────────────────────────────────
+
+export interface AlgorithmParam {
+  key: string;
+  value: number;
+  label: string;
+  description: string;
+  min_val: number;
+  max_val: number;
+  default: number;
+  step: number;
+  category: 'peso_heuristico' | 'restriccion_dura' | 'ventana_tiempo';
+}
+
+export interface AlgorithmParamsResponse {
+  parametros: AlgorithmParam[];
+}
+
+export interface AlgorithmParamsUpdate {
+  parametros: Record<string, number>;
 }

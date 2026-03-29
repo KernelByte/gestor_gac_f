@@ -201,6 +201,17 @@ export class InformesHistorialEditComponent implements OnInit {
       this.esEspecial.set(priv === 'Precursor Especial');
    }
    
+   onHorasChange(valor: number | null) {
+      const h = valor || 0;
+      this.horas.set(h);
+      
+      if (h > 0) {
+         this.participo.set(true);
+      } else if (h === 0) {
+         this.participo.set(false);
+      }
+   }
+
    togglePrivilegio(tipo: 'Auxiliar' | 'Regular' | 'Especial') {
       if (tipo === 'Auxiliar') {
          this.esAuxiliar.set(!this.esAuxiliar());

@@ -12,6 +12,7 @@ export interface ProcessConfig {
   provider: string;
   model: string;
   prompt: string;
+  description?: string;
 }
 
 export interface AIConfig {

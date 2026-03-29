@@ -17,14 +17,6 @@ interface CongregacionAdmin {
    miembros: number; // Computed field from backend?
 }
 
-interface SystemVars {
-   maintenance_mode: boolean;
-   allow_backups: boolean;
-   backup_frequency: number;
-   global_message: string;
-   max_upload_size: number;
-}
-
 interface ImportResult {
    success: boolean;
    detalle: string;
@@ -72,19 +64,11 @@ export class AdminConfigPage implements OnInit {
    private fb = inject(FormBuilder);
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
-   activeTab = signal<'congregaciones' | 'variables' | 'auditoria' | 'api' | 'seguridad' | 'ai'>('congregaciones');
+   activeTab = signal<'congregaciones' | 'auditoria' | 'seguridad' | 'ai'>('congregaciones');
    loading = signal(false);
 
    // Data Signals
    congregaciones = signal<CongregacionAdmin[]>([]);
-
-   systemVars = signal<SystemVars>({
-      maintenance_mode: false,
-      allow_backups: true,
-      backup_frequency: 24,
-      global_message: '',
-      max_upload_size: 10
-   });
 
    searchTerm = signal('');
 
@@ -119,7 +103,6 @@ export class AdminConfigPage implements OnInit {
    ngOnInit() {
       this.initForm();
       this.loadCongregaciones();
-      this.loadSystemVars();
    }
 
    initForm() {
@@ -132,10 +115,9 @@ export class AdminConfigPage implements OnInit {
       });
    }
 
-   setTab(tab: 'congregaciones' | 'variables' | 'auditoria' | 'api' | 'seguridad' | 'ai') {
+   setTab(tab: 'congregaciones' | 'auditoria' | 'seguridad' | 'ai') {
       this.activeTab.set(tab);
       if (tab === 'congregaciones') this.loadCongregaciones();
-      if (tab === 'variables') this.loadSystemVars();
    }
 
    loadCongregaciones() {
@@ -150,16 +132,6 @@ export class AdminConfigPage implements OnInit {
                console.error(err);
                this.loading.set(false);
             }
-         });
-   }
-
-   loadSystemVars() {
-      this.http.get<SystemVars>(`${this.API_URL}/variables`)
-         .subscribe({
-            next: (data) => {
-               this.systemVars.set(data);
-            },
-            error: (err) => console.error(err)
          });
    }
 
@@ -193,23 +165,6 @@ export class AdminConfigPage implements OnInit {
          });
          this.panelOpen.set(true);
       }
-   }
-
-   saveVariables() {
-      this.loading.set(true);
-      this.http.put(`${this.API_URL}/variables`, this.systemVars())
-         .subscribe({
-            next: () => {
-               // Success Feedback
-               alert('Configuración del sistema actualizada correctamente.');
-               this.loading.set(false);
-            },
-            error: (err: any) => {
-               console.error(err);
-               alert('Error al guardar configuración.');
-               this.loading.set(false);
-            }
-         });
    }
 
    // ===== Import Modal Methods =====

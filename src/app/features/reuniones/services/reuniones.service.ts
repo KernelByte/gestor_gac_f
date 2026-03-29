@@ -14,6 +14,8 @@ import {
   UpdateMatrizRequest,
   MWBImportPreviewResponse,
   MWBImportConfirmRequest,
+  AlgorithmParamsResponse,
+  AlgorithmParamsUpdate,
 } from '../models/reuniones.models';
 
 @Injectable({ providedIn: 'root' })
@@ -117,6 +119,18 @@ export class ReunionesService {
       `${this.base}/programas/importar-mwb/confirm`,
       payload
     );
+  }
+
+  // ──────────────────────────────────────────────────
+  // PARÁMETROS DEL ALGORITMO
+  // ──────────────────────────────────────────────────
+
+  getAlgorithmParams(): Observable<AlgorithmParamsResponse> {
+    return this.http.get<AlgorithmParamsResponse>(`${this.base}/configuracion/parametros`);
+  }
+
+  updateAlgorithmParams(payload: AlgorithmParamsUpdate): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/configuracion/parametros`, payload);
   }
 
   private normalizeSemana(raw: any): ProgramaSemana {
