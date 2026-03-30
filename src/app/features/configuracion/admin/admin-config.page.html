@@ -47,6 +47,18 @@
          </div>
       </button>
 
+      <button (click)="setTab('base-datos')" type="button"
+         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
+         [ngClass]="activeTab() === 'base-datos' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
+         <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+            </svg>
+            Base de Datos
+         </div>
+      </button>
+
       <button (click)="setTab('seguridad')" type="button"
          class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
          [ngClass]="activeTab() === 'seguridad' ? 'border-red-500 text-red-500 border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
@@ -372,6 +384,10 @@
       <!-- TAB: AI CONFIGURATION -->
       <div *ngIf="activeTab() === 'ai'" class="flex flex-col flex-1 min-h-0">
          <app-ai-config class="flex-1 min-h-0"></app-ai-config>
+      </div>
+
+      <div *ngIf="activeTab() === 'base-datos'" class="flex flex-col flex-1 min-h-0">
+         <app-db-backup class="flex-1 min-h-0"></app-db-backup>
       </div>
 
    </div>

@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { AIConfigComponent } from './components/ai-config.component';
+import { DbBackupComponent } from './components/db-backup.component';
 
 interface CongregacionAdmin {
    id_congregacion: number;
@@ -36,7 +37,7 @@ interface ImportResult {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent],
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -64,7 +65,7 @@ export class AdminConfigPage implements OnInit {
    private fb = inject(FormBuilder);
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
-   activeTab = signal<'congregaciones' | 'auditoria' | 'seguridad' | 'ai'>('congregaciones');
+   activeTab = signal<'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos'>('congregaciones');
    loading = signal(false);
 
    // Data Signals
@@ -115,7 +116,7 @@ export class AdminConfigPage implements OnInit {
       });
    }
 
-   setTab(tab: 'congregaciones' | 'auditoria' | 'seguridad' | 'ai') {
+   setTab(tab: 'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos') {
       this.activeTab.set(tab);
       if (tab === 'congregaciones') this.loadCongregaciones();
    }
