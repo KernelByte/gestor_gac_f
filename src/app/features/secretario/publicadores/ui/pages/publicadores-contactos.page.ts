@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -97,7 +97,7 @@ interface ContactoEmergencia {
 
                 <div class="divide-y divide-slate-200 dark:divide-slate-800">
                     <button 
-                        *ngFor="let p of filteredList()"
+                        *ngFor="let p of filteredList(); trackBy: trackByPublicador"
                         (click)="selectPublicador(p)"
                         class="w-full text-left p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex items-center gap-4 group relative"
                         [ngClass]="selectedPublicador()?.id_publicador === p.id_publicador 
@@ -288,7 +288,7 @@ interface ContactoEmergencia {
                         </div>
                         
                         <!-- Card Item -->
-                        <div *ngFor="let c of contactos()" class="group bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50 hover:border-orange-100 dark:hover:border-slate-700 transition-all duration-300 relative overflow-hidden">
+                        <div *ngFor="let c of contactos(); trackBy: trackByContacto" class="group bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50 hover:border-orange-100 dark:hover:border-slate-700 transition-all duration-300 relative overflow-hidden">
                              <!-- Action Buttons (Static on mobile, Hover on Desktop) -->
                              <div class="absolute top-4 right-4 flex gap-1 transform translate-x-0 lg:translate-x-12 lg:group-hover:translate-x-0 transition-transform duration-300 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-lg p-1 shadow-sm border border-slate-100 dark:border-slate-700 z-10">
                                  <button (click)="edit(c)" class="p-2 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-md transition-colors" title="Editar">
@@ -474,10 +474,13 @@ export class PublicadoresContactosComponent {
             const user = this.authStore.user();
             const effectiveId = this.congregacionContext.effectiveCongregacionId();
             if (!user) return;
-            const params: any = { limit: 100, offset: 0 };
-            if (effectiveId != null) params.id_congregacion = effectiveId;
-            this.facade.load(params);
-            this.loadEmergencyContactsMap();
+            
+            untracked(() => {
+                const params: any = { limit: 100, offset: 0 };
+                if (effectiveId != null) params.id_congregacion = effectiveId;
+                this.facade.load(params);
+                this.loadEmergencyContactsMap();
+            });
         }, { allowSignalWrites: true });
 
         // Auto load contacts when selection changes
@@ -694,5 +697,13 @@ export class PublicadoresContactosComponent {
         } finally {
             this.loadingContactos = false;
         }
+    }
+
+    trackByPublicador(index: number, p: Publicador) {
+        return p.id_publicador;
+    }
+
+    trackByContacto(index: number, c: ContactoEmergencia) {
+        return c.id_contacto_emergencia;
     }
 }
