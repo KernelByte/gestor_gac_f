@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { trigger, transition, style, animate } from '@angular/animations';
+import { Router, ActivatedRoute } from '@angular/router';
 import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { AIConfigComponent } from './components/ai-config.component';
 import { DbBackupComponent } from './components/db-backup.component';
@@ -63,6 +64,8 @@ interface ImportResult {
 export class AdminConfigPage implements OnInit {
    private http = inject(HttpClient);
    private fb = inject(FormBuilder);
+   private router = inject(Router);
+   private route = inject(ActivatedRoute);
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
    activeTab = signal<'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos'>('congregaciones');
@@ -102,6 +105,16 @@ export class AdminConfigPage implements OnInit {
    deletingCongregation = signal(false);
 
    ngOnInit() {
+      // Restore active tab from URL or localStorage
+      const tabParam = this.route.snapshot.queryParams['tab'];
+      const savedTab = localStorage.getItem('admin_active_tab');
+      const tabToSet = (tabParam || savedTab) as any;
+      const validTabs = ['congregaciones', 'auditoria', 'seguridad', 'ai', 'base-datos'];
+
+      if (tabToSet && validTabs.includes(tabToSet)) {
+         this.activeTab.set(tabToSet);
+      }
+
       this.initForm();
       this.loadCongregaciones();
    }
@@ -118,6 +131,16 @@ export class AdminConfigPage implements OnInit {
 
    setTab(tab: 'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos') {
       this.activeTab.set(tab);
+      localStorage.setItem('admin_active_tab', tab);
+
+      // Update URL query parameters
+      this.router.navigate([], {
+         relativeTo: this.route,
+         queryParams: { tab: tab },
+         queryParamsHandling: 'merge',
+         replaceUrl: true // Using replaceUrl ensures we don't pollute the history stack
+      });
+
       if (tab === 'congregaciones') this.loadCongregaciones();
    }
 

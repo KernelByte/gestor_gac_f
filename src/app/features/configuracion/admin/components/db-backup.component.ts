@@ -55,21 +55,21 @@ interface CongregacionOption {
 
          <!-- Sub Navigation -->
          <div class="shrink-0 flex items-center gap-1 px-4 py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700/60">
-            <button (click)="activeSection.set('backup')" type="button"
+            <button (click)="setSection('backup')" type="button"
                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
                [ngClass]="activeSection() === 'backup'
                   ? 'bg-brand-purple/10 text-brand-purple dark:bg-brand-purple/20'
                   : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'">
                Crear Respaldo
             </button>
-            <button (click)="activeSection.set('historial'); loadHistorial()" type="button"
+            <button (click)="setSection('historial')" type="button"
                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
                [ngClass]="activeSection() === 'historial'
                   ? 'bg-brand-purple/10 text-brand-purple dark:bg-brand-purple/20'
                   : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'">
                Historial
             </button>
-            <button (click)="activeSection.set('programacion'); loadProgramacion()" type="button"
+            <button (click)="setSection('programacion')" type="button"
                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
                [ngClass]="activeSection() === 'programacion'
                   ? 'bg-brand-purple/10 text-brand-purple dark:bg-brand-purple/20'
@@ -488,9 +488,23 @@ export class DbBackupComponent implements OnInit {
    congregaciones = signal<CongregacionOption[]>([]);
 
    ngOnInit() {
+      // Restore active section from localStorage
+      const savedSection = localStorage.getItem('db_backup_active_section');
+      if (savedSection && ['backup', 'historial', 'programacion'].includes(savedSection)) {
+         this.activeSection.set(savedSection as any);
+      }
+
       this.loadCongregaciones();
       this.loadHistorial();
       this.loadProgramacion();
+   }
+
+   setSection(section: 'backup' | 'historial' | 'programacion') {
+      this.activeSection.set(section);
+      localStorage.setItem('db_backup_active_section', section);
+      
+      if (section === 'historial') this.loadHistorial();
+      if (section === 'programacion') this.loadProgramacion();
    }
 
    loadCongregaciones() {
