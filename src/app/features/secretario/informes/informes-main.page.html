@@ -1,7 +1,7 @@
-<div class="flex flex-col gap-4 h-full overflow-hidden p-1">
+<div class="flex flex-col gap-4 h-full overflow-hidden p-1 print:!overflow-visible print:!p-0 print:!h-auto">
    <!-- Tabs Navigation -->
    <div
-      class="shrink-0 flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 rounded-2xl p-1.5 sm:p-2 shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-x-auto">
+      class="print:hidden shrink-0 flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 rounded-2xl p-1.5 sm:p-2 shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-x-auto">
       <button *ngFor="let tab of visibleTabs()" (click)="activeTab.set(tab.id)"
          class="px-3 py-2 sm:px-5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0"
          [ngClass]="activeTab() === tab.id 
@@ -16,10 +16,10 @@
    </div>
 
    <!-- Tab Content -->
-   <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
+   <div class="flex-1 min-h-0 overflow-hidden flex flex-col print:!overflow-visible print:!h-auto print:block">
       <!-- Tab 1: Entrada Mensual -->
       <ng-container *ngIf="activeTab() === 'entrada'">
-         <div class="flex flex-col gap-5 flex-1 min-h-0">
+         <div class="flex flex-col gap-5 flex-1 min-h-0 overflow-hidden">
             <!-- Resumen del mes (informes recibidos + cursos/horas) -->
             <app-informes-stats [resumen]="resumen()"></app-informes-stats>
 
@@ -39,7 +39,7 @@
             <app-informes-table [resumen]="resumen()" [saving]="saving()" [privilegios]="privilegios()"
                [publicadorPrivilegiosMap]="publicadorPrivilegiosMap()" [localChanges]="localChanges"
                (informeChange)="handleInformeChange($event)" (save)="guardarTodo()" (exportExcel)="exportarExcel()"
-               (importExcel)="importarExcel($event)">
+               (importExcel)="importarExcel($event)" (notifyWhatsApp)="notificarWhatsApp($event)">
             </app-informes-table>
          </div>
       </ng-container>

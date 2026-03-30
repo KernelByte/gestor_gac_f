@@ -11,7 +11,9 @@ import {
    HistorialAnualOut,
    ResumenSucursal,
    InformeHistorialDetalle,
-   InformeHistorialEdit
+   InformeHistorialEdit,
+   NotificarRequest,
+   NotificarResponse
 } from '../models/informe.model';
 
 
@@ -150,5 +152,10 @@ export class InformesService {
       if (filters.publicadorId) params = params.set('publicador_id', filters.publicadorId.toString());
 
       return this.http.get(`${this.apiUrl}/export-historial-pdf`, { params, responseType: 'blob' });
+   }
+
+   // --- WhatsApp ---
+   generarTokenNotificacion(datos: NotificarRequest): Observable<NotificarResponse> {
+      return this.http.post<NotificarResponse>(`${this.apiUrl}/notificar`, datos);
    }
 }

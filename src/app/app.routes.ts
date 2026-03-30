@@ -7,6 +7,8 @@ export const routes: Routes = [
   { path: 'auth/forgot-password', title: 'Recuperar Contraseña', loadComponent: () => import('./features/auth/forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage) },
   { path: 'auth/reset-password', title: 'Restablecer Contraseña', loadComponent: () => import('./features/auth/reset-password/reset-password.page').then(m => m.ResetPasswordPage) },
 
+  { path: 'public/informe/:token', title: 'Enviar Informe', loadComponent: () => import('./features/public/informe/public-informe.page').then(m => m.PublicInformePage) },
+
   // Shell protegido
   {
     path: '',

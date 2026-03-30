@@ -23,7 +23,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
       
       <!-- Sidebar -->
       <aside
-        class="fixed top-0 left-0 lg:top-6 lg:left-6 h-screen lg:h-[calc(100vh-3rem)] bg-white dark:bg-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-slate-950/50 lg:rounded-3xl flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] overflow-hidden ring-1 ring-transparent dark:ring-white/5"
+        class="print:hidden fixed top-0 left-0 lg:top-6 lg:left-6 h-screen lg:h-[calc(100vh-3rem)] bg-white dark:bg-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-slate-950/50 lg:rounded-3xl flex flex-col z-50 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] overflow-hidden ring-1 ring-transparent dark:ring-white/5"
         [ngClass]="{
           'w-[272px]': !collapsed(),
           'w-[72px]': collapsed(),
@@ -137,7 +137,16 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10">Usuarios</span>
               </a>
-                           <!-- Reuniones Accordion -->
+            </div>
+            
+            <!-- Modules Section -->
+            <div *ngIf="hasPermission('reuniones.ver') || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')">
+              <p 
+                *ngIf="!collapsed()"
+                class="px-5 mb-2 mt-6 text-[13px] font-medium text-slate-400 dark:text-slate-500 relative"
+              >Módulos</p>
+              
+              <!-- Reuniones Accordion -->
               <div *ngIf="hasPermission('reuniones.ver') || hasRole('Secretario')" class="relative">
                 <button
                   (click)="toggleReunionesMenu()"
@@ -154,7 +163,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                     <div class="nav-icon w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"
                          [ngClass]="isReunionesActive() ? '!text-brand-purple dark:!text-purple-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <span *ngIf="!collapsed()" class="font-medium relative z-10">Reuniones</span>
@@ -164,9 +173,6 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 
                 <!-- Submenu -->
                 <div *ngIf="!collapsed() && reunionesMenuOpen()" class="relative mt-1 ml-[1.8rem] pl-4 pr-1 space-y-0.5 reuniones-submenu">
-                   <!-- Vertical connector line -->
-                   
-                   
                    <a routerLink="/reuniones/resumen" routerLinkActive="sub-active" #rlaResumen="routerLinkActive"
                       class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaResumen.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
@@ -195,18 +201,16 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                             [ngClass]="rlaAsist.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Asistencia</span>
                    </a>
+                   <a routerLink="/reuniones/configuracion" routerLinkActive="sub-active" #rlaConfigPl="routerLinkActive"
+                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      [ngClass]="rlaConfigPl.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
+                      <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
+                            [ngClass]="rlaConfigPl.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
+                      <span class="truncate">Configuración</span>
+                   </a>
                 </div>
               </div>
-            </div>
-            
-            <!-- Modules Section -->
-            <div *ngIf="hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')">
-              <p 
-                *ngIf="!collapsed()"
-                class="px-5 mb-2 mt-6 text-[13px] font-medium text-slate-400 dark:text-slate-500 relative"
-              >Módulos</p>
-              
-              <!-- Publicadores -->
+
               <!-- Publicadores -->
               <a 
                 *ngIf="hasPermission('publicadores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
@@ -228,7 +232,6 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
               </a>
 
               <!-- Informes -->
-              <!-- Informes -->
               <a 
                 *ngIf="hasPermission('informes.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
                 routerLink="/secretario/informes"
@@ -248,7 +251,6 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 <span *ngIf="!collapsed()" class="font-medium relative z-10">Informes</span>
               </a>
 
-              <!-- Territorios -->
               <!-- Territorios -->
               <a 
                 *ngIf="hasPermission('territorios.ver')"
@@ -270,7 +272,6 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
               </a>
 
               <!-- Exhibidores -->
-              <!-- Exhibidores -->
               <a 
                 *ngIf="hasPermission('exhibidores.ver')"
                 routerLink="/exhibidores"
@@ -289,8 +290,6 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10">Exhibidores</span>
               </a>
-
-
             </div>
 
             <!-- Extras Section -->
@@ -350,7 +349,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
 
       <!-- Main Content Area -->
       <div 
-        class="flex-1 flex flex-col min-w-0 h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]" 
+        class="flex-1 flex flex-col min-w-0 h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] print:!ml-0 print:!h-auto print:!overflow-visible" 
         [ngClass]="{
           'lg:ml-[296px]': !collapsed(),
           'lg:ml-[96px]': collapsed()
@@ -359,7 +358,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
         
         
         <!-- Top Header - Floating Island -->
-        <header class="mx-4 md:mx-6 mt-4 md:mt-6 mb-4 md:mb-6 h-[72px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-8 sticky top-4 md:top-6 z-30 transition-all duration-300 rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)] dark:shadow-black/20 border border-gray-100/50 dark:border-white/5">
+        <header class="print:hidden mx-4 md:mx-6 mt-4 md:mt-6 mb-4 md:mb-6 h-[72px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl flex items-center justify-between px-6 sm:px-8 sticky top-4 md:top-6 z-30 transition-all duration-300 rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)] dark:shadow-black/20 border border-gray-100/50 dark:border-white/5">
           <div class="flex items-center gap-4">
             <!-- Mobile Menu Toggle -->
             <button 
@@ -556,8 +555,8 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
 
 
         <!-- Page Content -->
-        <main class="flex-1 overflow-hidden relative flex flex-col mx-4 md:mx-6 mb-4 md:mb-6">
-          <div class="router-container flex-1 min-h-0 relative overflow-hidden flex flex-col">
+        <main class="print:!overflow-visible print:!m-0 flex-1 overflow-hidden relative flex flex-col mx-4 md:mx-6 mb-4 md:mb-6">
+          <div class="router-container print:!overflow-visible print:!h-auto flex-1 min-h-0 relative overflow-hidden flex flex-col">
              <router-outlet></router-outlet>
           </div>
         </main>
@@ -697,7 +696,7 @@ export class ShellPage implements OnInit, OnDestroy {
     } else if (url.includes('/reuniones/asistencia')) {
       this.pageTitle.set({ title: 'Asistencia', subtitle: 'Registro y seguimiento de asistencia semanal.' });
     } else if (url.includes('/reuniones/configuracion')) {
-      this.pageTitle.set({ title: 'Configuración Reuniones', subtitle: 'Ajustes del motor de asignación.' });
+      this.pageTitle.set({ title: 'Configuración de Reuniones', subtitle: 'Asignación de privilegios, plantillas y parámetros del motor.' });
     } else if (url.includes('/reuniones')) {
       this.pageTitle.set({ title: 'Reuniones', subtitle: 'Resumen general de reuniones.' });
     } else if (url.includes('/admin/configuracion')) {

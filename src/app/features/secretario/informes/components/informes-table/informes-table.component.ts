@@ -26,6 +26,7 @@ export class InformesTableComponent {
    @Output() save = new EventEmitter<void>();
    @Output() exportExcel = new EventEmitter<void>();
    @Output() importExcel = new EventEmitter<Event>();
+   @Output() notifyWhatsApp = new EventEmitter<InformeConPublicador>();
 
    trackByPub = (_: number, pub: InformeConPublicador) => pub.id_publicador;
 

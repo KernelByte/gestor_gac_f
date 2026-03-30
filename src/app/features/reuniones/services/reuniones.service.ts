@@ -4,6 +4,8 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   PlantillaOption,
+  PlantillaDetailResponse,
+  PlantillaUpdateRequest,
   ProgramaSemana,
   AsignacionDraft,
   GenerarAsignacionesResponse,
@@ -45,6 +47,18 @@ export class ReunionesService {
       .set('tipo', tipo)
       .set('id_congregacion', idCong);
     return this.http.get<PlantillaOption[]>(`${this.base}/plantillas`, { params });
+  }
+
+  getPlantillaDetail(idPlantilla: number): Observable<PlantillaDetailResponse> {
+    return this.http.get<PlantillaDetailResponse>(`${this.base}/plantillas/${idPlantilla}`);
+  }
+
+  updatePlantilla(idPlantilla: number, payload: PlantillaUpdateRequest): Observable<PlantillaDetailResponse> {
+    return this.http.put<PlantillaDetailResponse>(`${this.base}/plantillas/${idPlantilla}`, payload);
+  }
+
+  deletePlantilla(idPlantilla: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.base}/plantillas/${idPlantilla}`);
   }
 
   // ──────────────────────────────────────────────────
@@ -117,6 +131,15 @@ export class ReunionesService {
   ): Observable<{ mensaje: string; programas_creados: number }> {
     return this.http.post<{ mensaje: string; programas_creados: number }>(
       `${this.base}/programas/importar-mwb/confirm`,
+      payload
+    );
+  }
+
+  checkMWBDuplicates(
+    payload: MWBImportConfirmRequest
+  ): Observable<{ duplicados: Array<{ semana_iso: number; ano: number; titulo_guia: string; fecha: string | null }> }> {
+    return this.http.post<{ duplicados: Array<{ semana_iso: number; ano: number; titulo_guia: string; fecha: string | null }> }>(
+      `${this.base}/programas/importar-mwb/check-duplicates`,
       payload
     );
   }

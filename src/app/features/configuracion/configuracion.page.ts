@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from '../../core/auth/auth.store';
 
@@ -11,6 +12,7 @@ interface Configuracion {
    circuito: string;
    direccion: string;
    codigo_seguridad: string;
+   tiene_sala_b: boolean | number;
 }
 
 @Component({
@@ -22,7 +24,18 @@ interface Configuracion {
     :host { display: block; }
     .animate-fadeIn { animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  `]
+  `],
+   animations: [
+      trigger('slideIn', [
+         transition(':enter', [
+            style({ opacity: 0, transform: 'translateX(100%)' }),
+            animate('400ms cubic-bezier(0.16, 1, 0.3, 1)', style({ opacity: 1, transform: 'translateX(0)' }))
+         ]),
+         transition(':leave', [
+            animate('300ms ease-in', style({ opacity: 0, transform: 'translateX(100%)' }))
+         ])
+      ])
+   ]
 })
 export class ConfiguracionPage implements OnInit {
    private http = inject(HttpClient);
@@ -34,7 +47,8 @@ export class ConfiguracionPage implements OnInit {
       nombre_congregacion: '',
       circuito: '',
       direccion: '',
-      codigo_seguridad: ''
+      codigo_seguridad: '',
+      tiene_sala_b: false
    };
 
    // Clone to check for changes
@@ -44,6 +58,7 @@ export class ConfiguracionPage implements OnInit {
    saving = signal(false);
    showSecurityCode = signal(false);
    generatingCode = signal(false);
+   notification = signal<{ message: string, type: 'success' | 'error' } | null>(null);
 
    ngOnInit() {
       this.loadConfig();
@@ -74,7 +89,8 @@ export class ConfiguracionPage implements OnInit {
          nombre_congregacion: this.config.nombre_congregacion,
          circuito: this.config.circuito,
          direccion: this.config.direccion,
-         codigo_seguridad: this.config.codigo_seguridad
+         codigo_seguridad: this.config.codigo_seguridad,
+         tiene_sala_b: this.config.tiene_sala_b ? 1 : 0
       };
 
       this.http.put<Configuracion>(this.API_URL, payload)
@@ -83,12 +99,24 @@ export class ConfiguracionPage implements OnInit {
                this.config = data;
                this.originalConfig = { ...data }; // Update original state
                this.saving.set(false);
+               this.showNotification('Configuración guardada exitosamente', 'success');
             },
             error: (err) => {
                console.error('Error guardando configuración', err);
                this.saving.set(false);
+               this.showNotification(
+                  err.error?.detail || 'Error al guardar la configuración',
+                  'error'
+               );
             }
          });
+   }
+
+   showNotification(message: string, type: 'success' | 'error' = 'success') {
+      this.notification.set({ message, type });
+      setTimeout(() => {
+         this.notification.set(null);
+      }, 4000);
    }
 
    regenerateSecurityCode() {
@@ -119,11 +147,13 @@ export class ConfiguracionPage implements OnInit {
                }
 
                this.generatingCode.set(false);
+               this.showNotification('Código de seguridad actualizado', 'success');
             },
             error: (err) => {
                console.error('Error actualizando código', err);
                this.config.codigo_seguridad = oldCode; // Revert on error
                this.generatingCode.set(false);
+               this.showNotification('Error al regenerar el código', 'error');
             }
          });
    }
@@ -133,7 +163,8 @@ export class ConfiguracionPage implements OnInit {
       return this.config.nombre_congregacion !== this.originalConfig.nombre_congregacion ||
          this.config.circuito !== this.originalConfig.circuito ||
          this.config.direccion !== this.originalConfig.direccion ||
-         this.config.codigo_seguridad !== this.originalConfig.codigo_seguridad;
+         this.config.codigo_seguridad !== this.originalConfig.codigo_seguridad ||
+         !!this.config.tiene_sala_b !== !!this.originalConfig.tiene_sala_b;
    }
 
    canEdit() {

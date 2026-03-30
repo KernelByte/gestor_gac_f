@@ -31,6 +31,7 @@ export interface InformeConPublicador {
    observaciones: string | null;
    es_paux_mes: boolean; // Managed by frontend toggle
    tiene_informe: boolean;
+   notificaciones_enviadas?: number;
 }
 
 export interface ResumenMensual {
@@ -199,6 +200,18 @@ export interface InformeHistorialEdit {
    cursos_biblicos: number;
    observaciones: string | null;
    privilegio: string | null;
+}
+
+export interface NotificarRequest {
+   id_publicador: number;
+   id_periodo: number;
+}
+
+export interface NotificarResponse {
+   token: string;
+   url_publica: string;
+   telefono: string | null;
+   mensaje_wa: string;
 }
 
 

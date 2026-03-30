@@ -386,6 +386,44 @@ export class InformesMainPage implements OnInit {
     });
   }
 
+  notificarWhatsApp(pub: InformeConPublicador) {
+    const periodoId = this.getPeriodoId();
+    if (!periodoId) return;
+
+    this.saving.set(true);
+    this.informesService.generarTokenNotificacion({
+      id_publicador: pub.id_publicador,
+      id_periodo: periodoId
+    }).subscribe({
+      next: (res) => {
+        this.saving.set(false);
+        const encodedMsg = encodeURIComponent(res.mensaje_wa);
+        
+        let waUrl = `https://wa.me/?text=${encodedMsg}`;
+        if (res.telefono && res.telefono.trim() !== '') {
+          // Limpiar teléfono (quitar +, espacios, guiones)
+          const cleanPhone = res.telefono.replace(/[\+\-\s()]/g, '');
+          waUrl = `https://wa.me/${cleanPhone}?text=${encodedMsg}`;
+          
+          // Abrir WhatsApp en nueva pestaña
+          window.open(waUrl, '_blank');
+          this.showToast('Enlace generado', 'success', 'Se ha abierto WhatsApp para enviar el mensaje.');
+          
+          // Actualizar contador visualmente
+          pub.notificaciones_enviadas = (pub.notificaciones_enviadas || 0) + 1;
+        } else {
+          // Si no tiene teléfono, mostrar error explicativo
+          this.showToast('Sin Teléfono', 'error', 'El publicador no tiene un número configurado. Por favor, edita su ficha y agrega su teléfono primero.');
+        }
+      },
+      error: (err) => {
+        this.saving.set(false);
+        const detail = err.error?.detail || 'No se pudo generar el enlace de WhatsApp.';
+        this.showToast('Error', 'error', detail);
+      }
+    });
+  }
+
   showToast(title: string, type: 'success' | 'error' | 'info' = 'success', text?: string) {
     this.toastMessage.set({ title, type, text });
     setTimeout(() => this.toastMessage.set(null), type === 'error' ? 8000 : 5000);

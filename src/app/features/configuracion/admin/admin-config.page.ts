@@ -111,7 +111,7 @@ export class AdminConfigPage implements OnInit {
          circuito: ['', [Validators.required]],
          direccion: ['', [Validators.required]],
          codigo_seguridad: [''],
-         tiene_sala_b: [0]
+         tiene_sala_b: [false]
       });
    }
 
@@ -161,7 +161,7 @@ export class AdminConfigPage implements OnInit {
             circuito: cong.circuito,
             direccion: cong.direccion || '',
             codigo_seguridad: cong.codigo_seguridad,
-            tiene_sala_b: cong.tiene_sala_b || 0
+            tiene_sala_b: !!cong.tiene_sala_b
          });
          this.panelOpen.set(true);
       }

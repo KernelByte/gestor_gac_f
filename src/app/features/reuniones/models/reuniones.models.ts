@@ -17,6 +17,7 @@ export interface AsignacionDraft {
   id_publicador: number;
   nombre_completo: string;
   es_reemplazo: boolean;
+  sala?: string;
   estado: 'draft' | 'conflict' | 'confirmado';
   alternativos: CandidatoAlternativo[];
   _swapped?: boolean;
@@ -105,14 +106,18 @@ export interface ParteParsed {
   nombre_parte: string;
   seccion: string;
   duracion_minutos: number;
-  privilegios_permitidos: string[];
+  privilegios_permitidos?: string[];
   requiere_pareja: boolean;
   aplica_sala_b: boolean;
+  es_informativa: boolean;
   orden_visual: number;
+  fuente_informacion?: string;
+  semana_ordinal?: number;
 }
 
 export interface SemanaParsed {
   titulo_semana: string;
+  lectura_semanal?: string;
   partes: ParteParsed[];
 }
 
@@ -126,6 +131,7 @@ export interface SemanaConfirm {
   ano: number;
   fecha_lunes: string;
   titulo_semana: string;
+  lectura_semanal?: string;
   partes: ParteParsed[];
 }
 
@@ -156,4 +162,33 @@ export interface AlgorithmParamsResponse {
 
 export interface AlgorithmParamsUpdate {
   parametros: Record<string, number>;
+}
+
+export interface PlantillaParteDetail {
+  id_parte?: number;
+  nombre_parte: string;
+  seccion: string;
+  duracion_minutos?: number;
+  privilegios_permitidos: string[];
+  requiere_pareja: boolean;
+  aplica_sala_b: boolean;
+  es_informativa: boolean;
+  orden_visual: number;
+  fuente_informacion?: string;
+  semana_ordinal?: number;
+}
+
+export interface PlantillaDetailResponse {
+  id_plantilla: number;
+  nombre: string;
+  tipo: string;
+  tiene_sala_b: boolean;
+  activo: boolean;
+  partes: PlantillaParteDetail[];
+}
+
+export interface PlantillaUpdateRequest {
+  nombre?: string;
+  tiene_sala_b?: boolean;
+  partes?: PlantillaParteDetail[];
 }

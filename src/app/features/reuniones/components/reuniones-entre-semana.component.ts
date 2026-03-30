@@ -44,12 +44,7 @@ import {
           </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-          <button
-            (click)="irConfiguracion()"
-            class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Configuracion
-          </button>
+  // ── Navigation ─────────────────────────────────────────────────
           <button
             (click)="openModal()"
             [disabled]="estado() === 'loading'"
@@ -159,7 +154,7 @@ import {
 
           <!-- Parts list -->
           <div class="flex-1 overflow-y-auto simple-scrollbar divide-y divide-slate-200 dark:divide-slate-800">
-            @for (asig of semana.partes; track asig.id_programa_parte) {
+            @for (asig of semana.partes; track asig.id_programa_parte + (asig.sala || 'Principal')) {
               <div
                 [class]="parteCardClass(asig)"
                 class="group px-6 py-3.5 transition-colors">
@@ -172,7 +167,12 @@ import {
                       [class]="asig.estado === 'conflict' ? 'bg-red-400' : asig._swapped ? 'bg-amber-400' : 'bg-purple-300 dark:bg-purple-600'">
                     </span>
                     <div class="min-w-0">
-                      <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight">{{ asig.nombre_parte }}</p>
+                      <div class="flex items-center gap-2">
+                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight">{{ asig.nombre_parte }}</p>
+                        @if (asig.sala === 'Auxiliar') {
+                          <span class="px-1.5 py-0.5 rounded bg-slate-700 dark:bg-slate-600 text-white text-[9px] font-black uppercase tracking-tighter shrink-0">SALA B</span>
+                        }
+                      </div>
                       <div class="flex items-center gap-1.5 mt-0.5">
                         @if (asig.estado === 'conflict') {
                           <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800/50">
@@ -589,10 +589,6 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     });
   }
 
-  // ── Navigation ─────────────────────────────────────────────────
-  irConfiguracion(): void {
-    this.router.navigate(['/reuniones/configuracion']);
-  }
 
   // ── CSS helpers ────────────────────────────────────────────────
   estadoBadgeClass = computed(() => {

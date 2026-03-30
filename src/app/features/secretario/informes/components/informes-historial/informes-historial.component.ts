@@ -34,6 +34,7 @@ export class InformesHistorialComponent implements OnChanges {
    historial = signal<HistorialAnualOut | null>(null);
    loading = signal<boolean>(false);
    selectedPublicadorId = signal<number | null>(null);
+   showMobileList = signal<boolean>(true);
 
    // Filters
    filterGrupoId = signal<number | null>(null);
@@ -155,6 +156,11 @@ export class InformesHistorialComponent implements OnChanges {
 
    selectPublicador(id: number) {
       this.selectedPublicadorId.set(id);
+      this.showMobileList.set(false);
+   }
+
+   volverLista() {
+      this.showMobileList.set(true);
    }
 
    // --- Edit Modal State ---

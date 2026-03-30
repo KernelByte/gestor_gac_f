@@ -56,7 +56,7 @@
                 </svg>
               </div>
             </div>
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <p class="font-semibold text-slate-800 dark:text-slate-100 text-sm truncate">{{ pub.nombre_completo }}</p>
               <div class="flex flex-wrap gap-1 items-center mt-0.5">
                 <ng-container *ngFor="let role of getRoles(pub)">
@@ -73,6 +73,20 @@
                 </ng-container>
               </div>
             </div>
+            <button
+              type="button"
+              [title]="(pub.notificaciones_enviadas ?? 0) > 0 ? 'Notificado ' + pub.notificaciones_enviadas + ' veces. Volver a notificar.' : 'Solicitar informe mediante WhatsApp'"
+              (click)="notifyWhatsApp.emit(pub)"
+              class="relative opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity ml-1 shrink-0 w-8 h-8 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-full flex items-center justify-center border border-[#25D366]/30 shadow-sm"
+              [class.!opacity-100]="(pub.notificaciones_enviadas ?? 0) > 0"
+            >
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.031 0C5.385 0 0 5.385 0 12.031a12.022 12.022 0 001.624 6.075L.036 24l6.095-1.597a11.979 11.979 0 005.9 1.547h.005c6.643 0 12.028-5.385 12.028-12.03S18.674 0 12.031 0zm0 22.012c-1.898 0-3.755-.51-5.385-1.474l-.387-.228-4 1.05.105-3.899-.25-.398A9.998 9.998 0 012.053 12.03 c0-5.525 4.498-10.024 10.025-10.024A10.022 10.022 0 0122.067 12a9.998 9.998 0 01-10.036 10.012zM17.5 14.537c-.3-.15-1.782-.878-2.057-.978-.276-.1-.476-.15-.676.15-.2.3-.778.978-.95 1.178-.173.2-.348.225-.648.075-.3-.15-1.272-.468-2.42-1.5-.89-.8-1.49-1.79-1.664-2.09-.175-.3 0-.46.15-.61.135-.133.3-.346.45-.52.15-.173.2-.296.3-.496.1-.2.05-.375-.025-.525-.075-.15-.675-1.63-.925-2.23-.243-.591-.49-.51-.675-.519-.175-.01-.375-.01-.575-.01a1.1 1.1 0 00-.792.368c-.276.3-.1.5 0 .6-.1 0 0 0 0 0 .1.1 0 .3.5.076.223.328.775 1.408 1.9 2.5 1.468 1.417 2.483 1.84 2.83 2.013.35.174.55.15.75-.025.2-.175.875-.85 1.125-1.15.25-.3.475-.25.775-.15.3.1 1.9 2.7.228 3.1z"/>
+              </svg>
+              <div *ngIf="(pub.notificaciones_enviadas ?? 0) > 0" class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#25D366] text-[9px] font-black text-white shadow-sm ring-2 ring-white dark:ring-slate-900 border border-white/20">
+                {{ (pub.notificaciones_enviadas ?? 0) > 9 ? '9+' : pub.notificaciones_enviadas }}
+              </div>
+            </button>
           </div>
         </td>
 
@@ -204,7 +218,23 @@
       >
         <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
           <p class="font-bold text-slate-900 dark:text-white text-sm truncate flex-1 min-w-0">{{ pub.nombre_completo }}</p>
-          <div class="flex gap-2 shrink-0">
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- Botón WhatsApp Móvil -->
+            <button
+              (click)="notifyWhatsApp.emit(pub)"
+              class="relative w-8 h-8 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-full flex items-center justify-center border border-[#25D366]/30 shadow-sm shrink-0"
+              [title]="(pub.notificaciones_enviadas ?? 0) > 0 ? 'Notificado ' + pub.notificaciones_enviadas + ' veces. Volver a notificar.' : 'Notificar por WhatsApp'"
+            >
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.031 0C5.385 0 0 5.385 0 12.031a12.022 12.022 0 001.624 6.075L.036 24l6.095-1.597a11.979 11.979 0 005.9 1.547h.005c6.643 0 12.028-5.385 12.028-12.03S18.674 0 12.031 0zm0 22.012c-1.898 0-3.755-.51-5.385-1.474l-.387-.228-4 1.05.105-3.899-.25-.398A9.998 9.998 0 012.053 12.03 c0-5.525 4.498-10.024 10.025-10.024A10.022 10.022 0 0122.067 12a9.998 9.998 0 01-10.036 10.012zM17.5 14.537c-.3-.15-1.782-.878-2.057-.978-.276-.1-.476-.15-.676.15-.2.3-.778.978-.95 1.178-.173.2-.348.225-.648.075-.3-.15-1.272-.468-2.42-1.5-.89-.8-1.49-1.79-1.664-2.09-.175-.3 0-.46.15-.61.135-.133.3-.346.45-.52.15-.173.2-.296.3-.496.1-.2.05-.375-.025-.525-.075-.15-.675-1.63-.925-2.23-.243-.591-.49-.51-.675-.519-.175-.01-.375-.01-.575-.01a1.1 1.1 0 00-.792.368c-.276.3-.1.5 0 .6-.1 0 0 0 0 0 .1.1 0 .3.5.076.223.328.775 1.408 1.9 2.5 1.468 1.417 2.483 1.84 2.83 2.013.35.174.55.15.75-.025.2-.175.875-.85 1.125-1.15.25-.3.475-.25.775-.15.3.1 1.9 2.7.228 3.1z"/>
+              </svg>
+              <div *ngIf="(pub.notificaciones_enviadas ?? 0) > 0" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#25D366] text-[9px] font-black text-white shadow-sm ring-2 ring-white dark:ring-slate-900 border border-white/20">
+                {{ (pub.notificaciones_enviadas ?? 0) > 9 ? '9+' : pub.notificaciones_enviadas }}
+              </div>
+            </button>
+
+            <!-- Togglers Si/No -->
+            <div class="flex gap-1.5 shrink-0">
             <label class="flex items-center cursor-pointer">
               <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="getInformeValue(pub, 'participo')" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="true" />
               <span class="px-3 py-1.5 rounded-lg text-sm font-bold" [class.bg-brand-purple]="getInformeValue(pub, 'participo')" [class.text-white]="getInformeValue(pub, 'participo')" [class.bg-slate-100]="!getInformeValue(pub, 'participo')" [class.text-slate-500]="!getInformeValue(pub, 'participo')" [class.dark:bg-slate-800]="!getInformeValue(pub, 'participo')" [class.dark:text-slate-400]="!getInformeValue(pub, 'participo')">Sí</span>
@@ -241,9 +271,9 @@
   </div>
 </div>
 
-<!-- Footer fijo en móvil / normal en escritorio -->
+<!-- Footer fijo (sticky al fondo de este contenedor) -->
 <div
-  class="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t-2 border-slate-200 dark:border-slate-800 p-4 sm:relative sm:inset-auto sm:p-4 sm:border-t shadow-[0_-4px_12px_rgba(0,0,0,0.08)] dark:shadow-none sm:shadow-[0_-1px_2px_rgba(0,0,0,0.02)]"
+  class="sticky bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95 border-t-2 border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]"
 >
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 max-w-4xl mx-auto">
     <div class="md:hidden text-center min-h-[1.25rem]">
