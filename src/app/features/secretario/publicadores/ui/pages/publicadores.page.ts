@@ -1104,6 +1104,63 @@ interface TableColumn {
                      </div>
                 </div>
 
+                <!-- Section: Login Simple (PIN) — solo en edición -->
+                <div *ngIf="editingPublicador()" class="space-y-4 animate-fadeIn">
+                    <div class="flex items-center gap-3 py-2">
+                        <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">App Móvil · Login Simple</span>
+                        <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                    </div>
+
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-4">
+                        <!-- PIN Display -->
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Código PIN</p>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-lg font-black tracking-widest"
+                                          [ngClass]="editingPublicador()?.permite_login_simple ? 'text-slate-800 dark:text-white' : 'text-slate-400 line-through'">
+                                        {{ editingPublicador()?.codigo_pin || '—' }}
+                                    </span>
+                                    <button *ngIf="editingPublicador()?.codigo_pin"
+                                            type="button"
+                                            (click)="copyPin(editingPublicador()?.codigo_pin)"
+                                            title="Copiar PIN"
+                                            class="p-1.5 rounded-md text-slate-400 hover:text-brand-orange hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    </button>
+                                </div>
+                                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Comunicar al publicador junto con el código de congregación</p>
+                            </div>
+
+                            <!-- Regenerar PIN -->
+                            <button type="button"
+                                    (click)="regenerarPin(editingPublicador()!.id_publicador)"
+                                    [disabled]="savingPin()"
+                                    class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-brand-orange hover:text-brand-orange transition-all disabled:opacity-50 shrink-0">
+                                <svg class="w-3.5 h-3.5" [ngClass]="savingPin() ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                Nuevo PIN
+                            </button>
+                        </div>
+
+                        <!-- Toggle login simple -->
+                        <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
+                            <div>
+                                <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Login simple habilitado</p>
+                                <p class="text-[10px] text-slate-400 dark:text-slate-500">Si se deshabilita, debe usar correo y contraseña</p>
+                            </div>
+                            <button type="button"
+                                    (click)="toggleLoginSimple(editingPublicador()!.id_publicador)"
+                                    [disabled]="savingPin()"
+                                    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50"
+                                    [ngClass]="editingPublicador()?.permite_login_simple ? 'bg-brand-orange' : 'bg-slate-300 dark:bg-slate-600'">
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform"
+                                      [ngClass]="editingPublicador()?.permite_login_simple ? 'translate-x-6' : 'translate-x-1'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- TAB: TEOCRÁTICO is next -->
 
                 <!-- TAB: TEOCRÁTICO -->
@@ -1203,6 +1260,15 @@ interface TableColumn {
                                  </div>
                              </div>
                          </div>
+                       </div>
+
+                       <!-- Fecha Inicio Informe (Editable in side panel) -->
+                       <div class="space-y-2">
+                           <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                               Fecha Inicio Informe
+                           </label>
+                           <app-date-picker formControlName="fecha_inicio_informe" placeholder="Seleccionar fecha"></app-date-picker>
                        </div>
                        
                        <!-- Privilegios Management Section (Only in Edit Mode) -->
@@ -1720,6 +1786,66 @@ interface TableColumn {
           </div>
       </div>
 
+      <!-- Start Date Selection Modal (New Registration) -->
+      <div *ngIf="showStartDateModal()" class="fixed inset-0 z-[65] flex items-center justify-center p-4">
+          <!-- Backdrop -->
+          <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" (click)="showStartDateModal.set(false)"></div>
+          
+          <!-- Modal Card -->
+          <div class="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-[420px] w-full animate-fadeInUp border border-slate-100 dark:border-slate-700">
+             
+             <!-- Icon Header -->
+             <div class="flex items-center gap-4 mb-6">
+                <div class="w-14 h-14 rounded-2xl bg-brand-orange/10 flex items-center justify-center shrink-0">
+                    <svg class="w-7 h-7 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-slate-900 dark:text-white leading-tight">Configuración de Informe</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mt-1">Paso Final</p>
+                </div>
+             </div>
+
+             <!-- Content -->
+             <div class="space-y-5">
+                 <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                     Para completar el registro de <strong class="text-slate-900 dark:text-white">{{ publicadorForm.get('primer_nombre')?.value }} {{ publicadorForm.get('primer_apellido')?.value }}</strong>, por favor selecciona desde qué mes comenzará a informar en esta congregación.
+                 </p>
+
+                 <div class="space-y-2">
+                    <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+                       <span class="w-1.5 h-1.5 rounded-full bg-brand-orange shadow-[0_0_8px_rgba(249,115,22,0.4)]"></span>
+                       Fecha de inicio de informe
+                    </label>
+                    <app-date-picker 
+                      [ngModel]="publicadorForm.get('fecha_inicio_informe')?.value" 
+                      (ngModelChange)="publicadorForm.get('fecha_inicio_informe')?.setValue($event)"
+                      placeholder="Seleccionar mes y año"
+                    ></app-date-picker>
+                    <p class="text-[10px] text-slate-400 font-medium italic mt-1.5">
+                      * Se recomienda seleccionar el primer día del mes correspondiente.
+                    </p>
+                 </div>
+             </div>
+
+             <!-- Actions -->
+             <div class="flex items-center gap-3 mt-8">
+                <button (click)="showStartDateModal.set(false)" class="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    Atrás
+                </button>
+                <button 
+                  (click)="confirmCreationWithStartDate()" 
+                  [disabled]="!publicadorForm.get('fecha_inicio_informe')?.value || saving()" 
+                  class="flex-1 py-3 rounded-xl bg-gradient-to-r from-brand-orange to-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none"
+                >
+                    <svg *ngIf="saving()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span>Finalizar Registro</span>
+                </button>
+              </div>
+          </div>
+      </div>
+
       <!-- Toast Notification -->
       <div 
         *ngIf="toastMessage()" 
@@ -1815,6 +1941,7 @@ export class PublicadoresListComponent implements OnInit {
   saving = signal(false);
   exporting = signal(false);
   showExportMenu = signal(false);
+  showStartDateModal = signal(false);
   viewingPublicador = signal<Publicador | null>(null);
   editingPublicador = signal<Publicador | null>(null);
   publicadorToDelete = signal<Publicador | null>(null);
@@ -1922,6 +2049,59 @@ export class PublicadoresListComponent implements OnInit {
     setTimeout(() => this.toastMessage.set(null), 3000);
   }
 
+  // ── Login Simple (PIN) ────────────────────────────────────────────────────
+  savingPin = signal(false);
+
+  async regenerarPin(idPublicador: number) {
+    if (this.savingPin()) return;
+    this.savingPin.set(true);
+    try {
+      const updated = await lastValueFrom(
+        this.http.patch<any>(`/api/publicadores/${idPublicador}/regenerar-pin`, {})
+      );
+      const current = this.editingPublicador();
+      if (current) {
+        this.editingPublicador.set({ ...current, codigo_pin: updated.codigo_pin });
+      }
+      this.facade.load();
+      this.showToast(`Nuevo PIN: ${updated.codigo_pin}`, 'success');
+    } catch {
+      this.showToast('Error al regenerar el PIN', 'error');
+    } finally {
+      this.savingPin.set(false);
+    }
+  }
+
+  async toggleLoginSimple(idPublicador: number) {
+    if (this.savingPin()) return;
+    this.savingPin.set(true);
+    try {
+      const updated = await lastValueFrom(
+        this.http.patch<any>(`/api/publicadores/${idPublicador}/toggle-login-simple`, {})
+      );
+      const current = this.editingPublicador();
+      if (current) {
+        this.editingPublicador.set({ ...current, permite_login_simple: updated.permite_login_simple });
+      }
+      this.facade.load();
+      const estado = updated.permite_login_simple ? 'habilitado' : 'deshabilitado';
+      this.showToast(`Login simple ${estado}`, 'success');
+    } catch {
+      this.showToast('Error al cambiar el estado del login', 'error');
+    } finally {
+      this.savingPin.set(false);
+    }
+  }
+
+  copyPin(pin?: string | null) {
+    if (!pin) return;
+    navigator.clipboard.writeText(pin).then(() => {
+      this.showToast(`PIN copiado: ${pin}`, 'success');
+    }).catch(() => {
+      this.showToast('No se pudo copiar el PIN', 'error');
+    });
+  }
+
   // Role Check - Solo admin y gestor pueden ver el ID
   isAdminOrGestor = computed(() => {
     const user = this.authStore.user();
@@ -1966,7 +2146,8 @@ export class PublicadoresListComponent implements OnInit {
       id_grupo_publicador: [null],
       id_congregacion_publicador: [null],
       id_estado_publicador: [null, Validators.required],
-      consentimiento_datos: [false]
+      consentimiento_datos: [false],
+      fecha_inicio_informe: [null]
     });
 
     this.contactoForm = this.fb.group({
@@ -2274,9 +2455,18 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   formatDateExport(dateStr: string): string {
+    if (!dateStr) return '';
     try {
+      // Parse YYYY-MM-DD or full ISO string without timezone shift
+      const parts = dateStr.split('T')[0].split('-');
+      if (parts.length === 3) {
+        const [year, month, day] = parts;
+        return `${day}/${month}/${year}`;
+      }
       const d = new Date(dateStr);
-      return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const userTimezoneOffset = d.getTimezoneOffset() * 60000;
+      const adjustedDate = new Date(d.getTime() + userTimezoneOffset);
+      return adjustedDate.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
     } catch {
       return dateStr;
     }
@@ -2533,7 +2723,8 @@ export class PublicadoresListComponent implements OnInit {
       id_grupo_publicador: p.id_grupo_publicador || null,
       id_congregacion_publicador: p.id_congregacion_publicador || null,
       id_estado_publicador: p.id_estado_publicador || null,
-      consentimiento_datos: p.consentimiento_datos || false
+      consentimiento_datos: p.consentimiento_datos || false,
+      fecha_inicio_informe: p.fecha_inicio_informe || null
     });
     this.loadPublicadorPrivilegios(p.id_publicador); // Fetch privileges for this publisher
     this.loadContactos(); // Fetch emergency contacts for this publisher
@@ -2632,12 +2823,52 @@ export class PublicadoresListComponent implements OnInit {
     try {
       if (this.editingPublicador()) {
         await this.facade.update(this.editingPublicador()!.id_publicador, data);
+        this.closePanel();
       } else {
-        await this.facade.create({ ...data, id_congregacion_publicador: id_congregacion! });
+        // En lugar de crear inmediatamente, abrimos el modal para pedir la fecha de inicio de informe
+        this.saving.set(false);
+        this.showStartDateModal.set(true);
       }
-      this.closePanel();
     } catch (error) {
       console.error('Error saving:', error);
+      this.saving.set(false);
+    }
+  }
+
+  /**
+   * Finaliza la creación del publicador después de que el usuario selecciona la fecha de inicio de informe.
+   */
+  async confirmCreationWithStartDate() {
+    if (this.publicadorForm.invalid) return;
+
+    this.saving.set(true);
+    const rawData = this.publicadorForm.value;
+
+    const data = {
+      ...rawData,
+      ungido: rawData.ungido ? 'Sí' : null,
+      segundo_nombre: rawData.segundo_nombre || null,
+      segundo_apellido: rawData.segundo_apellido || null,
+      telefono: rawData.telefono || null,
+      direccion: rawData.direccion || null,
+      barrio: rawData.barrio || null,
+      fecha_nacimiento: rawData.fecha_nacimiento || null,
+      fecha_bautismo: rawData.fecha_bautismo || null,
+      sexo: rawData.sexo || null,
+      id_grupo_publicador: rawData.id_grupo_publicador || null,
+      fecha_inicio_informe: rawData.fecha_inicio_informe // Aseguramos que se envíe la fecha seleccionada
+    };
+
+    const id_congregacion = this.congregacionContext.effectiveCongregacionId();
+
+    try {
+      await this.facade.create({ ...data, id_congregacion_publicador: id_congregacion! });
+      this.showStartDateModal.set(false);
+      this.closePanel();
+      this.showToast('Publicador creado correctamente', 'success');
+    } catch (error) {
+      console.error('Error creating publicador:', error);
+      this.showToast('Error al crear el publicador', 'error');
     } finally {
       this.saving.set(false);
     }

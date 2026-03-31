@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, inject, signal, computed, effect } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, inject, signal, computed, effect, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InformesService } from '../../services/informes.service';
@@ -21,6 +21,7 @@ import { InformesHistorialEditComponent } from '../informes-historial-edit/infor
 })
 export class InformesHistorialComponent implements OnChanges {
    private informesService = inject(InformesService);
+   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
    @Input() selectedAno: number = new Date().getFullYear();
    @Input() congregacionId: number = 0;
@@ -130,6 +131,10 @@ export class InformesHistorialComponent implements OnChanges {
       if (!this.congregacionId) return;
 
       this.loading.set(true);
+
+      // Guardar la posición actual del scroll
+      const scrollPosition = this.scrollContainer?.nativeElement.scrollTop || 0;
+
       this.informesService.getHistorialAnual(
          this.congregacionId,
          this.selectedAno,
@@ -139,6 +144,13 @@ export class InformesHistorialComponent implements OnChanges {
          next: (data) => {
             this.historial.set(data);
             this.loading.set(false);
+
+            // Restaurar la posición del scroll después de que Angular actualice la vista
+            setTimeout(() => {
+               if (this.scrollContainer) {
+                  this.scrollContainer.nativeElement.scrollTop = scrollPosition;
+               }
+            }, 0);
             
             // Retain selection if current selection is still in new list
             const currentSelected = this.selectedPublicadorId();

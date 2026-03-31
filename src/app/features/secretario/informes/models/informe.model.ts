@@ -165,6 +165,8 @@ export interface PublicadorHistorial {
    nombre_completo: string;
    id_grupo: number | null;
    nombre_grupo: string | null;
+   id_estado?: number | null;
+   nombre_estado?: string | null;
    es_precursor_regular: boolean;
    privilegio_actual?: string | null;
    informes: InformeHistorialItem[];

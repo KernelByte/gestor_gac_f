@@ -111,10 +111,7 @@ export class InformesHistorialEditComponent implements OnInit {
       // Auto-select first available month in new year
       const mesesInYear = this.availableMeses();
       if (mesesInYear.length > 0) {
-         const currentMesExists = mesesInYear.some(m => m.num === this.selectedMes());
-         if (!currentMesExists) {
-            this.selectedMes.set(mesesInYear[0].num);
-         }
+         this.selectedMes.set(mesesInYear[0].num);
       }
 
       this.loadDetails();

@@ -1,17 +1,3 @@
-export interface Publicador {
-  id_publicador: number;
-  primer_nombre: string;
-  segundo_nombre?: string | null;
-  primer_apellido: string;
-  segundo_apellido?: string | null;
-  telefono?: string | null;
-  id_congregacion_publicador?: number | null;
-  id_grupo_publicador?: number | null;
-  id_estado_publicador?: number | null;
-  fecha_inactividad?: string | null;
-  fecha_inicio_informe?: string | null;
-}
-
 // TODO: Añadir Value Objects y validaciones del dominio según necesidades.
 export interface Publicador {
   id_publicador: number;
@@ -35,4 +21,6 @@ export interface Publicador {
   fecha_actualizacion?: string;
   fecha_inactividad?: string | null;
   fecha_inicio_informe?: string | null;
+  codigo_pin?: string | null;
+  permite_login_simple?: boolean;
 }
