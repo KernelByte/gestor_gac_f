@@ -50,10 +50,13 @@ export class InformesHistorialComponent implements OnChanges {
       if (!data) return [];
 
       let pubs = data.publicadores;
+      const currentFilter = this.activeFilter();
 
-      // Filter by "Precursores Only" mode
-      if (this.activeFilter() === 'precursores') {
+      // Filter by Mode (Precursores or Group)
+      if (currentFilter === 'precursores') {
          pubs = pubs.filter(p => p.es_precursor_regular);
+      } else if (typeof currentFilter === 'number') {
+         pubs = pubs.filter(p => p.grupo_numero === currentFilter);
       }
 
       // Filter by Search

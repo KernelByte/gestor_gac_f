@@ -159,4 +159,13 @@
   .numeric-tabular {
     font-variant-numeric: tabular-nums;
   }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
