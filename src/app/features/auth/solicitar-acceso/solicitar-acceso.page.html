@@ -1,0 +1,178 @@
+<div
+  class="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-brand-purple selection:text-white supports-[min-height:100dvh]:min-h-[100dvh]">
+
+  <!-- Improved Animated Gradient Background -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div
+      class="absolute bottom-[-10%] left-[-10%] w-[90vw] h-[90vw] sm:w-[500px] sm:h-[500px] bg-brand-purple/20 rounded-full blur-[80px] sm:blur-[120px] animate-blob mix-blend-screen">
+    </div>
+    <div
+      class="absolute top-[-10%] right-[-10%] w-[90vw] h-[90vw] sm:w-[500px] sm:h-[500px] bg-indigo-600/15 rounded-full blur-[80px] sm:blur-[120px] animate-blob animation-delay-2000 mix-blend-screen">
+    </div>
+    <div
+      class="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] sm:w-[800px] sm:h-[800px] bg-brand-purple/5 rounded-full blur-[80px] sm:blur-[100px]">
+    </div>
+    <div
+      class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light">
+    </div>
+  </div>
+
+  <!-- Content Wrapper -->
+  <div class="relative z-10 w-full max-w-[500px] flex flex-col items-center">
+
+    <!-- Branding Section -->
+    <div class="flex flex-col items-center mb-6 sm:mb-10 w-full animate-fadeIn">
+      <div class="text-center space-y-2">
+        <h2 class="text-4xl font-black tracking-tight text-white select-none drop-shadow-xl">
+          Sistema <span
+            class="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple via-violet-400 to-indigo-400 saturate-150 animate-shine bg-[length:200%_auto]">GAC</span>
+        </h2>
+        <div class="flex items-center justify-center gap-3 opacity-60">
+          <div class="h-px w-12 bg-gradient-to-r from-transparent to-slate-500"></div>
+          <p class="text-[10px] text-slate-300 font-bold tracking-[0.4em] uppercase antialiased">
+            Solicitud de Acceso
+          </p>
+          <div class="h-px w-12 bg-gradient-to-l from-transparent to-slate-500"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Card -->
+    <div
+      class="w-full bg-slate-900/60 backdrop-blur-2xl rounded-[2rem] border border-white/10 shadow-[0_8px_50px_rgb(0,0,0,0.5)] p-6 sm:p-10 transition-all duration-500 relative overflow-hidden ring-1 ring-white/5">
+
+      <!-- Success State -->
+      <div *ngIf="success()" class="text-center space-y-6 animate-fadeIn py-8">
+        <div class="flex justify-center">
+          <div class="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center border border-emerald-500/30">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <h1 class="text-2xl font-black text-white">¡Solicitud Enviada!</h1>
+          <p class="text-slate-400">
+            Hemos recibido tus datos correctamente. El administrador del sistema revisará tu solicitud y se pondrá en contacto contigo a la brevedad.
+          </p>
+        </div>
+        <p class="text-xs text-slate-500 pt-4">Redirigiendo al inicio de sesión...</p>
+        <button routerLink="/login" class="text-brand-purple font-bold hover:text-violet-300 transition-colors">Volver ahora</button>
+      </div>
+
+      <!-- Form State -->
+      <div *ngIf="!success()">
+        <div class="mb-6 sm:mb-8 text-center relative z-10">
+          <h1 class="text-2xl font-black text-white mb-2 tracking-tight">Regístrate para acceso</h1>
+          <p class="text-slate-400 text-sm font-medium">
+            Completa tus datos para validar tu ingreso al sistema
+          </p>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+          
+          <!-- Nombre -->
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-slate-300 ml-1">Nombre completo</label>
+            <div class="relative group">
+              <input formControlName="nombre" type="text"
+                class="w-full h-11 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200"
+                placeholder="Tu nombre y apellido">
+            </div>
+            <div *ngIf="form.controls['nombre'].touched && form.controls['nombre'].invalid" class="text-xs text-rose-400 mt-1 ml-1">Campo requerido (mín. 3 caracteres)</div>
+          </div>
+
+          <!-- Email -->
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-slate-300 ml-1">Correo electrónico</label>
+            <div class="relative group">
+              <input formControlName="email" type="email"
+                class="w-full h-11 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200"
+                placeholder="nombre@ejemplo.com">
+            </div>
+            <div *ngIf="form.controls['email'].touched && form.controls['email'].invalid" class="text-xs text-rose-400 mt-1 ml-1">Correo electrónico no válido</div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Congregación -->
+            <div class="space-y-1.5">
+              <label class="block text-sm font-semibold text-slate-300 ml-1">Congregación</label>
+              <div class="relative group">
+                <input formControlName="congregacion" type="text"
+                  class="w-full h-11 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200"
+                  placeholder="Nombre de tu congregación">
+              </div>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="space-y-1.5">
+              <label class="block text-sm font-semibold text-slate-300 ml-1">Teléfono</label>
+              <div class="relative group">
+                <input formControlName="telefono" type="text"
+                  class="w-full h-11 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200"
+                  placeholder="+57 ...">
+              </div>
+            </div>
+          </div>
+
+          <!-- Observaciones -->
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-slate-300 ml-1">Observaciones</label>
+            <div class="relative group">
+              <textarea formControlName="observaciones" rows="3"
+                class="w-full bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block p-4 placeholder-slate-600 transition-all duration-200 resize-none"
+                placeholder="Indica cualquier dato adicional que nos ayude a validar tu identidad"></textarea>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-4">
+            <button type="submit" [disabled]="form.invalid || loading()"
+              class="group relative w-full flex justify-center py-4 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-purple to-violet-600 hover:to-brand-purple hover:shadow-[0_0_20px_rgba(109,40,217,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-brand-purple disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98] overflow-hidden shadow-lg shadow-purple-900/20">
+
+              <div
+                class="absolute inset-0 -translate-x-full group-hover:animate-[shine_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent">
+              </div>
+
+              <div *ngIf="loading()" class="absolute inset-0 flex items-center justify-center bg-inherit">
+                <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+              </div>
+
+              <span [class.opacity-0]="loading()">Enviar Solicitud</span>
+            </button>
+
+            <div *ngIf="error()"
+              class="mt-4 text-center text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl flex items-center justify-center gap-2 animate-fadeIn font-medium">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{{ error() }}</span>
+            </div>
+          </div>
+        </form>
+
+        <!-- Back to Login -->
+        <div class="mt-8 pt-6 border-t border-white/5 text-center">
+          <p class="text-sm text-slate-500">
+            ¿Ya tienes cuenta? <a routerLink="/login"
+              class="font-bold text-white hover:text-brand-purple transition-colors p-2 inline-block">Inicia sesión</a>
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer
+      class="mt-8 flex items-center justify-center gap-8 text-xs text-slate-500 font-medium tracking-wide z-10 w-full opacity-80 hover:opacity-100 transition-opacity pb-4">
+      <span class="text-slate-600">v1.2 • GAC System</span>
+    </footer>
+
+  </div>
+</div>
