@@ -1332,7 +1332,7 @@ interface TableColumn {
                                                <span *ngIf="!pp.fecha_fin" class="text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-md">Activo</span>
                                            </div>
                                        </div>
-                                       <button type="button" (click)="deletePublicadorPrivilegio(pp.id_publicador_privilegio)" class="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 transition-all">
+                                       <button type="button" (click)="confirmDeletePrivilegio(pp.id_publicador_privilegio)" class="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 transition-all">
                                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                        </button>
                                    </div>
@@ -1859,6 +1859,44 @@ interface TableColumn {
           </div>
       </div>
 
+      <!-- Delete Privilege Modal (Sutil) -->
+      <div *ngIf="deletePrivilegioModalOpen()" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <!-- Backdrop -->
+          <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity" (click)="closeDeletePrivilegioModal()"></div>
+          
+          <!-- Modal Card -->
+          <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-[360px] w-full animate-fadeInUp border border-slate-100 dark:border-slate-700">
+             
+             <!-- Icon Header -->
+             <div class="flex items-center gap-4 mb-4">
+                <div class="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">¿Eliminar privilegio?</h3>
+                    <p class="text-[11px] text-slate-500 font-medium">Se borrará del historial del publicador</p>
+                </div>
+             </div>
+
+             <!-- Content -->
+             <p class="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+                 Esta acción eliminará permanentemente este registro del historial. ¿Estás seguro de continuar?
+             </p>
+
+             <!-- Actions -->
+             <div class="flex items-center gap-2">
+                <button (click)="closeDeletePrivilegioModal()" class="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    Cancelar
+                </button>
+                <button (click)="executeDeletePrivilegio()" class="flex-1 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs hover:bg-slate-800 dark:hover:bg-white transition-all active:scale-95 shadow-sm">
+                    Confirmar
+                </button>
+              </div>
+          </div>
+      </div>
+
       <!-- Toast Notification -->
       <div 
         *ngIf="toastMessage()" 
@@ -2056,6 +2094,20 @@ export class PublicadoresListComponent implements OnInit {
 
   // Toast Notification
   toastMessage = signal<{ text: string, type: 'success' | 'error' } | null>(null);
+
+  // Modal de confirmación para privilegios
+  privilegioToDelete = signal<number | null>(null);
+  deletePrivilegioModalOpen = signal(false);
+
+  confirmDeletePrivilegio(id: number) {
+    this.privilegioToDelete.set(id);
+    this.deletePrivilegioModalOpen.set(true);
+  }
+
+  closeDeletePrivilegioModal() {
+    this.deletePrivilegioModalOpen.set(false);
+    this.privilegioToDelete.set(null);
+  }
 
   showToast(text: string, type: 'success' | 'error' = 'success') {
     this.toastMessage.set({ text, type });
@@ -3193,7 +3245,6 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   deletePublicadorPrivilegio(id: number) {
-    if (!confirm('¿Estás seguro de eliminar este privilegio del historial?')) return;
     const pub = this.editingPublicador();
     if (!pub) return;
 
@@ -3204,6 +3255,14 @@ export class PublicadoresListComponent implements OnInit {
       },
       error: (err) => this.showToast('Error al eliminar: ' + err.message, 'error')
     });
+  }
+
+  executeDeletePrivilegio() {
+    const id = this.privilegioToDelete();
+    if (id !== null) {
+      this.deletePublicadorPrivilegio(id);
+      this.closeDeletePrivilegioModal();
+    }
   }
 
 }
