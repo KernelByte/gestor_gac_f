@@ -971,15 +971,14 @@ interface TableColumn {
               <form [formGroup]="publicadorForm" (ngSubmit)="onSubmit()" class="space-y-6 pb-20"> <!-- pb-20 para espacio extra al final -->
 
                 <!-- TAB: PERSONAL -->
-                <!-- TAB: PERSONAL -->
                 <div *ngIf="activeTab() === 'personal'" class="space-y-8 animate-fadeIn">
                      
                      <!-- Section: Identidad -->
                      <div class="space-y-6">
                         <div class="flex items-center gap-3 py-2">
-                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Identidad</span>
-                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
@@ -1014,25 +1013,8 @@ interface TableColumn {
                                </label>
                                <input formControlName="segundo_apellido" (input)="capitalizeInput('segundo_apellido')" placeholder="Ej: García" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                              </div>
-                        </div>
-                     </div>
 
-                     <!-- Section: Contacto -->
-                     <div class="space-y-6">
-                        <div class="flex items-center gap-3 py-2">
-                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-                           <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Contacto</span>
-                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
-                                  <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></span>
-                                  Teléfono
-                               </label>
-                               <input formControlName="telefono" placeholder="+57 300..." class="w-full h-11 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
-                            </div>
+                             <!-- Fila 3: Sexo y Nacimiento -->
                              <div class="col-span-1 space-y-2">
                                 <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
@@ -1043,7 +1025,7 @@ interface TableColumn {
                                     <button
                                       type="button"
                                       (click)="sexoDropdownOpen.set(!sexoDropdownOpen())"
-                                      class="w-full h-11 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-left shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none flex items-center justify-between"
+                                      class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-left shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none flex items-center justify-between"
                                       [class.text-slate-500]="!publicadorForm.get('sexo')?.value"
                                       [class.dark:text-slate-400]="!publicadorForm.get('sexo')?.value"
                                       [class.text-slate-800]="publicadorForm.get('sexo')?.value"
@@ -1084,195 +1066,258 @@ interface TableColumn {
                                     <div *ngIf="sexoDropdownOpen()" (click)="sexoDropdownOpen.set(false)" class="fixed inset-0 z-40 bg-transparent"></div>
                                 </div>
                              </div>
+                             <div class="col-span-1 space-y-2">
+                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                  Fecha Nacimiento
+                                </label>
+                                <app-date-picker formControlName="fecha_nacimiento" placeholder="Seleccionar fecha"></app-date-picker>
+                             </div>
+                        </div>
+                     </div>
+
+                     <!-- Section: Ubicación y Contacto -->
+                     <div class="space-y-6">
+                        <div class="flex items-center gap-3 py-2">
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                           <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Ubicación y Contacto</span>
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                         </div>
 
-                         <div class="col-span-2 space-y-2">
-                            <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                               <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                               Dirección / Barrio
-                            </label>
-                            <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="col-span-2 sm:col-span-1 space-y-2">
+                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></span>
+                                  Teléfono
+                               </label>
+                               <input formControlName="telefono" placeholder="+57 300..." class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                            </div>
+
+                            <div class="col-span-2 sm:col-span-1 space-y-2">
+                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                   Barrio
+                                </label>
+                                <input formControlName="barrio" placeholder="Ej: El Poblado" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                            </div>
+
+                            <div class="col-span-2 space-y-2">
+                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                   Dirección Completa
+                                </label>
+                                <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                            </div>
+                        </div>
+                     </div>
+
+                     <!-- Section: Acceso App Móvil (Sutil) -->
+                     <div class="space-y-4 pt-4">
+                        <div class="flex items-center gap-3 py-2">
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                           <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Acceso App Móvil</span>
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                         </div>
 
-                        <div class="space-y-2">
-                            <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
-                               <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
-                               Fecha Nacimiento
-                            </label>
-                            <app-date-picker formControlName="fecha_nacimiento" placeholder="Seleccionar fecha"></app-date-picker>
+                        <div class="rounded-2xl border border-sky-100 dark:border-sky-900/30 bg-sky-50/30 dark:bg-sky-900/10 p-5 space-y-4">
+                            <!-- Toggle login simple -->
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Acceso habilitado</p>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Permite al publicador ingresar con su PIN o correo</p>
+                                </div>
+                                <button type="button"
+                                        (click)="publicadorForm.get('permite_login_simple')?.setValue(!publicadorForm.get('permite_login_simple')?.value)"
+                                        class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none"
+                                        [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-600'">
+                                    <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform"
+                                          [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'translate-x-6' : 'translate-x-1'"></span>
+                                </button>
+                            </div>
+
+                            <!-- PIN Display (Only in Edit Mode or if access enabled) -->
+                            <div *ngIf="editingPublicador()" class="pt-4 border-t border-sky-100 dark:border-sky-900/20 flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">Código PIN</p>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-mono text-xl font-black tracking-widest"
+                                              [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 line-through'">
+                                            {{ editingPublicador()?.codigo_pin || '—' }}
+                                        </span>
+                                        <button *ngIf="editingPublicador()?.codigo_pin"
+                                                type="button"
+                                                (click)="copyPin(editingPublicador()?.codigo_pin)"
+                                                title="Copiar PIN"
+                                                class="p-1.5 rounded-md text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
+                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Regenerar PIN -->
+                                <button type="button"
+                                        (click)="regenerarPin(editingPublicador()!.id_publicador)"
+                                        [disabled]="savingPin() || !publicadorForm.get('permite_login_simple')?.value"
+                                        class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-sky-100 dark:border-sky-900/30 text-xs font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all disabled:opacity-50 shrink-0 shadow-sm">
+                                    <svg class="w-3.5 h-3.5" [ngClass]="savingPin() ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                    Nuevo PIN
+                                </button>
+                            </div>
                         </div>
                      </div>
                 </div>
 
-                <!-- Section: Login Simple (PIN) — solo en edición -->
-                <div *ngIf="editingPublicador()" class="space-y-4 animate-fadeIn">
-                    <div class="flex items-center gap-3 py-2">
-                        <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">App Móvil · Login Simple</span>
-                        <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                    </div>
-
-                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-4">
-                        <!-- PIN Display -->
-                        <div class="flex items-center justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Código PIN</p>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-mono text-lg font-black tracking-widest"
-                                          [ngClass]="editingPublicador()?.permite_login_simple ? 'text-slate-800 dark:text-white' : 'text-slate-400 line-through'">
-                                        {{ editingPublicador()?.codigo_pin || '—' }}
-                                    </span>
-                                    <button *ngIf="editingPublicador()?.codigo_pin"
-                                            type="button"
-                                            (click)="copyPin(editingPublicador()?.codigo_pin)"
-                                            title="Copiar PIN"
-                                            class="p-1.5 rounded-md text-slate-400 hover:text-brand-orange hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">
-                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                    </button>
-                                </div>
-                                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Comunicar al publicador junto con el código de congregación</p>
-                            </div>
-
-                            <!-- Regenerar PIN -->
-                            <button type="button"
-                                    (click)="regenerarPin(editingPublicador()!.id_publicador)"
-                                    [disabled]="savingPin()"
-                                    class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-brand-orange hover:text-brand-orange transition-all disabled:opacity-50 shrink-0">
-                                <svg class="w-3.5 h-3.5" [ngClass]="savingPin() ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                                Nuevo PIN
-                            </button>
-                        </div>
-
-                        <!-- Toggle login simple -->
-                        <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
-                            <div>
-                                <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Login simple habilitado</p>
-                                <p class="text-[10px] text-slate-400 dark:text-slate-500">Si se deshabilita, debe usar correo y contraseña</p>
-                            </div>
-                            <button type="button"
-                                    (click)="toggleLoginSimple(editingPublicador()!.id_publicador)"
-                                    [disabled]="savingPin()"
-                                    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50"
-                                    [ngClass]="editingPublicador()?.permite_login_simple ? 'bg-brand-orange' : 'bg-slate-300 dark:bg-slate-600'">
-                                <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform"
-                                      [ngClass]="editingPublicador()?.permite_login_simple ? 'translate-x-6' : 'translate-x-1'"></span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB: TEOCRÁTICO is next -->
-
                 <!-- TAB: TEOCRÁTICO -->
-                <div *ngIf="activeTab() === 'teocratico'" class="space-y-6 animate-fadeIn bg-white dark:bg-slate-900">
+                <div *ngIf="activeTab() === 'teocratico'" class="space-y-6 animate-fadeIn">
                        
-                       <!-- Header -->
-                       <div class="flex items-center gap-3 py-2">
-                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-                           <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Servicio</span>
-                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                       <!-- Section: Asignación -->
+                       <div class="space-y-4">
+                           <div class="flex items-center gap-3 py-2">
+                               <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                               <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Asignación</span>
+                               <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                           </div>
+
+                           <div class="grid grid-cols-2 gap-4">
+                               <div *ngIf="isAdminOrGestor()" class="col-span-2 sm:col-span-1 space-y-2">
+                                    <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                       <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                                       Congregación
+                                    </label>
+                                    <div class="relative">
+                                        <select formControlName="id_congregacion_publicador" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
+                                            <option [ngValue]="null">Seleccionar</option>
+                                            <option *ngFor="let c of congregaciones()" [ngValue]="c.id_congregacion">{{ c.nombre_congregacion }}</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                        </div>
+                                    </div>
+                               </div>
+
+                               <div class="col-span-2 sm:col-span-1 space-y-2">
+                                    <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                       <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                                       Grupo de Servicio
+                                    </label>
+                                    <div class="relative">
+                                        <select [compareWith]="compareFn" formControlName="id_grupo_publicador" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
+                                            <option [ngValue]="null">Sin asignar</option>
+                                            <option *ngFor="let g of grupos(); trackBy: trackGroupById" [ngValue]="g.id_grupo">{{ g.nombre_grupo }}</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                        </div>
+                                    </div>
+                               </div>
+                           </div>
                        </div>
 
+                       <!-- Section: Estado Espiritual -->
+                       <div class="space-y-4">
+                           <div class="flex items-center gap-3 py-2">
+                               <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                               <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Estado Espiritual</span>
+                               <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                           </div>
 
-
-                       <div *ngIf="isAdminOrGestor()" class="space-y-2">
-                            <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                               <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-                               Congregación
-                            </label>
-                            <div class="relative">
-                                <select formControlName="id_congregacion_publicador" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
-                                    <option [ngValue]="null">Seleccionar</option>
-                                    <option *ngFor="let c of congregaciones()" [ngValue]="c.id_congregacion">{{ c.nombre_congregacion }}</option>
-                                </select>
-                                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                                </div>
-                            </div>
-                       </div>
-
-                       <div class="space-y-2">
-                            <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                               <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
-                               Grupo de Servicio
-                            </label>
-                            <div class="relative">
-                                <select [compareWith]="compareFn" formControlName="id_grupo_publicador" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
-                                    <option [ngValue]="null">Sin asignar</option>
-                                    <option *ngFor="let g of grupos(); trackBy: trackGroupById" [ngValue]="g.id_grupo">{{ g.nombre_grupo }}</option>
-                                </select>
-                                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                                </div>
-                            </div>
-                       </div>
-
-                       <div class="grid grid-cols-2 gap-4">
-                         <div class="col-span-1 space-y-2">
-                             <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                               <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                               Fecha Bautismo
-                             </label>
-                             <app-date-picker formControlName="fecha_bautismo" placeholder="Seleccionar fecha"></app-date-picker>
-                         </div>
-                         <div class="col-span-1 space-y-2">
-                             <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                               <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                               Estado
-                             </label>
-                             <div class="relative">
-                                 <!-- Backdrop for click outside -->
-                                 <div *ngIf="estadoDropdownOpen()" (click)="estadoDropdownOpen.set(false)" class="fixed inset-0 z-10"></div>
-                                 
-                                 <!-- Trigger Button -->
-                                 <button 
-                                   type="button" 
-                                   (click)="toggleEstadoDropdown()"
-                                   class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none flex items-center justify-between"
-                                 >
-                                    <span [class.text-slate-400]="!publicadorForm.get('id_estado_publicador')?.value" [class.dark:text-slate-500]="!publicadorForm.get('id_estado_publicador')?.value" [class.dark:text-slate-200]="publicadorForm.get('id_estado_publicador')?.value">
-                                      {{ getSelectedEstadoName() }}
-                                    </span>
-                                    <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="estadoDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                                 </button>
-
-                                 <!-- Dropdown Menu -->
-                                 <div *ngIf="estadoDropdownOpen()" class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-20 overflow-hidden animate-fadeIn">
-                                     <div class="max-h-48 overflow-y-auto py-1">
+                           <div class="grid grid-cols-2 gap-4">
+                                <div class="col-span-1 space-y-2">
+                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                       <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                       Estado
+                                     </label>
+                                     <div class="relative">
+                                         <!-- Backdrop for click outside -->
+                                         <div *ngIf="estadoDropdownOpen()" (click)="estadoDropdownOpen.set(false)" class="fixed inset-0 z-10"></div>
+                                         
+                                         <!-- Trigger Button -->
                                          <button 
-                                           type="button"
-                                           (click)="selectEstado(null)"
-                                           class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-between"
-                                         >
-                                             Seleccionar
-                                             <svg *ngIf="!publicadorForm.get('id_estado_publicador')?.value" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                         </button>
-                                         <button 
-                                           *ngFor="let e of estadosPublicador()" 
                                            type="button" 
-                                           (click)="selectEstado(e.id_estado)"
-                                           class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange transition-colors flex items-center justify-between"
+                                           (click)="toggleEstadoDropdown()"
+                                           class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none flex items-center justify-between"
                                          >
-                                             {{ e.nombre_estado }}
-                                             <svg *ngIf="publicadorForm.get('id_estado_publicador')?.value == e.id_estado" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            <span [class.text-slate-400]="!publicadorForm.get('id_estado_publicador')?.value" [class.dark:text-slate-500]="!publicadorForm.get('id_estado_publicador')?.value" [class.dark:text-slate-200]="publicadorForm.get('id_estado_publicador')?.value">
+                                              {{ getSelectedEstadoName() }}
+                                            </span>
+                                            <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="estadoDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                                          </button>
+
+                                         <!-- Dropdown Menu -->
+                                         <div *ngIf="estadoDropdownOpen()" class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-20 overflow-hidden animate-fadeIn">
+                                             <div class="max-h-48 overflow-y-auto py-1">
+                                                 <button 
+                                                   type="button"
+                                                   (click)="selectEstado(null)"
+                                                   class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-between"
+                                                 >
+                                                     Seleccionar
+                                                     <svg *ngIf="!publicadorForm.get('id_estado_publicador')?.value" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                 </button>
+                                                 <button 
+                                                   *ngFor="let e of estadosPublicador()" 
+                                                   type="button" 
+                                                   (click)="selectEstado(e.id_estado)"
+                                                   class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange transition-colors flex items-center justify-between"
+                                                 >
+                                                     {{ e.nombre_estado }}
+                                                     <svg *ngIf="publicadorForm.get('id_estado_publicador')?.value == e.id_estado" class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                 </button>
+                                             </div>
+                                         </div>
                                      </div>
                                  </div>
-                             </div>
-                         </div>
-                       </div>
+                                 <div class="col-span-1 space-y-2">
+                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                       <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                       Fecha Bautismo
+                                     </label>
+                                     <app-date-picker formControlName="fecha_bautismo" placeholder="Seleccionar fecha"></app-date-picker>
+                                 </div>
+                                 <div class="col-span-2 space-y-2">
+                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                         Fecha Inicio Informe
+                                     </label>
+                                     <app-date-picker formControlName="fecha_inicio_informe" placeholder="Seleccionar fecha"></app-date-picker>
+                                 </div>
+                           </div>
 
-                       <!-- Fecha Inicio Informe (Editable in side panel) -->
-                       <div class="space-y-2">
-                           <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                               Fecha Inicio Informe
-                           </label>
-                           <app-date-picker formControlName="fecha_inicio_informe" placeholder="Seleccionar fecha"></app-date-picker>
+                           <!-- Ungido Toggle -->
+                           <div class="pt-2">
+                              <button 
+                                type="button" 
+                                (click)="toggleUngido()"
+                                [class.ring-2]="publicadorForm.get('ungido')?.value"
+                                [class.ring-brand-orange]="publicadorForm.get('ungido')?.value"
+                                [class.bg-orange-50]="publicadorForm.get('ungido')?.value"
+                                [class.border-brand-orange]="publicadorForm.get('ungido')?.value"
+                                [class.bg-white]="!publicadorForm.get('ungido')?.value"
+                                [class.dark:bg-slate-800]="!publicadorForm.get('ungido')?.value"
+                                [class.border-slate-200]="!publicadorForm.get('ungido')?.value"
+                                [class.dark:border-slate-700]="!publicadorForm.get('ungido')?.value"
+                                class="w-full h-14 rounded-xl border flex items-center justify-between px-4 transition-all duration-200 group"
+                              >
+                                  <div class="flex items-center gap-3">
+                                      <div class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                                           [ngClass]="publicadorForm.get('ungido')?.value ? 'bg-brand-orange text-white' : 'bg-slate-100 text-slate-400'">
+                                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                                      </div>
+                                      <div class="text-left">
+                                          <span class="block text-sm font-bold" [ngClass]="publicadorForm.get('ungido')?.value ? 'text-brand-orange' : 'text-slate-700'">Participante de los emblemas</span>
+                                          <span class="text-xs text-slate-500 font-medium">Ungido</span>
+                                      </div>
+                                  </div>
+                                  <div class="w-5 h-5 rounded-full border flex items-center justify-center transition-colors"
+                                       [ngClass]="publicadorForm.get('ungido')?.value ? 'border-brand-orange bg-brand-orange' : 'border-slate-300'">
+                                      <svg *ngIf="publicadorForm.get('ungido')?.value" class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                  </div>
+                              </button>
+                           </div>
                        </div>
                        
-                       <!-- Privilegios Management Section (Only in Edit Mode) -->
-                       <div *ngIf="editingPublicador()" class="pt-4 space-y-4 border-t border-slate-100 mt-4">
+                       <!-- Section: Privilegios (Only in Edit Mode) -->
+                       <div *ngIf="editingPublicador()" class="pt-4 space-y-4 border-t border-slate-100 dark:border-slate-800 mt-4">
                            <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Privilegios</label>
 
                            <!-- List of Privileges -->
@@ -1292,7 +1337,7 @@ interface TableColumn {
                                        </button>
                                    </div>
                                </div>
-                               <div *ngIf="publicadorPrivilegios().length === 0" class="text-center py-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                               <div *ngIf="publicadorPrivilegios().length === 0" class="text-center py-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                                    <p class="text-xs text-slate-400">Sin privilegios asignados</p>
                                </div>
                            </div>
@@ -1372,42 +1417,10 @@ interface TableColumn {
                                </div>
                            </div>
                        </div>
-                       <div *ngIf="!editingPublicador()" class="mt-6 p-4 bg-slate-50 rounded-xl text-center border border-dashed border-slate-200">
+                       <div *ngIf="!editingPublicador()" class="mt-6 p-4 bg-slate-50 rounded-xl text-center border border-dashed border-slate-200 dark:border-slate-700">
                            <p class="text-xs text-slate-400">Guarda el publicador para gestionar sus privilegios.</p>
                        </div>
-
-                       <!-- Privilegios Management Section (Only in Edit Mode) -->
-                       <div class="pt-2 space-y-3">
-                          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Privilegios Especiales</label>
-                          <button 
-                            type="button" 
-                            (click)="toggleUngido()"
-                            [class.ring-2]="publicadorForm.get('ungido')?.value"
-                            [class.ring-brand-orange]="publicadorForm.get('ungido')?.value"
-                            [class.bg-orange-50]="publicadorForm.get('ungido')?.value"
-                            [class.border-brand-orange]="publicadorForm.get('ungido')?.value"
-                            [class.bg-white]="!publicadorForm.get('ungido')?.value"
-                            [class.dark:bg-slate-800]="!publicadorForm.get('ungido')?.value"
-                            [class.border-slate-200]="!publicadorForm.get('ungido')?.value"
-                            [class.dark:border-slate-700]="!publicadorForm.get('ungido')?.value"
-                            class="w-full h-14 rounded-xl border flex items-center justify-between px-4 transition-all duration-200 group"
-                          >
-                              <div class="flex items-center gap-3">
-                                  <div class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                                       [ngClass]="publicadorForm.get('ungido')?.value ? 'bg-brand-orange text-white' : 'bg-slate-100 text-slate-400'">
-                                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
-                                  </div>
-                                  <div class="text-left">
-                                      <span class="block text-sm font-bold" [ngClass]="publicadorForm.get('ungido')?.value ? 'text-brand-orange' : 'text-slate-700'">Participante de los emblemas</span>
-                                      <span class="text-xs text-slate-500 font-medium">Ungido</span>
-                                  </div>
-                              </div>
-                              <div class="w-5 h-5 rounded-full border flex items-center justify-center transition-colors"
-                                   [ngClass]="publicadorForm.get('ungido')?.value ? 'border-brand-orange bg-brand-orange' : 'border-slate-300'">
-                                  <svg *ngIf="publicadorForm.get('ungido')?.value" class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                              </div>
-                          </button>
-                      </div>                </div>
+                </div>
 
                 <!-- TAB: EMERGENCIA -->
                 <div *ngIf="activeTab() === 'emergencia'" class="space-y-6 animate-fadeIn">
@@ -2072,27 +2085,6 @@ export class PublicadoresListComponent implements OnInit {
     }
   }
 
-  async toggleLoginSimple(idPublicador: number) {
-    if (this.savingPin()) return;
-    this.savingPin.set(true);
-    try {
-      const updated = await lastValueFrom(
-        this.http.patch<any>(`/api/publicadores/${idPublicador}/toggle-login-simple`, {})
-      );
-      const current = this.editingPublicador();
-      if (current) {
-        this.editingPublicador.set({ ...current, permite_login_simple: updated.permite_login_simple });
-      }
-      this.facade.load();
-      const estado = updated.permite_login_simple ? 'habilitado' : 'deshabilitado';
-      this.showToast(`Login simple ${estado}`, 'success');
-    } catch {
-      this.showToast('Error al cambiar el estado del login', 'error');
-    } finally {
-      this.savingPin.set(false);
-    }
-  }
-
   copyPin(pin?: string | null) {
     if (!pin) return;
     navigator.clipboard.writeText(pin).then(() => {
@@ -2147,7 +2139,8 @@ export class PublicadoresListComponent implements OnInit {
       id_congregacion_publicador: [null],
       id_estado_publicador: [null, Validators.required],
       consentimiento_datos: [false],
-      fecha_inicio_informe: [null]
+      fecha_inicio_informe: [null],
+      permite_login_simple: [true]
     });
 
     this.contactoForm = this.fb.group({
@@ -2698,7 +2691,8 @@ export class PublicadoresListComponent implements OnInit {
       ungido: false,
       id_grupo_publicador: null,
       id_congregacion_publicador: null,
-      id_estado_publicador: estadoActivo ? estadoActivo.id_estado : null
+      id_estado_publicador: estadoActivo ? estadoActivo.id_estado : null,
+      permite_login_simple: true
     });
     this.publicadorPrivilegios.set([]); // Clear privileges for new form
     this.panelOpen.set(true);
@@ -2724,7 +2718,8 @@ export class PublicadoresListComponent implements OnInit {
       id_congregacion_publicador: p.id_congregacion_publicador || null,
       id_estado_publicador: p.id_estado_publicador || null,
       consentimiento_datos: p.consentimiento_datos || false,
-      fecha_inicio_informe: p.fecha_inicio_informe || null
+      fecha_inicio_informe: p.fecha_inicio_informe || null,
+      permite_login_simple: p.permite_login_simple ?? true
     });
     this.loadPublicadorPrivilegios(p.id_publicador); // Fetch privileges for this publisher
     this.loadContactos(); // Fetch emergency contacts for this publisher
@@ -2824,13 +2819,15 @@ export class PublicadoresListComponent implements OnInit {
       if (this.editingPublicador()) {
         await this.facade.update(this.editingPublicador()!.id_publicador, data);
         this.closePanel();
+        this.showToast('Cambios guardados correctamente', 'success');
       } else {
         // En lugar de crear inmediatamente, abrimos el modal para pedir la fecha de inicio de informe
-        this.saving.set(false);
         this.showStartDateModal.set(true);
       }
     } catch (error) {
       console.error('Error saving:', error);
+      this.showToast('Error al guardar los cambios', 'error');
+    } finally {
       this.saving.set(false);
     }
   }
@@ -2896,16 +2893,13 @@ export class PublicadoresListComponent implements OnInit {
     try {
       await this.facade.remove(p.id_publicador);
       this.showToast('Publicador eliminado correctamente', 'success');
-
-      // Force close modal on success
-      this.isDeleting.set(false);
       this.deleteModalOpen.set(false);
       this.publicadorToDelete.set(null);
-
     } catch (err: any) {
       console.error('Error deleting publicador:', err);
       const msg = err?.error?.detail || 'No se pudo eliminar el publicador';
       this.showToast(msg, 'error');
+    } finally {
       this.isDeleting.set(false);
     }
   }
