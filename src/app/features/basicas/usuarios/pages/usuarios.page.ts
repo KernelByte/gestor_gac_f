@@ -5,7 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractContro
 import { trigger, transition, style, animate } from '@angular/animations';
 import { lastValueFrom } from 'rxjs';
 
-import { UsuariosService, Rol, Congregacion, UsuarioCreatePublicador } from '../services/usuarios.service';
+import { UsuariosService, Rol, Congregacion, Estado, UsuarioCreatePublicador } from '../services/usuarios.service';
 import { Usuario } from '../models/usuario.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
@@ -56,6 +56,7 @@ export class UsuariosPage implements OnInit {
    usuarios = signal<Usuario[]>([]);
    roles = signal<Rol[]>([]);
    congregaciones = signal<Congregacion[]>([]);
+   estados = signal<Estado[]>([]);
    publicadores = signal<any[]>([]);
 
    // Modo restringido para Coordinador/Secretario
@@ -78,6 +79,7 @@ export class UsuariosPage implements OnInit {
    roleDropdownOpen = signal(false);
    congDropdownOpen = signal(false);
    pubDropdownOpen = signal(false); // New
+   estadoDropdownOpen = signal(false); // New
    idTypeDropdownOpen = signal(false); // ID Type dropdown
 
    // ID Types Definition
@@ -107,6 +109,7 @@ export class UsuariosPage implements OnInit {
          id_rol_usuario: [null, Validators.required],
          id_congregacion: [null],
          id_usuario_publicador: [null],
+         id_usuario_estado: [1, Validators.required], // 1 = Activo por defecto
          telefono: [''],
          tipo_identificacion: ['CC'],
          id_identificacion: ['']
@@ -199,6 +202,31 @@ export class UsuariosPage implements OnInit {
 
    isPubSelected(id: number): boolean {
       return this.userForm.get('id_usuario_publicador')?.value === id;
+   }
+
+   // --- Estado Helpers ---
+
+   getSelectedEstadoName(): string | null {
+      const id = this.userForm.get('id_usuario_estado')?.value;
+      if (!id) return null;
+      
+      const estado = this.estados().find(e => e.id_estado == id);
+      if (estado) return estado.nombre_estado;
+
+      // Fallback para estados de cuenta de usuario
+      if (id == 1) return 'Usuario activo';
+      if (id == 2) return 'Usuario desactivado';
+      
+      return null;
+   }
+
+   selectEstado(id: number) {
+      this.userForm.patchValue({ id_usuario_estado: id });
+      this.estadoDropdownOpen.set(false);
+   }
+
+   isEstadoSelected(id: number): boolean {
+      return this.userForm.get('id_usuario_estado')?.value == id;
    }
 
    // --- ID Type Helpers ---
@@ -308,6 +336,9 @@ export class UsuariosPage implements OnInit {
          this.roles.set(roles);
          const congs = await lastValueFrom(this.service.getCongregaciones());
          this.congregaciones.set(congs);
+         // Filtrar solo estados de tipo 'Sistema' que corresponden a la cuenta de usuario
+         const estados = await lastValueFrom(this.service.getEstados('Sistema'));
+         this.estados.set(estados);
       } catch (err) {
          console.error('Aux data error', err);
       }
@@ -326,7 +357,10 @@ export class UsuariosPage implements OnInit {
    openCreatePanel() {
       console.log('openCreatePanel clicked');
       this.editingUser.set(null);
-      this.userForm.reset({ tipo_identificacion: 'CC' });
+      this.userForm.reset({ 
+         tipo_identificacion: 'CC',
+         id_usuario_estado: 1 // Activo
+      });
 
       // Re-enable password validators for new users
       this.userForm.get('contrasena')?.setValidators([Validators.required, Validators.minLength(6)]);
@@ -377,6 +411,7 @@ export class UsuariosPage implements OnInit {
          id_rol_usuario: u.id_rol_usuario,
          id_congregacion: u.id_congregacion,
          id_usuario_publicador: u.id_usuario_publicador,
+         id_usuario_estado: u.id_usuario_estado,
          telefono: u.telefono,
          tipo_identificacion: u.tipo_identificacion,
          id_identificacion: u.id_identificacion
@@ -427,6 +462,7 @@ export class UsuariosPage implements OnInit {
             const updatePayload: any = {
                nombre: formValue.nombre,
                correo: formValue.correo,
+               id_usuario_estado: formValue.id_usuario_estado,
                telefono: formValue.telefono,
                tipo_identificacion: formValue.tipo_identificacion,
                id_identificacion: formValue.id_identificacion
@@ -551,6 +587,22 @@ export class UsuariosPage implements OnInit {
          'bg-sky-50 text-sky-700 border border-sky-100/50 dark:bg-sky-900/20 dark:text-sky-400 dark:border-sky-800/30'
       ];
       return colors[id % colors.length];
+   }
+
+   // --- Status Display Helpers ---
+
+   getEstadoName(u: Usuario): string {
+      const id = u.id_usuario_estado;
+      if (id === 1) return 'Activo';
+      if (id === 2) return 'Inactivo';
+      return 'Desconocido';
+   }
+
+   getEstadoBadgeStyle(u: Usuario): string {
+      const id = u.id_usuario_estado;
+      if (id === 1) return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/30';
+      if (id === 2) return 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-100/50 dark:border-red-800/30';
+      return 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-100 dark:border-slate-700';
    }
 
    clearSearch() {

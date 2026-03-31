@@ -14,6 +14,12 @@ export interface Congregacion {
    nombre_congregacion: string;
 }
 
+export interface Estado {
+   id_estado: number;
+   nombre_estado: string;
+   tipo: string;
+}
+
 @Injectable({
    providedIn: 'root'
 })
@@ -22,6 +28,7 @@ export class UsuariosService {
    private readonly API_URL = '/api/usuarios/';
    private readonly ROLES_URL = '/api/roles/';
    private readonly CONGREGACIONES_URL = '/api/congregaciones/';
+   private readonly ESTADOS_URL = '/api/estados/';
 
    getUsuarios(q?: string): Observable<Usuario[]> {
       let params: any = {};
@@ -48,6 +55,12 @@ export class UsuariosService {
 
    getCongregaciones(): Observable<Congregacion[]> {
       return this.http.get<Congregacion[]>(this.CONGREGACIONES_URL);
+   }
+
+   getEstados(tipo?: string): Observable<Estado[]> {
+      let params: any = {};
+      if (tipo) params.q = tipo;
+      return this.http.get<Estado[]>(this.ESTADOS_URL, { params });
    }
 
    getPublicadores(idCongregacion?: number, soloDisponibles: boolean = false): Observable<any[]> {

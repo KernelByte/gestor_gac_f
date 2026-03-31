@@ -165,12 +165,13 @@
                            <span class="text-sm text-slate-600 dark:text-slate-400 font-mono">{{ u.telefono || '—' }}</span>
                         </td>
 
-                        <!-- Status Badge (Mock) -->
+                        <!-- Status Badge -->
                         <td class="px-6 py-4 text-center">
-                           <div
-                              class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/30">
-                              <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                              Activo
+                           <div [ngClass]="getEstadoBadgeStyle(u)"
+                              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors">
+                              <div class="w-1.5 h-1.5 rounded-full bg-current" 
+                                   [class.animate-pulse]="u.id_usuario_estado === 1"></div>
+                              {{ getEstadoName(u) }}
                            </div>
                         </td>
 
@@ -294,65 +295,59 @@
 
          <!-- Form Body -->
          <div class="flex-1 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900">
-            <div class="px-8 py-4">
-               <form [formGroup]="userForm" class="space-y-8"><div class="space-y-8"><div class="space-y-8">
+            <div class="px-8 py-6 pb-32">
+               <form [formGroup]="userForm" class="space-y-6">
 
                   <!-- Personal Info -->
-                  <div class="space-y-5">
-                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <span class="w-8 h-px bg-slate-200 dark:bg-slate-700"></span>
+                  <div class="space-y-4">
+                     <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <span class="w-6 h-px bg-slate-200 dark:bg-slate-700"></span>
                         Datos Personales
                      </h3>
 
-                     <div class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                            <div class="space-y-1">
-                              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Nombre Completo <span class="text-red-500">*</span></label>
+                              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Nombre Completo <span class="text-red-500">*</span></label>
                               <div class="relative group">
                                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
+                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                        <circle cx="12" cy="7" r="4"></circle>
                                     </svg>
                                  </div>
                                  <input formControlName="nombre" type="text"
-                                    class="block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium sm:text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
                                     [class.border-red-300]="userForm.get('nombre')?.invalid && userForm.get('nombre')?.touched"
                                     placeholder="Ej. Ana García">
                               </div>
-                              <p *ngIf="userForm.get('nombre')?.invalid && userForm.get('nombre')?.touched"
-                                 class="text-xs text-red-500 font-bold ml-1 mt-1">El nombre es requerido</p>
                            </div>
 
                            <div class="space-y-1">
-                              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Correo Electrónico <span class="text-red-500">*</span></label>
+                              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Correo Electrónico <span class="text-red-500">*</span></label>
                               <div class="relative group">
                                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
+                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
                                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
                                     </svg>
                                  </div>
                                  <input formControlName="correo" type="email"
-                                    class="block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium sm:text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
                                     [class.border-red-300]="userForm.get('correo')?.invalid && userForm.get('correo')?.touched"
                                     placeholder="ana@ejemplo.com">
                               </div>
-                              <p *ngIf="userForm.get('correo')?.hasError('required') && userForm.get('correo')?.touched"
-                                 class="text-xs text-red-500 font-bold ml-1 mt-1">El correo es requerido</p>
-                              <p *ngIf="userForm.get('correo')?.hasError('email') && userForm.get('correo')?.touched"
-                                 class="text-xs text-red-500 font-bold ml-1 mt-1">Ingrese un correo válido</p>
                            </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                            <div class="space-y-1">
-                              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Teléfono</label>
+                              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Teléfono</label>
                               <div class="relative group">
                                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
+                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                        <path
                                           d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
@@ -360,93 +355,89 @@
                                     </svg>
                                  </div>
                                  <input formControlName="telefono" type="text"
-                                    class="block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium sm:text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
                                     placeholder="Ej. 300 123 4567">
                               </div>
                            </div>
 
-                           <div class="space-y-1 relative">
-                              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 truncate" title="Tipo Documento">Tipo Documento</label>
+                           <div class="grid grid-cols-2 gap-3">
+                              <div class="space-y-1 relative">
+                                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1 truncate" title="Tipo Documento">Tipo Doc.</label>
 
-                              <button type="button" (click)="idTypeDropdownOpen.set(!idTypeDropdownOpen())"
-                                 class="w-full h-[46px] bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group">
-                                 <span [class.text-slate-400]="!userForm.get('tipo_identificacion')?.value"
-                                    class="font-medium text-slate-800 dark:text-slate-200 text-sm block truncate">
-                                    {{ getSelectedIdTypeName() || 'Seleccione' }}
-                                 </span>
-                                 <svg class="w-4 h-4 shrink-0 ml-1 text-slate-400 transition-transform duration-200"
-                                    [class.rotate-180]="idTypeDropdownOpen()" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M6 9l6 6 6-6" />
-                                 </svg>
-                              </button>
+                                 <button type="button" (click)="idTypeDropdownOpen.set(!idTypeDropdownOpen())"
+                                    class="w-full h-[38px] bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group">
+                                    <span [class.text-slate-400]="!userForm.get('tipo_identificacion')?.value"
+                                       class="font-medium text-slate-800 dark:text-slate-200 text-sm block truncate">
+                                       {{ getSelectedIdTypeName() || 'Seleccione' }}
+                                    </span>
+                                    <svg class="w-4 h-4 shrink-0 ml-1 text-slate-400 transition-transform duration-200"
+                                       [class.rotate-180]="idTypeDropdownOpen()" viewBox="0 0 24 24" fill="none"
+                                       stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                       stroke-linejoin="round">
+                                       <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                 </button>
 
-                              <div *ngIf="idTypeDropdownOpen()" (click)="idTypeDropdownOpen.set(false)"
-                                 class="fixed inset-0 z-10 cursor-default"></div>
+                                 <div *ngIf="idTypeDropdownOpen()" (click)="idTypeDropdownOpen.set(false)"
+                                    class="fixed inset-0 z-30 cursor-default"></div>
 
-                              <div *ngIf="idTypeDropdownOpen()" @fadeIn
-                                 class="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 z-20 overflow-hidden min-w-[140px] origin-top">
-                                 <div class="p-1 space-y-0.5">
-                                    <button type="button" *ngFor="let type of idTypes" (click)="selectIdType(type.code)"
-                                       class="w-full px-3 py-2 text-left text-xs sm:text-sm transition-all flex items-center justify-between rounded-lg group"
-                                       [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isIdTypeSelected(type.code), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isIdTypeSelected(type.code)}">
-                                       <span class="truncate">{{ type.name }}</span>
-                                       <svg *ngIf="isIdTypeSelected(type.code)"
-                                          class="w-4 h-4 text-[#6D28D9] shrink-0 ml-2" viewBox="0 0 24 24" fill="none"
-                                          stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                          stroke-linejoin="round">
-                                          <polyline points="20 6 9 17 4 12"></polyline>
-                                       </svg>
-                                    </button>
+                                 <div *ngIf="idTypeDropdownOpen()" @fadeIn
+                                    class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden min-w-[120px] origin-top">
+                                    <div class="p-1 space-y-0.5">
+                                       <button type="button" *ngFor="let type of idTypes" (click)="selectIdType(type.code)"
+                                          class="w-full px-3 py-1.5 text-left text-xs transition-all flex items-center justify-between rounded-lg group"
+                                          [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isIdTypeSelected(type.code), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isIdTypeSelected(type.code)}">
+                                          <span class="truncate">{{ type.name }}</span>
+                                       </button>
+                                    </div>
                                  </div>
                               </div>
-                           </div>
 
-                           <div class="space-y-1">
-                              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 truncate" title="Número ID">Número ID</label>
-                              <input formControlName="id_identificacion" type="text"
-                                 class="block w-full h-[46px] px-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium sm:text-sm text-slate-800 dark:text-slate-200"
-                                 placeholder="Ej. 12345678">
+                              <div class="space-y-1">
+                                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1 truncate" title="Número ID">Número ID</label>
+                                 <input formControlName="id_identificacion" type="text"
+                                    class="block w-full h-[38px] px-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    placeholder="Ej. 123456">
+                              </div>
                            </div>
                         </div>
                      </div>
                   </div>
 
                   <!-- Roles & Permissions -->
-                  <div class="space-y-5">
-                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <span class="w-8 h-px bg-slate-200 dark:bg-slate-700"></span>
+                  <div class="space-y-4">
+                     <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <span class="w-6 h-px bg-slate-200 dark:bg-slate-700"></span>
                         Acceso y Rol
                      </h3>
 
-                     <div class="bg-purple-50 dark:bg-purple-900/10 rounded-xl p-4 border border-purple-100 dark:border-purple-800/30">
-                        <div class="space-y-4">
+                     <div class="bg-purple-50/50 dark:bg-purple-900/10 rounded-2xl p-4 border border-purple-100/50 dark:border-purple-800/20">
+                        <div class="grid grid-cols-1 gap-4">
                            <!-- Rol fijo para Coordinador/Secretario -->
                            <div *ngIf="!isAdmin()" class="space-y-1">
-                              <label class="block text-sm font-bold text-[#6D28D9] dark:text-purple-400">Rol de Usuario</label>
+                              <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">Rol de Usuario</label>
                               <div
-                                 class="w-full bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800/30 rounded-xl px-4 py-3 flex items-center gap-2">
-                                 <svg class="w-5 h-5 text-cyan-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none"
+                                 class="w-full bg-white dark:bg-slate-900 border border-purple-100 dark:border-purple-800/30 rounded-xl px-4 py-2.5 flex items-center gap-2 shadow-sm shadow-purple-500/5">
+                                 <svg class="w-4 h-4 text-[#6D28D9] dark:text-purple-400" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2">
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                  </svg>
-                                 <span class="font-medium text-cyan-800 dark:text-cyan-200">Usuario Publicador</span>
-                                 <span class="text-xs text-cyan-600 dark:text-cyan-400 ml-auto">(asignado automáticamente)</span>
+                                 <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">Usuario Publicador</span>
+                                 <span class="text-[10px] text-slate-400 dark:text-slate-500 ml-auto font-medium">Auto</span>
                               </div>
                            </div>
 
                            <!-- Custom Role Select (Solo Admin) -->
                            <div *ngIf="isAdmin()" class="space-y-1 relative">
-                              <label class="block text-sm font-bold text-[#6D28D9] dark:text-purple-400">Rol de Usuario</label>
+                              <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">Rol de Usuario</label>
 
                               <button type="button" (click)="roleDropdownOpen.set(!roleDropdownOpen())"
-                                 class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group">
+                                 class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group">
                                  <span [class.text-slate-400]="!userForm.get('id_rol_usuario')?.value"
-                                    class="font-medium text-slate-700 dark:text-slate-200 block truncate">
+                                    class="font-medium text-slate-700 dark:text-slate-200 block truncate text-sm">
                                     {{ getSelectedRoleName() || 'Seleccione un rol...' }}
                                  </span>
-                                 <svg class="w-5 h-5 text-slate-400 transition-transform duration-200"
+                                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
                                     [class.rotate-180]="roleDropdownOpen()" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                     stroke-linejoin="round">
@@ -454,136 +445,147 @@
                                  </svg>
                               </button>
 
-                              <p *ngIf="userForm.get('id_rol_usuario')?.invalid && userForm.get('id_rol_usuario')?.touched"
-                                 class="text-xs text-red-500 font-bold ml-1 mt-1">Seleccione un rol de usuario</p>
-
                               <div *ngIf="roleDropdownOpen()" (click)="roleDropdownOpen.set(false)"
-                                 class="fixed inset-0 z-10 cursor-default"></div>
+                                 class="fixed inset-0 z-30 cursor-default"></div>
 
                               <div *ngIf="roleDropdownOpen()" @fadeIn
-                                 class="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 z-20 overflow-hidden max-h-60 overflow-y-auto simple-scrollbar origin-top">
+                                 class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden max-h-60 overflow-y-auto simple-scrollbar origin-top">
                                  <div class="p-1 space-y-0.5">
                                     <button type="button" *ngFor="let r of roles()" (click)="selectRole(r.id_rol)"
-                                       class="w-full px-4 py-2.5 text-left text-sm transition-all flex items-center justify-between rounded-lg group"
+                                       class="w-full px-4 py-2 text-sm transition-all flex items-center justify-between rounded-lg group"
                                        [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isRoleSelected(r.id_rol), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isRoleSelected(r.id_rol)}">
                                        <span>{{ r.descripcion_rol }}</span>
-                                       <svg *ngIf="isRoleSelected(r.id_rol)" class="w-4 h-4 text-[#6D28D9]"
-                                          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                          stroke-linecap="round" stroke-linejoin="round">
-                                          <polyline points="20 6 9 17 4 12"></polyline>
-                                       </svg>
                                     </button>
                                  </div>
                               </div>
                            </div>
 
-                           <!-- Custom Congregation Select (Solo Admin) -->
-                           <div *ngIf="isAdmin()" class="space-y-1 relative">
-                              <label class="block text-sm font-bold text-[#6D28D9] dark:text-purple-400">
-                                 Congregación <span *ngIf="isCongregationRequired()" class="text-red-500">*</span>
-                              </label>
+                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <!-- Custom Congregation Select (Solo Admin) -->
+                              <div *ngIf="isAdmin()" class="space-y-1 relative">
+                                 <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
+                                    Congregación <span *ngIf="isCongregationRequired()" class="text-red-500">*</span>
+                                 </label>
 
-                              <button type="button" (click)="congDropdownOpen.set(!congDropdownOpen())"
-                                 class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group"
-                                 [class.border-red-300]="userForm.get('id_congregacion')?.invalid && userForm.get('id_congregacion')?.touched">
-                                 <span [class.text-slate-400]="!userForm.get('id_congregacion')?.value"
-                                    class="font-medium text-slate-700 dark:text-slate-200 block truncate">
-                                    {{ getSelectedCongName() || 'Seleccione congregación...' }}
-                                 </span>
-                                 <svg class="w-5 h-5 text-slate-400 transition-transform duration-200"
-                                    [class.rotate-180]="congDropdownOpen()" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M6 9l6 6 6-6" />
-                                 </svg>
-                              </button>
+                                 <button type="button" (click)="congDropdownOpen.set(!congDropdownOpen())"
+                                    class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group"
+                                    [class.border-red-300]="userForm.get('id_congregacion')?.invalid && userForm.get('id_congregacion')?.touched">
+                                    <span [class.text-slate-400]="!userForm.get('id_congregacion')?.value"
+                                       class="font-medium text-slate-700 dark:text-slate-200 block truncate text-sm">
+                                       {{ getSelectedCongName() || 'Seleccione...' }}
+                                    </span>
+                                    <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                                       [class.rotate-180]="congDropdownOpen()" viewBox="0 0 24 24" fill="none"
+                                       stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                       stroke-linejoin="round">
+                                       <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                 </button>
 
-                              <p *ngIf="userForm.get('id_congregacion')?.invalid && userForm.get('id_congregacion')?.touched"
-                                 class="text-xs text-red-500 font-bold ml-1">Requerido para este rol</p>
+                                 <div *ngIf="congDropdownOpen()" (click)="congDropdownOpen.set(false)"
+                                    class="fixed inset-0 z-30 cursor-default"></div>
 
-                              <div *ngIf="congDropdownOpen()" (click)="congDropdownOpen.set(false)"
-                                 class="fixed inset-0 z-10 cursor-default"></div>
-
-                              <div *ngIf="congDropdownOpen()" @fadeIn
-                                 class="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 z-20 overflow-hidden max-h-72 overflow-y-auto simple-scrollbar origin-top flex flex-col">
-
-                                 <div class="sticky top-0 bg-white dark:bg-slate-800 p-2 border-b border-slate-50 dark:border-slate-700">
-                                    <input type="text" placeholder="Buscar congregación..." [value]="congSearch()"
-                                       (input)="congSearch.set($any($event.target).value)"
-                                       class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all font-medium placeholder:font-normal text-slate-700 dark:text-slate-200 placeholder:text-slate-400">
-                                 </div>
-
-                                 <div class="p-1 space-y-0.5">
-                                    <button type="button" *ngFor="let c of filteredCongregaciones()"
-                                       (click)="selectCongregacion(c.id_congregacion)"
-                                       class="w-full px-4 py-2.5 text-left text-sm transition-all flex items-center justify-between rounded-lg group"
-                                       [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isCongSelected(c.id_congregacion), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isCongSelected(c.id_congregacion)}">
-                                       <span>{{ c.nombre_congregacion }}</span>
-                                       <svg *ngIf="isCongSelected(c.id_congregacion)" class="w-4 h-4 text-[#6D28D9] dark:text-purple-400"
-                                          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                          stroke-linecap="round" stroke-linejoin="round">
-                                          <polyline points="20 6 9 17 4 12"></polyline>
-                                       </svg>
-                                    </button>
-
-                                    <div *ngIf="filteredCongregaciones().length === 0" class="px-4 py-8 text-center">
-                                       <p class="text-xs text-slate-400 font-medium">No se encontraron resultados</p>
+                                 <div *ngIf="congDropdownOpen()" @fadeIn
+                                    class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden max-h-72 overflow-y-auto simple-scrollbar origin-top flex flex-col">
+                                    <div class="sticky top-0 bg-white dark:bg-slate-800 p-2 border-b border-slate-50 dark:border-slate-700">
+                                       <input type="text" placeholder="Buscar..." [value]="congSearch()"
+                                          (input)="congSearch.set($any($event.target).value)"
+                                          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all text-slate-700 dark:text-slate-200">
+                                    </div>
+                                    <div class="p-1 space-y-0.5">
+                                       <button type="button" *ngFor="let c of filteredCongregaciones()"
+                                          (click)="selectCongregacion(c.id_congregacion)"
+                                          class="w-full px-4 py-2 text-xs transition-all flex items-center justify-between rounded-lg group"
+                                          [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isCongSelected(c.id_congregacion), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isCongSelected(c.id_congregacion)}">
+                                          <span>{{ c.nombre_congregacion }}</span>
+                                       </button>
                                     </div>
                                  </div>
                               </div>
-                           </div>
 
-                           <!-- Custom Publisher Select -->
-                           <div class="space-y-1 relative">
-                              <label class="block text-sm font-bold text-[#6D28D9] dark:text-purple-400">
-                                 Publicador Asociado <span class="text-red-500">*</span>
-                              </label>
+                              <!-- Custom Publisher Select -->
+                              <div class="space-y-1 relative">
+                                 <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
+                                    Publicador Asociado <span class="text-red-500">*</span>
+                                 </label>
 
-                              <button type="button" (click)="pubDropdownOpen.set(!pubDropdownOpen())"
-                                 [disabled]="isAdmin() && !userForm.get('id_congregacion')?.value"
-                                 class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group disabled:opacity-50 disabled:cursor-not-allowed"
-                                 [class.border-red-300]="userForm.get('id_usuario_publicador')?.invalid && userForm.get('id_usuario_publicador')?.touched">
-                                 <span [class.text-slate-400]="!userForm.get('id_usuario_publicador')?.value"
-                                    class="font-medium text-slate-700 dark:text-slate-200 block truncate">
-                                    {{ getSelectedPubName() || 'Seleccione publicador...' }}
-                                 </span>
-                                 <svg class="w-5 h-5 text-slate-400 transition-transform duration-200"
-                                    [class.rotate-180]="pubDropdownOpen()" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M6 9l6 6 6-6" />
-                                 </svg>
-                              </button>
+                                 <button type="button" (click)="pubDropdownOpen.set(!pubDropdownOpen())"
+                                    [disabled]="isAdmin() && !userForm.get('id_congregacion')?.value"
+                                    class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group disabled:opacity-50 disabled:cursor-not-allowed"
+                                    [class.border-red-300]="userForm.get('id_usuario_publicador')?.invalid && userForm.get('id_usuario_publicador')?.touched">
+                                    <span [class.text-slate-400]="!userForm.get('id_usuario_publicador')?.value"
+                                       class="font-medium text-slate-700 dark:text-slate-200 block truncate text-sm">
+                                       {{ getSelectedPubName() || 'Seleccione...' }}
+                                    </span>
+                                    <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                                       [class.rotate-180]="pubDropdownOpen()" viewBox="0 0 24 24" fill="none"
+                                       stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                       stroke-linejoin="round">
+                                       <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                 </button>
 
-                              <p *ngIf="userForm.get('id_usuario_publicador')?.invalid && userForm.get('id_usuario_publicador')?.touched"
-                                 class="text-xs text-red-500 font-bold ml-1">Debes asociar un publicador</p>
+                                 <div *ngIf="pubDropdownOpen()" (click)="pubDropdownOpen.set(false)"
+                                    class="fixed inset-0 z-30 cursor-default"></div>
 
-                              <div *ngIf="pubDropdownOpen()" (click)="pubDropdownOpen.set(false)"
-                                 class="fixed inset-0 z-10 cursor-default"></div>
-
-                              <div *ngIf="pubDropdownOpen()" @fadeIn
-                                 class="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 z-20 overflow-hidden max-h-72 overflow-y-auto simple-scrollbar origin-top flex flex-col">
-                                 <div class="sticky top-0 bg-white dark:bg-slate-800 p-2 border-b border-slate-50 dark:border-slate-700">
-                                    <input type="text" placeholder="Buscar publicador..." [value]="pubSearch()"
-                                       (input)="pubSearch.set($any($event.target).value)"
-                                       class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all font-medium placeholder:font-normal text-slate-700 dark:text-slate-200 placeholder:text-slate-400">
+                                 <div *ngIf="pubDropdownOpen()" @fadeIn
+                                    class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden max-h-72 overflow-y-auto simple-scrollbar origin-top flex flex-col">
+                                    <div class="sticky top-0 bg-white dark:bg-slate-800 p-2 border-b border-slate-50 dark:border-slate-700">
+                                       <input type="text" placeholder="Buscar..." [value]="pubSearch()"
+                                          (input)="pubSearch.set($any($event.target).value)"
+                                          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all text-slate-700 dark:text-slate-200">
+                                    </div>
+                                    <div class="p-1 space-y-0.5">
+                                       <button type="button" *ngFor="let p of filteredPublicadores()"
+                                          (click)="selectPublicador(p.id_publicador)"
+                                          class="w-full px-4 py-2 text-xs transition-all flex items-center justify-between rounded-lg group"
+                                          [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isPubSelected(p.id_publicador), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isPubSelected(p.id_publicador)}">
+                                          <span>{{ p.primer_nombre }} {{ p.primer_apellido }}</span>
+                                       </button>
+                                    </div>
                                  </div>
+                              </div>
 
-                                 <div class="p-1 space-y-0.5">
-                                    <button type="button" *ngFor="let p of filteredPublicadores()"
-                                       (click)="selectPublicador(p.id_publicador)"
-                                       class="w-full px-4 py-2.5 text-left text-sm transition-all flex items-center justify-between rounded-lg group"
-                                       [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isPubSelected(p.id_publicador), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isPubSelected(p.id_publicador)}">
-                                       <span>{{ p.primer_nombre }} {{ p.primer_apellido }}</span>
-                                       <svg *ngIf="isPubSelected(p.id_publicador)" class="w-4 h-4 text-[#6D28D9] dark:text-purple-400"
-                                          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                          stroke-linecap="round" stroke-linejoin="round">
-                                          <polyline points="20 6 9 17 4 12"></polyline>
-                                       </svg>
-                                    </button>
+                              <!-- Custom Estado Select -->
+                              <div class="space-y-1 relative">
+                                 <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
+                                    Estado <span class="text-red-500">*</span>
+                                 </label>
 
-                                    <div *ngIf="filteredPublicadores().length === 0" class="px-4 py-8 text-center">
-                                       <p class="text-xs text-slate-400 font-medium">No se encontraron resultados</p>
+                                 <button type="button" (click)="estadoDropdownOpen.set(!estadoDropdownOpen())"
+                                    class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group"
+                                    [class.border-red-300]="userForm.get('id_usuario_estado')?.invalid && userForm.get('id_usuario_estado')?.touched">
+                                    <div class="flex items-center gap-2">
+                                       <div class="w-2 h-2 rounded-full" 
+                                         [ngClass]="userForm.get('id_usuario_estado')?.value == 1 ? 'bg-emerald-500' : 'bg-slate-400'"></div>
+                                       <span [class.text-slate-400]="!userForm.get('id_usuario_estado')?.value"
+                                          class="font-medium text-slate-700 dark:text-slate-200 block truncate text-sm">
+                                          {{ getSelectedEstadoName() || 'Seleccione...' }}
+                                       </span>
+                                    </div>
+                                    <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                                       [class.rotate-180]="estadoDropdownOpen()" viewBox="0 0 24 24" fill="none"
+                                       stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                       stroke-linejoin="round">
+                                       <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                 </button>
+
+                                 <div *ngIf="estadoDropdownOpen()" (click)="estadoDropdownOpen.set(false)"
+                                    class="fixed inset-0 z-30 cursor-default"></div>
+
+                                 <div *ngIf="estadoDropdownOpen()" @fadeIn
+                                    class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden max-h-60 overflow-y-auto simple-scrollbar origin-top flex flex-col">
+                                    <div class="p-1 space-y-0.5">
+                                       <button type="button" *ngFor="let e of estados()" (click)="selectEstado(e.id_estado)"
+                                          class="w-full px-4 py-2 text-xs transition-all flex items-center justify-between rounded-lg group"
+                                          [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isEstadoSelected(e.id_estado), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isEstadoSelected(e.id_estado)}">
+                                          <div class="flex items-center gap-2">
+                                             <div class="w-1.5 h-1.5 rounded-full" 
+                                                  [ngClass]="e.id_estado === 1 ? 'bg-emerald-500' : 'bg-slate-400'"></div>
+                                             <span>{{ e.nombre_estado }}</span>
+                                          </div>
+                                       </button>
                                     </div>
                                  </div>
                               </div>
@@ -593,65 +595,51 @@
                   </div>
 
                   <!-- Security -->
-                  <div class="space-y-5">
-                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <span class="w-8 h-px bg-slate-200 dark:bg-slate-700"></span>
+                  <div class="space-y-4">
+                     <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <span class="w-6 h-px bg-slate-200 dark:bg-slate-700"></span>
                         Seguridad
                      </h3>
 
-                     <div class="space-y-4">
-                        <div class="space-y-1">
-                           <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Contraseña <span class="text-red-500">*</span></label>
-                           <div class="relative group">
-                              <input [type]="showPassword() ? 'text' : 'password'" formControlName="contrasena"
-                                 class="block w-full pl-4 pr-12 py-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium sm:text-sm text-slate-800 dark:text-slate-200"
-                                 placeholder="Min. 6 caracteres">
-                              <button type="button" (click)="showPassword.set(!showPassword())"
-                                 class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
-                                 <svg *ngIf="!showPassword()" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path
-                                       d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
-                                    </path>
-                                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                                 </svg>
-                                 <svg *ngIf="showPassword()" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                 </svg>
-                              </button>
+                     <div class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                           <div class="space-y-1">
+                              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Contraseña <span class="text-red-500">*</span></label>
+                              <div class="relative group">
+                                 <input [type]="showPassword() ? 'text' : 'password'" formControlName="contrasena"
+                                    class="block w-full pl-4 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    placeholder="Min. 6 caracteres">
+                                 <button type="button" (click)="showPassword.set(!showPassword())"
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+                                    <svg *ngIf="!showPassword()" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                                       stroke="currentColor" stroke-width="2">
+                                       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                       <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                    <svg *ngIf="showPassword()" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                                       stroke="currentColor" stroke-width="2">
+                                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                       <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                 </button>
+                              </div>
                            </div>
-                        </div>
 
-                        <div class="space-y-1">
-                           <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Confirmar Contraseña <span class="text-red-500">*</span></label>
-                           <div class="relative group">
-                              <input [type]="showPassword() ? 'text' : 'password'" formControlName="confirmPassword"
-                                 class="block w-full pl-4 pr-12 py-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium sm:text-sm text-slate-800 dark:text-slate-200"
-                                 [class.border-red-300]="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched">
-                              <button type="button" (click)="showPassword.set(!showPassword())"
-                                 class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
-                                 <svg *ngIf="!showPassword()" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
-                                    </path>
-                                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                                 </svg>
-                                 <svg *ngIf="showPassword()" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                 </svg>
-                              </button>
+                           <div class="space-y-1">
+                              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Confirmar Contraseña <span class="text-red-500">*</span></label>
+                              <div class="relative group">
+                                 <input [type]="showPassword() ? 'text' : 'password'" formControlName="confirmPassword"
+                                    class="block w-full pl-4 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    [class.border-red-300]="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched">
+                              </div>
+                              <p *ngIf="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched"
+                                 class="text-[10px] text-red-500 mt-1 font-bold ml-1">No coinciden</p>
                            </div>
-                           <p *ngIf="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched"
-                              class="text-xs text-red-500 mt-1 font-bold">Las contraseñas no coinciden</p>
                         </div>
                      </div>
                   </div>
 
-               </div></div></form>
+               </form>
             </div>
          </div>
 
