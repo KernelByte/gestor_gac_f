@@ -331,16 +331,35 @@ export class UsuariosPage implements OnInit {
    }
 
    async loadAuxData() {
+      // Intentar cargar cada uno por separado para que el fallo de uno no bloquee los demás
+      
       try {
          const roles = await lastValueFrom(this.service.getRoles());
-         this.roles.set(roles);
+         this.roles.set(roles || []);
+      } catch (err) {
+         console.warn('Could not load roles (likely permission issue)', err);
+         this.roles.set([]);
+      }
+
+      try {
          const congs = await lastValueFrom(this.service.getCongregaciones());
-         this.congregaciones.set(congs);
+         this.congregaciones.set(congs || []);
+      } catch (err) {
+         console.warn('Could not load congregaciones', err);
+         this.congregaciones.set([]);
+      }
+
+      try {
          // Filtrar solo estados de tipo 'Sistema' que corresponden a la cuenta de usuario
          const estados = await lastValueFrom(this.service.getEstados('Sistema'));
-         this.estados.set(estados);
+         this.estados.set(estados || []);
       } catch (err) {
-         console.error('Aux data error', err);
+         console.warn('Could not load estados, using fallbacks', err);
+         // Fallback manual si el API de estados falla o no tiene permisos
+         this.estados.set([
+            { id_estado: 1, nombre_estado: 'Activo', tipo: 'Sistema' },
+            { id_estado: 2, nombre_estado: 'Inactivo', tipo: 'Sistema' }
+         ]);
       }
    }
 
