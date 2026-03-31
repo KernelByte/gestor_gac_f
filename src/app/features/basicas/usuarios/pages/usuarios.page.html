@@ -547,7 +547,7 @@
                               </div>
 
                               <!-- Custom Estado Select -->
-                              <div class="space-y-1 relative">
+                              <div class="space-y-1 relative z-50">
                                  <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
                                     Estado <span class="text-red-500">*</span>
                                  </label>
@@ -572,17 +572,17 @@
                                  </button>
 
                                  <div *ngIf="estadoDropdownOpen()" (click)="estadoDropdownOpen.set(false)"
-                                    class="fixed inset-0 z-30 cursor-default"></div>
+                                    class="fixed inset-0 z-[9998] cursor-default"></div>
 
                                  <div *ngIf="estadoDropdownOpen()" @fadeIn
-                                    class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden max-h-60 overflow-y-auto simple-scrollbar origin-top flex flex-col">
+                                    class="absolute left-0 right-0 bottom-full mb-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-[9999] overflow-hidden max-h-60 overflow-y-auto simple-scrollbar origin-bottom flex flex-col">
                                     <div class="p-1 space-y-0.5">
                                        <button type="button" *ngFor="let e of estados()" (click)="selectEstado(e.id_estado)"
                                           class="w-full px-4 py-2 text-xs transition-all flex items-center justify-between rounded-lg group"
                                           [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isEstadoSelected(e.id_estado), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isEstadoSelected(e.id_estado)}">
                                           <div class="flex items-center gap-2">
                                              <div class="w-1.5 h-1.5 rounded-full" 
-                                                  [ngClass]="e.id_estado === 1 ? 'bg-emerald-500' : 'bg-slate-400'"></div>
+                                                  [ngClass]="e.id_estado == 1 ? 'bg-emerald-500' : 'bg-slate-400'"></div>
                                              <span>{{ e.nombre_estado }}</span>
                                           </div>
                                        </button>
