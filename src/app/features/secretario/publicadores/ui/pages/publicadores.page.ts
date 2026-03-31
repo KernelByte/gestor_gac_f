@@ -115,17 +115,16 @@ interface TableColumn {
             <!-- Trigger Button -->
             <button 
                 (click)="showAdvancedFilters.set(!showAdvancedFilters())"
-                class="flex items-center gap-2 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all border outline-none"
+                title="Filtros avanzados"
+                class="flex items-center justify-center w-9 h-9 rounded-lg transition-all border outline-none relative"
                 [ngClass]="activeFiltersCount() > 0 
                   ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-brand-orange shadow-sm' 
                   : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-slate-200'"
             >
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                <span class="hidden sm:inline">Filtros</span>
-                <span *ngIf="activeFiltersCount() > 0" class="flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-black shadow-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                <span *ngIf="activeFiltersCount() > 0" class="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full bg-brand-orange text-white text-[9px] font-black shadow-sm ring-2 ring-white dark:ring-slate-900">
                     {{ activeFiltersCount() }}
                 </span>
-                <svg class="w-3 h-3 opacity-50 transition-transform duration-200" [class.rotate-180]="showAdvancedFilters()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </button>
             
             <!-- Backdrop (Click Outside) -->
@@ -321,14 +320,13 @@ interface TableColumn {
         <div class="relative shrink-0 hidden md:block">
             <button
                 (click)="showColumnManager.set(!showColumnManager())"
-                class="flex items-center gap-2 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all border outline-none"
+                title="Gestionar columnas"
+                class="flex items-center justify-center w-9 h-9 rounded-lg transition-all border outline-none"
                 [ngClass]="hasOptionalColumnsVisible()
                   ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 shadow-sm'
                   : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-slate-200'"
             >
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-                <span class="hidden sm:inline">Columnas</span>
-                <svg class="w-3 h-3 opacity-50 transition-transform duration-200" [class.rotate-180]="showColumnManager()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
             </button>
 
             <!-- Backdrop -->
@@ -410,18 +408,19 @@ interface TableColumn {
         </div>
 
         <!-- Reset All Button (aparece solo cuando hay filtros o columnas personalizadas) -->
-        <button
-            *ngIf="hasCustomView()"
-            (click)="resetAll()"
-            title="Restablecer filtros y columnas"
-            class="shrink-0 hidden md:flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap border border-rose-200 dark:border-rose-800/60 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all animate-fadeIn"
-        >
-            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                <path d="M3 3v5h5"/>
-            </svg>
-            <span class="hidden sm:inline">Restablecer</span>
-        </button>
+        <div class="relative shrink-0 hidden md:block">
+            <button
+                *ngIf="hasCustomView()"
+                (click)="resetAll()"
+                title="Restablecer filtros y columnas"
+                class="flex items-center justify-center w-9 h-9 rounded-lg transition-all border border-rose-200 dark:border-rose-800/60 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 animate-fadeIn"
+            >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+            </button>
+        </div>
 
         <!-- Spacer -->
         <div class="flex-1 hidden lg:block"></div>
@@ -435,14 +434,13 @@ interface TableColumn {
             <button
                 (click)="showExportMenu.set(!showExportMenu())"
                 [disabled]="exporting()"
-                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 hover:text-slate-900 dark:hover:text-slate-200 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                [title]="exporting() ? 'Exportando...' : 'Exportar vista'"
+                class="flex items-center justify-center w-9 h-9 rounded-lg transition-all border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 hover:text-slate-900 dark:hover:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
                 <!-- Spinner cuando exporta -->
-                <svg *ngIf="exporting()" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
+                <svg *ngIf="exporting()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
                 <!-- Icono normal -->
-                <svg *ngIf="!exporting()" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span class="hidden sm:inline">{{ exporting() ? 'Exportando...' : 'Exportar' }}</span>
-                <svg *ngIf="!exporting()" class="w-3 h-3 opacity-50 transition-transform duration-200" [class.rotate-180]="showExportMenu()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <svg *ngIf="!exporting()" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
 
             <!-- Menú dropdown -->
