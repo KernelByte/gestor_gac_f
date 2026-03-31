@@ -119,9 +119,6 @@
                      [ngClass]="selectedPublicadorId() === pub.id_publicador ? 'text-brand-purple' : 'text-slate-700 dark:text-slate-200'">
                      {{ pub.nombre_completo }}
                   </h4>
-                  <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                     <span *ngIf="pub.id_grupo" class="text-xs font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-lg">{{ pub.nombre_grupo }}</span>
-                  </div>
                </div>
 
                <!-- Selección indicator -->
@@ -179,6 +176,16 @@
                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-0">
                   <div class="flex flex-wrap items-center gap-2 md:gap-3">
                      <h2 class="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{{ selectedPublicador()?.nombre_completo }}</h2>
+                     
+                     <!-- Grupo Badge -->
+                     <div *ngIf="selectedPublicador()?.nombre_grupo"
+                        class="inline-flex items-center px-2 md:px-2.5 py-0.5 md:py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] md:text-xs font-bold gap-1 border border-slate-200 dark:border-slate-700">
+                        <svg class="w-3 h-3 md:w-3.5 md:h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        {{ selectedPublicador()?.nombre_grupo }}
+                     </div>
+
                      <div *ngIf="selectedPublicador()?.es_precursor_regular"
                         class="inline-flex items-center px-2 md:px-2.5 py-0.5 md:py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] md:text-xs font-bold gap-1">
                         <svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
