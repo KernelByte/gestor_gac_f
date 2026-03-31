@@ -163,7 +163,8 @@ export interface InformeHistorialItem {
 export interface PublicadorHistorial {
    id_publicador: number;
    nombre_completo: string;
-   grupo_numero?: number;
+   id_grupo: number | null;
+   nombre_grupo: string | null;
    es_precursor_regular: boolean;
    privilegio_actual?: string | null;
    informes: InformeHistorialItem[];

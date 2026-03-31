@@ -73,7 +73,7 @@
                   <button *ngFor="let grupo of sortedGrupos" (click)="selectGroupFilter(grupo.id_grupo)"
                      class="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-between"
                      [ngClass]="{'text-brand-purple bg-purple-50 dark:bg-purple-900/10 font-bold': activeFilter() === grupo.id_grupo, 'text-slate-600 dark:text-slate-300': activeFilter() !== grupo.id_grupo}">
-                     Grupo {{ grupo.id_grupo }}
+                     {{ grupo.nombre_grupo }}
                      <svg *ngIf="activeFilter() === grupo.id_grupo" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -120,7 +120,7 @@
                      {{ pub.nombre_completo }}
                   </h4>
                   <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                     <span *ngIf="pub.grupo_numero">G{{ pub.grupo_numero }}</span>
+                     <span *ngIf="pub.id_grupo" class="text-xs font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-lg">{{ pub.nombre_grupo }}</span>
                   </div>
                </div>
 

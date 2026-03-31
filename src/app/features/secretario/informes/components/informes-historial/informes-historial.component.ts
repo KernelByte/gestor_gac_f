@@ -27,7 +27,9 @@ export class InformesHistorialComponent implements OnChanges {
    @Input() grupos: Grupo[] = [];
 
    get sortedGrupos(): Grupo[] {
-      return [...this.grupos].sort((a, b) => a.id_grupo - b.id_grupo);
+      return [...this.grupos].sort((a, b) => 
+         a.nombre_grupo.localeCompare(b.nombre_grupo, undefined, { numeric: true, sensitivity: 'base' })
+      );
    }
 
    // State
@@ -56,7 +58,7 @@ export class InformesHistorialComponent implements OnChanges {
       if (currentFilter === 'precursores') {
          pubs = pubs.filter(p => p.es_precursor_regular);
       } else if (typeof currentFilter === 'number') {
-         pubs = pubs.filter(p => p.grupo_numero === currentFilter);
+         pubs = pubs.filter(p => p.id_grupo === currentFilter);
       }
 
       // Filter by Search
@@ -134,7 +136,6 @@ export class InformesHistorialComponent implements OnChanges {
          this.filterGrupoId() || undefined,
          this.viewType()
       ).subscribe({
-         // I need to update the service method in frontend to match the new backend endpoint.
          next: (data) => {
             this.historial.set(data);
             this.loading.set(false);
@@ -214,7 +215,8 @@ export class InformesHistorialComponent implements OnChanges {
    getActiveGroupLabel(): string {
       const filter = this.activeFilter();
       if (typeof filter === 'number') {
-         return `Grupo ${filter}`;
+         const g = this.grupos.find(x => x.id_grupo === filter);
+         return g ? g.nombre_grupo : `Grupo ${filter}`;
       }
       return 'Grupos';
    }
@@ -224,7 +226,10 @@ export class InformesHistorialComponent implements OnChanges {
       const filter = this.activeFilter();
       if (filter === 'all') return 'Exportar Todos';
       if (filter === 'precursores') return 'Exportar Precursores';
-      if (typeof filter === 'number') return `Exportar Grupo ${filter}`;
+      if (typeof filter === 'number') {
+         const g = this.grupos.find(x => x.id_grupo === filter);
+         return `Exportar ${g ? g.nombre_grupo : `Grupo ${filter}`}`;
+      }
       return 'Exportar Lista';
    });
 
