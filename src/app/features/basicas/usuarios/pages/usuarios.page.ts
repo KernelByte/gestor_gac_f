@@ -131,8 +131,9 @@ export class UsuariosPage implements OnInit {
       const selectedRole = this.roles().find(r => r.id_rol === roleId);
       if (!selectedRole) return;
 
-      const roleName = selectedRole.descripcion_rol.toLowerCase().trim();
-      const isGlobal = roleName === 'administrador' || roleName === 'gestor aplicación';
+      // Usar nombre_rol o descripcion_rol para identificar si el rol es global
+      const roleName = (selectedRole.nombre_rol || selectedRole.descripcion_rol || '').toLowerCase();
+      const isGlobal = roleName.includes('administrador') || roleName.includes('gestor');
 
       const congControl = this.userForm.get('id_congregacion');
       const pubControl = this.userForm.get('id_usuario_publicador');
@@ -141,7 +142,12 @@ export class UsuariosPage implements OnInit {
          congControl?.clearValidators();
          pubControl?.clearValidators();
       } else {
-         congControl?.setValidators(Validators.required);
+         // La congregación solo es obligatoria para el Administrador (que puede elegir entre varias)
+         if (this.isAdmin()) {
+            congControl?.setValidators(Validators.required);
+         } else {
+            congControl?.clearValidators();
+         }
          pubControl?.setValidators(Validators.required);
       }
 
@@ -169,7 +175,6 @@ export class UsuariosPage implements OnInit {
          id_congregacion: id,
          id_usuario_publicador: null // Reset publisher when changing congregation
       });
-      this.congDropdownOpen.set(false);
       this.congDropdownOpen.set(false);
       this.loadPublicadores(id, true); // Crear: Solo disponibles
    }
@@ -349,6 +354,11 @@ export class UsuariosPage implements OnInit {
          console.error('Error in openCreatePanel logic', e);
       }
 
+      // IMPORTANTE: Forzar actualización de validez de todos los controles
+      Object.keys(this.userForm.controls).forEach(key => {
+         this.userForm.get(key)?.updateValueAndValidity();
+      });
+
       this.userForm.updateValueAndValidity();
       this.panelOpen.set(true);
    }
@@ -408,7 +418,7 @@ export class UsuariosPage implements OnInit {
          const formValue = this.userForm.value;
 
          if (this.editingUser()) {
-            // --- Modo edición (solo Admin puede editar actualmente) ---
+            // --- Modo edición ---
             const id = this.editingUser()!.id_usuario;
             if (id === undefined) {
                throw new Error('El usuario no tiene ID válido para editar');
@@ -417,12 +427,17 @@ export class UsuariosPage implements OnInit {
             const updatePayload: any = {
                nombre: formValue.nombre,
                correo: formValue.correo,
-               id_rol_usuario: formValue.id_rol_usuario,
-               id_usuario_publicador: formValue.id_usuario_publicador,
                telefono: formValue.telefono,
                tipo_identificacion: formValue.tipo_identificacion,
                id_identificacion: formValue.id_identificacion
             };
+
+            // Solo Admin/Gestor pueden editar campos críticos como rol y publicador
+            if (this.isAdmin()) {
+               updatePayload.id_rol_usuario = formValue.id_rol_usuario;
+               updatePayload.id_usuario_publicador = formValue.id_usuario_publicador;
+            }
+
             if (formValue.contrasena) {
                updatePayload.contrasena = formValue.contrasena;
             }
@@ -470,7 +485,13 @@ export class UsuariosPage implements OnInit {
 
       } catch (err: any) {
          console.error('Save error', err);
-         alert('Error al guardar: ' + (err.error?.detail || 'Desconocido'));
+         const detail = err.error?.detail || 'Error desconocido';
+         
+         if (err.status === 403) {
+            alert(`No tienes permisos suficientes para realizar esta acción. Si crees que esto es un error, por favor contacta al administrador del sistema o al equipo de soporte técnico.`);
+         } else {
+            alert('Error al guardar: ' + detail);
+         }
       } finally {
          this.saving.set(false);
       }
