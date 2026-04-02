@@ -160,7 +160,7 @@ export class TimeAgoPipe implements PipeTransform {
             </div>
             
             <!-- Modules Section -->
-            <div *ngIf="hasPermission('reuniones.ver') || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')">
+            <div *ngIf="hasPermission('reuniones.ver') || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')">
               <p 
                 *ngIf="!collapsed()"
                 class="px-5 mb-2 mt-6 text-[0.8125rem] font-medium text-slate-400 dark:text-slate-500 relative"
@@ -253,7 +253,7 @@ export class TimeAgoPipe implements PipeTransform {
 
               <!-- Informes -->
               <a 
-                *ngIf="hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
+                *ngIf="hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
                 routerLink="/secretario/informes"
                 routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
                 class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"

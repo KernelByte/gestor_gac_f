@@ -357,6 +357,36 @@
                            </div>
                         </div>
                      </div>
+
+                     <!-- Config Panel for Informes.Resumen -->
+                     <div *ngIf="permiso.codigo === 'informes.enviar' && permiso.asignado"
+                        class="px-4 pb-3 pl-14 md:px-6 md:pb-4 md:pl-16">
+                        <div class="bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800/30 p-3 md:p-4">
+                           <label
+                              class="block text-[0.625rem] md:text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider mb-2 md:mb-3">
+                              Alcance del resumen
+                           </label>
+                           <div class="flex flex-col sm:flex-row flex-wrap sm:items-center gap-2 sm:gap-4">
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                 <input type="radio" name="scope_resumen" [value]="'todos'" [(ngModel)]="permiso.alcance"
+                                    (ngModelChange)="updateScope(permiso)" (click)="$event.stopPropagation()"
+                                    class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-purple-300 dark:border-purple-700 dark:bg-slate-800">
+                                 <span
+                                    class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-400">Todos
+                                    los grupos</span>
+                              </label>
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                 <input type="radio" name="scope_resumen" [value]="'asignados'"
+                                    [(ngModel)]="permiso.alcance" (ngModelChange)="updateScope(permiso)"
+                                    (click)="$event.stopPropagation()"
+                                    class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-purple-300 dark:border-purple-700 dark:bg-slate-800">
+                                 <span
+                                    class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-purple-700 dark:group-hover:text-purple-400">Solo
+                                    asignados</span>
+                              </label>
+                           </div>
+                        </div>
+                     </div>
                   </div>
                </div>
             </div>

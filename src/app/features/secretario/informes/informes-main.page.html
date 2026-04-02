@@ -58,7 +58,9 @@
          <app-resumen-sucursal
             [selectedMes]="selectedMes"
             [selectedAno]="selectedAno"
-            [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0">
+            [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0"
+            [grupoId]="canViewResumenSucursalAllGroups() ? null : historialGroupId()"
+            [showAsistencia]="canViewResumenSucursalAllGroups()">
          </app-resumen-sucursal>
       </ng-container>
    </div>

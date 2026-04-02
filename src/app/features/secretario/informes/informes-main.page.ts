@@ -135,6 +135,20 @@ export class InformesMainPage implements OnInit {
     return user.permisos?.includes('informes.historial') ?? false;
   });
 
+  canViewResumenSucursalAllGroups = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    if (this.isAdminOrSecretario()) return true;
+    return user.permisos?.includes('informes.enviar_todos') ?? false;
+  });
+
+  canViewResumenSucursal = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    if (this.isAdminOrSecretario()) return true;
+    return (user.permisos?.includes('informes.enviar') ?? false) || this.canViewResumenSucursalAllGroups();
+  });
+
   isRestrictedUser = computed(() => !this.canEditAllGroups());
 
   visibleTabs = computed(() => {
@@ -148,12 +162,12 @@ export class InformesMainPage implements OnInit {
       tabs = tabs.filter(t => t.id !== 'historial');
     }
 
-    if (!this.isAdminOrSecretario()) {
+    if (!this.canViewResumenSucursal()) {
       tabs = tabs.filter(t => t.id !== 'sucursal');
     }
 
     if (this.isRestrictedUser()) {
-      tabs = tabs.filter(t => t.id === 'entrada' || t.id === 'historial');
+      tabs = tabs.filter(t => t.id === 'entrada' || t.id === 'historial' || t.id === 'sucursal');
     }
 
     return tabs;
@@ -168,7 +182,7 @@ export class InformesMainPage implements OnInit {
   anos = Array.from({ length: 10 }, (_, i) => (new Date().getFullYear() - 5 + i).toString());
 
   async ngOnInit() {
-    if (!this.canViewInformes() && !this.canViewHistorial()) {
+    if (!this.canViewInformes() && !this.canViewHistorial() && !this.canViewResumenSucursal()) {
       this.showToast('Acceso restringido', 'error', 'No tienes permiso para ver el módulo de informes.');
       return;
     }
@@ -209,7 +223,7 @@ export class InformesMainPage implements OnInit {
 
   private async loadHistorialGroupIdIfNeeded() {
     if (this.canEditHistorial()) return;
-    if (!this.canViewHistorial()) return;
+    if (!this.canViewHistorial() && !(this.canViewResumenSucursal() && !this.canViewResumenSucursalAllGroups())) return;
     if (this.historialGroupId()) return;
 
     const user = this.authStore.user();
@@ -318,6 +332,7 @@ export class InformesMainPage implements OnInit {
   }
 
   loadResumen() {
+    if (!this.canViewInformes()) return;
     const congregacionId = this.congregacionContext.effectiveCongregacionId() ?? 0;
     const periodoId = this.getPeriodoId();
     if (!periodoId) return;

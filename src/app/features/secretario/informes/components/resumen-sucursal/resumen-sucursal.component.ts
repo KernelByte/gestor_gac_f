@@ -39,6 +39,8 @@ export class ResumenSucursalComponent implements OnChanges {
   @Input() selectedMes = '';
   @Input() selectedAno = '';
   @Input() congregacionId = 0;
+  @Input() grupoId: number | null = null;
+  @Input() showAsistencia: boolean = true;
 
   resumen = signal<ResumenSucursal | null>(null);
   loading = signal(false);
@@ -56,7 +58,7 @@ export class ResumenSucursalComponent implements OnChanges {
   localAno = '';
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['selectedMes'] || changes['selectedAno'] || changes['congregacionId']) {
+    if (changes['selectedMes'] || changes['selectedAno'] || changes['congregacionId'] || changes['grupoId']) {
       this.localMes = this.selectedMes;
       this.localAno = this.selectedAno;
       this.loadResumen();
@@ -78,7 +80,7 @@ export class ResumenSucursalComponent implements OnChanges {
     if (!periodoId || !this.congregacionId) return;
 
     this.loading.set(true);
-    this.informesService.getResumenSucursal(periodoId, this.congregacionId).subscribe({
+    this.informesService.getResumenSucursal(periodoId, this.congregacionId, this.grupoId).subscribe({
       next: (data) => {
         this.resumen.set(data);
         this.loading.set(false);

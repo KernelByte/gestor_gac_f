@@ -20,6 +20,8 @@ const informesPermissionGuard: CanActivateFn = () => {
       store.hasPermission('informes.ver') ||
       store.hasPermission('informes.editar') ||
       store.hasPermission('informes.historial') ||
+      store.hasPermission('informes.enviar') ||
+      store.hasPermission('informes.enviar_todos') ||
       store.hasPermission('informes.editar_todos');
 
    return ok ? true : router.createUrlTree(['/']);

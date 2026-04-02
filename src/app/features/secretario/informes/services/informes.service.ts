@@ -98,12 +98,14 @@ export class InformesService {
 
 
    // --- Resumen Sucursal ---
-   getResumenSucursal(periodoId: number, congregacionId: number): Observable<ResumenSucursal> {
+  getResumenSucursal(periodoId: number, congregacionId: number, grupoId?: number | null): Observable<ResumenSucursal> {
       const params = new HttpParams()
          .set('periodo_id', periodoId.toString())
          .set('congregacion_id', congregacionId.toString());
 
-      return this.http.get<ResumenSucursal>(`${this.apiUrl}/resumen-sucursal`, { params });
+     const finalParams = (grupoId && grupoId > 0) ? params.set('grupo_id', grupoId.toString()) : params;
+
+     return this.http.get<ResumenSucursal>(`${this.apiUrl}/resumen-sucursal`, { params: finalParams });
    }
 
    // --- Export/Import Excel ---
