@@ -35,6 +35,18 @@ interface ImportResult {
    };
 }
 
+interface SolicitudAcceso {
+   id_solicitud: number;
+   nombre: string;
+   email: string;
+   congregacion: string;
+   telefono: string;
+   observaciones: string | null;
+   estado: string;
+   creado_en: string | null;
+   procesado_en: string | null;
+}
+
 @Component({
    selector: 'app-admin-config',
    standalone: true,
@@ -68,7 +80,7 @@ export class AdminConfigPage implements OnInit {
    private route = inject(ActivatedRoute);
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
-   activeTab = signal<'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos'>('congregaciones');
+   activeTab = signal<'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos' | 'solicitudes'>('congregaciones');
    loading = signal(false);
 
    // Data Signals
@@ -104,12 +116,18 @@ export class AdminConfigPage implements OnInit {
    congregationToDelete = signal<CongregacionAdmin | null>(null);
    deletingCongregation = signal(false);
 
+   // Solicitudes signals
+   solicitudes = signal<SolicitudAcceso[]>([]);
+   solicitudesLoading = signal(false);
+   solicitudFilter = signal<string>('todas');
+   updatingSolicitudId = signal<number | null>(null);
+
    ngOnInit() {
       // Restore active tab from URL or localStorage
       const tabParam = this.route.snapshot.queryParams['tab'];
       const savedTab = localStorage.getItem('admin_active_tab');
       const tabToSet = (tabParam || savedTab) as any;
-      const validTabs = ['congregaciones', 'auditoria', 'seguridad', 'ai', 'base-datos'];
+      const validTabs = ['congregaciones', 'auditoria', 'seguridad', 'ai', 'base-datos', 'solicitudes'];
 
       if (tabToSet && validTabs.includes(tabToSet)) {
          this.activeTab.set(tabToSet);
@@ -129,7 +147,7 @@ export class AdminConfigPage implements OnInit {
       });
    }
 
-   setTab(tab: 'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos') {
+   setTab(tab: 'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos' | 'solicitudes') {
       this.activeTab.set(tab);
       localStorage.setItem('admin_active_tab', tab);
 
@@ -138,10 +156,11 @@ export class AdminConfigPage implements OnInit {
          relativeTo: this.route,
          queryParams: { tab: tab },
          queryParamsHandling: 'merge',
-         replaceUrl: true // Using replaceUrl ensures we don't pollute the history stack
+         replaceUrl: true
       });
 
       if (tab === 'congregaciones') this.loadCongregaciones();
+      if (tab === 'solicitudes') this.loadSolicitudes();
    }
 
    loadCongregaciones() {
@@ -446,6 +465,67 @@ export class AdminConfigPage implements OnInit {
             this.deletingCongregation.set(false);
             this.showNotification(
                err?.error?.detail || 'No se pudo eliminar la congregación',
+               'error'
+            );
+         }
+      });
+   }
+
+   // ===== Solicitudes de Acceso =====
+   loadSolicitudes() {
+      this.solicitudesLoading.set(true);
+      const filter = this.solicitudFilter();
+      let url = `${environment.apiUrl}/solicitudes/`;
+      if (filter !== 'todas') {
+         url += `?estado=${filter}`;
+      }
+      this.http.get<SolicitudAcceso[]>(url).subscribe({
+         next: (data) => {
+            this.solicitudes.set(data);
+            this.solicitudesLoading.set(false);
+         },
+         error: (err: any) => {
+            console.error('Error loading solicitudes:', err);
+            this.solicitudesLoading.set(false);
+         }
+      });
+   }
+
+   get filteredSolicitudes() {
+      return this.solicitudes();
+   }
+
+   get solicitudStats() {
+      const all = this.solicitudes();
+      return {
+         total: all.length,
+         pendientes: all.filter(s => s.estado === 'pendiente').length,
+         aprobadas: all.filter(s => s.estado === 'aprobada').length,
+         rechazadas: all.filter(s => s.estado === 'rechazada').length,
+      };
+   }
+
+   setSolicitudFilter(filter: string) {
+      this.solicitudFilter.set(filter);
+      this.loadSolicitudes();
+   }
+
+   cambiarEstadoSolicitud(id: number, nuevoEstado: string) {
+      this.updatingSolicitudId.set(id);
+      this.http.put(`${environment.apiUrl}/solicitudes/${id}/estado`, { estado: nuevoEstado }).subscribe({
+         next: () => {
+            this.updatingSolicitudId.set(null);
+            this.loadSolicitudes();
+            this.showNotification(
+               `Solicitud ${nuevoEstado === 'aprobada' ? 'aprobada' : 'rechazada'} exitosamente`,
+               'success'
+            );
+         },
+         error: (err: any) => {
+            console.error('Error updating solicitud:', err);
+            this.updatingSolicitudId.set(null);
+            this.showNotification(
+               err?.error?.detail || 'Error al actualizar la solicitud',
                'error'
             );
          }

@@ -17,6 +17,7 @@ export class SolicitarAccesoPage {
   loading = signal(false);
   success = signal(false);
   error = signal<string | null>(null);
+  rateLimited = signal(false);
 
   constructor(
     private fb: FormBuilder,
@@ -37,6 +38,7 @@ export class SolicitarAccesoPage {
 
     this.loading.set(true);
     this.error.set(null);
+    this.rateLimited.set(false);
 
     this.http.post(`${environment.apiUrl}/auth/request-access`, this.form.value)
       .subscribe({
@@ -50,8 +52,14 @@ export class SolicitarAccesoPage {
         },
         error: (err) => {
           this.loading.set(false);
-          this.error.set(err.error?.detail || 'Ocurrió un error al enviar la solicitud. Por favor intenta de nuevo.');
+          if (err.status === 429) {
+            this.rateLimited.set(true);
+            this.error.set(err.error?.detail || 'Ya tienes una solicitud pendiente. Por favor espera 24 horas antes de intentarlo de nuevo.');
+          } else {
+            this.error.set(err.error?.detail || 'Ocurrió un error al enviar la solicitud. Por favor intenta de nuevo.');
+          }
         }
       });
   }
 }
+

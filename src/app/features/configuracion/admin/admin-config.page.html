@@ -35,6 +35,18 @@
          </div>
       </button>
 
+      <button (click)="setTab('solicitudes')" type="button"
+         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
+         [ngClass]="activeTab() === 'solicitudes' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
+         <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+            Solicitudes
+         </div>
+      </button>
+
       <button (click)="setTab('ai')" type="button"
          class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
          [ngClass]="activeTab() === 'ai' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
@@ -379,6 +391,112 @@
          </div>
          <h3 class="text-xl font-bold text-slate-900 dark:text-white">Seguridad</h3>
          <p class="text-slate-500 dark:text-slate-400 max-w-sm mt-2">Próximamente</p>
+      </div>
+
+      <!-- TAB: SOLICITUDES DE ACCESO -->
+      <div *ngIf="activeTab() === 'solicitudes'" class="flex flex-col flex-1 min-h-0 animate-fadeIn">
+
+         <!-- Filter & Stats Bar -->
+         <div class="px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700 shrink-0 bg-white dark:bg-slate-900">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+               <!-- Filter Pills -->
+               <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                  <button *ngFor="let f of [{val:'todas', label:'Todas'},{val:'pendiente', label:'Pendientes'},{val:'aprobada', label:'Aprobadas'},{val:'rechazada', label:'Rechazadas'}]"
+                     (click)="setSolicitudFilter(f.val)" type="button"
+                     class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap"
+                     [ngClass]="solicitudFilter() === f.val 
+                        ? 'bg-brand-purple text-white shadow-sm' 
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'">
+                     {{ f.label }}
+                  </button>
+               </div>
+
+               <!-- Stats -->
+               <div class="flex items-center gap-4 ml-auto text-xs font-bold">
+                  <span class="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-md">{{ solicitudStats.pendientes }} pendientes</span>
+                  <span class="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-md">{{ solicitudStats.aprobadas }} aprobadas</span>
+                  <span class="text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-md">{{ solicitudStats.rechazadas }} rechazadas</span>
+               </div>
+            </div>
+         </div>
+
+         <!-- Loading -->
+         <div *ngIf="solicitudesLoading()" class="flex-1 flex items-center justify-center">
+            <div class="w-10 h-10 border-4 border-brand-purple/20 border-t-brand-purple rounded-full animate-spin"></div>
+         </div>
+
+         <!-- List -->
+         <div *ngIf="!solicitudesLoading()" class="flex-1 min-h-0 overflow-auto">
+            <div *ngFor="let s of filteredSolicitudes"
+               class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+
+               <!-- Avatar & Info -->
+               <div class="flex items-center gap-3 flex-1 min-w-0">
+                  <div class="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/30 text-brand-purple dark:text-purple-400 flex items-center justify-center font-bold text-sm shrink-0">
+                     {{ s.nombre.charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                     <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{{ s.nombre }}</p>
+                     <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ s.email }}</span>
+                        <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ s.congregacion }}</span>
+                     </div>
+                     <div class="flex items-center gap-2 mt-1">
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500">{{ s.telefono }}</span>
+                        <span *ngIf="s.observaciones" class="text-[10px] text-slate-400 dark:text-slate-500">· {{ s.observaciones }}</span>
+                     </div>
+                  </div>
+               </div>
+
+               <!-- Estado Badge -->
+               <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider"
+                     [ngClass]="{
+                        'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400': s.estado === 'pendiente',
+                        'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': s.estado === 'aprobada',
+                        'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': s.estado === 'rechazada'
+                     }">
+                     {{ s.estado }}
+                  </span>
+
+                  <span class="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">{{ s.creado_en ? (s.creado_en | date:'dd MMM yyyy, HH:mm':'-0500':'es') : '' }}</span>
+
+                  <!-- Actions (only for pendiente) -->
+                  <div *ngIf="s.estado === 'pendiente'" class="flex items-center gap-1">
+                     <button (click)="cambiarEstadoSolicitud(s.id_solicitud, 'aprobada')" type="button"
+                        [disabled]="updatingSolicitudId() === s.id_solicitud"
+                        class="w-8 h-8 rounded-lg flex items-center justify-center text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors disabled:opacity-50"
+                        title="Aprobar">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                     </button>
+                     <button (click)="cambiarEstadoSolicitud(s.id_solicitud, 'rechazada')" type="button"
+                        [disabled]="updatingSolicitudId() === s.id_solicitud"
+                        class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                        title="Rechazar">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                     </button>
+                  </div>
+               </div>
+            </div>
+
+            <!-- Empty State -->
+            <div *ngIf="filteredSolicitudes.length === 0 && !solicitudesLoading()"
+               class="py-20 flex flex-col items-center justify-center text-center">
+               <div class="w-20 h-20 bg-slate-50 dark:bg-slate-700/50 rounded-2xl flex items-center justify-center mb-4">
+                  <svg class="w-10 h-10 text-slate-200 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+               </div>
+               <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Sin solicitudes</h3>
+               <p class="text-slate-500 dark:text-slate-400 text-sm">No hay solicitudes de acceso que coincidan con el filtro seleccionado.</p>
+            </div>
+         </div>
       </div>
 
       <!-- TAB: AI CONFIGURATION -->

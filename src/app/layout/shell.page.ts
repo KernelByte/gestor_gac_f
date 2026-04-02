@@ -1,15 +1,35 @@
-import { Component, computed, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef, HostListener, Pipe, PipeTransform } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { AuthStore } from '../core/auth/auth.store';
 import { AuthService } from '../core/auth/auth.service';
 import { ThemeService } from '../core/services/theme.service';
 import { CongregacionContextService } from '../core/congregacion-context/congregacion-context.service';
+import { NotificacionesService } from '../core/notificaciones/notificaciones.service';
+import { Notificacion } from '../core/notificaciones/notificacion.model';
+
+@Pipe({ name: 'timeAgo', standalone: true })
+export class TimeAgoPipe implements PipeTransform {
+  transform(value: string | null): string {
+    if (!value) return '';
+    const date = new Date(value);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (seconds < 60) return 'Ahora';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `Hace ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours}h`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `Hace ${days}d`;
+    return date.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+  }
+}
 
 @Component({
   standalone: true,
   selector: 'app-shell',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TimeAgoPipe],
   template: `
     <div class="flex h-screen overflow-hidden bg-[#f3f4f6] dark:bg-slate-950 transition-colors duration-300" [class.dark]="themeService.darkMode()">
       
@@ -448,35 +468,112 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
 
             <!-- Notifications -->
             <div class="relative">
+              <div *ngIf="notificationsOpen()" class="fixed inset-0 z-40" (click)="notificationsOpen.set(false)"></div>
               <button 
-                class="p-2.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-purple-600 transition-all duration-200 relative group active:scale-95" 
+                class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 relative group active:scale-95" 
+                [ngClass]="notifService.count() > 0 ? 'text-brand-purple dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
                 (click)="toggleNotifications()"
               >
-                <div class="absolute inset-0 bg-purple-50 rounded-full scale-0 group-hover:scale-100 transition-transform duration-200"></div>
-                <svg class="w-5 h-5 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <!-- Bell icon — animated shake when unread -->
+                <svg class="w-[22px] h-[22px] relative z-10 transition-transform duration-200" 
+                  [ngClass]="{'animate-[bellShake_0.6s_ease-in-out_infinite_3s]': notifService.count() > 0}"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 
-                <!-- Badge Logic -->
-                <div *ngIf="notificationCount() > 0" class="absolute -top-0.5 -right-0.5 z-20 flex items-center justify-center">
-                   <span *ngIf="notificationCount() < 9" class="bg-[#EF4444] text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-white">{{ notificationCount() }}</span>
-                   <span *ngIf="notificationCount() >= 9" class="h-2.5 w-2.5 bg-[#EF4444] rounded-full border border-white animate-bounce"></span>
+                <!-- Badge -->
+                <div *ngIf="notifService.count() > 0" class="absolute -top-1 -right-1 z-20">
+                   <!-- Pulse ring -->
+                   <span class="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-40"></span>
+                   <!-- Count badge -->
+                   <span class="relative flex items-center justify-center min-w-[20px] h-[20px] px-1 bg-gradient-to-br from-red-500 to-rose-600 text-white text-[10px] font-extrabold rounded-full shadow-[0_2px_8px_rgba(239,68,68,0.5)] border-2 border-white dark:border-slate-900">
+                     {{ notifService.count() > 99 ? '99+' : notifService.count() }}
+                   </span>
                 </div>
               </button>
               
+              <!-- Dropdown Panel -->
               <div 
                 *ngIf="notificationsOpen()" 
-                class="absolute right-0 mt-3 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-slate-100 dark:border-slate-800 z-50 overflow-hidden animate-fadeIn origin-top-right transform transition-all"
+                class="absolute right-0 mt-3 w-[400px] bg-white dark:bg-slate-900 rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] border border-slate-200/80 dark:border-slate-700/80 z-50 overflow-hidden animate-fadeIn origin-top-right"
               >
-                <div class="p-4 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-                  <h3 class="font-bold text-slate-800 dark:text-white">Notificaciones</h3>
-                  <span class="text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded-full uppercase tracking-wide">{{ notificationCount() }} nuevas</span>
+                <!-- Header -->
+                <div class="px-5 py-4 flex items-center justify-between bg-gradient-to-r from-brand-purple/[0.06] via-white to-white dark:from-purple-900/20 dark:via-slate-900 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-brand-purple/10 dark:bg-purple-900/40 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-brand-purple dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                    </div>
+                    <h3 class="font-bold text-slate-800 dark:text-white text-[15px]">Notificaciones</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span *ngIf="notifService.count() > 0" 
+                      class="text-[10px] font-bold text-white bg-gradient-to-r from-brand-purple to-violet-500 px-2.5 py-1 rounded-full shadow-sm">
+                      {{ notifService.count() }} {{ notifService.count() === 1 ? 'nueva' : 'nuevas' }}
+                    </span>
+                    <button *ngIf="notifService.count() > 0" 
+                      (click)="marcarTodasLeidas()" 
+                      class="text-[11px] font-semibold text-slate-400 hover:text-brand-purple dark:hover:text-purple-400 transition-colors px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20">
+                      Leer todas
+                    </button>
+                  </div>
                 </div>
-                <div class="p-8 text-sm text-slate-400 text-center flex flex-col items-center gap-3">
-                   <div class="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center">
-                      <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
-                   </div>
-                   <p>¡Estás al día!</p>
+
+                <!-- Notification list -->
+                <div class="max-h-[420px] overflow-y-auto overscroll-contain">
+                  <div *ngFor="let n of notifService.notificaciones(); let i = index" 
+                    class="flex items-start gap-3.5 px-5 py-4 cursor-pointer transition-all duration-150 border-b border-slate-50 dark:border-slate-800/40 group relative overflow-hidden"
+                    [ngClass]="!n.leida 
+                      ? 'bg-gradient-to-r from-purple-50/60 via-white to-white dark:from-purple-900/[0.12] dark:via-slate-900 dark:to-slate-900 hover:from-purple-50 hover:via-purple-50/30 dark:hover:from-purple-900/20' 
+                      : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/30'"
+                    (click)="onNotificacionClick(n)">
+
+                    <!-- Left accent bar for unread -->
+                    <div *ngIf="!n.leida" class="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-brand-purple"></div>
+
+                    <!-- Icon -->
+                    <div class="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center mt-0.5 transition-transform duration-200 group-hover:scale-110" 
+                      [ngClass]="getNotifIconBg(n.tipo)">
+                      <svg *ngIf="n.tipo === 'solicitud_acceso'" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                      </svg>
+                      <svg *ngIf="n.tipo !== 'solicitud_acceso'" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0">
+                      <p class="text-[13px] leading-snug text-slate-800 dark:text-white" 
+                        [ngClass]="!n.leida ? 'font-bold' : 'font-medium'">
+                        {{ n.titulo }}
+                      </p>
+                      <p *ngIf="n.mensaje" class="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ n.mensaje }}</p>
+                      <div class="flex items-center gap-1.5 mt-1.5">
+                        <svg class="w-3 h-3 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{{ n.creado_en | timeAgo }}</p>
+                      </div>
+                    </div>
+
+                    <!-- Unread dot -->
+                    <div *ngIf="!n.leida" class="shrink-0 mt-2">
+                      <div class="w-2.5 h-2.5 bg-brand-purple rounded-full shadow-[0_0_8px_rgba(109,40,217,0.4)]"></div>
+                    </div>
+                  </div>
+
+                  <!-- Empty state -->
+                  <div *ngIf="notifService.notificaciones().length === 0" class="py-14 text-center flex flex-col items-center gap-4">
+                    <div class="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+                      <svg class="w-8 h-8 text-slate-200 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-600 dark:text-slate-300 text-sm">¡Estás al día!</p>
+                      <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">No tienes notificaciones pendientes</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -603,6 +700,7 @@ export class ShellPage implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   themeService = inject(ThemeService);
   congregacionContext = inject(CongregacionContextService);
+  notifService = inject(NotificacionesService);
 
   collapsed = signal(false);
   mobileMenuOpen = signal(false);
@@ -617,7 +715,7 @@ export class ShellPage implements OnInit, OnDestroy {
   // Page Title State
   pageTitle = signal<{ title: string, subtitle: string }>({ title: 'Sistema GAC', subtitle: 'Panel de Administración' });
 
-  notificationCount = signal(0);
+  // notificationCount ahora viene de notifService.count()
   @ViewChild('searchInput') searchInput!: ElementRef;
 
   // Search Shortcut
@@ -652,6 +750,9 @@ export class ShellPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     document.addEventListener('click', this.outsideClickHandler);
+    
+    // Conectar SSE para notificaciones en tiempo real
+    this.notifService.connectSSE();
 
     // Initial Title update
     this.updateTitle(this.router.url);
@@ -710,6 +811,7 @@ export class ShellPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     document.removeEventListener('click', this.outsideClickHandler);
+    this.notifService.disconnectSSE();
   }
 
   hasRole = (r: string) => {
@@ -739,6 +841,30 @@ export class ShellPage implements OnInit, OnDestroy {
 
   toggleUserMenu() { this.userMenuOpen.update(v => !v); }
   toggleNotifications() { this.notificationsOpen.update(v => !v); }
+
+  onNotificacionClick(n: Notificacion) {
+    if (!n.leida) {
+      this.notifService.marcarLeida(n.id_notificacion).subscribe();
+    }
+    // Navegar según tipo si corresponde
+    if (n.tipo === 'solicitud_acceso') {
+      this.notificationsOpen.set(false);
+      this.router.navigate(['/admin/configuracion'], { queryParams: { tab: 'solicitudes' } });
+    }
+  }
+
+  marcarTodasLeidas() {
+    this.notifService.marcarTodasLeidas().subscribe();
+  }
+
+  getNotifIconBg(tipo: string): string {
+    switch (tipo) {
+      case 'solicitud_acceso': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400';
+      case 'usuario_activado': return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400';
+      case 'backup_completado': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
+      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+    }
+  }
 
   editProfile() {
     this.userMenuOpen.set(false);

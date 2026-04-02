@@ -1,13 +1,17 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
 import { provideRouter, TitleStrategy } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
 
 import { routes } from './app.routes';
 import { CORE_PROVIDERS } from './core/providers';
 import { PUBLICADOR_REPO } from './features/secretario/publicadores/application/tokens';
 import { HttpPublicadorRepo } from './features/secretario/publicadores/infrastructure/adapters/http-publicador-repo';
 import { CustomTitleStrategy } from './core/services/custom-title.strategy';
+
+registerLocaleData(localeEs, 'es');
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,6 +22,7 @@ export const appConfig: ApplicationConfig = {
     ...CORE_PROVIDERS,
     // global repo binding for Publicadores feature
     { provide: PUBLICADOR_REPO, useClass: HttpPublicadorRepo },
-    { provide: TitleStrategy, useClass: CustomTitleStrategy }
+    { provide: TitleStrategy, useClass: CustomTitleStrategy },
+    { provide: LOCALE_ID, useValue: 'es' }
   ]
 };
