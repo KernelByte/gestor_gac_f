@@ -123,18 +123,28 @@ export class AdminConfigPage implements OnInit {
    updatingSolicitudId = signal<number | null>(null);
 
    ngOnInit() {
-      // Restore active tab from URL or localStorage
-      const tabParam = this.route.snapshot.queryParams['tab'];
-      const savedTab = localStorage.getItem('admin_active_tab');
-      const tabToSet = (tabParam || savedTab) as any;
-      const validTabs = ['congregaciones', 'auditoria', 'seguridad', 'ai', 'base-datos', 'solicitudes'];
-
-      if (tabToSet && validTabs.includes(tabToSet)) {
-         this.activeTab.set(tabToSet);
-      }
-
+      // Initialize form
       this.initForm();
-      this.loadCongregaciones();
+
+      // Reactive tab handling from query params
+      this.route.queryParams.subscribe(params => {
+         const tabParam = params['tab'];
+         const savedTab = localStorage.getItem('admin_active_tab');
+         const tabToSet = (tabParam || savedTab || 'congregaciones') as any;
+         const validTabs = ['congregaciones', 'auditoria', 'seguridad', 'ai', 'base-datos', 'solicitudes'];
+
+         if (tabToSet && validTabs.includes(tabToSet)) {
+            this.activeTab.set(tabToSet);
+            localStorage.setItem('admin_active_tab', tabToSet);
+            
+            // Load specific data based on tab
+            if (tabToSet === 'solicitudes') {
+               this.loadSolicitudes();
+            } else if (tabToSet === 'congregaciones') {
+               this.loadCongregaciones();
+            }
+         }
+      });
    }
 
    initForm() {

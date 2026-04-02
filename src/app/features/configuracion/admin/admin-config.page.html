@@ -397,93 +397,101 @@
       <div *ngIf="activeTab() === 'solicitudes'" class="flex flex-col flex-1 min-h-0 animate-fadeIn">
 
          <!-- Filter & Stats Bar -->
-         <div class="px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700 shrink-0 bg-white dark:bg-slate-900">
-            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+         <div class="px-4 sm:px-6 py-3.5 border-b border-slate-100 dark:border-slate-800/60 shrink-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                <!-- Filter Pills -->
-               <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+               <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
                   <button *ngFor="let f of [{val:'todas', label:'Todas'},{val:'pendiente', label:'Pendientes'},{val:'aprobada', label:'Aprobadas'},{val:'rechazada', label:'Rechazadas'}]"
                      (click)="setSolicitudFilter(f.val)" type="button"
-                     class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap"
+                     class="px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap active:scale-95"
                      [ngClass]="solicitudFilter() === f.val 
-                        ? 'bg-brand-purple text-white shadow-sm' 
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'">
+                        ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20' 
+                        : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'">
                      {{ f.label }}
                   </button>
                </div>
 
-               <!-- Stats -->
-               <div class="flex items-center gap-4 ml-auto text-xs font-bold">
-                  <span class="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-md">{{ solicitudStats.pendientes }} pendientes</span>
-                  <span class="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-md">{{ solicitudStats.aprobadas }} aprobadas</span>
-                  <span class="text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-md">{{ solicitudStats.rechazadas }} rechazadas</span>
+               <!-- Stats Badges -->
+               <div class="flex items-center gap-3 text-[10px] font-bold">
+                  <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100/50 dark:border-amber-900/30">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    {{ solicitudStats.pendientes }} pendientes
+                  </div>
+                  <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-900/30">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    {{ solicitudStats.aprobadas }} aprobadas
+                  </div>
                </div>
             </div>
          </div>
 
          <!-- Loading -->
-         <div *ngIf="solicitudesLoading()" class="flex-1 flex items-center justify-center">
-            <div class="w-10 h-10 border-4 border-brand-purple/20 border-t-brand-purple rounded-full animate-spin"></div>
+         <div *ngIf="solicitudesLoading()" class="flex-1 flex items-center justify-center py-20">
+            <div class="w-8 h-8 border-[3px] border-brand-purple/10 border-t-brand-purple rounded-full animate-spin"></div>
          </div>
 
          <!-- List -->
-         <div *ngIf="!solicitudesLoading()" class="flex-1 min-h-0 overflow-auto">
+         <div *ngIf="!solicitudesLoading()" class="flex-1 min-h-0 overflow-auto divide-y divide-slate-50 dark:divide-slate-800/40">
             <div *ngFor="let s of filteredSolicitudes"
-               class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+               class="flex flex-col sm:flex-row sm:items-center gap-4 px-4 sm:px-6 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all duration-200">
 
-               <!-- Avatar & Info -->
-               <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <div class="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/30 text-brand-purple dark:text-purple-400 flex items-center justify-center font-bold text-sm shrink-0">
+               <!-- Info Section -->
+               <div class="flex items-center gap-3.5 flex-1 min-w-0">
+                  <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-500 dark:text-slate-400 shrink-0 border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
                      {{ s.nombre.charAt(0).toUpperCase() }}
                   </div>
                   <div class="min-w-0 flex-1">
-                     <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{{ s.nombre }}</p>
-                     <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ s.email }}</span>
-                        <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ s.congregacion }}</span>
+                     <div class="flex items-center gap-2">
+                        <p class="text-[13px] font-bold text-slate-800 dark:text-white truncate">{{ s.nombre }}</p>
+                        <span class="hidden sm:inline w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+                        <span class="hidden sm:inline text-[11px] text-slate-400 dark:text-slate-500">{{ s.email }}</span>
                      </div>
-                     <div class="flex items-center gap-2 mt-1">
-                        <span class="text-[10px] text-slate-400 dark:text-slate-500">{{ s.telefono }}</span>
-                        <span *ngIf="s.observaciones" class="text-[10px] text-slate-400 dark:text-slate-500">· {{ s.observaciones }}</span>
+                     <div class="flex items-center gap-2 mt-0.5 opacity-80">
+                        <span class="text-[11px] text-slate-500 dark:text-slate-400">{{ s.congregacion }}</span>
+                        <span class="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-800"></span>
+                        <span class="text-[11px] text-slate-400 dark:text-slate-500">{{ s.telefono }}</span>
                      </div>
+                     <p *ngIf="s.observaciones" class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 italic line-clamp-1 border-s-2 border-slate-100 dark:border-slate-800 ps-2">
+                        "{{ s.observaciones }}"
+                     </p>
                   </div>
                </div>
 
-               <!-- Estado Badge -->
-               <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-                  <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider"
-                     [ngClass]="{
-                        'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400': s.estado === 'pendiente',
-                        'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': s.estado === 'aprobada',
-                        'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': s.estado === 'rechazada'
-                     }">
-                     {{ s.estado }}
-                  </span>
+               <!-- Status and Actions -->
+               <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                  <div class="flex flex-col items-end gap-1">
+                    <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border shadow-sm"
+                       [ngClass]="{
+                          'bg-amber-50/50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800': s.estado === 'pendiente',
+                          'bg-emerald-50/50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800': s.estado === 'aprobada',
+                          'bg-red-50/50 dark:bg-red-900/10 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800': s.estado === 'rechazada'
+                       }">
+                       {{ s.estado }}
+                    </span>
+                    <span class="text-[9px] text-slate-400 dark:text-slate-600 font-medium">{{ s.creado_en ? (s.creado_en | date:'dd MMM yyyy, HH:mm':'-0500':'es') : '' }}</span>
+                  </div>
 
-                  <span class="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">{{ s.creado_en ? (s.creado_en | date:'dd MMM yyyy, HH:mm':'-0500':'es') : '' }}</span>
-
-                  <!-- Actions (only for pendiente) -->
-                  <div *ngIf="s.estado === 'pendiente'" class="flex items-center gap-1">
+                  <!-- Action Buttons -->
+                  <div *ngIf="s.estado === 'pendiente'" class="flex items-center gap-1.5 ms-2 ps-3 border-s border-slate-100 dark:border-slate-800/60">
                      <button (click)="cambiarEstadoSolicitud(s.id_solicitud, 'aprobada')" type="button"
                         [disabled]="updatingSolicitudId() === s.id_solicitud"
-                        class="w-8 h-8 rounded-lg flex items-center justify-center text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors disabled:opacity-50"
+                        class="w-8 h-8 rounded-lg flex items-center justify-center text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all active:scale-90 disabled:opacity-50"
                         title="Aprobar">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                         </svg>
                      </button>
                      <button (click)="cambiarEstadoSolicitud(s.id_solicitud, 'rechazada')" type="button"
                         [disabled]="updatingSolicitudId() === s.id_solicitud"
-                        class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                        class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500/70 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all active:scale-90 disabled:opacity-50"
                         title="Rechazar">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                      </button>
                   </div>
                </div>
             </div>
-
             <!-- Empty State -->
             <div *ngIf="filteredSolicitudes.length === 0 && !solicitudesLoading()"
                class="py-20 flex flex-col items-center justify-center text-center">

@@ -495,83 +495,73 @@ export class TimeAgoPipe implements PipeTransform {
               <!-- Dropdown Panel -->
               <div 
                 *ngIf="notificationsOpen()" 
-                class="absolute right-0 mt-3 w-[400px] bg-white dark:bg-slate-900 rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] border border-slate-200/80 dark:border-slate-700/80 z-50 overflow-hidden animate-fadeIn origin-top-right"
+                class="absolute right-0 mt-2.5 w-[380px] bg-white dark:bg-slate-900 rounded-xl shadow-[0_12px_48px_-12px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_48px_-12px_rgba(0,0,0,0.6)] border border-slate-200/60 dark:border-slate-700/60 z-50 overflow-hidden animate-fadeIn"
               >
                 <!-- Header -->
-                <div class="px-5 py-4 flex items-center justify-between bg-gradient-to-r from-brand-purple/[0.06] via-white to-white dark:from-purple-900/20 dark:via-slate-900 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-brand-purple/10 dark:bg-purple-900/40 flex items-center justify-center">
-                      <svg class="w-4 h-4 text-brand-purple dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                      </svg>
-                    </div>
-                    <h3 class="font-bold text-slate-800 dark:text-white text-[15px]">Notificaciones</h3>
-                  </div>
+                <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80">
                   <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 dark:text-white text-sm">Notificaciones</h3>
                     <span *ngIf="notifService.count() > 0" 
-                      class="text-[10px] font-bold text-white bg-gradient-to-r from-brand-purple to-violet-500 px-2.5 py-1 rounded-full shadow-sm">
-                      {{ notifService.count() }} {{ notifService.count() === 1 ? 'nueva' : 'nuevas' }}
+                      class="text-[10px] font-bold text-brand-purple dark:text-purple-400 bg-brand-purple/8 dark:bg-purple-900/30 px-2 py-0.5 rounded-md">
+                      {{ notifService.count() }}
                     </span>
-                    <button *ngIf="notifService.count() > 0" 
-                      (click)="marcarTodasLeidas()" 
-                      class="text-[11px] font-semibold text-slate-400 hover:text-brand-purple dark:hover:text-purple-400 transition-colors px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20">
-                      Leer todas
-                    </button>
                   </div>
+                  <button *ngIf="notifService.count() > 0" 
+                    (click)="marcarTodasLeidas()" 
+                    class="text-[11px] font-semibold text-slate-400 hover:text-brand-purple dark:hover:text-purple-400 transition-colors px-2 py-1 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
+                    Marcar todas
+                  </button>
                 </div>
 
                 <!-- Notification list -->
-                <div class="max-h-[420px] overflow-y-auto overscroll-contain">
-                  <div *ngFor="let n of notifService.notificaciones(); let i = index" 
-                    class="flex items-start gap-3.5 px-5 py-4 cursor-pointer transition-all duration-150 border-b border-slate-50 dark:border-slate-800/40 group relative overflow-hidden"
+                <div class="max-h-[380px] overflow-y-auto overscroll-contain divide-y divide-slate-100/80 dark:divide-slate-800/50">
+                  <div *ngFor="let n of notifService.notificaciones()" 
+                    class="flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors duration-100 relative group"
                     [ngClass]="!n.leida 
-                      ? 'bg-gradient-to-r from-purple-50/60 via-white to-white dark:from-purple-900/[0.12] dark:via-slate-900 dark:to-slate-900 hover:from-purple-50 hover:via-purple-50/30 dark:hover:from-purple-900/20' 
-                      : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/30'"
+                      ? 'bg-brand-purple/[0.03] dark:bg-purple-500/[0.04] hover:bg-brand-purple/[0.06] dark:hover:bg-purple-500/[0.07]' 
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'"
                     (click)="onNotificacionClick(n)">
 
-                    <!-- Left accent bar for unread -->
-                    <div *ngIf="!n.leida" class="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-brand-purple"></div>
+                    <!-- Left accent for unread -->
+                    <div *ngIf="!n.leida" class="absolute left-0 top-3 bottom-3 w-[2.5px] rounded-r-full bg-brand-purple dark:bg-purple-500"></div>
 
                     <!-- Icon -->
-                    <div class="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center mt-0.5 transition-transform duration-200 group-hover:scale-110" 
+                    <div class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center mt-0.5" 
                       [ngClass]="getNotifIconBg(n.tipo)">
-                      <svg *ngIf="n.tipo === 'solicitud_acceso'" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <svg *ngIf="n.tipo === 'solicitud_acceso'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                       </svg>
-                      <svg *ngIf="n.tipo !== 'solicitud_acceso'" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <svg *ngIf="n.tipo !== 'solicitud_acceso'" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                       </svg>
                     </div>
 
                     <!-- Content -->
                     <div class="flex-1 min-w-0">
-                      <p class="text-[13px] leading-snug text-slate-800 dark:text-white" 
-                        [ngClass]="!n.leida ? 'font-bold' : 'font-medium'">
+                      <p class="text-[13px] leading-snug text-slate-700 dark:text-slate-200" 
+                        [ngClass]="!n.leida ? 'font-bold text-slate-900 dark:text-white' : 'font-medium'">
                         {{ n.titulo }}
                       </p>
-                      <p *ngIf="n.mensaje" class="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ n.mensaje }}</p>
-                      <div class="flex items-center gap-1.5 mt-1.5">
-                        <svg class="w-3 h-3 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{{ n.creado_en | timeAgo }}</p>
-                      </div>
+                      <p *ngIf="n.mensaje" class="text-[11.5px] text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">{{ n.mensaje }}</p>
+                      <p class="text-[10px] text-slate-400/80 dark:text-slate-600 mt-1">{{ n.creado_en | timeAgo }}</p>
                     </div>
 
                     <!-- Unread dot -->
-                    <div *ngIf="!n.leida" class="shrink-0 mt-2">
-                      <div class="w-2.5 h-2.5 bg-brand-purple rounded-full shadow-[0_0_8px_rgba(109,40,217,0.4)]"></div>
+                    <div *ngIf="!n.leida" class="shrink-0 mt-1.5">
+                      <div class="w-2 h-2 bg-brand-purple dark:bg-purple-400 rounded-full"></div>
                     </div>
                   </div>
 
                   <!-- Empty state -->
-                  <div *ngIf="notifService.notificaciones().length === 0" class="py-14 text-center flex flex-col items-center gap-4">
-                    <div class="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
-                      <svg class="w-8 h-8 text-slate-200 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                  <div *ngIf="notifService.notificaciones().length === 0" class="py-12 text-center flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 bg-slate-50 dark:bg-slate-800/80 rounded-xl flex items-center justify-center">
+                      <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                      </svg>
                     </div>
                     <div>
-                      <p class="font-bold text-slate-600 dark:text-slate-300 text-sm">¡Estás al día!</p>
-                      <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">No tienes notificaciones pendientes</p>
+                      <p class="font-semibold text-slate-500 dark:text-slate-400 text-sm">Sin notificaciones</p>
+                      <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Estás al día</p>
                     </div>
                   </div>
                 </div>
