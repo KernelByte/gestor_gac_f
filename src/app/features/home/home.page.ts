@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { AuthStore } from '../../core/auth/auth.store';
 
+import { RouterModule } from '@angular/router';
+
 @Component({
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
-  <div class="h-full flex flex-col gap-6 overflow-y-auto overflow-x-hidden p-1 custom-scrollbar">
+  <div class="h-full flex flex-col gap-6 overflow-y-auto overflow-x-hidden p-1 custom-scrollbar pb-10">
    
    <!-- 1. Compact Welcome Header (Taller now) -->
    <div class="shrink-0 relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#6D28D9] to-[#4C1D95] px-8 py-10 text-white shadow-lg flex items-center justify-between">
@@ -29,14 +31,12 @@ import { AuthStore } from '../../core/auth/auth.store';
    <div class="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     
     <!-- Publicadores (Purple) -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:border-purple-200 transition-all hover:shadow-md group h-36">
+    <div *ngIf="canViewPublicadores()" class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:border-purple-200 transition-all hover:shadow-md group h-36">
       <div class="flex justify-between items-start mb-2">
        <div class="p-2 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-[#6D28D9] dark:text-purple-400 group-hover:scale-105 transition-transform shadow-sm">
          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
        </div>
        <div class="flex flex-col items-end">
-        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full mb-1">+12%</span>
-        <span class="text-[10px] text-slate-400 dark:text-slate-400">vs mes ant.</span>
        </div>
       </div>
       <div>
@@ -53,77 +53,35 @@ import { AuthStore } from '../../core/auth/auth.store';
     </div>
 
     <!-- Informes (Orange) -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 pb-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:border-orange-200 transition-all hover:shadow-md group h-36">
+    <div *ngIf="canViewInformes()" class="bg-white dark:bg-slate-800 rounded-2xl p-4 pb-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:border-orange-200 transition-all hover:shadow-md group h-36">
       <div class="flex justify-between items-start">
        <div class="p-2 rounded-xl bg-orange-50 dark:bg-orange-900/30 text-orange-500 group-hover:scale-105 transition-transform shadow-sm">
          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
        </div>
-       <div class="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-lg border border-red-100">
+       <div *ngIf="informesPendientes() > 0" class="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-lg border border-red-100">
           <span class="relative flex h-1.5 w-1.5">
            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
           </span>
-          <span class="text-[10px] font-bold text-red-600 leading-none">2 Pendientes</span>
+          <span class="text-[10px] font-bold text-red-600 leading-none">{{ informesPendientes() }} Pendientes</span>
         </div>
       </div>
       
       <div class="flex-1 flex flex-col justify-center">
        <div class="flex items-baseline gap-1.5">
-         <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none">23</h3>
-         <span class="text-xs font-bold text-slate-400 dark:text-slate-400">/ 30</span>
+         <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none">{{ informesRecibidos() }}</h3>
+         <span class="text-xs font-bold text-slate-400 dark:text-slate-400">/ {{ totalPublicadores() }}</span>
        </div>
-       <p class="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-0.5">Informes Rec.</p>
+       <p class="text-[10px] font-bold text-slate-400 dark:text-slate-400 tracking-wide mt-0.5">Informes Rec. Último Mes</p>
       </div>
       
       <div class="w-full">
         <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden flex">
-         <div class="h-full bg-orange-400 rounded-full w-[76%] shadow-[0_0_8px_rgba(251,146,60,0.4)]"></div>
+         <div class="h-full bg-orange-400 rounded-full shadow-[0_0_8px_rgba(251,146,60,0.4)] transition-all duration-1000" [style.width.%]="porcentajeInformes()"></div>
         </div>
       </div>
     </div>
 
-    <!-- Territorios (Green) -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:border-emerald-200 transition-all hover:shadow-md group h-36">
-      <div class="flex justify-between items-start mb-2">
-       <div class="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500 group-hover:scale-105 transition-transform shadow-sm">
-         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-       </div>
-       <div class="text-right">
-        <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 block">8 / 42</span>
-        <span class="text-[10px] text-slate-400 dark:text-slate-400">Asignados</span>
-       </div>
-      </div>
-      <div>
-        <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">19%</h3>
-        <p class="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">Cobertura</p>
-      </div>
-      <div class="mt-2 text-[10px] text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-lg text-center truncate">
-        Terr. #14, #22, #05 activos
-      </div>
-    </div>
-
-    <!-- Turnos / Exhibidores (Blue) -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:border-blue-200 transition-all hover:shadow-md group h-36 relative overflow-hidden">
-      <div class="absolute right-0 top-0 w-16 h-16 bg-blue-50/50 dark:bg-blue-900/20 rounded-bl-full -mr-4 -mt-4 z-0 pointer-events-none"></div>
-      <div class="flex justify-between items-start mb-2 relative z-10">
-       <div class="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-500 group-hover:scale-105 transition-transform shadow-sm">
-         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-       </div>
-       <span class="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">Próx. 24h</span>
-      </div>
-      <div class="relative z-10 flex-1 flex flex-col justify-end">
-        <p class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase mb-1">Siguiente Turno</p>
-        <div class="bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 rounded-lg p-2 flex items-center justify-between">
-          <div class="flex flex-col">
-            <span class="text-xs font-black text-slate-700 dark:text-slate-200">Mañana</span>
-            <span class="text-[10px] text-blue-600 font-bold">10:00 AM</span>
-          </div>
-          <div class="w-6 h-6 rounded-full bg-blue-200 text-blue-700 dark:text-blue-400 text-[10px] flex items-center justify-center font-bold">
-           JG
-          </div>
-        </div>
-      </div>
-    </div>
    </div>
 
    <!-- 3. New Visual Insights Section -->
@@ -133,103 +91,29 @@ import { AuthStore } from '../../core/auth/auth.store';
     <div class="lg:col-span-2 flex flex-col gap-6">
       
       <!-- Reports Performance Chart (Compact & Horizontal) -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-row items-center justify-between h-32">
+      <div *ngIf="canViewInformes()" class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-row items-center justify-between h-32">
         <div class="flex flex-col justify-center h-full">
           <div>
            <h3 class="font-bold text-slate-800 dark:text-white text-lg">Rendimiento</h3>
-           <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Informes últimos 6 meses</p>
+           <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Cursos y Horas (Último mes)</p>
           </div>
           <div class="mt-3 flex items-center gap-3">
-           <span class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">142</span>
+           <span class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">{{ totalCursos() }}</span>
            <div class="flex flex-col">
-            <span class="text-[10px] text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded w-fit">+12%</span>
-            <span class="text-[9px] text-slate-400 dark:text-slate-400 mt-0.5">Media Semanal</span>
+            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded w-fit">Cursos Bíblicos</span>
            </div>
           </div>
         </div>
 
-        <!-- Mini Bar Chart (Right Side) -->
-        <div class="h-full flex items-end gap-2 sm:gap-3">
-          <div class="group flex flex-col items-center gap-1 cursor-pointer">
-            <div class="w-2 sm:w-2.5 bg-orange-100 dark:bg-orange-900/50 group-hover:bg-orange-400 rounded-full h-8 transition-all duration-300"></div>
-            <span class="text-[9px] text-slate-300 font-bold">Jul</span>
-          </div>
-          <div class="group flex flex-col items-center gap-1 cursor-pointer">
-            <div class="w-2 sm:w-2.5 bg-orange-100 dark:bg-orange-900/50 group-hover:bg-orange-400 rounded-full h-12 transition-all duration-300"></div>
-            <span class="text-[9px] text-slate-300 font-bold">Ago</span>
-          </div>
-          <div class="group flex flex-col items-center gap-1 cursor-pointer">
-            <div class="w-2 sm:w-2.5 bg-orange-200 dark:bg-orange-800/60 group-hover:bg-orange-400 rounded-full h-10 transition-all duration-300"></div>
-            <span class="text-[9px] text-slate-300 font-bold">Sep</span>
-          </div>
-           <div class="group flex flex-col items-center gap-1 cursor-pointer">
-            <div class="w-2 sm:w-2.5 bg-orange-300 dark:bg-orange-700/70 group-hover:bg-orange-400 rounded-full h-16 transition-all duration-300"></div>
-            <span class="text-[9px] text-slate-300 font-bold">Oct</span>
-          </div>
-           <div class="group flex flex-col items-center gap-1 cursor-pointer">
-             <div class="w-2 sm:w-2.5 bg-orange-400 group-hover:bg-orange-500 rounded-full h-14 transition-all duration-300"></div>
-            <span class="text-[9px] text-slate-300 font-bold">Nov</span>
-          </div>
-           <div class="group flex flex-col items-center gap-1 cursor-pointer">
-             <div class="w-2 sm:w-2.5 bg-orange-500 shadow-lg shadow-orange-200 rounded-full h-20 transition-all duration-300"></div>
-            <span class="text-[9px] text-slate-500 dark:text-slate-400 font-bold">Dic</span>
-          </div>
+        <div class="h-full flex items-end justify-end gap-2 sm:gap-4 flex-1 pb-2">
+            <div class="flex flex-col items-center justify-end h-full">
+              <span class="text-2xl font-black text-purple-600 dark:text-purple-400 pb-1">{{ totalHorasPrecursores() }}</span>
+              <span class="text-[10px] text-slate-400 dark:text-slate-400 uppercase font-bold tracking-wider">Horas Precursores</span>
+            </div>
         </div>
       </div>
 
-      <!-- Enhanced Activity Feed (Color Corrected) -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden flex-1">
-        <div class="px-5 py-4 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between shrink-0 bg-slate-50/30 dark:bg-slate-800/80">
-          <h2 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <svg class="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            Actividad Reciente
-          </h2>
-          <button class="text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-purple-600 transition-colors">Ver historial completo</button>
-        </div>
-        <div class="p-0">
-          <!-- Item 1: Informe (Orange) -->
-          <button class="w-full text-left p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-50 dark:border-slate-700 flex gap-4 group">
-            <div class="w-10 h-10 rounded-full bg-orange-50 dark:bg-orange-900/30 border border-orange-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-             <svg class="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            </div>
-            <div class="flex-1 min-w-0">
-             <div class="flex justify-between items-baseline mb-0.5">
-               <h4 class="text-sm font-bold text-slate-800 dark:text-white truncate">Informe Completado</h4>
-               <span class="text-[10px] text-slate-400 dark:text-slate-400 font-medium">Hace 15m</span>
-             </div>
-             <p class="text-xs text-slate-500 dark:text-slate-400 truncate">Maria García entregó su informe mensual sin novedades.</p>
-            </div>
-          </button>
 
-          <!-- Item 2: Territorio (Green) -->
-          <button class="w-full text-left p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-50 dark:border-slate-700 flex gap-4 group">
-            <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-             <svg class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
-            <div class="flex-1 min-w-0">
-             <div class="flex justify-between items-baseline mb-0.5">
-               <h4 class="text-sm font-bold text-slate-800 dark:text-white truncate">Territorio Entregado</h4>
-               <span class="text-[10px] text-slate-400 dark:text-slate-400 font-medium">Hace 2h</span>
-             </div>
-             <p class="text-xs text-slate-500 dark:text-slate-400 truncate">El Territorio #09 fue completado por Juan Perez.</p>
-            </div>
-          </button>
-
-          <!-- Item 3: Publicador (Purple) -->
-          <button class="w-full text-left p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors flex gap-4 group">
-            <div class="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/30 border border-purple-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-             <svg class="w-4 h-4 text-[#6D28D9] dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-            </div>
-            <div class="flex-1 min-w-0">
-             <div class="flex justify-between items-baseline mb-0.5">
-               <h4 class="text-sm font-bold text-slate-800 dark:text-white truncate">Nuevo Publicador</h4>
-               <span class="text-[10px] text-slate-400 dark:text-slate-400 font-medium">Ayer</span>
-             </div>
-             <p class="text-xs text-slate-500 dark:text-slate-400 truncate">Carlos Rodriguez se unió al Grupo 3.</p>
-            </div>
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- Right Column: Quick Actions (1 Col) -->
@@ -243,46 +127,34 @@ import { AuthStore } from '../../core/auth/auth.store';
         <div class="p-4 grid grid-cols-1 gap-3">
           
           <!-- Publicadores (Purple) -->
-          <button class="flex flex-row items-center gap-4 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/30 hover:bg-[#6D28D9] group hover:text-white dark:hover:text-white border border-transparent dark:border-slate-700/50 transition-all duration-300">
+          <button *ngIf="canManagePublicadores()" routerLink="/secretario/publicadores" class="flex flex-row items-center gap-4 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/30 hover:bg-[#6D28D9] group hover:text-white dark:hover:text-white border border-transparent dark:border-slate-700/50 transition-all duration-300">
            <span class="w-10 h-10 rounded-lg bg-white/60 dark:bg-slate-800/60 flex items-center justify-center text-[#6D28D9] dark:text-purple-400 group-hover:bg-white/20 group-hover:text-white transition-colors">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
            </span>
            <div class="text-left">
-            <span class="block text-sm font-bold">Nuevo Miembro</span>
-            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Añadir publicador</span>
+            <span class="block text-sm font-bold">Gestionar Publicadores</span>
+            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Añadir o editar</span>
            </div>
           </button>
           
           <!-- Informes (Orange) (Was Green) -->
-          <button class="flex flex-row items-center gap-4 p-4 rounded-xl bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-500 group hover:text-white dark:hover:text-white border border-transparent dark:border-slate-700/50 transition-all duration-300">
+          <button *ngIf="canViewInformes()" routerLink="/mi-informe" class="flex flex-row items-center gap-4 p-4 rounded-xl bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-500 group hover:text-white dark:hover:text-white border border-transparent dark:border-slate-700/50 transition-all duration-300">
            <span class="w-10 h-10 rounded-lg bg-white/60 dark:bg-slate-800/60 flex items-center justify-center text-orange-500 group-hover:bg-white/20 group-hover:text-white transition-colors">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
            </span>
            <div class="text-left">
-            <span class="block text-sm font-bold">Informe</span>
-            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Registrar actividad</span>
+            <span class="block text-sm font-bold">Mi Informe</span>
+            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Registrar tu actividad</span>
            </div>
           </button>
-          
-          <!-- Territorios (Green) (Was Orange) -->
-          <button class="flex flex-row items-center gap-4 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-600 group hover:text-white dark:hover:text-white border border-transparent dark:border-slate-700/50 transition-all duration-300">
-           <span class="w-10 h-10 rounded-lg bg-white/60 dark:bg-slate-800/60 flex items-center justify-center text-emerald-600 group-hover:bg-white/20 group-hover:text-white transition-colors">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+
+          <button *ngIf="canManageInformes()" routerLink="/secretario/informes" class="flex flex-row items-center gap-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-500 group hover:text-white dark:hover:text-white border border-transparent dark:border-slate-700/50 transition-all duration-300">
+           <span class="w-10 h-10 rounded-lg bg-white/60 dark:bg-slate-800/60 flex items-center justify-center text-blue-500 group-hover:bg-white/20 group-hover:text-white transition-colors">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
            </span>
            <div class="text-left">
-            <span class="block text-sm font-bold">Territorio</span>
-            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Asignar o devolver</span>
-           </div>
-          </button>
-          
-          <!-- Turnos (Blue) -->
-          <button class="flex flex-row items-center gap-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-600 group hover:text-white dark:hover:text-white border border-transparent dark:border-slate-700/50 transition-all duration-300">
-           <span class="w-10 h-10 rounded-lg bg-white/60 dark:bg-slate-800/60 flex items-center justify-center text-blue-600 group-hover:bg-white/20 group-hover:text-white transition-colors">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-           </span>
-           <div class="text-left">
-            <span class="block text-sm font-bold">Turno</span>
-            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Programar carrito</span>
+            <span class="block text-sm font-bold">Resumen de Informes</span>
+            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Ver mes actual</span>
            </div>
           </button>
         </div>
@@ -320,12 +192,42 @@ export class HomePage implements OnInit {
   userName = signal('Usuario');
   currentDate = signal('');
   totalPublicadores = signal(0);
+  informesPendientes = signal(0);
+  informesRecibidos = signal(0);
+  porcentajeInformes = signal(0);
+  totalCursos = signal(0);
+  totalHorasPrecursores = signal(0);
+
+  // Role verification checks
+  canViewPublicadores = signal(false);
+  canManagePublicadores = signal(false);
+  canViewInformes = signal(false);
+  canManageInformes = signal(false);
 
   ngOnInit() {
    const user = this.store.user();
    if (user) {
      this.userName.set(user.nombre || user.username);
-     this.loadPublicadoresCount();
+     
+     // Set permissions based on role
+     const rolesPublicadores = ['Administrador', 'Gestor Aplicación', 'Coordinador', 'Secretario', 'Superintendente de servicio', 'Gestor', 'Publicador'];
+     const rolesManagePublicadores = ['Administrador', 'Gestor Aplicación', 'Secretario', 'Coordinador'];
+     const rolesInformes = ['Administrador', 'Secretario', 'Coordinador', 'Publicador', 'Superintendente de servicio'];
+     const rolesManageInformes = ['Administrador', 'Secretario', 'Coordinador'];
+
+     const currentRole = user.rol || '';
+     
+     this.canViewPublicadores.set(rolesPublicadores.includes(currentRole));
+     this.canManagePublicadores.set(rolesManagePublicadores.includes(currentRole));
+     this.canViewInformes.set(rolesInformes.includes(currentRole));
+     this.canManageInformes.set(rolesManageInformes.includes(currentRole));
+
+     if(this.canViewPublicadores()) {
+        this.loadPublicadoresCount();
+     }
+     if(this.canViewInformes()) {
+        this.loadInformesStats(user.id_congregacion);
+     }
    }
 
    const now = new Date();
@@ -345,8 +247,56 @@ export class HomePage implements OnInit {
      },
      error: (err) => {
       console.error('Error cargando publicadores:', err);
-      // Mantener el valor por defecto en caso de error
      }
    });
+  }
+
+  private loadInformesStats(congregacionId: number | null | undefined) {
+    if (!congregacionId) return;
+
+    // Primero obtener los periodos disponibles
+    this.http.get<any>('/api/informes/periodos-disponibles').subscribe({
+      next: (res) => {
+        if (res.periodos && res.periodos.length > 0) {
+          const latest = res.periodos[0]; // El más reciente (están ordenados por backend desc)
+          
+          // Ahora buscar el id_periodo - Oh, la api de periodos disponibles no da el id base, vamos a deducirlo 
+          // O podemos simplemente consultar el historial de este año o buscar el id_periodo
+          // Si no tenemos el ID, podemos llamar get_periodo buscando por ano y mes, o iterar.
+          // Wait, the API for periodos-disponibles does not return the 'id_periodo', just ano and mes.
+          // Let's use the current date to find out the recent data if needed, or better, 
+          // fetch /api/periodos/actual? No, there is no such endpoint specified here.
+          // We can call /api/informes/resumen-mensual by looking up the ID. Since we need ID,
+          // Let's first search periodos:
+          this.http.get<any[]>('/api/periodos/').subscribe(periodos => {
+            const p = periodos.find(x => x.codigo_ano === latest.ano && x.codigo_mes === latest.mes);
+            if(p && p.id_periodo) {
+               this.http.get<any>(`/api/informes/resumen-mensual?periodo_id=${p.id_periodo}&congregacion_id=${congregacionId}`).subscribe({
+                  next: (stats) => {
+                     this.informesRecibidos.set(stats.informes_recibidos);
+                     
+                     // Pendientes depends on total allowed, or from total_publicadores reported in that stats
+                     const pending = stats.total_publicadores - stats.informes_recibidos;
+                     this.informesPendientes.set(pending > 0 ? pending : 0);
+                     
+                     const pct = stats.total_publicadores > 0 ? Math.round((stats.informes_recibidos / stats.total_publicadores) * 100) : 0;
+                     this.porcentajeInformes.set(pct);
+                     
+                     this.totalCursos.set(stats.total_cursos);
+                     this.totalHorasPrecursores.set(stats.total_horas_precursores);
+                     
+                     // If we are getting the real total_publicadores for the period, lets also update the general one to match
+                     if (stats.total_publicadores > 0) {
+                        this.totalPublicadores.set(stats.total_publicadores);
+                     }
+                  },
+                  error: err => console.error('Error loading resumen', err)
+               });
+            }
+          });
+        }
+      },
+      error: err => console.error('Error periodos', err)
+    });
   }
 }
