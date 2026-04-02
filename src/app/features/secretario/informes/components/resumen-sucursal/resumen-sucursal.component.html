@@ -63,7 +63,7 @@
                      <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Publicadores</span>
                   </div>
                   <p class="text-2xl font-display font-black text-slate-800 dark:text-white">{{ r.total_publicadores_activos }}</p>
-                  <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ r.total_informaron }} informaron</p>
+                  <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ r.total_informaron }} informaron</p>
                </div>
             </div>
 
@@ -114,7 +114,7 @@
                      <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Sin Informe</span>
                   </div>
                   <p class="text-2xl font-display font-black text-slate-800 dark:text-white">{{ r.sin_informe_count }}</p>
-                  <p class="text-[11px] text-red-500 dark:text-red-400 mt-1 font-bold">{{ r.sin_informe_porcentaje }}%</p>
+                  <p class="text-[0.6875rem] text-red-500 dark:text-red-400 mt-1 font-bold">{{ r.sin_informe_porcentaje }}%</p>
                </div>
             </div>
 
@@ -187,11 +187,11 @@
                      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">Publicadores</p>
                      <div class="grid grid-cols-2 gap-2">
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Particip.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Particip.</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_publicadores.cantidad_informaron }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Est. Bíblicos</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Est. Bíblicos</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_publicadores.cursos_biblicos }}</p>
                         </div>
                      </div>
@@ -200,15 +200,15 @@
                      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">Prec. Auxiliares</p>
                      <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Particip.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Particip.</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.cantidad_informaron }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Est. Bíb.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Est. Bíb.</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.cursos_biblicos }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Horas</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Horas</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.horas_totales | number:'1.0-0' }}</p>
                         </div>
                      </div>
@@ -217,15 +217,15 @@
                      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">Prec. Regulares</p>
                      <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Particip.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Particip.</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.cantidad_informaron }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Est. Bíb.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Est. Bíb.</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.cursos_biblicos }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Horas</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Horas</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.horas_totales | number:'1.0-0' }}</p>
                         </div>
                      </div>
@@ -234,15 +234,15 @@
                      <p class="text-xs font-display font-black text-slate-900 dark:text-white uppercase tracking-wider mb-2">Totales</p>
                      <div class="grid grid-cols-3 gap-2">
                         <div class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Particip.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Particip.</p>
                            <p class="text-base font-display font-black text-slate-900 dark:text-white mt-0.5">{{ r.total_informaron }}</p>
                         </div>
                         <div class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Est. Bíb.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Est. Bíb.</p>
                            <p class="text-base font-display font-black text-slate-900 dark:text-white mt-0.5">{{ r.total_cursos_biblicos }}</p>
                         </div>
                         <div class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Horas</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Horas</p>
                            <p class="text-base font-display font-black text-slate-900 dark:text-white mt-0.5">{{ r.total_horas | number:'1.0-0' }}</p>
                         </div>
                      </div>
@@ -308,15 +308,15 @@
                      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">Prec. Auxiliares</p>
                      <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Promedio</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Promedio</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.promedio_horas | number:'1.0-1' }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">3 Meses</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">3 Meses</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.promedio_horas_3m !== null ? (r.detalle_auxiliares.promedio_horas_3m | number:'1.0-1') : '—' }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">6 Meses</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">6 Meses</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.promedio_horas_6m !== null ? (r.detalle_auxiliares.promedio_horas_6m | number:'1.0-1') : '—' }}</p>
                         </div>
                      </div>
@@ -325,15 +325,15 @@
                      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">Prec. Regulares</p>
                      <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Promedio</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Promedio</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.promedio_horas | number:'1.0-1' }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">3 Meses</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">3 Meses</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.promedio_horas_3m !== null ? (r.detalle_regulares.promedio_horas_3m | number:'1.0-1') : '—' }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">6 Meses</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">6 Meses</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.promedio_horas_6m !== null ? (r.detalle_regulares.promedio_horas_6m | number:'1.0-1') : '—' }}</p>
                         </div>
                      </div>
@@ -394,15 +394,15 @@
                      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">Entre semana</p>
                      <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Reun.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Reun.</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ ae.num_reuniones }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Total</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Total</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ ae.total | number:'1.0-0' }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Prom.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Prom.</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ ae.promedio | number:'1.0-0' }}</p>
                         </div>
                      </div>
@@ -411,15 +411,15 @@
                      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">Fin de semana</p>
                      <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Reun.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Reun.</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ af.num_reuniones }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Total</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Total</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ af.total | number:'1.0-0' }}</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Prom.</p>
+                           <p class="text-[0.625rem] text-slate-400 uppercase tracking-wide">Prom.</p>
                            <p class="text-base font-display font-black text-slate-800 dark:text-white mt-0.5">{{ af.promedio | number:'1.0-0' }}</p>
                         </div>
                      </div>

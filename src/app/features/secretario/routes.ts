@@ -1,5 +1,29 @@
-import { Routes } from '@angular/router';
+import { CanActivateFn, Router, Routes } from '@angular/router';
 import { PUBLICADORES_PROVIDERS } from './publicadores/providers';
+import { inject } from '@angular/core';
+import { AuthStore } from '../../core/auth/auth.store';
+
+const informesPermissionGuard: CanActivateFn = () => {
+   const store = inject(AuthStore);
+   const router = inject(Router);
+
+   const user = store.user();
+   if (!user) return router.createUrlTree(['/login']);
+
+   const roles = (user.roles ?? (user.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+   const isPrivilegedRole = roles.includes('administrador') ||
+      roles.includes('secretario') ||
+      roles.includes('coordinador') ||
+      roles.includes('superintendente de servicio');
+
+   const ok = isPrivilegedRole ||
+      store.hasPermission('informes.ver') ||
+      store.hasPermission('informes.editar') ||
+      store.hasPermission('informes.historial') ||
+      store.hasPermission('informes.editar_todos');
+
+   return ok ? true : router.createUrlTree(['/']);
+};
 
 export const SECRETARIO_ROUTES: Routes = [
    {
@@ -11,6 +35,7 @@ export const SECRETARIO_ROUTES: Routes = [
    {
       path: 'informes',
       title: 'Informes de Servicio',
+      canActivate: [informesPermissionGuard],
       loadComponent: () => import('./informes/informes-main.page').then(m => m.InformesMainPage)
    },
    // 'grupos' main route is merged into publicadores tab

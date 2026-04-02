@@ -64,23 +64,23 @@ interface ContactoEmergencia {
                 <!-- Filter Pills (Scrollable) -->
                 <div class="flex gap-2 mt-4 overflow-x-auto no-scrollbar pb-1 mask-linear-fade">
                     <button (click)="toggleFilter('all')"
-                        class="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border shrink-0"
+                        class="px-3 py-1.5 rounded-full text-[0.6875rem] font-bold transition-all border shrink-0"
                         [ngClass]="activeFilters().has('all') ? 'bg-slate-800 dark:bg-slate-100 border-slate-800 dark:border-white text-white dark:text-slate-900 shadow-md shadow-slate-900/10' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
                         Todos
                     </button>
                     <button (click)="toggleFilter('active')"
-                        class="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border shrink-0 flex items-center gap-1.5"
+                        class="px-3 py-1.5 rounded-full text-[0.6875rem] font-bold transition-all border shrink-0 flex items-center gap-1.5"
                         [ngClass]="activeFilters().has('active') ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800'">
                         <span class="w-1.5 h-1.5 rounded-full" [ngClass]="activeFilters().has('active') ? 'bg-emerald-500' : 'bg-emerald-400'"></span>
                         Activos
                     </button>
                     <button (click)="toggleFilter('inactive')"
-                        class="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border shrink-0"
+                        class="px-3 py-1.5 rounded-full text-[0.6875rem] font-bold transition-all border shrink-0"
                         [ngClass]="activeFilters().has('inactive') ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
                         Inactivos
                     </button>
                     <button (click)="toggleFilter('no-phone')"
-                        class="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border shrink-0 flex items-center gap-1.5"
+                        class="px-3 py-1.5 rounded-full text-[0.6875rem] font-bold transition-all border shrink-0 flex items-center gap-1.5"
                         [ngClass]="activeFilters().has('no-phone') ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-200 dark:hover:border-amber-800'">
                         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         Sin Teléfono
@@ -131,7 +131,7 @@ interface ContactoEmergencia {
             
             <!-- Footer Status -->
             <div class="p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <span class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">
                     {{ filteredList().length }} Miembros
                 </span>
             </div>
@@ -182,12 +182,12 @@ interface ContactoEmergencia {
                             <div>
                                 <h1 class="text-xl md:text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">{{ p.primer_nombre }} {{ p.primer_apellido }}</h1>
                                 <div class="flex flex-wrap items-center gap-3 md:gap-4 mt-2">
-                                    <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] md:text-xs font-bold border border-slate-200 dark:border-slate-700" title="Número de teléfono personal">
+                                    <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[0.625rem] md:text-xs font-bold border border-slate-200 dark:border-slate-700" title="Número de teléfono personal">
                                         <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                                         <span class="text-slate-400 font-normal mr-1 hidden sm:inline">Personal:</span>
                                         {{ p.telefono || 'N/A' }}
                                     </div>
-                                    <span class="text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100" *ngIf="p.id_estado_publicador === 1">Activo</span>
+                                    <span class="text-[0.625rem] md:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100" *ngIf="p.id_estado_publicador === 1">Activo</span>
                                 </div>
                             </div>
                         </div>
@@ -226,24 +226,24 @@ interface ContactoEmergencia {
                                  <div class="grid grid-cols-12 gap-3 mb-4">
                                      <!-- Name Full Width -->
                                      <div class="col-span-12 space-y-1">
-                                         <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Nombre <span class="text-red-400">*</span></label>
+                                         <label class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Nombre <span class="text-red-400">*</span></label>
                                          <input formControlName="nombre" class="w-full h-8 px-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded text-sm text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="Nombre del contacto">
                                      </div>
                                      
                                      <!-- Parentesco & Phone on same line (6 cols each on mobile too if space allows, otherwise 12) -->
                                      <div class="col-span-6 space-y-1">
-                                         <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Parentesco</label>
+                                         <label class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Parentesco</label>
                                          <input formControlName="parentesco" class="w-full h-8 px-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded text-sm text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="Ej: Madre">
                                      </div>
                                      
                                      <div class="col-span-6 space-y-1">
-                                         <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Teléfono</label>
+                                         <label class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Teléfono</label>
                                          <input formControlName="telefono" class="w-full h-8 px-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded text-sm text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="Teléfono">
                                      </div>
 
                                      <!-- Address Full Width -->
                                      <div class="col-span-12 space-y-1">
-                                         <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Dirección</label>
+                                         <label class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Dirección</label>
                                          <input formControlName="direccion" class="w-full h-8 px-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded text-sm text-slate-800 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="Dirección o notas...">
                                      </div>
                                  </div>
@@ -328,8 +328,8 @@ interface ContactoEmergencia {
 
                              <!-- Tags -->
                              <div class="flex flex-wrap gap-2 mt-5 pt-4 border-t border-slate-50 dark:border-slate-800">
-                                 <span *ngIf="c.es_principal" class="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[10px] uppercase font-black tracking-wide border border-emerald-100">Principal</span>
-                                 <span *ngIf="c.solo_urgencias" class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[10px] uppercase font-black tracking-wide">Solo Urgencias</span>
+                                 <span *ngIf="c.es_principal" class="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[0.625rem] uppercase font-black tracking-wide border border-emerald-100">Principal</span>
+                                 <span *ngIf="c.solo_urgencias" class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[0.625rem] uppercase font-black tracking-wide">Solo Urgencias</span>
                              </div>
                         </div>
 

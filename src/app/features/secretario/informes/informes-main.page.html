@@ -36,7 +36,7 @@
             </app-informes-filters>
 
             <!-- Data List/Table Container -->
-            <app-informes-table [resumen]="resumen()" [saving]="saving()" [privilegios]="privilegios()"
+            <app-informes-table [resumen]="resumen()" [saving]="saving()" [canEdit]="canEditInformes()" [privilegios]="privilegios()"
                [publicadorPrivilegiosMap]="publicadorPrivilegiosMap()" [localChanges]="localChanges"
                (informeChange)="handleInformeChange($event)" (save)="guardarTodo()" (exportExcel)="exportarExcel()"
                (importExcel)="importarExcel($event)" (notifyWhatsApp)="notificarWhatsApp($event)">
@@ -47,7 +47,8 @@
       <!-- Tab 2: Historial (Placeholder) -->
       <ng-container *ngIf="activeTab() === 'historial'">
          <app-informes-historial [selectedAno]="+selectedAno" [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0"
-            [grupos]="grupos()">
+            [grupos]="grupos()" [canEdit]="canEditHistorial()" [canExport]="canEditHistorial()"
+            [lockedGroupId]="canEditHistorial() ? null : historialGroupId()">
          </app-informes-historial>
       </ng-container>
 

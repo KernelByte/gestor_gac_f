@@ -92,7 +92,7 @@ interface TableColumn {
                   ? 'bg-brand-orange text-white shadow-sm' 
                   : 'bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200'"
             >
-                Todos <span class="text-[10px] opacity-80">{{ totalFilteredCount() }}</span>
+                Todos <span class="text-[0.625rem] opacity-80">{{ totalFilteredCount() }}</span>
             </button>
             
             <button 
@@ -103,7 +103,7 @@ interface TableColumn {
                   ? 'bg-brand-orange text-white shadow-sm' 
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'"
             >
-                {{ e.nombre_estado }} <span class="text-[10px] opacity-60">{{ e.count }}</span>
+                {{ e.nombre_estado }} <span class="text-[0.625rem] opacity-60">{{ e.count }}</span>
             </button>
         </div>
 
@@ -141,7 +141,7 @@ interface TableColumn {
                     <button 
                         *ngIf="activeFiltersCount() > 0"
                         (click)="clearFilters()"
-                        class="text-[10px] font-bold text-brand-orange hover:text-orange-600 transition-colors uppercase tracking-wider"
+                        class="text-[0.625rem] font-bold text-brand-orange hover:text-orange-600 transition-colors uppercase tracking-wider"
                     >
                         Limpiar Todo
                     </button>
@@ -154,7 +154,7 @@ interface TableColumn {
                     <div class="mb-1">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                             <span class="w-1 h-3 rounded-full bg-blue-400"></span>
-                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sexo</span>
+                            <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sexo</span>
                         </div>
                         <div class="grid grid-cols-2 gap-1.5 px-2">
                             <button type="button" (click)="toggleSexoFilter('M')"
@@ -182,7 +182,7 @@ interface TableColumn {
                     <div class="mb-1">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                             <span class="w-1 h-3 rounded-full bg-emerald-400"></span>
-                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Consentimiento</span>
+                            <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Consentimiento</span>
                         </div>
                         <div class="space-y-0.5">
                             <button type="button" (click)="setConsentimientoFilter(true)"
@@ -230,7 +230,7 @@ interface TableColumn {
                     <div class="mb-3">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                              <span class="w-1 h-3 rounded-full bg-brand-orange"></span>
-                             <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Grupos</span>
+                             <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Grupos</span>
                         </div>
                         <div class="grid grid-cols-2 gap-x-0.5 gap-y-0">
                             <label
@@ -247,7 +247,7 @@ interface TableColumn {
                                     <div class="w-3.5 h-3.5 border-2 border-slate-200 dark:border-slate-600 rounded transition-all peer-checked:bg-brand-orange peer-checked:border-brand-orange peer-checked:ring-1 peer-checked:ring-brand-orange/20"></div>
                                     <svg class="absolute w-2 h-2 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 </div>
-                                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{ g.nombre_grupo }}</span>
+                                <span class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{ g.nombre_grupo }}</span>
                             </label>
                         </div>
                     </div>
@@ -258,7 +258,7 @@ interface TableColumn {
                     <div class="mb-3">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                              <span class="w-1 h-3 rounded-full bg-indigo-500"></span>
-                             <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Privilegios</span>
+                             <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Privilegios</span>
                         </div>
                         <div class="grid grid-cols-2 gap-x-0.5 gap-y-0">
                             <label
@@ -275,7 +275,7 @@ interface TableColumn {
                                     <div class="w-3.5 h-3.5 border-2 border-slate-200 dark:border-slate-600 rounded transition-all peer-checked:bg-indigo-500 peer-checked:border-indigo-500 peer-checked:ring-1 peer-checked:ring-indigo-500/20"></div>
                                     <svg class="absolute w-2 h-2 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 </div>
-                                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{ p.nombre_privilegio }}</span>
+                                <span class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{ p.nombre_privilegio }}</span>
                             </label>
                         </div>
                     </div>
@@ -286,7 +286,7 @@ interface TableColumn {
                         <div class="mb-2">
                             <div class="px-2 py-1.5 flex items-center gap-2">
                                 <span class="w-1 h-3 rounded-full bg-teal-400"></span>
-                                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Barrio</span>
+                                <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Barrio</span>
                             </div>
                             <div class="grid grid-cols-2 gap-x-0.5 gap-y-0 max-h-32 overflow-y-auto simple-scrollbar">
                                 <label
@@ -303,7 +303,7 @@ interface TableColumn {
                                         <div class="w-3.5 h-3.5 border-2 border-slate-200 dark:border-slate-600 rounded transition-all peer-checked:bg-teal-500 peer-checked:border-teal-500 peer-checked:ring-1 peer-checked:ring-teal-500/20"></div>
                                         <svg class="absolute w-2 h-2 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                     </div>
-                                    <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{ b }}</span>
+                                    <span class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white truncate">{{ b }}</span>
                                 </label>
                             </div>
                         </div>
@@ -338,7 +338,7 @@ interface TableColumn {
                 <!-- Header -->
                 <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
                     <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Configurar Columnas</span>
-                    <button (click)="resetColumns()" class="text-[10px] font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors uppercase tracking-wider">Restablecer</button>
+                    <button (click)="resetColumns()" class="text-[0.625rem] font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors uppercase tracking-wider">Restablecer</button>
                 </div>
 
                 <!-- Fixed Columns (Locked Info) -->
@@ -347,12 +347,12 @@ interface TableColumn {
                     <div class="space-y-0.5">
                         <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg opacity-50 cursor-not-allowed select-none">
                             <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex-1">Nombre</span>
+                            <span class="text-[0.6875rem] font-semibold text-slate-600 dark:text-slate-400 flex-1">Nombre</span>
                             <div class="rounded-full bg-brand-orange relative shrink-0" style="width:32px;height:18px;"><div class="bg-white rounded-full absolute shadow-sm" style="width:14px;height:14px;top:2px;right:2px;"></div></div>
                         </div>
                         <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg opacity-50 cursor-not-allowed select-none">
                             <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex-1">Estado</span>
+                            <span class="text-[0.6875rem] font-semibold text-slate-600 dark:text-slate-400 flex-1">Estado</span>
                             <div class="rounded-full bg-brand-orange relative shrink-0" style="width:32px;height:18px;"><div class="bg-white rounded-full absolute shadow-sm" style="width:14px;height:14px;top:2px;right:2px;"></div></div>
                         </div>
                     </div>
@@ -362,7 +362,7 @@ interface TableColumn {
                 <div class="overflow-y-auto flex-1 simple-scrollbar">
                     <div class="p-2">
                         <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2 pt-1 mb-0.5">Columnas Configurables</p>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500 px-2 mb-2.5">Arrastra <span class="font-bold">⠿</span> para reordenar</p>
+                        <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 px-2 mb-2.5">Arrastra <span class="font-bold">⠿</span> para reordenar</p>
                         <div class="space-y-0.5">
                             <div
                                 *ngFor="let col of columnManagerList(); let i = index; trackBy: trackColById"
@@ -383,7 +383,7 @@ interface TableColumn {
                                     <circle cx="3" cy="16" r="1.5"/><circle cx="7" cy="16" r="1.5"/>
                                 </svg>
                                 <!-- Label -->
-                                <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex-1 truncate">{{ col.label }}</span>
+                                <span class="text-[0.6875rem] font-semibold text-slate-700 dark:text-slate-300 flex-1 truncate">{{ col.label }}</span>
                                 <span *ngIf="col.optional" class="shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 uppercase tracking-wide">Extra</span>
                                 <!-- Toggle Switch -->
                                 <button
@@ -450,8 +450,8 @@ interface TableColumn {
             >
                 <!-- Cabecera del menú -->
                 <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exportar vista actual</p>
-                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{{ sortedList().length }} registros · {{ visibleMoveableColumns().length + 2 }} columnas</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Exportar vista actual</p>
+                    <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5">{{ sortedList().length }} registros · {{ visibleMoveableColumns().length + 2 }} columnas</p>
                 </div>
 
                 <!-- Opción Excel -->
@@ -464,7 +464,7 @@ interface TableColumn {
                     </div>
                     <div>
                         <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Excel (.xlsx)</p>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500">Con filtros y columnas visibles</p>
+                        <p class="text-[0.625rem] text-slate-400 dark:text-slate-500">Con filtros y columnas visibles</p>
                     </div>
                 </button>
 
@@ -478,7 +478,7 @@ interface TableColumn {
                     </div>
                     <div>
                         <p class="text-xs font-bold text-slate-700 dark:text-slate-200">PDF</p>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500">Orientación automática por columnas</p>
+                        <p class="text-[0.625rem] text-slate-400 dark:text-slate-500">Orientación automática por columnas</p>
                     </div>
                 </button>
             </div>
@@ -523,10 +523,10 @@ interface TableColumn {
                                 <h3 class="font-bold text-slate-900 dark:text-white leading-tight mb-1">{{ p.primer_nombre }} {{ p.primer_apellido }}</h3>
                                 <div class="flex flex-wrap gap-1 items-center">
                                      <ng-container *ngFor="let role of getRoles(p)">
-                                          <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
+                                          <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[0.625rem] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
                                               {{ role.label }}
                                           </span>
-                                          <span *ngIf="role.type === 'text'" class="text-[10px] uppercase tracking-wider" [ngClass]="role.class">
+                                          <span *ngIf="role.type === 'text'" class="text-[0.625rem] uppercase tracking-wider" [ngClass]="role.class">
                                               {{ role.label }}
                                           </span>
                                      </ng-container>
@@ -543,11 +543,11 @@ interface TableColumn {
                      <!-- Info Grid -->
                      <div class="grid grid-cols-2 gap-3 text-sm mb-3">
                          <div class="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">
-                             <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Grupo</span>
+                             <span class="block text-[0.625rem] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Grupo</span>
                              <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ getGrupoNombre(p.id_grupo_publicador) }}</span>
                          </div>
                          <div class="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">
-                             <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Estado</span>
+                             <span class="block text-[0.625rem] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Estado</span>
                              <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ getEstadoNombre(p.id_estado_publicador) }}</span>
                          </div>
                          <div class="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg col-span-2 flex items-center gap-2">
@@ -559,21 +559,21 @@ interface TableColumn {
                      <!-- Optional Columns (Mobile Chips) -->
                      <div class="flex flex-wrap gap-1.5 mb-3" *ngIf="isMobileColVisible('sexo') && p.sexo || isMobileColVisible('direccion') && p.direccion || isMobileColVisible('barrio') && p.barrio || isMobileColVisible('consentimiento_datos')">
                          <span *ngIf="isMobileColVisible('sexo') && p.sexo"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold border"
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold border"
                              [ngClass]="p.sexo === 'M' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800/50' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800/50'">
                              {{ p.sexo === 'M' ? '♂ Masculino' : '♀ Femenino' }}
                          </span>
                          <span *ngIf="isMobileColVisible('direccion') && p.direccion"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 max-w-[200px] truncate">
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 max-w-[200px] truncate">
                              <svg class="w-3 h-3 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                              <span class="truncate">{{ p.direccion }}</span>
                          </span>
                          <span *ngIf="isMobileColVisible('barrio') && p.barrio && !isMobileColVisible('direccion')"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300">
                              Barrio: {{ p.barrio }}
                          </span>
                          <span *ngIf="isMobileColVisible('consentimiento_datos')"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold border"
+                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[0.6875rem] font-bold border"
                              [ngClass]="p.consentimiento_datos ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'">
                              {{ p.consentimiento_datos ? '✓ Con consentimiento' : '✗ Sin consentimiento' }}
                          </span>
@@ -617,7 +617,7 @@ interface TableColumn {
                                 <!-- Chip de criterio -->
                                 <div class="flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
                                   <span class="w-3.5 h-3.5 rounded-full bg-brand-orange text-white text-[8px] font-black flex items-center justify-center shrink-0">{{ i + 1 }}</span>
-                                  <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 pl-0.5">{{ getSortColLabel(s.col) }}</span>
+                                  <span class="text-[0.625rem] font-bold text-slate-700 dark:text-slate-300 pl-0.5">{{ getSortColLabel(s.col) }}</span>
                                   <svg class="w-2.5 h-2.5 text-brand-orange transition-transform duration-200" [class.rotate-180]="s.dir === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
                                   <button (click)="removeSortCriteria(i)" title="Quitar este criterio"
                                     class="w-3.5 h-3.5 flex items-center justify-center rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/30 text-slate-300 hover:text-rose-500 transition-colors">
@@ -630,10 +630,10 @@ interface TableColumn {
                             </div>
                             <!-- Hint + limpiar -->
                             <div class="flex items-center gap-2 shrink-0">
-                              <span class="text-[10px] text-slate-400 dark:text-slate-500 hidden lg:inline">
+                              <span class="text-[0.625rem] text-slate-400 dark:text-slate-500 hidden lg:inline">
                                 <kbd class="font-mono bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-1 py-0.5 rounded text-[9px]">Shift</kbd>+clic para añadir
                               </span>
-                              <button (click)="resetSort()" class="text-[10px] font-bold text-rose-400 hover:text-rose-600 transition-colors uppercase tracking-wider">Limpiar orden</button>
+                              <button (click)="resetSort()" class="text-[0.625rem] font-bold text-rose-400 hover:text-rose-600 transition-colors uppercase tracking-wider">Limpiar orden</button>
                             </div>
                           </div>
                         </td>
@@ -705,14 +705,14 @@ interface TableColumn {
                                       <p class="text-sm font-bold text-slate-900 dark:text-white leading-tight mb-0.5">{{ getFullName(p) }}</p>
                                       <div class="flex flex-wrap gap-1 items-center">
                                          <ng-container *ngFor="let role of getRoles(p)">
-                                              <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
+                                              <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[0.625rem] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
                                                   {{ role.label }}
                                               </span>
-                                              <span *ngIf="role.type === 'text'" class="text-[10px] uppercase tracking-wider" [ngClass]="role.class">
+                                              <span *ngIf="role.type === 'text'" class="text-[0.625rem] uppercase tracking-wider" [ngClass]="role.class">
                                                   {{ role.label }}
                                               </span>
                                          </ng-container>
-                                         <span *ngIf="isAdminOrGestor()" class="text-[10px] text-slate-300 dark:text-slate-600 font-medium">#{{ p.id_publicador }}</span>
+                                         <span *ngIf="isAdminOrGestor()" class="text-[0.625rem] text-slate-300 dark:text-slate-600 font-medium">#{{ p.id_publicador }}</span>
                                       </div>
                                   </div>
                             </div>
@@ -757,7 +757,7 @@ interface TableColumn {
 
                                <ng-container *ngSwitchCase="'sexo'">
                                  <span class="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 font-medium">
-                                   <span class="w-4 h-4 rounded-full inline-flex items-center justify-center text-[10px] font-black"
+                                   <span class="w-4 h-4 rounded-full inline-flex items-center justify-center text-[0.625rem] font-black"
                                      [ngClass]="p.sexo === 'M' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : p.sexo === 'F' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'">
                                      {{ p.sexo === 'M' ? 'M' : p.sexo === 'F' ? 'F' : '?' }}
                                    </span>
@@ -774,7 +774,7 @@ interface TableColumn {
                                </ng-container>
 
                                <ng-container *ngSwitchCase="'consentimiento_datos'">
-                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border"
+                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.625rem] font-bold border"
                                    [ngClass]="p.consentimiento_datos ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'">
                                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                      <ng-container *ngIf="p.consentimiento_datos"><polyline points="20 6 9 17 4 12"></polyline></ng-container>
@@ -795,7 +795,7 @@ interface TableColumn {
                          <!-- Estado -->
                          <td class="px-6 py-4">
                               <span 
-                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
+                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.6875rem] font-bold border"
                                  [ngClass]="{
                                      'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50': getEstadoNombre(p.id_estado_publicador).includes('Activo'),
                                      'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50': getEstadoNombre(p.id_estado_publicador).includes('Inactivo'),
@@ -903,7 +903,7 @@ interface TableColumn {
                          </div>
                          <div>
                              <div class="flex items-center gap-2 mb-1.5">
-                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border border-transparent"
+                                <span class="px-2.5 py-1 rounded-lg text-[0.625rem] font-black uppercase tracking-widest shadow-sm border border-transparent"
                                       [ngClass]="editingPublicador() 
                                         ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/30' 
                                         : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/30'">
@@ -975,21 +975,21 @@ interface TableColumn {
                      <div class="space-y-6">
                         <div class="flex items-center gap-3 py-2">
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                           <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Identidad</span>
+                           <span class="text-[0.6875rem] font-bold text-slate-400 uppercase tracking-widest">Identidad</span>
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                              <!-- Fila 1: Nombres -->
                              <div class="col-span-1 space-y-2">
-                               <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                               <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                                   Primer Nombre <span class="text-red-400">*</span>
                                </label>
                                <input formControlName="primer_nombre" (input)="capitalizeInput('primer_nombre')" placeholder="Ej: Juan" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                              </div>
                              <div class="col-span-1 space-y-2">
-                               <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                               <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
                                   Segundo Nombre
                                </label>
@@ -998,14 +998,14 @@ interface TableColumn {
                              
                              <!-- Fila 2: Apellidos -->
                              <div class="col-span-1 space-y-2">
-                               <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                               <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                                   Primer Apellido <span class="text-red-400">*</span>
                                </label>
                                <input formControlName="primer_apellido" (input)="capitalizeInput('primer_apellido')" placeholder="Ej: Pérez" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                              </div>
                              <div class="col-span-1 space-y-2">
-                               <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                               <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
                                   Segundo Apellido
                                </label>
@@ -1014,7 +1014,7 @@ interface TableColumn {
 
                              <!-- Fila 3: Sexo y Nacimiento -->
                              <div class="col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+                                <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wide mb-2">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
                                   Sexo
                                </label>
@@ -1065,7 +1065,7 @@ interface TableColumn {
                                 </div>
                              </div>
                              <div class="col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+                                <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wide mb-2">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                   Fecha Nacimiento
                                 </label>
@@ -1078,13 +1078,13 @@ interface TableColumn {
                      <div class="space-y-6">
                         <div class="flex items-center gap-3 py-2">
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                           <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Ubicación y Contacto</span>
+                           <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Ubicación y Contacto</span>
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div class="col-span-2 sm:col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+                                <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wide mb-2">
                                   <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></span>
                                   Teléfono
                                </label>
@@ -1092,7 +1092,7 @@ interface TableColumn {
                             </div>
 
                             <div class="col-span-2 sm:col-span-1 space-y-2">
-                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                    Barrio
                                 </label>
@@ -1100,7 +1100,7 @@ interface TableColumn {
                             </div>
 
                             <div class="col-span-2 space-y-2">
-                                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                    Dirección Completa
                                 </label>
@@ -1113,7 +1113,7 @@ interface TableColumn {
                      <div class="space-y-4 pt-4">
                         <div class="flex items-center gap-3 py-2">
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                           <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Acceso App Móvil</span>
+                           <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Acceso App Móvil</span>
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                         </div>
 
@@ -1122,7 +1122,7 @@ interface TableColumn {
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Acceso habilitado</p>
-                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Permite al publicador ingresar con su PIN o correo</p>
+                                    <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 mt-0.5">Permite al publicador ingresar con su PIN o correo</p>
                                 </div>
                                 <button type="button"
                                         (click)="publicadorForm.get('permite_login_simple')?.setValue(!publicadorForm.get('permite_login_simple')?.value)"
@@ -1136,7 +1136,7 @@ interface TableColumn {
                             <!-- PIN Display (Only in Edit Mode or if access enabled) -->
                             <div *ngIf="editingPublicador()" class="pt-4 border-t border-sky-100 dark:border-sky-900/20 flex items-center justify-between gap-3">
                                 <div>
-                                    <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">Código PIN</p>
+                                    <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">Código PIN</p>
                                     <div class="flex items-center gap-2">
                                         <span class="font-mono text-xl font-black tracking-widest"
                                               [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 line-through'">
@@ -1172,13 +1172,13 @@ interface TableColumn {
                        <div class="space-y-4">
                            <div class="flex items-center gap-3 py-2">
                                <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                               <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Asignación</span>
+                               <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Asignación</span>
                                <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                            </div>
 
                            <div class="grid grid-cols-2 gap-4">
                                <div *ngIf="isAdminOrGestor()" class="col-span-2 sm:col-span-1 space-y-2">
-                                    <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                    <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                        <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
                                        Congregación
                                     </label>
@@ -1194,7 +1194,7 @@ interface TableColumn {
                                </div>
 
                                <div class="col-span-2 sm:col-span-1 space-y-2">
-                                    <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                    <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
                                        Grupo de Servicio
                                     </label>
@@ -1215,13 +1215,13 @@ interface TableColumn {
                        <div class="space-y-4">
                            <div class="flex items-center gap-3 py-2">
                                <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                               <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Estado Espiritual</span>
+                               <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Estado Espiritual</span>
                                <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                            </div>
 
                            <div class="grid grid-cols-2 gap-4">
                                 <div class="col-span-1 space-y-2">
-                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                     <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                        Estado
                                      </label>
@@ -1266,14 +1266,14 @@ interface TableColumn {
                                      </div>
                                  </div>
                                  <div class="col-span-1 space-y-2">
-                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                     <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                        Fecha Bautismo
                                      </label>
                                      <app-date-picker formControlName="fecha_bautismo" placeholder="Seleccionar fecha"></app-date-picker>
                                  </div>
                                  <div class="col-span-2 space-y-2">
-                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                     <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                                          Fecha Inicio Informe
                                      </label>
@@ -1316,7 +1316,7 @@ interface TableColumn {
                        
                        <!-- Section: Privilegios (Only in Edit Mode) -->
                        <div *ngIf="editingPublicador()" class="pt-4 space-y-4 border-t border-slate-100 dark:border-slate-800 mt-4">
-                           <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Privilegios</label>
+                           <label class="block text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Privilegios</label>
 
                            <!-- List of Privileges -->
                            <div class="space-y-2">
@@ -1324,7 +1324,7 @@ interface TableColumn {
                                    <div class="flex items-start justify-between">
                                        <div>
                                            <h4 class="text-xs font-bold text-slate-800 dark:text-white">{{ getPrivilegioNombre(pp.id_privilegio) }}</h4>
-                                           <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex gap-2">
+                                           <div class="text-[0.6875rem] text-slate-500 dark:text-slate-400 font-medium flex gap-2">
                                                <span>Desde: {{ formatDate(pp.fecha_inicio) }}</span>
                                                <span *ngIf="pp.fecha_fin" class="text-slate-400">Hasta: {{ formatDate(pp.fecha_fin) }}</span>
                                                <span *ngIf="!pp.fecha_fin" class="text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-md">Activo</span>
@@ -1343,7 +1343,7 @@ interface TableColumn {
 
                            <!-- Add New Privilege Form -->
                            <div class="bg-indigo-50/30 dark:bg-indigo-900/10 rounded-xl p-3 border border-indigo-100 dark:border-indigo-500/20 relative">
-                               <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Asignar Nuevo</p>
+                               <p class="text-[0.625rem] font-bold text-indigo-400 uppercase tracking-widest mb-2">Asignar Nuevo</p>
                                <div class="space-y-3">
                                    <!-- Custom Select Privilegio -->
                                    <div class="relative">
@@ -1446,8 +1446,8 @@ interface TableColumn {
                                  <div>
                                      <div class="flex items-center gap-2 mb-1">
                                          <h4 class="text-sm font-bold text-slate-800">{{ c.nombre }}</h4>
-                                         <span *ngIf="c.parentesco" class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wide">{{ c.parentesco }}</span>
-                                         <span *ngIf="c.es_principal" class="px-2 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-bold border border-orange-200">Principal</span>
+                                         <span *ngIf="c.parentesco" class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[0.625rem] font-bold text-slate-500 uppercase tracking-wide">{{ c.parentesco }}</span>
+                                         <span *ngIf="c.es_principal" class="px-2 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[0.625rem] font-bold border border-orange-200">Principal</span>
                                      </div>
                                      <div class="flex flex-col gap-1">
                                         <div class="flex items-center gap-2 text-xs text-slate-600 font-medium">
@@ -1490,7 +1490,7 @@ interface TableColumn {
                           
                           <div class="space-y-4">
                               <div class="space-y-2">
-                                  <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                  <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                      Nombre Completo
                                   </label>
@@ -1499,14 +1499,14 @@ interface TableColumn {
                               
                               <div class="grid grid-cols-2 gap-4">
                                   <div class="col-span-1 space-y-2">
-                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                     <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                         Parentesco
                                      </label>
                                      <input formControlName="parentesco" placeholder="Ej. Madre" class="w-full h-12 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal">
                                   </div>
                                   <div class="col-span-1 space-y-2">
-                                     <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                     <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                         Teléfono
                                      </label>
@@ -1515,7 +1515,7 @@ interface TableColumn {
                               </div>
                               
                               <div class="space-y-2">
-                                  <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                  <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                      Dirección (Opcional)
                                   </label>
@@ -1561,7 +1561,7 @@ interface TableColumn {
            <!-- Panel Footer -->
            <div class="px-8 py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-4 shrink-0 z-20">
                <div class="hidden sm:block">
-                  <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                  <p class="text-[0.625rem] text-slate-400 font-bold uppercase tracking-wider">
                      <span class="text-red-400">*</span> Campo obligatorio
                   </p>
                </div>
@@ -1612,7 +1612,7 @@ interface TableColumn {
                 <h2 class="text-lg font-black text-slate-900 dark:text-white leading-tight truncate">{{ getFullName(viewingPublicador()!) }}</h2>
                 <!-- Estado badge -->
                 <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border"
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.6875rem] font-bold border"
                     [ngClass]="{
                       'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Activo'),
                       'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Inactivo'),
@@ -1621,7 +1621,7 @@ interface TableColumn {
                     <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getEstadoDotClass(viewingPublicador()!.id_estado_publicador)"></span>
                     {{ getEstadoNombre(viewingPublicador()!.id_estado_publicador) }}
                   </span>
-                  <span *ngIf="viewingPublicador()!.sexo" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-800/50">
+                  <span *ngIf="viewingPublicador()!.sexo" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6875rem] font-bold bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-800/50">
                     {{ viewingPublicador()!.sexo === 'M' ? '♂ Masculino' : '♀ Femenino' }}
                   </span>
                 </div>
@@ -1634,14 +1634,14 @@ interface TableColumn {
 
             <!-- Sección: Contacto -->
             <div>
-              <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Contacto</p>
+              <p class="text-[0.625rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Contacto</p>
               <div class="grid grid-cols-2 gap-3">
                 <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                   <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
                     <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Teléfono</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Teléfono</p>
                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.telefono || '—' }}</p>
                   </div>
                 </div>
@@ -1650,7 +1650,7 @@ interface TableColumn {
                     <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nacimiento</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Nacimiento</p>
                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.fecha_nacimiento ? formatDateExport(viewingPublicador()!.fecha_nacimiento!) : '—' }}</p>
                   </div>
                 </div>
@@ -1659,9 +1659,9 @@ interface TableColumn {
                     <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   </div>
                   <div class="min-w-0 flex-1">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dirección</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Dirección</p>
                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{{ viewingPublicador()!.direccion || '—' }}
-                      <span *ngIf="viewingPublicador()!.barrio" class="ml-1 text-[11px] font-bold text-slate-400">· {{ viewingPublicador()!.barrio }}</span>
+                      <span *ngIf="viewingPublicador()!.barrio" class="ml-1 text-[0.6875rem] font-bold text-slate-400">· {{ viewingPublicador()!.barrio }}</span>
                     </p>
                   </div>
                 </div>
@@ -1670,14 +1670,14 @@ interface TableColumn {
 
             <!-- Sección: Teocrático -->
             <div>
-              <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Servicio</p>
+              <p class="text-[0.625rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Servicio</p>
               <div class="grid grid-cols-2 gap-3">
                 <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                   <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
                     <svg class="w-3.5 h-3.5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grupo</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Grupo</p>
                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ getGrupoNombre(viewingPublicador()!.id_grupo_publicador) }}</p>
                   </div>
                 </div>
@@ -1686,7 +1686,7 @@ interface TableColumn {
                     <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bautismo</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Bautismo</p>
                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.fecha_bautismo ? formatDateExport(viewingPublicador()!.fecha_bautismo!) : '—' }}</p>
                   </div>
                 </div>
@@ -1695,7 +1695,7 @@ interface TableColumn {
                     <svg class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inicio Inf.</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Inicio Inf.</p>
                     <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-400 truncate mt-0.5">{{ formatDateExport(viewingPublicador()!.fecha_inicio_informe!) }}</p>
                   </div>
                 </div>
@@ -1704,7 +1704,7 @@ interface TableColumn {
                     <svg class="w-3.5 h-3.5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Inactividad</p>
+                    <p class="text-[0.625rem] font-bold text-rose-400 uppercase tracking-wider">Inactividad</p>
                     <p class="text-sm font-semibold text-rose-600 dark:text-rose-400 truncate mt-0.5">{{ formatDateExport(viewingPublicador()!.fecha_inactividad!) }}</p>
                   </div>
                 </div>
@@ -1719,7 +1719,7 @@ interface TableColumn {
                     </svg>
                   </div>
                   <div>
-                    <p class="text-[10px] font-bold uppercase tracking-wider" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'">Consentimiento de datos</p>
+                    <p class="text-[0.625rem] font-bold uppercase tracking-wider" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'">Consentimiento de datos</p>
                     <p class="text-sm font-bold mt-0.5" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">
                       {{ viewingPublicador()!.consentimiento_datos ? 'Ha dado consentimiento' : 'Sin consentimiento' }}
                     </p>
@@ -1730,7 +1730,7 @@ interface TableColumn {
 
             <!-- Sección: Privilegios -->
             <div *ngIf="publicadorPrivilegios().length > 0">
-              <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Privilegios</p>
+              <p class="text-[0.625rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Privilegios</p>
               <div class="flex flex-wrap gap-2">
                 <span *ngFor="let pp of publicadorPrivilegios()"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800">
@@ -1825,7 +1825,7 @@ interface TableColumn {
                  </p>
 
                  <div class="space-y-2">
-                    <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+                    <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wide mb-2">
                        <span class="w-1.5 h-1.5 rounded-full bg-brand-orange shadow-[0_0_8px_rgba(249,115,22,0.4)]"></span>
                        Fecha de inicio de informe
                     </label>
@@ -1834,7 +1834,7 @@ interface TableColumn {
                       (ngModelChange)="publicadorForm.get('fecha_inicio_informe')?.setValue($event)"
                       placeholder="Seleccionar mes y año"
                     ></app-date-picker>
-                    <p class="text-[10px] text-slate-400 font-medium italic mt-1.5">
+                    <p class="text-[0.625rem] text-slate-400 font-medium italic mt-1.5">
                       * Se recomienda seleccionar el primer día del mes correspondiente.
                     </p>
                  </div>
@@ -1874,7 +1874,7 @@ interface TableColumn {
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-slate-900 dark:text-white">¿Eliminar privilegio?</h3>
-                    <p class="text-[11px] text-slate-500 font-medium">Se borrará del historial del publicador</p>
+                    <p class="text-[0.6875rem] text-slate-500 font-medium">Se borrará del historial del publicador</p>
                 </div>
              </div>
 

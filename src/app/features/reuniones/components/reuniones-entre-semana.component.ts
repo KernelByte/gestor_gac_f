@@ -144,11 +144,11 @@ import {
               @if (semana.titulo_guia) {
                 <p class="text-xs font-bold text-slate-800 dark:text-slate-100">{{ semana.titulo_guia }}</p>
               }
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{{ semana.partes.length }} partes · semana {{ semana.semana_iso }}</p>
+              <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium">{{ semana.partes.length }} partes · semana {{ semana.semana_iso }}</p>
             </div>
             <div class="flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full" [class]="estado() === 'confirmado' ? 'bg-emerald-400' : 'bg-amber-400'"></span>
-              <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ estadoLabel() }}</span>
+              <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ estadoLabel() }}</span>
             </div>
           </div>
 
@@ -175,16 +175,16 @@ import {
                       </div>
                       <div class="flex items-center gap-1.5 mt-0.5">
                         @if (asig.estado === 'conflict') {
-                          <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800/50">
+                          <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[0.625rem] font-bold uppercase tracking-wider bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800/50">
                             Sin candidato
                           </span>
                         } @else if (asig.es_reemplazo) {
-                          <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                          <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[0.625rem] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                             Reemplazo
                           </span>
                         }
                         @if (asig._swapped) {
-                          <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50">
+                          <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[0.625rem] font-bold uppercase tracking-wider bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50">
                             Modificado
                           </span>
                         }
@@ -214,7 +214,7 @@ import {
                       <div class="absolute right-0 top-full mt-1.5 z-50 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-700 overflow-hidden animate-fadeIn">
                         <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex items-center gap-2">
                           <span class="w-1 h-3 rounded-full bg-[#6D28D9]"></span>
-                          <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Candidatos alternativos</span>
+                          <span class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Candidatos alternativos</span>
                         </div>
                         <div class="p-1.5">
                           @for (alt of asig.alternativos; track alt.id_publicador) {
@@ -222,7 +222,7 @@ import {
                               (click)="swapAsignacion(selectedWeekIdx(), asig.id_programa_parte, alt)"
                               class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors">
                               <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{{ alt.nombre_completo }}</span>
-                              <span class="text-[10px] text-purple-600 dark:text-purple-400 font-mono font-bold shrink-0 tabular-nums">{{ alt.score | number:'1.2-2' }}</span>
+                              <span class="text-[0.625rem] text-purple-600 dark:text-purple-400 font-mono font-bold shrink-0 tabular-nums">{{ alt.score | number:'1.2-2' }}</span>
                             </button>
                           }
                         </div>
@@ -267,7 +267,7 @@ import {
             <div>
               <div class="flex items-center gap-1.5 mb-1.5">
                 <span class="w-1 h-3 rounded-full bg-[#6D28D9]"></span>
-                <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mes</label>
+                <label class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mes</label>
               </div>
               <select
                 [value]="modalForm().mes"
@@ -281,7 +281,7 @@ import {
             <div>
               <div class="flex items-center gap-1.5 mb-1.5">
                 <span class="w-1 h-3 rounded-full bg-[#6D28D9]"></span>
-                <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Año</label>
+                <label class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Año</label>
               </div>
               <select
                 [value]="modalForm().ano"
@@ -298,7 +298,7 @@ import {
           <div class="mb-3">
             <div class="flex items-center gap-1.5 mb-1.5">
               <span class="w-1 h-3 rounded-full bg-blue-400"></span>
-              <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dia de reunion</label>
+              <label class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dia de reunion</label>
             </div>
             <select
               [value]="modalForm().dia_reunion"
@@ -314,7 +314,7 @@ import {
           <div class="mb-4">
             <div class="flex items-center gap-1.5 mb-1.5">
               <span class="w-1 h-3 rounded-full bg-emerald-400"></span>
-              <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Plantilla</label>
+              <label class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Plantilla</label>
             </div>
             @if (plantillas().length === 0) {
               <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-400">
@@ -335,7 +335,7 @@ import {
 
           <!-- Preview de fechas -->
           <div class="mb-5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">{{ fechasPreview().length }} semanas a crear</p>
+            <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">{{ fechasPreview().length }} semanas a crear</p>
             <p class="text-xs text-slate-500 dark:text-slate-400 font-mono leading-relaxed">{{ fechasPreview().join('  ·  ') }}</p>
           </div>
 

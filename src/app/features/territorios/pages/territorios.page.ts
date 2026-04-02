@@ -136,11 +136,11 @@ interface Territorio {
               <table class="w-full text-left border-collapse">
                  <thead class="sticky top-0 bg-white dark:bg-slate-800 z-10 border-b border-slate-100 dark:border-slate-700/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                     <tr>
-                       <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">ID / Nombre</th>
-                       <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Zona</th>
-                       <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Viviendas</th>
-                       <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Estado</th>
-                       <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Asignado A</th>
+                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wider">ID / Nombre</th>
+                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wider">Zona</th>
+                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wider">Viviendas</th>
+                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wider">Asignado A</th>
                        <th class="px-4 py-4 w-10"></th>
                     </tr>
                  </thead>
@@ -164,7 +164,7 @@ interface Territorio {
                        <!-- Status -->
                        <td class="px-6 py-4">
                           <span 
-                            class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border"
+                            class="inline-flex items-center px-2.5 py-1 rounded-full text-[0.625rem] font-bold border"
                             [ngClass]="getStatusColor(t.estado)"
                           >
                              <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="getStatusDotColor(t.estado)"></span>
@@ -174,7 +174,7 @@ interface Territorio {
                        <!-- Assignee -->
                        <td class="px-6 py-4">
                           <div *ngIf="t.asignadoA" class="flex items-center gap-2">
-                             <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                             <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[0.625rem] font-bold text-slate-600 dark:text-slate-300">
                                 {{ t.asignadoA.nombre.charAt(0) }}{{ t.asignadoA.nombre.split(' ')[1]?.charAt(0) }}
                              </div>
                              <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">{{ t.asignadoA.nombre }}</span>
@@ -211,7 +211,7 @@ interface Territorio {
            <!-- Header -->
            <div class="p-6 border-b border-slate-100 dark:border-slate-700/50 flex items-start justify-between bg-slate-50/30 dark:bg-slate-900/30">
               <div>
-                 <h2 class="text-[10px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-widest mb-1">Detalles Del Territorio</h2>
+                 <h2 class="text-[0.625rem] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-widest mb-1">Detalles Del Territorio</h2>
                  <h3 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{{ selectedTerritorio()!.id }}</h3>
                  <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{{ selectedTerritorio()!.nombre }} • Zona {{ selectedTerritorio()!.zona }}</p>
               </div>
@@ -237,7 +237,7 @@ interface Territorio {
 
               <!-- Current Assignment -->
               <div class="bg-purple-50/50 dark:bg-purple-900/20 rounded-xl p-5 border border-purple-100 dark:border-purple-800/30">
-                 <h4 class="text-[11px] font-bold text-purple-800 dark:text-purple-300 uppercase tracking-widest mb-4 flex items-center gap-2">
+                 <h4 class="text-[0.6875rem] font-bold text-purple-800 dark:text-purple-300 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
                     Asignación Actual
                  </h4>
@@ -255,7 +255,7 @@ interface Territorio {
                     
                     <!-- Progress Bar -->
                     <div class="space-y-1.5">
-                       <div class="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                       <div class="flex justify-between text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           <span>Progreso estimado</span>
                           <span>~{{ assignee.progreso }}%</span>
                        </div>
@@ -278,11 +278,11 @@ interface Territorio {
               <!-- Stats Grid -->
               <div class="grid grid-cols-2 gap-3">
                  <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Viviendas</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider mb-1">Viviendas</p>
                     <p class="text-2xl font-black text-slate-700 dark:text-slate-200">{{ selectedTerritorio()!.viviendas }}</p>
                  </div>
                  <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Comercios</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider mb-1">Comercios</p>
                     <p class="text-2xl font-black text-slate-700 dark:text-slate-200">--</p>
                  </div>
               </div>

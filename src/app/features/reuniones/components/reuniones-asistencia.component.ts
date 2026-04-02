@@ -128,7 +128,7 @@ import { saveAs } from 'file-saver';
                       'bg-white dark:bg-slate-800 text-brand-purple dark:text-purple-400 shadow-sm': selectedWeek() === week,
                       'text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800': selectedWeek() !== week
                     }">
-                    <span class="text-[10px] uppercase tracking-wider opacity-70">Sem</span>
+                    <span class="text-[0.625rem] uppercase tracking-wider opacity-70">Sem</span>
                     <span class="text-base leading-none">{{ week }}</span>
                     @if (weekHasData(week)) {
                       <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -151,7 +151,7 @@ import { saveAs } from 'file-saver';
                     <h3 class="font-bold text-slate-800 dark:text-slate-100">Entre Semana</h3>
                   </div>
                   @if (currentMidweekDate()) {
-                    <span class="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-brand-purple text-[11px] font-bold border border-purple-100 dark:border-purple-800/40">
+                    <span class="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-brand-purple text-[0.6875rem] font-bold border border-purple-100 dark:border-purple-800/40">
                       {{ currentMidweekDate() }}
                     </span>
                   }
@@ -183,7 +183,7 @@ import { saveAs } from 'file-saver';
                     <h3 class="font-bold text-slate-800 dark:text-slate-100">Fin de Semana</h3>
                   </div>
                   @if (currentWeekendDate()) {
-                    <span class="px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-[11px] font-bold border border-orange-100 dark:border-orange-800/40">
+                    <span class="px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-[0.6875rem] font-bold border border-orange-100 dark:border-orange-800/40">
                       {{ currentWeekendDate() }}
                     </span>
                   }
@@ -234,7 +234,7 @@ import { saveAs } from 'file-saver';
                     <th colspan="3" class="px-3 py-3.5 text-center text-xs font-bold text-purple-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">Entre Semana</th>
                     <th colspan="3" class="px-3 py-3.5 text-center text-xs font-bold text-orange-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">Fin de Semana</th>
                   </tr>
-                  <tr class="text-[10px] uppercase tracking-wider">
+                  <tr class="text-[0.625rem] uppercase tracking-wider">
                     <th class="px-5 py-2"></th>
                     <th class="px-2 py-2 text-center text-slate-400 border-l border-slate-100 dark:border-slate-700">Reun.</th>
                     <th class="px-2 py-2 text-center text-slate-400">Total</th>
@@ -255,7 +255,7 @@ import { saveAs } from 'file-saver';
                           [ngClass]="isCurrentMonth(row) ? 'text-brand-purple' : (row.midweek_total !== null || row.weekend_total !== null ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600')">
                         {{ row.nombre_mes }}
                         @if (isCurrentMonth(row)) {
-                          <span class="text-[10px] font-bold text-purple-400 ml-1">(Actual)</span>
+                          <span class="text-[0.625rem] font-bold text-purple-400 ml-1">(Actual)</span>
                         }
                       </td>
                       <td class="px-2 py-3.5 text-center text-sm font-medium border-l border-slate-100 dark:border-slate-700"
@@ -316,11 +316,11 @@ import { saveAs } from 'file-saver';
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
                 <div class="flex-1">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Entre Semana</p>
+                  <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide">Entre Semana</p>
                   <div class="flex items-baseline gap-2">
                     <span class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ midweekAverage() }}</span>
                     @if (midweekWeekCount() > 0) {
-                      <span class="text-[10px] font-bold text-slate-400">{{ midweekWeekCount() }} sem.</span>
+                      <span class="text-[0.625rem] font-bold text-slate-400">{{ midweekWeekCount() }} sem.</span>
                     }
                   </div>
                 </div>
@@ -331,11 +331,11 @@ import { saveAs } from 'file-saver';
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 <div class="flex-1">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Fin de Semana</p>
+                  <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide">Fin de Semana</p>
                   <div class="flex items-baseline gap-2">
                     <span class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ weekendAverage() }}</span>
                     @if (weekendWeekCount() > 0) {
-                      <span class="text-[10px] font-bold text-slate-400">{{ weekendWeekCount() }} sem.</span>
+                      <span class="text-[0.625rem] font-bold text-slate-400">{{ weekendWeekCount() }} sem.</span>
                     }
                   </div>
                 </div>
@@ -356,7 +356,7 @@ import { saveAs } from 'file-saver';
               @for (week of [1,2,3,4,5]; track week) {
                 <div class="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors"
                      [ngClass]="weekHasData(week) ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-900/30'">
-                  <span class="text-[10px] font-bold uppercase text-slate-400">S{{ week }}</span>
+                  <span class="text-[0.625rem] font-bold uppercase text-slate-400">S{{ week }}</span>
                   @if (weekHasData(week)) {
                     <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                   } @else {

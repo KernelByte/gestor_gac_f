@@ -27,6 +27,29 @@
     --foreground: 15 23 42;
   }
 
+  /* Rescalado fluido para pantallas de alta resolución */
+  html {
+    font-size: 16px; /* Base por defecto (1rem = 16px) - Laptops y móviles */
+  }
+
+  @media (min-width: 1920px) {
+    html {
+      font-size: 18px; /* Pantallas 1080p (Full HD) - ~12% de aumento */
+    }
+  }
+
+  @media (min-width: 2560px) {
+    html {
+      font-size: 22px; /* Pantallas 2K (1440p) - ~37.5% de aumento */
+    }
+  }
+
+  @media (min-width: 3840px) {
+    html {
+      font-size: 32px; /* Pantallas 4K (Ultra HD) - 200% del tamaño (todo al doble) */
+    }
+  }
+
   body {
     @apply tracking-wide font-sans text-slate-600 antialiased;
   }

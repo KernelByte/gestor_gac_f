@@ -218,18 +218,12 @@ export class UsuarioPermisosPage implements OnInit {
          // Hide informes.editar_todos from the UI list (it's handled via the scope radio)
          const visiblePermisos = permisos.filter(p => p.codigo !== 'informes.editar_todos');
 
-         // Check/Add mock perms if needed (for visual completeness if not in DB yet, though we added it)
-         const hasHistorial = visiblePermisos.some(p => p.codigo === 'informes.historial');
-         if (!hasHistorial) {
-            visiblePermisos.push({
-               id_permiso: 99999,
-               codigo: 'informes.historial',
-               nombre: 'Ver Historial',
-               descripcion: 'Acceso al historial de informes de servicio',
-               asignado: false,
-               alcance: 'todos'
-            });
-         }
+         visiblePermisos.forEach(p => {
+            if (p.codigo === 'informes.ver') {
+               p.nombre = 'Ver módulo de informes';
+            }
+         });
+
          visiblePermisos.forEach(p => { if (!p.alcance) p.alcance = 'todos'; });
 
          this.usuario.set(usuario);

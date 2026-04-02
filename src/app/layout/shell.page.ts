@@ -72,7 +72,7 @@ export class TimeAgoPipe implements PipeTransform {
              <!-- Brand Name - Vertical Stack -->
              <div *ngIf="!collapsed()" class="animate-fadeIn text-center space-y-1">
                <!-- "Sistema" - Subtle Label -->
-               <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">
+               <p class="text-[0.625rem] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">
                  Sistema
                </p>
                
@@ -91,7 +91,7 @@ export class TimeAgoPipe implements PipeTransform {
             <div class="mb-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-5 mb-2 mt-6 text-[13px] font-medium text-slate-400 dark:text-slate-500 relative"
+                class="px-5 mb-2 mt-6 text-[0.8125rem] font-medium text-slate-400 dark:text-slate-500 relative"
               >Principal</p>
               
               <!-- Inicio -->
@@ -99,7 +99,7 @@ export class TimeAgoPipe implements PipeTransform {
                 routerLink="/"
                                                                 routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
                 [routerLinkActiveOptions]="{ exact: true }"
-                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-2.5': !collapsed()
@@ -123,7 +123,7 @@ export class TimeAgoPipe implements PipeTransform {
                 *ngIf="hasRole('Administrador')"
                 routerLink="/roles"
                                                                 routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
-                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-2.5': !collapsed()
@@ -143,7 +143,7 @@ export class TimeAgoPipe implements PipeTransform {
                 *ngIf="hasRole('Administrador') || hasRole('Coordinador') || hasRole('Secretario')"
                 routerLink="/usuarios"
                                                                 routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
-                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-2.5': !collapsed()
@@ -160,17 +160,17 @@ export class TimeAgoPipe implements PipeTransform {
             </div>
             
             <!-- Modules Section -->
-            <div *ngIf="hasPermission('reuniones.ver') || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')">
+            <div *ngIf="hasPermission('reuniones.ver') || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')">
               <p 
                 *ngIf="!collapsed()"
-                class="px-5 mb-2 mt-6 text-[13px] font-medium text-slate-400 dark:text-slate-500 relative"
+                class="px-5 mb-2 mt-6 text-[0.8125rem] font-medium text-slate-400 dark:text-slate-500 relative"
               >Módulos</p>
               
               <!-- Reuniones Accordion -->
               <div *ngIf="hasPermission('reuniones.ver') || hasRole('Secretario')" class="relative">
                 <button
                   (click)="toggleReunionesMenu()"
-                  class="w-full group flex items-center justify-between text-[14px] transition-all duration-200 relative overflow-hidden rounded-lg"
+                  class="w-full group flex items-center justify-between text-sm transition-all duration-200 relative overflow-hidden rounded-lg"
                   [ngClass]="{
                     'p-2.5': collapsed(),
                     'px-3.5 py-3': !collapsed(),
@@ -194,35 +194,35 @@ export class TimeAgoPipe implements PipeTransform {
                 <!-- Submenu -->
                 <div *ngIf="!collapsed() && reunionesMenuOpen()" class="relative mt-1 ml-[1.8rem] pl-4 pr-1 space-y-0.5 reuniones-submenu">
                    <a routerLink="/reuniones/resumen" routerLinkActive="sub-active" #rlaResumen="routerLinkActive"
-                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaResumen.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
                             [ngClass]="rlaResumen.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Resumen Hoy</span>
                    </a>
                    <a routerLink="/reuniones/entre-semana" routerLinkActive="sub-active" #rlaEntre="routerLinkActive"
-                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaEntre.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
                             [ngClass]="rlaEntre.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Entre Semana</span>
                    </a>
                    <a routerLink="/reuniones/fin-semana" routerLinkActive="sub-active" #rlaFin="routerLinkActive"
-                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaFin.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
                             [ngClass]="rlaFin.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Fin de Semana</span>
                    </a>
                    <a routerLink="/reuniones/asistencia" routerLinkActive="sub-active" #rlaAsist="routerLinkActive"
-                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaAsist.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
                             [ngClass]="rlaAsist.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Asistencia</span>
                    </a>
                    <a routerLink="/reuniones/configuracion" routerLinkActive="sub-active" #rlaConfigPl="routerLinkActive"
-                      class="relative flex items-center px-4 py-[7px] text-[13px] transition-colors duration-200 rounded-lg group"
+                      class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaConfigPl.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
                             [ngClass]="rlaConfigPl.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
@@ -236,7 +236,7 @@ export class TimeAgoPipe implements PipeTransform {
                 *ngIf="hasPermission('publicadores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
                 routerLink="/secretario/publicadores"
                 routerLinkActive="!text-brand-orange dark:!text-orange-400 font-semibold [&_.nav-icon]:!text-brand-orange dark:[&_.nav-icon]:!text-orange-400 bg-brand-orange/10 dark:bg-white/[0.02]"
-                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-2.5': !collapsed()
@@ -253,10 +253,10 @@ export class TimeAgoPipe implements PipeTransform {
 
               <!-- Informes -->
               <a 
-                *ngIf="hasPermission('informes.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
+                *ngIf="hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
                 routerLink="/secretario/informes"
                 routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
-                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-2.5': !collapsed()
@@ -276,7 +276,7 @@ export class TimeAgoPipe implements PipeTransform {
                 *ngIf="hasPermission('territorios.ver')"
                 routerLink="/territorios"
                 routerLinkActive="!text-brand-green dark:!text-green-400 font-semibold [&_.nav-icon]:!text-brand-green dark:[&_.nav-icon]:!text-green-400 bg-brand-green/10 dark:bg-white/[0.02]"
-                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-2.5': !collapsed()
@@ -296,7 +296,7 @@ export class TimeAgoPipe implements PipeTransform {
                 *ngIf="hasPermission('exhibidores.ver')"
                 routerLink="/exhibidores"
                 routerLinkActive="!text-brand-blue dark:!text-blue-400 font-semibold [&_.nav-icon]:!text-brand-blue dark:[&_.nav-icon]:!text-blue-400 bg-brand-blue/10 dark:bg-white/[0.02]"
-                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-2.5': !collapsed()
@@ -316,7 +316,7 @@ export class TimeAgoPipe implements PipeTransform {
             <div *ngIf="hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Administrador')" class="mt-8">
               <p 
                 *ngIf="!collapsed()"
-                class="px-5 mb-2 mt-6 text-[13px] font-medium text-slate-400 dark:text-slate-500 relative"
+                class="px-5 mb-2 mt-6 text-[0.8125rem] font-medium text-slate-400 dark:text-slate-500 relative"
               >Extras</p>
               
               <!-- Configuracion Normal (NO ADMIN) -->
@@ -324,7 +324,7 @@ export class TimeAgoPipe implements PipeTransform {
                 *ngIf="!hasRole('Administrador') && (hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador'))"
                 routerLink="/configuracion" 
                 routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
-                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-2.5': !collapsed()
@@ -345,7 +345,7 @@ export class TimeAgoPipe implements PipeTransform {
                 *ngIf="hasRole('Administrador')"
                 routerLink="/admin/configuracion" 
                 routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
-                class="group flex items-center text-[14px] text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
                 [ngClass]="{
                   'justify-center p-2.5': collapsed(),
                   'gap-3.5 px-3.5 py-2.5': !collapsed()
@@ -410,7 +410,7 @@ export class TimeAgoPipe implements PipeTransform {
                 class="bg-transparent border-none outline-none ml-2 text-sm text-slate-700 dark:text-slate-200 w-full placeholder:text-slate-400 dark:placeholder:text-slate-500"
               >
               <div class="hidden lg:flex items-center gap-1">
-                <kbd class="hidden sm:inline-block min-h-[20px] px-1.5 py-0.5 text-[10px] font-bold text-slate-400 bg-white dark:bg-slate-700 dark:border-slate-600 border border-slate-200 rounded-md shadow-[0_1px_1px_rgba(0,0,0,0.05)]">⌘K</kbd>
+                <kbd class="hidden sm:inline-block min-h-[20px] px-1.5 py-0.5 text-[0.625rem] font-bold text-slate-400 bg-white dark:bg-slate-700 dark:border-slate-600 border border-slate-200 rounded-md shadow-[0_1px_1px_rgba(0,0,0,0.05)]">⌘K</kbd>
               </div>
             </div>
 
@@ -486,7 +486,7 @@ export class TimeAgoPipe implements PipeTransform {
                    <!-- Pulse ring -->
                    <span class="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-40"></span>
                    <!-- Count badge -->
-                   <span class="relative flex items-center justify-center min-w-[20px] h-[20px] px-1 bg-gradient-to-br from-red-500 to-rose-600 text-white text-[10px] font-extrabold rounded-full shadow-[0_2px_8px_rgba(239,68,68,0.5)] border-2 border-white dark:border-slate-900">
+                   <span class="relative flex items-center justify-center min-w-[20px] h-[20px] px-1 bg-gradient-to-br from-red-500 to-rose-600 text-white text-[0.625rem] font-extrabold rounded-full shadow-[0_2px_8px_rgba(239,68,68,0.5)] border-2 border-white dark:border-slate-900">
                      {{ notifService.count() > 99 ? '99+' : notifService.count() }}
                    </span>
                 </div>
@@ -495,20 +495,20 @@ export class TimeAgoPipe implements PipeTransform {
               <!-- Dropdown Panel -->
               <div 
                 *ngIf="notificationsOpen()" 
-                class="absolute right-0 mt-2.5 w-[380px] bg-white dark:bg-slate-900 rounded-xl shadow-[0_12px_48px_-12px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_48px_-12px_rgba(0,0,0,0.6)] border border-slate-200/60 dark:border-slate-700/60 z-50 overflow-hidden animate-fadeIn"
+                class="absolute right-0 mt-2.5 w-[90vw] sm:w-[380px] bg-white dark:bg-slate-900 rounded-xl shadow-[0_12px_48px_-12px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_48px_-12px_rgba(0,0,0,0.6)] border border-slate-200/60 dark:border-slate-700/60 z-50 overflow-hidden animate-fadeIn"
               >
                 <!-- Header -->
                 <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80">
                   <div class="flex items-center gap-2">
                     <h3 class="font-bold text-slate-800 dark:text-white text-sm">Notificaciones</h3>
                     <span *ngIf="notifService.count() > 0" 
-                      class="text-[10px] font-bold text-brand-purple dark:text-purple-400 bg-brand-purple/8 dark:bg-purple-900/30 px-2 py-0.5 rounded-md">
+                      class="text-[0.625rem] font-bold text-brand-purple dark:text-purple-400 bg-brand-purple/8 dark:bg-purple-900/30 px-2 py-0.5 rounded-md">
                       {{ notifService.count() }}
                     </span>
                   </div>
                   <button *ngIf="notifService.count() > 0" 
                     (click)="marcarTodasLeidas()" 
-                    class="text-[11px] font-semibold text-slate-400 hover:text-brand-purple dark:hover:text-purple-400 transition-colors px-2 py-1 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
+                    class="text-[0.6875rem] font-semibold text-slate-400 hover:text-brand-purple dark:hover:text-purple-400 transition-colors px-2 py-1 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
                     Marcar todas
                   </button>
                 </div>
@@ -538,12 +538,12 @@ export class TimeAgoPipe implements PipeTransform {
 
                     <!-- Content -->
                     <div class="flex-1 min-w-0">
-                      <p class="text-[13px] leading-snug text-slate-700 dark:text-slate-200" 
+                      <p class="text-[0.8125rem] leading-snug text-slate-700 dark:text-slate-200" 
                         [ngClass]="!n.leida ? 'font-bold text-slate-900 dark:text-white' : 'font-medium'">
                         {{ n.titulo }}
                       </p>
                       <p *ngIf="n.mensaje" class="text-[11.5px] text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">{{ n.mensaje }}</p>
-                      <p class="text-[10px] text-slate-400/80 dark:text-slate-600 mt-1">{{ n.creado_en | timeAgo }}</p>
+                      <p class="text-[0.625rem] text-slate-400/80 dark:text-slate-600 mt-1">{{ n.creado_en | timeAgo }}</p>
                     </div>
 
                     <!-- Unread dot -->
@@ -561,7 +561,7 @@ export class TimeAgoPipe implements PipeTransform {
                     </div>
                     <div>
                       <p class="font-semibold text-slate-500 dark:text-slate-400 text-sm">Sin notificaciones</p>
-                      <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Estás al día</p>
+                      <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 mt-0.5">Estás al día</p>
                     </div>
                   </div>
                 </div>
@@ -594,7 +594,7 @@ export class TimeAgoPipe implements PipeTransform {
                       <h3 class="font-display font-bold text-white text-lg leading-tight tracking-tight">{{ u.nombre || u.username }}</h3>
                       <p class="font-sans text-purple-200 dark:text-slate-400 text-xs font-medium mt-0.5 truncate">{{ u.correo }}</p>
                       <div class="mt-3">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-white text-[10px] font-bold border border-white/10 uppercase tracking-wider backdrop-blur-md shadow-sm">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white/10 text-white text-[0.625rem] font-bold border border-white/10 uppercase tracking-wider backdrop-blur-md shadow-sm">
                           {{ u.roles?.[0] || 'Usuario' }}
                         </span>
                       </div>

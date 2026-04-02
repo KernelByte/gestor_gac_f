@@ -17,6 +17,7 @@ import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.ut
 export class InformesTableComponent {
    @Input() resumen: ResumenMensual | null = null;
    @Input() saving: boolean = false;
+   @Input() canEdit: boolean = true;
 
    @Input() privilegios: Privilegio[] = [];
    @Input() publicadorPrivilegiosMap: Map<number, number[]> = new Map();
@@ -31,7 +32,8 @@ export class InformesTableComponent {
    trackByPub = (_: number, pub: InformeConPublicador) => pub.id_publicador;
 
    getInitials(name: string): string {
-      return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+      if (!name) return '';
+      return name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase();
    }
 
    getAvatarStyle(nombre: string): string {
@@ -40,10 +42,11 @@ export class InformesTableComponent {
 
    getRoles(pub: InformeConPublicador): { label: string, type: 'pill' | 'text', class: string }[] {
       const roles: { label: string, type: 'pill' | 'text', class: string }[] = [];
+      if (!pub) return roles;
 
       // 1. Try to get from loaded map (accurate assignments)
       const assignedIds = this.publicadorPrivilegiosMap.get(pub.id_publicador);
-      const catalog = this.privilegios;
+      const catalog = this.privilegios || [];
 
       if (assignedIds && assignedIds.length > 0 && catalog.length > 0) {
          // Map Ids to Names
@@ -87,13 +90,14 @@ export class InformesTableComponent {
       }
 
       if (roles.length === 0) {
-         roles.push({ label: 'PUBLICADOR', type: 'text', class: 'text-slate-400 font-medium text-[10px] uppercase tracking-wide' });
+         roles.push({ label: 'PUBLICADOR', type: 'text', class: 'text-slate-400 font-medium text-[0.625rem] uppercase tracking-wide' });
       }
 
       return roles;
    }
 
    getInformeValue(pub: InformeConPublicador, field: string): any {
+      if (!pub) return null;
       const local = this.localChanges.get(pub.id_publicador);
       if (local) {
          if (field === 'participo') return local.participo ?? pub.participo ?? false;
@@ -111,6 +115,8 @@ export class InformesTableComponent {
    }
 
    onUpdateInforme(pub: InformeConPublicador, field: string, event: Event) {
+      if (!this.canEdit) return;
+      if (!pub) return;
       let value: any;
       const el = event.target as HTMLInputElement;
       if (field === 'participo') {
@@ -134,12 +140,15 @@ export class InformesTableComponent {
    }
 
    getBonusHours(pub: InformeConPublicador): number | null {
+      if (!pub) return null;
       const roles = this.getRoles(pub);
       const isRegular = roles.some(r => r.label === 'PRECURSOR REGULAR');
       if (!isRegular) return null;
 
       const hours = this.getInformeValue(pub, 'horas') || 0;
       const notes = this.getInformeValue(pub, 'notas') || '';
+
+      if (typeof notes !== 'string') return null;
 
       const match = notes.match(/(\d+)/);
       if (!match) return null;
@@ -157,7 +166,8 @@ export class InformesTableComponent {
    }
 
    togglePaux(pub: InformeConPublicador) {
-      if (!this.getInformeValue(pub, 'participo')) return;
+      if (!this.canEdit) return;
+      if (!pub || !this.getInformeValue(pub, 'participo')) return;
 
       const current = this.getInformeValue(pub, 'es_paux');
       const newValue = !current;
@@ -178,6 +188,7 @@ export class InformesTableComponent {
    }
 
    onSave() {
+      if (!this.canEdit) return;
       // Validation: Check for Auxiliary Pioneers with 0 hours
       const publishers0Hours = (this.resumen?.publicadores_list || []).filter(pub => {
          const isPaux = this.getInformeValue(pub, 'es_paux');

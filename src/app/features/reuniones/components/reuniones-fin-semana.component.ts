@@ -53,7 +53,7 @@ import { Router } from '@angular/router';
                   [class.text-slate-500]="selectedWeekIdx() !== i"
                   [class.border-slate-200]="selectedWeekIdx() !== i"
                   class="shrink-0 px-6 py-3 rounded-2xl border font-bold text-sm shadow-sm transition-all hover:border-orange-500/50 snap-start">
-              <span class="block text-[10px] uppercase tracking-wider mb-0.5 opacity-80">Semana {{week + 40}}</span>
+              <span class="block text-[0.625rem] uppercase tracking-wider mb-0.5 opacity-80">Semana {{week + 40}}</span>
               {{ i * 7 + 3 }} - {{ i * 7 + 9 }} Oct
           </button>
        </div>
@@ -120,9 +120,9 @@ import { Router } from '@angular/router';
                                <div class="flex-1 min-w-0">
                                    <div class="flex items-center gap-2">
                                        <p class="font-bold text-slate-800 truncate text-sm">Mario Hernández</p>
-                                       <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold">Orador Invitado</span>
+                                       <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[0.625rem] font-bold">Orador Invitado</span>
                                    </div>
-                                   <p class="text-[10px] text-slate-500 mt-0.5">Congregación Las Colinas</p>
+                                   <p class="text-[0.625rem] text-slate-500 mt-0.5">Congregación Las Colinas</p>
                                </div>
                                <div class="shrink-0 mr-2 text-slate-300 group-hover:text-orange-500 transition-colors">
                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 20 8 16"/><line x1="12" y1="12" x2="12" y2="20"/><polyline points="8 8 12 4 16 8"/><line x1="12" y1="12" x2="12" y2="4"/></svg>
@@ -182,7 +182,7 @@ import { Router } from '@angular/router';
                                    </div>
                                    <div class="flex-1 min-w-0">
                                        <p class="font-bold text-slate-800 text-sm truncate">Eduardo Martínez</p>
-                                       <p class="text-[10px] text-slate-500 font-bold">Conductor (Anciano)</p>
+                                       <p class="text-[0.625rem] text-slate-500 font-bold">Conductor (Anciano)</p>
                                    </div>
                                </div>
                                <!-- Connector -->
@@ -196,7 +196,7 @@ import { Router } from '@angular/router';
                                    </div>
                                    <div class="flex-1 min-w-0">
                                        <p class="font-bold text-slate-700 text-sm truncate">Fernando Ponce</p>
-                                       <p class="text-[10px] text-slate-500 font-bold">Lector (S. Ministerial)</p>
+                                       <p class="text-[0.625rem] text-slate-500 font-bold">Lector (S. Ministerial)</p>
                                    </div>
                                </div>
                                

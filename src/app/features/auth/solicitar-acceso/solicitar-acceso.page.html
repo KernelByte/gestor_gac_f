@@ -1,16 +1,17 @@
 <div
-  class="h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden font-sans selection:bg-brand-purple selection:text-white pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]">
+  class="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-4 relative overflow-y-auto font-sans selection:bg-brand-purple selection:text-white"
+  style="padding-top: max(1rem, env(safe-area-inset-top)); padding-bottom: max(1.5rem, env(safe-area-inset-bottom));">
 
   <!-- Improved Animated Gradient Background -->
   <div class="absolute inset-0 overflow-hidden pointer-events-none">
     <div
-      class="absolute bottom-[-10%] left-[-10%] w-[90vw] h-[90vw] sm:w-[500px] sm:h-[500px] bg-brand-purple/20 rounded-full blur-[80px] sm:blur-[120px] animate-blob mix-blend-screen">
+      class="absolute bottom-[-10%] left-[-10%] w-[90vw] h-[90vw] sm:w-[32rem] sm:h-[32rem] bg-brand-purple/20 rounded-full blur-[80px] sm:blur-[120px] animate-blob mix-blend-screen">
     </div>
     <div
-      class="absolute top-[-10%] right-[-10%] w-[90vw] h-[90vw] sm:w-[500px] sm:h-[500px] bg-indigo-600/15 rounded-full blur-[80px] sm:blur-[120px] animate-blob animation-delay-2000 mix-blend-screen">
+      class="absolute top-[-10%] right-[-10%] w-[90vw] h-[90vw] sm:w-[32rem] sm:h-[32rem] bg-indigo-600/15 rounded-full blur-[80px] sm:blur-[120px] animate-blob animation-delay-2000 mix-blend-screen">
     </div>
     <div
-      class="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] sm:w-[800px] sm:h-[800px] bg-brand-purple/5 rounded-full blur-[80px] sm:blur-[100px]">
+      class="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] sm:w-[50rem] sm:h-[50rem] bg-brand-purple/5 rounded-full blur-[80px] sm:blur-[100px]">
     </div>
     <div
       class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light">
@@ -18,23 +19,23 @@
   </div>
 
   <!-- Content Wrapper -->
-  <div class="relative z-10 w-full max-w-[720px] flex flex-col items-center max-h-full overflow-y-auto sm:overflow-visible py-4 sm:py-8 scrollbar-none">
+  <div class="relative z-10 w-full max-w-3xl flex flex-col items-center py-4 sm:py-8">
 
     <!-- Out-of-form Message Area (Top) -->
-    <div *ngIf="error()" class="w-full mb-6 animate-fadeIn">
+    <div *ngIf="error()" class="w-full mb-4 sm:mb-6 animate-fadeIn">
       <div [class]="rateLimited() ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'"
-           class="p-4 rounded-xl border flex items-center justify-center gap-3 backdrop-blur-md shadow-lg">
-        <svg class="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+           class="p-3 sm:p-4 rounded-xl border flex items-center justify-center gap-3 backdrop-blur-md shadow-lg">
+        <svg class="w-5 h-5 sm:w-6 sm:h-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path *ngIf="rateLimited()" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           <path *ngIf="!rateLimited()" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
-        <span class="text-sm sm:text-base font-semibold tracking-tight">{{ error() }}</span>
+        <span class="text-sm font-semibold tracking-tight">{{ error() }}</span>
       </div>
     </div>
 
     <!-- Branding / Header Section -->
-    <div *ngIf="!success()" class="mb-10 sm:mb-14 text-center animate-fadeIn">
-      <h1 class="text-2xl sm:text-4xl font-black text-white mb-2 tracking-tight">Registro de Acceso</h1>
+    <div *ngIf="!success()" class="mb-5 sm:mb-10 text-center animate-fadeIn">
+      <h1 class="text-2xl sm:text-4xl font-black text-white mb-1 sm:mb-2 tracking-tight">Registro de Acceso</h1>
       <p class="text-slate-400 text-sm sm:text-base font-medium opacity-80">
         Completa tus datos para enviarlos a revisión
       </p>
@@ -42,7 +43,7 @@
 
     <!-- Main Card -->
     <div
-      class="w-full bg-slate-900/40 backdrop-blur-2xl rounded-[2rem] sm:rounded-[2.5rem] border border-white/[0.08] shadow-[0_8px_50px_rgb(0,0,0,0.5)] p-6 sm:p-12 transition-all duration-500 relative overflow-hidden ring-1 ring-white/[0.04]">
+      class="w-full bg-slate-900/40 backdrop-blur-2xl rounded-2xl sm:rounded-[2.5rem] border border-white/[0.08] shadow-[0_8px_50px_rgb(0,0,0,0.5)] p-5 sm:p-12 transition-all duration-500 relative overflow-hidden ring-1 ring-white/[0.04]">
 
       <!-- Success State -->
       <div *ngIf="success()" class="text-center space-y-4 sm:space-y-6 animate-fadeIn py-4">
@@ -64,15 +65,15 @@
 
       <!-- Form State -->
       <div *ngIf="!success()">
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
-          
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 sm:space-y-6">
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <!-- Nombre -->
             <div class="space-y-1.5">
               <label class="block text-sm font-semibold text-slate-300 ml-1">Nombre completo</label>
               <input formControlName="nombre" type="text"
                 [class.border-rose-500/50]="form.controls['nombre'].touched && form.controls['nombre'].invalid"
-                class="w-full h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 shadow-inner group-focus-within:bg-slate-950/80"
+                class="w-full h-11 sm:h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 shadow-inner"
                 placeholder="Tu nombre">
               <div *ngIf="form.controls['nombre'].touched && form.controls['nombre'].invalid" class="text-xs text-rose-400 mt-1.5 ml-1 font-medium animate-fadeIn flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -85,9 +86,9 @@
             <!-- Email -->
             <div class="space-y-1.5">
               <label class="block text-sm font-semibold text-slate-300 ml-1">Correo electrónico</label>
-              <input formControlName="email" type="email"
+              <input formControlName="email" type="email" inputmode="email"
                 [class.border-rose-500/50]="form.controls['email'].touched && form.controls['email'].invalid"
-                class="w-full h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 shadow-inner group-focus-within:bg-slate-950/80"
+                class="w-full h-11 sm:h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 shadow-inner"
                 placeholder="nombre@ejemplo.com">
               <div *ngIf="form.controls['email'].touched && form.controls['email'].invalid" class="text-xs text-rose-400 mt-1.5 ml-1 font-medium animate-fadeIn flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,13 +99,13 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <!-- Congregación -->
             <div class="space-y-1.5">
               <label class="block text-sm font-semibold text-slate-300 ml-1">Congregación</label>
               <input formControlName="congregacion" type="text"
                 [class.border-rose-500/50]="form.controls['congregacion'].touched && form.controls['congregacion'].invalid"
-                class="w-full h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 shadow-inner group-focus-within:bg-slate-950/80"
+                class="w-full h-11 sm:h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 shadow-inner"
                 placeholder="Tu congregación">
               <div *ngIf="form.controls['congregacion'].touched && form.controls['congregacion'].invalid" class="text-xs text-rose-400 mt-1.5 ml-1 font-medium animate-fadeIn flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,9 +118,9 @@
             <!-- Teléfono -->
             <div class="space-y-1.5">
               <label class="block text-sm font-semibold text-slate-300 ml-1">Teléfono móvil</label>
-              <input formControlName="telefono" type="text"
+              <input formControlName="telefono" type="tel" inputmode="numeric"
                 [class.border-rose-500/50]="form.controls['telefono'].touched && form.controls['telefono'].invalid"
-                class="w-full h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 shadow-inner group-focus-within:bg-slate-950/80"
+                class="w-full h-11 sm:h-12 bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 shadow-inner"
                 placeholder="Solo números">
               <div *ngIf="form.controls['telefono'].touched && form.controls['telefono'].invalid" class="text-xs text-rose-400 mt-1.5 ml-1 font-medium animate-fadeIn flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -134,14 +135,15 @@
           <div class="space-y-1.5">
             <label class="block text-sm font-semibold text-slate-300 ml-1">Observaciones opcionales</label>
             <textarea formControlName="observaciones" rows="2"
-              class="w-full bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block p-4 placeholder-slate-600 transition-all duration-200 resize-none min-h-[100px] shadow-inner group-focus-within:bg-slate-950/80"
+              class="w-full bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block p-4 placeholder-slate-600 transition-all duration-200 resize-none shadow-inner"
+              style="min-height: 5rem;"
               placeholder="¿Alguna aclaración adicional?"></textarea>
           </div>
 
           <!-- Submit Button -->
-          <div class="pt-2">
+          <div class="pt-1 sm:pt-2">
             <button type="submit" [disabled]="form.invalid || loading()"
-              class="group relative w-full flex justify-center py-4 px-6 rounded-xl text-base font-bold text-white bg-gradient-to-r from-brand-purple to-violet-600 hover:to-brand-purple hover:shadow-[0_0_30px_rgba(109,40,217,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-brand-purple disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98] overflow-hidden shadow-xl shadow-purple-900/20">
+              class="group relative w-full flex justify-center py-3.5 sm:py-4 px-6 rounded-xl text-base font-bold text-white bg-gradient-to-r from-brand-purple to-violet-600 hover:to-brand-purple hover:shadow-[0_0_30px_rgba(109,40,217,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-brand-purple disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98] overflow-hidden shadow-xl shadow-purple-900/20">
 
               <div
                 class="absolute inset-0 -translate-x-full group-hover:animate-[shine_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent">
@@ -162,7 +164,7 @@
         </form>
 
         <!-- Footer link -->
-        <div class="mt-10 pt-6 border-t border-white/5 text-center">
+        <div class="mt-6 sm:mt-10 pt-4 sm:pt-6 border-t border-white/5 text-center">
           <p class="text-sm text-slate-500">
             ¿Ya tienes acceso? <a routerLink="/login"
               class="font-bold text-white hover:text-brand-purple transition-colors p-2 inline-block">Vuelve al Login</a>
@@ -174,10 +176,9 @@
 
     <!-- Footer -->
     <footer
-      class="mt-8 flex items-center justify-center gap-6 text-[10px] text-slate-500 font-medium tracking-wider z-10 w-full opacity-60 hover:opacity-100 transition-opacity pb-6 shrink-0 uppercase">
+      class="mt-6 sm:mt-8 flex items-center justify-center gap-6 text-[0.6875rem] sm:text-xs text-slate-500 font-medium tracking-wider z-10 w-full opacity-60 hover:opacity-100 transition-opacity pb-2 sm:pb-6 shrink-0 uppercase">
       <span class="text-slate-600">v1.2 • GAC System</span>
     </footer>
 
   </div>
 </div>
-

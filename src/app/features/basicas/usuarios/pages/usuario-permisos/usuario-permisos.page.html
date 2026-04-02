@@ -61,9 +61,9 @@
             <!-- Stats Badge -->
             <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
                <div
-                  class="flex items-center gap-3 px-3 py-2 md:px-4 md:py-2.5 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/40 dark:to-emerald-800/40 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
-                  <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  class="flex items-center gap-3 px-3 py-2 md:px-4 md:py-2.5 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/30 rounded-xl border border-purple-200 dark:border-purple-800/50">
+                  <div class="w-3 h-3 rounded-full bg-purple-500 animate-pulse"></div>
+                  <span class="text-sm font-semibold text-purple-700 dark:text-purple-300">
                      {{ totalAsignados() }} de {{ totalPermisos() }} activos
                   </span>
                </div>
@@ -71,7 +71,7 @@
                <!-- Quick Actions -->
                <div class="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1">
                   <button (click)="toggleTodos(true)"
-                     class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-lg transition-colors">
+                     class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors">
                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                      </svg>
@@ -115,26 +115,37 @@
    <!-- Categories Scrollable Grid -->
    <div *ngIf="!loading()" @fadeIn class="flex-1 min-h-0 overflow-y-auto simple-scrollbar pb-32">
 
-      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 pb-24">
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 pb-24 items-start">
          <div *ngFor="let cat of filteredCategorias()"
-            class="group bg-white dark:bg-slate-800 rounded-2xl shadow-sm border overflow-hidden transition-all duration-300 hover:shadow-lg"
-            [class.border-slate-200]="true" [class.dark:border-slate-700]="true" 
-            [class.hover:border-amber-300]="getCategoryTheme(cat.categoria) === 'amber'"
-            [class.dark:hover:border-amber-700]="getCategoryTheme(cat.categoria) === 'amber'"
-            [class.hover:border-purple-300]="getCategoryTheme(cat.categoria) === 'purple'"
-            [class.dark:hover:border-purple-700]="getCategoryTheme(cat.categoria) === 'purple'"
-            [class.hover:border-emerald-300]="getCategoryTheme(cat.categoria) === 'emerald'"
-            [class.dark:hover:border-emerald-700]="getCategoryTheme(cat.categoria) === 'emerald'"
-            [class.hover:border-blue-300]="getCategoryTheme(cat.categoria) === 'blue'"
-            [class.dark:hover:border-blue-700]="getCategoryTheme(cat.categoria) === 'blue'">
+            class="group bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-300 hover:shadow-lg"
+            [ngClass]="{
+               'xl:col-span-2': cat.expandido,
+               'hover:border-amber-300 dark:hover:border-amber-700': getCategoryTheme(cat.categoria) === 'amber',
+               'hover:border-purple-300 dark:hover:border-purple-700': getCategoryTheme(cat.categoria) === 'purple',
+               'hover:border-emerald-300 dark:hover:border-emerald-700': getCategoryTheme(cat.categoria) === 'emerald',
+               'hover:border-blue-300 dark:hover:border-blue-700': getCategoryTheme(cat.categoria) === 'blue',
+               'hover:border-slate-300 dark:hover:border-slate-600': getCategoryTheme(cat.categoria) === 'slate'
+            }">
 
             <!-- Category Header -->
             <button (click)="toggleCategoria(cat)"
                class="w-full px-4 py-4 md:px-6 md:py-5 flex items-center gap-4 transition-colors"
-               [ngClass]="getCategoryHoverClass(cat.categoria)">
+               [ngClass]="{
+                  'hover:bg-amber-50/60 dark:hover:bg-amber-900/10': getCategoryTheme(cat.categoria) === 'amber',
+                  'hover:bg-purple-50/60 dark:hover:bg-purple-900/10': getCategoryTheme(cat.categoria) === 'purple',
+                  'hover:bg-emerald-50/60 dark:hover:bg-emerald-900/10': getCategoryTheme(cat.categoria) === 'emerald',
+                  'hover:bg-blue-50/60 dark:hover:bg-blue-900/10': getCategoryTheme(cat.categoria) === 'blue',
+                  'hover:bg-slate-50/60 dark:hover:bg-slate-900/10': getCategoryTheme(cat.categoria) === 'slate'
+               }">
                <div
-                  class="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105"
-                  [ngClass]="getCategoryBgClass(cat.categoria)">
+                  class="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105 ring-1"
+                  [ngClass]="{
+                     'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 ring-amber-200/60 dark:ring-amber-900/50': getCategoryTheme(cat.categoria) === 'amber',
+                     'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 ring-purple-200/60 dark:ring-purple-900/50': getCategoryTheme(cat.categoria) === 'purple',
+                     'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300 ring-emerald-200/60 dark:ring-emerald-900/50': getCategoryTheme(cat.categoria) === 'emerald',
+                     'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 ring-blue-200/60 dark:ring-blue-900/50': getCategoryTheme(cat.categoria) === 'blue',
+                     'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 ring-slate-200/60 dark:ring-slate-700/60': getCategoryTheme(cat.categoria) === 'slate'
+                  }">
                   <div class="w-5 h-5 md:w-6 md:h-6" [innerHTML]="getCategoryIcon(cat.categoria)"></div>
                </div>
                <div class="flex-1 text-left">
@@ -146,47 +157,47 @@
                <div class="flex items-center gap-3 md:gap-4">
                   <div class="hidden sm:flex flex-col items-end gap-1">
                      <span class="text-sm font-bold"
-                        [class.text-amber-600]="getCategoryTheme(cat.categoria) === 'amber'"
-                        [class.dark:text-amber-400]="getCategoryTheme(cat.categoria) === 'amber'"
-                        [class.text-purple-600]="getCategoryTheme(cat.categoria) === 'purple'"
-                        [class.dark:text-purple-400]="getCategoryTheme(cat.categoria) === 'purple'"
-                        [class.text-emerald-600]="getCategoryTheme(cat.categoria) === 'emerald'"
-                        [class.dark:text-emerald-400]="getCategoryTheme(cat.categoria) === 'emerald'"
-                        [class.text-blue-600]="getCategoryTheme(cat.categoria) === 'blue'"
-                        [class.dark:text-blue-400]="getCategoryTheme(cat.categoria) === 'blue'">
+                        [ngClass]="{
+                           'text-amber-600 dark:text-amber-300': getCategoryTheme(cat.categoria) === 'amber',
+                           'text-purple-600 dark:text-purple-300': getCategoryTheme(cat.categoria) === 'purple',
+                           'text-emerald-600 dark:text-emerald-300': getCategoryTheme(cat.categoria) === 'emerald',
+                           'text-blue-600 dark:text-blue-300': getCategoryTheme(cat.categoria) === 'blue',
+                           'text-slate-600 dark:text-slate-300': getCategoryTheme(cat.categoria) === 'slate'
+                        }">
                         {{ getAssignedCount(cat) }}/{{ cat.permisos.length }}
                      </span>
                      <div class="w-16 md:w-24 h-1.5 md:h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                         <div class="h-full rounded-full transition-all duration-500"
-                           [class.bg-amber-500]="getCategoryTheme(cat.categoria) === 'amber'"
-                           [class.bg-purple-500]="getCategoryTheme(cat.categoria) === 'purple'"
-                           [class.bg-emerald-500]="getCategoryTheme(cat.categoria) === 'emerald'"
-                           [class.bg-blue-500]="getCategoryTheme(cat.categoria) === 'blue'"
+                           [ngClass]="{
+                              'bg-amber-500': getCategoryTheme(cat.categoria) === 'amber',
+                              'bg-purple-500': getCategoryTheme(cat.categoria) === 'purple',
+                              'bg-emerald-500': getCategoryTheme(cat.categoria) === 'emerald',
+                              'bg-blue-500': getCategoryTheme(cat.categoria) === 'blue',
+                              'bg-slate-500': getCategoryTheme(cat.categoria) === 'slate'
+                           }"
                            [style.width.%]="(getAssignedCount(cat) / cat.permisos.length) * 100"></div>
                      </div>
                   </div>
                   <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-all"
-                     [class.bg-amber-100]="getCategoryTheme(cat.categoria) === 'amber' && cat.expandido"
-                     [class.dark:bg-amber-900/40]="getCategoryTheme(cat.categoria) === 'amber' && cat.expandido"
-                     [class.bg-purple-100]="getCategoryTheme(cat.categoria) === 'purple' && cat.expandido"
-                     [class.dark:bg-purple-900/40]="getCategoryTheme(cat.categoria) === 'purple' && cat.expandido"
-                     [class.bg-emerald-100]="getCategoryTheme(cat.categoria) === 'emerald' && cat.expandido"
-                     [class.dark:bg-emerald-900/40]="getCategoryTheme(cat.categoria) === 'emerald' && cat.expandido"
-                     [class.bg-blue-100]="getCategoryTheme(cat.categoria) === 'blue' && cat.expandido"
-                     [class.dark:bg-blue-900/40]="getCategoryTheme(cat.categoria) === 'blue' && cat.expandido"
+                     [ngClass]="{
+                        'bg-amber-100 dark:bg-amber-900/40': cat.expandido && getCategoryTheme(cat.categoria) === 'amber',
+                        'bg-purple-100 dark:bg-purple-900/40': cat.expandido && getCategoryTheme(cat.categoria) === 'purple',
+                        'bg-emerald-100 dark:bg-emerald-900/40': cat.expandido && getCategoryTheme(cat.categoria) === 'emerald',
+                        'bg-blue-100 dark:bg-blue-900/40': cat.expandido && getCategoryTheme(cat.categoria) === 'blue',
+                        'bg-slate-100 dark:bg-slate-700': cat.expandido && getCategoryTheme(cat.categoria) === 'slate'
+                     }"
                      [class.bg-slate-100]="!cat.expandido"
                      [class.dark:bg-slate-700]="!cat.expandido">
                      <svg class="w-4 h-4 md:w-5 md:h-5 transition-transform duration-300"
                         [class.rotate-180]="cat.expandido"
-                        [class.text-amber-600]="getCategoryTheme(cat.categoria) === 'amber'"
-                        [class.dark:text-amber-400]="getCategoryTheme(cat.categoria) === 'amber'"
-                        [class.text-purple-600]="getCategoryTheme(cat.categoria) === 'purple'"
-                        [class.dark:text-purple-400]="getCategoryTheme(cat.categoria) === 'purple'"
-                        [class.text-emerald-600]="getCategoryTheme(cat.categoria) === 'emerald'"
-                        [class.dark:text-emerald-400]="getCategoryTheme(cat.categoria) === 'emerald'"
-                        [class.text-blue-600]="getCategoryTheme(cat.categoria) === 'blue'"
-                        [class.dark:text-blue-400]="getCategoryTheme(cat.categoria) === 'blue'" fill="none"
-                        stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        [ngClass]="{
+                           'text-amber-600 dark:text-amber-300': getCategoryTheme(cat.categoria) === 'amber',
+                           'text-purple-600 dark:text-purple-300': getCategoryTheme(cat.categoria) === 'purple',
+                           'text-emerald-600 dark:text-emerald-300': getCategoryTheme(cat.categoria) === 'emerald',
+                           'text-blue-600 dark:text-blue-300': getCategoryTheme(cat.categoria) === 'blue',
+                           'text-slate-600 dark:text-slate-300': getCategoryTheme(cat.categoria) === 'slate'
+                        }"
+                        fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path d="M19 9l-7 7-7-7" />
                      </svg>
                   </div>
@@ -196,53 +207,34 @@
             <!-- Permissions List -->
             <div [@expandCollapse]="cat.expandido ? 'expanded' : 'collapsed'">
                <!-- Quick Actions Bar -->
-               <div class="px-4 py-3 md:px-6 flex items-center justify-between border-t border-b dark:border-slate-700"
-                  [class.bg-amber-50]="getCategoryTheme(cat.categoria) === 'amber'"
-                  [class.dark:bg-amber-900/10]="getCategoryTheme(cat.categoria) === 'amber'"
-                  [class.border-amber-100]="getCategoryTheme(cat.categoria) === 'amber'"
-                  [class.dark:border-amber-800/20]="getCategoryTheme(cat.categoria) === 'amber'"
-                  [class.bg-purple-50]="getCategoryTheme(cat.categoria) === 'purple'"
-                  [class.dark:bg-purple-900/10]="getCategoryTheme(cat.categoria) === 'purple'"
-                  [class.border-purple-100]="getCategoryTheme(cat.categoria) === 'purple'"
-                  [class.dark:border-purple-800/20]="getCategoryTheme(cat.categoria) === 'purple'"
-                  [class.bg-emerald-50]="getCategoryTheme(cat.categoria) === 'emerald'"
-                  [class.dark:bg-emerald-900/10]="getCategoryTheme(cat.categoria) === 'emerald'"
-                  [class.border-emerald-100]="getCategoryTheme(cat.categoria) === 'emerald'"
-                  [class.dark:border-emerald-800/20]="getCategoryTheme(cat.categoria) === 'emerald'"
-                  [class.bg-blue-50]="getCategoryTheme(cat.categoria) === 'blue'"
-                  [class.dark:bg-blue-900/10]="getCategoryTheme(cat.categoria) === 'blue'"
-                  [class.border-blue-100]="getCategoryTheme(cat.categoria) === 'blue'"
-                  [class.dark:border-blue-800/20]="getCategoryTheme(cat.categoria) === 'blue'">
-                  <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider"
-                     [class.text-amber-700]="getCategoryTheme(cat.categoria) === 'amber'"
-                     [class.dark:text-amber-400]="getCategoryTheme(cat.categoria) === 'amber'"
-                     [class.text-purple-700]="getCategoryTheme(cat.categoria) === 'purple'"
-                     [class.dark:text-purple-400]="getCategoryTheme(cat.categoria) === 'purple'"
-                     [class.text-emerald-700]="getCategoryTheme(cat.categoria) === 'emerald'"
-                     [class.dark:text-emerald-400]="getCategoryTheme(cat.categoria) === 'emerald'"
-                     [class.text-blue-700]="getCategoryTheme(cat.categoria) === 'blue'"
-                     [class.dark:text-blue-400]="getCategoryTheme(cat.categoria) === 'blue'">
+               <div class="px-4 py-3 md:px-6 flex items-center justify-between border-t border-b"
+                  [ngClass]="{
+                     'border-amber-100 dark:border-amber-800/20 bg-amber-50 dark:bg-amber-900/10': getCategoryTheme(cat.categoria) === 'amber',
+                     'border-purple-100 dark:border-purple-800/20 bg-purple-50 dark:bg-purple-900/10': getCategoryTheme(cat.categoria) === 'purple',
+                     'border-emerald-100 dark:border-emerald-800/20 bg-emerald-50 dark:bg-emerald-900/10': getCategoryTheme(cat.categoria) === 'emerald',
+                     'border-blue-100 dark:border-blue-800/20 bg-blue-50 dark:bg-blue-900/10': getCategoryTheme(cat.categoria) === 'blue',
+                     'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/10': getCategoryTheme(cat.categoria) === 'slate'
+                  }">
+                  <span class="text-[0.625rem] md:text-xs font-bold uppercase tracking-wider"
+                     [ngClass]="{
+                        'text-amber-700 dark:text-amber-300': getCategoryTheme(cat.categoria) === 'amber',
+                        'text-purple-700 dark:text-purple-300': getCategoryTheme(cat.categoria) === 'purple',
+                        'text-emerald-700 dark:text-emerald-300': getCategoryTheme(cat.categoria) === 'emerald',
+                        'text-blue-700 dark:text-blue-300': getCategoryTheme(cat.categoria) === 'blue',
+                        'text-slate-700 dark:text-slate-300': getCategoryTheme(cat.categoria) === 'slate'
+                     }">
                      Permisos
                   </span>
                   <div class="flex items-center gap-2">
                      <button (click)="toggleCategoriaTodos(cat, true); $event.stopPropagation()"
-                        class="px-2 py-1 md:px-3 md:py-1.5 text-[10px] md:text-xs font-bold rounded-lg transition-colors"
-                        [class.text-amber-700]="getCategoryTheme(cat.categoria) === 'amber'"
-                        [class.dark:text-amber-400]="getCategoryTheme(cat.categoria) === 'amber'"
-                        [class.hover:bg-amber-100]="getCategoryTheme(cat.categoria) === 'amber'"
-                        [class.dark:hover:bg-amber-900/30]="getCategoryTheme(cat.categoria) === 'amber'"
-                        [class.text-purple-700]="getCategoryTheme(cat.categoria) === 'purple'"
-                        [class.dark:text-purple-400]="getCategoryTheme(cat.categoria) === 'purple'"
-                        [class.hover:bg-purple-100]="getCategoryTheme(cat.categoria) === 'purple'"
-                        [class.dark:hover:bg-purple-900/30]="getCategoryTheme(cat.categoria) === 'purple'"
-                        [class.text-emerald-700]="getCategoryTheme(cat.categoria) === 'emerald'"
-                        [class.dark:text-emerald-400]="getCategoryTheme(cat.categoria) === 'emerald'"
-                        [class.hover:bg-emerald-100]="getCategoryTheme(cat.categoria) === 'emerald'"
-                        [class.dark:hover:bg-emerald-900/30]="getCategoryTheme(cat.categoria) === 'emerald'"
-                        [class.text-blue-700]="getCategoryTheme(cat.categoria) === 'blue'"
-                        [class.dark:text-blue-400]="getCategoryTheme(cat.categoria) === 'blue'"
-                        [class.hover:bg-blue-100]="getCategoryTheme(cat.categoria) === 'blue'"
-                        [class.dark:hover:bg-blue-900/30]="getCategoryTheme(cat.categoria) === 'blue'">
+                        class="px-2 py-1 md:px-3 md:py-1.5 text-[0.625rem] md:text-xs font-bold rounded-lg transition-colors"
+                        [ngClass]="{
+                           'text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30': getCategoryTheme(cat.categoria) === 'amber',
+                           'text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30': getCategoryTheme(cat.categoria) === 'purple',
+                           'text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30': getCategoryTheme(cat.categoria) === 'emerald',
+                           'text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30': getCategoryTheme(cat.categoria) === 'blue',
+                           'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700': getCategoryTheme(cat.categoria) === 'slate'
+                        }">
                         <div class="flex items-center gap-1.5">
                            <svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" stroke-width="2.5"
                               viewBox="0 0 24 24">
@@ -252,7 +244,7 @@
                         </div>
                      </button>
                      <button (click)="toggleCategoriaTodos(cat, false); $event.stopPropagation()"
-                        class="px-2 py-1 md:px-3 md:py-1.5 text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        class="px-2 py-1 md:px-3 md:py-1.5 text-[0.625rem] md:text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
                         <div class="flex items-center gap-1.5">
                            <svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" stroke-width="2.5"
                               viewBox="0 0 24 24">
@@ -268,7 +260,14 @@
                   <div *ngFor="let permiso of cat.permisos">
                      <div
                         class="px-4 py-3 md:px-6 md:py-4 flex items-center gap-3 md:gap-4 cursor-pointer transition-colors"
-                        (click)="togglePermiso(permiso)" [ngClass]="getCategoryHoverClass(cat.categoria)">
+                        [ngClass]="{
+                           'hover:bg-amber-50/60 dark:hover:bg-amber-900/10': getCategoryTheme(cat.categoria) === 'amber',
+                           'hover:bg-purple-50/60 dark:hover:bg-purple-900/10': getCategoryTheme(cat.categoria) === 'purple',
+                           'hover:bg-emerald-50/60 dark:hover:bg-emerald-900/10': getCategoryTheme(cat.categoria) === 'emerald',
+                           'hover:bg-blue-50/60 dark:hover:bg-blue-900/10': getCategoryTheme(cat.categoria) === 'blue',
+                           'hover:bg-slate-50/60 dark:hover:bg-slate-900/10': getCategoryTheme(cat.categoria) === 'slate'
+                        }"
+                        (click)="togglePermiso(permiso)">
 
                         <!-- Permission Info -->
                         <div class="flex-1 min-w-0">
@@ -276,22 +275,13 @@
                               <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0"
                                  [class.bg-slate-100]="!permiso.asignado" [class.dark:bg-slate-700]="!permiso.asignado"
                                  [class.text-slate-400]="!permiso.asignado" [class.dark:text-slate-500]="!permiso.asignado"
-                                 [class.bg-purple-100]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
-                                 [class.dark:bg-purple-900/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
-                                 [class.text-purple-600]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
-                                 [class.dark:text-purple-400]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
-                                 [class.bg-amber-100]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
-                                 [class.dark:bg-amber-900/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
-                                 [class.text-amber-600]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
-                                 [class.dark:text-amber-400]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
-                                 [class.bg-emerald-100]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
-                                 [class.dark:bg-emerald-900/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
-                                 [class.text-emerald-600]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
-                                 [class.dark:text-emerald-400]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
-                                 [class.bg-blue-100]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'"
-                                 [class.dark:bg-blue-900/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'"
-                                 [class.text-blue-600]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'"
-                                 [class.dark:text-blue-400]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'">
+                                 [ngClass]="{
+                                    'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300': permiso.asignado && getCategoryTheme(cat.categoria) === 'amber',
+                                    'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300': permiso.asignado && getCategoryTheme(cat.categoria) === 'purple',
+                                    'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300': permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald',
+                                    'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300': permiso.asignado && getCategoryTheme(cat.categoria) === 'blue',
+                                    'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300': permiso.asignado && getCategoryTheme(cat.categoria) === 'slate'
+                                 }">
                                  <div class="w-4 h-4" [innerHTML]="getPermisoIconSvg(permiso.codigo)"></div>
                               </div>
                               <div>
@@ -301,7 +291,7 @@
                                     {{ permiso.nombre }}
                                  </h4>
                                  <p *ngIf="permiso.descripcion"
-                                    class="text-[10px] md:text-xs text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
+                                    class="text-[0.625rem] md:text-xs text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
                                     {{ permiso.descripcion }}
                                  </p>
                               </div>
@@ -311,24 +301,26 @@
                         <!-- Themed Toggle Switch -->
                         <div
                            class="relative w-10 h-6 md:w-12 md:h-7 rounded-full transition-all duration-300 cursor-pointer flex-shrink-0"
-                           [class.bg-amber-500]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
-                           [class.shadow-amber-500/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'amber'"
-                           [class.bg-purple-500]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
-                           [class.shadow-purple-500/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'purple'"
-                           [class.bg-emerald-500]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
-                           [class.shadow-emerald-500/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald'"
-                           [class.bg-blue-500]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'"
-                           [class.shadow-blue-500/40]="permiso.asignado && getCategoryTheme(cat.categoria) === 'blue'"
+                           [ngClass]="{
+                              'bg-amber-500 shadow-amber-500/40': permiso.asignado && getCategoryTheme(cat.categoria) === 'amber',
+                              'bg-purple-600 shadow-purple-500/40': permiso.asignado && getCategoryTheme(cat.categoria) === 'purple',
+                              'bg-emerald-500 shadow-emerald-500/40': permiso.asignado && getCategoryTheme(cat.categoria) === 'emerald',
+                              'bg-blue-500 shadow-blue-500/40': permiso.asignado && getCategoryTheme(cat.categoria) === 'blue',
+                              'bg-slate-500 shadow-slate-500/40': permiso.asignado && getCategoryTheme(cat.categoria) === 'slate'
+                           }"
                            [class.bg-slate-300]="!permiso.asignado" [class.dark:bg-slate-600]="!permiso.asignado"
                            [class.shadow-lg]="permiso.asignado">
                            <div
                               class="absolute top-1 left-1 w-4 h-4 md:w-5 md:h-5 bg-white rounded-full shadow-md ring-1 ring-black/5 transition-transform duration-300 flex items-center justify-center mr-1"
                               [class.translate-x-4]="permiso.asignado" [class.md:translate-x-5]="permiso.asignado">
-                              <svg *ngIf="permiso.asignado" class="w-2.5 h-2.5 md:w-3 md:h-3"
-                                 [class.text-amber-500]="getCategoryTheme(cat.categoria) === 'amber'"
-                                 [class.text-purple-500]="getCategoryTheme(cat.categoria) === 'purple'"
-                                 [class.text-emerald-500]="getCategoryTheme(cat.categoria) === 'emerald'"
-                                 [class.text-blue-500]="getCategoryTheme(cat.categoria) === 'blue'" fill="none"
+                              <svg *ngIf="permiso.asignado" class="w-2.5 h-2.5 md:w-3 md:h-3" fill="none"
+                                 [ngClass]="{
+                                    'text-amber-500 dark:text-amber-200': getCategoryTheme(cat.categoria) === 'amber',
+                                    'text-purple-600 dark:text-purple-200': getCategoryTheme(cat.categoria) === 'purple',
+                                    'text-emerald-500 dark:text-emerald-200': getCategoryTheme(cat.categoria) === 'emerald',
+                                    'text-blue-500 dark:text-blue-200': getCategoryTheme(cat.categoria) === 'blue',
+                                    'text-slate-600 dark:text-slate-200': getCategoryTheme(cat.categoria) === 'slate'
+                                 }"
                                  stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                                  <path d="M5 13l4 4L19 7" />
                               </svg>
@@ -341,7 +333,7 @@
                         class="px-4 pb-3 pl-14 md:px-6 md:pb-4 md:pl-16">
                         <div class="bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800/30 p-3 md:p-4">
                            <label
-                              class="block text-[10px] md:text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider mb-2 md:mb-3">
+                              class="block text-[0.625rem] md:text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider mb-2 md:mb-3">
                               Alcance de edición
                            </label>
                            <div class="flex flex-col sm:flex-row flex-wrap sm:items-center gap-2 sm:gap-4">

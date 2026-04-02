@@ -55,7 +55,7 @@
                   <div *ngIf="showExportMenu()"
                      class="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 ring-1 ring-black/5 dark:ring-white/10 z-[9999] transform origin-top-right transition-all animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
                      <div class="px-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                        <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Opciones de
+                        <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Opciones de
                            Exportación
                         </p>
                         <div class="flex gap-2 mt-2">
@@ -90,7 +90,7 @@
                            </div>
                            <div>
                               <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Todos los publicadores</p>
-                              <p class="text-[11px] text-slate-400 font-medium leading-snug">Incluye activos, inactivos
+                              <p class="text-[0.6875rem] text-slate-400 font-medium leading-snug">Incluye activos, inactivos
                                  y
                                  otros.</p>
                            </div>
@@ -108,7 +108,7 @@
                            </div>
                            <div>
                               <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Solo Activos</p>
-                              <p class="text-[11px] text-slate-400 font-medium leading-snug">Únicamente con estado
+                              <p class="text-[0.6875rem] text-slate-400 font-medium leading-snug">Únicamente con estado
                                  "Activo".</p>
                            </div>
                         </button>
@@ -194,7 +194,7 @@
                      {{ totalSinAsignar() }}
                   </h3>
                   <p *ngIf="totalSinAsignar() === 0"
-                     class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                     class="text-[0.625rem] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full inline-block mt-0.5">
                      ¡Todo en orden!
                   </p>
                </div>
@@ -255,7 +255,7 @@
                               </svg>
                            </div>
                            <div class="flex-1 min-w-0">
-                              <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Capitán</p>
+                              <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Capitán</p>
                               <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{{ grupo.capitan_grupo || 'Sin
                                  asignar' }}</p>
                            </div>
@@ -272,7 +272,7 @@
                               </svg>
                            </div>
                            <div class="flex-1 min-w-0">
-                              <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Auxiliar</p>
+                              <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Auxiliar</p>
                               <p class="text-sm font-medium text-slate-600 dark:text-slate-300 truncate">{{ grupo.auxiliar_grupo }}</p>
                            </div>
                         </div>
@@ -347,7 +347,7 @@
                               </div>
                               <div>
                                  <p class="font-bold text-slate-800 dark:text-slate-200 text-sm">{{ grupo.nombre_grupo }}</p>
-                                 <p *ngIf="isAdminOrGestor()" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">ID: #{{
+                                 <p *ngIf="isAdminOrGestor()" class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium">ID: #{{
                                     grupo.id_grupo }}</p>
                               </div>
                            </div>
@@ -368,7 +368,7 @@
                            </div>
                            <ng-template #noCapitan>
                               <span
-                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 text-[11px] font-bold border border-dashed border-slate-200 dark:border-slate-700">
+                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 text-[0.6875rem] font-bold border border-dashed border-slate-200 dark:border-slate-700">
                                  Sin Asignar
                               </span>
                            </ng-template>
@@ -391,7 +391,7 @@
                            </div>
                            <ng-template #noAuxiliar>
                               <span
-                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 text-[11px] font-bold border border-dashed border-slate-200 dark:border-slate-700">
+                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 text-[0.6875rem] font-bold border border-dashed border-slate-200 dark:border-slate-700">
                                  Sin Asignar
                               </span>
                            </ng-template>
@@ -400,7 +400,7 @@
                         <!-- Miembros -->
                         <td class="px-6 py-4 text-center">
                            <span
-                              class="inline-flex items-center justify-center min-w-[80px] gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold"
+                              class="inline-flex items-center justify-center min-w-[80px] gap-1.5 px-3 py-1.5 rounded-full text-[0.6875rem] font-bold"
                               [ngClass]="{
                                      'bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-400': (grupo.cantidad_publicadores || 0) > 0,
                                      'bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500': (grupo.cantidad_publicadores || 0) === 0
@@ -550,7 +550,7 @@
                      </div>
                      <div>
                         <div class="flex items-center gap-2 mb-1.5">
-                           <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                           <span class="px-2.5 py-1 rounded-lg text-[0.625rem] font-black uppercase tracking-widest"
                               [ngClass]="editingGrupo() ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'">
                               {{ editingGrupo() ? 'Modo Edición' : 'Nuevo Registro' }}
                            </span>
@@ -581,10 +581,10 @@
                   <!-- Nombre del Grupo - Featured Input -->
                   <div class="space-y-2">
                      <label
-                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                        class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                         Nombre del Grupo
-                        <span class="text-red-400 text-[10px]">*</span>
+                        <span class="text-red-400 text-[0.625rem]">*</span>
                      </label>
                      <div class="relative group">
                         <input formControlName="nombre_grupo" type="text" placeholder="Ej: Grupo Centro"
@@ -611,14 +611,14 @@
                   <!-- Divider -->
                   <div class="flex items-center gap-3 py-2">
                      <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                     <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Liderazgo</span>
+                     <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Liderazgo</span>
                      <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                   </div>
 
                   <!-- Capitán Input with Autocomplete -->
                   <div class="space-y-2">
                      <label
-                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                        class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
                         Capitán </label>
                      <div class="relative">
@@ -667,7 +667,7 @@
                               </button>
                            </div>
                            <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700">
-                              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{{ filteredCapitanes().length }}
+                              <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium">{{ filteredCapitanes().length }}
                                  publicador(es) encontrado(s)</p>
                            </div>
                         </div>
@@ -677,7 +677,7 @@
                   <!-- Auxiliar Input with Autocomplete -->
                   <div class="space-y-2">
                      <label
-                        class="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                        class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                         Auxiliar
                      </label>
@@ -729,7 +729,7 @@
                               </button>
                            </div>
                            <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700">
-                              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{{ filteredAuxiliares().length }}
+                              <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium">{{ filteredAuxiliares().length }}
                                  publicador(es) encontrado(s)</p>
                            </div>
                         </div>

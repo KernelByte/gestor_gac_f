@@ -95,7 +95,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
                       </div>
                       <div>
                         <p class="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ rol.nombre_rol }}</p>
-                        <p class="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-0.5">ID: {{ rol.id_rol }}</p>
+                        <p class="text-[0.6875rem] font-medium text-slate-400 dark:text-slate-500 mt-0.5">ID: {{ rol.id_rol }}</p>
                       </div>
                     </div>
                   </td>
@@ -121,7 +121,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 
                   <!-- Status -->
                   <td class="px-6 py-4 text-center">
-                    <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/30">
+                    <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 text-[0.6875rem] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/30">
                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                        Activo
                     </div>
@@ -192,7 +192,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
                         </div>
                         <div>
                            <div class="flex items-center gap-2 mb-1.5">
-                              <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                              <span class="px-2.5 py-1 rounded-lg text-[0.625rem] font-black uppercase tracking-widest"
                                  [ngClass]="editingRol() ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'">
                                  {{ editingRol() ? 'Modo Edición' : 'Nuevo Registro' }}
                               </span>
@@ -309,17 +309,17 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
            
            <h3 class="text-2xl font-display font-black text-slate-900 dark:text-white mb-3">Eliminar Rol</h3>
            
-           <p class="text-[15px] leading-relaxed text-slate-500 dark:text-slate-400 mb-8 px-2">
+           <p class="text-[0.9375rem] leading-relaxed text-slate-500 dark:text-slate-400 mb-8 px-2">
               ¿Estás seguro de eliminar el rol <strong class="text-slate-800 dark:text-white font-bold">"{{ rolToDelete()?.nombre_rol }}"</strong>? Esta acción no se puede deshacer.
            </p>
            
            <div class="flex gap-3 w-full">
               <button (click)="cancelDelete()"
-                 class="flex-1 px-4 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-bold text-[15px] transition-all focus:outline-none hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95 border border-slate-200/50 dark:border-slate-700/50">
+                 class="flex-1 px-4 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-bold text-[0.9375rem] transition-all focus:outline-none hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95 border border-slate-200/50 dark:border-slate-700/50">
                  Cancelar
               </button>
               <button (click)="executeDelete()"
-                 class="flex-1 px-4 h-12 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold text-[15px] transition-all focus:outline-none focus:ring-4 focus:ring-red-500/20 active:scale-95 shadow-sm shadow-red-500/20">
+                 class="flex-1 px-4 h-12 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold text-[0.9375rem] transition-all focus:outline-none focus:ring-4 focus:ring-red-500/20 active:scale-95 shadow-sm shadow-red-500/20">
                  Sí, Eliminar
               </button>
            </div>

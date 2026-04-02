@@ -25,7 +25,7 @@ import {
            </div>
            <div class="flex items-center gap-2 shrink-0">
                @if (hasPendingChanges()) {
-                 <span class="text-[10px] font-bold text-amber-500 dark:text-amber-400 animate-pulse">
+                 <span class="text-[0.625rem] font-bold text-amber-500 dark:text-amber-400 animate-pulse">
                    {{ pendingCount() }} cambio{{ pendingCount() > 1 ? 's' : '' }}
                  </span>
                }
@@ -134,19 +134,19 @@ import {
              <div class="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-3">
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
                  <p class="text-xl font-black text-slate-800 dark:text-white tabular-nums">{{ filteredPublicadores().length }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Publicadores</p>
+                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Publicadores</p>
                </div>
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
                  <p class="text-xl font-black text-amber-600 dark:text-amber-400 tabular-nums">{{ countPrivilegio('Anciano') }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Ancianos</p>
+                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Ancianos</p>
                </div>
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
                  <p class="text-xl font-black text-blue-600 dark:text-blue-400 tabular-nums">{{ countPrivilegio('Siervo Ministerial') }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">S. Ministeriales</p>
+                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">S. Ministeriales</p>
                </div>
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
                  <p class="text-xl font-black text-slate-600 dark:text-slate-300 tabular-nums">{{ countPrecursores() }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Precursores</p>
+                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Precursores</p>
                </div>
              </div>
 
@@ -156,13 +156,13 @@ import {
                      <table class="w-full min-w-max text-left border-collapse">
                          <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
                              <tr class="border-b border-slate-200 dark:border-slate-700">
-                                 <th class="px-4 py-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md z-10 min-w-[150px]">Publicador</th>
-                                 <th class="px-2 py-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[80px]">Privilegio</th>
+                                 <th class="px-4 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md z-10 min-w-[150px]">Publicador</th>
+                                 <th class="px-2 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[80px]">Privilegio</th>
                                  <th *ngFor="let col of columnas()"
                                      class="px-2 py-2 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[70px] leading-tight whitespace-normal">
                                    {{ col.label }}
                                  </th>
-                                 <th class="px-2 py-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[90px] leading-tight whitespace-normal">
+                                 <th class="px-2 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[90px] leading-tight whitespace-normal">
                                    Nivel Oratoria
                                  </th>
                              </tr>
@@ -176,15 +176,15 @@ import {
                                    <!-- Publicador -->
                                    <td class="px-4 py-2 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/40 transition-colors border-r border-slate-100 dark:border-slate-800/50">
                                        <div class="flex items-center gap-3">
-                                           <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 ring-1 ring-white dark:ring-slate-800"
+                                           <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[0.6875rem] shrink-0 ring-1 ring-white dark:ring-slate-800"
                                                 [class]="avatarClass(pub)">
                                              {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
                                            </div>
                                            <div>
-                                               <div class="text-[13px] font-bold text-slate-800 dark:text-white truncate max-w-[140px] leading-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
+                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[140px] leading-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
                                          {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
                                      </div>
-                                     <div class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                                     <div class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium">
                                          {{ isHermano(pub) ? 'Hermano' : 'Hermana' }}
                                      </div>
                                            </div>
@@ -237,7 +237,7 @@ import {
 
                   <!-- Pagination -->
                   <div class="shrink-0 px-5 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-                    <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium tabular-nums">
+                    <span class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium tabular-nums">
                       {{ (currentPage() - 1) * pageSize() + 1 }}–{{ Math.min(currentPage() * pageSize(), filteredPublicadores().length) }}
                       <span class="text-slate-300 dark:text-slate-600">de</span>
                       {{ filteredPublicadores().length }}
@@ -251,7 +251,7 @@ import {
 
                         @for (item of getPagesArray(); track $index) {
                           @if (item === null) {
-                            <span class="w-7 h-7 flex items-center justify-center text-[11px] text-slate-300 dark:text-slate-600 select-none">···</span>
+                            <span class="w-7 h-7 flex items-center justify-center text-[0.6875rem] text-slate-300 dark:text-slate-600 select-none">···</span>
                           } @else {
                             <button (click)="setPage(item)"
                                     class="w-7 h-7 rounded-lg text-xs font-bold transition-all"

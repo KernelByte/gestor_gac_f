@@ -74,6 +74,7 @@
               </div>
             </div>
             <button
+              *ngIf="canEdit"
               type="button"
               [title]="(pub.notificaciones_enviadas ?? 0) > 0 ? 'Notificado ' + pub.notificaciones_enviadas + ' veces. Volver a notificar.' : 'Solicitar informe mediante WhatsApp'"
               (click)="notifyWhatsApp.emit(pub)"
@@ -92,10 +93,11 @@
 
         <!-- Participó -->
         <td class="px-3 py-2.5 text-center align-middle">
-          <label class="inline-flex items-center justify-center cursor-pointer">
+          <label class="inline-flex items-center justify-center" [class.cursor-pointer]="canEdit" [class.cursor-not-allowed]="!canEdit" [class.opacity-60]="!canEdit">
             <input
               type="checkbox"
               [checked]="getInformeValue(pub, 'participo')"
+              [disabled]="!canEdit"
               (change)="onUpdateInforme(pub, 'participo', $event)"
               class="sr-only"
             />
@@ -115,7 +117,7 @@
             <input
               type="checkbox"
               [checked]="getInformeValue(pub, 'es_paux')"
-              [disabled]="!getInformeValue(pub, 'participo')"
+              [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
               (change)="togglePaux(pub)"
               class="sr-only disabled:cursor-not-allowed"
             />
@@ -140,7 +142,7 @@
               placeholder="0"
               [value]="getInformeValue(pub, 'horas') || ''"
               [id]="'horas-' + pub.id_publicador"
-              [disabled]="!getInformeValue(pub, 'participo')"
+              [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
               (input)="onUpdateInforme(pub, 'horas', $event)"
               class="w-16 px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-orange/30 focus:border-brand-orange disabled:opacity-40 disabled:cursor-not-allowed"
             />
@@ -159,7 +161,7 @@
               >
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span class="text-[10px] font-extrabold whitespace-nowrap">{{ bonus }}</span>
+              <span class="text-[0.625rem] font-extrabold whitespace-nowrap">{{ bonus }}</span>
             </div>
           </div>
           <div
@@ -177,7 +179,7 @@
             min="0"
             placeholder="0"
             [value]="getInformeValue(pub, 'cursos') || ''"
-            [disabled]="!getInformeValue(pub, 'participo')"
+            [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
             (input)="onUpdateInforme(pub, 'cursos', $event)"
             class="w-16 px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple disabled:opacity-40 disabled:cursor-not-allowed"
           />
@@ -189,7 +191,7 @@
             type="text"
             placeholder="Nota..."
             [value]="getInformeValue(pub, 'notas') || ''"
-            [disabled]="!getInformeValue(pub, 'participo')"
+            [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
             (input)="onUpdateInforme(pub, 'notas', $event)"
             class="w-full min-w-0 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple disabled:opacity-40 disabled:cursor-not-allowed"
             title="{{ getInformeValue(pub, 'notas') || '' }}"
@@ -221,6 +223,7 @@
           <div class="flex items-center gap-2 shrink-0">
             <!-- Botón WhatsApp Móvil -->
             <button
+              *ngIf="canEdit"
               (click)="notifyWhatsApp.emit(pub)"
               class="relative w-8 h-8 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-full flex items-center justify-center border border-[#25D366]/30 shadow-sm shrink-0"
               [title]="(pub.notificaciones_enviadas ?? 0) > 0 ? 'Notificado ' + pub.notificaciones_enviadas + ' veces. Volver a notificar.' : 'Notificar por WhatsApp'"
@@ -236,11 +239,11 @@
             <!-- Togglers Si/No -->
             <div class="flex gap-1.5 shrink-0">
             <label class="flex items-center cursor-pointer">
-              <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="getInformeValue(pub, 'participo')" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="true" />
+              <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="getInformeValue(pub, 'participo')" [disabled]="!canEdit" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="true" />
               <span class="px-3 py-1.5 rounded-lg text-sm font-bold" [class.bg-brand-purple]="getInformeValue(pub, 'participo')" [class.text-white]="getInformeValue(pub, 'participo')" [class.bg-slate-100]="!getInformeValue(pub, 'participo')" [class.text-slate-500]="!getInformeValue(pub, 'participo')" [class.dark:bg-slate-800]="!getInformeValue(pub, 'participo')" [class.dark:text-slate-400]="!getInformeValue(pub, 'participo')">Sí</span>
             </label>
             <label class="flex items-center cursor-pointer">
-              <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="!getInformeValue(pub, 'participo')" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="false" />
+              <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="!getInformeValue(pub, 'participo')" [disabled]="!canEdit" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="false" />
               <span class="px-3 py-1.5 rounded-lg text-sm font-bold" [class.bg-slate-200]="!getInformeValue(pub, 'participo')" [class.dark:bg-slate-700]="!getInformeValue(pub, 'participo')" [class.text-slate-700]="!getInformeValue(pub, 'participo')" [class.dark:text-slate-200]="!getInformeValue(pub, 'participo')" [class.bg-slate-100]="getInformeValue(pub, 'participo')" [class.text-slate-400]="getInformeValue(pub, 'participo')">No</span>
             </label>
           </div>
@@ -248,21 +251,21 @@
 
         <ng-container *ngIf="getInformeValue(pub, 'participo')">
           <div class="px-4 py-3 space-y-3">
-            <div *ngIf="!isRegular(pub)" class="flex items-center justify-between gap-2">
+            <div *ngIf="!isRegular(pub)" class="flex items-center justify-between gap-2" [class.opacity-60]="!canEdit" [class.pointer-events-none]="!canEdit">
               <span class="text-xs font-medium text-slate-600 dark:text-slate-400 shrink-0">Auxiliar</span>
               <input type="checkbox" [checked]="getInformeValue(pub, 'es_paux')" (change)="togglePaux(pub)" class="w-9 h-5 rounded-full accent-amber-500 shrink-0" />
             </div>
             <div *ngIf="pub.requiere_horas || getInformeValue(pub, 'es_paux') || isRegular(pub)" class="flex items-center gap-2">
               <span class="text-xs font-medium text-slate-600 dark:text-slate-400 w-14 shrink-0">Horas</span>
-              <input type="number" min="0" [value]="getInformeValue(pub, 'horas') || ''" (input)="onUpdateInforme(pub, 'horas', $event)" placeholder="0" class="flex-1 h-10 px-3 text-base border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30" />
+              <input type="number" min="0" [value]="getInformeValue(pub, 'horas') || ''" [disabled]="!canEdit" (input)="onUpdateInforme(pub, 'horas', $event)" placeholder="0" class="flex-1 h-10 px-3 text-base border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30 disabled:opacity-40 disabled:cursor-not-allowed" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs font-medium text-slate-600 dark:text-slate-400 w-14 shrink-0">Estudios</span>
-              <input type="number" min="0" [value]="getInformeValue(pub, 'cursos') || ''" (input)="onUpdateInforme(pub, 'cursos', $event)" placeholder="0" class="flex-1 h-10 px-3 text-base border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30" />
+              <input type="number" min="0" [value]="getInformeValue(pub, 'cursos') || ''" [disabled]="!canEdit" (input)="onUpdateInforme(pub, 'cursos', $event)" placeholder="0" class="flex-1 h-10 px-3 text-base border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30 disabled:opacity-40 disabled:cursor-not-allowed" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs font-medium text-slate-600 dark:text-slate-400 w-14 shrink-0">Notas</span>
-              <input type="text" [value]="getInformeValue(pub, 'notas') || ''" (input)="onUpdateInforme(pub, 'notas', $event)" placeholder="—" class="flex-1 h-10 px-3 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30" />
+              <input type="text" [value]="getInformeValue(pub, 'notas') || ''" [disabled]="!canEdit" (input)="onUpdateInforme(pub, 'notas', $event)" placeholder="—" class="flex-1 h-10 px-3 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30 disabled:opacity-40 disabled:cursor-not-allowed" />
             </div>
           </div>
         </ng-container>
@@ -273,6 +276,7 @@
 
 <!-- Footer fijo (sticky al fondo de este contenedor) -->
 <div
+  *ngIf="canEdit; else readOnlyFooter"
   class="sticky bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95 border-t-2 border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]"
 >
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 max-w-4xl mx-auto">
@@ -301,6 +305,23 @@
     </div>
   </div>
 </div>
+
+<ng-template #readOnlyFooter>
+  <div class="sticky bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 p-4">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 17v.01" />
+          <path d="M7 10V7a5 5 0 0110 0v3" />
+          <rect x="5" y="10" width="14" height="12" rx="2" />
+        </svg>
+        <span class="text-sm font-semibold">Modo solo lectura</span>
+        <span class="text-sm text-slate-400 dark:text-slate-500 hidden sm:inline">No tienes permiso para editar informes.</span>
+      </div>
+      <span class="text-xs text-slate-500 dark:text-slate-400">Mostrando {{ resumen?.publicadores_list?.length || 0 }} publicadores</span>
+    </div>
+  </div>
+</ng-template>
 
 <!-- Validation Warning Modal -->
 <div *ngIf="showValidationModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
@@ -333,7 +354,7 @@
       <!-- Body: List of Names -->
       <div class="p-6 bg-slate-50/50 dark:bg-slate-800/20">
          <div class="flex items-center justify-between mb-2">
-            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Publicadores ({{ validationModalPublicadores.length }})</p>
+            <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Publicadores ({{ validationModalPublicadores.length }})</p>
          </div>
          <ul class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800 max-h-48 overflow-y-auto shadow-sm">
             <li *ngFor="let name of validationModalPublicadores" class="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">

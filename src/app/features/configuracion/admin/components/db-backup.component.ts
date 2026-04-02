@@ -48,7 +48,7 @@ interface CongregacionOption {
                </svg>
                <div>
                   <h2 class="text-base font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">Respaldo de Base de Datos</h2>
-                  <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium leading-tight">Copias de seguridad y programación automática</p>
+                  <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium leading-tight">Copias de seguridad y programación automática</p>
                </div>
             </div>
          </div>
@@ -268,7 +268,7 @@ interface CongregacionOption {
                   <div class="min-w-0 flex-1">
                      <div class="flex items-center gap-2">
                         <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ backup.nombre_archivo }}</p>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase shrink-0"
+                        <span class="px-2 py-0.5 rounded-full text-[0.625rem] font-bold uppercase shrink-0"
                            [ngClass]="backup.tipo === 'completo'
                               ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
                               : 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400'">

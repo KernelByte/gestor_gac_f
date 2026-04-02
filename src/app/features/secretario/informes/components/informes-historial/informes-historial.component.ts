@@ -26,6 +26,9 @@ export class InformesHistorialComponent implements OnChanges {
    @Input() selectedAno: number = new Date().getFullYear();
    @Input() congregacionId: number = 0;
    @Input() grupos: Grupo[] = [];
+   @Input() canEdit: boolean = false;
+   @Input() canExport: boolean = false;
+   @Input() lockedGroupId: number | null = null;
 
    get sortedGrupos(): Grupo[] {
       return [...this.grupos].sort((a, b) => 
@@ -110,13 +113,21 @@ export class InformesHistorialComponent implements OnChanges {
       if (changes['selectedAno'] || changes['congregacionId']) {
          this.loadData();
       }
+      if (changes['lockedGroupId']) {
+         if (this.lockedGroupId) {
+            this.setFilter(this.lockedGroupId);
+         }
+      }
    }
 
    setFilter(filter: 'all' | 'precursores' | number) {
+      if (this.lockedGroupId && typeof filter === 'number' && filter !== this.lockedGroupId) {
+         return;
+      }
       this.activeFilter.set(filter);
 
       // If filtering by specific group, set ID for backend. Otherwise null (fetch all).
-      const groupId = typeof filter === 'number' ? filter : null;
+      const groupId = this.lockedGroupId ?? (typeof filter === 'number' ? filter : null);
       this.filterGrupoId.set(groupId);
 
       this.loadData();
@@ -187,6 +198,7 @@ export class InformesHistorialComponent implements OnChanges {
    editInitialMes = signal<number>(new Date().getMonth() + 1);
 
    abrirEditorHistorial(pubId: number, pubNombre: string) {
+      if (!this.canEdit) return;
       this.editPublicadorId.set(pubId);
       this.editPublicadorNombre.set(pubNombre);
       this.editInitialAno.set(this.selectedAno);
@@ -212,10 +224,12 @@ export class InformesHistorialComponent implements OnChanges {
    showGroupsDropdown = signal(false);
 
    toggleGroupsDropdown() {
+      if (this.lockedGroupId) return;
       this.showGroupsDropdown.update(v => !v);
    }
 
    selectGroupFilter(groupId: number) {
+      if (this.lockedGroupId) return;
       this.setFilter(groupId);
       this.showGroupsDropdown.set(false);
    }
@@ -225,6 +239,10 @@ export class InformesHistorialComponent implements OnChanges {
    }
 
    getActiveGroupLabel(): string {
+      if (this.lockedGroupId) {
+         const g = this.grupos.find(x => x.id_grupo === this.lockedGroupId);
+         return g ? g.nombre_grupo : `Grupo ${this.lockedGroupId}`;
+      }
       const filter = this.activeFilter();
       if (typeof filter === 'number') {
          const g = this.grupos.find(x => x.id_grupo === filter);
@@ -246,6 +264,7 @@ export class InformesHistorialComponent implements OnChanges {
    });
 
    onExport(scope: 'global' | 'single') {
+      if (!this.canExport) return;
       if (this.exporting()) return;
       if (scope === 'single' && !this.selectedPublicadorId()) return;
 

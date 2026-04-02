@@ -63,7 +63,7 @@ import { RouterModule } from '@angular/router';
            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
           </span>
-          <span class="text-[10px] font-bold text-red-600 leading-none">{{ informesPendientes() }} Pendientes</span>
+          <span class="text-[0.625rem] font-bold text-red-600 leading-none">{{ informesPendientes() }} Pendientes</span>
         </div>
       </div>
       
@@ -72,7 +72,7 @@ import { RouterModule } from '@angular/router';
          <h3 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none">{{ informesRecibidos() }}</h3>
          <span class="text-xs font-bold text-slate-400 dark:text-slate-400">/ {{ totalPublicadores() }}</span>
        </div>
-       <p class="text-[10px] font-bold text-slate-400 dark:text-slate-400 tracking-wide mt-0.5">Informes Rec. Último Mes</p>
+       <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-400 tracking-wide mt-0.5">Informes Rec. Último Mes</p>
       </div>
       
       <div class="w-full">
@@ -100,7 +100,7 @@ import { RouterModule } from '@angular/router';
           <div class="mt-3 flex items-center gap-3">
            <span class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">{{ totalCursos() }}</span>
            <div class="flex flex-col">
-            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded w-fit">Cursos Bíblicos</span>
+            <span class="text-[0.625rem] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded w-fit">Cursos Bíblicos</span>
            </div>
           </div>
         </div>
@@ -108,7 +108,7 @@ import { RouterModule } from '@angular/router';
         <div class="h-full flex items-end justify-end gap-2 sm:gap-4 flex-1 pb-2">
             <div class="flex flex-col items-center justify-end h-full">
               <span class="text-2xl font-black text-purple-600 dark:text-purple-400 pb-1">{{ totalHorasPrecursores() }}</span>
-              <span class="text-[10px] text-slate-400 dark:text-slate-400 uppercase font-bold tracking-wider">Horas Precursores</span>
+              <span class="text-[0.625rem] text-slate-400 dark:text-slate-400 uppercase font-bold tracking-wider">Horas Precursores</span>
             </div>
         </div>
       </div>
@@ -133,7 +133,7 @@ import { RouterModule } from '@angular/router';
            </span>
            <div class="text-left">
             <span class="block text-sm font-bold">Gestionar Publicadores</span>
-            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Añadir o editar</span>
+            <span class="text-[0.625rem] opacity-70 dark:opacity-80 dark:text-slate-300">Añadir o editar</span>
            </div>
           </button>
           
@@ -144,7 +144,7 @@ import { RouterModule } from '@angular/router';
            </span>
            <div class="text-left">
             <span class="block text-sm font-bold">Mi Informe</span>
-            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Registrar tu actividad</span>
+            <span class="text-[0.625rem] opacity-70 dark:opacity-80 dark:text-slate-300">Registrar tu actividad</span>
            </div>
           </button>
 
@@ -154,7 +154,7 @@ import { RouterModule } from '@angular/router';
            </span>
            <div class="text-left">
             <span class="block text-sm font-bold">Resumen de Informes</span>
-            <span class="text-[10px] opacity-70 dark:opacity-80 dark:text-slate-300">Ver mes actual</span>
+            <span class="text-[0.625rem] opacity-70 dark:opacity-80 dark:text-slate-300">Ver mes actual</span>
            </div>
           </button>
         </div>
@@ -241,7 +241,7 @@ export class HomePage implements OnInit {
   }
 
   private loadPublicadoresCount() {
-   this.http.get<any[]>('/api/publicadores/').subscribe({
+   this.http.get<any[]>('/api/publicadores/?limit=1000').subscribe({
      next: (publicadores) => {
       this.totalPublicadores.set(publicadores.length);
      },

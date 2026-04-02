@@ -37,7 +37,7 @@ import {
            @if (activeTab() === 'parametros') {
              <div class="flex items-center gap-2 shrink-0">
                @if (algoHasDirty()) {
-                 <span class="text-[10px] font-bold text-amber-500 dark:text-amber-400 animate-pulse">Cambios sin guardar</span>
+                 <span class="text-[0.625rem] font-bold text-amber-500 dark:text-amber-400 animate-pulse">Cambios sin guardar</span>
                }
                <button
                  (click)="saveAlgoParams()"
@@ -56,7 +56,7 @@ import {
            @if (activeTab() === 'privilegios') {
              <div class="flex items-center gap-2 shrink-0">
                @if (matrizHasPending()) {
-                 <span class="text-[10px] font-bold text-amber-500 dark:text-amber-400 animate-pulse">
+                 <span class="text-[0.625rem] font-bold text-amber-500 dark:text-amber-400 animate-pulse">
                    {{ matrizPendingCount() }} cambio{{ matrizPendingCount() > 1 ? 's' : '' }}
                  </span>
                }
@@ -119,7 +119,7 @@ import {
               </div>
               <div>
                   <h3 class="font-bold text-slate-800 dark:text-white text-sm">Generador de Plantillas (Motor IA)</h3>
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Suba el PDF de la Guía de Actividades para estructurar reuniones o crear nuevas plantillas.</p>
+                  <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 hidden sm:block">Suba el PDF de la Guía de Actividades para estructurar reuniones o crear nuevas plantillas.</p>
               </div>
            </div>
 
@@ -128,8 +128,8 @@ import {
            @if (mwbLoading()) {
              <div class="w-full sm:w-48 mt-1 sm:mt-0">
                <div class="flex items-center justify-between mb-1.5">
-                 <span class="text-[10px] font-bold text-slate-600 dark:text-slate-300">{{ mwbProgressMessage() || 'Analizando mediante IA...' }}</span>
-                 <span class="text-[10px] font-mono font-bold text-[#6D28D9]">{{ mwbProgress() }}%</span>
+                 <span class="text-[0.625rem] font-bold text-slate-600 dark:text-slate-300">{{ mwbProgressMessage() || 'Analizando mediante IA...' }}</span>
+                 <span class="text-[0.625rem] font-mono font-bold text-[#6D28D9]">{{ mwbProgress() }}%</span>
                </div>
                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
                  <div class="bg-gradient-to-r from-[#6D28D9] to-[#8B5CF6] h-full rounded-full transition-all duration-500 ease-out"
@@ -143,7 +143,7 @@ import {
                    <div class="px-2 border-r border-slate-100 dark:border-slate-700 mr-1 hidden md:block">
                      <span class="text-[9px] uppercase tracking-wider font-black text-slate-400 dark:text-slate-500">Mes Inicial</span>
                    </div>
-                   <select [ngModel]="mwbTargetMonth()" (ngModelChange)="mwbTargetMonth.set(+$event)" class="text-[11px] font-bold bg-transparent outline-none p-1 text-slate-700 dark:text-slate-200 focus:ring-1 rounded cursor-pointer">
+                   <select [ngModel]="mwbTargetMonth()" (ngModelChange)="mwbTargetMonth.set(+$event)" class="text-[0.6875rem] font-bold bg-transparent outline-none p-1 text-slate-700 dark:text-slate-200 focus:ring-1 rounded cursor-pointer">
                      <option [value]="1">Enero</option>
                      <option [value]="2">Febrero</option>
                      <option [value]="3">Marzo</option>
@@ -157,19 +157,19 @@ import {
                      <option [value]="11">Noviembre</option>
                      <option [value]="12">Diciembre</option>
                   </select>
-                  <input type="number" [ngModel]="mwbTargetYear()" (ngModelChange)="mwbTargetYear.set(+$event)" class="w-14 text-[11px] font-bold bg-transparent outline-none p-1 text-slate-700 dark:text-slate-200 focus:ring-1 rounded text-center" min="2020" max="2100">
+                  <input type="number" [ngModel]="mwbTargetYear()" (ngModelChange)="mwbTargetYear.set(+$event)" class="w-14 text-[0.6875rem] font-bold bg-transparent outline-none p-1 text-slate-700 dark:text-slate-200 focus:ring-1 rounded text-center" min="2020" max="2100">
                </div>
                
-               <button (click)="fileInput.click()" [disabled]="mwbConfirming()" class="h-9 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[11px] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
+               <button (click)="fileInput.click()" [disabled]="mwbConfirming()" class="h-9 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                  <span>Subir PDF MWB</span>
                </button>
-               <button (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())" class="h-9 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 text-[11px] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
+               <button (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())" class="h-9 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                  <span>Pegar JSON</span>
                </button>
                @if (plantillaEditing()) {
-                 <button (click)="closePlantillaEditor()" class="h-9 px-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[11px] font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all justify-center sm:flex hidden w-full sm:w-auto">
+                 <button (click)="closePlantillaEditor()" class="h-9 px-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[0.6875rem] font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all justify-center sm:flex hidden w-full sm:w-auto">
                    Cerrar Editor
                  </button>
                }
@@ -182,8 +182,8 @@ import {
            <h4 class="text-xs font-bold text-slate-800 dark:text-white mb-2">Pega aquí el JSON generado</h4>
            <textarea [ngModel]="mwbJsonText()" (ngModelChange)="mwbJsonText.set($event)" rows="6" class="w-full text-xs font-mono p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-[#6D28D9]/50 outline-none resize-y mb-3 h-48" placeholder='{"mensaje": "OK", "semanas": [{ "titulo_semana": "...", "partes": [] }]}'></textarea>
            <div class="flex items-center gap-2 justify-end">
-              <button (click)="mwbJsonInputOpen.set(false)" class="h-8 px-4 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 text-[11px] font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancelar</button>
-              <button (click)="processJsonInput()" class="h-8 px-4 bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-[11px] font-bold rounded-lg shadow-sm transition-all">Procesar JSON</button>
+              <button (click)="mwbJsonInputOpen.set(false)" class="h-8 px-4 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 text-[0.6875rem] font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancelar</button>
+              <button (click)="processJsonInput()" class="h-8 px-4 bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all">Procesar JSON</button>
            </div>
          </div>
        }
@@ -199,20 +199,20 @@ import {
                    <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
                      {{ plantillaEditing() ? 'Modificando Plantilla' : (mwbPreview()?.mensaje || 'Confirmación de Estructura') }}
                    </h3>
-                   <span class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hidden sm:block">
+                   <span class="text-[0.6875rem] font-medium text-emerald-600 dark:text-emerald-400 hidden sm:block">
                      {{ plantillaEditing() ? 'Los cambios afectarán solo a las generaciones futuras.' : 'Verifique y confirme la estructura propuesta por la IA.' }}
                    </span>
                  </div>
                  <div class="flex items-center gap-2">
                    @if (plantillaEditing()) {
-                     <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="h-8 px-4 bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-[11px] font-bold rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+                     <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="h-8 px-4 bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-1.5">
                        @if (plantillasLoading()) {
                          <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                        }
                        Guardar
                      </button>
                    } @else {
-                     <button (click)="confirmMWB()" [disabled]="mwbConfirming()" class="h-8 px-4 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold rounded-lg shadow-sm shadow-emerald-900/20 transition-all flex items-center gap-1.5 disabled:opacity-50">
+                     <button (click)="confirmMWB()" [disabled]="mwbConfirming()" class="h-8 px-4 bg-emerald-500 hover:bg-emerald-600 text-white text-[0.6875rem] font-bold rounded-lg shadow-sm shadow-emerald-900/20 transition-all flex items-center gap-1.5 disabled:opacity-50">
                        @if (mwbConfirming()) {
                          <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                          <span>Importando...</span>
@@ -232,9 +232,9 @@ import {
                      <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
                        <div class="bg-slate-50 dark:bg-slate-800/80 px-3 sm:px-4 py-2 sm:py-2.5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                          <div class="flex items-center gap-2.5 flex-1 w-full">
-                             <div class="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-[10px] shrink-0">W{{ i + 1 }}</div>
+                             <div class="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-[0.625rem] shrink-0">W{{ i + 1 }}</div>
                              <div class="flex flex-col gap-0.5 min-w-0 flex-1">
-                               <input [(ngModel)]="semana.titulo_semana" class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[11px] sm:text-xs outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 min-w-0">
+                               <input [(ngModel)]="semana.titulo_semana" class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] sm:text-xs outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 min-w-0">
                                @if (semana.lectura_semanal) {
                                  <div class="text-[9px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1 px-1">
                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -247,13 +247,13 @@ import {
                          <div class="flex items-center gap-2 sm:ml-auto shrink-0">
                              <div class="flex items-center gap-1.5 shrink-0 hidden sm:flex">
                                  <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                 <label class="text-[10px] font-bold text-slate-500 uppercase">Lunes:</label>
+                                 <label class="text-[0.625rem] font-bold text-slate-500 uppercase">Lunes:</label>
                              </div>
                              <input type="date"
                                  [ngModel]="mwbDates().get(i) || ''"
                                  (ngModelChange)="updateMwbDate(i, $event)"
                                  [class.border-red-500]="!!mwbDates().get(i) === false"
-                                 class="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[10px] sm:text-[11px] font-medium focus:ring-2 focus:ring-[#6D28D9]/50 outline-none w-[110px] sm:w-[120px]">
+                                 class="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[0.625rem] sm:text-[0.6875rem] font-medium focus:ring-2 focus:ring-[#6D28D9]/50 outline-none w-[110px] sm:w-[120px]">
                          </div>
                        </div>
                        <div class="p-0 bg-white dark:bg-slate-900">
@@ -262,11 +262,11 @@ import {
                              @for (parte of semana.partes; track $index) {
                                <tr class="border-b last:border-b-0 border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
                                  <td class="py-2 px-3 sm:px-4 w-1/4 min-w-[90px] sm:min-w-[120px] align-middle">
-                                     <div class="text-[9px] sm:text-[10px] font-black uppercase tracking-widest" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</div>
+                                     <div class="text-[9px] sm:text-[0.625rem] font-black uppercase tracking-widest" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</div>
                                  </td>
                                  <td class="py-2 px-2 sm:px-4 align-middle">
                                     <div class="flex flex-col gap-0.5 flex-1 min-w-0">
-                                      <input [(ngModel)]="parte.nombre_parte" class="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 flex-1 min-w-0 w-full overflow-hidden text-ellipsis">
+                                      <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] sm:text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 flex-1 min-w-0 w-full overflow-hidden text-ellipsis">
                                       @if (parte.fuente_informacion) {
                                         <div class="text-[9px] text-slate-400 dark:text-slate-500 font-medium px-1 italic truncate">
                                           {{ parte.fuente_informacion }}
@@ -284,7 +284,7 @@ import {
                                  </td>
                                  <td class="py-2 px-3 sm:px-4 text-right w-16 sm:w-24 align-middle">
                                    <div class="flex items-center justify-end gap-1">
-                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-8 sm:w-10 h-6 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded text-[9px] sm:text-[10px] font-black outline-none border border-transparent focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-all">
+                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-8 sm:w-10 h-6 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded text-[9px] sm:text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-all">
                                      <span class="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest">min</span>
                                    </div>
                                  </td>
@@ -301,26 +301,26 @@ import {
                  @if (plantillaEditing() && selectedPlantilla()) {
                    <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
                      <div class="bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 border-b border-slate-200 dark:border-slate-700 flex items-center">
-                       <input [(ngModel)]="selectedPlantilla()!.nombre" placeholder="Nombre Único de Plantilla" class="flex-1 w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[11px] sm:text-xs outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
+                       <input [(ngModel)]="selectedPlantilla()!.nombre" placeholder="Nombre Único de Plantilla" class="flex-1 w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] sm:text-xs outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
                      </div>
                      <div class="p-0 bg-white dark:bg-slate-900 overflow-y-auto flex-1 simple-scrollbar">
                         @for (week of plantillaByWeek(); track week.ordinal) {
                           <div class="bg-slate-50/40 dark:bg-slate-800/20 px-4 py-2 border-b border-t first:border-t-0 border-slate-200 dark:border-slate-700">
-                             <h5 class="text-[10px] font-black uppercase text-slate-500 tracking-widest text-[#6366F1]">Semana {{ week.ordinal }}</h5>
+                             <h5 class="text-[0.625rem] font-black uppercase text-slate-500 tracking-widest text-[#6366F1]">Semana {{ week.ordinal }}</h5>
                           </div>
                           <table class="w-full text-left border-collapse mb-4 last:mb-0">
                             <tbody>
                               @for (parte of week.partes; track $index) {
                              <tr class="border-b last:border-b-0 border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
                                <td class="py-2 px-3 sm:px-4 w-1/4 min-w-[90px] sm:min-w-[120px] align-middle">
-                                   <div class="text-[9px] sm:text-[10px] font-black uppercase tracking-widest"
+                                   <div class="text-[9px] sm:text-[0.625rem] font-black uppercase tracking-widest"
                                         [style.color]="getSectionColor(parte.seccion)">
                                      {{ parte.seccion }}
                                    </div>
                                </td>
                                <td class="py-2 px-2 sm:px-4 align-middle">
                                  <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                   <input [(ngModel)]="parte.nombre_parte" class="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 flex-1 min-w-0 w-full overflow-hidden text-ellipsis">
+                                   <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] sm:text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 flex-1 min-w-0 w-full overflow-hidden text-ellipsis">
                                    <div class="flex items-center gap-1 shrink-0 px-1 mt-1 sm:mt-0">
                                      <button (click)="parte.aplica_sala_b = !parte.aplica_sala_b"
                                              [class]="parte.aplica_sala_b ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 ring-1 ring-purple-500/30' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'"
@@ -333,7 +333,7 @@ import {
                                </td>
                                <td class="py-2 px-3 sm:px-4 text-right w-16 sm:w-24 align-middle">
                                  <div class="flex items-center justify-end gap-1">
-                                   <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-8 sm:w-10 h-6 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded text-[9px] sm:text-[10px] font-black outline-none border border-transparent focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-all">
+                                   <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-8 sm:w-10 h-6 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded text-[9px] sm:text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-all">
                                    <span class="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest">min</span>
                                  </div>
                                </td>
@@ -352,7 +352,7 @@ import {
            <!-- Historical Archive Panel -->
            <div class="flex-[1] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col transition-all min-h-[300px]">
              <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20 shrink-0">
-               <h3 class="text-[11px] font-bold text-slate-800 dark:text-white flex items-center gap-1.5 uppercase tracking-wide">
+               <h3 class="text-[0.6875rem] font-bold text-slate-800 dark:text-white flex items-center gap-1.5 uppercase tracking-wide">
                  <svg class="w-3.5 h-3.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                  Histórico Guardado
                </h3>
@@ -365,7 +365,7 @@ import {
                  @for (p of savedPlantillas(); track p.id_plantilla) {
                    <div class="group flex items-center justify-between px-3.5 py-2.5 rounded-[12px] bg-white dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/90 shadow-sm hover:shadow-md transition-all cursor-default">
                      <div class="min-w-0 pr-3 flex-1 flex flex-col justify-center">
-                       <h4 class="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate mb-0.5 leading-tight" [title]="p.nombre">{{ p.nombre }}</h4>
+                       <h4 class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-200 truncate mb-0.5 leading-tight" [title]="p.nombre">{{ p.nombre }}</h4>
                        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider self-start"
                              [class]="p.tipo === 'entre_semana' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'">
                          {{ p.tipo === 'entre_semana' ? 'Estudio' : 'Fin de Sem' }}
@@ -387,7 +387,7 @@ import {
                        <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2">
                          <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                        </div>
-                       <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Sin plantillas</p>
+                       <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400">Sin plantillas</p>
                      </div>
                    }
                  }
@@ -419,12 +419,12 @@ import {
                   {{ algoWeightSum().toFixed(2) }}
                 </span>
                 @if (Math.abs(algoWeightSum() - 1.0) > 0.05) {
-                  <span class="text-[10px] text-amber-500 font-bold block sm:inline w-full sm:w-auto ml-0 sm:ml-1 mt-1 sm:mt-0">Los pesos deben sumar ~1.0</span>
+                  <span class="text-[0.625rem] text-amber-500 font-bold block sm:inline w-full sm:w-auto ml-0 sm:ml-1 mt-1 sm:mt-0">Los pesos deben sumar ~1.0</span>
                 }
               </div>
               <div class="flex items-center justify-end w-full sm:w-auto">
                 <button (click)="resetAlgoDefaults()"
-                  class="text-[10px] font-bold px-3 py-1.5 rounded-md hover:bg-slate-100 text-slate-500 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-slate-300 hover:text-[#6D28D9] transition-all shrink-0">
+                  class="text-[0.625rem] font-bold px-3 py-1.5 rounded-md hover:bg-slate-100 text-slate-500 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-slate-300 hover:text-[#6D28D9] transition-all shrink-0">
                   Restaurar por defecto
                 </button>
               </div>
@@ -434,13 +434,13 @@ import {
             <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0">
               <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
                 <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Pesos Heurísticos</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5">Controlan la prioridad relativa de cada criterio al asignar publicadores.</p>
+                <p class="text-[0.625rem] text-slate-400 mt-0.5">Controlan la prioridad relativa de cada criterio al asignar publicadores.</p>
               </div>
               @for (param of algoByCategory().peso_heuristico; track param.key) {
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 border-b border-slate-50 dark:border-slate-800/50 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                   <div class="flex-1 min-w-0">
                     <div class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ param.label }}</div>
-                    <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">{{ param.description }}</div>
+                    <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">{{ param.description }}</div>
                   </div>
                   <div class="flex items-center shrink-0 pr-2 pb-1 sm:pb-0 sm:pr-0">
                     <input type="range"
@@ -461,13 +461,13 @@ import {
             <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0">
               <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
                 <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Ventanas de Tiempo</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5">Periodos en días usados para normalizar y evaluar asignaciones.</p>
+                <p class="text-[0.625rem] text-slate-400 mt-0.5">Periodos en días usados para normalizar y evaluar asignaciones.</p>
               </div>
               @for (param of algoByCategory().ventana_tiempo; track param.key) {
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 border-b border-slate-50 dark:border-slate-800/50 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                   <div class="flex-1 min-w-0">
                     <div class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ param.label }}</div>
-                    <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">{{ param.description }}</div>
+                    <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">{{ param.description }}</div>
                   </div>
                   <div class="flex items-center shrink-0 pr-2 pb-1 sm:pb-0 sm:pr-0">
                     <input type="number"
@@ -476,7 +476,7 @@ import {
                       (ngModelChange)="onAlgoParamChange(param.key, $event)"
                       class="w-20 h-8 px-2 text-center rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm font-mono font-bold text-slate-700 dark:text-slate-200 focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 outline-none transition-all block"
                       [class.border-amber-400]="isAlgoDirty(param.key)">
-                    <span class="text-[10px] text-slate-400 w-8 pl-1 block">días</span>
+                    <span class="text-[0.625rem] text-slate-400 w-8 pl-1 block">días</span>
                   </div>
                 </div>
               }
@@ -486,13 +486,13 @@ import {
             <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0">
               <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
                 <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Restricciones Duras</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5">Límites estrictos que el motor respeta como reglas absolutas.</p>
+                <p class="text-[0.625rem] text-slate-400 mt-0.5">Límites estrictos que el motor respeta como reglas absolutas.</p>
               </div>
               @for (param of algoByCategory().restriccion_dura; track param.key) {
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 border-b border-slate-50 dark:border-slate-800/50 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                   <div class="flex-1 min-w-0">
                     <div class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ param.label }}</div>
-                    <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">{{ param.description }}</div>
+                    <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">{{ param.description }}</div>
                   </div>
                   <div class="flex items-center shrink-0 pr-2 pb-1 sm:pb-0 sm:pr-0">
                     @if (param.key === 'algo_nivel_oratoria_default') {
@@ -594,19 +594,19 @@ import {
              <div class="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-3">
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
                  <p class="text-xl font-black text-slate-800 dark:text-white tabular-nums">{{ filteredPublicadores().length }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Publicadores</p>
+                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Publicadores</p>
                </div>
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
                  <p class="text-xl font-black text-amber-600 dark:text-amber-400 tabular-nums">{{ countPrivilegio('Anciano') }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Ancianos</p>
+                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Ancianos</p>
                </div>
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
                  <p class="text-xl font-black text-blue-600 dark:text-blue-400 tabular-nums">{{ countPrivilegio('Siervo Ministerial') }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">S. Ministeriales</p>
+                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">S. Ministeriales</p>
                </div>
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
                  <p class="text-xl font-black text-slate-600 dark:text-slate-300 tabular-nums">{{ countPrecursores() }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Precursores</p>
+                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Precursores</p>
                </div>
              </div>
 
@@ -616,13 +616,13 @@ import {
                      <table class="w-full min-w-max text-left border-collapse">
                          <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
                              <tr class="border-b border-slate-200 dark:border-slate-700">
-                                 <th class="px-4 py-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md z-10 min-w-[150px]">Publicador</th>
-                                 <th class="px-2 py-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[80px]">Privilegio</th>
+                                 <th class="px-4 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md z-10 min-w-[150px]">Publicador</th>
+                                 <th class="px-2 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[80px]">Privilegio</th>
                                  <th *ngFor="let col of columnas()"
                                      class="px-2 py-2 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[70px] leading-tight whitespace-normal">
                                    {{ col.label }}
                                  </th>
-                                 <th class="px-2 py-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[90px] leading-tight whitespace-normal">
+                                 <th class="px-2 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[90px] leading-tight whitespace-normal">
                                    Nivel Oratoria
                                  </th>
                              </tr>
@@ -634,15 +634,15 @@ import {
                                     [class.dark:bg-amber-900/10]="isDirty(pub.id_publicador)">
                                    <td class="px-4 py-2 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/40 transition-colors border-r border-slate-100 dark:border-slate-800/50">
                                        <div class="flex items-center gap-3">
-                                           <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 ring-1 ring-white dark:ring-slate-800"
+                                           <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[0.6875rem] shrink-0 ring-1 ring-white dark:ring-slate-800"
                                                 [class]="avatarClass(pub)">
                                              {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
                                            </div>
                                            <div>
-                                               <div class="text-[13px] font-bold text-slate-800 dark:text-white truncate max-w-[140px] leading-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
+                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[140px] leading-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
                                          {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
                                      </div>
-                                     <div class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                                     <div class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium">
                                          {{ isHermano(pub) ? 'Hermano' : 'Hermana' }}
                                      </div>
                                            </div>
@@ -689,7 +689,7 @@ import {
 
                   <!-- Pagination -->
                   <div class="shrink-0 px-5 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-                    <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium tabular-nums">
+                    <span class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium tabular-nums">
                       {{ (currentPage() - 1) * pageSize() + 1 }}–{{ Math.min(currentPage() * pageSize(), filteredPublicadores().length) }}
                       <span class="text-slate-300 dark:text-slate-600">de</span>
                       {{ filteredPublicadores().length }}
@@ -702,7 +702,7 @@ import {
                         </button>
                         @for (item of getPagesArray(); track $index) {
                           @if (item === null) {
-                            <span class="w-7 h-7 flex items-center justify-center text-[11px] text-slate-300 dark:text-slate-600 select-none">···</span>
+                            <span class="w-7 h-7 flex items-center justify-center text-[0.6875rem] text-slate-300 dark:text-slate-600 select-none">···</span>
                           } @else {
                             <button (click)="setPage(item)"
                                     class="w-7 h-7 rounded-lg text-xs font-bold transition-all"
@@ -743,8 +743,8 @@ import {
                  @for (dup of mwbDuplicates(); track $index) {
                    <div class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
                      <div class="min-w-0">
-                       <p class="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate">{{ dup.titulo_guia }}</p>
-                       <p class="text-[10px] text-slate-400 font-bold tabular-nums">Semana {{ dup.semana_iso }} ({{ dup.fecha }})</p>
+                       <p class="text-[0.6875rem] font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate">{{ dup.titulo_guia }}</p>
+                       <p class="text-[0.625rem] text-slate-400 font-bold tabular-nums">Semana {{ dup.semana_iso }} ({{ dup.fecha }})</p>
                      </div>
                      <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 uppercase tracking-tighter">Existente</span>
                    </div>

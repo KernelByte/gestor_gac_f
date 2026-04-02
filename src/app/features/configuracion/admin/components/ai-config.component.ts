@@ -57,7 +57,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
           </svg>
           <div>
             <h2 class="text-base font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">Cerebros de IA</h2>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium leading-tight">Modelos, APIs y prompts del sistema</p>
+            <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium leading-tight">Modelos, APIs y prompts del sistema</p>
           </div>
         </div>
 
@@ -93,7 +93,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
-              <h3 class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Proveedores</h3>
+              <h3 class="text-[0.6875rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Proveedores</h3>
             </div>
 
             <div class="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -149,7 +149,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                       <div class="w-1.5 h-1.5 rounded-full shrink-0"
                         [ngClass]="getProvider(provider).api_key ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'">
                       </div>
-                      <span class="text-[10px] font-medium"
+                      <span class="text-[0.625rem] font-medium"
                         [ngClass]="getProvider(provider).api_key ? 'text-emerald-500' : 'text-slate-400'">
                         {{ getProvider(provider).api_key ? 'Configurada' : 'Sin configurar' }}
                       </span>
@@ -159,7 +159,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
 
                 <div class="space-y-2">
                   <div>
-                    <label class="block text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 pl-0.5">API Key</label>
+                    <label class="block text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 pl-0.5">API Key</label>
                     <div class="relative">
                       <input [type]="isKeyVisible(provider) ? 'text' : 'password'" [(ngModel)]="getProvider(provider).api_key"
                         class="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-medium text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
@@ -179,9 +179,9 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                     </div>
                   </div>
                   <div *ngIf="provider === 'open_source'">
-                    <label class="block text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 pl-0.5">Base URL</label>
+                    <label class="block text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 pl-0.5">Base URL</label>
                     <input type="text" [(ngModel)]="getProvider(provider).base_url"
-                      class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-medium text-[11px] focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all"
+                      class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-medium text-[0.6875rem] focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all"
                       placeholder="https://api.provider.ai/v1">
                   </div>
                 </div>
@@ -196,7 +196,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
+            <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
               Las API Keys se almacenan de forma segura y nunca se comparten con terceros.
             </p>
           </div>
@@ -213,7 +213,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
               </svg>
-              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Procesos</span>
+              <span class="text-[0.6875rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Procesos</span>
             </div>
             <button (click)="openAddModal()"
               class="w-6 h-6 rounded-md bg-brand-purple/10 hover:bg-brand-purple/20 text-brand-purple flex items-center justify-center transition-colors"
@@ -238,7 +238,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                   {{ key }}
                 </div>
                 <div *ngIf="config()!.processes[key].description"
-                  class="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                  class="text-[0.625rem] text-slate-400 dark:text-slate-500 truncate mt-0.5">
                   {{ config()!.processes[key].description }}
                 </div>
               </div>
@@ -260,7 +260,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Sin procesos.<br>Usa "+" para agregar uno.</p>
+              <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium">Sin procesos.<br>Usa "+" para agregar uno.</p>
             </div>
           </div>
 
@@ -275,7 +275,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
             <!-- Editor header -->
             <div class="shrink-0 px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-end gap-3">
               <div class="flex-1 min-w-0">
-                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">Proceso activo</div>
+                <div class="text-[0.625rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">Proceso activo</div>
                 <h4 class="text-base font-display font-bold text-slate-900 dark:text-white truncate font-mono">{{ selectedProcessKey() }}</h4>
                 <p *ngIf="selectedProcess()?.description"
                   class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
@@ -285,7 +285,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
 
               <!-- Provider select -->
               <div class="flex flex-col gap-1 w-36">
-                <label class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Proveedor</label>
+                <label class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Proveedor</label>
                 <select [(ngModel)]="config()!.processes[selectedProcessKey()!].provider"
                   class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-bold text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
                   <option *ngFor="let p of objectKeys(config()!.providers)" [value]="p">
@@ -296,7 +296,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
 
               <!-- Model select -->
               <div class="flex flex-col gap-1 w-52">
-                <label class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Modelo</label>
+                <label class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Modelo</label>
                 <select [(ngModel)]="config()!.processes[selectedProcessKey()!].model"
                   class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-bold text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
                   <option *ngFor="let m of getModelsForProvider(config()!.processes[selectedProcessKey()!].provider)" [value]="m.id">
@@ -308,7 +308,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
 
             <!-- Prompt editor (fills remaining height) -->
             <div class="flex-1 min-h-0 flex flex-col p-3 gap-2">
-              <label class="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <label class="shrink-0 flex items-center gap-1.5 text-[0.6875rem] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -316,10 +316,10 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 System Prompt
               </label>
               <textarea [(ngModel)]="config()!.processes[selectedProcessKey()!].prompt"
-                class="prompt-editor flex-1 w-full p-4 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 font-mono text-[13px] focus:border-brand-purple outline-none resize-none transition-all custom-scrollbar"
+                class="prompt-editor flex-1 w-full p-4 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 font-mono text-[0.8125rem] focus:border-brand-purple outline-none resize-none transition-all custom-scrollbar"
                 placeholder="Defina el comportamiento y formato esperado del modelo...">
               </textarea>
-              <p class="shrink-0 text-[10px] text-slate-400 dark:text-slate-500 font-medium px-1">
+              <p class="shrink-0 text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium px-1">
                 Optimizado para <span class="text-brand-purple font-bold">{{ config()!.processes[selectedProcessKey()!].provider === 'open_source' ? 'Open Source' : (config()!.processes[selectedProcessKey()!].provider | titlecase) }}</span>
                 · {{ config()!.processes[selectedProcessKey()!].model || '—' }}
               </p>
@@ -335,7 +335,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                   d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
               </svg>
               <p class="text-sm font-bold text-slate-400 dark:text-slate-500">Selecciona un proceso</p>
-              <p class="text-[11px] text-slate-400 dark:text-slate-500">o crea uno nuevo con el botón "+"</p>
+              <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500">o crea uno nuevo con el botón "+"</p>
             </div>
           </ng-template>
 
@@ -391,7 +391,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
               class="form-control !py-2 !text-sm font-mono"
               placeholder="ej: carta_servicio"
               (input)="addError.set(null)">
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 ml-0.5">Solo letras, números y guiones bajos. No se puede modificar luego.</p>
+            <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-1 ml-0.5">Solo letras, números y guiones bajos. No se puede modificar luego.</p>
           </div>
 
           <!-- Descripción -->
@@ -431,7 +431,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
               System Prompt <span class="text-slate-400 dark:text-slate-500 font-normal">(opcional, editable luego)</span>
             </label>
             <textarea [(ngModel)]="newPrompt" rows="5"
-              class="w-full p-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 font-mono text-[12px] focus:border-brand-purple outline-none resize-none transition-all custom-scrollbar"
+              class="w-full p-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 font-mono text-xs focus:border-brand-purple outline-none resize-none transition-all custom-scrollbar"
               placeholder="Instrucciones del sistema..."></textarea>
           </div>
 

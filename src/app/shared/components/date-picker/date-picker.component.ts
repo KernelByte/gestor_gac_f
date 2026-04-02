@@ -114,7 +114,7 @@ type ViewMode = 'calendar' | 'months' | 'years';
         <div *ngIf="viewMode() === 'calendar'">
           <!-- Days of Week -->
           <div class="grid grid-cols-7 px-2 pt-1">
-            <div *ngFor="let day of dayNames" class="text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500 py-1">
+            <div *ngFor="let day of dayNames" class="text-center text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 py-1">
               {{ day }}
             </div>
           </div>

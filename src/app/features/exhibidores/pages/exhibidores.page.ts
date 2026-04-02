@@ -107,7 +107,7 @@ interface Turno {
                   <!-- Mini Map Placeholder -->
                   <div class="w-full h-24 bg-slate-100 dark:bg-slate-800 rounded-xl mb-3 overflow-hidden relative border border-slate-100 dark:border-slate-700/50">
                      <div class="absolute inset-0 opacity-60 bg-cover bg-center" style="background-image: url('https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/-0.1278,51.5074,13,0/300x150?access_token=mock'); background-color: #e2e8f0;"></div>
-                     <div class="absolute top-2 right-2 px-2 py-1 bg-white dark:bg-slate-900/90 backdrop-blur-sm rounded-md text-[10px] font-bold shadow-sm dark:shadow-none"
+                     <div class="absolute top-2 right-2 px-2 py-1 bg-white dark:bg-slate-900/90 backdrop-blur-sm rounded-md text-[0.625rem] font-bold shadow-sm dark:shadow-none"
                         [ngClass]="loc.estado === 'Activo' ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-600 dark:text-orange-400'">
                         {{ loc.estado }}
                      </div>
@@ -165,7 +165,7 @@ interface Turno {
 
                <!-- Schedule List -->
                <div class="flex-1 overflow-y-auto simple-scrollbar">
-                  <div class="grid grid-cols-12 px-6 py-3 bg-slate-50 dark:bg-slate-800/50/80 border-b border-slate-100 dark:border-slate-700/50 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky top-0 backdrop-blur-sm z-10">
+                  <div class="grid grid-cols-12 px-6 py-3 bg-slate-50 dark:bg-slate-800/50/80 border-b border-slate-100 dark:border-slate-700/50 text-[0.6875rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky top-0 backdrop-blur-sm z-10">
                      <div class="col-span-2">Hora</div>
                      <div class="col-span-2">Estado</div>
                      <div class="col-span-3">Publicador 1</div>
@@ -183,7 +183,7 @@ interface Turno {
 
                         <!-- Status -->
                         <div class="col-span-2">
-                           <span class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold border"
+                           <span class="inline-flex px-2.5 py-1 rounded-full text-[0.625rem] font-bold border"
                               [ngClass]="{
                                  'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50': t.estado === 'Completo',
                                  'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800/50': t.estado === 'Parcial',
@@ -250,7 +250,7 @@ interface Turno {
                </div>
                <div class="flex-1 overflow-auto simple-scrollbar">
                   <table class="w-full text-left border-collapse">
-                     <thead class="bg-slate-50 dark:bg-slate-800/50 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky top-0 z-10">
+                     <thead class="bg-slate-50 dark:bg-slate-800/50 text-[0.6875rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky top-0 z-10">
                         <tr>
                            <th class="px-6 py-4">Fecha / Hora</th>
                            <th class="px-6 py-4">Ubicación</th>

@@ -12,7 +12,7 @@
             </svg>
           </div>
           <div>
-            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Informes del mes</p>
+            <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Informes del mes</p>
             <p class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-baseline gap-1.5 flex-wrap">
               <span class="text-brand-purple">{{ resumen?.informes_recibidos ?? 0 }}</span>
               <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 normal-case">recibidos</span>
@@ -26,7 +26,7 @@
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0" aria-hidden="true"></span>
           <div>
-            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pendientes</p>
+            <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pendientes</p>
             <p class="text-lg font-bold text-slate-700 dark:text-slate-200">{{ missingReportsCount }}</p>
           </div>
         </div>
@@ -36,19 +36,19 @@
       <div
         class="flex items-center gap-2 sm:gap-4 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
         <div class="flex items-center gap-2">
-          <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Cursos</span>
+          <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Cursos</span>
           <span class="text-lg font-bold text-slate-800 dark:text-white tabular-nums">{{ resumen?.total_cursos ?? 0 }}</span>
         </div>
         <div class="w-px h-6 bg-slate-200 dark:bg-slate-700" aria-hidden="true"></div>
         <div class="flex items-center gap-2">
           <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" aria-hidden="true"></span>
-          <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">H. reg.</span>
+          <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">H. reg.</span>
           <span class="text-lg font-bold text-slate-800 dark:text-white tabular-nums">{{ regularHours | number }}</span>
         </div>
         <div class="w-px h-6 bg-slate-200 dark:bg-slate-700" aria-hidden="true"></div>
         <div class="flex items-center gap-2">
           <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" aria-hidden="true"></span>
-          <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">H. aux.</span>
+          <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">H. aux.</span>
           <span class="text-lg font-bold text-slate-800 dark:text-white tabular-nums">{{ auxiliaryHours | number }}</span>
         </div>
       </div>

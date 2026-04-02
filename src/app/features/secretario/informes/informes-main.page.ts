@@ -49,6 +49,14 @@ export class InformesMainPage implements OnInit {
     effect(() => {
       localStorage.setItem('informes_activeTab', this.activeTab());
     });
+
+    effect(() => {
+      const visible = this.visibleTabs();
+      const current = this.activeTab();
+      if (visible.length > 0 && !visible.some(t => t.id === current)) {
+        this.activeTab.set(visible[0].id);
+      }
+    }, { allowSignalWrites: true });
   }
 
   tabs = [
@@ -75,31 +83,80 @@ export class InformesMainPage implements OnInit {
   // Privilegios Loading
   privilegios = signal<Privilegio[]>([]);
   publicadorPrivilegiosMap = signal<Map<number, number[]>>(new Map());
+  historialGroupId = signal<number | null>(null);
 
   // Restricted user detection: Publicador sin roles privilegiados
-  isRestrictedUser = computed(() => {
+  private isPrivilegedRole = computed(() => {
     const user = this.authStore.user();
-    if (!user) return true;
+    if (!user) return false;
     const roles = user.roles ?? (user.rol ? [user.rol] : []);
     const rolesLower = roles.map(r => (r || '').toLowerCase());
-    // Si tiene Administrador o Secretario -> NO restringido
-    if (rolesLower.includes('administrador') || rolesLower.includes('secretario')) {
-      return false;
-    }
-
-    // Si tiene permiso explícito de "Ver Todos los Grupos" (Scope global)
-    if (user.permisos?.includes('informes.editar_todos')) {
-      return false;
-    }
-
-    return true; // Solo Publicador u otros roles menores -> Restringido
+    return rolesLower.includes('administrador') ||
+      rolesLower.includes('secretario') ||
+      rolesLower.includes('coordinador') ||
+      rolesLower.includes('superintendente de servicio');
   });
 
+  private isAdminOrSecretario = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    const roles = user.roles ?? (user.rol ? [user.rol] : []);
+    const rolesLower = roles.map(r => (r || '').toLowerCase());
+    return rolesLower.includes('administrador') || rolesLower.includes('secretario');
+  });
+
+  canEditAllGroups = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    if (this.isPrivilegedRole()) return true;
+    return user.permisos?.includes('informes.editar_todos') ?? false;
+  });
+
+  canEditInformes = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    if (this.isPrivilegedRole()) return true;
+    return (user.permisos?.includes('informes.editar') ?? false) || this.canEditAllGroups();
+  });
+
+  canViewInformes = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    if (this.isPrivilegedRole()) return true;
+    return (user.permisos?.includes('informes.ver') ?? false) || this.canEditInformes();
+  });
+
+  canEditHistorial = computed(() => this.isAdminOrSecretario());
+
+  canViewHistorial = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    if (this.isAdminOrSecretario()) return true;
+    return user.permisos?.includes('informes.historial') ?? false;
+  });
+
+  isRestrictedUser = computed(() => !this.canEditAllGroups());
+
   visibleTabs = computed(() => {
-    if (this.isRestrictedUser()) {
-      return this.tabs.filter(t => t.id === 'entrada');
+    let tabs = this.tabs;
+
+    if (!this.canViewInformes()) {
+      tabs = tabs.filter(t => t.id !== 'entrada');
     }
-    return this.tabs;
+
+    if (!this.canViewHistorial()) {
+      tabs = tabs.filter(t => t.id !== 'historial');
+    }
+
+    if (!this.isAdminOrSecretario()) {
+      tabs = tabs.filter(t => t.id !== 'sucursal');
+    }
+
+    if (this.isRestrictedUser()) {
+      tabs = tabs.filter(t => t.id === 'entrada' || t.id === 'historial');
+    }
+
+    return tabs;
   });
 
   meses = [
@@ -111,6 +168,10 @@ export class InformesMainPage implements OnInit {
   anos = Array.from({ length: 10 }, (_, i) => (new Date().getFullYear() - 5 + i).toString());
 
   async ngOnInit() {
+    if (!this.canViewInformes() && !this.canViewHistorial()) {
+      this.showToast('Acceso restringido', 'error', 'No tienes permiso para ver el módulo de informes.');
+      return;
+    }
     // Restaurar preferencia de filtro "Sin Informe"
     const savedFilter = localStorage.getItem('informes_soloSinInforme');
     if (savedFilter !== null) {
@@ -119,6 +180,7 @@ export class InformesMainPage implements OnInit {
 
     // Primero inicializar para usuarios restringidos (precargar grupo)
     await this.initializeForRestrictedUser();
+    await this.loadHistorialGroupIdIfNeeded();
     this.loadPrivilegiosData();
   }
 
@@ -135,12 +197,33 @@ export class InformesMainPage implements OnInit {
           if (publicador?.id_grupo_publicador) {
             this.selectedGrupo = publicador.id_grupo_publicador;
             this.vistaGrupo.set(true);
+            this.historialGroupId.set(publicador.id_grupo_publicador);
             console.log('Restricted user group set to:', this.selectedGrupo);
           }
         } catch (e) {
           console.error('Error loading publicador data for restricted user:', e);
         }
       }
+    }
+  }
+
+  private async loadHistorialGroupIdIfNeeded() {
+    if (this.canEditHistorial()) return;
+    if (!this.canViewHistorial()) return;
+    if (this.historialGroupId()) return;
+
+    const user = this.authStore.user();
+    if (!user?.id_usuario_publicador) return;
+
+    try {
+      const publicador = await lastValueFrom(
+        this.http.get<any>(`/api/publicadores/${user.id_usuario_publicador}`)
+      );
+      if (publicador?.id_grupo_publicador) {
+        this.historialGroupId.set(publicador.id_grupo_publicador);
+      }
+    } catch (e) {
+      console.error('Error loading publicador data for historial group:', e);
     }
   }
 
@@ -253,8 +336,10 @@ export class InformesMainPage implements OnInit {
   }
 
   handleInformeChange(event: { pub: InformeConPublicador, field: string, value: any }) {
+    if (!this.canEditInformes()) return;
     const { pub, field, value } = event;
-    const existing = this.localChanges.get(pub.id_publicador) || { id_publicador: pub.id_publicador, participo: pub.participo ?? false, cursos_biblicos: pub.cursos_biblicos ?? 0, horas: pub.horas ?? 0, observaciones: pub.observaciones };
+    const existingEntry = this.localChanges.get(pub.id_publicador);
+    const existing = existingEntry ? { ...existingEntry } : { id_publicador: pub.id_publicador, participo: pub.participo ?? false, cursos_biblicos: pub.cursos_biblicos ?? 0, horas: pub.horas ?? 0, observaciones: pub.observaciones };
 
     if (field === 'participo') {
       existing.participo = value;
@@ -270,10 +355,14 @@ export class InformesMainPage implements OnInit {
     else if (field === 'horas') existing.horas = value;
     else if (field === 'notas') existing.observaciones = value;
 
-    this.localChanges.set(pub.id_publicador, existing);
+    // Create a new map to properly trigger Angular Change Detection
+    const newChanges = new Map(this.localChanges);
+    newChanges.set(pub.id_publicador, existing);
+    this.localChanges = newChanges;
   }
 
   guardarTodo() {
+    if (!this.canEditInformes()) return;
     if (this.localChanges.size === 0) return;
     this.saving.set(true);
 
@@ -300,7 +389,7 @@ export class InformesMainPage implements OnInit {
     });
   }
 
-   async exportarExcel() {
+  async exportarExcel() {
     this.saving.set(true);
     try {
       const periodo = `${this.selectedAno}-${this.getMesLabel(this.selectedMes)}`;
@@ -325,7 +414,7 @@ export class InformesMainPage implements OnInit {
       } else {
         // Descargar toda la congregación
         if (!congregacionId) {
-             throw new Error("No se pudo identificar la congregación del usuario.");
+          throw new Error("No se pudo identificar la congregación del usuario.");
         }
         this.informesService.exportTemplateCongregacion(this.getPeriodoId(), congregacionId).subscribe({
           next: (blob) => {
@@ -398,17 +487,17 @@ export class InformesMainPage implements OnInit {
       next: (res) => {
         this.saving.set(false);
         const encodedMsg = encodeURIComponent(res.mensaje_wa);
-        
+
         let waUrl = `https://wa.me/?text=${encodedMsg}`;
         if (res.telefono && res.telefono.trim() !== '') {
           // Limpiar teléfono (quitar +, espacios, guiones)
           const cleanPhone = res.telefono.replace(/[\+\-\s()]/g, '');
           waUrl = `https://wa.me/${cleanPhone}?text=${encodedMsg}`;
-          
+
           // Abrir WhatsApp en nueva pestaña
           window.open(waUrl, '_blank');
           this.showToast('Enlace generado', 'success', 'Se ha abierto WhatsApp para enviar el mensaje.');
-          
+
           // Actualizar contador visualmente
           pub.notificaciones_enviadas = (pub.notificaciones_enviadas || 0) + 1;
         } else {
