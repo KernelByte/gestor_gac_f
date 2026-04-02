@@ -27,8 +27,8 @@ export class SolicitarAccesoPage {
     this.form = this.fb.group({
       nombre: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
-      congregacion: ['', [Validators.required]],
-      telefono: ['', [Validators.required]],
+      congregacion: ['', [Validators.required, Validators.minLength(5)]],
+      telefono: ['', [Validators.required, Validators.pattern('^[0-9]*$'), Validators.minLength(7)]],
       observaciones: ['']
     });
   }
