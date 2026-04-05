@@ -81,6 +81,24 @@ export class GruposListComponent implements OnInit {
       return rol.includes('admin') || rol.includes('gestor');
    });
 
+   canCreateGrupos = computed(() => this.isPrivilegedRole());
+
+   canEditGrupos = computed(() =>
+      this.isPrivilegedRole() || this.authStore.hasPermission('grupos.editar')
+   );
+
+   isPrivilegedRole = computed(() => {
+      const user = this.authStore.user();
+      const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+      return this.isAdminOrGestor() ||
+             roles.includes('secretario') ||
+             roles.includes('coordinador');
+   });
+
+   isScopedToGroup = computed(() =>
+      !this.isPrivilegedRole() && !this.authStore.hasPermission('grupos.ver_todos')
+   );
+
    loading = signal(false);
    saving = signal(false);
    exporting = signal(false);
@@ -125,6 +143,12 @@ export class GruposListComponent implements OnInit {
       }
       if (idCongregacion) {
          params.id_congregacion = idCongregacion;
+      }
+      if (this.isScopedToGroup()) {
+         const idGrupo = this.authStore.user()?.id_grupo_publicador;
+         if (idGrupo != null) {
+            params.id_grupo = idGrupo;
+         }
       }
 
       const endpoint = format === 'pdf' ? '/api/grupos/exportar-pdf' : '/api/grupos/exportar-excel';
@@ -241,9 +265,15 @@ export class GruposListComponent implements OnInit {
          }
          params.limit = 1000;
 
-         const data = await lastValueFrom(this.gruposService.getGrupos(params));
+         let data = await lastValueFrom(this.gruposService.getGrupos(params));
          console.log('Grupos cargados:', data);
          console.log('Total asignados calculado:', data.reduce((acc, g) => acc + (g.cantidad_publicadores || 0), 0));
+         if (this.isScopedToGroup()) {
+            const idGrupo = this.authStore.user()?.id_grupo_publicador;
+            if (idGrupo != null) {
+               data = data.filter(g => g.id_grupo === idGrupo);
+            }
+         }
          this.grupos.set(data);
       } catch (err: any) {
          console.error('Error cargando grupos', err);

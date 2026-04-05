@@ -9,6 +9,7 @@ export interface SessionUser {
   roles?: string[];  // por si luego se devuelven múltiples
   id_usuario_publicador?: number | null;
   id_congregacion?: number | null;
+  id_grupo_publicador?: number | null;
   permisos?: string[];
 }
 

@@ -387,6 +387,96 @@
                            </div>
                         </div>
                      </div>
+
+                     <!-- Config Panel for publicadores.ver -->
+                     <div *ngIf="permiso.codigo === 'publicadores.ver' && permiso.asignado && _publicadoresVerTodosId"
+                        class="px-4 pb-3 pl-14 md:px-6 md:pb-4 md:pl-16">
+                        <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30 p-3 md:p-4">
+                           <label
+                              class="block text-[0.625rem] md:text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2 md:mb-3">
+                              Alcance de publicadores
+                           </label>
+                           <div class="flex flex-col sm:flex-row flex-wrap sm:items-center gap-2 sm:gap-4">
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                 <input type="radio" name="scope_pub_ver" [value]="'todos'" [(ngModel)]="permiso.alcance"
+                                    (ngModelChange)="updateScope(permiso)" (click)="$event.stopPropagation()"
+                                    class="w-4 h-4 text-amber-600 focus:ring-amber-500 border-amber-300 dark:border-amber-700 dark:bg-slate-800">
+                                 <span
+                                    class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-amber-700 dark:group-hover:text-amber-400">Toda
+                                    la congregación</span>
+                              </label>
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                 <input type="radio" name="scope_pub_ver" [value]="'mi_grupo'"
+                                    [(ngModel)]="permiso.alcance" (ngModelChange)="updateScope(permiso)"
+                                    (click)="$event.stopPropagation()"
+                                    class="w-4 h-4 text-amber-600 focus:ring-amber-500 border-amber-300 dark:border-amber-700 dark:bg-slate-800">
+                                 <span
+                                    class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-amber-700 dark:group-hover:text-amber-400">Solo
+                                    mi grupo</span>
+                              </label>
+                           </div>
+                        </div>
+                     </div>
+
+                     <!-- Config Panel for grupos.ver -->
+                     <div *ngIf="permiso.codigo === 'grupos.ver' && permiso.asignado && _gruposVerTodosId"
+                        class="px-4 pb-3 pl-14 md:px-6 md:pb-4 md:pl-16">
+                        <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30 p-3 md:p-4">
+                           <label
+                              class="block text-[0.625rem] md:text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2 md:mb-3">
+                              Alcance de grupos
+                           </label>
+                           <div class="flex flex-col sm:flex-row flex-wrap sm:items-center gap-2 sm:gap-4">
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                 <input type="radio" name="scope_grupos_ver" [value]="'todos'" [(ngModel)]="permiso.alcance"
+                                    (ngModelChange)="updateScope(permiso)" (click)="$event.stopPropagation()"
+                                    class="w-4 h-4 text-amber-600 focus:ring-amber-500 border-amber-300 dark:border-amber-700 dark:bg-slate-800">
+                                 <span
+                                    class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-amber-700 dark:group-hover:text-amber-400">Toda
+                                    la congregación</span>
+                              </label>
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                 <input type="radio" name="scope_grupos_ver" [value]="'mi_grupo'"
+                                    [(ngModel)]="permiso.alcance" (ngModelChange)="updateScope(permiso)"
+                                    (click)="$event.stopPropagation()"
+                                    class="w-4 h-4 text-amber-600 focus:ring-amber-500 border-amber-300 dark:border-amber-700 dark:bg-slate-800">
+                                 <span
+                                    class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-amber-700 dark:group-hover:text-amber-400">Solo
+                                    mi grupo</span>
+                              </label>
+                           </div>
+                        </div>
+                     </div>
+
+                     <!-- Config Panel for contactos.ver -->
+                     <div *ngIf="permiso.codigo === 'contactos.ver' && permiso.asignado && _contactosVerTodosId"
+                        class="px-4 pb-3 pl-14 md:px-6 md:pb-4 md:pl-16">
+                        <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/30 p-3 md:p-4">
+                           <label
+                              class="block text-[0.625rem] md:text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2 md:mb-3">
+                              Alcance de contactos
+                           </label>
+                           <div class="flex flex-col sm:flex-row flex-wrap sm:items-center gap-2 sm:gap-4">
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                 <input type="radio" name="scope_contactos_ver" [value]="'todos'" [(ngModel)]="permiso.alcance"
+                                    (ngModelChange)="updateScope(permiso)" (click)="$event.stopPropagation()"
+                                    class="w-4 h-4 text-amber-600 focus:ring-amber-500 border-amber-300 dark:border-amber-700 dark:bg-slate-800">
+                                 <span
+                                    class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-amber-700 dark:group-hover:text-amber-400">Toda
+                                    la congregación</span>
+                              </label>
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                 <input type="radio" name="scope_contactos_ver" [value]="'mi_grupo'"
+                                    [(ngModel)]="permiso.alcance" (ngModelChange)="updateScope(permiso)"
+                                    (click)="$event.stopPropagation()"
+                                    class="w-4 h-4 text-amber-600 focus:ring-amber-500 border-amber-300 dark:border-amber-700 dark:bg-slate-800">
+                                 <span
+                                    class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-amber-700 dark:group-hover:text-amber-400">Solo
+                                    mi grupo</span>
+                              </label>
+                           </div>
+                        </div>
+                     </div>
                   </div>
                </div>
             </div>

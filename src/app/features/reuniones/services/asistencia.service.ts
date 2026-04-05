@@ -10,11 +10,22 @@ import {
   FechasReunionesResponse,
 } from '../models/asistencia.models';
 
+export interface CongregacionConfig {
+  dia_reunion_entre_semana:  string | null;
+  hora_reunion_entre_semana: string | null;
+  dia_reunion_fin_semana:    string | null;
+  hora_reunion_fin_semana:   string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AsistenciaService {
   private http = inject(HttpClient);
   private readonly asistenciasUrl = `${environment.apiUrl}/asistencias`;
   private readonly periodosUrl = `${environment.apiUrl}/periodos`;
+
+  getCongregacionConfig(): Observable<CongregacionConfig> {
+    return this.http.get<CongregacionConfig>(`${environment.apiUrl}/configuracion/`);
+  }
 
   getPeriodos(ano?: number): Observable<Periodo[]> {
     let params = new HttpParams().set('limit', 500);

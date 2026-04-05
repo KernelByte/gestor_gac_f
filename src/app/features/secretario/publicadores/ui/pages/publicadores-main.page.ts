@@ -87,26 +87,27 @@ export class PublicadoresMainPage implements OnInit {
     { id: 'contactos', label: 'Contactos' }
   ];
 
-  isSuperintendenteServicio = computed(() => {
-    const user = this.authStore.user();
-    if (!user) return false;
-    const roles = user.roles ?? (user.rol ? [user.rol] : []);
-    return roles.some(r => r.toLowerCase() === 'superintendente de servicio');
-  });
-
   visibleTabs = computed(() => {
-    const user = this.authStore.user();
-    if (!user) return this.tabs;
-    
-    const roles = user.roles ?? (user.rol ? [user.rol] : []);
-    const restrictedRoles = ['superintendente de servicio', 'coordinador'];
-    
-    const isRestricted = roles.some(r => restrictedRoles.includes(r.toLowerCase()));
+    const auth = this.authStore;
+    const user = auth.user();
+    if (!user) return [];
 
-    if (isRestricted) {
-      return this.tabs.filter(t => t.id === 'grupos');
+    const roles = (user.roles ?? (user.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+    const isPrivileged = roles.some(r =>
+      ['administrador', 'secretario', 'gestor aplicación'].includes(r)
+    );
+
+    const result: { id: PublicadoresTab, label: string }[] = [];
+    if (isPrivileged || auth.hasPermission('publicadores.ver')) {
+      result.push({ id: 'listado', label: 'Listado' });
     }
-    return this.tabs;
+    if (isPrivileged || auth.hasPermission('grupos.ver') || roles.includes('coordinador') || roles.includes('superintendente de servicio')) {
+      result.push({ id: 'grupos', label: 'Grupos' });
+    }
+    if (isPrivileged || auth.hasPermission('contactos.ver')) {
+      result.push({ id: 'contactos', label: 'Contactos' });
+    }
+    return result;
   });
   
   public currentTab = signal<PublicadoresTab>('listado');

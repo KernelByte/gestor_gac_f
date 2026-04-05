@@ -193,7 +193,7 @@ interface ContactoEmergencia {
                         </div>
 
                         <!-- Add Button -->
-                        <button (click)="initNewContacto()" class="w-full md:w-auto group flex items-center justify-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 hover:bg-orange-600 hover:shadow-orange-600/40 active:scale-95 transition-all">
+                        <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="w-full md:w-auto group flex items-center justify-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 hover:bg-orange-600 hover:shadow-orange-600/40 active:scale-95 transition-all">
                             <span class="bg-white/20 p-1 rounded-lg group-hover:rotate-90 transition-transform duration-300">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </span>
@@ -282,7 +282,7 @@ interface ContactoEmergencia {
                              </div>
                              <p class="font-bold text-slate-600 dark:text-slate-300 mb-1">Sin contactos de emergencia</p>
                              <p class="text-sm text-slate-400 dark:text-slate-500 mb-6">Añade al menos un contacto para seguridad.</p>
-                             <button (click)="initNewContacto()" class="px-6 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full font-bold text-sm text-slate-700 dark:text-slate-300 hover:border-brand-orange hover:text-brand-orange transition-colors">
+                             <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="px-6 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full font-bold text-sm text-slate-700 dark:text-slate-300 hover:border-brand-orange hover:text-brand-orange transition-colors">
                                 Añadir Ahora
                              </button>
                         </div>
@@ -290,7 +290,7 @@ interface ContactoEmergencia {
                         <!-- Card Item -->
                         <div *ngFor="let c of contactos(); trackBy: trackByContacto" class="group bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50 hover:border-orange-100 dark:hover:border-slate-700 transition-all duration-300 relative overflow-hidden">
                              <!-- Action Buttons (Static on mobile, Hover on Desktop) -->
-                             <div class="absolute top-4 right-4 flex gap-1 transform translate-x-0 lg:translate-x-12 lg:group-hover:translate-x-0 transition-transform duration-300 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-lg p-1 shadow-sm border border-slate-100 dark:border-slate-700 z-10">
+                             <div *ngIf="canEditContactos()" class="absolute top-4 right-4 flex gap-1 transform translate-x-0 lg:translate-x-12 lg:group-hover:translate-x-0 transition-transform duration-300 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-lg p-1 shadow-sm border border-slate-100 dark:border-slate-700 z-10">
                                  <button (click)="edit(c)" class="p-2 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-md transition-colors" title="Editar">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                  </button>
@@ -334,7 +334,7 @@ interface ContactoEmergencia {
                         </div>
 
                         <!-- Quick Add Card -->
-                        <button (click)="initNewContacto()" class="group flex flex-col items-center justify-center min-h-[280px] rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-brand-orange hover:bg-orange-50/20 dark:hover:bg-orange-900/10 transition-all p-6 text-center">
+                        <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="group flex flex-col items-center justify-center min-h-[280px] rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-brand-orange hover:bg-orange-50/20 dark:hover:bg-orange-900/10 transition-all p-6 text-center">
                             <div class="w-14 h-14 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-300 dark:text-slate-500 group-hover:scale-110 group-hover:text-brand-orange group-hover:border-orange-200 dark:group-hover:border-orange-800 transition-all mb-4">
                                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </div>
@@ -395,6 +395,23 @@ export class PublicadoresContactosComponent {
     showForm = signal(false);
     editingContacto = signal<ContactoEmergencia | null>(null);
     form: FormGroup;
+
+    canEditContactos = computed(() => {
+        const user = this.authStore.user();
+        const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+        return this.congregacionContext.isAdmin() ||
+               roles.includes('secretario') ||
+               this.authStore.hasPermission('contactos.editar');
+    });
+
+    isScopedToGroup = computed(() => {
+        const user = this.authStore.user();
+        const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+        const isPrivileged = this.congregacionContext.isAdmin() ||
+                             roles.includes('secretario') ||
+                             roles.includes('coordinador');
+        return !isPrivileged && !this.authStore.hasPermission('contactos.ver_todos');
+    });
 
     // Public List filtering logic
     filteredList = computed(() => {
@@ -474,10 +491,14 @@ export class PublicadoresContactosComponent {
             const user = this.authStore.user();
             const effectiveId = this.congregacionContext.effectiveCongregacionId();
             if (!user) return;
-            
+
             untracked(() => {
                 const params: any = { limit: 100, offset: 0 };
                 if (effectiveId != null) params.id_congregacion = effectiveId;
+                if (this.isScopedToGroup()) {
+                    const idGrupo = user.id_grupo_publicador;
+                    if (idGrupo != null) params.id_grupo = idGrupo;
+                }
                 this.facade.load(params);
                 this.loadEmergencyContactsMap();
             });

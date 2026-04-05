@@ -661,7 +661,8 @@ export class TimeAgoPipe implements PipeTransform {
       max-height: 100%;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     /* Reuniones submenu slide animation */
     .reuniones-submenu {

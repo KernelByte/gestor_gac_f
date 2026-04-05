@@ -76,9 +76,7 @@ export class UsuarioPermisosPage implements OnInit {
       for (const p of this.permisos()) {
          // Combinar Publicadores y Grupos en una sola categoría
          let catKey = this.getCategoriaNombre(p.codigo);
-         if (catKey === 'Grupos') {
-            catKey = 'Publicadores y Grupos';
-         } else if (catKey === 'Publicadores') {
+         if (['Grupos', 'Publicadores', 'Contactos'].includes(catKey)) {
             catKey = 'Publicadores y Grupos';
          }
 
@@ -137,6 +135,10 @@ export class UsuarioPermisosPage implements OnInit {
    totalAsignados = computed(() => this.permisos().filter(p => p.asignado).length);
    totalPermisos = computed(() => this.permisos().length);
 
+   _publicadoresVerTodosId: number | undefined;
+   _gruposVerTodosId: number | undefined;
+   _contactosVerTodosId: number | undefined;
+
    private buildEffectiveIds(permisosList: PermisoConEstado[]): Set<number> {
       const actuales = new Set(permisosList.filter(p => p.asignado).map(p => p.id_permiso));
 
@@ -153,6 +155,27 @@ export class UsuarioPermisosPage implements OnInit {
          const resumenPermiso = permisosList.find(p => p.codigo === 'informes.enviar');
          if (resumenPermiso?.asignado && resumenPermiso.alcance === 'todos') {
             actuales.add(globalResumenId);
+         }
+      }
+
+      if (this._publicadoresVerTodosId) {
+         const pubVer = permisosList.find(p => p.codigo === 'publicadores.ver');
+         if (pubVer?.asignado && pubVer.alcance === 'todos') {
+            actuales.add(this._publicadoresVerTodosId);
+         }
+      }
+
+      if (this._gruposVerTodosId) {
+         const gruposVer = permisosList.find(p => p.codigo === 'grupos.ver');
+         if (gruposVer?.asignado && gruposVer.alcance === 'todos') {
+            actuales.add(this._gruposVerTodosId);
+         }
+      }
+
+      if (this._contactosVerTodosId) {
+         const contactosVer = permisosList.find(p => p.codigo === 'contactos.ver');
+         if (contactosVer?.asignado && contactosVer.alcance === 'todos') {
+            actuales.add(this._contactosVerTodosId);
          }
       }
 
@@ -236,8 +259,45 @@ export class UsuarioPermisosPage implements OnInit {
             resumenPermiso.alcance = hasGlobalResumen ? 'todos' : 'asignados';
          }
 
+         // --- Publicadores scope ---
+         const pubVerTodosPermiso = permisos.find(p => p.codigo === 'publicadores.ver_todos');
+         const hasPubVerTodos = pubVerTodosPermiso?.asignado ?? false;
+         if (pubVerTodosPermiso) this._publicadoresVerTodosId = pubVerTodosPermiso.id_permiso;
+         const pubVerPermiso = permisos.find(p => p.codigo === 'publicadores.ver');
+         if (pubVerPermiso) {
+            if (hasPubVerTodos) pubVerPermiso.asignado = true;
+            pubVerPermiso.alcance = hasPubVerTodos ? 'todos' : 'mi_grupo';
+         }
+
+         // --- Grupos scope ---
+         const gruposVerTodosPermiso = permisos.find(p => p.codigo === 'grupos.ver_todos');
+         const hasGruposVerTodos = gruposVerTodosPermiso?.asignado ?? false;
+         if (gruposVerTodosPermiso) this._gruposVerTodosId = gruposVerTodosPermiso.id_permiso;
+         const gruposVerPermiso = permisos.find(p => p.codigo === 'grupos.ver');
+         if (gruposVerPermiso) {
+            if (hasGruposVerTodos) gruposVerPermiso.asignado = true;
+            gruposVerPermiso.alcance = hasGruposVerTodos ? 'todos' : 'mi_grupo';
+         }
+
+         // --- Contactos scope ---
+         const contactosVerTodosPermiso = permisos.find(p => p.codigo === 'contactos.ver_todos');
+         const hasContactosVerTodos = contactosVerTodosPermiso?.asignado ?? false;
+         if (contactosVerTodosPermiso) this._contactosVerTodosId = contactosVerTodosPermiso.id_permiso;
+         const contactosVerPermiso = permisos.find(p => p.codigo === 'contactos.ver');
+         if (contactosVerPermiso) {
+            if (hasContactosVerTodos) contactosVerPermiso.asignado = true;
+            contactosVerPermiso.alcance = hasContactosVerTodos ? 'todos' : 'mi_grupo';
+         }
+
          // Hide global scope perms from the UI list (handled via scope radios)
-         const visiblePermisos = permisos.filter(p => p.codigo !== 'informes.editar_todos' && p.codigo !== 'informes.enviar_todos');
+         const hiddenCodes = new Set([
+            'informes.editar_todos',
+            'informes.enviar_todos',
+            'publicadores.ver_todos',
+            'grupos.ver_todos',
+            'contactos.ver_todos',
+         ]);
+         const visiblePermisos = permisos.filter(p => !hiddenCodes.has(p.codigo));
 
          visiblePermisos.forEach(p => {
             if (p.codigo === 'informes.ver') {
@@ -336,6 +396,7 @@ export class UsuarioPermisosPage implements OnInit {
       const nombres: Record<string, string> = {
          'publicadores': 'Publicadores',
          'grupos': 'Grupos',
+         'contactos': 'Contactos',
          'informes': 'Informes',
          'territorios': 'Territorios',
          'reuniones': 'Reuniones',

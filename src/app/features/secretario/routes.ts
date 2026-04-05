@@ -3,6 +3,28 @@ import { PUBLICADORES_PROVIDERS } from './publicadores/providers';
 import { inject } from '@angular/core';
 import { AuthStore } from '../../core/auth/auth.store';
 
+const publicadoresPermissionGuard: CanActivateFn = () => {
+   const store = inject(AuthStore);
+   const router = inject(Router);
+
+   const user = store.user();
+   if (!user) return router.createUrlTree(['/login']);
+
+   const roles = (user.roles ?? (user.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+   const isPrivilegedRole = roles.includes('administrador') ||
+      roles.includes('secretario') ||
+      roles.includes('coordinador') ||
+      roles.includes('superintendente de servicio') ||
+      roles.includes('gestor aplicación');
+
+   const ok = isPrivilegedRole ||
+      store.hasPermission('publicadores.ver') ||
+      store.hasPermission('grupos.ver') ||
+      store.hasPermission('contactos.ver');
+
+   return ok ? true : router.createUrlTree(['/']);
+};
+
 const informesPermissionGuard: CanActivateFn = () => {
    const store = inject(AuthStore);
    const router = inject(Router);
@@ -31,6 +53,7 @@ export const SECRETARIO_ROUTES: Routes = [
    {
       path: 'publicadores',
       title: 'Gestión de Publicadores',
+      canActivate: [publicadoresPermissionGuard],
       loadComponent: () => import('./publicadores/ui/pages/publicadores-main.page').then(m => m.PublicadoresMainPage),
       providers: [...PUBLICADORES_PROVIDERS]
    },

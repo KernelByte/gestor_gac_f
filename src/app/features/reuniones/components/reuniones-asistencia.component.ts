@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject, effect, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AsistenciaService } from '../services/asistencia.service';
+import { AsistenciaService, CongregacionConfig } from '../services/asistencia.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import {
   Periodo, AsistenciaRecord, AsistenciaUpsert,
@@ -15,7 +15,7 @@ import { saveAs } from 'file-saver';
   selector: 'app-reuniones-asistencia',
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex flex-col gap-6 h-full pb-10">
+    <div class="flex flex-col gap-6 min-h-full pb-12 overflow-y-auto">
 
       <!-- Toast -->
       @if (toast()) {
@@ -36,9 +36,9 @@ import { saveAs } from 'file-saver';
       }
 
       <!-- Header -->
-      <div class="shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div class="shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
         <div>
-          <h1 class="font-display font-black text-3xl text-slate-900 dark:text-white tracking-tight">Registro de Asistencia</h1>
+          <h1 class="font-display font-black text-3xl text-slate-900 dark:text-white tracking-tight text-glow">Registro de Asistencia</h1>
           <p class="text-slate-500 font-medium text-sm">Control de asistencia semanal por reunión</p>
         </div>
         <div class="flex gap-3">
@@ -63,8 +63,9 @@ import { saveAs } from 'file-saver';
       </div>
 
       <!-- Month/Year Navigator -->
-      <div class="shrink-0 flex flex-wrap items-center gap-4">
-        <div class="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+      <div class="shrink-0 flex items-center justify-between gap-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-4 py-3">
+        <!-- Date picker pill -->
+        <div class="flex items-center gap-1">
           <button (click)="prevMonth()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
@@ -85,21 +86,30 @@ import { saveAs } from 'file-saver';
           </button>
         </div>
 
-        @if (loading()) {
-          <div class="flex items-center gap-2 text-sm text-slate-400">
-            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
-            Cargando...
-          </div>
-        }
-
-        @if (!currentPeriodo() && !loading()) {
-          <span class="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800/50">
-            No se encontró periodo para este mes
-          </span>
-        }
+        <!-- Status indicators (right-aligned) -->
+        <div class="flex items-center gap-3">
+          @if (loading()) {
+            <div class="flex items-center gap-2 text-xs font-medium text-slate-400">
+              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
+              Cargando...
+            </div>
+          }
+          @if (currentPeriodo() && !loading()) {
+            <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+              Periodo activo
+            </span>
+          }
+          @if (!currentPeriodo() && !loading()) {
+            <span class="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800/50">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              No se encontró periodo para este mes
+            </span>
+          }
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-fadeIn">
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-fadeIn flex-1 min-h-0 pb-6">
         <!-- Left Column: Main Entry (2/3 width) -->
         <div class="xl:col-span-2 flex flex-col gap-6">
 
@@ -120,7 +130,7 @@ import { saveAs } from 'file-saver';
 
               <!-- Week Selector Tabs -->
               <div class="flex bg-slate-50 dark:bg-slate-900/50 p-1 rounded-xl">
-                @for (week of [1,2,3,4,5]; track week) {
+                @for (week of weeksArray(); track week) {
                   <button
                     (click)="selectWeek(week)"
                     class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all relative flex flex-col items-center gap-0.5 min-w-[60px]"
@@ -148,7 +158,15 @@ import { saveAs } from 'file-saver';
                     <div class="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/30">
                       <svg class="w-4.5 h-4.5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     </div>
-                    <h3 class="font-bold text-slate-800 dark:text-slate-100">Entre Semana</h3>
+                    <div>
+                      <h3 class="font-bold text-slate-800 dark:text-slate-100">Entre Semana</h3>
+                      @if (congregacionConfig()?.dia_reunion_entre_semana) {
+                        <p class="text-[0.625rem] font-bold text-slate-400 leading-none mt-0.5">
+                          {{ congregacionConfig()!.dia_reunion_entre_semana }}
+                          @if (congregacionConfig()!.hora_reunion_entre_semana) { · {{ congregacionConfig()!.hora_reunion_entre_semana }} }
+                        </p>
+                      }
+                    </div>
                   </div>
                   @if (currentMidweekDate()) {
                     <span class="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-brand-purple text-[0.6875rem] font-bold border border-purple-100 dark:border-purple-800/40">
@@ -157,17 +175,38 @@ import { saveAs } from 'file-saver';
                   }
                 </div>
 
-                <div class="space-y-2 group">
-                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-brand-purple transition-colors">Asistencia Total</label>
-                  <input type="number" min="0"
-                         [ngModel]="midweekWeeks()[selectedWeek() - 1]"
-                         (ngModelChange)="updateMidweekWeek($event)"
-                         class="w-full h-20 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-2xl text-center text-4xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none"
-                         placeholder="0">
-                </div>
+                @if (selectedWeek() > midweekWeekCount()) {
+                  <div class="flex items-center justify-center h-40 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-dashed border-slate-200 dark:border-slate-700">
+                    <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
+                  </div>
+                } @else {
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2 group">
+                      <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-brand-purple transition-colors">Presencial</label>
+                      <input type="number" min="0" 
+                             [ngModel]="midweekWeeks()[selectedWeek() - 1]"
+                             (ngModelChange)="updateMidweekWeek($event)"
+                             class="w-full h-16 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none"
+                             placeholder="0">
+                    </div>
+                    <div class="space-y-2 group">
+                      <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-brand-purple transition-colors">Zoom</label>
+                      <input type="number" min="0"
+                             [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]"
+                             (ngModelChange)="updateMidweekZoomWeek($event)"
+                             class="w-full h-16 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none"
+                             placeholder="0">
+                    </div>
+                  </div>
+                  
+                  <div class="mt-4 p-4 rounded-xl bg-slate-50/50 dark:bg-slate-900/20 border border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Asistencia Total</span>
+                    <span class="text-3xl font-black text-slate-900 dark:text-white">{{ currentMidweekTotal() }}</span>
+                  </div>
+                }
 
                 <!-- Total Row -->
-                <div class="mt-5 flex items-center justify-between p-4 bg-purple-50/50 dark:bg-purple-900/10 rounded-2xl border border-purple-100/60 dark:border-purple-800/30">
+                <div class="mt-5 flex items-center justify-between p-4 bg-purple-50/50 dark:bg-purple-900/10 rounded-2xl border border-purple-100/60 dark:border-purple-800/30 shadow-inner-sm">
                   <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Total Mes</span>
                   <span class="text-2xl font-black text-brand-purple">{{ midweekMonthTotal() }}</span>
                 </div>
@@ -180,7 +219,15 @@ import { saveAs } from 'file-saver';
                     <div class="p-1.5 rounded-lg bg-orange-50 dark:bg-orange-900/30">
                       <svg class="w-4.5 h-4.5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
-                    <h3 class="font-bold text-slate-800 dark:text-slate-100">Fin de Semana</h3>
+                    <div>
+                      <h3 class="font-bold text-slate-800 dark:text-slate-100">Fin de Semana</h3>
+                      @if (congregacionConfig()?.dia_reunion_fin_semana) {
+                        <p class="text-[0.625rem] font-bold text-slate-400 leading-none mt-0.5">
+                          {{ congregacionConfig()!.dia_reunion_fin_semana }}
+                          @if (congregacionConfig()!.hora_reunion_fin_semana) { · {{ congregacionConfig()!.hora_reunion_fin_semana }} }
+                        </p>
+                      }
+                    </div>
                   </div>
                   @if (currentWeekendDate()) {
                     <span class="px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-[0.6875rem] font-bold border border-orange-100 dark:border-orange-800/40">
@@ -189,17 +236,38 @@ import { saveAs } from 'file-saver';
                   }
                 </div>
 
-                <div class="space-y-2 group">
-                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-orange-500 transition-colors">Asistencia Total</label>
-                  <input type="number" min="0"
-                         [ngModel]="weekendWeeks()[selectedWeek() - 1]"
-                         (ngModelChange)="updateWeekendWeek($event)"
-                         class="w-full h-20 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-2xl text-center text-4xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none"
-                         placeholder="0">
-                </div>
+                @if (selectedWeek() > weekendWeekCount()) {
+                  <div class="flex items-center justify-center h-40 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-dashed border-slate-200 dark:border-slate-700">
+                    <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
+                  </div>
+                } @else {
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2 group">
+                      <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-orange-500 transition-colors">Presencial</label>
+                      <input type="number" min="0"
+                             [ngModel]="weekendWeeks()[selectedWeek() - 1]"
+                             (ngModelChange)="updateWeekendWeek($event)"
+                             class="w-full h-16 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none"
+                             placeholder="0">
+                    </div>
+                    <div class="space-y-2 group">
+                      <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-orange-500 transition-colors">Zoom</label>
+                      <input type="number" min="0"
+                             [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]"
+                             (ngModelChange)="updateWeekendZoomWeek($event)"
+                             class="w-full h-16 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none"
+                             placeholder="0">
+                    </div>
+                  </div>
+
+                  <div class="mt-4 p-4 rounded-xl bg-slate-50/50 dark:bg-slate-900/20 border border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Asistencia Total</span>
+                    <span class="text-3xl font-black text-slate-900 dark:text-white">{{ currentWeekendTotal() }}</span>
+                  </div>
+                }
 
                 <!-- Total Row -->
-                <div class="mt-5 flex items-center justify-between p-4 bg-orange-50/40 dark:bg-orange-900/10 rounded-2xl border border-orange-100/60 dark:border-orange-800/30">
+                <div class="mt-5 flex items-center justify-between p-4 bg-orange-50/40 dark:bg-orange-900/10 rounded-2xl border border-orange-100/60 dark:border-orange-800/30 shadow-inner-sm">
                   <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Total Mes</span>
                   <span class="text-2xl font-black text-orange-500">{{ weekendMonthTotal() }}</span>
                 </div>
@@ -299,7 +367,7 @@ import { saveAs } from 'file-saver';
         </div>
 
         <!-- Right Column: Sidebar Widgets -->
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-6 xl:sticky xl:top-0">
 
           <!-- Averages Widget -->
           <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
@@ -307,11 +375,11 @@ import { saveAs } from 'file-saver';
               <div class="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
               </div>
-              <h3 class="font-bold text-slate-800 dark:text-slate-100 leading-tight">Promedios<br>Mes Actual</h3>
+              <h3 class="font-bold text-slate-800 dark:text-slate-100 leading-tight text-glow-indigo">Promedios<br>Mes Actual</h3>
             </div>
 
             <div class="space-y-4">
-              <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700">
+              <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow">
                 <div class="p-2.5 bg-purple-100 dark:bg-purple-900/40 text-brand-purple rounded-lg">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
@@ -319,14 +387,14 @@ import { saveAs } from 'file-saver';
                   <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide">Entre Semana</p>
                   <div class="flex items-baseline gap-2">
                     <span class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ midweekAverage() }}</span>
-                    @if (midweekWeekCount() > 0) {
-                      <span class="text-[0.625rem] font-bold text-slate-400">{{ midweekWeekCount() }} sem.</span>
+                    @if (midweekFilledCount() > 0) {
+                      <span class="text-[0.625rem] font-bold text-slate-400">{{ midweekFilledCount() }} sem.</span>
                     }
                   </div>
                 </div>
               </div>
 
-              <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700">
+              <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow">
                 <div class="p-2.5 bg-orange-100 dark:bg-orange-900/40 text-orange-600 rounded-lg">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
@@ -334,8 +402,8 @@ import { saveAs } from 'file-saver';
                   <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide">Fin de Semana</p>
                   <div class="flex items-baseline gap-2">
                     <span class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ weekendAverage() }}</span>
-                    @if (weekendWeekCount() > 0) {
-                      <span class="text-[0.625rem] font-bold text-slate-400">{{ weekendWeekCount() }} sem.</span>
+                    @if (weekendFilledCount() > 0) {
+                      <span class="text-[0.625rem] font-bold text-slate-400">{{ weekendFilledCount() }} sem.</span>
                     }
                   </div>
                 </div>
@@ -353,7 +421,7 @@ import { saveAs } from 'file-saver';
             </div>
 
             <div class="grid grid-cols-5 gap-2">
-              @for (week of [1,2,3,4,5]; track week) {
+              @for (week of weeksArray(); track week) {
                 <div class="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors"
                      [ngClass]="weekHasData(week) ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-900/30'">
                   <span class="text-[0.625rem] font-bold uppercase text-slate-400">S{{ week }}</span>
@@ -373,8 +441,13 @@ import { saveAs } from 'file-saver';
               <svg class="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             </div>
             <p class="text-xs font-medium text-amber-800 dark:text-amber-300 leading-relaxed">
-              Recuerde contar niños y dispositivos Zoom multiplicados por espectadores.
+              Ingrese la asistencia <b>Presencial</b> y por <b>Zoom</b> por separado. El sistema sumará ambas automáticamente.
             </p>
+          </div>
+          
+          <!-- Bottom visual closure -->
+          <div class="flex items-center justify-center py-4 opacity-20 pointer-events-none">
+            <div class="w-12 h-1 bg-slate-400 rounded-full"></div>
           </div>
 
         </div>
@@ -383,9 +456,9 @@ import { saveAs } from 'file-saver';
     </div>
   `,
   styles: [`
-    :host { display: flex; flex-direction: column; height: 100%; }
+    :host { display: block; height: 100%; }
     .animate-fadeIn {
-      animation: fadeIn 0.3s ease-out;
+      animation: fadeIn 0.3s ease-out forwards;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(8px); }
@@ -397,6 +470,15 @@ import { saveAs } from 'file-saver';
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-12px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+    .text-glow {
+      text-shadow: 0 0 15px rgba(100, 116, 139, 0.1);
+    }
+    .text-glow-indigo {
+      text-shadow: 0 0 15px rgba(79, 70, 229, 0.2);
+    }
+    .shadow-inner-sm {
+      box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
   `]
 })
@@ -415,10 +497,13 @@ export class ReunionesAsistenciaComponent implements OnInit {
   weekendRecord = signal<AsistenciaRecord | null>(null);
   fechasReuniones = signal<FechaSemanaReunion[]>([]);
   resumenAnual = signal<ResumenMensualAsistencia[]>([]);
+  congregacionConfig = signal<CongregacionConfig | null>(null);
 
   // ── Editable week arrays (5 slots) ──
   midweekWeeks = signal<(number | null)[]>([null, null, null, null, null]);
   weekendWeeks = signal<(number | null)[]>([null, null, null, null, null]);
+  midweekZoomWeeks = signal<(number | null)[]>([null, null, null, null, null]);
+  weekendZoomWeeks = signal<(number | null)[]>([null, null, null, null, null]);
 
   // ── UI state ──
   loading = signal(false);
@@ -450,24 +535,75 @@ export class ReunionesAsistenciaComponent implements OnInit {
   });
 
   midweekMonthTotal = computed(() => {
-    return this.midweekWeeks().reduce((sum: number, v) => sum + (v ?? 0), 0);
+    const presencial = this.midweekWeeks().reduce((sum: number, v) => sum + (v ?? 0), 0);
+    const zoom = this.midweekZoomWeeks().reduce((sum: number, v) => sum + (v ?? 0), 0);
+    return presencial + zoom;
   });
 
   weekendMonthTotal = computed(() => {
-    return this.weekendWeeks().reduce((sum: number, v) => sum + (v ?? 0), 0);
+    const presencial = this.weekendWeeks().reduce((sum: number, v) => sum + (v ?? 0), 0);
+    const zoom = this.weekendZoomWeeks().reduce((sum: number, v) => sum + (v ?? 0), 0);
+    return presencial + zoom;
   });
 
-  midweekWeekCount = computed(() => this.midweekWeeks().filter(v => v !== null && v > 0).length);
-  weekendWeekCount = computed(() => this.weekendWeeks().filter(v => v !== null && v > 0).length);
+  currentMidweekTotal = computed(() => {
+    const p = this.midweekWeeks()[this.selectedWeek() - 1] ?? 0;
+    const z = this.midweekZoomWeeks()[this.selectedWeek() - 1] ?? 0;
+    return p + z;
+  });
+
+  currentWeekendTotal = computed(() => {
+    const p = this.weekendWeeks()[this.selectedWeek() - 1] ?? 0;
+    const z = this.weekendZoomWeeks()[this.selectedWeek() - 1] ?? 0;
+    return p + z;
+  });
+
+  // Cuántos slots tienen datos registrados (para promedios)
+  midweekFilledCount = computed(() => {
+    return this.midweekWeeks().filter((v, i) => {
+      const p = v ?? 0;
+      const z = this.midweekZoomWeeks()[i] ?? 0;
+      return p + z > 0;
+    }).length;
+  });
+
+  weekendFilledCount = computed(() => {
+    return this.weekendWeeks().filter((v, i) => {
+      const p = v ?? 0;
+      const z = this.weekendZoomWeeks()[i] ?? 0;
+      return p + z > 0;
+    }).length;
+  });
+
+  // Cuántas veces ocurre el día de reunión en el mes seleccionado
+  private readonly DAY_MAP: Record<string, number> = {
+    'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miercoles': 3,
+    'Jueves': 4, 'Viernes': 5, 'Sabado': 6,
+  };
+
+  midweekWeekCount = computed(() => {
+    const cfg = this.congregacionConfig();
+    if (!cfg?.dia_reunion_entre_semana) return 5;
+    return this.countDayOccurrences(+this.selectedYear(), +this.selectedMonth(), cfg.dia_reunion_entre_semana);
+  });
+
+  weekendWeekCount = computed(() => {
+    const cfg = this.congregacionConfig();
+    if (!cfg?.dia_reunion_fin_semana) return 5;
+    return this.countDayOccurrences(+this.selectedYear(), +this.selectedMonth(), cfg.dia_reunion_fin_semana);
+  });
+
+  totalWeeksInMonth = computed(() => Math.max(this.midweekWeekCount(), this.weekendWeekCount()));
+  weeksArray = computed(() => Array.from({ length: this.totalWeeksInMonth() }, (_, i) => i + 1));
 
   midweekAverage = computed(() => {
-    const count = this.midweekWeekCount();
+    const count = this.midweekFilledCount();
     if (count === 0) return '–';
     return Math.round(this.midweekMonthTotal() / count);
   });
 
   weekendAverage = computed(() => {
-    const count = this.weekendWeekCount();
+    const count = this.weekendFilledCount();
     if (count === 0) return '–';
     return Math.round(this.weekendMonthTotal() / count);
   });
@@ -494,12 +630,22 @@ export class ReunionesAsistenciaComponent implements OnInit {
         this.loadData(+year, +month, congId);
       }
     });
+
+    // Auto-reset selected week when the month has fewer weeks than current selection
+    effect(() => {
+      const max = this.totalWeeksInMonth();
+      if (this.selectedWeek() > max) this.selectedWeek.set(max);
+    });
   }
 
   ngOnInit(): void {
     this.asistenciaService.getPeriodos().subscribe({
       next: (periodos) => this.periodos.set(periodos),
       error: () => this.showToast('error', 'Error al cargar periodos'),
+    });
+    this.asistenciaService.getCongregacionConfig().subscribe({
+      next: (cfg) => this.congregacionConfig.set(cfg),
+      error: () => {},
     });
   }
 
@@ -524,8 +670,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
     if (!periodo) {
       this.midweekRecord.set(null);
       this.weekendRecord.set(null);
-      this.midweekWeeks.set([null, null, null, null, null]);
-      this.weekendWeeks.set([null, null, null, null, null]);
+      this._resetWeeks();
       this.loading.set(false);
       return;
     }
@@ -547,12 +692,28 @@ export class ReunionesAsistenciaComponent implements OnInit {
           midweek?.asistencia_semana_05 ?? null,
         ]);
 
+        this.midweekZoomWeeks.set([
+          midweek?.asistencia_zoom_semana_01 ?? null,
+          midweek?.asistencia_zoom_semana_02 ?? null,
+          midweek?.asistencia_zoom_semana_03 ?? null,
+          midweek?.asistencia_zoom_semana_04 ?? null,
+          midweek?.asistencia_zoom_semana_05 ?? null,
+        ]);
+
         this.weekendWeeks.set([
           weekend?.asistencia_semana_01 ?? null,
           weekend?.asistencia_semana_02 ?? null,
           weekend?.asistencia_semana_03 ?? null,
           weekend?.asistencia_semana_04 ?? null,
           weekend?.asistencia_semana_05 ?? null,
+        ]);
+
+        this.weekendZoomWeeks.set([
+          weekend?.asistencia_zoom_semana_01 ?? null,
+          weekend?.asistencia_zoom_semana_02 ?? null,
+          weekend?.asistencia_zoom_semana_03 ?? null,
+          weekend?.asistencia_zoom_semana_04 ?? null,
+          weekend?.asistencia_zoom_semana_05 ?? null,
         ]);
 
         this.loading.set(false);
@@ -562,6 +723,13 @@ export class ReunionesAsistenciaComponent implements OnInit {
         this.showToast('error', 'Error al cargar asistencias');
       },
     });
+  }
+
+  private _resetWeeks() {
+    this.midweekWeeks.set([null, null, null, null, null]);
+    this.weekendWeeks.set([null, null, null, null, null]);
+    this.midweekZoomWeeks.set([null, null, null, null, null]);
+    this.weekendZoomWeeks.set([null, null, null, null, null]);
   }
 
   // ── Week editing ──
@@ -575,16 +743,29 @@ export class ReunionesAsistenciaComponent implements OnInit {
     this.midweekWeeks.set(weeks);
   }
 
+  updateMidweekZoomWeek(value: number | null): void {
+    const weeks = [...this.midweekZoomWeeks()];
+    weeks[this.selectedWeek() - 1] = value !== null && value >= 0 ? value : null;
+    this.midweekZoomWeeks.set(weeks);
+  }
+
   updateWeekendWeek(value: number | null): void {
     const weeks = [...this.weekendWeeks()];
     weeks[this.selectedWeek() - 1] = value !== null && value >= 0 ? value : null;
     this.weekendWeeks.set(weeks);
   }
 
+  updateWeekendZoomWeek(value: number | null): void {
+    const weeks = [...this.weekendZoomWeeks()];
+    weeks[this.selectedWeek() - 1] = value !== null && value >= 0 ? value : null;
+    this.weekendZoomWeeks.set(weeks);
+  }
+
   weekHasData(week: number): boolean {
-    const mw = this.midweekWeeks()[week - 1];
-    const we = this.weekendWeeks()[week - 1];
-    return (mw !== null && mw > 0) || (we !== null && we > 0);
+    const idx = week - 1;
+    const mw = (this.midweekWeeks()[idx] ?? 0) + (this.midweekZoomWeeks()[idx] ?? 0);
+    const we = (this.weekendWeeks()[idx] ?? 0) + (this.weekendZoomWeeks()[idx] ?? 0);
+    return mw > 0 || we > 0;
   }
 
   // ── Month navigation ──
@@ -613,11 +794,13 @@ export class ReunionesAsistenciaComponent implements OnInit {
     if (!periodo || !congId) return;
 
     this.saving.set(true);
-    const mw = this.midweekWeeks();
-    const we = this.weekendWeeks();
+    const mwPres = this.midweekWeeks();
+    const mwZoom = this.midweekZoomWeeks();
+    const wePres = this.weekendWeeks();
+    const weZoom = this.weekendZoomWeeks();
 
-    const hasMidweekData = mw.some(v => v !== null && v > 0);
-    const hasWeekendData = we.some(v => v !== null && v > 0);
+    const hasMidweekData = mwPres.some(v => (v ?? 0) > 0) || mwZoom.some(v => (v ?? 0) > 0);
+    const hasWeekendData = wePres.some(v => (v ?? 0) > 0) || weZoom.some(v => (v ?? 0) > 0);
 
     const requests: Promise<any>[] = [];
 
@@ -626,11 +809,16 @@ export class ReunionesAsistenciaComponent implements OnInit {
         id_periodo_asistencia: periodo.id_periodo,
         id_congregacion_asistencia: congId,
         asistencia_tipo_reunion: 1,
-        asistencia_semana_01: mw[0],
-        asistencia_semana_02: mw[1],
-        asistencia_semana_03: mw[2],
-        asistencia_semana_04: mw[3],
-        asistencia_semana_05: mw[4],
+        asistencia_semana_01: mwPres[0],
+        asistencia_semana_02: mwPres[1],
+        asistencia_semana_03: mwPres[2],
+        asistencia_semana_04: mwPres[3],
+        asistencia_semana_05: mwPres[4],
+        asistencia_zoom_semana_01: mwZoom[0],
+        asistencia_zoom_semana_02: mwZoom[1],
+        asistencia_zoom_semana_03: mwZoom[2],
+        asistencia_zoom_semana_04: mwZoom[3],
+        asistencia_zoom_semana_05: mwZoom[4],
       };
       requests.push(lastValueFrom(this.asistenciaService.upsertAsistencia(payload)));
     }
@@ -640,11 +828,16 @@ export class ReunionesAsistenciaComponent implements OnInit {
         id_periodo_asistencia: periodo.id_periodo,
         id_congregacion_asistencia: congId,
         asistencia_tipo_reunion: 2,
-        asistencia_semana_01: we[0],
-        asistencia_semana_02: we[1],
-        asistencia_semana_03: we[2],
-        asistencia_semana_04: we[3],
-        asistencia_semana_05: we[4],
+        asistencia_semana_01: wePres[0],
+        asistencia_semana_02: wePres[1],
+        asistencia_semana_03: wePres[2],
+        asistencia_semana_04: wePres[3],
+        asistencia_semana_05: wePres[4],
+        asistencia_zoom_semana_01: weZoom[0],
+        asistencia_zoom_semana_02: weZoom[1],
+        asistencia_zoom_semana_03: weZoom[2],
+        asistencia_zoom_semana_04: weZoom[3],
+        asistencia_zoom_semana_05: weZoom[4],
       };
       requests.push(lastValueFrom(this.asistenciaService.upsertAsistencia(payload)));
     }
@@ -708,6 +901,17 @@ export class ReunionesAsistenciaComponent implements OnInit {
     const now = new Date();
     const m = now.getMonth() + 1;
     return m === 1 ? now.getFullYear() - 1 : now.getFullYear();
+  }
+
+  private countDayOccurrences(year: number, month: number, dayName: string): number {
+    const target = this.DAY_MAP[dayName];
+    if (target === undefined) return 5;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    let count = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (new Date(year, month - 1, d).getDay() === target) count++;
+    }
+    return count;
   }
 
   private showToast(type: 'success' | 'error', message: string): void {

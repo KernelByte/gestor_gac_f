@@ -1,276 +1,309 @@
-<div class="w-full h-full p-4 md:p-8 animate-fadeIn">
-   <!-- Header Section -->
-   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+<div class="w-full h-full flex flex-col p-4 md:p-6 animate-fadeIn">
+
+   <!-- ── Header ── -->
+   <div class="flex items-center justify-between gap-3 mb-4 shrink-0">
       <div>
-         <h1 class="text-3xl md:text-4xl font-display font-black text-slate-900 tracking-tight">
+         <h1 class="text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight">
             Configuración
          </h1>
-         <p class="text-slate-500 font-medium mt-1">
-            Gestiona los detalles y preferencias de tu congregación
+         <p class="text-base text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+            Congregación · Reuniones · Seguridad
          </p>
       </div>
-
-      <!-- Optional: Status Badge or similar info could go here -->
-      <div
-         class="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full text-sm font-semibold text-slate-600">
-         <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-         Sistema Conectado
+      <div class="flex items-center gap-2 shrink-0">
+         <span *ngIf="!canEdit()"
+            class="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg border border-amber-200/60 dark:border-amber-700/40">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+               <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            Solo lectura
+         </span>
+         <button *ngIf="canEdit()" (click)="save()" [disabled]="saving() || !hasChanges()"
+            class="relative px-5 py-2 bg-brand-purple text-white text-sm font-bold rounded-xl shadow-md shadow-purple-500/20 hover:shadow-purple-500/35 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:shadow-none disabled:translate-y-0 disabled:cursor-not-allowed transition-all flex items-center gap-1.5 overflow-hidden">
+            <span *ngIf="saving()" class="absolute inset-0 flex items-center justify-center bg-brand-purple">
+               <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            </span>
+            <span [class.opacity-0]="saving()" class="flex items-center gap-1.5">
+               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+               </svg>
+               Guardar cambios
+            </span>
+         </button>
       </div>
    </div>
 
-   <!-- Main Content Card -->
-   <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden relative">
+   <!-- ── Main Card ── -->
+   <div class="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm shadow-slate-200/50 dark:shadow-slate-950/40 flex flex-col overflow-hidden relative">
 
       <!-- Loading Overlay -->
-      <div *ngIf="loading()"
-         class="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center transition-all duration-300">
-         <div class="flex flex-col items-center gap-4">
-            <div class="w-12 h-12 border-4 border-slate-100 border-t-brand-purple rounded-full animate-spin"></div>
-            <span class="text-sm font-bold text-slate-500 animate-pulse">Cargando datos...</span>
+      <div *ngIf="loading()" class="absolute inset-0 bg-white/85 dark:bg-slate-900/85 backdrop-blur-sm z-50 flex items-center justify-center">
+         <div class="flex items-center gap-3">
+            <div class="w-5 h-5 border-2 border-slate-200 dark:border-slate-700 border-t-brand-purple rounded-full animate-spin"></div>
+            <span class="text-xs font-semibold text-slate-400">Cargando configuración...</span>
          </div>
       </div>
 
-      <div class="p-6 md:p-10">
-         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+      <div class="flex-1 overflow-y-auto">
 
-            <!-- Congretation Name -->
-            <div class="space-y-3 group">
-               <label class="block text-sm font-bold text-slate-700 ml-1">
-                  Nombre de la Congregación
-               </label>
-               <div class="relative transition-all duration-300 focus-within:scale-[1.01]">
-                  <div
-                     class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-purple transition-colors">
-                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                           d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+         <!-- ══ SECCIÓN: Información de la Congregación ══ -->
+         <div class="px-5 md:px-7 pt-5 md:pt-6">
+            <!-- Section label -->
+            <div class="flex items-center gap-3 mb-4">
+               <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center">
+                     <svg class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                           d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                      </svg>
                   </div>
+                  <span class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Congregación</span>
+               </div>
+               <div class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+            </div>
+
+            <!-- Fields grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 md:gap-4 mb-5">
+
+               <!-- 1. Nombre (identificador principal) -->
+               <div class="sm:col-span-8 space-y-1.5">
+                  <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nombre de la Congregación</label>
                   <input [(ngModel)]="config.nombre_congregacion" [readonly]="!canEdit()" type="text"
-                     class="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-semibold focus:bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all placeholder:text-slate-400"
+                     class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/15 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
                      placeholder="Ej. Central">
                </div>
-            </div>
 
-            <!-- Circuit -->
-            <div class="space-y-3 group">
-               <label class="block text-sm font-bold text-slate-700 ml-1">
-                  Circuito
-               </label>
-               <div class="relative transition-all duration-300 focus-within:scale-[1.01]">
-                  <div
-                     class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-purple transition-colors">
-                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                           d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                     </svg>
-                  </div>
+               <!-- 2. Circuito (identificador secundario) -->
+               <div class="sm:col-span-4 space-y-1.5">
+                  <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Circuito</label>
                   <input [(ngModel)]="config.circuito" [readonly]="!canEdit()" type="text"
-                     class="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-semibold focus:bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all placeholder:text-slate-400"
+                     class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/15 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
                      placeholder="Ej. CO-01">
                </div>
-            </div>
 
-            <!-- Address (Full Width) -->
-            <div class="md:col-span-2 space-y-3 group">
-               <label class="block text-sm font-bold text-slate-700 ml-1">
-                  Dirección del Salón del Reino
-               </label>
-               <div class="relative transition-all duration-300 focus-within:scale-[1.005]">
-                  <div
-                     class="absolute top-4 left-0 pl-4 flex items-start pointer-events-none text-slate-400 group-focus-within:text-brand-purple transition-colors">
-                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+               <!-- 3. Dirección (ubicación física) -->
+               <div class="sm:col-span-12 space-y-1.5">
+                  <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dirección del Salón del Reino</label>
+                  <input [(ngModel)]="config.direccion" [readonly]="!canEdit()" type="text"
+                     class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/15 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                     placeholder="Calle Principal #123, Ciudad...">
+               </div>
+
+               <!-- 4. Sala B (configuración del espacio físico) -->
+               <div class="sm:col-span-12">
+                  <label class="flex items-center justify-between gap-4 px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl cursor-pointer select-none hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 hover:border-indigo-200 dark:hover:border-indigo-800/50 transition-all group">
+                     <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                           <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                           </svg>
+                        </div>
+                        <div>
+                           <span class="block text-sm font-bold text-slate-700 dark:text-slate-300">Sala B habilitada</span>
+                           <span class="block text-xs text-slate-400 dark:text-slate-500">Permite asignar discursos y partes en una sala auxiliar</span>
+                        </div>
+                     </div>
+                     <div class="shrink-0">
+                        <input type="checkbox" [(ngModel)]="config.tiene_sala_b" [disabled]="!canEdit()" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 dark:bg-slate-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500 relative"></div>
+                     </div>
+                  </label>
+               </div>
+
+            </div>
+         </div>
+
+         <!-- ══ SECCIÓN: Horario de Reuniones ══ -->
+         <div class="px-5 md:px-7 pb-5 md:pb-6">
+            <div class="flex items-center gap-3 mb-4">
+               <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-md bg-violet-500/10 flex items-center justify-center">
+                     <svg class="w-3.5 h-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                      </svg>
                   </div>
-                  <textarea [(ngModel)]="config.direccion" [readonly]="!canEdit()" rows="2"
-                     class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-semibold focus:bg-white focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 outline-none transition-all placeholder:text-slate-400 resize-none"
-                     placeholder="Calle Principal #123, Ciudad..."></textarea>
+                  <span class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Horario de Reuniones</span>
                </div>
+               <div class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
             </div>
 
-            <!-- Configuration Options (Auxiliary Halls) -->
-            <div class="md:col-span-2">
-               <div class="bg-indigo-50/50 rounded-2xl p-6 border border-indigo-100 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between transition-all duration-300 hover:shadow-md hover:shadow-indigo-500/5">
-                  <div class="flex gap-4">
-                     <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-indigo-500 shadow-sm border border-indigo-100 shrink-0">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            <!-- Dos filas: Entre Semana y Fin de Semana -->
+            <div class="border border-slate-200/80 dark:border-slate-700/50 rounded-2xl overflow-hidden divide-y divide-slate-200/80 dark:divide-slate-700/50">
+
+               <!-- Fila: Entre Semana -->
+               <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-slate-50/50 dark:bg-slate-800/20 hover:bg-violet-50/30 dark:hover:bg-violet-900/10 transition-colors">
+                  <!-- Label -->
+                  <div class="flex items-center gap-2.5 sm:w-40 shrink-0">
+                     <div class="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                        <svg class="w-3.5 h-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
                      </div>
                      <div>
-                        <h3 class="font-bold text-slate-900">Configuración de Salas</h3>
-                        <p class="text-sm text-slate-500 mt-1 max-w-sm">
-                           Define si tu congregación utiliza salas auxiliares para las asignaciones de reuniones.
-                        </p>
+                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Entre Semana</span>
+                        <span class="block text-xs text-slate-400 dark:text-slate-500">Lunes a Viernes</span>
                      </div>
                   </div>
-
-                  <div class="flex items-center gap-6">
-                     <label class="flex items-center cursor-pointer select-none group">
-                        <div class="mr-4">
-                           <span class="block text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">¿Tiene Sala B?</span>
-                           <span class="block text-xs text-slate-500">Habilita la asignación de discursos en Sala B</span>
-                        </div>
-                        <div class="relative">
-                           <input type="checkbox" [(ngModel)]="config.tiene_sala_b" [disabled]="!canEdit()" class="sr-only peer">
-                           <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-500 shadow-inner"></div>
-                        </div>
-                     </label>
+                  <!-- Controls -->
+                  <div class="flex items-center gap-2 flex-1">
+                     <select [(ngModel)]="config.dia_reunion_entre_semana" [disabled]="!canEdit()"
+                        class="flex-1 min-w-0 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:border-violet-400 focus:ring-2 focus:ring-violet-400/15 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+                        style="background-image:url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239ca3af%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 0.6rem center;background-size:0.9rem;padding-right:2rem;">
+                        <option value="">Día</option>
+                        <option value="Lunes">Lunes</option>
+                        <option value="Martes">Martes</option>
+                        <option value="Miercoles">Miércoles</option>
+                        <option value="Jueves">Jueves</option>
+                        <option value="Viernes">Viernes</option>
+                     </select>
+                     <input type="time" [(ngModel)]="config.hora_reunion_entre_semana" [readonly]="!canEdit()"
+                        class="w-28 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:border-violet-400 focus:ring-2 focus:ring-violet-400/15 outline-none transition-all [color-scheme:light] dark:[color-scheme:dark]">
+                  </div>
+                  <!-- Confirmación -->
+                  <div class="sm:w-36 shrink-0">
+                     <span *ngIf="config.dia_reunion_entre_semana && config.hora_reunion_entre_semana"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg text-xs font-bold">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                           <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ config.dia_reunion_entre_semana }} · {{ config.hora_reunion_entre_semana }}
+                     </span>
+                     <span *ngIf="!config.dia_reunion_entre_semana || !config.hora_reunion_entre_semana"
+                        class="text-xs text-slate-400 dark:text-slate-600 italic">Sin configurar</span>
                   </div>
                </div>
+
+               <!-- Fila: Fin de Semana -->
+               <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-slate-50/50 dark:bg-slate-800/20 hover:bg-amber-50/30 dark:hover:bg-amber-900/10 transition-colors">
+                  <!-- Label -->
+                  <div class="flex items-center gap-2.5 sm:w-40 shrink-0">
+                     <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                        <svg class="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                     </div>
+                     <div>
+                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Fin de Semana</span>
+                        <span class="block text-xs text-slate-400 dark:text-slate-500">Sábado o Domingo</span>
+                     </div>
+                  </div>
+                  <!-- Controls -->
+                  <div class="flex items-center gap-2 flex-1">
+                     <select [(ngModel)]="config.dia_reunion_fin_semana" [disabled]="!canEdit()"
+                        class="flex-1 min-w-0 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+                        style="background-image:url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239ca3af%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 0.6rem center;background-size:0.9rem;padding-right:2rem;">
+                        <option value="">Día</option>
+                        <option value="Sabado">Sábado</option>
+                        <option value="Domingo">Domingo</option>
+                     </select>
+                     <input type="time" [(ngModel)]="config.hora_reunion_fin_semana" [readonly]="!canEdit()"
+                        class="w-28 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 outline-none transition-all [color-scheme:light] dark:[color-scheme:dark]">
+                  </div>
+                  <!-- Confirmación -->
+                  <div class="sm:w-36 shrink-0">
+                     <span *ngIf="config.dia_reunion_fin_semana && config.hora_reunion_fin_semana"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-bold">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                           <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ config.dia_reunion_fin_semana }} · {{ config.hora_reunion_fin_semana }}
+                     </span>
+                     <span *ngIf="!config.dia_reunion_fin_semana || !config.hora_reunion_fin_semana"
+                        class="text-xs text-slate-400 dark:text-slate-600 italic">Sin configurar</span>
+                  </div>
+               </div>
+
+            </div>
+         </div>
+
+         <!-- ══ SECCIÓN: Seguridad ══ -->
+         <div class="px-5 md:px-7 pb-5 md:pb-6">
+            <div class="flex items-center gap-3 mb-4">
+               <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-md bg-rose-500/10 flex items-center justify-center">
+                     <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                           d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                     </svg>
+                  </div>
+                  <span class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Seguridad</span>
+               </div>
+               <div class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
             </div>
 
-            <!-- Security Code -->
-            <div
-               class="md:col-span-2 bg-rose-50/50 rounded-2xl p-6 border border-rose-100 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
-               <div class="flex gap-4">
-                  <div
-                     class="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-rose-500 shadow-sm border border-rose-100 shrink-0">
-                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                           d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20">
+               <!-- Label -->
+               <div class="flex items-center gap-2.5 sm:w-40 shrink-0">
+                  <div class="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
+                     <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                           d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                      </svg>
                   </div>
                   <div>
-                     <h3 class="font-bold text-slate-900">Código de Seguridad</h3>
-                     <p class="text-sm text-slate-500 mt-1 max-w-sm">
-                        Este código se utiliza para autorizar operaciones sensibles (eliminar datos, restaurar copias).
-                        Mantenlo seguro.
-                     </p>
+                     <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Código</span>
+                     <span class="block text-xs text-slate-400 dark:text-slate-500">Para operaciones críticas</span>
                   </div>
                </div>
-
-               <div class="w-full md:w-auto min-w-[280px] space-y-2">
-                  <div class="relative group">
+               <!-- Controls -->
+               <div class="flex items-center gap-2 flex-1">
+                  <div class="relative flex-1">
                      <input [type]="showSecurityCode() ? 'text' : 'password'" [(ngModel)]="config.codigo_seguridad"
                         [readonly]="!canEdit()"
-                        class="w-full pl-4 pr-20 py-3 bg-white border border-rose-200 rounded-xl text-slate-900 font-bold focus:border-rose-400 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all placeholder:text-slate-400 shadow-sm"
-                        placeholder="••••••">
-
-                     <div class="absolute inset-y-0 right-0 flex items-center pr-1 gap-1">
-                        <!-- Visibility Toggle -->
-                        <button type="button" (click)="showSecurityCode.set(!showSecurityCode())"
-                           class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
-                           <svg *ngIf="!showSecurityCode()" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                              stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                           </svg>
-                           <svg *ngIf="showSecurityCode()" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                              stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                 d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                           </svg>
-                        </button>
-                     </div>
-                  </div>
-
-                  <!-- Separate Generate Button -->
-                  <div class="flex justify-end" *ngIf="canEdit()">
-                     <button type="button" (click)="regenerateSecurityCode()" [disabled]="generatingCode()"
-                        class="text-xs font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-100 rounded-lg px-2 py-1 transition-colors flex items-center gap-1.5 disabled:opacity-50">
-                        <svg *ngIf="!generatingCode()" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
-                           stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        class="w-full pl-3 pr-9 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-bold tracking-widest focus:border-rose-400 focus:ring-2 focus:ring-rose-400/15 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:tracking-normal"
+                        placeholder="Código de acceso">
+                     <button type="button" (click)="showSecurityCode.set(!showSecurityCode())"
+                        class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-300 hover:text-rose-400 transition-colors">
+                        <svg *ngIf="!showSecurityCode()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                         </svg>
-                        <span *ngIf="generatingCode()"
-                           class="w-3.5 h-3.5 block border-2 border-rose-200 border-t-rose-500 rounded-full animate-spin"></span>
-                        {{ generatingCode() ? 'Generando...' : 'Generar nuevo código' }}
+                        <svg *ngIf="showSecurityCode()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                        </svg>
                      </button>
                   </div>
+                  <button *ngIf="canEdit()" type="button" (click)="regenerateSecurityCode()" [disabled]="generatingCode()"
+                     class="shrink-0 flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-rose-500 border border-rose-200 dark:border-rose-800/50 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all disabled:opacity-40">
+                     <svg *ngIf="!generatingCode()" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                           d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                     </svg>
+                     <span *ngIf="generatingCode()" class="w-3.5 h-3.5 block border-2 border-rose-200 border-t-rose-500 rounded-full animate-spin"></span>
+                     Regenerar
+                  </button>
                </div>
             </div>
-
-         </div>
-      </div>
-
-      <!-- Footer Actions -->
-      <div
-         class="px-6 py-6 md:px-10 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
-
-         <div class="text-sm text-slate-500 font-medium order-2 md:order-1">
-            <span *ngIf="!canEdit()" class="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
-               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-               </svg>
-               Modo solo lectura
-            </span>
-            <span *ngIf="canEdit()">
-               * Los cambios se aplicarán inmediatamente.
-            </span>
          </div>
 
-         <div class="order-1 md:order-2 w-full md:w-auto">
-            <button *ngIf="canEdit()" (click)="save()" [disabled]="saving() || !hasChanges()"
-               class="w-full md:w-auto relative px-8 py-3 bg-brand-purple text-white font-bold rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 overflow-hidden group">
-
-               <!-- Loading Spinner -->
-               <span *ngIf="saving()" class="absolute inset-0 flex items-center justify-center bg-brand-purple">
-                  <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-               </span>
-
-               <span [class.opacity-0]="saving()" class="flex items-center gap-2">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                  </svg>
-                  Guardar Cambios
-               </span>
-
-               <!-- Shine Effect -->
-               <div
-                  class="absolute inset-0 -translate-x-full group-hover:animate-[shine_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent">
-               </div>
-            </button>
-         </div>
       </div>
    </div>
 
-   <!-- TOAST NOTIFICATION -->
-   <div *ngIf="notification()" class="fixed bottom-6 right-6 max-w-sm sm:max-w-md z-50 overflow-hidden" @slideIn>
+   <!-- ── Toast ── -->
+   <div *ngIf="notification()" class="fixed bottom-4 right-4 max-w-xs z-50" @slideIn>
       <div [ngClass]="{
-            'bg-emerald-50 text-emerald-800 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800': notification()?.type === 'success',
-            'bg-red-50 text-red-800 border-red-100 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800': notification()?.type === 'error'
-         }" class="flex items-center gap-4 px-6 py-5 rounded-3xl shadow-2xl border backdrop-blur-md">
-
-         <!-- Icon -->
+            'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/40 dark:border-emerald-800 dark:text-emerald-300': notification()?.type === 'success',
+            'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-900/40 dark:border-rose-800 dark:text-rose-300': notification()?.type === 'error'
+         }" class="flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm">
          <div [ngClass]="{
-               'bg-emerald-100 text-emerald-600': notification()?.type === 'success',
-               'bg-rose-100 text-rose-600': notification()?.type === 'error'
-            }" class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
-            <svg *ngIf="notification()?.type === 'success'" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-               stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+               'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/60': notification()?.type === 'success',
+               'bg-rose-100 text-rose-600 dark:bg-rose-900/60': notification()?.type === 'error'
+            }" class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+            <svg *ngIf="notification()?.type === 'success'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
-            <svg *ngIf="notification()?.type === 'error'" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-               stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg *ngIf="notification()?.type === 'error'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+               <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
          </div>
-
-         <!-- Text Content -->
-         <div class="flex-1">
-            <h4 class="font-black text-sm uppercase tracking-wider mb-0.5">
-               {{ notification()?.type === 'success' ? 'Éxito' : 'Atención' }}
-            </h4>
-            <p class="text-sm font-bold opacity-80">{{ notification()?.message }}</p>
-         </div>
-
-         <!-- Close Button -->
-         <button (click)="notification.set(null)" class="p-2 rounded-xl hover:bg-black/5 transition-all">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+         <p class="text-xs font-semibold flex-1">{{ notification()?.message }}</p>
+         <button (click)="notification.set(null)" class="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-all shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
             </svg>
          </button>
       </div>
    </div>
+
 </div>

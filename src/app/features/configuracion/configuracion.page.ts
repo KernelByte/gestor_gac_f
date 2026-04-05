@@ -13,6 +13,10 @@ interface Configuracion {
    direccion: string;
    codigo_seguridad: string;
    tiene_sala_b: boolean | number;
+   dia_reunion_entre_semana:  string;
+   hora_reunion_entre_semana: string;
+   dia_reunion_fin_semana:    string;
+   hora_reunion_fin_semana:   string;
 }
 
 @Component({
@@ -21,9 +25,9 @@ interface Configuracion {
    imports: [CommonModule, FormsModule],
    templateUrl: './configuracion.page.html',
    styles: [`
-    :host { display: block; }
-    .animate-fadeIn { animation: fadeIn 0.4s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    :host { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+    .animate-fadeIn { animation: fadeIn 0.35s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   `],
    animations: [
       trigger('slideIn', [
@@ -48,7 +52,11 @@ export class ConfiguracionPage implements OnInit {
       circuito: '',
       direccion: '',
       codigo_seguridad: '',
-      tiene_sala_b: false
+      tiene_sala_b: false,
+      dia_reunion_entre_semana:  '',
+      hora_reunion_entre_semana: '',
+      dia_reunion_fin_semana:    '',
+      hora_reunion_fin_semana:   '',
    };
 
    // Clone to check for changes
@@ -86,11 +94,15 @@ export class ConfiguracionPage implements OnInit {
       this.saving.set(true);
       // Send only updateable fields
       const payload = {
-         nombre_congregacion: this.config.nombre_congregacion,
-         circuito: this.config.circuito,
-         direccion: this.config.direccion,
-         codigo_seguridad: this.config.codigo_seguridad,
-         tiene_sala_b: this.config.tiene_sala_b ? 1 : 0
+         nombre_congregacion:       this.config.nombre_congregacion,
+         circuito:                  this.config.circuito,
+         direccion:                 this.config.direccion,
+         codigo_seguridad:          this.config.codigo_seguridad,
+         tiene_sala_b:              this.config.tiene_sala_b ? 1 : 0,
+         dia_reunion_entre_semana:  this.config.dia_reunion_entre_semana  || null,
+         hora_reunion_entre_semana: this.config.hora_reunion_entre_semana || null,
+         dia_reunion_fin_semana:    this.config.dia_reunion_fin_semana    || null,
+         hora_reunion_fin_semana:   this.config.hora_reunion_fin_semana   || null,
       };
 
       this.http.put<Configuracion>(this.API_URL, payload)
@@ -164,7 +176,11 @@ export class ConfiguracionPage implements OnInit {
          this.config.circuito !== this.originalConfig.circuito ||
          this.config.direccion !== this.originalConfig.direccion ||
          this.config.codigo_seguridad !== this.originalConfig.codigo_seguridad ||
-         !!this.config.tiene_sala_b !== !!this.originalConfig.tiene_sala_b;
+         !!this.config.tiene_sala_b !== !!this.originalConfig.tiene_sala_b ||
+         (this.config.dia_reunion_entre_semana  || '') !== (this.originalConfig.dia_reunion_entre_semana  || '') ||
+         (this.config.hora_reunion_entre_semana || '') !== (this.originalConfig.hora_reunion_entre_semana || '') ||
+         (this.config.dia_reunion_fin_semana    || '') !== (this.originalConfig.dia_reunion_fin_semana    || '') ||
+         (this.config.hora_reunion_fin_semana   || '') !== (this.originalConfig.hora_reunion_fin_semana   || '');
    }
 
    canEdit() {

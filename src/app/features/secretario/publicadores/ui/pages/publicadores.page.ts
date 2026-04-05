@@ -224,6 +224,7 @@ interface TableColumn {
                         </div>
                     </div>
 
+                    <ng-container *ngIf="!isScopedToGroup()">
                     <div class="h-px bg-slate-100 dark:bg-slate-700/50 mx-2 my-2"></div>
 
                     <!-- Section: Grupos (grid 2 columnas) -->
@@ -253,6 +254,7 @@ interface TableColumn {
                     </div>
 
                     <div class="h-px bg-slate-100 dark:bg-slate-700/50 mx-2 my-2"></div>
+                    </ng-container>
 
                     <!-- Section: Privilegios (grid 2 columnas) -->
                     <div class="mb-3">
@@ -426,7 +428,7 @@ interface TableColumn {
         <div class="flex-1 hidden lg:block"></div>
 
         <!-- Export Dropdown -->
-        <div class="relative shrink-0 hidden md:block">
+        <div *ngIf="canExportPublicadores()" class="relative shrink-0 hidden md:block">
             <!-- Backdrop -->
             <div *ngIf="showExportMenu()" (click)="showExportMenu.set(false)" class="fixed inset-0 z-40 bg-transparent"></div>
 
@@ -488,7 +490,7 @@ interface TableColumn {
         <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 shrink-0"></div>
 
         <!-- Action Button (Compact, inside toolbar) -->
-        <button 
+        <button *ngIf="canEditPublicadores()"
             (click)="openCreateForm()"
             class="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 h-9 bg-brand-orange hover:bg-orange-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-orange-900/10 transition-all active:scale-95 whitespace-nowrap"
         >
@@ -580,7 +582,7 @@ interface TableColumn {
                      </div>
 
                      <!-- Actions -->
-                     <div class="flex gap-2">
+                     <div class="flex gap-2" *ngIf="canEditPublicadores()">
                          <button (click)="openEditForm(p)" class="flex-1 py-2.5 rounded-xl bg-brand-orange/10 text-brand-orange font-bold text-xs hover:bg-brand-orange hover:text-white transition-colors">
                              Editar
                          </button>
@@ -596,7 +598,7 @@ interface TableColumn {
                       </div>
                       <h3 class="text-slate-800 dark:text-white font-bold mb-1">No se encontraron publicadores</h3>
                       <p class="text-slate-400 dark:text-slate-500 text-sm mb-4">Ajusta los filtros o búsqueda</p>
-                      <button (click)="openCreateForm()" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-orange text-white rounded-lg text-sm font-bold shadow-md shadow-orange-500/20">
+                      <button *ngIf="canEditPublicadores()" (click)="openCreateForm()" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-orange text-white rounded-lg text-sm font-bold shadow-md shadow-orange-500/20">
                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                          Agregar
                       </button>
@@ -813,10 +815,10 @@ interface TableColumn {
                                <button (click)="openQuickView(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-sky-500 transition-all shadow-sm hover:shadow-md hover:shadow-sky-200" title="Ver detalles">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                </button>
-                               <button (click)="openEditForm(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-brand-orange transition-all shadow-sm hover:shadow-md hover:shadow-orange-200" title="Editar">
+                               <button *ngIf="canEditPublicadores()" (click)="openEditForm(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-brand-orange transition-all shadow-sm hover:shadow-md hover:shadow-orange-200" title="Editar">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                </button>
-                               <button (click)="confirmDelete(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-red-500 transition-all shadow-sm hover:shadow-md hover:shadow-red-200" title="Eliminar">
+                               <button *ngIf="canEditPublicadores()" (click)="confirmDelete(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-red-500 transition-all shadow-sm hover:shadow-md hover:shadow-red-200" title="Eliminar">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                                </button>
                             </div>
@@ -837,7 +839,7 @@ interface TableColumn {
                                  </div>
                                  <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">No se encontraron publicadores</h3>
                                  <p class="text-slate-500 dark:text-slate-400 text-sm max-w-xs">Intenta ajustando los filtros o términos de búsqueda.</p>
-                                 <button (click)="openCreateForm()" class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-xl text-sm font-bold shadow-md shadow-orange-500/20 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30 transition-all active:scale-95">
+                                 <button *ngIf="canEditPublicadores()" (click)="openCreateForm()" class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-xl text-sm font-bold shadow-md shadow-orange-500/20 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30 transition-all active:scale-95">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
                                     Agregar Publicador
                                  </button>
@@ -1747,7 +1749,7 @@ interface TableColumn {
             <button (click)="closeQuickView()" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
               Cerrar
             </button>
-            <button (click)="editFromQuickView()"
+            <button *ngIf="canEditPublicadores()" (click)="editFromQuickView()"
               class="px-5 py-2 rounded-xl text-sm font-bold bg-brand-orange hover:bg-orange-600 text-white shadow-sm shadow-orange-500/20 hover:shadow-md hover:shadow-orange-500/30 transition-all active:scale-95 flex items-center gap-2">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
@@ -2150,6 +2152,26 @@ export class PublicadoresListComponent implements OnInit {
     const rol = user?.rol?.toLowerCase() || '';
     return rol.includes('admin') || rol.includes('gestor');
   });
+
+  isSecretario = computed(() => {
+    const user = this.authStore.user();
+    const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+    return roles.includes('secretario');
+  });
+
+  canEditPublicadores = computed(() =>
+    this.isAdminOrGestor() || this.isSecretario() || this.authStore.hasPermission('publicadores.editar')
+  );
+
+  canExportPublicadores = computed(() => {
+    const user = this.authStore.user();
+    const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+    return roles.some(r => ['administrador', 'gestor aplicación', 'coordinador', 'secretario', 'superintendente de servicio', 'publicador'].includes(r));
+  });
+
+  isScopedToGroup = computed(() =>
+    !this.isAdminOrGestor() && !this.isSecretario() && !this.authStore.hasPermission('publicadores.ver_todos')
+  );
 
   // Form
   publicadorForm: FormGroup;
@@ -2624,6 +2646,12 @@ export class PublicadoresListComponent implements OnInit {
     const params: any = { limit: 1000, offset: 0 };
     if (effectiveId != null) {
       params.id_congregacion = effectiveId;
+    }
+    if (this.isScopedToGroup()) {
+      const idGrupo = this.authStore.user()?.id_grupo_publicador;
+      if (idGrupo != null) {
+        params.id_grupo = idGrupo;
+      }
     }
     this.facade.load(params);
   }

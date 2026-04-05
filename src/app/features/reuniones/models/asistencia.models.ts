@@ -14,6 +14,11 @@ export interface AsistenciaRecord {
   asistencia_semana_03: number | null;
   asistencia_semana_04: number | null;
   asistencia_semana_05: number | null;
+  asistencia_zoom_semana_01: number | null;
+  asistencia_zoom_semana_02: number | null;
+  asistencia_zoom_semana_03: number | null;
+  asistencia_zoom_semana_04: number | null;
+  asistencia_zoom_semana_05: number | null;
   asistencia_tipo_reunion: number;
   total: number | null;
   promedio: number | null;
@@ -28,6 +33,11 @@ export interface AsistenciaUpsert {
   asistencia_semana_03?: number | null;
   asistencia_semana_04?: number | null;
   asistencia_semana_05?: number | null;
+  asistencia_zoom_semana_01?: number | null;
+  asistencia_zoom_semana_02?: number | null;
+  asistencia_zoom_semana_03?: number | null;
+  asistencia_zoom_semana_04?: number | null;
+  asistencia_zoom_semana_05?: number | null;
 }
 
 export interface ResumenMensualAsistencia {
