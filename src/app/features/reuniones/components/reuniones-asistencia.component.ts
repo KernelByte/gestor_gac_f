@@ -41,26 +41,50 @@ import { saveAs } from 'file-saver';
           <h1 class="font-display font-black text-3xl text-slate-900 dark:text-white tracking-tight text-glow">Registro de Asistencia</h1>
           <p class="text-slate-500 font-medium text-sm">Control de asistencia semanal por reunión</p>
         </div>
-        <div class="flex gap-3">
-          <button (click)="onExportPdf()"
-                  [disabled]="!currentPeriodo() || loading()"
-                  class="inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
-            <svg class="w-4.5 h-4.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-            Exportar PDF
-          </button>
-          <button (click)="onSave()"
-                  [disabled]="saving() || !currentPeriodo() || loading()"
-                  class="inline-flex items-center gap-2 px-6 h-11 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-display font-bold text-sm shadow-xl shadow-purple-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-            @if (saving()) {
-              <svg class="w-4.5 h-4.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
-              Guardando...
-            } @else {
-              <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Guardar Cambios
-            }
-          </button>
-        </div>
+        @if (activeTab() === 'registro') {
+          <div class="flex gap-3">
+            <button (click)="onExportPdf()"
+                    [disabled]="!currentPeriodo() || loading()"
+                    class="inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg class="w-4.5 h-4.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+              Exportar PDF
+            </button>
+            <button (click)="onSave()"
+                    [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges()"
+                    class="inline-flex items-center gap-2 px-6 h-11 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-display font-bold text-sm shadow-xl shadow-purple-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+              @if (saving()) {
+                <svg class="w-4.5 h-4.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
+                Guardando...
+              } @else {
+                <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Guardar Cambios
+              }
+            </button>
+          </div>
+        }
       </div>
+
+      <!-- Tabs -->
+      <div class="shrink-0 flex bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl w-fit gap-1">
+        <button (click)="activeTab.set('registro')"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
+                [ngClass]="activeTab() === 'registro'
+                  ? 'bg-brand-purple text-white shadow-md'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:text-slate-300 dark:hover:bg-slate-700/50'">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Registro Mensual
+        </button>
+        <button (click)="activeTab.set('resumen')"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
+                [ngClass]="activeTab() === 'resumen'
+                  ? 'bg-brand-purple text-white shadow-md'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:text-slate-300 dark:hover:bg-slate-700/50'">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+          Resumen Anual
+        </button>
+      </div>
+
+      @if (activeTab() === 'registro') {
 
       <!-- Month/Year Navigator -->
       <div class="shrink-0 flex items-center justify-between gap-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-4 py-3">
@@ -69,7 +93,7 @@ import { saveAs } from 'file-saver';
           <button (click)="prevMonth()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <select [ngModel]="selectedMonth()" (ngModelChange)="selectedMonth.set($event)"
+          <select [ngModel]="selectedMonth()" (ngModelChange)="selectedMonth.set($event); selectedWeek.set(1)"
                   class="bg-transparent border-0 text-sm font-bold text-slate-800 dark:text-slate-100 cursor-pointer focus:ring-0 pr-6">
             @for (m of meses; track m.value) {
               <option [value]="m.value">{{ m.label }}</option>
@@ -94,7 +118,7 @@ import { saveAs } from 'file-saver';
               Cargando...
             </div>
           }
-          @if (currentPeriodo() && !loading()) {
+          @if (currentPeriodo() && !loading() && isViewingCurrentMonth()) {
             <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
               Periodo activo
@@ -149,11 +173,13 @@ import { saveAs } from 'file-saver';
             </div>
 
             <!-- Input Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:divide-x md:divide-slate-100 dark:md:divide-slate-700">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x md:divide-slate-100 dark:md:divide-slate-700">
 
               <!-- Midweek Meeting -->
-              <div class="md:pr-6">
-                <div class="flex items-center justify-between mb-5">
+              <div class="flex flex-col gap-5 md:pr-8">
+
+                <!-- Section header -->
+                <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2.5">
                     <div class="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/30">
                       <svg class="w-4.5 h-4.5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -163,8 +189,19 @@ import { saveAs } from 'file-saver';
                       @if (congregacionConfig()?.dia_reunion_entre_semana) {
                         <p class="text-[0.625rem] font-bold text-slate-400 leading-none mt-0.5">
                           {{ congregacionConfig()!.dia_reunion_entre_semana }}
-                          @if (congregacionConfig()!.hora_reunion_entre_semana) { · {{ congregacionConfig()!.hora_reunion_entre_semana }} }
+                          @if (congregacionConfig()!.hora_reunion_entre_semana) { · {{ formatTime12(congregacionConfig()!.hora_reunion_entre_semana) }} }
                         </p>
+                      }
+                      @if (nextMidweekDate()) {
+                        <span class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md text-[0.6rem] font-bold"
+                              [class]="nextMidweekDate()!.isToday
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-purple-50 dark:bg-purple-900/20 text-brand-purple'">
+                          <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          {{ nextMidweekDate()!.isToday ? 'Hoy' : 'Próxima: ' + nextMidweekDate()!.label }}
+                        </span>
                       }
                     </div>
                   </div>
@@ -175,46 +212,64 @@ import { saveAs } from 'file-saver';
                   }
                 </div>
 
+                <!-- Inputs or empty state -->
                 @if (selectedWeek() > midweekWeekCount()) {
-                  <div class="flex items-center justify-center h-40 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-dashed border-slate-200 dark:border-slate-700">
+                  <div class="flex items-center justify-center h-[8.5rem] rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-dashed border-slate-200 dark:border-slate-700">
                     <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
                   </div>
                 } @else {
-                  <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2 group">
-                      <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-brand-purple transition-colors">Presencial</label>
-                      <input type="number" min="0" 
+                  <!-- Editable inputs: white bg + colored border signals interactivity -->
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5 group">
+                      <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-brand-purple uppercase tracking-wide">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Presencial
+                      </label>
+                      <input type="number" min="0"
                              [ngModel]="midweekWeeks()[selectedWeek() - 1]"
                              (ngModelChange)="updateMidweekWeek($event)"
-                             class="w-full h-16 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none"
+                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none cursor-text shadow-sm"
                              placeholder="0">
                     </div>
-                    <div class="space-y-2 group">
-                      <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-brand-purple transition-colors">Zoom</label>
+                    <div class="flex flex-col gap-1.5 group">
+                      <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-brand-purple uppercase tracking-wide">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Zoom
+                      </label>
                       <input type="number" min="0"
                              [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]"
                              (ngModelChange)="updateMidweekZoomWeek($event)"
-                             class="w-full h-16 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none"
+                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none cursor-text shadow-sm"
                              placeholder="0">
                     </div>
                   </div>
-                  
-                  <div class="mt-4 p-4 rounded-xl bg-slate-50/50 dark:bg-slate-900/20 border border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Asistencia Total</span>
-                    <span class="text-3xl font-black text-slate-900 dark:text-white">{{ currentMidweekTotal() }}</span>
-                  </div>
                 }
 
-                <!-- Total Row -->
-                <div class="mt-5 flex items-center justify-between p-4 bg-purple-50/50 dark:bg-purple-900/10 rounded-2xl border border-purple-100/60 dark:border-purple-800/30 shadow-inner-sm">
-                  <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Total Mes</span>
+                <!-- Read-only total semana: muted, no edit cue -->
+                <div class="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-700/60">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Total semana</span>
+                  </div>
+                  <span class="text-2xl font-black text-slate-700 dark:text-slate-200">{{ currentMidweekTotal() }}</span>
+                </div>
+
+                <!-- Read-only total mes: accent color but clearly non-editable -->
+                <div class="flex items-center justify-between px-4 py-3.5 bg-purple-50/60 dark:bg-purple-900/10 rounded-2xl border border-purple-100/80 dark:border-purple-800/30">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Total Mes</span>
+                  </div>
                   <span class="text-2xl font-black text-brand-purple">{{ midweekMonthTotal() }}</span>
                 </div>
+
               </div>
 
               <!-- Weekend Meeting -->
-              <div class="md:pl-6">
-                <div class="flex items-center justify-between mb-5">
+              <div class="flex flex-col gap-5 md:pl-8 mt-8 md:mt-0">
+
+                <!-- Section header -->
+                <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2.5">
                     <div class="p-1.5 rounded-lg bg-orange-50 dark:bg-orange-900/30">
                       <svg class="w-4.5 h-4.5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -224,8 +279,19 @@ import { saveAs } from 'file-saver';
                       @if (congregacionConfig()?.dia_reunion_fin_semana) {
                         <p class="text-[0.625rem] font-bold text-slate-400 leading-none mt-0.5">
                           {{ congregacionConfig()!.dia_reunion_fin_semana }}
-                          @if (congregacionConfig()!.hora_reunion_fin_semana) { · {{ congregacionConfig()!.hora_reunion_fin_semana }} }
+                          @if (congregacionConfig()!.hora_reunion_fin_semana) { · {{ formatTime12(congregacionConfig()!.hora_reunion_fin_semana) }} }
                         </p>
+                      }
+                      @if (nextWeekendDate()) {
+                        <span class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md text-[0.6rem] font-bold"
+                              [class]="nextWeekendDate()!.isToday
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'">
+                          <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          {{ nextWeekendDate()!.isToday ? 'Hoy' : 'Próxima: ' + nextWeekendDate()!.label }}
+                        </span>
                       }
                     </div>
                   </div>
@@ -236,131 +302,58 @@ import { saveAs } from 'file-saver';
                   }
                 </div>
 
+                <!-- Inputs or empty state -->
                 @if (selectedWeek() > weekendWeekCount()) {
-                  <div class="flex items-center justify-center h-40 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-dashed border-slate-200 dark:border-slate-700">
+                  <div class="flex items-center justify-center h-[8.5rem] rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-dashed border-slate-200 dark:border-slate-700">
                     <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
                   </div>
                 } @else {
-                  <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2 group">
-                      <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-orange-500 transition-colors">Presencial</label>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5 group">
+                      <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-orange-500 uppercase tracking-wide">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Presencial
+                      </label>
                       <input type="number" min="0"
                              [ngModel]="weekendWeeks()[selectedWeek() - 1]"
                              (ngModelChange)="updateWeekendWeek($event)"
-                             class="w-full h-16 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none"
+                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none cursor-text shadow-sm"
                              placeholder="0">
                     </div>
-                    <div class="space-y-2 group">
-                      <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide group-focus-within:text-orange-500 transition-colors">Zoom</label>
+                    <div class="flex flex-col gap-1.5 group">
+                      <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-orange-500 uppercase tracking-wide">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Zoom
+                      </label>
                       <input type="number" min="0"
                              [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]"
                              (ngModelChange)="updateWeekendZoomWeek($event)"
-                             class="w-full h-16 bg-slate-50 dark:bg-slate-900/60 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none"
+                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none cursor-text shadow-sm"
                              placeholder="0">
                     </div>
                   </div>
-
-                  <div class="mt-4 p-4 rounded-xl bg-slate-50/50 dark:bg-slate-900/20 border border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Asistencia Total</span>
-                    <span class="text-3xl font-black text-slate-900 dark:text-white">{{ currentWeekendTotal() }}</span>
-                  </div>
                 }
 
-                <!-- Total Row -->
-                <div class="mt-5 flex items-center justify-between p-4 bg-orange-50/40 dark:bg-orange-900/10 rounded-2xl border border-orange-100/60 dark:border-orange-800/30 shadow-inner-sm">
-                  <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Total Mes</span>
+                <!-- Read-only total semana -->
+                <div class="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-700/60">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Total semana</span>
+                  </div>
+                  <span class="text-2xl font-black text-slate-700 dark:text-slate-200">{{ currentWeekendTotal() }}</span>
+                </div>
+
+                <!-- Read-only total mes -->
+                <div class="flex items-center justify-between px-4 py-3.5 bg-orange-50/60 dark:bg-orange-900/10 rounded-2xl border border-orange-100/80 dark:border-orange-800/30">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Total Mes</span>
+                  </div>
                   <span class="text-2xl font-black text-orange-500">{{ weekendMonthTotal() }}</span>
                 </div>
+
               </div>
 
-            </div>
-          </div>
-
-          <!-- Annual Summary Table -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/30">
-              <div class="flex items-center gap-3">
-                <div class="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-                </div>
-                <div>
-                  <h3 class="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">Resumen Anual</h3>
-                  <p class="text-xs text-slate-400 font-medium">Año de Servicio {{ currentServiceYear() }}</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-2 text-xs">
-                <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <span class="text-slate-500 dark:text-slate-400 font-medium">Sep {{ currentServiceYear() - 1 }} – Ago {{ currentServiceYear() }}</span>
-              </div>
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead class="bg-slate-50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700">
-                  <tr>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Mes</th>
-                    <th colspan="3" class="px-3 py-3.5 text-center text-xs font-bold text-purple-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">Entre Semana</th>
-                    <th colspan="3" class="px-3 py-3.5 text-center text-xs font-bold text-orange-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">Fin de Semana</th>
-                  </tr>
-                  <tr class="text-[0.625rem] uppercase tracking-wider">
-                    <th class="px-5 py-2"></th>
-                    <th class="px-2 py-2 text-center text-slate-400 border-l border-slate-100 dark:border-slate-700">Reun.</th>
-                    <th class="px-2 py-2 text-center text-slate-400">Total</th>
-                    <th class="px-2 py-2 text-center text-slate-700 dark:text-slate-200 font-extrabold">Prom.</th>
-                    <th class="px-2 py-2 text-center text-slate-400 border-l border-slate-100 dark:border-slate-700">Reun.</th>
-                    <th class="px-2 py-2 text-center text-slate-400">Total</th>
-                    <th class="px-2 py-2 text-center text-orange-600 dark:text-orange-400 font-extrabold">Prom.</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                  @for (row of resumenAnual(); track row.mes) {
-                    <tr class="transition-colors"
-                        [ngClass]="{
-                          'bg-purple-50/40 dark:bg-purple-900/10 hover:bg-purple-50/60': isCurrentMonth(row),
-                          'hover:bg-slate-50 dark:hover:bg-slate-800/50': !isCurrentMonth(row)
-                        }">
-                      <td class="px-5 py-3.5 font-bold text-sm"
-                          [ngClass]="isCurrentMonth(row) ? 'text-brand-purple' : (row.midweek_total !== null || row.weekend_total !== null ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600')">
-                        {{ row.nombre_mes }}
-                        @if (isCurrentMonth(row)) {
-                          <span class="text-[0.625rem] font-bold text-purple-400 ml-1">(Actual)</span>
-                        }
-                      </td>
-                      <td class="px-2 py-3.5 text-center text-sm font-medium border-l border-slate-100 dark:border-slate-700"
-                          [ngClass]="row.midweek_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
-                        {{ row.midweek_reuniones > 0 ? row.midweek_reuniones : '–' }}
-                      </td>
-                      <td class="px-2 py-3.5 text-center text-sm font-medium"
-                          [ngClass]="row.midweek_total !== null ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
-                        {{ row.midweek_total !== null ? row.midweek_total : '–' }}
-                      </td>
-                      <td class="px-2 py-3.5 text-center text-sm font-bold"
-                          [ngClass]="row.midweek_promedio !== null ? 'text-slate-900 dark:text-white' : 'text-slate-300 dark:text-slate-600'">
-                        {{ row.midweek_promedio !== null ? row.midweek_promedio : '–' }}
-                      </td>
-                      <td class="px-2 py-3.5 text-center text-sm font-medium border-l border-slate-100 dark:border-slate-700"
-                          [ngClass]="row.weekend_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
-                        {{ row.weekend_reuniones > 0 ? row.weekend_reuniones : '–' }}
-                      </td>
-                      <td class="px-2 py-3.5 text-center text-sm font-medium"
-                          [ngClass]="row.weekend_total !== null ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
-                        {{ row.weekend_total !== null ? row.weekend_total : '–' }}
-                      </td>
-                      <td class="px-2 py-3.5 text-center text-sm font-bold"
-                          [ngClass]="row.weekend_promedio !== null ? 'text-orange-600 dark:text-orange-400' : 'text-slate-300 dark:text-slate-600'">
-                        {{ row.weekend_promedio !== null ? row.weekend_promedio : '–' }}
-                      </td>
-                    </tr>
-                  }
-                  @empty {
-                    <tr>
-                      <td colspan="7" class="px-5 py-8 text-center text-sm text-slate-400">
-                        Sin datos de resumen anual
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
             </div>
           </div>
 
@@ -453,6 +446,112 @@ import { saveAs } from 'file-saver';
         </div>
 
       </div>
+
+      } @else {
+
+      <!-- Resumen Anual Tab -->
+      <div class="animate-fadeIn flex flex-col gap-6">
+
+        <!-- Year selector -->
+        <div class="shrink-0 flex items-center gap-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-4 py-3 w-fit">
+          <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Año de Servicio</span>
+          <select [ngModel]="resumenServiceYear()" (ngModelChange)="resumenServiceYear.set(+$event)"
+                  class="bg-transparent border-0 text-sm font-bold text-slate-800 dark:text-slate-100 cursor-pointer focus:ring-0 pr-6">
+            @for (y of serviceYears; track y) {
+              <option [value]="y">{{ y }}</option>
+            }
+          </select>
+          <span class="text-xs font-medium text-slate-400">Sep {{ resumenServiceYear() - 1 }} – Ago {{ resumenServiceYear() }}</span>
+        </div>
+
+        <!-- Summary Table Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/30">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+              </div>
+              <div>
+                <h3 class="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">Resumen Anual</h3>
+                <p class="text-xs text-slate-400 font-medium">Año de Servicio {{ resumenServiceYear() }}</p>
+              </div>
+            </div>
+            @if (loadingResumen()) {
+              <div class="flex items-center gap-2 text-xs font-medium text-slate-400">
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
+                Cargando...
+              </div>
+            }
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-slate-50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700">
+                <tr>
+                  <th class="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Mes</th>
+                  <th colspan="3" class="px-3 py-3.5 text-center text-xs font-bold text-purple-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">Entre Semana</th>
+                  <th colspan="3" class="px-3 py-3.5 text-center text-xs font-bold text-orange-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">Fin de Semana</th>
+                </tr>
+                <tr class="text-[0.625rem] uppercase tracking-wider">
+                  <th class="px-5 py-2"></th>
+                  <th class="px-2 py-2 text-center text-slate-400 border-l border-slate-100 dark:border-slate-700">Reun.</th>
+                  <th class="px-2 py-2 text-center text-slate-400">Total</th>
+                  <th class="px-2 py-2 text-center text-brand-purple font-extrabold">Prom.</th>
+                  <th class="px-2 py-2 text-center text-slate-400 border-l border-slate-100 dark:border-slate-700">Reun.</th>
+                  <th class="px-2 py-2 text-center text-slate-400">Total</th>
+                  <th class="px-2 py-2 text-center text-orange-600 dark:text-orange-400 font-extrabold">Prom.</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                @for (row of resumenAnualHistorico(); track row.mes) {
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td class="px-5 py-3.5 font-bold text-sm"
+                        [ngClass]="row.midweek_total !== null || row.weekend_total !== null ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'">
+                      {{ row.nombre_mes }}
+                    </td>
+                    <td class="px-2 py-3.5 text-center text-sm font-medium border-l border-slate-100 dark:border-slate-700"
+                        [ngClass]="row.midweek_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
+                      {{ row.midweek_reuniones > 0 ? row.midweek_reuniones : '–' }}
+                    </td>
+                    <td class="px-2 py-3.5 text-center text-sm font-medium"
+                        [ngClass]="row.midweek_total !== null ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
+                      {{ row.midweek_total !== null ? row.midweek_total : '–' }}
+                    </td>
+                    <td class="px-2 py-3.5 text-center text-sm font-bold"
+                        [ngClass]="row.midweek_promedio !== null ? 'text-brand-purple' : 'text-slate-300 dark:text-slate-600'">
+                      {{ row.midweek_promedio !== null ? row.midweek_promedio : '–' }}
+                    </td>
+                    <td class="px-2 py-3.5 text-center text-sm font-medium border-l border-slate-100 dark:border-slate-700"
+                        [ngClass]="row.weekend_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
+                      {{ row.weekend_reuniones > 0 ? row.weekend_reuniones : '–' }}
+                    </td>
+                    <td class="px-2 py-3.5 text-center text-sm font-medium"
+                        [ngClass]="row.weekend_total !== null ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
+                      {{ row.weekend_total !== null ? row.weekend_total : '–' }}
+                    </td>
+                    <td class="px-2 py-3.5 text-center text-sm font-bold"
+                        [ngClass]="row.weekend_promedio !== null ? 'text-orange-600 dark:text-orange-400' : 'text-slate-300 dark:text-slate-600'">
+                      {{ row.weekend_promedio !== null ? row.weekend_promedio : '–' }}
+                    </td>
+                  </tr>
+                }
+                @empty {
+                  <tr>
+                    <td colspan="7" class="px-5 py-8 text-center text-sm text-slate-400">
+                      Sin datos de resumen para este año de servicio
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      }
+
     </div>
   `,
   styles: [`
@@ -510,6 +609,14 @@ export class ReunionesAsistenciaComponent implements OnInit {
   saving = signal(false);
   toast = signal<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // ── Dirty tracking: snapshot of last loaded/saved state ──
+  private savedSnapshot = signal<{
+    mwPres: (number | null)[];
+    mwZoom: (number | null)[];
+    wePres: (number | null)[];
+    weZoom: (number | null)[];
+  }>({ mwPres: [null,null,null,null,null], mwZoom: [null,null,null,null,null], wePres: [null,null,null,null,null], weZoom: [null,null,null,null,null] });
+
   // ── Reference data ──
   meses = [
     { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
@@ -518,6 +625,13 @@ export class ReunionesAsistenciaComponent implements OnInit {
     { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
   ];
   anos = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i);
+  serviceYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 4 + i);
+
+  // ── Tab & Resumen state ──
+  activeTab = signal<'registro' | 'resumen'>('registro');
+  resumenServiceYear = signal<number>(this.defaultResumenServiceYear());
+  resumenAnualHistorico = signal<ResumenMensualAsistencia[]>([]);
+  loadingResumen = signal(false);
 
   // ── Computed ──
   currentPeriodo = computed(() => {
@@ -527,6 +641,11 @@ export class ReunionesAsistenciaComponent implements OnInit {
   });
 
   mesLabel = computed(() => this.meses.find(m => m.value === +this.selectedMonth())?.label ?? '');
+
+  isViewingCurrentMonth = computed(() => {
+    const now = new Date();
+    return +this.selectedMonth() === (now.getMonth() + 1) && +this.selectedYear() === now.getFullYear();
+  });
 
   currentServiceYear = computed(() => {
     const m = +this.selectedMonth();
@@ -608,6 +727,16 @@ export class ReunionesAsistenciaComponent implements OnInit {
     return Math.round(this.weekendMonthTotal() / count);
   });
 
+  hasChanges = computed(() => {
+    const snap = this.savedSnapshot();
+    const arrEq = (a: (number | null)[], b: (number | null)[]) =>
+      a.every((v, i) => (v ?? null) === (b[i] ?? null));
+    return !arrEq(this.midweekWeeks(), snap.mwPres)
+        || !arrEq(this.midweekZoomWeeks(), snap.mwZoom)
+        || !arrEq(this.weekendWeeks(), snap.wePres)
+        || !arrEq(this.weekendZoomWeeks(), snap.weZoom);
+  });
+
   currentMidweekDate = computed(() => {
     const w = this.selectedWeek();
     const f = this.fechasReuniones().find(s => s.semana === w);
@@ -619,6 +748,37 @@ export class ReunionesAsistenciaComponent implements OnInit {
     const f = this.fechasReuniones().find(s => s.semana === w);
     return f?.fecha_fin_semana ? this.formatDateShort(f.fecha_fin_semana) : null;
   });
+
+  /** Próxima fecha de reunión entre semana a partir de hoy */
+  nextMidweekDate = computed(() => {
+    const cfg = this.congregacionConfig();
+    if (!cfg?.dia_reunion_entre_semana) return null;
+    return this.calcNextMeetingDate(cfg.dia_reunion_entre_semana);
+  });
+
+  /** Próxima fecha de reunión de fin de semana a partir de hoy */
+  nextWeekendDate = computed(() => {
+    const cfg = this.congregacionConfig();
+    if (!cfg?.dia_reunion_fin_semana) return null;
+    return this.calcNextMeetingDate(cfg.dia_reunion_fin_semana);
+  });
+
+  private calcNextMeetingDate(dayName: string): { label: string; isToday: boolean } | null {
+    const targetDay = this.DAY_MAP[dayName];
+    if (targetDay === undefined) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const next = new Date(today);
+    const diff = (targetDay - today.getDay() + 7) % 7;
+    next.setDate(today.getDate() + diff);
+    const isToday = diff === 0;
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const dias  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const label = isToday
+      ? 'Hoy'
+      : `${dias[next.getDay()]} ${next.getDate()} ${meses[next.getMonth()]}`;
+    return { label, isToday };
+  }
 
   constructor() {
     effect(() => {
@@ -636,6 +796,16 @@ export class ReunionesAsistenciaComponent implements OnInit {
       const max = this.totalWeeksInMonth();
       if (this.selectedWeek() > max) this.selectedWeek.set(max);
     });
+
+    // Load resumen historico when resumen tab is active or year changes
+    effect(() => {
+      const tab = this.activeTab();
+      const anoServicio = this.resumenServiceYear();
+      const congId = this.congregacionCtx.effectiveCongregacionId();
+      if (tab === 'resumen' && congId) {
+        this.loadResumenHistorico(anoServicio, congId);
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -644,7 +814,10 @@ export class ReunionesAsistenciaComponent implements OnInit {
       error: () => this.showToast('error', 'Error al cargar periodos'),
     });
     this.asistenciaService.getCongregacionConfig().subscribe({
-      next: (cfg) => this.congregacionConfig.set(cfg),
+      next: (cfg) => {
+        this.congregacionConfig.set(cfg);
+        this.autoSelectCurrentWeek();
+      },
       error: () => {},
     });
   }
@@ -716,7 +889,9 @@ export class ReunionesAsistenciaComponent implements OnInit {
           weekend?.asistencia_zoom_semana_05 ?? null,
         ]);
 
+        this.saveSnapshot();
         this.loading.set(false);
+        this.autoSelectCurrentWeek();
       },
       error: () => {
         this.loading.set(false);
@@ -730,6 +905,16 @@ export class ReunionesAsistenciaComponent implements OnInit {
     this.weekendWeeks.set([null, null, null, null, null]);
     this.midweekZoomWeeks.set([null, null, null, null, null]);
     this.weekendZoomWeeks.set([null, null, null, null, null]);
+    this.saveSnapshot();
+  }
+
+  private saveSnapshot(): void {
+    this.savedSnapshot.set({
+      mwPres: [...this.midweekWeeks()],
+      mwZoom: [...this.midweekZoomWeeks()],
+      wePres: [...this.weekendWeeks()],
+      weZoom: [...this.weekendZoomWeeks()],
+    });
   }
 
   // ── Week editing ──
@@ -776,6 +961,11 @@ export class ReunionesAsistenciaComponent implements OnInit {
     this.selectedYear.set(y);
     this.selectedMonth.set(m);
     this.selectedWeek.set(1);
+    // Si navegamos al mes actual, aplicar semana inteligente
+    const now = new Date();
+    if (y === now.getFullYear() && m === now.getMonth() + 1) {
+      setTimeout(() => this.autoSelectCurrentWeek());
+    }
   }
 
   nextMonth(): void {
@@ -785,6 +975,10 @@ export class ReunionesAsistenciaComponent implements OnInit {
     this.selectedYear.set(y);
     this.selectedMonth.set(m);
     this.selectedWeek.set(1);
+    const now = new Date();
+    if (y === now.getFullYear() && m === now.getMonth() + 1) {
+      setTimeout(() => this.autoSelectCurrentWeek());
+    }
   }
 
   // ── Save ──
@@ -851,6 +1045,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
     Promise.all(requests)
       .then(() => {
         this.saving.set(false);
+        this.saveSnapshot();
         this.showToast('success', 'Asistencia guardada correctamente');
         // Reload resumen anual
         const anoServicio = this.currentServiceYear();
@@ -884,6 +1079,15 @@ export class ReunionesAsistenciaComponent implements OnInit {
     return row.ano === now.getFullYear() && row.mes === (now.getMonth() + 1);
   }
 
+  formatTime12(time: string | null | undefined): string {
+    if (!time) return '';
+    const [hStr, mStr] = time.split(':');
+    const h = parseInt(hStr, 10);
+    const period = h < 12 ? 'AM' : 'PM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${mStr} ${period}`;
+  }
+
   private formatDateShort(isoDate: string): string {
     const d = new Date(isoDate + 'T12:00:00');
     const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -892,15 +1096,58 @@ export class ReunionesAsistenciaComponent implements OnInit {
   }
 
   private defaultMonth(): number {
-    const now = new Date();
-    const m = now.getMonth() + 1; // 1-indexed
-    return m === 1 ? 12 : m - 1; // default to previous month
+    return new Date().getMonth() + 1;
   }
 
   private defaultYear(): number {
+    return new Date().getFullYear();
+  }
+
+  /** Devuelve el número de semana calendario del mes en que cae hoy.
+   *
+   *  Definición: semana 1 = día 1 del mes hasta el primer domingo;
+   *  semanas siguientes = lunes a domingo consecutivos.
+   *
+   *  Ejemplo abril 2026 (empieza miércoles):
+   *    Sem 1: 1–5  | Sem 2: 6–12 | Sem 3: 13–19 | Sem 4: 20–26 | Sem 5: 27–30
+   */
+  private calcCurrentWeek(): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const year  = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const d     = today.getDate();
+
+    // Día de semana del 1° del mes (0=Dom … 6=Sáb)
+    const firstDow = new Date(year, month - 1, 1).getDay();
+
+    // Último día de la semana 1 = primer domingo del mes
+    // Si el mes empieza en domingo, la semana 1 es solo ese día (día 1)
+    const endOfWeek1 = firstDow === 0 ? 1 : 1 + (7 - firstDow);
+
+    if (d <= endOfWeek1) return 1;
+
+    const week = 1 + Math.ceil((d - endOfWeek1) / 7);
+    return Math.max(1, Math.min(week, this.totalWeeksInMonth()));
+  }
+
+  private autoSelectCurrentWeek(): void {
+    if (!this.isViewingCurrentMonth()) return;
+    this.selectedWeek.set(this.calcCurrentWeek());
+  }
+
+  private defaultResumenServiceYear(): number {
     const now = new Date();
     const m = now.getMonth() + 1;
-    return m === 1 ? now.getFullYear() - 1 : now.getFullYear();
+    return m >= 9 ? now.getFullYear() + 1 : now.getFullYear();
+  }
+
+  private loadResumenHistorico(anoServicio: number, congId: number): void {
+    this.loadingResumen.set(true);
+    this.asistenciaService.getResumenAnual(congId, anoServicio).subscribe({
+      next: (res) => { this.resumenAnualHistorico.set(res.meses); this.loadingResumen.set(false); },
+      error: () => { this.resumenAnualHistorico.set([]); this.loadingResumen.set(false); },
+    });
   }
 
   private countDayOccurrences(year: number, month: number, dayName: string): number {

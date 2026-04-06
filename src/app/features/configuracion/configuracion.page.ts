@@ -67,6 +67,92 @@ export class ConfiguracionPage implements OnInit {
    showSecurityCode = signal(false);
    generatingCode = signal(false);
    notification = signal<{ message: string, type: 'success' | 'error' } | null>(null);
+   dropdownEntreOpen  = signal(false);
+   dropdownFinOpen    = signal(false);
+   timePickerEntreOpen = signal(false);
+   timePickerFinOpen   = signal(false);
+
+   readonly diasEntreSemana = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
+   readonly diasFinSemana   = ['Sabado', 'Domingo'];
+   readonly diasLabel: Record<string, string> = {
+      Lunes: 'Lunes', Martes: 'Martes', Miercoles: 'Miércoles',
+      Jueves: 'Jueves', Viernes: 'Viernes', Sabado: 'Sábado', Domingo: 'Domingo'
+   };
+   readonly horas12  = ['12','01','02','03','04','05','06','07','08','09','10','11'];
+   readonly minutos  = ['00','05','10','15','20','25','30','35','40','45','50','55'];
+   readonly periodos = ['AM','PM'];
+
+   selectDiaEntre(dia: string) {
+      this.config.dia_reunion_entre_semana = dia;
+      this.dropdownEntreOpen.set(false);
+   }
+
+   selectDiaFin(dia: string) {
+      this.config.dia_reunion_fin_semana = dia;
+      this.dropdownFinOpen.set(false);
+   }
+
+   // ── 24h helpers ──────────────────────────────────────────
+   private to24(h12: string, periodo: string): string {
+      let h = parseInt(h12, 10);
+      if (periodo === 'AM') { h = h === 12 ? 0 : h; }
+      else                  { h = h === 12 ? 12 : h + 12; }
+      return String(h).padStart(2, '0');
+   }
+
+   getMinuto(time: string) { return time ? time.split(':')[1] : ''; }
+
+   get12Hour(time: string): string {
+      if (!time) return '12';
+      const h = parseInt(time.split(':')[0], 10);
+      const h12 = h % 12 || 12;
+      return String(h12).padStart(2, '0');
+   }
+
+   getPeriodo(time: string): string {
+      if (!time) return 'AM';
+      return parseInt(time.split(':')[0], 10) < 12 ? 'AM' : 'PM';
+   }
+
+   setHoraEntre(h12: string) {
+      const m  = this.getMinuto(this.config.hora_reunion_entre_semana) || '00';
+      const p  = this.getPeriodo(this.config.hora_reunion_entre_semana);
+      this.config.hora_reunion_entre_semana = `${this.to24(h12, p)}:${m}`;
+   }
+   setMinutoEntre(m: string) {
+      const h24 = this.config.hora_reunion_entre_semana
+         ? this.config.hora_reunion_entre_semana.split(':')[0] : '07';
+      this.config.hora_reunion_entre_semana = `${h24}:${m}`;
+   }
+   setPeriodoEntre(p: string) {
+      const h12 = this.get12Hour(this.config.hora_reunion_entre_semana);
+      const m   = this.getMinuto(this.config.hora_reunion_entre_semana) || '00';
+      this.config.hora_reunion_entre_semana = `${this.to24(h12, p)}:${m}`;
+   }
+
+   setHoraFin(h12: string) {
+      const m  = this.getMinuto(this.config.hora_reunion_fin_semana) || '00';
+      const p  = this.getPeriodo(this.config.hora_reunion_fin_semana);
+      this.config.hora_reunion_fin_semana = `${this.to24(h12, p)}:${m}`;
+   }
+   setMinutoFin(m: string) {
+      const h24 = this.config.hora_reunion_fin_semana
+         ? this.config.hora_reunion_fin_semana.split(':')[0] : '09';
+      this.config.hora_reunion_fin_semana = `${h24}:${m}`;
+   }
+   setPeriodoFin(p: string) {
+      const h12 = this.get12Hour(this.config.hora_reunion_fin_semana);
+      const m   = this.getMinuto(this.config.hora_reunion_fin_semana) || '00';
+      this.config.hora_reunion_fin_semana = `${this.to24(h12, p)}:${m}`;
+   }
+
+   formatDisplay(time: string): string {
+      if (!time) return '--:--';
+      const h12 = this.get12Hour(time);
+      const m   = this.getMinuto(time);
+      const p   = this.getPeriodo(time);
+      return `${h12}:${m} ${p}`;
+   }
 
    ngOnInit() {
       this.loadConfig();
