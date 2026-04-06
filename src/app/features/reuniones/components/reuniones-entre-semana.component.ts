@@ -11,6 +11,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { ReunionesService } from '../services/reuniones.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
+import { AuthStore } from '../../../core/auth/auth.store';
 import {
   ProgramaSemana,
   AsignacionDraft,
@@ -46,6 +47,7 @@ import {
         <div class="flex items-center gap-2 shrink-0">
   // ── Navigation ─────────────────────────────────────────────────
           <button
+            *ngIf="hasEditPermission()"
             (click)="openModal()"
             [disabled]="estado() === 'loading'"
             class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95">
@@ -53,6 +55,7 @@ import {
             Generar Mes
           </button>
           <button
+            *ngIf="hasEditPermission()"
             (click)="confirmar()"
             [disabled]="!canConfirmar()"
             class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#059669] hover:bg-[#047857] disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-emerald-900/20 active:scale-95">
@@ -127,6 +130,7 @@ import {
             <h3 class="text-slate-800 dark:text-white font-bold mb-1">No hay programa generado</h3>
             <p class="text-slate-400 dark:text-slate-500 text-sm mb-5 max-w-xs">Genera el programa del mes para asignar automaticamente a los publicadores.</p>
             <button
+              *ngIf="hasEditPermission()"
               (click)="openModal()"
               class="inline-flex items-center gap-2 px-4 h-9 bg-[#6D28D9] hover:bg-[#5b21b6] text-white rounded-lg text-xs font-bold shadow-sm shadow-purple-900/20 transition-all active:scale-95">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -196,7 +200,7 @@ import {
                   <div class="relative shrink-0">
                     <button
                       (click)="toggleDropdown(asig.id_programa_parte)"
-                      [disabled]="estado() === 'confirmado'"
+                      [disabled]="estado() === 'confirmado' || !hasEditPermission()"
                       [class]="assigneeButtonClass(asig)"
                       class="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold transition-all active:scale-95 border">
                       <span>{{ asig.nombre_completo }}</span>
@@ -373,8 +377,13 @@ export class ReunionesEntreSemanaComponent implements OnInit {
 
   private reunionesSvc = inject(ReunionesService);
   congregacionCtx = inject(CongregacionContextService);
+  private authStore = inject(AuthStore);
   private router = inject(Router);
   private datePipe = inject(DatePipe);
+
+  hasEditPermission = computed(() => {
+    return this.authStore.hasPermission('reuniones.entre_semana_editar') || !!this.authStore.user()?.roles?.includes('Secretario');
+  });
 
   // ── State machine ──────────────────────────────────────────────
   estado = signal<'idle' | 'loading' | 'draft' | 'confirmado' | 'error'>('idle');

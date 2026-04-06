@@ -40,6 +40,7 @@ import {
                  <span class="text-[0.625rem] font-bold text-amber-500 dark:text-amber-400 animate-pulse">Cambios sin guardar</span>
                }
                <button
+                 *ngIf="hasEditPermission()"
                  (click)="saveAlgoParams()"
                  [disabled]="!algoHasDirty() || !algoValid() || algoSaving()"
                  class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
@@ -61,6 +62,7 @@ import {
                  </span>
                }
                <button
+                 *ngIf="hasEditPermission()"
                  (click)="guardarMatriz()"
                  [disabled]="!matrizHasPending() || matrizSaving()"
                  class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
@@ -160,11 +162,11 @@ import {
                   <input type="number" [ngModel]="mwbTargetYear()" (ngModelChange)="mwbTargetYear.set(+$event)" class="w-14 text-[0.6875rem] font-bold bg-transparent outline-none p-1 text-slate-700 dark:text-slate-200 focus:ring-1 rounded text-center" min="2020" max="2100">
                </div>
                
-               <button (click)="fileInput.click()" [disabled]="mwbConfirming()" class="h-9 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
+               <button *ngIf="hasEditPermission()" (click)="fileInput.click()" [disabled]="mwbConfirming()" class="h-9 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                  <span>Subir PDF MWB</span>
                </button>
-               <button (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())" class="h-9 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
+               <button *ngIf="hasEditPermission()" (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())" class="h-9 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                  <span>Pegar JSON</span>
                </button>
@@ -664,15 +666,15 @@ import {
                                          <label class="inline-flex items-center justify-center cursor-pointer p-1">
                                            <input type="checkbox"
                                              [checked]="getPermiso(pub, col.key)"
-                                             (change)="togglePermiso(pub, col.key)"
-                                             class="w-4 h-4 text-[#6D28D9] rounded border-slate-300 dark:border-slate-600 focus:ring-[#6D28D9] focus:ring-offset-0 cursor-pointer transition-colors">
+                                             [disabled]="!hasEditPermission()"
+                                             class="w-4 h-4 text-[#6D28D9] rounded border-slate-300 dark:border-slate-600 focus:ring-[#6D28D9] focus:ring-offset-0 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                          </label>
                                    </td>
                                    <td class="px-2 py-2 text-center">
                                      <select
                                        [ngModel]="getOratoria(pub)"
-                                       (ngModelChange)="setOratoria(pub, $event)"
-                                       class="h-7 px-1 w-[85px] rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[9px] font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all cursor-pointer truncate"
+                                       [disabled]="!hasEditPermission()"
+                                       class="h-7 px-1 w-[85px] rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[9px] font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all cursor-pointer truncate disabled:opacity-50 disabled:cursor-not-allowed"
                                        [class.border-amber-400]="isOratoriaDirty(pub.id_publicador)">
                                        <option [value]="1">Principiante</option>
                                        <option [value]="2">Básico</option>
@@ -799,6 +801,10 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   private reunionesSvc = inject(ReunionesService);
   private congregacionCtx = inject(CongregacionContextService);
   private authStore = inject(AuthStore);
+
+  hasEditPermission = computed(() => {
+    return this.authStore.hasPermission('reuniones.configuracion_editar') || !!this.authStore.user()?.roles?.includes('Secretario');
+  });
 
   // ── Tabs ──
   private allTabs = [
