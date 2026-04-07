@@ -53,8 +53,19 @@
             </div>
 
             <div class="h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block"></div>
+
+            <!-- Congregation Filter Dropdown -->
+            <div class="w-full sm:w-56 shrink-0 relative" *ngIf="showCongregacionCol()">
+               <select (change)="setCongFilter($event)" [value]="selectedCongregacionFilter() || ''"
+                   class="w-full pl-3 pr-8 py-2 border-none bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-slate-700 dark:text-slate-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all appearance-none cursor-pointer">
+                   <option value="">Todas las Congregaciones</option>
+                   <option *ngFor="let c of congregaciones()" [value]="c.id_congregacion">{{ c.nombre_congregacion }}</option>
+               </select>
+               <svg class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+
             <div class="hidden sm:block w-full sm:w-auto px-2">
-               <button (click)="clearAllFilters()" [disabled]="!searchControl.value && !selectedRolFilter()"
+               <button (click)="clearAllFilters()" [disabled]="!searchControl.value && !selectedRolFilter() && !selectedCongregacionFilter()"
                   class="w-full sm:w-auto flex items-center justify-between gap-3 px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-xl font-bold text-sm transition-colors border border-slate-200 dark:border-slate-700 hover:border-red-200 dark:hover:border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-slate-800 disabled:hover:text-slate-500 dark:disabled:hover:text-slate-400 disabled:hover:border-slate-200 dark:disabled:hover:border-slate-700">
                   <span>Limpiar Filtros</span>
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -84,10 +95,14 @@
                         </div>
                      </div>
                      <div class="flex items-center justify-between border-t border-slate-100 pt-3">
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
                            <div [ngClass]="getRolBadgeStyle(u)"
                               class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold">
                               {{ getRolName(u) }}
+                           </div>
+                           <div *ngIf="showCongregacionCol()" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
+                                [ngClass]="getCongregacionNameForUser(u) === 'Sistema Central' ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'">
+                              {{ getCongregacionNameForUser(u) }}
                            </div>
                            <div *ngIf="u.telefono" class="p-1.5 bg-slate-50 rounded-full text-slate-400">
                               <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -127,6 +142,8 @@
                            Usuario</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">Rol
                         </th>
+                        <th *ngIf="showCongregacionCol()" class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">
+                           Congregación</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">
                            Teléfono</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">
@@ -158,6 +175,14 @@
                               class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold">
                               {{ getRolName(u) }}
                            </div>
+                        </td>
+
+                        <!-- Congregacion (Condicional) -->
+                        <td *ngIf="showCongregacionCol()" class="px-6 py-4 text-center">
+                           <span class="text-[0.6875rem] font-bold px-2.5 py-1 rounded-full whitespace-nowrap"
+                              [ngClass]="getCongregacionNameForUser(u) === 'Sistema Central' ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'">
+                              {{ getCongregacionNameForUser(u) }}
+                           </span>
                         </td>
 
                         <!-- Phone -->

@@ -89,6 +89,22 @@ export class UsuariosPage implements OnInit {
       return this.authStore.user()?.id_congregacion ?? null;
    });
 
+   showCongregacionCol = computed(() => {
+      const user = this.authStore.user();
+      const roles = user?.roles ?? (user?.rol ? [user.rol] : []);
+      return roles.map(r => (r || '').toLowerCase()).some(r => r.includes('administrador') || r.includes('gestor'));
+   });
+
+   getCongregacionNameForUser(u: Usuario): string {
+      const roles = u.roles ?? (u.rol ? [u.rol] : []);
+      const isGlobal = roles.map(r => (r || '').toLowerCase()).some(r => r.includes('administrador') || r.includes('gestor'));
+      if (isGlobal) return 'Sistema Central';
+
+      if (!u.id_congregacion) return 'Sin asignación';
+      const c = this.congregaciones().find(x => x.id_congregacion === u.id_congregacion);
+      return c ? c.nombre_congregacion : 'Desconocida';
+   }
+
    panelOpen = signal(false);
    saving = signal(false);
    showPassword = signal(false);
@@ -314,21 +330,42 @@ export class UsuariosPage implements OnInit {
       this.selectedRolFilter.set(null);
    }
 
+   selectedCongregacionFilter = signal<number | null>(null);
+
+   setCongFilter(event: Event) {
+      const val = (event.target as HTMLSelectElement).value;
+      this.selectedCongregacionFilter.set(val ? Number(val) : null);
+   }
+
    clearAllFilters() {
       this.searchControl.setValue('');
       this.selectedRolFilter.set(null);
+      this.selectedCongregacionFilter.set(null);
    }
 
    filteredUsuarios = computed(() => {
       const q = this.searchQuery().toLowerCase();
       const rolFilter = this.selectedRolFilter();
       const congId = this.congregacionContext.effectiveCongregacionId();
+      const pageCongFilter = this.selectedCongregacionFilter();
 
       return this.usuarios().filter(u => {
          const matchesSearch = u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q);
          const matchesRol = rolFilter === null || u.id_rol_usuario === rolFilter;
-         const matchesCong = congId === null || (u.id_congregacion != null && u.id_congregacion === congId);
-         return matchesSearch && matchesRol && matchesCong;
+         
+         // Filtro directo seleccionado en el combo local de la página
+         const matchesPageFilter = pageCongFilter === null || u.id_congregacion === pageCongFilter;
+         
+         // Los administradores o usuarios de sistema (sin congregacion) siempre son visibles
+         // para quien tiene los permisos de ver esta lista (en este caso el Administrador)
+         // o si no hay congregacion seleccionada en el contexto.
+         const isGlobalUser = !u.id_congregacion || 
+                              [1, 2].includes(u.id_rol_usuario || 0) || 
+                              (u.rol && (u.rol.toLowerCase().includes('administrador') || u.rol.toLowerCase().includes('gestor')));
+                              
+         const matchesCongContext = congId === null || isGlobalUser || u.id_congregacion === congId;
+         
+         return matchesSearch && matchesRol && matchesCongContext && matchesPageFilter;
       });
    });
 

@@ -9,6 +9,10 @@ import { trigger, transition, style, animate, state } from '@angular/animations'
 import { PermisosService, PermisoConEstado } from '../../services/permisos.service';
 import { UsuariosService } from '../../services/usuarios.service';
 import { Usuario } from '../../models/usuario.model';
+import { AuthStore } from '../../../../../core/auth/auth.store';
+
+// Permisos que Coordinador/Secretario no pueden otorgar
+const PERMISOS_RESTRINGIDOS_CONG = new Set(['publicadores.editar']);
 
 interface CategoriaPermisos {
    categoria: string;
@@ -59,6 +63,19 @@ export class UsuarioPermisosPage implements OnInit {
    private permisosService = inject(PermisosService);
    private usuariosService = inject(UsuariosService);
    private sanitizer = inject(DomSanitizer);
+   private authStore = inject(AuthStore);
+
+   /** Coordinador/Secretario tienen restricciones sobre qué permisos pueden otorgar */
+   readonly esCongRole = computed(() => {
+      const user = this.authStore.user();
+      const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+      return roles.some(r => ['coordinador', 'secretario'].includes(r));
+   });
+
+   /** Devuelve true si el permiso NO puede ser modificado por el usuario actual */
+   isPermisoRestringido(codigo: string): boolean {
+      return this.esCongRole() && PERMISOS_RESTRINGIDOS_CONG.has(codigo);
+   }
 
    loading = signal(true);
    saving = signal(false);
