@@ -108,8 +108,17 @@ export class InformesMainPage implements OnInit {
   canEditAllGroups = computed(() => {
     const user = this.authStore.user();
     if (!user) return false;
-    if (this.isPrivilegedRole()) return true;
+    // Solo Administrador y Secretario tienen acceso total por defecto.
+    // Otros roles (Coordinador, etc.) requieren permiso explícito para editar todos los grupos.
+    if (this.isAdminOrSecretario()) return true;
     return user.permisos?.includes('informes.editar_todos') ?? false;
+  });
+
+  canAccessAllGroups = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    if (this.isAdminOrSecretario()) return true;
+    return (user.permisos?.includes('informes.editar_todos') || user.permisos?.includes('informes.ver_todos')) ?? false;
   });
 
   canEditInformes = computed(() => {
@@ -149,7 +158,7 @@ export class InformesMainPage implements OnInit {
     return (user.permisos?.includes('informes.enviar') ?? false) || this.canViewResumenSucursalAllGroups();
   });
 
-  isRestrictedUser = computed(() => !this.canEditAllGroups());
+  isRestrictedUser = computed(() => !this.canAccessAllGroups());
 
   visibleTabs = computed(() => {
     let tabs = this.tabs;
