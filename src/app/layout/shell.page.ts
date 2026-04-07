@@ -138,9 +138,9 @@ export class TimeAgoPipe implements PipeTransform {
                 <span *ngIf="!collapsed()" class="font-medium relative z-10">Roles</span>
               </a>
 
-              <!-- Usuarios (Admin, Coordinador, Secretario) -->
+              <!-- Usuarios (Admin, Gestor, Coordinador, Secretario) -->
               <a
-                *ngIf="hasRole('Administrador') || hasRole('Coordinador') || hasRole('Secretario')"
+                *ngIf="hasRole('Administrador') || hasRole('Gestor Aplicación') || hasRole('Coordinador') || hasRole('Secretario')"
                 routerLink="/usuarios"
                                                                 routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
                 class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
@@ -160,14 +160,14 @@ export class TimeAgoPipe implements PipeTransform {
             </div>
             
             <!-- Modules Section -->
-            <div *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.entre_semana_ver') || hasPermission('reuniones.fin_semana_ver') || hasPermission('reuniones.asistencia_ver') || hasPermission('reuniones.configuracion_ver') || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')">
+            <div *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.entre_semana_ver') || hasPermission('reuniones.fin_semana_ver') || hasPermission('reuniones.asistencia_ver') || hasPermission('reuniones.configuracion_ver') || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver')">
               <p 
                 *ngIf="!collapsed()"
                 class="px-5 mb-2 mt-6 text-[0.8125rem] font-medium text-slate-400 dark:text-slate-500 relative"
               >Módulos</p>
               
               <!-- Reuniones Accordion -->
-              <div *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.entre_semana_ver') || hasPermission('reuniones.fin_semana_ver') || hasPermission('reuniones.asistencia_ver') || hasPermission('reuniones.configuracion_ver') || hasRole('Secretario')" class="relative">
+              <div *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.entre_semana_ver') || hasPermission('reuniones.fin_semana_ver') || hasPermission('reuniones.asistencia_ver') || hasPermission('reuniones.configuracion_ver')" class="relative">
                 <button
                   (click)="toggleReunionesMenu()"
                   class="w-full group flex items-center justify-between text-sm transition-all duration-200 relative overflow-hidden rounded-lg"
@@ -233,7 +233,7 @@ export class TimeAgoPipe implements PipeTransform {
 
               <!-- Publicadores -->
               <a 
-                *ngIf="hasPermission('publicadores.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
+                *ngIf="hasPermission('publicadores.ver')"
                 routerLink="/secretario/publicadores"
                 routerLinkActive="!text-brand-orange dark:!text-orange-400 font-semibold [&_.nav-icon]:!text-brand-orange dark:[&_.nav-icon]:!text-orange-400 bg-brand-orange/10 dark:bg-white/[0.02]"
                 class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
@@ -253,7 +253,7 @@ export class TimeAgoPipe implements PipeTransform {
 
               <!-- Informes -->
               <a 
-                *ngIf="hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Superintendente de servicio')"
+                *ngIf="hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar')"
                 routerLink="/secretario/informes"
                 routerLinkActive="!text-brand-purple dark:!text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/[0.08] dark:bg-white/[0.02]"
                 class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
@@ -795,6 +795,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Configuración del Sistema', subtitle: 'Administración global de la plataforma' });
     } else if (url.includes('/configuracion')) {
       this.pageTitle.set({ title: 'Configuración', subtitle: 'Ajustes generales de la congregación' });
+    } else if (url.includes('/perfil')) {
+      this.pageTitle.set({ title: 'Mi Perfil', subtitle: 'Información general de tu cuenta y datos personales.' });
     } else {
       this.pageTitle.set({ title: 'Inicio', subtitle: 'Bienvenido al panel principal de gestión.' });
     }
@@ -859,6 +861,7 @@ export class ShellPage implements OnInit, OnDestroy {
 
   editProfile() {
     this.userMenuOpen.set(false);
+    this.router.navigate(['/perfil']);
   }
 
   openSettings() {

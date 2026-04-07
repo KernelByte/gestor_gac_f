@@ -66,6 +66,25 @@ export class UsuariosPage implements OnInit {
       return roles.map(r => (r || '').toLowerCase()).includes('administrador');
    });
 
+   isPrivilegedRole = computed(() => {
+      if (this.isAdmin()) return true;
+      const user = this.authStore.user();
+      const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+      return roles.some(r => ['secretario', 'coordinador', 'superintendente de servicio'].includes(r));
+   });
+
+   canManagePermisos = computed(() => {
+      const user = this.authStore.user();
+      const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+      return roles.some(r => ['administrador', 'gestor aplicación', 'coordinador', 'secretario'].includes(r));
+   });
+
+   canDeleteUser = computed(() => {
+      const user = this.authStore.user();
+      const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+      return roles.some(r => ['administrador', 'gestor aplicación', 'coordinador', 'secretario'].includes(r));
+   });
+
    currentUserCongregacion = computed(() => {
       return this.authStore.user()?.id_congregacion ?? null;
    });
@@ -622,6 +641,23 @@ export class UsuariosPage implements OnInit {
       if (id === 1) return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/30';
       if (id === 2) return 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-100/50 dark:border-red-800/30';
       return 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-100 dark:border-slate-700';
+   }
+
+   async deleteUsuario(u: Usuario) {
+      if (!u.id_usuario) return;
+      
+      const confirmMsg = `¿Estás seguro de que deseas eliminar al usuario "${u.nombre}"? Esta acción no se puede deshacer.`;
+      if (!confirm(confirmMsg)) return;
+
+      try {
+         await lastValueFrom(this.service.deleteUsuario(u.id_usuario));
+         this.usuarios.update(list => list.filter(item => item.id_usuario !== u.id_usuario));
+         // Toast or notification could go here
+      } catch (err: any) {
+         console.error('Delete error', err);
+         const detail = err.error?.detail || 'Error desconocido';
+         alert('Error al eliminar: ' + detail);
+      }
    }
 
    clearSearch() {
