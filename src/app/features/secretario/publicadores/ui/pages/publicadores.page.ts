@@ -930,7 +930,7 @@ interface TableColumn {
              </div>
 
              <!-- Tabs Navigation (Dark Bar Style) -->
-             <div class="px-8 pb-8 relative z-10">
+             <div class="px-4 pb-4 sm:px-6 sm:pb-6 md:px-8 md:pb-8 relative z-10">
                 <div class="flex p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 backdrop-blur-md">
                   <button 
                     (click)="activeTab.set('personal')" 
@@ -967,7 +967,7 @@ interface TableColumn {
         <!-- Divider is not needed with the new design, content scrolls cleanly -->
 
             <!-- 3. Scrollable Content Area -->
-            <div class="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">
+            <div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 scroll-smooth">
               <form [formGroup]="publicadorForm" (ngSubmit)="onSubmit()" class="space-y-6 pb-20"> <!-- pb-20 para espacio extra al final -->
 
                 <!-- TAB: PERSONAL -->
@@ -981,7 +981,7 @@ interface TableColumn {
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                              <!-- Fila 1: Nombres -->
                              <div class="col-span-1 space-y-2">
                                <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
@@ -1561,17 +1561,17 @@ interface TableColumn {
            </div>
 
            <!-- Panel Footer -->
-           <div class="px-8 py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-4 shrink-0 z-20">
+           <div class="px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 z-20">
                <div class="hidden sm:block">
                   <p class="text-[0.625rem] text-slate-400 font-bold uppercase tracking-wider">
                      <span class="text-red-400">*</span> Campo obligatorio
                   </p>
                </div>
-               <div class="flex items-center gap-3 w-full sm:w-auto">
+               <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto min-w-0">
                    <button 
                       type="button"
                       (click)="tryClosePanel()" 
-                      class="flex-1 sm:flex-none px-6 h-11 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-200 transition-all focus:ring-4 focus:ring-slate-100 outline-none"
+                      class="flex-1 sm:flex-none min-w-0 px-6 h-11 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-200 transition-all focus:ring-4 focus:ring-slate-100 outline-none"
                    >
                       Cancelar
                    </button>
@@ -1579,7 +1579,7 @@ interface TableColumn {
                       type="button"
                       (click)="onSubmit()" 
                       [disabled]="publicadorForm.invalid || saving()" 
-                      class="flex-1 sm:flex-none px-8 h-11 rounded-xl bg-gradient-to-r from-brand-orange to-orange-500 text-white font-bold text-sm hover:shadow-lg hover:shadow-brand-orange/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+                      class="flex-1 sm:flex-none min-w-0 px-8 h-11 rounded-xl bg-gradient-to-r from-brand-orange to-orange-500 text-white font-bold text-sm hover:shadow-lg hover:shadow-brand-orange/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
                    >
                       <svg *ngIf="saving()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                       {{ saving() ? 'Guardando...' : (editingPublicador() ? 'Guardar Cambios' : 'Crear Registro') }}
