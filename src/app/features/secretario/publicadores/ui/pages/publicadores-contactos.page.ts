@@ -408,8 +408,7 @@ export class PublicadoresContactosComponent {
         const user = this.authStore.user();
         const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
         const isPrivileged = this.congregacionContext.isAdmin() ||
-                             roles.includes('secretario') ||
-                             roles.includes('coordinador');
+                             roles.includes('secretario');
         return !isPrivileged && !this.authStore.hasPermission('contactos.ver_todos');
     });
 
