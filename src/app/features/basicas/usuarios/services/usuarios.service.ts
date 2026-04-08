@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
 import { Usuario, UsuarioCreate, UsuarioUpdate } from '../models/usuario.model';
 
 export interface Rol {
@@ -49,12 +49,25 @@ export class UsuariosService {
       return this.http.delete<void>(`${this.API_URL}${id}`);
    }
 
+   private roles$: Observable<Rol[]> | null = null;
+   private congregaciones$: Observable<Congregacion[]> | null = null;
+
    getRoles(): Observable<Rol[]> {
-      return this.http.get<Rol[]>(this.ROLES_URL);
+      if (!this.roles$) {
+         this.roles$ = this.http.get<Rol[]>(this.ROLES_URL).pipe(
+            shareReplay({ bufferSize: 1, refCount: true })
+         );
+      }
+      return this.roles$;
    }
 
    getCongregaciones(): Observable<Congregacion[]> {
-      return this.http.get<Congregacion[]>(this.CONGREGACIONES_URL);
+      if (!this.congregaciones$) {
+         this.congregaciones$ = this.http.get<Congregacion[]>(this.CONGREGACIONES_URL).pipe(
+            shareReplay({ bufferSize: 1, refCount: true })
+         );
+      }
+      return this.congregaciones$;
    }
 
    getEstados(tipo?: string): Observable<Estado[]> {

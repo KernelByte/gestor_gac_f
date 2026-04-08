@@ -207,25 +207,30 @@ export class InformesMainPage implements OnInit {
     this.loadPrivilegiosData();
   }
 
+  private _cachedUserPublicador: any = null;
+
+  private async getUserPublicador(): Promise<any> {
+    if (this._cachedUserPublicador) return this._cachedUserPublicador;
+    const user = this.authStore.user();
+    if (!user?.id_usuario_publicador) return null;
+    try {
+      this._cachedUserPublicador = await lastValueFrom(
+        this.http.get<any>(`/api/publicadores/${user.id_usuario_publicador}`)
+      );
+      return this._cachedUserPublicador;
+    } catch (e) {
+      console.error('Error loading publicador data:', e);
+      return null;
+    }
+  }
+
   private async initializeForRestrictedUser() {
     if (this.isRestrictedUser()) {
-      // Precargar grupo del publicador
-      const user = this.authStore.user();
-      if (user?.id_usuario_publicador) {
-        // Necesitamos obtener el grupo del publicador desde el backend
-        try {
-          const publicador = await lastValueFrom(
-            this.http.get<any>(`/api/publicadores/${user.id_usuario_publicador}`)
-          );
-          if (publicador?.id_grupo_publicador) {
-            this.selectedGrupo = publicador.id_grupo_publicador;
-            this.vistaGrupo.set(true);
-            this.historialGroupId.set(publicador.id_grupo_publicador);
-            console.log('Restricted user group set to:', this.selectedGrupo);
-          }
-        } catch (e) {
-          console.error('Error loading publicador data for restricted user:', e);
-        }
+      const publicador = await this.getUserPublicador();
+      if (publicador?.id_grupo_publicador) {
+        this.selectedGrupo = publicador.id_grupo_publicador;
+        this.vistaGrupo.set(true);
+        this.historialGroupId.set(publicador.id_grupo_publicador);
       }
     }
   }
@@ -235,29 +240,20 @@ export class InformesMainPage implements OnInit {
     if (!this.canViewHistorial() && !(this.canViewResumenSucursal() && !this.canViewResumenSucursalAllGroups())) return;
     if (this.historialGroupId()) return;
 
-    const user = this.authStore.user();
-    if (!user?.id_usuario_publicador) return;
-
-    try {
-      const publicador = await lastValueFrom(
-        this.http.get<any>(`/api/publicadores/${user.id_usuario_publicador}`)
-      );
-      if (publicador?.id_grupo_publicador) {
-        this.historialGroupId.set(publicador.id_grupo_publicador);
-      }
-    } catch (e) {
-      console.error('Error loading publicador data for historial group:', e);
+    const publicador = await this.getUserPublicador();
+    if (publicador?.id_grupo_publicador) {
+      this.historialGroupId.set(publicador.id_grupo_publicador);
     }
   }
 
   async loadPrivilegiosData() {
     try {
-      // 1. Load Catalog
-      const catalog = await lastValueFrom(this.privilegiosService.getPrivilegios());
+      // Load catalog and assignments in parallel
+      const [catalog, allPrivilegios] = await Promise.all([
+        lastValueFrom(this.privilegiosService.getPrivilegios()),
+        lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/')),
+      ]);
       this.privilegios.set(catalog);
-
-      // 2. Load Assignments
-      const allPrivilegios = await lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/'));
 
       const today = new Date().toISOString().split('T')[0];
       const privilegiosMap = new Map<number, number[]>();

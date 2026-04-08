@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { trigger, transition, style, animate } from '@angular/animations';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { UsuariosService, Rol, Congregacion, Estado, UsuarioCreatePublicador } from '../services/usuarios.service';
 import { Usuario } from '../models/usuario.model';
@@ -309,8 +309,11 @@ export class UsuariosPage implements OnInit {
          }
       });
 
-      // Connect FormControl to signal for reactive filtering
-      this.searchControl.valueChanges.subscribe(value => {
+      // Connect FormControl to signal for reactive filtering (debounced)
+      this.searchControl.valueChanges.pipe(
+         debounceTime(300),
+         distinctUntilChanged(),
+      ).subscribe(value => {
          this.searchQuery.set(value || '');
       });
 

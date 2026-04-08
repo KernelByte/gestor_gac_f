@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment'; // Ajustar ruta según corresponda
 import { Privilegio } from '../domain/models/privilegio';
 import { PublicadorPrivilegio, PublicadorPrivilegioCreate, PublicadorPrivilegioUpdate } from '../domain/models/publicador-privilegio';
-import { lastValueFrom } from 'rxjs';
+import { Observable, lastValueFrom, shareReplay } from 'rxjs';
 
 @Injectable({
    providedIn: 'root'
@@ -26,10 +26,21 @@ export class PrivilegiosService {
       return '/api';
    }
 
-   // --- Catálogo de Privilegios ---
+   // --- Catálogo de Privilegios (cached) ---
 
-   getPrivilegios() {
-      return this.http.get<Privilegio[]>(`${this.baseUrl}/privilegios/`);
+   private privilegios$: Observable<Privilegio[]> | null = null;
+
+   getPrivilegios(): Observable<Privilegio[]> {
+      if (!this.privilegios$) {
+         this.privilegios$ = this.http.get<Privilegio[]>(`${this.baseUrl}/privilegios/`).pipe(
+            shareReplay({ bufferSize: 1, refCount: true })
+         );
+      }
+      return this.privilegios$;
+   }
+
+   refreshPrivilegios(): void {
+      this.privilegios$ = null;
    }
 
    // --- Privilegios de Publicadores ---
