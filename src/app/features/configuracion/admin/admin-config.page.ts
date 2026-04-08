@@ -16,6 +16,7 @@ interface CongregacionAdmin {
    direccion: string;
    codigo_seguridad: string;
    tiene_sala_b: number;
+   usa_zoom: number;
    miembros: number; // Computed field from backend?
 }
 
@@ -153,7 +154,8 @@ export class AdminConfigPage implements OnInit {
          circuito: ['', [Validators.required]],
          direccion: ['', [Validators.required]],
          codigo_seguridad: [''],
-         tiene_sala_b: [false]
+         tiene_sala_b: [false],
+         usa_zoom: [true]
       });
    }
 
@@ -214,7 +216,8 @@ export class AdminConfigPage implements OnInit {
             circuito: cong.circuito,
             direccion: cong.direccion || '',
             codigo_seguridad: cong.codigo_seguridad,
-            tiene_sala_b: !!cong.tiene_sala_b
+            tiene_sala_b: !!cong.tiene_sala_b,
+            usa_zoom: !!cong.usa_zoom
          });
          this.panelOpen.set(true);
       }
@@ -360,7 +363,8 @@ export class AdminConfigPage implements OnInit {
          circuito: data.circuito,
          direccion: data.direccion,
          codigo_seguridad: data.codigo_seguridad,
-         tiene_sala_b: data.tiene_sala_b ? 1 : 0
+         tiene_sala_b: data.tiene_sala_b ? 1 : 0,
+         usa_zoom: data.usa_zoom ? 1 : 0
       };
 
       let req;

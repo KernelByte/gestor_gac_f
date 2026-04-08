@@ -224,7 +224,7 @@ import { saveAs } from 'file-saver';
                   </div>
                 } @else {
                   <!-- Editable inputs: white bg + colored border signals interactivity -->
-                  <div class="grid grid-cols-2 gap-3">
+                  <div class="grid gap-3" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
                     <div class="flex flex-col gap-1.5 group">
                       <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-brand-purple uppercase tracking-wide">
                         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -237,18 +237,20 @@ import { saveAs } from 'file-saver';
                              class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
                              placeholder="0">
                     </div>
-                    <div class="flex flex-col gap-1.5 group">
-                      <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-brand-purple uppercase tracking-wide">
-                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Zoom
-                      </label>
-                      <input type="number" min="0"
-                             [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]"
-                             (ngModelChange)="updateMidweekZoomWeek($event)"
-                             [disabled]="!hasEditPermission()"
-                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
-                             placeholder="0">
-                    </div>
+                    @if (congregacionConfig()?.usa_zoom !== 0) {
+                      <div class="flex flex-col gap-1.5 group">
+                        <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-brand-purple uppercase tracking-wide">
+                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          Zoom
+                        </label>
+                        <input type="number" min="0"
+                               [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]"
+                               (ngModelChange)="updateMidweekZoomWeek($event)"
+                               [disabled]="!hasEditPermission()"
+                               class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
+                               placeholder="0">
+                      </div>
+                    }
                   </div>
                 }
 
@@ -315,7 +317,7 @@ import { saveAs } from 'file-saver';
                     <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
                   </div>
                 } @else {
-                  <div class="grid grid-cols-2 gap-3">
+                  <div class="grid gap-3" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
                     <div class="flex flex-col gap-1.5 group">
                       <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-orange-500 uppercase tracking-wide">
                         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -328,18 +330,20 @@ import { saveAs } from 'file-saver';
                              class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
                              placeholder="0">
                     </div>
-                    <div class="flex flex-col gap-1.5 group">
-                      <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-orange-500 uppercase tracking-wide">
-                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Zoom
-                      </label>
-                      <input type="number" min="0"
-                             [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]"
-                             (ngModelChange)="updateWeekendZoomWeek($event)"
-                             [disabled]="!hasEditPermission()"
-                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
-                             placeholder="0">
-                    </div>
+                    @if (congregacionConfig()?.usa_zoom !== 0) {
+                      <div class="flex flex-col gap-1.5 group">
+                        <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-orange-500 uppercase tracking-wide">
+                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          Zoom
+                        </label>
+                        <input type="number" min="0"
+                               [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]"
+                               (ngModelChange)="updateWeekendZoomWeek($event)"
+                               [disabled]="!hasEditPermission()"
+                               class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
+                               placeholder="0">
+                      </div>
+                    }
                   </div>
                 }
 

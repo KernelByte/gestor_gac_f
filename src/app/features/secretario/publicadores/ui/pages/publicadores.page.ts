@@ -2422,7 +2422,7 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   saveColumnConfig() {
-    try { localStorage.setItem(this.COL_STORAGE_KEY, JSON.stringify(this.columnConfig())); } catch {}
+    try { localStorage.setItem(this.COL_STORAGE_KEY, JSON.stringify(this.columnConfig())); } catch { }
   }
 
   toggleColumnVisibility(id: string) {
@@ -2502,20 +2502,20 @@ export class PublicadoresListComponent implements OnInit {
 
   private getExportCellValue(p: Publicador, colId: string): string {
     switch (colId) {
-      case 'nombre':             return this.getFullName(p);
-      case 'congregacion':       return p.nombre_congregacion ?? '';
-      case 'grupo':              return this.getGrupoNombre(p.id_grupo_publicador);
-      case 'fecha_nacimiento':   return p.fecha_nacimiento ? this.formatDateExport(p.fecha_nacimiento) : '';
-      case 'fecha_bautismo':     return p.fecha_bautismo ? this.formatDateExport(p.fecha_bautismo) : '';
+      case 'nombre': return this.getFullName(p);
+      case 'congregacion': return p.nombre_congregacion ?? '';
+      case 'grupo': return this.getGrupoNombre(p.id_grupo_publicador);
+      case 'fecha_nacimiento': return p.fecha_nacimiento ? this.formatDateExport(p.fecha_nacimiento) : '';
+      case 'fecha_bautismo': return p.fecha_bautismo ? this.formatDateExport(p.fecha_bautismo) : '';
       case 'fecha_inicio_informe': return p.fecha_inicio_informe ? this.formatDateExport(p.fecha_inicio_informe) : '';
-      case 'fecha_inactividad':  return p.fecha_inactividad ? this.formatDateExport(p.fecha_inactividad) : '';
-      case 'telefono':           return p.telefono ?? '';
-      case 'sexo':               return p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Femenino' : (p.sexo ?? '');
-      case 'direccion':          return p.direccion ?? '';
-      case 'barrio':             return p.barrio ?? '';
+      case 'fecha_inactividad': return p.fecha_inactividad ? this.formatDateExport(p.fecha_inactividad) : '';
+      case 'telefono': return p.telefono ?? '';
+      case 'sexo': return p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Femenino' : (p.sexo ?? '');
+      case 'direccion': return p.direccion ?? '';
+      case 'barrio': return p.barrio ?? '';
       case 'consentimiento_datos': return p.consentimiento_datos ? 'Sí' : 'No';
-      case 'estado':             return this.getEstadoNombre(p.id_estado_publicador);
-      default:                   return '';
+      case 'estado': return this.getEstadoNombre(p.id_estado_publicador);
+      default: return '';
     }
   }
 
@@ -2577,20 +2577,20 @@ export class PublicadoresListComponent implements OnInit {
   // Pagination Logic
   private getSortValue(p: Publicador, col: string): string | number {
     switch (col) {
-      case 'nombre':         return this.getFullName(p).toLowerCase();
-      case 'congregacion':   return p.nombre_congregacion?.toLowerCase() ?? '';
-      case 'grupo':          return this.getGrupoNombre(p.id_grupo_publicador).toLowerCase();
+      case 'nombre': return this.getFullName(p).toLowerCase();
+      case 'congregacion': return p.nombre_congregacion?.toLowerCase() ?? '';
+      case 'grupo': return this.getGrupoNombre(p.id_grupo_publicador).toLowerCase();
       case 'fecha_nacimiento': return p.fecha_nacimiento ? new Date(p.fecha_nacimiento).getTime() : 0;
       case 'fecha_bautismo': return p.fecha_bautismo ? new Date(p.fecha_bautismo).getTime() : 0;
       case 'fecha_inicio_informe': return p.fecha_inicio_informe ? new Date(p.fecha_inicio_informe).getTime() : 0;
       case 'fecha_inactividad': return p.fecha_inactividad ? new Date(p.fecha_inactividad).getTime() : 0;
-      case 'telefono':       return (p.telefono ?? '').toLowerCase();
-      case 'sexo':           return (p.sexo ?? '').toLowerCase();
-      case 'direccion':      return (p.direccion ?? '').toLowerCase();
-      case 'barrio':         return (p.barrio ?? '').toLowerCase();
+      case 'telefono': return (p.telefono ?? '').toLowerCase();
+      case 'sexo': return (p.sexo ?? '').toLowerCase();
+      case 'direccion': return (p.direccion ?? '').toLowerCase();
+      case 'barrio': return (p.barrio ?? '').toLowerCase();
       case 'consentimiento_datos': return p.consentimiento_datos ? 1 : 0;
-      case 'estado':         return this.getEstadoNombre(p.id_estado_publicador).toLowerCase();
-      default:               return '';
+      case 'estado': return this.getEstadoNombre(p.id_estado_publicador).toLowerCase();
+      default: return '';
     }
   }
 

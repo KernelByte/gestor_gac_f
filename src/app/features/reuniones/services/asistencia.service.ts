@@ -15,6 +15,7 @@ export interface CongregacionConfig {
   hora_reunion_entre_semana: string | null;
   dia_reunion_fin_semana:    string | null;
   hora_reunion_fin_semana:   string | null;
+  usa_zoom?:                 number;
 }
 
 @Injectable({ providedIn: 'root' })

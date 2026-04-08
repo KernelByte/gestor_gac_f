@@ -13,6 +13,7 @@ interface Configuracion {
    direccion: string;
    codigo_seguridad: string;
    tiene_sala_b: boolean | number;
+   usa_zoom: boolean | number;
    dia_reunion_entre_semana:  string;
    hora_reunion_entre_semana: string;
    dia_reunion_fin_semana:    string;
@@ -53,6 +54,7 @@ export class ConfiguracionPage implements OnInit {
       direccion: '',
       codigo_seguridad: '',
       tiene_sala_b: false,
+      usa_zoom: true,
       dia_reunion_entre_semana:  '',
       hora_reunion_entre_semana: '',
       dia_reunion_fin_semana:    '',
@@ -185,6 +187,7 @@ export class ConfiguracionPage implements OnInit {
          direccion:                 this.config.direccion,
          codigo_seguridad:          this.config.codigo_seguridad,
          tiene_sala_b:              this.config.tiene_sala_b ? 1 : 0,
+         usa_zoom:                  this.config.usa_zoom ? 1 : 0,
          dia_reunion_entre_semana:  this.config.dia_reunion_entre_semana  || null,
          hora_reunion_entre_semana: this.config.hora_reunion_entre_semana || null,
          dia_reunion_fin_semana:    this.config.dia_reunion_fin_semana    || null,
@@ -263,6 +266,7 @@ export class ConfiguracionPage implements OnInit {
          this.config.direccion !== this.originalConfig.direccion ||
          this.config.codigo_seguridad !== this.originalConfig.codigo_seguridad ||
          !!this.config.tiene_sala_b !== !!this.originalConfig.tiene_sala_b ||
+         !!this.config.usa_zoom !== !!this.originalConfig.usa_zoom ||
          (this.config.dia_reunion_entre_semana  || '') !== (this.originalConfig.dia_reunion_entre_semana  || '') ||
          (this.config.hora_reunion_entre_semana || '') !== (this.originalConfig.hora_reunion_entre_semana || '') ||
          (this.config.dia_reunion_fin_semana    || '') !== (this.originalConfig.dia_reunion_fin_semana    || '') ||
