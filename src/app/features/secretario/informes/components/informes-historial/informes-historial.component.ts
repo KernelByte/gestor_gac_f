@@ -195,14 +195,18 @@ export class InformesHistorialComponent implements OnChanges {
    editPublicadorId = signal<number>(0);
    editPublicadorNombre = signal<string>('');
    editInitialAno = signal<number>(new Date().getFullYear());
-   editInitialMes = signal<number>(new Date().getMonth() + 1);
+   editInitialMes = signal<number>(new Date().getMonth()); // Default to previous month
 
    abrirEditorHistorial(pubId: number, pubNombre: string) {
       if (!this.canEdit) return;
+      
+      const today = new Date();
+      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      
       this.editPublicadorId.set(pubId);
       this.editPublicadorNombre.set(pubNombre);
-      this.editInitialAno.set(this.selectedAno);
-      this.editInitialMes.set(new Date().getMonth() + 1); // Select current month or let modal handle it
+      this.editInitialAno.set(lastMonth.getFullYear());
+      this.editInitialMes.set(lastMonth.getMonth() + 1); 
       this.showEditModal.set(true);
    }
 
