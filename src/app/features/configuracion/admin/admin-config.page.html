@@ -671,6 +671,31 @@
                   </div>
                </div>
 
+               <!-- Informes Históricos Stats (only if any historical data was processed) -->
+               <div *ngIf="(importResult()?.resumen?.informes_insertados || 0) + (importResult()?.resumen?.informes_actualizados || 0) + (importResult()?.resumen?.informes_errores || 0) > 0"
+                  class="mb-6">
+                  <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                     </svg>
+                     Informes Históricos
+                  </p>
+                  <div class="grid grid-cols-3 gap-3">
+                     <div class="bg-indigo-50 rounded-xl p-3 border border-indigo-100 text-center">
+                        <div class="text-xl font-black text-indigo-600">{{ importResult()?.resumen?.informes_insertados || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-indigo-600/70 uppercase tracking-wide">Creados</div>
+                     </div>
+                     <div class="bg-cyan-50 rounded-xl p-3 border border-cyan-100 text-center">
+                        <div class="text-xl font-black text-cyan-600">{{ importResult()?.resumen?.informes_actualizados || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-cyan-600/70 uppercase tracking-wide">Actualizados</div>
+                     </div>
+                     <div class="bg-rose-50 rounded-xl p-3 border border-rose-100 text-center">
+                        <div class="text-xl font-black text-rose-600">{{ importResult()?.resumen?.informes_errores || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-rose-600/70 uppercase tracking-wide">Errores</div>
+                     </div>
+                  </div>
+               </div>
+
                <!-- Total Rows -->
                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 flex items-center justify-between">
                   <span class="text-sm font-bold text-slate-600">Total de filas procesadas</span>
