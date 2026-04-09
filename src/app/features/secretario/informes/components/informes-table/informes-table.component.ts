@@ -215,8 +215,7 @@ export class InformesTableComponent {
    private focusHours(id: number) {
       const el = document.getElementById(`horas-${id}`);
       if (el) {
-         el.focus();
-         // Optional: Select all content
+         el.focus({ preventScroll: true });
          (el as HTMLInputElement).select?.();
       }
    }

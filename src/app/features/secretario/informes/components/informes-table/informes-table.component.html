@@ -93,13 +93,14 @@
 
         <!-- Participó -->
         <td class="px-3 py-2.5 text-center align-middle">
-          <label class="inline-flex items-center justify-center" [class.cursor-pointer]="canEdit" [class.cursor-not-allowed]="!canEdit" [class.opacity-60]="!canEdit">
+          <label class="inline-flex items-center justify-center relative" [class.cursor-pointer]="canEdit" [class.cursor-not-allowed]="!canEdit" [class.opacity-60]="!canEdit">
             <input
               type="checkbox"
               [checked]="getInformeValue(pub, 'participo')"
               [disabled]="!canEdit"
               (change)="onUpdateInforme(pub, 'participo', $event)"
               class="sr-only"
+              tabindex="-1"
             />
             <div class="w-9 h-5 rounded-full flex items-center px-0.5 transition-colors" [ngClass]="getInformeValue(pub, 'participo') ? 'bg-brand-purple' : 'bg-slate-200 dark:bg-slate-700'">
               <div class="w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-200" [class.translate-x-4]="getInformeValue(pub, 'participo')"></div>
@@ -111,7 +112,7 @@
         <td class="px-3 py-2.5 text-center align-middle">
           <label
             *ngIf="!isRegular(pub)"
-            class="inline-flex items-center justify-center cursor-pointer"
+            class="inline-flex items-center justify-center cursor-pointer relative"
             title="Precursor auxiliar este mes"
           >
             <input
@@ -120,6 +121,7 @@
               [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
               (change)="togglePaux(pub)"
               class="sr-only disabled:cursor-not-allowed"
+              tabindex="-1"
             />
             <div class="w-9 h-5 rounded-full flex items-center px-0.5 transition-colors" [ngClass]="getInformeValue(pub, 'es_paux') ? 'bg-amber-400' : 'bg-slate-200 dark:bg-slate-700'">
               <div class="w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 flex items-center justify-center" [class.translate-x-4]="getInformeValue(pub, 'es_paux')">
@@ -238,12 +240,12 @@
 
             <!-- Togglers Si/No -->
             <div class="flex gap-1.5 shrink-0">
-            <label class="flex items-center cursor-pointer">
-              <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="getInformeValue(pub, 'participo')" [disabled]="!canEdit" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="true" />
+            <label class="flex items-center cursor-pointer relative">
+              <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="getInformeValue(pub, 'participo')" [disabled]="!canEdit" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="true" tabindex="-1" />
               <span class="px-3 py-1.5 rounded-lg text-sm font-bold" [class.bg-brand-purple]="getInformeValue(pub, 'participo')" [class.text-white]="getInformeValue(pub, 'participo')" [class.bg-slate-100]="!getInformeValue(pub, 'participo')" [class.text-slate-500]="!getInformeValue(pub, 'participo')" [class.dark:bg-slate-800]="!getInformeValue(pub, 'participo')" [class.dark:text-slate-400]="!getInformeValue(pub, 'participo')">Sí</span>
             </label>
-            <label class="flex items-center cursor-pointer">
-              <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="!getInformeValue(pub, 'participo')" [disabled]="!canEdit" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="false" />
+            <label class="flex items-center cursor-pointer relative">
+              <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="!getInformeValue(pub, 'participo')" [disabled]="!canEdit" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="false" tabindex="-1" />
               <span class="px-3 py-1.5 rounded-lg text-sm font-bold" [class.bg-slate-200]="!getInformeValue(pub, 'participo')" [class.dark:bg-slate-700]="!getInformeValue(pub, 'participo')" [class.text-slate-700]="!getInformeValue(pub, 'participo')" [class.dark:text-slate-200]="!getInformeValue(pub, 'participo')" [class.bg-slate-100]="getInformeValue(pub, 'participo')" [class.text-slate-400]="getInformeValue(pub, 'participo')">No</span>
             </label>
           </div>
