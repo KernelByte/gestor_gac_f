@@ -34,8 +34,9 @@
         </td>
       </tr>
       <tr
-        *ngFor="let pub of resumen?.publicadores_list || []; let odd = odd; trackBy: trackByPub"
+        *ngFor="let pub of resumen?.publicadores_list || []; let odd = odd; let even = even; trackBy: trackByPub"
         class="group transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+        [ngClass]="even ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/40 dark:bg-slate-800/20'"
       >
         <!-- Publicador -->
         <td class="px-5 py-2.5">
@@ -92,7 +93,7 @@
         </td>
 
         <!-- Participó -->
-        <td class="px-3 py-2.5 text-center align-middle">
+        <td class="px-3 py-2 text-center align-middle">
           <label class="inline-flex items-center justify-center relative" [class.cursor-pointer]="canEdit" [class.cursor-not-allowed]="!canEdit" [class.opacity-60]="!canEdit">
             <input
               type="checkbox"
@@ -109,7 +110,7 @@
         </td>
 
         <!-- Auxiliar (oculto si es precursor regular) -->
-        <td class="px-3 py-2.5 text-center align-middle">
+        <td class="px-3 py-2 text-center align-middle">
           <label
             *ngIf="!isRegular(pub)"
             class="inline-flex items-center justify-center cursor-pointer relative"
@@ -133,7 +134,7 @@
         </td>
 
         <!-- Horas -->
-        <td class="px-3 py-2.5 text-center">
+        <td class="px-3 py-2 text-center">
           <div
             *ngIf="pub.requiere_horas || getInformeValue(pub, 'es_paux') || isRegular(pub)"
             class="flex items-center justify-center gap-3"
@@ -146,7 +147,7 @@
               [id]="'horas-' + pub.id_publicador"
               [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
               (input)="onUpdateInforme(pub, 'horas', $event)"
-              class="w-16 px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-orange/30 focus:border-brand-orange disabled:opacity-40 disabled:cursor-not-allowed"
+              class="w-[4.5rem] px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-orange/30 focus:border-brand-orange disabled:opacity-40 disabled:cursor-not-allowed"
             />
 
             <!-- Bonus Pill (Static) -->
@@ -175,7 +176,7 @@
         </td>
 
         <!-- Estudios -->
-        <td class="px-3 py-2.5 text-center">
+        <td class="px-3 py-2 text-center">
           <input
             type="number"
             min="0"
@@ -183,12 +184,12 @@
             [value]="getInformeValue(pub, 'cursos') || ''"
             [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
             (input)="onUpdateInforme(pub, 'cursos', $event)"
-            class="w-16 px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple disabled:opacity-40 disabled:cursor-not-allowed"
+            class="w-[4.5rem] px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple disabled:opacity-40 disabled:cursor-not-allowed"
           />
         </td>
 
         <!-- Observaciones (compacto, truncado visualmente) -->
-        <td class="px-4 py-2.5 max-w-[180px]">
+        <td class="px-4 py-2 max-w-[180px]">
           <input
             type="text"
             placeholder="Nota..."
@@ -248,6 +249,7 @@
               <input type="radio" [name]="'participo-' + pub.id_publicador" [checked]="!getInformeValue(pub, 'participo')" [disabled]="!canEdit" (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="false" tabindex="-1" />
               <span class="px-3 py-1.5 rounded-lg text-sm font-bold" [class.bg-slate-200]="!getInformeValue(pub, 'participo')" [class.dark:bg-slate-700]="!getInformeValue(pub, 'participo')" [class.text-slate-700]="!getInformeValue(pub, 'participo')" [class.dark:text-slate-200]="!getInformeValue(pub, 'participo')" [class.bg-slate-100]="getInformeValue(pub, 'participo')" [class.text-slate-400]="getInformeValue(pub, 'participo')">No</span>
             </label>
+            </div>
           </div>
         </div>
 
@@ -279,13 +281,13 @@
 <!-- Footer fijo (sticky al fondo de este contenedor) -->
 <div
   *ngIf="canEdit; else readOnlyFooter"
-  class="sticky bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95 border-t-2 border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]"
+  class="sticky bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]"
 >
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 max-w-4xl mx-auto">
-    <div class="md:hidden text-center min-h-[1.25rem]">
-      <p *ngIf="localChanges.size > 0 && !saving" class="text-xs text-amber-600 dark:text-amber-400">{{ localChanges.size }} sin guardar</p>
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 max-w-4xl mx-auto">
+    <div class="md:hidden text-center">
+      <p *ngIf="localChanges.size > 0 && !saving" class="text-[11px] font-medium text-amber-600 dark:text-amber-400">{{ localChanges.size }} sin guardar</p>
     </div>
-    <span class="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
+    <span class="text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline">
       Mostrando {{ resumen?.publicadores_list?.length || 0 }} publicadores
     </span>
 
@@ -293,12 +295,12 @@
       <button
         (click)="onSave()"
         [disabled]="saving || localChanges.size === 0"
-        class="flex-1 sm:w-auto min-h-[48px] sm:min-h-0 px-5 py-3.5 sm:py-2.5 rounded-xl bg-brand-purple text-white font-bold text-base sm:text-sm hover:bg-purple-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 shadow-lg shadow-purple-500/25"
+        class="flex-1 sm:w-auto px-4 py-2 sm:px-5 sm:py-2 rounded-xl bg-brand-purple text-white font-bold text-sm hover:bg-purple-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 shadow-md shadow-purple-500/25"
       >
-        <svg *ngIf="!saving" class="w-6 h-6 sm:w-4 sm:h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <svg *ngIf="!saving" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
         </svg>
-        <svg *ngIf="saving" class="w-6 h-6 sm:w-4 sm:h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+        <svg *ngIf="saving" class="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
@@ -309,7 +311,7 @@
 </div>
 
 <ng-template #readOnlyFooter>
-  <div class="sticky bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 p-4">
+  <div class="sticky bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 px-4 py-2.5">
     <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
       <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
         <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

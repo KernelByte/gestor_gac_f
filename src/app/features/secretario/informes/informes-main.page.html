@@ -1,40 +1,41 @@
 <div class="flex flex-col gap-4 h-full overflow-hidden p-1 print:!overflow-visible print:!p-0 print:!h-auto">
-   <!-- Tabs Navigation -->
-   <div
-      class="print:hidden shrink-0 flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 rounded-2xl p-1.5 sm:p-2 shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-x-auto">
-      <button *ngFor="let tab of visibleTabs()" (click)="activeTab.set(tab.id)"
-         class="px-3 py-2 sm:px-5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0"
-         [ngClass]="activeTab() === tab.id 
-        ? 'bg-brand-purple text-white shadow-lg shadow-purple-500/20' 
-        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
-         <span class="flex items-center gap-1.5 sm:gap-2">
-            <span [innerHTML]="tab.icon"></span>
-            <span class="hidden xs:inline">{{ tab.label }}</span>
-            <span class="xs:hidden">{{ tab.label.split(' ')[0] }}</span>
-         </span>
-      </button>
+   <!-- Header Area: Tabs + Stats -->
+   <div class="print:hidden flex flex-col sm:flex-row sm:items-center gap-3">
+      <!-- Tabs Navigation -->
+      <div class="shrink-0 inline-flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 rounded-2xl p-1.5 sm:p-2 shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-x-auto max-w-full" style="scrollbar-width: none;">
+         <button *ngFor="let tab of visibleTabs()" (click)="activeTab.set(tab.id)"
+            class="px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0"
+            [ngClass]="activeTab() === tab.id 
+           ? 'bg-brand-purple text-white shadow-lg shadow-purple-500/20' 
+           : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
+            <span class="flex items-center gap-1.5 sm:gap-2">
+               <span [innerHTML]="tab.icon"></span>
+               <span class="hidden xs:inline">{{ tab.label }}</span>
+               <span class="xs:hidden">{{ tab.label.split(' ')[0] }}</span>
+            </span>
+         </button>
+      </div>
+
+      <!-- Unified Filters & Stats (Solo en Entrada Mensual) -->
+      <div *ngIf="activeTab() === 'entrada'" class="flex-1 min-w-0 max-w-full overflow-visible relative z-20">
+         <app-informes-filters [resumen]="resumen()" [activeDropdown]="activeDropdown()" [isRestrictedUser]="isRestrictedUser()"
+            [selectedMes]="selectedMes" [selectedAno]="selectedAno" [selectedGrupo]="selectedGrupo" [meses]="meses"
+            [anos]="anos" [grupos]="grupos()" [vistaGrupo]="vistaGrupo()" [searchQuery]="searchQuery"
+            [soloSinInforme]="soloSinInforme" [saving]="saving()" (toggleDropdown)="toggleDropdown($event)"
+            (closeDropdown)="closeDropdown()" (selectMes)="selectMes($event)" (selectAno)="selectAno($event)"
+            (selectGrupo)="selectGrupo($event)" (setVista)="setVista($event)"
+            (searchQueryChange)="searchQuery = $event; loadResumen()"
+            (soloSinInformeChange)="onSoloSinInformeChange($event)"
+            (exportExcel)="exportarExcel()" (importExcel)="importarExcel($event)">
+         </app-informes-filters>
+      </div>
    </div>
 
    <!-- Tab Content -->
    <div class="flex-1 min-h-0 overflow-hidden flex flex-col print:!overflow-visible print:!h-auto print:block">
       <!-- Tab 1: Entrada Mensual -->
       <ng-container *ngIf="activeTab() === 'entrada'">
-         <div class="flex flex-col gap-5 flex-1 min-h-0 overflow-hidden">
-            <!-- Resumen del mes (informes recibidos + cursos/horas) -->
-            <app-informes-stats [resumen]="resumen()"></app-informes-stats>
-
-            <!-- Período, vista, búsqueda y Excel -->
-            <app-informes-filters [activeDropdown]="activeDropdown()" [isRestrictedUser]="isRestrictedUser()"
-               [selectedMes]="selectedMes" [selectedAno]="selectedAno" [selectedGrupo]="selectedGrupo" [meses]="meses"
-               [anos]="anos" [grupos]="grupos()" [vistaGrupo]="vistaGrupo()" [searchQuery]="searchQuery"
-               [soloSinInforme]="soloSinInforme" [saving]="saving()" (toggleDropdown)="toggleDropdown($event)"
-               (closeDropdown)="closeDropdown()" (selectMes)="selectMes($event)" (selectAno)="selectAno($event)"
-               (selectGrupo)="selectGrupo($event)" (setVista)="setVista($event)"
-               (searchQueryChange)="searchQuery = $event; loadResumen()"
-               (soloSinInformeChange)="onSoloSinInformeChange($event)"
-               (exportExcel)="exportarExcel()" (importExcel)="importarExcel($event)">
-            </app-informes-filters>
-
+         <div class="flex flex-col gap-3 flex-1 min-h-0 overflow-hidden">
             <!-- Data List/Table Container -->
             <app-informes-table [resumen]="resumen()" [saving]="saving()" [canEdit]="canEditInformes()" [privilegios]="privilegios()"
                [publicadorPrivilegiosMap]="publicadorPrivilegiosMap()" [localChanges]="localChanges"

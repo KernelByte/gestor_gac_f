@@ -52,23 +52,38 @@ export class TimeAgoPipe implements PipeTransform {
         }"
       >
         <!-- Sidebar Header -->
-        <div class="flex items-center gap-3 py-4 px-4 border-b border-gray-100/50 dark:border-white/5 transition-all duration-300" [ngClass]="{ 'justify-center px-3': collapsed() }">
-          <!-- Logo clickeable -->
+        <div class="h-[72px] flex items-center shrink-0 border-b border-gray-100/50 dark:border-white/5 transition-all duration-300" [ngClass]="collapsed() ? 'px-3 justify-center' : 'px-5'">
           <div
-            class="relative shrink-0 cursor-pointer group"
+            class="flex items-center w-full rounded-[14px] transition-all duration-200 group cursor-pointer select-none"
+            [ngClass]="collapsed() ? 'justify-center p-2 hover:bg-slate-50 dark:hover:bg-white/[0.04]' : 'hover:bg-slate-50 dark:hover:bg-white/[0.04] px-3 py-2 flex-grow justify-between'"
             (click)="toggleSidebar()"
             [title]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
           >
-            <div class="w-9 h-9 bg-white dark:bg-slate-800 rounded-xl p-1.5 ring-1 ring-slate-100 dark:ring-white/10 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:scale-105 group-hover:ring-purple-300 dark:group-hover:ring-purple-500/40">
+            <!-- Logo Icon -->
+            <div class="relative flex items-center justify-center shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.2,1.2,0.3,1)] group-hover:scale-105"
+                 [ngClass]="!collapsed() ? 'w-[28px]' : ''">
+              <div class="absolute inset-0 bg-brand-purple/20 dark:bg-purple-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full"></div>
               <img
                 src="images/LogoAppMorado.png"
-                alt="GAC"
-                class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+                alt="GAC Logo"
+                class="w-[28px] h-[28px] object-contain relative z-10 transition-transform duration-500 group-hover:-rotate-3 drop-shadow-sm"
               >
             </div>
+            
+            <!-- App Name -->
+            <div *ngIf="!collapsed()" class="flex flex-col flex-1 items-center justify-center animate-fadeIn pt-0.5">
+               <span class="font-black text-[1.25rem] tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-400 dark:to-purple-200 leading-none pb-[2px]">
+                 GAC
+               </span>
+            </div>
+            
+            <!-- Collapse Indicator -->
+            <div *ngIf="!collapsed()" class="shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-brand-purple/70 dark:group-hover:text-purple-400/80 transition-colors duration-200 flex justify-end w-[28px]">
+               <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+               </svg>
+            </div>
           </div>
-          <!-- Nombre GAC -->
-          <h1 *ngIf="!collapsed()" class="font-black text-transparent bg-clip-text bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] text-xl tracking-tight leading-none animate-fadeIn">GAC</h1>
         </div>
 
         <!-- Navigation -->

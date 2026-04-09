@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Grupo } from '../../../grupos/models/grupo.model';
+import { ResumenMensual } from '../../models/informe.model';
 
 @Component({
    selector: 'app-informes-filters',
@@ -13,6 +14,7 @@ import { Grupo } from '../../../grupos/models/grupo.model';
 export class InformesFiltersComponent {
    @Input() activeDropdown: string | null = null;
    @Input() isRestrictedUser: boolean = false;
+   @Input() resumen: ResumenMensual | null = null;
 
    @Input() selectedMes: string = '';
    @Input() selectedAno: string = '';
@@ -44,6 +46,11 @@ export class InformesFiltersComponent {
 
    getMesLabel(mesValue: string): string {
       return this.meses.find(m => m.value === mesValue)?.label || mesValue;
+   }
+
+   get missingReportsCount(): number {
+      if (!this.resumen) return 0;
+      return (this.resumen.total_publicadores || 0) - (this.resumen.informes_recibidos || 0);
    }
 
    getGrupoLabel(grupoId: number | null): string {
