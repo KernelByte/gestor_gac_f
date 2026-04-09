@@ -128,12 +128,12 @@ interface TableColumn {
             </button>
             
             <!-- Backdrop (Click Outside) -->
-             <div *ngIf="showAdvancedFilters()" (click)="showAdvancedFilters.set(false)" class="fixed inset-0 z-40 bg-transparent"></div>
+             <div *ngIf="showAdvancedFilters()" (click)="showAdvancedFilters.set(false)" class="fixed inset-0 bg-transparent" style="z-index: 9998; pointer-events: auto;"></div>
 
             <!-- Dropdown Menu -->
             <div 
                 *ngIf="showAdvancedFilters()"
-                class="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fadeInUp flex flex-col max-h-[80vh]"
+                class="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-700 overflow-hidden animate-fadeInUp flex flex-col max-h-[80vh]" style="z-index: 9999;"
             >
                 <!-- Header -->
                 <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 sticky top-0">
@@ -1322,8 +1322,8 @@ interface TableColumn {
 
                            <!-- List of Privileges -->
                            <div class="space-y-2">
-                               <div *ngFor="let pp of publicadorPrivilegios(); trackBy: trackPrivilegeById" class="p-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 relative group transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm hover:border-slate-200 dark:hover:border-slate-600">
-                                   <div class="flex items-start justify-between">
+                               <div *ngFor="let pp of publicadorPrivilegios(); trackBy: trackPrivilegeById" class="rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 relative group transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm hover:border-slate-200 dark:hover:border-slate-600">
+                                   <div class="p-3 flex items-start justify-between">
                                        <div>
                                            <h4 class="text-xs font-bold text-slate-800 dark:text-white">{{ getPrivilegioNombre(pp.id_privilegio) }}</h4>
                                            <div class="text-[0.6875rem] text-slate-500 dark:text-slate-400 font-medium flex gap-2">
@@ -1332,9 +1332,42 @@ interface TableColumn {
                                                <span *ngIf="!pp.fecha_fin" class="text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-md">Activo</span>
                                            </div>
                                        </div>
-                                       <button type="button" (click)="confirmDeletePrivilegio(pp.id_publicador_privilegio)" class="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 transition-all">
-                                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                       </button>
+                                       <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                           <!-- Botón cerrar privilegio (solo si está activo) -->
+                                           <button *ngIf="!pp.fecha_fin && closingPrivilegioId() !== pp.id_publicador_privilegio"
+                                               type="button"
+                                               (click)="startClosingPrivilegio(pp.id_publicador_privilegio)"
+                                               title="Establecer fecha fin"
+                                               class="p-1.5 text-slate-400 hover:text-amber-500 transition-all">
+                                               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="17" y1="16" x2="12" y2="16"/><line x1="12" y1="16" x2="12" y2="21"/></svg>
+                                           </button>
+                                           <button type="button" (click)="confirmDeletePrivilegio(pp.id_publicador_privilegio)" class="p-1.5 text-slate-400 hover:text-red-500 transition-all">
+                                               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                           </button>
+                                       </div>
+                                   </div>
+                                   <!-- Panel inline para establecer fecha fin -->
+                                   <div *ngIf="closingPrivilegioId() === pp.id_publicador_privilegio" class="px-3 pb-3 border-t border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10 rounded-b-xl">
+                                       <p class="text-[0.625rem] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mt-2 mb-2">Fecha de cierre</p>
+                                       <div class="flex items-center gap-2">
+                                           <div class="flex-1">
+                                               <app-date-picker
+                                                 [ngModel]="closingPrivilegioFechaFin()"
+                                                 (ngModelChange)="closingPrivilegioFechaFin.set($event)"
+                                                 [ngModelOptions]="{standalone: true}"
+                                                 placeholder="Seleccionar fecha"
+                                               ></app-date-picker>
+                                           </div>
+                                           <button type="button" (click)="confirmClosingPrivilegio()"
+                                               [disabled]="!closingPrivilegioFechaFin()"
+                                               class="h-9 px-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                               Guardar
+                                           </button>
+                                           <button type="button" (click)="cancelClosingPrivilegio()"
+                                               class="h-9 px-2 text-slate-400 hover:text-slate-600 transition-all">
+                                               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                           </button>
+                                       </div>
                                    </div>
                                </div>
                                <div *ngIf="publicadorPrivilegios().length === 0" class="text-center py-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
@@ -2109,6 +2142,36 @@ export class PublicadoresListComponent implements OnInit {
     this.privilegioToDelete.set(null);
   }
 
+  // Inline close (fecha_fin) for active privileges
+  closingPrivilegioId = signal<number | null>(null);
+  closingPrivilegioFechaFin = signal<string>('');
+
+  startClosingPrivilegio(id: number) {
+    this.closingPrivilegioId.set(id);
+    this.closingPrivilegioFechaFin.set(new Date().toISOString().split('T')[0]);
+  }
+
+  cancelClosingPrivilegio() {
+    this.closingPrivilegioId.set(null);
+    this.closingPrivilegioFechaFin.set('');
+  }
+
+  confirmClosingPrivilegio() {
+    const id = this.closingPrivilegioId();
+    const fecha = this.closingPrivilegioFechaFin();
+    const pub = this.editingPublicador();
+    if (!id || !fecha || !pub) return;
+
+    this.privilegiosService.updatePublicadorPrivilegio(id, { fecha_fin: fecha }).subscribe({
+      next: () => {
+        this.loadPublicadorPrivilegios(pub.id_publicador);
+        this.showToast('Privilegio cerrado correctamente', 'success');
+        this.cancelClosingPrivilegio();
+      },
+      error: (err) => this.showToast('Error: ' + (err.error?.detail || err.message), 'error')
+    });
+  }
+
   showToast(text: string, type: 'success' | 'error' = 'success') {
     this.toastMessage.set({ text, type });
     setTimeout(() => this.toastMessage.set(null), 3000);
@@ -2670,7 +2733,7 @@ export class PublicadoresListComponent implements OnInit {
       const requests: any[] = [
         lastValueFrom(this.http.get<Estado[]>('/api/estados/')),
         lastValueFrom(this.http.get<Grupo[]>('/api/grupos/', { params })),
-        lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/'))
+        lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/', { params: { limit: 500 } }))
       ];
 
       if (this.isAdminOrGestor()) {
@@ -2719,7 +2782,8 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   loadPublicadorPrivilegios(id: number) {
-    this.privilegiosService.getPublicadorPrivilegios(id).subscribe({
+    // activos=true → solo registros con fecha_fin IS NULL (el activo actual de cada tipo)
+    this.privilegiosService.getPublicadorPrivilegios(id, true).subscribe({
       next: (data) => {
         this.publicadorPrivilegios.set(data);
 

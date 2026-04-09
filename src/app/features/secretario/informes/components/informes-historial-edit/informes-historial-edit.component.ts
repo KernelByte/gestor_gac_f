@@ -67,6 +67,28 @@ export class InformesHistorialEditComponent implements OnInit {
    esRegular = signal<boolean>(false);
    esEspecial = signal<boolean>(false);
 
+   // Validation: horas > 0 requires a precursor type
+   horasRequierePrecursor = computed(() => {
+      return this.horas() > 0 && !this.esAuxiliar() && !this.esRegular() && !this.esEspecial();
+   });
+
+   /** Horas extra extraídas de la observación (patrón "N Hrs") */
+   hrsFromObservacion = computed(() => {
+      const obs = this.observaciones();
+      if (!obs) return null;
+      const match = obs.match(/(\d+)\s*Hrs/i);
+      return match ? parseInt(match[1], 10) : null;
+   });
+
+   /** Total horas + horas de la observación */
+   totalHorasConCreditos = computed(() => {
+      const extra = this.hrsFromObservacion();
+      if (extra === null) return null;
+      return (this.horas() || 0) + extra;
+   });
+
+   showValidationError = signal<boolean>(false);
+
    // Local cache for unsaved changes: key is "YYYY-MM"
    pendingChanges = new Map<string, InformeHistorialEdit>();
    originalValues = new Map<string, InformeHistorialDetalle>();
@@ -105,6 +127,11 @@ export class InformesHistorialEditComponent implements OnInit {
    
    onAnoSelect(ano: number) {
       if (this.selectedAno() === ano || this.loading() || this.saving()) return;
+      if (this.horasRequierePrecursor()) {
+         this.showValidationError.set(true);
+         return;
+      }
+      this.showValidationError.set(false);
       this.saveCurrentToPending();
       this.selectedAno.set(ano);
 
@@ -119,6 +146,11 @@ export class InformesHistorialEditComponent implements OnInit {
    
    onMesSelect(mes: number) {
       if (this.selectedMes() === mes || this.loading() || this.saving()) return;
+      if (this.horasRequierePrecursor()) {
+         this.showValidationError.set(true);
+         return;
+      }
+      this.showValidationError.set(false);
       this.saveCurrentToPending();
       this.selectedMes.set(mes);
       this.loadDetails();
@@ -215,18 +247,21 @@ export class InformesHistorialEditComponent implements OnInit {
          if (this.esAuxiliar()) {
              this.esRegular.set(false);
              this.esEspecial.set(false);
+             this.showValidationError.set(false);
          }
       } else if (tipo === 'Regular') {
          this.esRegular.set(!this.esRegular());
          if (this.esRegular()) {
              this.esAuxiliar.set(false);
              this.esEspecial.set(false);
+             this.showValidationError.set(false);
          }
       } else if (tipo === 'Especial') {
          this.esEspecial.set(!this.esEspecial());
          if (this.esEspecial()) {
              this.esAuxiliar.set(false);
              this.esRegular.set(false);
+             this.showValidationError.set(false);
          }
       }
    }
@@ -265,7 +300,11 @@ export class InformesHistorialEditComponent implements OnInit {
    
    guardar() {
       if (this.saving() || this.loading()) return;
-      
+      if (this.horasRequierePrecursor()) {
+         this.showValidationError.set(true);
+         return;
+      }
+      this.showValidationError.set(false);
       this.saving.set(true);
       
       this.saveCurrentToPending();

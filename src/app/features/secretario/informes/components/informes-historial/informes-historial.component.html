@@ -229,7 +229,14 @@
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        {{ selectedPublicador()?.total_horas }} Horas {{ getShortPrivilegeLabel(selectedPublicador()?.privilegio_actual) }}
+                        <ng-container *ngIf="totalHrsCreditos() > 0; else sinCreditos">
+                           <span class="opacity-70">{{ selectedPublicador()?.total_horas }}</span>
+                           <span class="opacity-50 font-normal">+{{ totalHrsCreditos() }}</span>
+                           <span class="mx-0.5 opacity-40 font-normal">=</span>
+                           <span>{{ (selectedPublicador()?.total_horas || 0) + totalHrsCreditos() }}</span>
+                        </ng-container>
+                        <ng-template #sinCreditos>{{ selectedPublicador()?.total_horas }}</ng-template>
+                        Horas {{ getShortPrivilegeLabel(selectedPublicador()?.privilegio_actual) }}
                      </div>
                      <div
                         class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[0.6875rem] md:text-xs font-bold gap-1.5 whitespace-nowrap">
@@ -346,9 +353,19 @@
                         <!-- Horas -->
                         <div class="flex items-center justify-between">
                            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Horas</span>
-                           <span class="text-lg font-bold text-slate-800 dark:text-white tabular-nums">
-                              {{ mes.horas || 0 }}
-                           </span>
+                           <div class="flex items-center gap-1.5">
+                              <span class="text-lg font-bold text-slate-800 dark:text-white tabular-nums">
+                                 {{ mes.horas || 0 }}
+                              </span>
+                              <ng-container *ngIf="getHrsFromObservacion(mes.observaciones) as extraHrs">
+                                 <span class="text-xs text-slate-400 dark:text-slate-500">+</span>
+                                 <span class="text-xs font-bold text-teal-600 dark:text-teal-400 tabular-nums">{{ extraHrs }}</span>
+                                 <span class="text-[0.6rem] text-slate-400 dark:text-slate-500">=</span>
+                                 <span class="text-sm font-extrabold text-teal-600 dark:text-teal-400 tabular-nums bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded-md">
+                                    {{ (mes.horas || 0) + extraHrs }}
+                                 </span>
+                              </ng-container>
+                           </div>
                         </div>
 
                         <!-- Cursos -->

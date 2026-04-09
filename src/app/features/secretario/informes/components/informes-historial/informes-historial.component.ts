@@ -80,6 +80,16 @@ export class InformesHistorialComponent implements OnChanges {
       return this.historial()?.publicadores.find(p => p.id_publicador === pid) || null;
    });
 
+   /** Total de horas extra acumuladas de todas las observaciones con "N Hrs" del publicador */
+   totalHrsCreditos = computed(() => {
+      const pub = this.selectedPublicador();
+      if (!pub?.informes?.length) return 0;
+      return pub.informes.reduce((sum, inf) => {
+         const match = inf.observaciones?.match(/(\d+)\s*Hrs/i);
+         return sum + (match ? parseInt(match[1], 10) : 0);
+      }, 0);
+   });
+
    // Group informes by year for visual separation
    groupedInformesByYear = computed(() => {
       const pub = this.selectedPublicador();
@@ -322,5 +332,12 @@ export class InformesHistorialComponent implements OnChanges {
    getShortPrivilegeLabel(priv: string | null | undefined): string {
       if (!priv) return '';
       return priv.replace('Precursor ', '');
+   }
+
+   /** Extrae el número de horas del texto de observación si contiene patrón "N Hrs" */
+   getHrsFromObservacion(obs: string | null | undefined): number | null {
+      if (!obs) return null;
+      const match = obs.match(/(\d+)\s*Hrs/i);
+      return match ? parseInt(match[1], 10) : null;
    }
 }

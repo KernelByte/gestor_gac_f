@@ -45,8 +45,11 @@ export class PrivilegiosService {
 
    // --- Privilegios de Publicadores ---
 
-   getPublicadorPrivilegios(idPublicador: number) {
-      const params = new HttpParams().set('id_publicador', idPublicador);
+   getPublicadorPrivilegios(idPublicador: number, activos?: boolean) {
+      let params = new HttpParams().set('id_publicador', idPublicador);
+      if (activos !== undefined) {
+         params = params.set('activos', activos);
+      }
       return this.http.get<PublicadorPrivilegio[]>(`${this.baseUrl}/publicador-privilegios/`, { params });
    }
 
