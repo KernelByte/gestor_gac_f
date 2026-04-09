@@ -34,6 +34,9 @@ interface ImportResult {
       informes_insertados: number;
       informes_actualizados: number;
       informes_errores: number;
+      asistencias_insertadas: number;
+      asistencias_actualizadas: number;
+      asistencias_errores: number;
       header_index_detectado: number;
       columnas_mapeadas: Record<string, string | null>;
    };

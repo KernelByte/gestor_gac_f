@@ -696,6 +696,31 @@
                   </div>
                </div>
 
+               <!-- Asistencia Histórica Stats (only if any attendance data was processed) -->
+               <div *ngIf="(importResult()?.resumen?.asistencias_insertadas || 0) + (importResult()?.resumen?.asistencias_actualizadas || 0) + (importResult()?.resumen?.asistencias_errores || 0) > 0"
+                  class="mb-6">
+                  <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                     </svg>
+                     Asistencia Histórica
+                  </p>
+                  <div class="grid grid-cols-3 gap-3">
+                     <div class="bg-cyan-50 rounded-xl p-3 border border-cyan-100 text-center">
+                        <div class="text-xl font-black text-cyan-600">{{ importResult()?.resumen?.asistencias_insertadas || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-cyan-600/70 uppercase tracking-wide">Creados</div>
+                     </div>
+                     <div class="bg-teal-50 rounded-xl p-3 border border-teal-100 text-center">
+                        <div class="text-xl font-black text-teal-600">{{ importResult()?.resumen?.asistencias_actualizadas || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-teal-600/70 uppercase tracking-wide">Actualizados</div>
+                     </div>
+                     <div class="bg-rose-50 rounded-xl p-3 border border-rose-100 text-center">
+                        <div class="text-xl font-black text-rose-600">{{ importResult()?.resumen?.asistencias_errores || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-rose-600/70 uppercase tracking-wide">Errores</div>
+                     </div>
+                  </div>
+               </div>
+
                <!-- Total Rows -->
                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 flex items-center justify-between">
                   <span class="text-sm font-bold text-slate-600">Total de filas procesadas</span>

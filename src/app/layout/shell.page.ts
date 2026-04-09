@@ -181,35 +181,35 @@ export class TimeAgoPipe implements PipeTransform {
                 
                 <!-- Submenu -->
                 <div *ngIf="!collapsed() && reunionesMenuOpen()" class="relative mt-1 ml-[1.8rem] pl-4 pr-1 space-y-0.5 reuniones-submenu">
-                   <a routerLink="/reuniones/resumen" routerLinkActive="sub-active" #rlaResumen="routerLinkActive"
+                   <a *ngIf="hasPermission('reuniones.ver')" routerLink="/reuniones/resumen" routerLinkActive="sub-active" #rlaResumen="routerLinkActive"
                       class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaResumen.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
                             [ngClass]="rlaResumen.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Resumen Hoy</span>
                    </a>
-                   <a *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.entre_semana_ver')" routerLink="/reuniones/entre-semana" routerLinkActive="sub-active" #rlaEntre="routerLinkActive"
+                   <a *ngIf="hasPermission('reuniones.entre_semana_ver')" routerLink="/reuniones/entre-semana" routerLinkActive="sub-active" #rlaEntre="routerLinkActive"
                       class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaEntre.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
                             [ngClass]="rlaEntre.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Entre Semana</span>
                    </a>
-                   <a *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.fin_semana_ver')" routerLink="/reuniones/fin-semana" routerLinkActive="sub-active" #rlaFin="routerLinkActive"
+                   <a *ngIf="hasPermission('reuniones.fin_semana_ver')" routerLink="/reuniones/fin-semana" routerLinkActive="sub-active" #rlaFin="routerLinkActive"
                       class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaFin.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
                             [ngClass]="rlaFin.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Fin de Semana</span>
                    </a>
-                   <a *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.asistencia_ver')" routerLink="/reuniones/asistencia" routerLinkActive="sub-active" #rlaAsist="routerLinkActive"
+                   <a *ngIf="hasPermission('reuniones.asistencia_ver')" routerLink="/reuniones/asistencia" routerLinkActive="sub-active" #rlaAsist="routerLinkActive"
                       class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaAsist.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"
                             [ngClass]="rlaAsist.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Asistencia</span>
                    </a>
-                   <a *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.configuracion_ver')" routerLink="/reuniones/configuracion" routerLinkActive="sub-active" #rlaConfigPl="routerLinkActive"
+                   <a *ngIf="hasPermission('reuniones.configuracion_ver')" routerLink="/reuniones/configuracion" routerLinkActive="sub-active" #rlaConfigPl="routerLinkActive"
                       class="relative flex items-center px-4 py-[7px] text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaConfigPl.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="absolute left-[-2px] w-[5.5px] h-[5.5px] rounded-full shadow-[0_0_0_4px_#ffffff] dark:shadow-[0_0_0_4px_#0f172a] transition-all duration-300"

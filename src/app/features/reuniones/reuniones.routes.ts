@@ -15,25 +15,25 @@ const generalReunionesGuard: CanActivateFn = () => {
 
 const entreSemanaGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.ver') || store.hasPermission('reuniones.entre_semana_ver') || store.user()?.roles?.includes('Secretario')) return true;
+  if (store.hasPermission('reuniones.entre_semana_ver') || store.user()?.roles?.includes('Secretario')) return true;
   return inject(Router).createUrlTree(['/reuniones']);
 };
 
 const finSemanaGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.ver') || store.hasPermission('reuniones.fin_semana_ver') || store.user()?.roles?.includes('Secretario')) return true;
+  if (store.hasPermission('reuniones.fin_semana_ver') || store.user()?.roles?.includes('Secretario')) return true;
   return inject(Router).createUrlTree(['/reuniones']);
 };
 
 const asistenciaGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.ver') || store.hasPermission('reuniones.asistencia_ver') || store.user()?.roles?.includes('Secretario')) return true;
+  if (store.hasPermission('reuniones.asistencia_ver') || store.user()?.roles?.includes('Secretario')) return true;
   return inject(Router).createUrlTree(['/reuniones']);
 };
 
 const configuracionGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.ver') || store.hasPermission('reuniones.configuracion_ver') || store.user()?.roles?.includes('Secretario')) return true;
+  if (store.hasPermission('reuniones.configuracion_ver') || store.user()?.roles?.includes('Secretario')) return true;
   return inject(Router).createUrlTree(['/reuniones']);
 };
 
