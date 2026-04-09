@@ -81,12 +81,15 @@ export class GruposListComponent implements OnInit {
       return rol.includes('admin') || rol.includes('gestor');
    });
 
-   canCreateGrupos = computed(() => this.isPrivilegedRole());
+   // Admin/Gestor/Secretario siempre tienen acceso completo a grupos.
+   // Coordinador NO está incluido aquí — su acceso se controla por permisos.
+   isFullyPrivilegedForGrupos = computed(() => {
+      const user = this.authStore.user();
+      const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+      return this.isAdminOrGestor() || roles.includes('secretario');
+   });
 
-   canEditGrupos = computed(() =>
-      this.isPrivilegedRole() || this.authStore.hasPermission('grupos.editar')
-   );
-
+   // Mantener isPrivilegedRole para compatibilidad con otras partes del template
    isPrivilegedRole = computed(() => {
       const user = this.authStore.user();
       const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
@@ -95,8 +98,14 @@ export class GruposListComponent implements OnInit {
              roles.includes('coordinador');
    });
 
+   canCreateGrupos = computed(() => this.isFullyPrivilegedForGrupos());
+
+   canEditGrupos = computed(() =>
+      this.isFullyPrivilegedForGrupos() || this.authStore.hasPermission('grupos.editar')
+   );
+
    isScopedToGroup = computed(() =>
-      !this.isPrivilegedRole() && !this.authStore.hasPermission('grupos.ver_todos')
+      !this.isFullyPrivilegedForGrupos() && !this.authStore.hasPermission('grupos.ver_todos')
    );
 
    loading = signal(false);
@@ -270,9 +279,7 @@ export class GruposListComponent implements OnInit {
          console.log('Total asignados calculado:', data.reduce((acc, g) => acc + (g.cantidad_publicadores || 0), 0));
          if (this.isScopedToGroup()) {
             const idGrupo = this.authStore.user()?.id_grupo_publicador;
-            if (idGrupo != null) {
-               data = data.filter(g => g.id_grupo === idGrupo);
-            }
+            data = idGrupo != null ? data.filter(g => g.id_grupo === idGrupo) : [];
          }
          this.grupos.set(data);
       } catch (err: any) {
