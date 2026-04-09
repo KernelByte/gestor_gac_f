@@ -52,35 +52,23 @@ export class TimeAgoPipe implements PipeTransform {
         }"
       >
         <!-- Sidebar Header -->
-        <div class="flex flex-col items-center justify-center py-6 px-4 border-b border-gray-100/50 dark:border-white/5 transition-all duration-300">
-             <!-- Logo Image - Minimalist & Interactive -->
-             <div 
-               class="relative w-14 h-14 shrink-0 mb-3 group cursor-pointer"
-               (click)="toggleSidebar()"
-               [title]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
-             >
-                <!-- Simple Background -->
-                <div class="relative w-full h-full bg-white dark:bg-slate-800 rounded-2xl p-2.5 shadow-sm group-hover:shadow-lg group-hover:scale-105 transition-all duration-300 ring-1 ring-gray-100 dark:ring-white/10 group-hover:ring-purple-200 dark:group-hover:ring-purple-500/30">
-                  <img 
-                    src="images/LogoAppMorado.png" 
-                    alt="Sistema GAC" 
-                    class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
-                  >
-                </div>
-             </div>
-
-             <!-- Brand Name - Vertical Stack -->
-             <div *ngIf="!collapsed()" class="animate-fadeIn text-center space-y-1">
-               <!-- "Sistema" - Subtle Label -->
-               <p class="text-[0.625rem] font-semibold text-slate-400 uppercase tracking-[0.15em] leading-none">
-                 Sistema
-               </p>
-               
-               <!-- "GAC" - Main Brand -->
-               <h1 class="font-display font-black text-transparent bg-clip-text bg-gradient-to-br from-[#7C3AED] via-[#6D28D9] to-[#5B21B6] text-[26px] tracking-tight leading-none">
-                 GAC
-               </h1>
-             </div>
+        <div class="flex items-center gap-3 py-4 px-4 border-b border-gray-100/50 dark:border-white/5 transition-all duration-300" [ngClass]="{ 'justify-center px-3': collapsed() }">
+          <!-- Logo clickeable -->
+          <div
+            class="relative shrink-0 cursor-pointer group"
+            (click)="toggleSidebar()"
+            [title]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
+          >
+            <div class="w-9 h-9 bg-white dark:bg-slate-800 rounded-xl p-1.5 ring-1 ring-slate-100 dark:ring-white/10 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:scale-105 group-hover:ring-purple-300 dark:group-hover:ring-purple-500/40">
+              <img
+                src="images/LogoAppMorado.png"
+                alt="GAC"
+                class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+              >
+            </div>
+          </div>
+          <!-- Nombre GAC -->
+          <h1 *ngIf="!collapsed()" class="font-black text-transparent bg-clip-text bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] text-xl tracking-tight leading-none animate-fadeIn">GAC</h1>
         </div>
 
         <!-- Navigation -->
@@ -613,15 +601,6 @@ export class TimeAgoPipe implements PipeTransform {
                     <span>Mi perfil</span>
                   </button>
                   
-                  <button 
-                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-sm transition-all duration-200 group" 
-                    (click)="openSettings()"
-                  >
-                     <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                        <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                     </div>
-                    <span>Configuración</span>
-                  </button>
                 </div>
 
                 <div class="p-2 border-t border-slate-100 mt-1">
