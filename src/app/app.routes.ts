@@ -39,6 +39,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/basicas/usuarios/pages/usuario-permisos/usuario-permisos.page').then(m => m.UsuarioPermisosPage),
       },
       {
+        path: 'territorios/mapa',
+        title: 'Mapa General de Territorios',
+        loadComponent: () => import('./features/territorios/pages/mapa-general.page').then(m => m.MapaGeneralPage),
+      },
+      {
         path: 'territorios',
         title: 'Territorios',
         loadComponent: () => import('./features/territorios/pages/territorios.page').then(m => m.TerritoriosPage),

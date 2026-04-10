@@ -479,6 +479,47 @@
             </div>
          </div>
 
+         <!-- ══ SECCIÓN: Proveedor de Mapa ══ -->
+         <div class="px-5 md:px-7 pb-5 md:pb-6">
+            <div class="flex items-center gap-3 mb-4">
+               <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-md bg-teal-500/10 flex items-center justify-center">
+                     <svg class="w-3.5 h-3.5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                     </svg>
+                  </div>
+                  <span class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Proveedor de Mapa</span>
+               </div>
+               <div class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20">
+               <div class="flex items-center gap-2.5 sm:w-40 shrink-0">
+                  <div class="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center shrink-0">
+                     <svg class="w-3.5 h-3.5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                     </svg>
+                  </div>
+                  <div>
+                     <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Tiles del Mapa</span>
+                     <span class="block text-xs text-slate-400 dark:text-slate-500">Para módulo de Territorios</span>
+                  </div>
+               </div>
+               <div class="flex items-center gap-2 flex-1">
+                  <select
+                    [(ngModel)]="tileProvider"
+                    [disabled]="!canEdit() || savingTileProvider()"
+                    (change)="saveTileProvider()"
+                    class="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:border-teal-400 focus:ring-2 focus:ring-teal-400/15 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                  >
+                    <option value="osm">OpenStreetMap (OSM)</option>
+                    <option value="google">Google Maps</option>
+                  </select>
+                  <span *ngIf="savingTileProvider()" class="w-4 h-4 block border-2 border-teal-200 border-t-teal-500 rounded-full animate-spin shrink-0"></span>
+               </div>
+            </div>
+         </div>
+
       </div>
    </div>
 

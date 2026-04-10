@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from '../../core/auth/auth.store';
+import { TerritoriosService } from '../territorios/services/territorios.service';
 
 interface Configuracion {
    id_congregacion: number;
@@ -45,6 +46,7 @@ interface Configuracion {
 export class ConfiguracionPage implements OnInit {
    private http = inject(HttpClient);
    private auth = inject(AuthStore);
+   private territoriosService = inject(TerritoriosService);
    private API_URL = `${environment.apiUrl}/configuracion/`;
 
    config: Configuracion = {
@@ -72,6 +74,10 @@ export class ConfiguracionPage implements OnInit {
    dropdownEntreOpen  = signal(false);
    dropdownFinOpen    = signal(false);
    timePickerEntreOpen = signal(false);
+
+   // Tile provider
+   tileProvider = 'osm';
+   savingTileProvider = signal(false);
    timePickerFinOpen   = signal(false);
 
    readonly diasEntreSemana = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
@@ -158,6 +164,28 @@ export class ConfiguracionPage implements OnInit {
 
    ngOnInit() {
       this.loadConfig();
+      this.loadTileProvider();
+   }
+
+   loadTileProvider() {
+      this.territoriosService.getTileProvider().subscribe({
+         next: (res) => this.tileProvider = res.tile_provider || 'osm',
+         error: () => this.tileProvider = 'osm',
+      });
+   }
+
+   saveTileProvider() {
+      this.savingTileProvider.set(true);
+      this.territoriosService.updateTileProvider(this.tileProvider).subscribe({
+         next: () => {
+            this.savingTileProvider.set(false);
+            this.showNotification('Proveedor de mapa actualizado', 'success');
+         },
+         error: () => {
+            this.savingTileProvider.set(false);
+            this.showNotification('Error al actualizar el proveedor de mapa', 'error');
+         },
+      });
    }
 
    loadConfig() {
