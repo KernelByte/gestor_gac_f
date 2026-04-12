@@ -228,6 +228,9 @@ export class InformesHistorialEditComponent implements OnInit {
       this.esAuxiliar.set(priv === 'Precursor Auxiliar');
       this.esRegular.set(priv === 'Precursor Regular');
       this.esEspecial.set(priv === 'Precursor Especial');
+      
+      // Force UI refresh by explicitly triggering change detection on the form state if needed, but signals handle this.
+      // The issue is likely that if priv is somehow undefined instead of null, it might evaluate differently, but strict equality covers both.
    }
    
    onHorasChange(valor: number | null) {

@@ -49,6 +49,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/territorios/pages/territorios.page').then(m => m.TerritoriosPage),
       },
       {
+        path: 'horarios',
+        title: 'Horarios de Predicación',
+        loadComponent: () => import('./features/territorios/pages/horarios.page').then(m => m.HorariosPage),
+      },
+      {
+        path: 'seguimiento-predicacion',
+        title: 'Predicación',
+        loadComponent: () => import('./features/territorios/pages/seguimiento-predicacion.page').then(m => m.SeguimientoPredicacionPage),
+      },
+      {
         path: 'exhibidores',
         title: 'Exhibidores',
         loadComponent: () => import('./features/exhibidores/pages/exhibidores.page').then(m => m.ExhibidoresPage),

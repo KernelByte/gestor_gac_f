@@ -11,6 +11,7 @@ import {
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 import { Territorio, GeoJSONFeatureCollection } from '../models/territorio.model';
+import { geoCentroid } from '../utils/geo-math.util';
 
 @Component({
   standalone: true,
@@ -63,13 +64,13 @@ import { Territorio, GeoJSONFeatureCollection } from '../models/territorio.model
     .territorio-card {
       width: 400px;
       background: #fff;
-      border: 2px solid #e2e8f0;
+      border: 2px solid #d1fae5;
       border-radius: 16px;
       overflow: hidden;
       font-family: system-ui, -apple-system, sans-serif;
     }
     .card-header {
-      background: linear-gradient(135deg, #5b3c88, #6d28d9);
+      background: linear-gradient(135deg, #065f46, #059669);
       padding: 20px 24px;
       color: #fff;
     }
@@ -93,8 +94,8 @@ import { Territorio, GeoJSONFeatureCollection } from '../models/territorio.model
       margin-top: 2px;
     }
     .card-map-wrapper {
-      height: 200px;
-      background: #f1f5f9;
+      height: 220px;
+      background: #f0fdf4;
     }
     .card-map {
       width: 100%;
@@ -125,10 +126,10 @@ import { Territorio, GeoJSONFeatureCollection } from '../models/territorio.model
     }
     .card-footer {
       padding: 12px 24px;
-      background: #f8fafc;
-      border-top: 1px solid #e2e8f0;
+      background: #f0fdf4;
+      border-top: 1px solid #d1fae5;
       font-size: 10px;
-      color: #94a3b8;
+      color: #6b7280;
       font-weight: 600;
       text-align: center;
     }
@@ -139,18 +140,20 @@ export class TerritorioCardComponent implements AfterViewInit, OnChanges, OnDest
 
   @Input() territorio: Territorio | null = null;
   @Input() geojson: GeoJSONFeatureCollection | null = null;
+  @Input() manzanasGeojson: GeoJSONFeatureCollection | null = null;
   @Input() stats: { manzanas_count: number; viviendas_count: number; cobertura_promedio: number } | null = null;
 
   today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 
   private map: L.Map | null = null;
+  private manzanaLabels: L.Marker[] = [];
 
   ngAfterViewInit(): void {
     setTimeout(() => this.initMiniMap(), 200);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if ((changes['geojson'] || changes['territorio']) && this.map) {
+    if ((changes['geojson'] || changes['territorio'] || changes['manzanasGeojson']) && this.map) {
       this.renderGeo();
     }
   }
@@ -166,11 +169,6 @@ export class TerritorioCardComponent implements AfterViewInit, OnChanges, OnDest
     if (!this.miniMapEl?.nativeElement) return;
 
     delete (L.Icon.Default.prototype as any)._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    });
 
     this.map = L.map(this.miniMapEl.nativeElement, {
       zoomControl: false,
@@ -189,27 +187,93 @@ export class TerritorioCardComponent implements AfterViewInit, OnChanges, OnDest
   }
 
   private renderGeo(): void {
-    if (!this.map || !this.geojson) return;
+    if (!this.map) return;
 
-    const layer = L.geoJSON(this.geojson as any, {
+    // Remove previous manzana labels
+    this.manzanaLabels.forEach(m => m.remove());
+    this.manzanaLabels = [];
+
+    // Render territory boundary (only territorio polygon, not manzanas)
+    const territorioFeatures = this.geojson?.features.filter(
+      f => f.geometry?.type === 'Polygon' || f.geometry?.type === 'MultiPolygon'
+    ) ?? [];
+
+    if (territorioFeatures.length === 0) return;
+
+    const territorioFC: GeoJSONFeatureCollection = {
+      type: 'FeatureCollection',
+      features: territorioFeatures,
+    };
+
+    // Clear existing geo layers (except tile layer)
+    this.map.eachLayer(layer => {
+      if (!(layer instanceof L.TileLayer)) {
+        layer.remove();
+      }
+    });
+
+    // Draw territory boundary in emerald
+    const boundaryLayer = L.geoJSON(territorioFC as any, {
       style: {
-        color: '#6d28d9',
-        weight: 2,
-        fillColor: '#ede9fe',
-        fillOpacity: 0.4,
+        color: '#059669',
+        weight: 2.5,
+        fillColor: '#d1fae5',
+        fillOpacity: 0.25,
       },
     }).addTo(this.map);
 
-    const bounds = layer.getBounds();
+    // Draw manzanas with green fill + numbers
+    if (this.manzanasGeojson && this.manzanasGeojson.features.length > 0) {
+      L.geoJSON(this.manzanasGeojson as any, {
+        style: {
+          color: '#065f46',
+          weight: 1.5,
+          fillColor: '#6ee7b7',
+          fillOpacity: 0.35,
+        },
+      }).addTo(this.map);
+
+      // Add number labels at centroid of each manzana
+      for (const feature of this.manzanasGeojson.features) {
+        const numero = feature.properties?.['numero_manzana'] ?? feature.properties?.['numero'];
+        if (!numero) continue;
+        const centroid = geoCentroid(feature);
+        if (!centroid) continue;
+
+        const label = L.marker([centroid[1], centroid[0]], {
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="
+              background: #065f46;
+              color: #fff;
+              font-size: 10px;
+              font-weight: 800;
+              padding: 2px 5px;
+              border-radius: 4px;
+              white-space: nowrap;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+              font-family: system-ui, sans-serif;
+            ">${numero}</div>`,
+            iconAnchor: [12, 10],
+          }),
+          interactive: false,
+        }).addTo(this.map!);
+
+        this.manzanaLabels.push(label);
+      }
+    }
+
+    // Fit bounds to territory
+    const bounds = boundaryLayer.getBounds();
     if (bounds.isValid()) {
-      this.map.fitBounds(bounds, { padding: [20, 20] });
+      this.map.fitBounds(bounds, { padding: [16, 16] });
     }
   }
 
   getStateColor(): string {
     switch (this.territorio?.estado_territorio) {
       case 'Disponible': return '#059669';
-      case 'Asignado': return '#7c3aed';
+      case 'Asignado': return '#0369a1';
       case 'En Pausa': return '#64748b';
       default: return '#1e293b';
     }

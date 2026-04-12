@@ -11,6 +11,7 @@ export interface Territorio {
 export interface Manzana {
   id_manzana: number;
   id_territorio: number;
+  id_sesion?: number | null;
   numero_manzana: string;
   coordenada?: GeoJSONGeometry | null;
 }
@@ -41,10 +42,60 @@ export interface CoberturaManzana {
   notas?: string;
 }
 
+export interface Punto {
+  id_punto: number;
+  id_territorio: number;
+  nombre?: string;
+  tipo?: string; // 'Salida' | 'Lugar' | 'Otro'
+  coordenadas?: GeoJSONGeometry | null;
+  notas?: string;
+}
+
+export interface Sesion {
+  id_sesion: number;
+  id_territorio: number;
+  codigo: string;
+  nombre: string;
+  notas?: string;
+  coordenada?: GeoJSONGeometry | null;
+}
+
+export interface AsignacionTerritorio {
+  id_asignacion: number;
+  id_territorio: number;
+  id_sesion?: number | null;
+  id_publicador: number;
+  nombre_publicador?: string | null;
+  fecha_asignacion: string;
+  fecha_devolucion?: string | null;
+  notas?: string | null;
+  activa: boolean;
+}
+
 export interface TerritorioStats {
   manzanas_count: number;
   viviendas_count: number;
   cobertura_promedio: number;
+}
+
+export interface SalidaPredicacion {
+  id_salida: number;
+  id_territorio: number;
+  id_sesion?: number | null;
+  fecha_salida: string;
+  id_capitan?: number | null;
+  nombre_capitan?: string | null;
+  id_punto_salida?: number | null;
+  nombre_punto_salida?: string | null;
+  notas?: string | null;
+  manzanas_predicadas: number;
+}
+
+export interface ProgresoTerritorio {
+  total_manzanas: number;
+  manzanas_predicadas: number;
+  manzanas_pendientes: number;
+  porcentaje: number;
 }
 
 export interface GeoJSONGeometry {
