@@ -11,7 +11,6 @@ interface Horario {
   id_horario: number;
   id_congregacion?: number | null;
   id_territorio?: number | null;
-  id_sesion?: number | null;
   id_capitan?: number | null;
   nombre_capitan?: string | null;
   id_punto_salida?: number | null;

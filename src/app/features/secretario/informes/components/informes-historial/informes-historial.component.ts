@@ -17,6 +17,13 @@ import { InformesHistorialEditComponent } from '../informes-historial-edit/infor
       display: block;
       height: 100%;
     }
+    @keyframes progress-fast {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .animate-progress-fast {
+      animation: progress-fast 0.8s infinite linear;
+    }
   `]
 })
 export class InformesHistorialComponent implements OnChanges {
@@ -110,10 +117,24 @@ export class InformesHistorialComponent implements OnChanges {
    });
 
    constructor() {
-      // Effect to auto-select first publisher when data loads if none selected
+      // Auto-select first publisher only when no publisher is selected AND data loads for the first time.
+      // We do NOT want this to override existing selections when the view type changes.
       effect(() => {
          const pubs = this.filteredPublicadores();
-         if (pubs.length > 0 && !this.selectedPublicadorId()) {
+         const currentId = this.selectedPublicadorId();
+         
+         if (pubs.length === 0) return;
+
+         // If no selection yet, picks first
+         if (!currentId) {
+            this.selectedPublicadorId.set(pubs[0].id_publicador);
+            return;
+         }
+
+         // If current selection is still present, leave it alone
+         const stillPresent = pubs.some(p => p.id_publicador === currentId);
+         if (!stillPresent) {
+            // Only jump to first if previous selection truly no longer exists
             this.selectedPublicadorId.set(pubs[0].id_publicador);
          }
       }, { allowSignalWrites: true });
@@ -168,20 +189,24 @@ export class InformesHistorialComponent implements OnChanges {
 
             // Restaurar la posición del scroll después de que Angular actualice la vista
             setTimeout(() => {
-               if (this.scrollContainer) {
-                  this.scrollContainer.nativeElement.scrollTop = scrollPosition;
-               }
-            }, 0);
+               requestAnimationFrame(() => {
+                  if (this.scrollContainer) {
+                     this.scrollContainer.nativeElement.scrollTop = scrollPosition;
+                  }
+               });
+            }, 10);
             
-            // Retain selection if current selection is still in new list
+            // Retain selection across reloads:
+            // - If the selected publicador still exists in the new data, keep it selected.
+            // - Only clear selection if they no longer exist in the updated list.
             const currentSelected = this.selectedPublicadorId();
             if (currentSelected) {
                const exists = data.publicadores.some(p => p.id_publicador === currentSelected);
                if (!exists) {
+                  // Publisher no longer in list (e.g. filtered out), clear selection so effect picks first.
                   this.selectedPublicadorId.set(null);
                }
-            } else {
-               this.selectedPublicadorId.set(null);
+               // Otherwise: preserve exact same selection — do NOT reset to null.
             }
          },
          error: (err) => {
@@ -198,6 +223,10 @@ export class InformesHistorialComponent implements OnChanges {
 
    volverLista() {
       this.showMobileList.set(true);
+   }
+
+   trackByPubId(index: number, pub: any): number {
+      return pub.id_publicador;
    }
 
    // --- Edit Modal State ---

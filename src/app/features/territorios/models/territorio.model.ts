@@ -11,7 +11,6 @@ export interface Territorio {
 export interface Manzana {
   id_manzana: number;
   id_territorio: number;
-  id_sesion?: number | null;
   numero_manzana: string;
   coordenada?: GeoJSONGeometry | null;
 }
@@ -51,19 +50,9 @@ export interface Punto {
   notas?: string;
 }
 
-export interface Sesion {
-  id_sesion: number;
-  id_territorio: number;
-  codigo: string;
-  nombre: string;
-  notas?: string;
-  coordenada?: GeoJSONGeometry | null;
-}
-
 export interface AsignacionTerritorio {
   id_asignacion: number;
   id_territorio: number;
-  id_sesion?: number | null;
   id_publicador: number;
   nombre_publicador?: string | null;
   fecha_asignacion: string;
@@ -81,7 +70,6 @@ export interface TerritorioStats {
 export interface SalidaPredicacion {
   id_salida: number;
   id_territorio: number;
-  id_sesion?: number | null;
   fecha_salida: string;
   id_capitan?: number | null;
   nombre_capitan?: string | null;

@@ -761,25 +761,6 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     this.activeToolHint.set('Lienzo limpiado. Selecciona una herramienta para comenzar.');
   }
 
-  // ── Session color palette (distinct colors for up to 10 sessions) ────────
-  private readonly SESION_PALETTE = [
-    { stroke: '#7c3aed', fill: '#ede9fe' }, // violet
-    { stroke: '#0891b2', fill: '#cffafe' }, // cyan
-    { stroke: '#d97706', fill: '#fef3c7' }, // amber
-    { stroke: '#db2777', fill: '#fce7f3' }, // pink
-    { stroke: '#059669', fill: '#d1fae5' }, // emerald
-    { stroke: '#dc2626', fill: '#fee2e2' }, // red
-    { stroke: '#7c3aed', fill: '#f3e8ff' }, // purple
-    { stroke: '#0284c7', fill: '#e0f2fe' }, // sky
-    { stroke: '#65a30d', fill: '#ecfccb' }, // lime
-    { stroke: '#c2410c', fill: '#ffedd5' }, // orange
-  ];
-
-  private getSesionColor(idSesion: number | null): { stroke: string; fill: string } {
-    if (!idSesion) return { stroke: '#475569', fill: '#f1f5f9' }; // unassigned = slate
-    const idx = (idSesion - 1) % this.SESION_PALETTE.length;
-    return this.SESION_PALETTE[Math.abs(idx)];
-  }
 
   // ── Manzanas layer rendering ───────────────────────────────────────────
 
@@ -797,12 +778,11 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       if (!feature.geometry) return;
       const props = feature.properties || {};
       const isPredicada = props.predicada === true;
-      const idSesion: number | null = props.id_sesion ?? null;
 
-      // When predicada: always green. Otherwise: color by session if assigned, else slate.
-      const strokeColor = isPredicada ? '#16a34a' : this.getSesionColor(idSesion).stroke;
-      const fillColor  = isPredicada ? '#bbf7d0' : this.getSesionColor(idSesion).fill;
-      const labelBg    = isPredicada ? '#16a34a' : this.getSesionColor(idSesion).stroke;
+      // When predicada: green. Otherwise: default slate.
+      const strokeColor = isPredicada ? '#16a34a' : '#475569';
+      const fillColor  = isPredicada ? '#bbf7d0' : '#f1f5f9';
+      const labelBg    = isPredicada ? '#16a34a' : '#475569';
 
       // Polygon fill
       const poly = L.geoJSON(feature, {
@@ -825,18 +805,22 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
             const checkmark = isPredicada ? '&nbsp;✓' : '';
             const labelIcon = L.divIcon({
               html: `<div style="
+                display:inline-block;
+                transform:translate(-50%,-50%);
                 background:${labelBg};
                 color:white;
-                font-weight:900;
-                font-size:11px;
-                padding:2px 6px;
-                border-radius:6px;
+                font-weight:700;
+                font-size:12px;
+                padding:3px 8px;
+                border-radius:8px;
                 white-space:nowrap;
-                box-shadow:0 1px 4px rgba(0,0,0,0.35);
+                box-shadow:0 2px 6px rgba(0,0,0,0.45);
                 font-family:system-ui,sans-serif;
-                letter-spacing:-0.3px;
+                border:1.5px solid rgba(255,255,255,0.55);
+                line-height:1.4;
               ">${numero}${checkmark}</div>`,
               className: '',
+              iconSize: [0, 0],
               iconAnchor: [0, 0],
             });
             L.marker(centroid, { icon: labelIcon, interactive: false }).addTo(this.manzanasLayer!);

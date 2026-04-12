@@ -10,7 +10,6 @@ import {
   TerritorioStats,
   GeoJSONFeatureCollection,
   GeoJSONFeature,
-  Sesion,
   AsignacionTerritorio,
   Punto,
   SalidaPredicacion,
@@ -101,23 +100,6 @@ export class TerritoriosService {
     return this.http.post<CoberturaManzana>(`${environment.apiUrl}/manzanas/${idManzana}/cobertura`, data);
   }
 
-  // ── Sesiones ─────────────────────────────────────────────────────────
-  getSesiones(idTerritorio: number): Observable<Sesion[]> {
-    return this.http.get<Sesion[]>(`${this.baseUrl}/${idTerritorio}/sesiones`);
-  }
-
-  createSesion(idTerritorio: number, data: Partial<Sesion>): Observable<Sesion> {
-    return this.http.post<Sesion>(`${this.baseUrl}/${idTerritorio}/sesiones`, data);
-  }
-
-  updateSesion(idTerritorio: number, idSesion: number, data: Partial<Sesion>): Observable<Sesion> {
-    return this.http.put<Sesion>(`${this.baseUrl}/${idTerritorio}/sesiones/${idSesion}`, data);
-  }
-
-  deleteSesion(idTerritorio: number, idSesion: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${idTerritorio}/sesiones/${idSesion}`);
-  }
-
   // ── Asignaciones ──────────────────────────────────────────────────────
   getAsignaciones(idTerritorio: number): Observable<AsignacionTerritorio[]> {
     return this.http.get<AsignacionTerritorio[]>(`${this.baseUrl}/${idTerritorio}/asignaciones`);
@@ -127,7 +109,7 @@ export class TerritoriosService {
     return this.http.get<AsignacionTerritorio | null>(`${this.baseUrl}/${idTerritorio}/asignaciones/activa`);
   }
 
-  createAsignacion(idTerritorio: number, data: { id_publicador: number; id_sesion?: number; fecha_asignacion: string; notas?: string }): Observable<AsignacionTerritorio> {
+  createAsignacion(idTerritorio: number, data: { id_publicador: number; fecha_asignacion: string; notas?: string }): Observable<AsignacionTerritorio> {
     return this.http.post<AsignacionTerritorio>(`${this.baseUrl}/${idTerritorio}/asignaciones`, data);
   }
 

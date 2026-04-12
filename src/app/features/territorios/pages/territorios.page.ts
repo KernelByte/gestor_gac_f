@@ -15,7 +15,6 @@ import {
   TerritorioStats,
   GeoJSONFeatureCollection,
   GeoJSONFeature,
-  Sesion,
   AsignacionTerritorio,
   Punto,
 } from '../models/territorio.model';
@@ -356,29 +355,56 @@ import {
                      @let isPredicada = m.ultimaCobertura?.estado === 'Predicada';
                      <div class="flex items-center gap-3 p-3 rounded-xl border transition-all"
                           [class]="isPredicada ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/30' : 'bg-white dark:bg-slate-800/60 border-slate-100 dark:border-slate-700/40 hover:border-emerald-200 dark:hover:border-emerald-800/40'">
-                       <div class="w-9 h-9 rounded-xl font-black text-sm flex items-center justify-center shrink-0 transition-colors"
+                       <div class="min-w-[2.25rem] h-9 px-2 rounded-xl font-black text-xs flex items-center justify-center shrink-0 transition-colors text-center leading-tight"
                             [class]="isPredicada ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200 dark:shadow-emerald-900' : 'bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300'">
                          {{ m.numero_manzana }}
                        </div>
-                       <div class="flex-1 min-w-0">
-                         <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Manzana {{ m.numero_manzana }}</p>
-                         @if (isPredicada) {
-                           <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                             <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                             Predicada · {{ m.ultimaCobertura!.fecha_inicio | date:'dd/MM/yy' }}
-                           </p>
-                         } @else {
-                           <p class="text-[10px] text-slate-400">Pendiente</p>
-                         }
-                       </div>
-                       @if (!isPredicada) {
-                         <button (click)="marcarManzanaPredicada(m.id_manzana)"
-                           [disabled]="coberturaSaving() === m.id_manzana"
-                           class="text-[10px] font-bold px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shrink-0">
-                           {{ coberturaSaving() === m.id_manzana ? '...' : '✓ Marcar' }}
+                       @if (editingManzanaId() === m.id_manzana) {
+                         <!-- Inline edit mode -->
+                         <input
+                           type="text"
+                           [value]="editingManzanaNombre()"
+                           (input)="editingManzanaNombre.set($any($event.target).value)"
+                           (keydown.enter)="saveEditManzana(m.id_manzana)"
+                           (keydown.escape)="cancelEditManzana()"
+                           class="flex-1 min-w-0 px-2 py-1 text-xs font-bold rounded-lg border border-blue-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           autofocus
+                         />
+                         <button (click)="saveEditManzana(m.id_manzana)"
+                           [disabled]="!editingManzanaNombre().trim() || manzanaRenaming() === m.id_manzana"
+                           class="text-[10px] font-bold px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 shrink-0">
+                           {{ manzanaRenaming() === m.id_manzana ? '...' : 'Ok' }}
+                         </button>
+                         <button (click)="cancelEditManzana()"
+                           class="text-[10px] font-bold px-2 py-1.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-600 dark:text-slate-200 rounded-lg transition-colors shrink-0">
+                           ✕
                          </button>
                        } @else {
-                         <svg class="w-4 h-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                         <div class="flex-1 min-w-0">
+                           <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ m.numero_manzana }}</p>
+                           @if (isPredicada) {
+                             <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                               <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                               Predicada · {{ m.ultimaCobertura!.fecha_inicio | date:'dd/MM/yy' }}
+                             </p>
+                           } @else {
+                             <p class="text-[10px] text-slate-400">Pendiente</p>
+                           }
+                         </div>
+                         <!-- Edit pencil button -->
+                         <button (click)="startEditManzana(m)"
+                           class="p-1.5 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 rounded-lg transition-colors shrink-0">
+                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                         </button>
+                         @if (!isPredicada) {
+                           <button (click)="marcarManzanaPredicada(m.id_manzana)"
+                             [disabled]="coberturaSaving() === m.id_manzana"
+                             class="text-[10px] font-bold px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shrink-0">
+                             {{ coberturaSaving() === m.id_manzana ? '...' : '✓ Marcar' }}
+                           </button>
+                         } @else {
+                           <svg class="w-4 h-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                         }
                        }
                      </div>
                    }
@@ -444,92 +470,6 @@ import {
                    }
                  </div>
                </div>
-               }
-             }
-
-             <!-- TAB: Sesiones (Fase 2) -->
-             @if (activeDetailTab() === 'sesiones') {
-               <div class="flex items-center justify-between">
-                 <h4 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-widest">Sesiones del Territorio</h4>
-                 <button (click)="openNuevaSesionModal()" class="text-xs font-bold px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors">+ Nueva</button>
-               </div>
-               @if (sesiones().length === 0) {
-                 <div class="text-center py-6 text-slate-400 text-sm">
-                   <p class="font-medium">Sin sesiones registradas</p>
-                   <p class="text-xs mt-1">Las sesiones dividen el territorio en sub-áreas para grupos grandes</p>
-                 </div>
-               } @else {
-                 <!-- Unassigned manzanas count -->
-                 @if (manzanasConCobertura().length > 0 && manzanasSinSesion().length > 0) {
-                   <p class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">{{ manzanasSinSesion().length }} manzana{{ manzanasSinSesion().length !== 1 ? 's' : '' }} sin sesión asignada</p>
-                 }
-                 <div class="space-y-2">
-                   @for (s of sesiones(); track s.id_sesion) {
-                     @let isExpanded = expandedSesionId() === s.id_sesion;
-                     <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
-                       <!-- Session header -->
-                       <div class="flex items-center justify-between p-3 bg-white dark:bg-slate-800/60 cursor-pointer"
-                            (click)="expandedSesionId.set(isExpanded ? null : s.id_sesion)">
-                         <div class="flex items-center gap-2 min-w-0">
-                           <span class="shrink-0 w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-black flex items-center justify-center">{{ s.codigo }}</span>
-                           <div class="min-w-0">
-                             <p class="text-xs font-black text-slate-700 dark:text-slate-200 truncate">{{ s.nombre }}</p>
-                             @if (s.notas) { <p class="text-[10px] text-slate-400">{{ s.notas }}</p> }
-                           </div>
-                         </div>
-                         <div class="flex items-center gap-1 shrink-0">
-                           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">{{ manzanasDeSesion(s.id_sesion).length }} manz.</span>
-                           <button (click)="$event.stopPropagation(); openEditSesionModal(s)" class="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
-                             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                           </button>
-                           <button (click)="$event.stopPropagation(); deleteSesion(s.id_sesion)" class="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
-                           </button>
-                           <svg class="w-3.5 h-3.5 text-slate-400 transition-transform" [class.rotate-180]="isExpanded" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                         </div>
-                       </div>
-                       <!-- Expanded: manzanas assigned + unassigned -->
-                       @if (isExpanded) {
-                         <div class="border-t border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/20 p-3 space-y-2">
-                           <!-- Assigned manzanas -->
-                           @if (manzanasDeSesion(s.id_sesion).length > 0) {
-                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Manzanas en esta sesión</p>
-                             <div class="flex flex-wrap gap-1.5">
-                               @for (m of manzanasDeSesion(s.id_sesion); track m.id_manzana) {
-                                 <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/40">
-                                   <span class="text-xs font-black text-emerald-700 dark:text-emerald-300">{{ m.numero_manzana || m.id_manzana }}</span>
-                                   <button (click)="assignManzanaToSesion(m.id_manzana, null)"
-                                     [disabled]="sesionAsignandoId() === m.id_manzana"
-                                     class="text-emerald-400 hover:text-red-500 transition-colors disabled:opacity-40"
-                                     title="Quitar de sesión">
-                                     <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                   </button>
-                                 </div>
-                               }
-                             </div>
-                           }
-                           <!-- Unassigned manzanas to add -->
-                           @if (manzanasSinSesion().length > 0) {
-                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Agregar manzanas sin sesión</p>
-                             <div class="flex flex-wrap gap-1.5">
-                               @for (m of manzanasSinSesion(); track m.id_manzana) {
-                                 <button (click)="assignManzanaToSesion(m.id_manzana, s.id_sesion)"
-                                   [disabled]="sesionAsignandoId() === m.id_manzana"
-                                   class="flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-emerald-400 hover:text-emerald-600 transition-colors text-xs font-bold text-slate-500 disabled:opacity-40">
-                                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                   {{ m.numero_manzana || m.id_manzana }}
-                                 </button>
-                               }
-                             </div>
-                           }
-                           @if (manzanasDeSesion(s.id_sesion).length === 0 && manzanasSinSesion().length === 0) {
-                             <p class="text-[10px] text-slate-400 text-center py-2">Todas las manzanas están asignadas a otras sesiones</p>
-                           }
-                         </div>
-                       }
-                     </div>
-                   }
-                 </div>
                }
              }
 
@@ -640,42 +580,6 @@ import {
             <button (click)="saveDevolucion()" [disabled]="asignacionSaving()"
               class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-colors disabled:opacity-50">
               {{ asignacionSaving() ? 'Guardando...' : 'Registrar Devolución' }}
-            </button>
-          </div>
-        </div>
-      </div>
-      }
-
-      <!-- Modal Sesión -->
-      @if (showSesionModal()) {
-      <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="showSesionModal.set(false)"></div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm relative z-10 shadow-2xl overflow-hidden animate-fadeIn">
-          <div class="p-5 border-b border-slate-100 dark:border-slate-700/50">
-            <h3 class="text-base font-black text-slate-900 dark:text-white">{{ editingSesionId() ? 'Editar Sesión' : 'Nueva Sesión' }}</h3>
-          </div>
-          <div class="p-5 space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Código *</label>
-              <input type="text" [(ngModel)]="editingSesion.codigo" placeholder="Ej: A, B, S1..."
-                class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nombre *</label>
-              <input type="text" [(ngModel)]="editingSesion.nombre" placeholder="Ej: Sector Norte"
-                class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notas (opcional)</label>
-              <input type="text" [(ngModel)]="editingSesion.notas" placeholder="Observaciones..."
-                class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
-          </div>
-          <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 flex gap-3">
-            <button (click)="showSesionModal.set(false)" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
-            <button (click)="saveSesion()" [disabled]="!editingSesion.codigo || !editingSesion.nombre || sesionSaving()"
-              class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-colors disabled:opacity-50">
-              {{ sesionSaving() ? 'Guardando...' : 'Guardar' }}
             </button>
           </div>
         </div>
@@ -932,13 +836,6 @@ export class TerritoriosPage implements OnInit {
    selectedPuntosGeoJSON = signal<GeoJSONFeatureCollection | null>(null);
    puntos = signal<Punto[]>([]);
 
-   // Sesiones
-   sesiones = signal<Sesion[]>([]);
-   showSesionModal = signal(false);
-   editingSesion: Partial<Sesion> = { codigo: '', nombre: '', notas: '' };
-   editingSesionId = signal<number | null>(null);
-   sesionSaving = signal(false);
-
    // Asignaciones
    asignacionActiva = signal<AsignacionTerritorio | null>(null);
    historialAsignaciones = signal<AsignacionTerritorio[]>([]);
@@ -960,19 +857,17 @@ export class TerritoriosPage implements OnInit {
    manzanasConCobertura = signal<Array<Manzana & { ultimaCobertura?: CoberturaManzana }>>([]);
    coberturaLoading = signal(false);
    coberturaSaving = signal<number | null>(null); // id_manzana siendo guardado
-   activeDetailTab = signal<'info' | 'manzanas' | 'sesiones' | 'asignaciones'>('info');
+   editingManzanaId = signal<number | null>(null);
+   editingManzanaNombre = signal('');
+   manzanaRenaming = signal<number | null>(null);
+   activeDetailTab = signal<'info' | 'manzanas' | 'asignaciones'>('info');
    manzanaSaving = signal(false);
 
-   readonly tabs = [
+   readonly tabs: Array<{ id: 'info' | 'manzanas' | 'asignaciones'; label: string; icon: string }> = [
      { id: 'info',        label: 'territorio',  icon: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' },
      { id: 'manzanas',   label: 'Manzanas',     icon: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>' },
      { id: 'asignaciones', label: 'Asignación', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
-     { id: 'sesiones',   label: 'Sesiones',     icon: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>' },
    ];
-
-   // Sesiones: asignación de manzanas
-   expandedSesionId = signal<number | null>(null);
-   sesionAsignandoId = signal<number | null>(null); // id_manzana siendo asignado
 
    // Editor State
    editingGeoJSON = signal<GeoJSONFeatureCollection | null>(null);
@@ -1048,21 +943,13 @@ export class TerritoriosPage implements OnInit {
       this.selectedPuntosGeoJSON.set(null);
       this.puntos.set([]);
       this.activeDetailTab.set('info');
-      this.sesiones.set([]);
       this.asignacionActiva.set(null);
       this.historialAsignaciones.set([]);
       this.manzanasConCobertura.set([]);
-      this.expandedSesionId.set(null);
-      this.sesionAsignandoId.set(null);
 
       // Load stats
       this.territoriosService.getTerritorioStats(t.id_territorio).subscribe({
          next: (stats) => this.selectedStats.set(stats),
-      });
-
-      // Load sesiones
-      this.territoriosService.getSesiones(t.id_territorio).subscribe({
-         next: (s) => this.sesiones.set(s),
       });
 
       // Load asignacion activa + historial
@@ -1104,12 +991,9 @@ export class TerritoriosPage implements OnInit {
       this.selectedManzanasGeoJSON.set(null);
       this.selectedPuntosGeoJSON.set(null);
       this.puntos.set([]);
-      this.sesiones.set([]);
       this.asignacionActiva.set(null);
       this.historialAsignaciones.set([]);
       this.manzanasConCobertura.set([]);
-      this.expandedSesionId.set(null);
-      this.sesionAsignandoId.set(null);
    }
 
    // ── Asignaciones ────────────────────────────────────────────────────
@@ -1192,74 +1076,6 @@ export class TerritoriosPage implements OnInit {
       });
    }
 
-   // ── Sesiones ────────────────────────────────────────────────────────
-   openNuevaSesionModal(): void {
-      this.editingSesion = { codigo: '', nombre: '', notas: '' };
-      this.editingSesionId.set(null);
-      this.showSesionModal.set(true);
-   }
-
-   openEditSesionModal(s: Sesion): void {
-      this.editingSesion = { codigo: s.codigo, nombre: s.nombre, notas: s.notas ?? '' };
-      this.editingSesionId.set(s.id_sesion);
-      this.showSesionModal.set(true);
-   }
-
-   saveSesion(): void {
-      const t = this.selectedTerritorio();
-      if (!t) return;
-      this.sesionSaving.set(true);
-      const id = this.editingSesionId();
-      const obs = id
-         ? this.territoriosService.updateSesion(t.id_territorio, id, this.editingSesion)
-         : this.territoriosService.createSesion(t.id_territorio, { ...this.editingSesion, id_territorio: t.id_territorio });
-      obs.subscribe({
-         next: () => {
-            this.sesionSaving.set(false);
-            this.showSesionModal.set(false);
-            this.territoriosService.getSesiones(t.id_territorio).subscribe({ next: (s) => this.sesiones.set(s) });
-         },
-         error: () => this.sesionSaving.set(false),
-      });
-   }
-
-   deleteSesion(idSesion: number): void {
-      const t = this.selectedTerritorio();
-      if (!t) return;
-      this.territoriosService.deleteSesion(t.id_territorio, idSesion).subscribe({
-         next: () => {
-            this.sesiones.update(list => list.filter(s => s.id_sesion !== idSesion));
-            // Unlink any manzanas that belonged to this session
-            this.manzanasConCobertura.update(list =>
-               list.map(m => m.id_sesion === idSesion ? { ...m, id_sesion: null } : m)
-            );
-         },
-      });
-   }
-
-   assignManzanaToSesion(idManzana: number, idSesion: number | null): void {
-      const t = this.selectedTerritorio();
-      if (!t) return;
-      this.sesionAsignandoId.set(idManzana);
-      this.territoriosService.updateManzana(t.id_territorio, idManzana, { id_sesion: idSesion } as any).subscribe({
-         next: () => {
-            this.sesionAsignandoId.set(null);
-            this.manzanasConCobertura.update(list =>
-               list.map(m => m.id_manzana === idManzana ? { ...m, id_sesion: idSesion } : m)
-            );
-         },
-         error: () => this.sesionAsignandoId.set(null),
-      });
-   }
-
-   manzanasDeSesion(idSesion: number): Array<Manzana & { ultimaCobertura?: CoberturaManzana }> {
-      return this.manzanasConCobertura().filter(m => m.id_sesion === idSesion);
-   }
-
-   manzanasSinSesion(): Array<Manzana & { ultimaCobertura?: CoberturaManzana }> {
-      return this.manzanasConCobertura().filter(m => !m.id_sesion);
-   }
-
    manzanasPredicadasCount(): number {
       return this.manzanasConCobertura().filter(m => m.ultimaCobertura?.estado === 'Predicada').length;
    }
@@ -1318,13 +1134,40 @@ export class TerritoriosPage implements OnInit {
       });
    }
 
-   setDetailTab(tab: 'info' | 'manzanas' | 'sesiones' | 'asignaciones'): void {
+   startEditManzana(m: Manzana): void {
+      this.editingManzanaId.set(m.id_manzana);
+      this.editingManzanaNombre.set(m.numero_manzana);
+   }
+
+   cancelEditManzana(): void {
+      this.editingManzanaId.set(null);
+      this.editingManzanaNombre.set('');
+   }
+
+   saveEditManzana(idManzana: number): void {
+      const t = this.selectedTerritorio();
+      const nombre = this.editingManzanaNombre().trim();
+      if (!t || !nombre) return;
+      this.manzanaRenaming.set(idManzana);
+      this.territoriosService.updateManzana(t.id_territorio, idManzana, { numero_manzana: nombre }).subscribe({
+         next: () => {
+            this.manzanasConCobertura.update(list =>
+               list.map(m => m.id_manzana === idManzana ? { ...m, numero_manzana: nombre } : m)
+            );
+            this.manzanaRenaming.set(null);
+            this.editingManzanaId.set(null);
+            this.editingManzanaNombre.set('');
+            // Reload manzanas GeoJSON so map label updates
+            this.territoriosService.getManzanasGeoJSON(t.id_territorio).subscribe(gj => this.selectedManzanasGeoJSON.set(gj));
+         },
+         error: () => this.manzanaRenaming.set(null),
+      });
+   }
+
+   setDetailTab(tab: 'info' | 'manzanas' | 'asignaciones'): void {
       this.activeDetailTab.set(tab);
-      if ((tab === 'manzanas' || tab === 'sesiones') && this.manzanasConCobertura().length === 0) {
+      if (tab === 'manzanas' && this.manzanasConCobertura().length === 0) {
          this.loadManzanasCobertura();
-      }
-      if (tab !== 'sesiones') {
-         this.expandedSesionId.set(null);
       }
    }
 
