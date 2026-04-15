@@ -35,8 +35,8 @@ import {
       ])
    ],
    template: `
-    <div class="h-full flex flex-col w-full max-w-[1920px] mx-auto p-4 sm:p-8 relative gap-6">
-      
+    <div class="flex flex-col h-full overflow-hidden gap-5">
+
       <!-- 1. Header -->
       <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
@@ -48,7 +48,7 @@ import {
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
             Ver Mapa General
           </button>
-          <button (click)="openCreateModal()" class="px-5 py-2.5 bg-[#6D28D9] text-white font-bold rounded-xl text-sm hover:bg-[#5b21b6] shadow-lg shadow-purple-900/20 dark:shadow-purple-900/40 transition-all active:scale-95 flex items-center gap-2">
+          <button (click)="openCreateModal()" class="px-5 py-2.5 bg-[#059669] text-white font-bold rounded-xl text-sm hover:bg-[#047857] shadow-lg shadow-emerald-900/20 dark:shadow-emerald-900/40 transition-all active:scale-95 flex items-center gap-2">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Nuevo Territorio
           </button>
@@ -56,12 +56,12 @@ import {
       </header>
 
       <!-- 2. KPIs -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 shrink-0">
         <!-- Total -->
         <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
-          <div class="absolute right-0 top-0 w-24 h-24 bg-purple-50 dark:bg-purple-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+          <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div class="flex items-center gap-3 z-10">
-            <div class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             </div>
             <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Territorios Totales</span>
@@ -101,41 +101,43 @@ import {
         </div>
       </div>
 
-      <!-- 3. Main Content (List + Detail) -->
-      <div class="flex-1 flex gap-6 min-h-0 relative">
-        
+      <!-- 3. Filter Bar -->
+      <div class="shrink-0 bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center gap-2">
+        <div class="relative flex-1 w-full group">
+          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#059669] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input
+            [(ngModel)]="searchQuery"
+            type="text"
+            placeholder="Buscar territorio..."
+            class="w-full pl-11 pr-4 py-2.5 bg-transparent border-none rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#059669]/20 transition-all"
+          >
+        </div>
+        <div class="h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block shrink-0"></div>
+        <div class="relative w-full sm:w-48 shrink-0">
+          <select
+            [(ngModel)]="estadoFilter"
+            class="w-full pl-3 pr-8 py-2.5 border-none bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors appearance-none cursor-pointer outline-none"
+          >
+            <option value="">Todos los Estados</option>
+            <option value="Disponible">Disponible</option>
+            <option value="Asignado">Asignado</option>
+            <option value="En Pausa">En Pausa</option>
+          </select>
+          <svg class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- 4. Main Content (List + Detail) -->
+      <div class="flex-1 flex gap-5 min-h-0 relative">
+
         <!-- Left: List -->
         <div class="flex-1 flex flex-col bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm overflow-hidden transition-all duration-300">
-           
-           <!-- Toolbar -->
-           <div class="p-4 border-b border-slate-100 dark:border-slate-700/50 flex flex-col sm:flex-row gap-4">
-              <div class="relative flex-1">
-                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                 <input 
-                   [(ngModel)]="searchQuery"
-                   type="text" 
-                   placeholder="Buscar territorio..." 
-                   class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#6D28D9] dark:focus:border-[#6D28D9] focus:ring-4 focus:ring-purple-500/10 transition-all placeholder:text-slate-400"
-                 >
-              </div>
-              <div class="flex gap-2">
-                 <select
-                   [(ngModel)]="estadoFilter"
-                   class="px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors appearance-none cursor-pointer"
-                 >
-                   <option value="">Todos los Estados</option>
-                   <option value="Disponible">Disponible</option>
-                   <option value="Asignado">Asignado</option>
-                   <option value="En Pausa">En Pausa</option>
-                 </select>
-              </div>
-           </div>
 
            <!-- Table -->
            <div class="flex-1 overflow-y-auto simple-scrollbar relative">
               @if (loading()) {
                 <div class="flex items-center justify-center py-20">
-                  <div class="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div class="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
                 </div>
               } @else {
               <table class="w-full text-left border-collapse">
@@ -150,13 +152,13 @@ import {
                     @for (t of paginatedTerritorios(); track t.id_territorio) {
                     <tr
                       (click)="selectTerritorio(t)"
-                      class="group cursor-pointer hover:bg-purple-50/40 dark:hover:bg-purple-900/20 transition-colors"
-                      [class.bg-purple-50]="selectedTerritorio()?.id_territorio === t.id_territorio"
-                      [class.dark:bg-purple-900/20]="selectedTerritorio()?.id_territorio === t.id_territorio"
+                      class="group cursor-pointer hover:bg-emerald-50/40 dark:hover:bg-emerald-900/20 transition-colors"
+                      [class.bg-emerald-50]="selectedTerritorio()?.id_territorio === t.id_territorio"
+                      [class.dark:bg-emerald-900/20]="selectedTerritorio()?.id_territorio === t.id_territorio"
                     >
                        <!-- Code/Name -->
                        <td class="px-6 py-4">
-                          <p class="font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#6D28D9] dark:group-hover:text-purple-400 transition-colors">{{ t.codigo }}</p>
+                          <p class="font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#059669] dark:group-hover:text-emerald-400 transition-colors">{{ t.codigo }}</p>
                           <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ t.nombre }}</p>
                        </td>
                        <!-- Status -->
@@ -192,10 +194,10 @@ import {
                   <button 
                     (click)="currentPage.set(p)"
                     class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors"
-                    [class.bg-[#5B3C88]]="currentPage() === p"
+                    [class.bg-emerald-600]="currentPage() === p"
                     [class.text-white]="currentPage() === p"
                     [class.shadow-md]="currentPage() === p"
-                    [class.hover:bg-white]="currentPage() !== p"
+                    [class.hover:bg-slate-100]="currentPage() !== p"
                     [class.dark:hover:bg-slate-700]="currentPage() !== p"
                     [class.text-slate-500]="currentPage() !== p"
                   >{{ p }}</button>
@@ -206,10 +208,19 @@ import {
 
         <!-- Right: Detail Panel -->
         @if (selectedTerritorio()) {
-        <div 
+        <div
           @slideOver
-          class="w-full md:w-[420px] shrink-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden flex flex-col h-full absolute md:relative right-0 z-20"
+          class="w-full md:w-[420px] shrink-0 bg-white dark:bg-slate-800 md:rounded-2xl border-0 md:border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden flex flex-col h-full absolute inset-0 md:inset-auto md:relative z-30"
         >
+           <!-- Mobile back button -->
+           <div class="md:hidden flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 shrink-0">
+             <button (click)="closeDetails()" class="flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
+               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                 <path d="M19 12H5M12 5l-7 7 7 7"/>
+               </svg>
+               Volver
+             </button>
+           </div>
            <!-- Header -->
            <div class="px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-700/50 bg-gradient-to-br from-emerald-50/60 to-white dark:from-emerald-900/10 dark:to-slate-800">
               <div class="flex items-start justify-between gap-3">
@@ -395,6 +406,16 @@ import {
                          <button (click)="startEditManzana(m)"
                            class="p-1.5 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 rounded-lg transition-colors shrink-0">
                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                         </button>
+                         <!-- Delete button -->
+                         <button (click)="deleteManzana(m.id_manzana)"
+                           [disabled]="manzanaDeleting() === m.id_manzana"
+                           class="p-1.5 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 rounded-lg transition-colors shrink-0 disabled:opacity-50">
+                           @if (manzanaDeleting() === m.id_manzana) {
+                             <div class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                           } @else {
+                             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                           }
                          </button>
                          @if (!isPredicada) {
                            <button (click)="marcarManzanaPredicada(m.id_manzana)"
@@ -860,6 +881,7 @@ export class TerritoriosPage implements OnInit {
    editingManzanaId = signal<number | null>(null);
    editingManzanaNombre = signal('');
    manzanaRenaming = signal<number | null>(null);
+   manzanaDeleting = signal<number | null>(null);
    activeDetailTab = signal<'info' | 'manzanas' | 'asignaciones'>('info');
    manzanaSaving = signal(false);
 
@@ -1161,6 +1183,20 @@ export class TerritoriosPage implements OnInit {
             this.territoriosService.getManzanasGeoJSON(t.id_territorio).subscribe(gj => this.selectedManzanasGeoJSON.set(gj));
          },
          error: () => this.manzanaRenaming.set(null),
+      });
+   }
+
+   deleteManzana(idManzana: number): void {
+      const t = this.selectedTerritorio();
+      if (!t || !confirm('¿Eliminar esta manzana? Esta acción no se puede deshacer.')) return;
+      this.manzanaDeleting.set(idManzana);
+      this.territoriosService.deleteManzana(t.id_territorio, idManzana).subscribe({
+         next: () => {
+            this.manzanasConCobertura.update(list => list.filter(m => m.id_manzana !== idManzana));
+            this.manzanaDeleting.set(null);
+            this.territoriosService.getManzanasGeoJSON(t.id_territorio).subscribe(gj => this.selectedManzanasGeoJSON.set(gj));
+         },
+         error: () => this.manzanaDeleting.set(null),
       });
    }
 

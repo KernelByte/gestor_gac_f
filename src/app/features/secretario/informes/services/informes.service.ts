@@ -160,4 +160,12 @@ export class InformesService {
    generarTokenNotificacion(datos: NotificarRequest): Observable<NotificarResponse> {
       return this.http.post<NotificarResponse>(`${this.apiUrl}/notificar`, datos);
    }
+
+   // --- URL Congregación ---
+   getCongregacionUrl(congregacionId: number, clave: string): Observable<{ url: string; clave: string }> {
+      const params = new HttpParams()
+         .set('congregacion_id', congregacionId.toString())
+         .set('clave', clave);
+      return this.http.get<{ url: string; clave: string }>(`${this.apiUrl}/congregacion-url`, { params });
+   }
 }

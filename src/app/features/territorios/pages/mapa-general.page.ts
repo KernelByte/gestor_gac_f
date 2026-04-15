@@ -10,7 +10,7 @@ import { GeoJSONFeatureCollection } from '../models/territorio.model';
   selector: 'app-mapa-general-page',
   imports: [CommonModule, TerritorioMapComponent],
   template: `
-    <div class="h-full flex flex-col w-full max-w-[1920px] mx-auto p-4 sm:p-8 gap-6">
+    <div class="flex flex-col h-full overflow-hidden gap-5">
       <!-- Header -->
       <header class="flex items-center justify-between shrink-0">
         <div>
@@ -47,7 +47,7 @@ import { GeoJSONFeatureCollection } from '../models/territorio.model';
         @if (loading()) {
           <div class="w-full h-full flex items-center justify-center">
             <div class="flex flex-col items-center gap-3">
-              <div class="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+              <div class="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
               <span class="text-sm text-slate-500 font-medium">Cargando mapa...</span>
             </div>
           </div>

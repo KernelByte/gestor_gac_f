@@ -9,6 +9,14 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { AIConfigComponent } from './components/ai-config.component';
 import { DbBackupComponent } from './components/db-backup.component';
 
+interface CongregacionUrl {
+   id_url: number;
+   id_congregacion: number;
+   clave: string;
+   url: string;
+   descripcion: string | null;
+}
+
 interface CongregacionAdmin {
    id_congregacion: number;
    nombre_congregacion: string;
@@ -112,6 +120,15 @@ export class AdminConfigPage implements OnInit {
    editingCongregation = signal<CongregacionAdmin | null>(null);
 
    congregationForm!: FormGroup;
+   urlForm!: FormGroup;
+
+   // URL Signals
+   congregacionUrls = signal<CongregacionUrl[]>([]);
+   loadingUrls = signal(false);
+   showUrlForm = signal(false);
+   editingUrlClave = signal<string | null>(null);
+   savingUrl = signal(false);
+   deletingUrlKey = signal<string | null>(null);
 
    // Notification Signal
    notification = signal<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -162,6 +179,12 @@ export class AdminConfigPage implements OnInit {
          codigo_seguridad: [''],
          tiene_sala_b: [false],
          usa_zoom: [true]
+      });
+
+      this.urlForm = this.fb.group({
+         clave: ['', [Validators.required, Validators.maxLength(50)]],
+         url: ['', [Validators.required, Validators.pattern('https?://.+')]],
+         descripcion: ['', [Validators.maxLength(200)]]
       });
    }
 
@@ -225,6 +248,7 @@ export class AdminConfigPage implements OnInit {
             tiene_sala_b: !!cong.tiene_sala_b,
             usa_zoom: !!cong.usa_zoom
          });
+         this.loadCongregacionUrls(id);
          this.panelOpen.set(true);
       }
    }
@@ -344,6 +368,87 @@ export class AdminConfigPage implements OnInit {
 
 
 
+   // ===== URLs Methods =====
+   loadCongregacionUrls(id: number) {
+      this.loadingUrls.set(true);
+      this.http.get<CongregacionUrl[]>(`${this.API_URL}/congregaciones/${id}/urls`).subscribe({
+         next: (urls) => {
+            this.congregacionUrls.set(urls);
+            this.loadingUrls.set(false);
+         },
+         error: (err: any) => {
+            console.error('Error loading URLs:', err);
+            this.loadingUrls.set(false);
+            this.showNotification('Error al cargar URLs de la congregación', 'error');
+         }
+      });
+   }
+
+   openUrlForm(urlObj?: CongregacionUrl) {
+      if (urlObj) {
+         this.editingUrlClave.set(urlObj.clave);
+         this.urlForm.patchValue({
+            clave: urlObj.clave,
+            url: urlObj.url,
+            descripcion: urlObj.descripcion
+         });
+         this.urlForm.get('clave')?.disable();
+      } else {
+         this.editingUrlClave.set(null);
+         this.urlForm.reset();
+         this.urlForm.get('clave')?.enable();
+      }
+      this.showUrlForm.set(true);
+   }
+
+   closeUrlForm() {
+      this.showUrlForm.set(false);
+      this.urlForm.reset();
+      this.editingUrlClave.set(null);
+   }
+
+   saveUrl() {
+      if (this.urlForm.invalid || !this.editingCongregation()) return;
+      
+      this.savingUrl.set(true);
+      const congId = this.editingCongregation()!.id_congregacion;
+      const formData = this.urlForm.getRawValue(); // gets disabled fields too
+      
+      this.http.post<CongregacionUrl>(`${this.API_URL}/congregaciones/${congId}/urls`, formData).subscribe({
+         next: () => {
+            this.savingUrl.set(false);
+            this.closeUrlForm();
+            this.loadCongregacionUrls(congId);
+            this.showNotification('URL guardada correctamente', 'success');
+         },
+         error: (err: any) => {
+            console.error('Error saving URL:', err);
+            this.savingUrl.set(false);
+            this.showNotification(err.error?.detail || 'Error al guardar la URL', 'error');
+         }
+      });
+   }
+
+   deleteUrl(clave: string) {
+      if (!this.editingCongregation() || !confirm(`¿Está seguro que desea eliminar la URL '${clave}'?`)) return;
+      
+      const congId = this.editingCongregation()!.id_congregacion;
+      this.deletingUrlKey.set(clave);
+      
+      this.http.delete(`${this.API_URL}/congregaciones/${congId}/urls/${clave}`).subscribe({
+         next: () => {
+            this.deletingUrlKey.set(null);
+            this.loadCongregacionUrls(congId);
+            this.showNotification('URL eliminada', 'success');
+         },
+         error: (err: any) => {
+            console.error('Error deleting URL:', err);
+            this.deletingUrlKey.set(null);
+            this.showNotification('Error al eliminar la URL', 'error');
+         }
+      });
+   }
+
    // ===== Panel Methods =====
    openCreatePanel() {
       this.editingCongregation.set(null);
@@ -355,6 +460,10 @@ export class AdminConfigPage implements OnInit {
       this.panelOpen.set(false);
       this.congregationForm.reset();
       this.editingCongregation.set(null);
+      this.congregacionUrls.set([]);
+      this.showUrlForm.set(false);
+      this.urlForm.reset();
+      this.editingUrlClave.set(null);
    }
 
    saveCongregation() {

@@ -1,69 +1,169 @@
 <div class="flex flex-col gap-3 h-full overflow-hidden p-1 print:!overflow-visible print:!p-0 print:!h-auto">
-   <!-- Header Area: Tabs + Stats -->
-   <div class="print:hidden flex flex-col sm:flex-row sm:items-center gap-3">
-      <!-- Tabs Navigation -->
-      <div class="shrink-0 inline-flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 rounded-2xl p-1.5 sm:p-2 shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-x-auto max-w-full" style="scrollbar-width: none;">
+   <!-- Template de los Tabs para usarlos dinámicamente -->
+   <ng-template #tabsNav>
+      <div
+         class="shrink-0 flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors w-full"
+         style="scrollbar-width: none;">
          <button *ngFor="let tab of visibleTabs()" (click)="activeTab.set(tab.id)"
-            class="px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0"
+            class="flex-1 min-w-0 px-1 h-9 rounded-lg text-[10px] md:text-xs font-bold transition-all flex items-center justify-center gap-1.5"
             [ngClass]="activeTab() === tab.id 
-           ? 'bg-brand-purple text-white shadow-lg shadow-purple-500/20' 
-           : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'">
-            <span class="flex items-center gap-1.5 sm:gap-2">
-               <span [innerHTML]="tab.icon"></span>
-               <span class="hidden xs:inline">{{ tab.label }}</span>
-               <span class="xs:hidden">{{ tab.label.split(' ')[0] }}</span>
+           ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20' 
+           : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+            <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
+               <svg *ngIf="tab.id === 'entrada'" class="w-full h-full" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+               </svg>
+               <svg *ngIf="tab.id === 'historial'" class="w-full h-full" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+               </svg>
+               <svg *ngIf="tab.id === 'sucursal'" class="w-full h-full" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                     d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+               </svg>
             </span>
+            <span class="truncate">{{ tab.label.split(' ')[0] }}</span>
          </button>
       </div>
+   </ng-template>
 
+   <!-- Header Area: Tabs + Stats (Solo Visible arriba si NO estamos en historial) -->
+   <div *ngIf="activeTab() !== 'historial'" class="print:hidden flex flex-col sm:flex-row sm:items-start gap-3">
+      <!-- Render original de Tabs Navigation si no es historial -->
+      <div class="w-full sm:w-[300px] lg:w-[340px] xl:w-[380px] shrink-0">
+         <ng-container *ngTemplateOutlet="tabsNav"></ng-container>
+      </div>
       <!-- Unified Filters & Stats (Solo en Entrada Mensual) -->
       <div *ngIf="activeTab() === 'entrada'" class="flex-1 min-w-0 max-w-full overflow-visible relative z-20">
-         <app-informes-filters [resumen]="resumen()" [activeDropdown]="activeDropdown()" [isRestrictedUser]="isRestrictedUser()"
-            [selectedMes]="selectedMes" [selectedAno]="selectedAno" [selectedGrupo]="selectedGrupo" [meses]="meses"
-            [anos]="anos" [grupos]="grupos()" [vistaGrupo]="vistaGrupo()" [searchQuery]="searchQuery"
-            [soloSinInforme]="soloSinInforme" [saving]="saving()" (toggleDropdown)="toggleDropdown($event)"
-            (closeDropdown)="closeDropdown()" (selectMes)="selectMes($event)" (selectAno)="selectAno($event)"
-            (selectGrupo)="selectGrupo($event)" (setVista)="setVista($event)"
-            (searchQueryChange)="searchQuery = $event; loadResumen()"
-            (soloSinInformeChange)="onSoloSinInformeChange($event)"
-            (exportExcel)="exportarExcel()" (importExcel)="importarExcel($event)">
+         <app-informes-filters [resumen]="resumen()" [activeDropdown]="activeDropdown()"
+            [isRestrictedUser]="isRestrictedUser()" [selectedMes]="selectedMes" [selectedAno]="selectedAno"
+            [selectedGrupo]="selectedGrupo" [meses]="meses" [anos]="anos" [grupos]="grupos()"
+            [vistaGrupo]="vistaGrupo()" [searchQuery]="searchQuery" [soloSinInforme]="soloSinInforme"
+            [saving]="saving()" (toggleDropdown)="toggleDropdown($event)" (closeDropdown)="closeDropdown()"
+            (selectMes)="selectMes($event)" (selectAno)="selectAno($event)" (selectGrupo)="selectGrupo($event)"
+            (setVista)="setVista($event)" (searchQueryChange)="searchQuery = $event; loadResumen()"
+            (soloSinInformeChange)="onSoloSinInformeChange($event)" (exportExcel)="exportarExcel()"
+            (importExcel)="importarExcel($event)">
          </app-informes-filters>
+      </div>
+
+      <!-- Resumen Sucursal Controls -->
+      <div *ngIf="activeTab() === 'sucursal'"
+         class="flex-1 min-w-0 max-w-full flex justify-start sm:justify-end overflow-visible relative z-20 mt-2 sm:mt-0">
+         <div
+            class="shrink-0 flex items-center gap-2 sm:gap-3 px-3 py-2 bg-white dark:bg-[#1a1b26] rounded-2xl shadow-sm dark:shadow-md border border-[#8854FF]/40 dark:border-[#8854FF]/50 transition-colors">
+            <!-- Backdrop para cerrar dropdown -->
+            <div *ngIf="sucursalDropdownOpen" (click)="sucursalDropdownOpen = false" class="fixed inset-0 z-10 cursor-default"
+               aria-hidden="true"></div>
+
+            <!-- Período selector (estilo unificado con Entrada) -->
+            <div class="flex items-center gap-1.5 relative z-20 shrink-0">
+               <div class="relative">
+                  <button (click)="sucursalDropdownOpen = !sucursalDropdownOpen"
+                     class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors focus:ring-1 focus:ring-brand-purple border border-slate-200 dark:border-transparent min-w-[110px] justify-between shadow-sm">
+                     <span class="truncate">{{ getMesLabel(selectedMes) }} {{ selectedAno }}</span>
+                     <svg class="w-3.5 h-3.5 text-slate-400 transition-transform shrink-0"
+                        [class.rotate-180]="sucursalDropdownOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                     </svg>
+                  </button>
+
+                  <!-- Panel unificado Año + Mes -->
+                  <div *ngIf="sucursalDropdownOpen"
+                     class="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-[#1e2030] rounded-xl shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden flex divide-x divide-slate-100 dark:divide-white/5 animate-in slide-in-from-top-2 duration-200">
+                     <!-- Columna Año -->
+                     <div class="w-20 max-h-[16.5rem] overflow-y-auto p-1.5 flex flex-col gap-0.5" style="scrollbar-width: thin;">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center py-1 mb-1 border-b border-slate-100 dark:border-white/5">Año</p>
+                        <button *ngFor="let a of anos" (click)="selectAno(a); sucursalDropdownOpen = false"
+                           class="w-full px-1 py-1.5 rounded-md text-xs font-bold transition-all text-center"
+                           [ngClass]="selectedAno === a ? 'bg-brand-purple text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'">
+                           {{ a }}
+                        </button>
+                     </div>
+                     <!-- Columna Mes -->
+                     <div class="flex-1 max-h-[16.5rem] overflow-y-auto p-1.5 flex flex-col gap-0.5" style="scrollbar-width: thin;">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-2 py-1 mb-1 border-b border-slate-100 dark:border-white/5">Mes</p>
+                        <div class="grid grid-cols-2 gap-1">
+                           <button *ngFor="let m of meses" (click)="selectMes(m.value); sucursalDropdownOpen = false"
+                              class="w-full text-left px-2 py-1.5 rounded-md text-xs font-medium transition-all truncate"
+                              [ngClass]="selectedMes === m.value ? 'bg-brand-purple text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'">
+                              {{ m.label }}
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <div class="w-px h-5 bg-slate-200 dark:bg-slate-700/60 shrink-0" aria-hidden="true"></div>
+
+            <!-- Botón Enviar a Sucursal -->
+            <button (click)="enviarInforme()"
+               [disabled]="!urlInformes()"
+               [title]="urlInformes() ? 'Abrir informe en el sistema de la sucursal' : 'URL de sucursal no configurada'"
+               class="h-8 flex items-center gap-1.5 px-3 rounded-lg text-xs font-display font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+               [ngClass]="urlInformes() ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-500/15 hover:shadow-lg hover:shadow-emerald-500/20' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">
+               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+               </svg>
+               <span class="hidden sm:inline">Enviar a Sucursal</span>
+            </button>
+
+            <!-- Botón Imprimir -->
+            <button (click)="imprimirSucursal()"
+               class="h-8 flex items-center gap-1.5 px-3 rounded-lg bg-brand-purple text-white text-xs font-display font-bold hover:bg-purple-700 shadow-md shadow-purple-500/15 hover:shadow-lg hover:shadow-purple-500/20 transition-all">
+               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+               </svg>
+               <span class="hidden sm:inline">Imprimir</span>
+            </button>
+         </div>
       </div>
    </div>
 
    <!-- Tab Content -->
-   <div class="flex-1 min-h-0 overflow-hidden flex flex-col print:!overflow-visible print:!h-auto print:block">
+   <div
+      class="flex-1 min-h-0 overflow-hidden flex flex-col print:!overflow-visible print:!h-auto print:block pt-1 md:pt-0">
       <!-- Tab 1: Entrada Mensual -->
-      <ng-container *ngIf="activeTab() === 'entrada'">
-         <div class="flex flex-col gap-3 flex-1 min-h-0 overflow-hidden">
-            <!-- Data List/Table Container -->
-            <app-informes-table [resumen]="resumen()" [saving]="saving()" [canEdit]="canEditInformes()" [privilegios]="privilegios()"
-               [publicadorPrivilegiosMap]="publicadorPrivilegiosMap()" [localChanges]="localChanges"
-               (informeChange)="handleInformeChange($event)" (save)="guardarTodo()" (exportExcel)="exportarExcel()"
-               (importExcel)="importarExcel($event)" (notifyWhatsApp)="notificarWhatsApp($event)">
-            </app-informes-table>
-         </div>
-      </ng-container>
+      <div [ngClass]="activeTab() === 'entrada' ? 'flex flex-col gap-3 flex-1 min-h-0 overflow-hidden' : 'hidden'">
+         <!-- Data List/Table Container -->
+         <app-informes-table [resumen]="resumen()" [saving]="saving()" [canEdit]="canEditInformes()"
+            [privilegios]="privilegios()" [publicadorPrivilegiosMap]="publicadorPrivilegiosMap()"
+            [localChanges]="localChanges" (informeChange)="handleInformeChange($event)" (save)="guardarTodo()"
+            (exportExcel)="exportarExcel()" (importExcel)="importarExcel($event)"
+            (notifyWhatsApp)="notificarWhatsApp($event)">
+         </app-informes-table>
+      </div>
 
-      <!-- Tab 2: Historial (Placeholder) -->
-      <ng-container *ngIf="activeTab() === 'historial'">
-         <app-informes-historial [selectedAno]="+selectedAno" [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0"
-            [grupos]="grupos()" [canEdit]="canEditHistorial()" [canExport]="canEditHistorial()"
-            [lockedGroupId]="canEditHistorial() ? null : historialGroupId()">
+      <!-- Tab 2: Historial -->
+      <div [ngClass]="activeTab() === 'historial' ? 'flex-1 min-h-0 h-full flex flex-col' : 'hidden'">
+         <app-informes-historial [selectedAno]="+selectedAno"
+            [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0" [grupos]="grupos()"
+            [canEdit]="canEditHistorial()" [canExport]="canEditHistorial()"
+            [lockedGroupId]="canEditHistorial() ? null : historialGroupId()"
+            class="h-full flex-col flex overflow-hidden">
+
+            <div tabs class="w-full shrink-0">
+               <ng-container *ngTemplateOutlet="tabsNav"></ng-container>
+            </div>
          </app-informes-historial>
-      </ng-container>
-
+      </div>
 
       <!-- Tab 3: Resumen Sucursal -->
-      <ng-container *ngIf="activeTab() === 'sucursal'">
-         <app-resumen-sucursal
-            [selectedMes]="selectedMes"
-            [selectedAno]="selectedAno"
+      <div [ngClass]="activeTab() === 'sucursal' ? 'flex-1 min-h-0 h-full flex flex-col overflow-y-auto' : 'hidden'">
+         <app-resumen-sucursal [selectedMes]="selectedMes" [selectedAno]="selectedAno"
             [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0"
             [grupoId]="canViewResumenSucursalAllGroups() ? null : historialGroupId()"
             [showAsistencia]="canViewResumenSucursalAllGroups()">
          </app-resumen-sucursal>
-      </ng-container>
+      </div>
    </div>
 
    <!-- Toast Notification -->

@@ -44,6 +44,7 @@ export class InformesMainPage implements OnInit {
       this.congregacionContext.effectiveCongregacionId();
       this.loadGrupos();
       this.loadResumen();
+      this.loadUrlInformes();
     });
 
     effect(() => {
@@ -77,6 +78,8 @@ export class InformesMainPage implements OnInit {
   selectedGrupo: number | null = null;
   searchQuery = '';
   soloSinInforme = false;
+  sucursalDropdownOpen = false;
+  urlInformes = signal<string | null>(null);
 
   localChanges: Map<number, Partial<InformeLoteItem>> = new Map();
 
@@ -536,5 +539,34 @@ export class InformesMainPage implements OnInit {
   showToast(title: string, type: 'success' | 'error' | 'info' = 'success', text?: string) {
     this.toastMessage.set({ title, type, text });
     setTimeout(() => this.toastMessage.set(null), type === 'error' ? 8000 : 5000);
+  }
+
+  loadUrlInformes() {
+    const congregacionId = this.congregacionContext.effectiveCongregacionId();
+    if (!congregacionId) {
+      this.urlInformes.set(null);
+      return;
+    }
+    this.informesService.getCongregacionUrl(congregacionId, 'url_informes').subscribe({
+      next: (res) => this.urlInformes.set(res.url),
+      error: (err) => {
+        console.warn('[urlInformes] Error al obtener URL:', err?.status, err?.error);
+        this.urlInformes.set(null);
+      },
+    });
+  }
+
+  enviarInforme() {
+    const base = this.urlInformes();
+    if (!base) return;
+    const finalUrl = base.replace(
+      /\/monthly-reports\/\d+\/\d+\//,
+      `/monthly-reports/${this.selectedAno}/${this.selectedMes}/`
+    );
+    window.open(finalUrl, '_blank');
+  }
+
+  imprimirSucursal() {
+    window.print();
   }
 }
