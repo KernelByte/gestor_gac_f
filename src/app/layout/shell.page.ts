@@ -31,7 +31,7 @@ export class TimeAgoPipe implements PipeTransform {
   selector: 'app-shell',
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TimeAgoPipe],
   template: `
-    <div class="flex h-screen overflow-hidden bg-[#fafafa] dark:bg-slate-950 transition-colors duration-300" [class.dark]="themeService.darkMode()">
+    <div class="flex h-screen overflow-hidden bg-app-bg dark:bg-slate-950 transition-colors duration-300" [class.dark]="themeService.darkMode()">
       
       <!-- Mobile Overlay -->
       <div 

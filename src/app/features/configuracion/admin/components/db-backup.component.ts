@@ -37,7 +37,7 @@ interface CongregacionOption {
       .pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }
    `],
    template: `
-      <div class="h-full flex flex-col overflow-hidden bg-[#f3f4f6] dark:bg-slate-950">
+      <div class="h-full flex flex-col overflow-hidden bg-app-bg dark:bg-slate-950">
 
          <!-- Header -->
          <div class="shrink-0 flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700/60">

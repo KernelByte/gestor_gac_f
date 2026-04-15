@@ -35,7 +35,7 @@ interface Publicador {
   selector: 'app-horarios-page',
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <div class="min-h-screen bg-[#f3f4f6] dark:bg-slate-950 p-4 lg:p-6">
+    <div class="min-h-screen bg-app-bg dark:bg-slate-950 p-4 lg:p-6">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div>
