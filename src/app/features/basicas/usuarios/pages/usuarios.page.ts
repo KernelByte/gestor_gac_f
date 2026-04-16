@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
-import { trigger, transition, style, animate } from '@angular/animations';
+import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 import { lastValueFrom, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { UsuariosService, Rol, Congregacion, Estado, UsuarioCreatePublicador } from '../services/usuarios.service';
@@ -16,19 +16,23 @@ import { getInitialAvatarStyle } from '../../../../core/utils/avatar-style.util'
    selector: 'app-usuarios-page',
    imports: [CommonModule, ReactiveFormsModule],
    animations: [
-      trigger('listAnimation', [
-         transition(':enter', [
-            style({ opacity: 0, transform: 'translateY(10px)' }),
-            animate('400ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+      trigger('tableAnimation', [
+         transition('* => *', [
+            query(':enter', [
+               style({ opacity: 0, transform: 'translateY(8px)' }),
+               stagger(40, [
+                  animate('180ms cubic-bezier(0.23, 1, 0.32, 1)', style({ opacity: 1, transform: 'translateY(0)' }))
+               ])
+            ], { optional: true })
          ])
       ]),
       trigger('fadeIn', [
          transition(':enter', [
-            style({ opacity: 0, transform: 'translateY(-5px)' }),
-            animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+            style({ opacity: 0, transform: 'scale(0.95)' }),
+            animate('180ms cubic-bezier(0.23, 1, 0.32, 1)', style({ opacity: 1, transform: 'scale(1)' }))
          ]),
          transition(':leave', [
-            animate('150ms ease-in', style({ opacity: 0, transform: 'translateY(-5px)' }))
+            animate('100ms cubic-bezier(0.4, 0, 1, 1)', style({ opacity: 0, transform: 'scale(0.95)' }))
          ])
       ])
    ],
@@ -107,6 +111,8 @@ export class UsuariosPage implements OnInit {
 
    panelOpen = signal(false);
    saving = signal(false);
+   showDeleteDialog = signal(false);
+   userToDelete = signal<Usuario | null>(null);
    showPassword = signal(false);
    editingUser = signal<Usuario | null>(null);
 
@@ -683,20 +689,31 @@ export class UsuariosPage implements OnInit {
       return 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-100 dark:border-slate-700';
    }
 
-   async deleteUsuario(u: Usuario) {
+   deleteUsuario(u: Usuario) {
       if (!u.id_usuario) return;
-      
-      const confirmMsg = `¿Estás seguro de que deseas eliminar al usuario "${u.nombre}"? Esta acción no se puede deshacer.`;
-      if (!confirm(confirmMsg)) return;
+      this.userToDelete.set(u);
+      this.showDeleteDialog.set(true);
+   }
+
+   cancelDelete() {
+      this.showDeleteDialog.set(false);
+      this.userToDelete.set(null);
+   }
+
+   async confirmDelete() {
+      const u = this.userToDelete();
+      if (!u?.id_usuario) return;
 
       try {
          await lastValueFrom(this.service.deleteUsuario(u.id_usuario));
          this.usuarios.update(list => list.filter(item => item.id_usuario !== u.id_usuario));
-         // Toast or notification could go here
       } catch (err: any) {
          console.error('Delete error', err);
          const detail = err.error?.detail || 'Error desconocido';
          alert('Error al eliminar: ' + detail);
+      } finally {
+         this.showDeleteDialog.set(false);
+         this.userToDelete.set(null);
       }
    }
 

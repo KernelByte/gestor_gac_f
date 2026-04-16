@@ -1,7 +1,7 @@
 <div class="flex flex-col md:flex-row h-full overflow-hidden relative" [class.gap-5]="panelOpen()">
 
    <!-- 1. Main Content Area -->
-   <div class="flex-1 flex flex-col min-w-0 h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
+   <div class="flex-1 flex flex-col min-w-0 h-full transition-[flex,min-width,max-width] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]">
 
       <div class="flex flex-col gap-5 h-full w-full overflow-hidden">
 
@@ -152,8 +152,8 @@
                            Acciones</th>
                      </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-                     <tr *ngFor="let u of filteredUsuarios()" @listAnimation
+                  <tbody [@tableAnimation]="filteredUsuarios().length" class="divide-y divide-slate-200 dark:divide-slate-800">
+                     <tr *ngFor="let u of filteredUsuarios()"
                         class="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                         <!-- User Info -->
                         <td class="px-6 py-4">
@@ -263,7 +263,7 @@
    </div>
 
    <!-- 2. Slide Over Panel (Fluid, sibling) -->
-   <div class="shrink-0 flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+   <div class="shrink-0 flex flex-col overflow-hidden transition-[width,opacity] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]
         fixed inset-0 z-50 md:static md:z-auto md:h-full" [class.w-full]="panelOpen()"
       [class.md:w-[480px]]="panelOpen()" [class.w-0]="!panelOpen()" [class.opacity-100]="panelOpen()"
       [class.opacity-0]="!panelOpen()">
@@ -691,3 +691,45 @@
 
       </div>
    </div>
+</div>
+
+<!-- Delete Confirmation Dialog -->
+<div *ngIf="showDeleteDialog()" @fadeIn
+   class="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+   <!-- Backdrop -->
+   <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="cancelDelete()"></div>
+
+   <!-- Dialog -->
+   <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl shadow-black/20 border border-slate-100 dark:border-slate-800 w-full max-w-sm p-6 flex flex-col gap-4">
+      <!-- Icon -->
+      <div class="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center shrink-0">
+         <svg class="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+         </svg>
+      </div>
+
+      <!-- Text -->
+      <div>
+         <h3 class="text-base font-display font-black text-slate-900 dark:text-white">Eliminar usuario</h3>
+         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            ¿Estás seguro de que deseas eliminar a
+            <span class="font-bold text-slate-700 dark:text-slate-300">{{ userToDelete()?.nombre }}</span>?
+            Esta acción no se puede deshacer.
+         </p>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-end gap-3 pt-1">
+         <button (click)="cancelDelete()"
+            class="px-4 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm transition-[transform,background-color] duration-[120ms] hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.97]">
+            Cancelar
+         </button>
+         <button (click)="confirmDelete()"
+            class="px-4 h-10 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm shadow-lg shadow-red-500/25 transition-[transform,background-color,box-shadow] duration-[120ms] active:scale-[0.97] hover:shadow-red-500/30">
+            Eliminar
+         </button>
+      </div>
+   </div>
+</div>
