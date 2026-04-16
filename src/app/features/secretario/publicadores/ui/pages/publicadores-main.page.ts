@@ -13,42 +13,35 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
   selector: 'app-publicadores-main',
   imports: [CommonModule, PublicadoresListComponent, GruposListComponent, PublicadoresContactosComponent],
   template: `
-    <div class="flex flex-col gap-6 h-full">
-      
-      <!-- Header & Navigation Wrapper -->
-      <div class="shrink-0 flex flex-col gap-6">
-          
-          <!-- Title & Description -->
-          <div class="px-8">
-            <h1 class="text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight mb-2 drop-shadow-sm">{{ pageTitle() }}</h1>
-            <p class="text-slate-500 dark:text-slate-400 text-lg leading-relaxed max-w-3xl hidden md:block">{{ pageDescription() }}</p>
-          </div>
+    <div class="flex flex-col gap-3 h-full">
 
-          <!-- Modern Tab Navigation (Segmented Control) -->
-          <div class="bg-slate-100/80 dark:bg-slate-900 p-1.5 rounded-2xl flex flex-wrap md:flex-nowrap gap-1 w-full md:w-fit border border-transparent dark:border-slate-800">
-              @for (tab of visibleTabs(); track tab.id) {
-                <button 
-                  (click)="setTab(tab.id)"
-                  class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
-                  [ngClass]="currentTab() === tab.id ? 'bg-white dark:bg-slate-800 text-brand-orange dark:text-orange-400 shadow-sm dark:shadow-lg dark:shadow-orange-900/10 ring-1 ring-black/5 dark:ring-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'"
-                >
-                  <!-- Icons based on tab.id -->
-                  @if (tab.id === 'listado') {
-                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                  }
-                  @if (tab.id === 'grupos') {
-                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                  }
-                  @if (tab.id === 'contactos') {
-                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                  }
-                  <span class="hidden md:inline">{{ tab.label }}</span>
-                </button>
+      <!-- Tab Navigation (mismo estilo que informes, colores naranja) -->
+      <div class="shrink-0 flex items-center gap-1.5 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors w-full sm:w-[380px]">
+        @for (tab of visibleTabs(); track tab.id) {
+          <button
+            (click)="setTab(tab.id)"
+            class="flex-1 sm:flex-none sm:min-w-[110px] px-4 h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+            [ngClass]="currentTab() === tab.id
+              ? 'bg-brand-orange text-white shadow-md shadow-orange-500/20'
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'"
+          >
+            <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
+              @if (tab.id === 'listado') {
+                <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               }
-          </div>
+              @if (tab.id === 'grupos') {
+                <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              }
+              @if (tab.id === 'contactos') {
+                <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              }
+            </span>
+            <span class="truncate">{{ tab.label }}</span>
+          </button>
+        }
       </div>
 
-      <!-- 3. Content Area -->
+      <!-- Content Area -->
       <div class="flex-1 min-h-0 relative animate-fadeIn">
          
          @if (currentTab() === 'listado') {
@@ -144,22 +137,5 @@ export class PublicadoresMainPage implements OnInit {
     });
   }
 
-  pageTitle = computed(() => {
-    switch (this.currentTab()) {
-      case 'listado': return 'Gestión de Publicadores';
-      case 'grupos': return 'Grupos de Predicación';
-      case 'contactos': return 'Contactos de Emergencia';
-      default: return 'Publicadores';
-    }
-  });
-
-  pageDescription = computed(() => {
-    switch (this.currentTab()) {
-      case 'listado': return 'Administra el directorio de publicadores y su información teocrática.';
-      case 'grupos': return 'Organiza los grupos de servicio del campo y sus asignaciones.';
-      case 'contactos': return 'Gestiona la información de los contactos en caso de emergencia.';
-      default: return '';
-    }
-  });
 }
 

@@ -76,6 +76,13 @@ interface CongregacionOption {
                   : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'">
                Programar
             </button>
+            <button (click)="setSection('restaurar')" type="button"
+               class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+               [ngClass]="activeSection() === 'restaurar'
+                  ? 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'">
+               Restaurar
+            </button>
          </div>
 
          <!-- Content -->
@@ -416,6 +423,144 @@ interface CongregacionOption {
                </div>
             </div>
 
+            <!-- ===== RESTAURAR ===== -->
+            <div *ngIf="activeSection() === 'restaurar'" class="animate-slideIn space-y-4">
+
+               <!-- Warning -->
+               <div class="rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 flex gap-3">
+                  <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                     <p class="text-xs font-bold text-amber-800 dark:text-amber-300">Atenci&oacute;n: esta acci&oacute;n modifica datos en el sistema</p>
+                     <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                        <strong>Backup completo:</strong> reemplaza todo el esquema de la base de datos (congregaciones, publicadores, informes, usuarios, etc.).<br>
+                        <strong>Backup por congregaci&oacute;n:</strong> sobrescribe los datos de esa congregaci&oacute;n espec&iacute;fica (publicadores, grupos, informes, asistencias, contactos y privilegios).
+                     </p>
+                  </div>
+               </div>
+
+               <!-- Upload from file -->
+               <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
+                  <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white mb-1">Subir archivo de respaldo</h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Acepta archivos <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.dump</code> (backup completo) o <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.sql</code> (backup por congregaci&oacute;n)</p>
+
+                  <label class="flex flex-col items-center justify-center gap-2 w-full rounded-xl border-2 border-dashed cursor-pointer transition-colors"
+                     [ngClass]="archivoSubir()
+                        ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 py-4'
+                        : 'border-slate-300 dark:border-slate-600 hover:border-brand-purple hover:bg-brand-purple/5 dark:hover:bg-brand-purple/10 py-6'">
+                     <input type="file" accept=".dump,.sql" class="hidden" (change)="onArchivoSeleccionado($event)" [disabled]="subiendoArchivo()">
+
+                     <ng-container *ngIf="!archivoSubir()">
+                        <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Haz clic para seleccionar un archivo</span>
+                     </ng-container>
+
+                     <ng-container *ngIf="archivoSubir()">
+                        <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400">{{ archivoSubir()!.name }}</span>
+                        <span class="text-[0.625rem] text-slate-400">{{ formatTamano(archivoSubir()!.size) }} &middot; clic para cambiar</span>
+                     </ng-container>
+                  </label>
+
+                  <div *ngIf="archivoSubir()" class="flex gap-2 mt-3">
+                     <button (click)="archivoSubir.set(null)" type="button" [disabled]="subiendoArchivo()"
+                        class="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-40">
+                        Quitar
+                     </button>
+                     <button (click)="confirmarRestaurarArchivo()" type="button" [disabled]="subiendoArchivo()"
+                        class="flex-1 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5">
+                        <svg *ngIf="subiendoArchivo()" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        {{ subiendoArchivo() ? 'Restaurando...' : 'Restaurar este archivo' }}
+                     </button>
+                  </div>
+               </div>
+
+               <!-- Divider -->
+               <div class="flex items-center gap-3">
+                  <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+                  <span class="text-xs text-slate-400 font-medium">o desde el historial</span>
+                  <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+               </div>
+
+               <!-- Empty State -->
+               <div *ngIf="!loadingHistorial() && backupsRestaurables().length === 0"
+                  class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-8 text-center">
+                  <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-4">
+                     <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                     </svg>
+                  </div>
+                  <p class="text-sm font-bold text-slate-900 dark:text-white">Sin respaldos disponibles</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Crea un respaldo primero para poder restaurarlo</p>
+               </div>
+
+               <!-- Loading -->
+               <div *ngIf="loadingHistorial()" class="flex items-center justify-center py-12">
+                  <svg class="w-6 h-6 animate-spin text-brand-purple" fill="none" viewBox="0 0 24 24">
+                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+               </div>
+
+               <!-- Backup list -->
+               <div *ngFor="let backup of backupsRestaurables()"
+                  class="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-4 flex items-center gap-3">
+
+                  <!-- Icon -->
+                  <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600">
+                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                     </svg>
+                  </div>
+
+                  <!-- Info -->
+                  <div class="min-w-0 flex-1">
+                     <div class="flex items-center gap-2">
+                        <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ backup.nombre_archivo }}</p>
+                        <span class="px-2 py-0.5 rounded-full text-[0.625rem] font-bold uppercase shrink-0"
+                           [ngClass]="backup.tipo === 'completo'
+                              ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400'
+                              : 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400'">
+                           {{ backup.tipo === 'completo' ? 'Completo' : backup.nombre_congregacion || 'Congregaci\u00f3n' }}
+                        </span>
+                     </div>
+                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {{ formatFecha(backup.fecha_creacion) }}
+                        <span *ngIf="backup.tamano_mb"> &middot; {{ backup.tamano_mb }} MB</span>
+                        <span *ngIf="backup.iniciado_por"> &middot; por {{ backup.iniciado_por }}</span>
+                     </p>
+                  </div>
+
+                  <!-- Restore Button -->
+                  <button (click)="confirmarRestaurar(backup)" type="button"
+                     [disabled]="restoringId() !== null"
+                     class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border"
+                     [ngClass]="restoringId() === backup.id_backup
+                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 border-amber-200 dark:border-amber-800 cursor-wait'
+                        : restoringId() !== null
+                           ? 'opacity-40 cursor-not-allowed border-slate-200 dark:border-slate-600 text-slate-400'
+                           : 'border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'">
+                     <span *ngIf="restoringId() === backup.id_backup" class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Restaurando...
+                     </span>
+                     <span *ngIf="restoringId() !== backup.id_backup">Restaurar</span>
+                  </button>
+               </div>
+
+            </div>
+
          </div>
       </div>
 
@@ -447,6 +592,79 @@ interface CongregacionOption {
             </div>
          </div>
       </div>
+
+      <!-- Restore Confirmation Modal -->
+      <div *ngIf="showRestoreConfirm()" class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         (click)="showRestoreConfirm.set(null)">
+         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+         <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 max-w-sm w-full animate-slideIn"
+            (click)="$event.stopPropagation()">
+            <div class="w-12 h-12 mx-auto rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center mb-4">
+               <svg class="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+               </svg>
+            </div>
+            <h3 class="text-center text-base font-display font-bold text-slate-900 dark:text-white mb-2">Restaurar respaldo</h3>
+            <p class="text-center text-sm text-slate-500 dark:text-slate-400 mb-2">
+               Se restaurar&aacute; el archivo:<br>
+               <span class="font-medium text-slate-700 dark:text-slate-300">{{ showRestoreConfirm()!.nombre_archivo }}</span>
+            </p>
+            <p class="text-center text-xs text-amber-600 dark:text-amber-400 mb-6">
+               <span *ngIf="showRestoreConfirm()!.tipo === 'completo'">
+                  Esto reemplazar&aacute; <strong>toda</strong> la base de datos con el estado del respaldo.
+               </span>
+               <span *ngIf="showRestoreConfirm()!.tipo !== 'completo'">
+                  Se sobrescribir&aacute;n los datos de la congregaci&oacute;n <strong>{{ showRestoreConfirm()!.nombre_congregacion }}</strong> con los del respaldo.
+               </span>
+            </p>
+            <div class="flex gap-3">
+               <button (click)="showRestoreConfirm.set(null)" type="button"
+                  class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  Cancelar
+               </button>
+               <button (click)="ejecutarRestaurar(showRestoreConfirm()!)" type="button"
+                  class="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-sm transition-colors">
+                  S&iacute;, restaurar
+               </button>
+            </div>
+         </div>
+      </div>
+
+      <!-- Restore from File Confirmation Modal -->
+      <div *ngIf="showRestoreArchivoConfirm()" class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         (click)="showRestoreArchivoConfirm.set(false)">
+         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+         <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 max-w-sm w-full animate-slideIn"
+            (click)="$event.stopPropagation()">
+            <div class="w-12 h-12 mx-auto rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center mb-4">
+               <svg class="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+               </svg>
+            </div>
+            <h3 class="text-center text-base font-display font-bold text-slate-900 dark:text-white mb-2">Restaurar desde archivo</h3>
+            <p class="text-center text-sm text-slate-500 dark:text-slate-400 mb-2">
+               <span class="font-medium text-slate-700 dark:text-slate-300">{{ archivoSubir()?.name }}</span>
+            </p>
+            <p class="text-center text-xs text-amber-600 dark:text-amber-400 mb-6">
+               <span *ngIf="archivoSubir()?.name?.endsWith('.dump')">
+                  Esto reemplazar&aacute; <strong>toda</strong> la base de datos con el contenido de este archivo.
+               </span>
+               <span *ngIf="archivoSubir()?.name?.endsWith('.sql')">
+                  Se sobrescribir&aacute;n los datos de la congregaci&oacute;n contenidos en este archivo.
+               </span>
+            </p>
+            <div class="flex gap-3">
+               <button (click)="showRestoreArchivoConfirm.set(false)" type="button"
+                  class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  Cancelar
+               </button>
+               <button (click)="ejecutarRestaurarArchivo()" type="button"
+                  class="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-sm transition-colors">
+                  S&iacute;, restaurar
+               </button>
+            </div>
+         </div>
+      </div>
    `
 })
 export class DbBackupComponent implements OnInit {
@@ -454,7 +672,7 @@ export class DbBackupComponent implements OnInit {
    private http = inject(HttpClient);
 
    // Section navigation
-   activeSection = signal<'backup' | 'historial' | 'programacion'>('backup');
+   activeSection = signal<'backup' | 'historial' | 'programacion' | 'restaurar'>('backup');
 
    // Notification
    notification = signal<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -484,13 +702,24 @@ export class DbBackupComponent implements OnInit {
    // Delete modal
    backupAEliminar = signal<BackupHistorial | null>(null);
 
+   // Restore from historial
+   restoringId = signal<number | null>(null);
+   showRestoreConfirm = signal<BackupHistorial | null>(null);
+
+   // Restore from file upload
+   archivoSubir = signal<File | null>(null);
+   subiendoArchivo = signal(false);
+   showRestoreArchivoConfirm = signal(false);
+
    // Congregaciones list
    congregaciones = signal<CongregacionOption[]>([]);
+
+   backupsRestaurables = () => this.historial().filter(b => b.estado === 'completado');
 
    ngOnInit() {
       // Restore active section from localStorage
       const savedSection = localStorage.getItem('db_backup_active_section');
-      if (savedSection && ['backup', 'historial', 'programacion'].includes(savedSection)) {
+      if (savedSection && ['backup', 'historial', 'programacion', 'restaurar'].includes(savedSection)) {
          this.activeSection.set(savedSection as any);
       }
 
@@ -499,12 +728,13 @@ export class DbBackupComponent implements OnInit {
       this.loadProgramacion();
    }
 
-   setSection(section: 'backup' | 'historial' | 'programacion') {
+   setSection(section: 'backup' | 'historial' | 'programacion' | 'restaurar') {
       this.activeSection.set(section);
       localStorage.setItem('db_backup_active_section', section);
-      
+
       if (section === 'historial') this.loadHistorial();
       if (section === 'programacion') this.loadProgramacion();
+      if (section === 'restaurar') this.loadHistorial();
    }
 
    loadCongregaciones() {
@@ -627,6 +857,66 @@ export class DbBackupComponent implements OnInit {
             this.showNotification('Error al guardar la programaci\u00f3n', 'error');
          }
       });
+   }
+
+   confirmarRestaurar(backup: BackupHistorial) {
+      this.showRestoreConfirm.set(backup);
+   }
+
+   ejecutarRestaurar(backup: BackupHistorial) {
+      this.showRestoreConfirm.set(null);
+      this.restoringId.set(backup.id_backup);
+      this.notification.set(null);
+
+      this.backupService.restaurarBackup(backup.id_backup).subscribe({
+         next: result => {
+            this.restoringId.set(null);
+            this.showNotification(result.mensaje, 'success');
+         },
+         error: err => {
+            this.restoringId.set(null);
+            this.showNotification(err.error?.detail || 'Error al restaurar el respaldo', 'error');
+         }
+      });
+   }
+
+   onArchivoSeleccionado(event: Event) {
+      const input = event.target as HTMLInputElement;
+      const file = input.files?.[0] ?? null;
+      this.archivoSubir.set(file);
+      // reset para permitir reseleccionar el mismo archivo
+      input.value = '';
+   }
+
+   confirmarRestaurarArchivo() {
+      if (!this.archivoSubir()) return;
+      this.showRestoreArchivoConfirm.set(true);
+   }
+
+   ejecutarRestaurarArchivo() {
+      const archivo = this.archivoSubir();
+      if (!archivo) return;
+      this.showRestoreArchivoConfirm.set(false);
+      this.subiendoArchivo.set(true);
+      this.notification.set(null);
+
+      this.backupService.restaurarDesdeArchivo(archivo).subscribe({
+         next: result => {
+            this.subiendoArchivo.set(false);
+            this.archivoSubir.set(null);
+            this.showNotification(result.mensaje, 'success');
+         },
+         error: err => {
+            this.subiendoArchivo.set(false);
+            this.showNotification(err.error?.detail || 'Error al restaurar el archivo', 'error');
+         }
+      });
+   }
+
+   formatTamano(bytes: number): string {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
    }
 
    formatFecha(fecha: string): string {

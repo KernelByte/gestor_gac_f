@@ -36,6 +36,13 @@ export interface BackupProgramacion {
    proxima_ejecucion: string | null;
 }
 
+export interface RestaurarResponse {
+   exito: boolean;
+   mensaje: string;
+   tablas_procesadas: number | null;
+   registros_procesados: number | null;
+}
+
 export interface ProgramacionUpdate {
    habilitado: boolean;
    frecuencia_horas: number;
@@ -84,6 +91,16 @@ export class BackupService {
       return this.http.get<BackupProgramacion>(`${this.apiUrl}/programacion`).pipe(
          tap(p => this.programacion.set(p))
       );
+   }
+
+   restaurarBackup(id: number): Observable<RestaurarResponse> {
+      return this.http.post<RestaurarResponse>(`${this.apiUrl}/restaurar/${id}`, {});
+   }
+
+   restaurarDesdeArchivo(archivo: File): Observable<RestaurarResponse> {
+      const form = new FormData();
+      form.append('archivo', archivo, archivo.name);
+      return this.http.post<RestaurarResponse>(`${this.apiUrl}/restaurar/upload`, form);
    }
 
    actualizarProgramacion(config: ProgramacionUpdate): Observable<BackupProgramacion> {

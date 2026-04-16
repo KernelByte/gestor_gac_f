@@ -61,7 +61,7 @@ interface TableColumn {
     <div class="flex h-full overflow-hidden">
     
     <!-- LEFT SIDE: Main Content (List, Search, Toolbar) -->
-    <div class="flex-1 flex flex-col gap-5 min-w-0 transition-all duration-500 ease-in-out">
+    <div class="flex-1 flex flex-col gap-3 min-w-0 transition-all duration-500 ease-in-out">
       
       <!-- Compact Toolbar -->
       <div class="shrink-0 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-1.5 flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
@@ -642,7 +642,7 @@ interface TableColumn {
                       </tr>
                       <tr class="border-b border-slate-200 dark:border-slate-700">
                          <!-- Columna fija: Nombre -->
-                         <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                         <th class="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
                            <button (click)="toggleSort('nombre', $event)" title="Clic para ordenar · Shift+Clic para anidar" class="flex items-center gap-1 group/sort hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                              Nombre
                              <ng-container *ngIf="getSortIndex('nombre') >= 0; else noSortNombre">
@@ -658,7 +658,7 @@ interface TableColumn {
                          </th>
                          <!-- Columnas configurables dinámicas -->
                          <ng-container *ngFor="let col of visibleMoveableColumns()">
-                           <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                           <th class="px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
                              <button (click)="toggleSort(col.id, $event)" title="Clic para ordenar · Shift+Clic para anidar" class="flex items-center gap-1 group/sort hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                                {{ col.label }}
                                <ng-container *ngIf="getSortIndex(col.id) >= 0; else noSortDyn">
@@ -674,7 +674,7 @@ interface TableColumn {
                            </th>
                          </ng-container>
                          <!-- Columna fija: Estado -->
-                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                         <th class="px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
                            <button (click)="toggleSort('estado', $event)" title="Clic para ordenar · Shift+Clic para anidar" class="flex items-center gap-1 group/sort hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                              Estado
                              <ng-container *ngIf="getSortIndex('estado') >= 0; else noSortEstado">
@@ -688,15 +688,15 @@ interface TableColumn {
                              </ng-template>
                            </button>
                          </th>
-                         <th class="px-4 py-4 w-10"></th>
+                         <th class="px-3 py-3 w-10"></th>
                       </tr>
                    </thead>
                    <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
                       <tr *ngFor="let p of pagedList(); trackBy: trackById" class="group hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-transparent dark:border-slate-800/50 transition-all">
                          
                          <!-- Nombre -->
-                         <td class="px-8 py-4 relative">
-                            <div class="flex items-center gap-4">
+                         <td class="px-5 py-2.5 relative">
+                            <div class="flex items-center gap-3">
                                <div 
                                    class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
                                    [ngClass]="getAvatarStyle(getFullName(p))"
@@ -722,7 +722,7 @@ interface TableColumn {
 
                          <!-- Dynamic Columns -->
                          <ng-container *ngFor="let col of visibleMoveableColumns()">
-                           <td class="px-6 py-4 whitespace-nowrap">
+                           <td class="px-4 py-2.5 whitespace-nowrap">
                              <ng-container [ngSwitch]="col.id">
 
                                <ng-container *ngSwitchCase="'congregacion'">
@@ -795,7 +795,7 @@ interface TableColumn {
                          </ng-container>
 
                          <!-- Estado -->
-                         <td class="px-6 py-4">
+                         <td class="px-4 py-2.5">
                               <span 
                                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.6875rem] font-bold border"
                                  [ngClass]="{
@@ -810,7 +810,7 @@ interface TableColumn {
                          </td>
 
                          <!-- Actions -->
-                         <td class="px-6 py-4 text-right">
+                         <td class="px-3 py-2.5 text-right">
                             <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
                                <button (click)="openQuickView(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-sky-500 transition-all shadow-sm hover:shadow-md hover:shadow-sky-200" title="Ver detalles">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>

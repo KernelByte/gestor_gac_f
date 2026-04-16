@@ -30,59 +30,59 @@ interface ContactoEmergencia {
         
         <!-- SIDEBAR (List) -->
         <!-- Logic: On mobile, hidden if a contact is selected. On Desktop, always visible (flex). -->
-        <div class="flex-none w-full lg:w-[420px] flex flex-col bg-white dark:bg-slate-900 lg:rounded-2xl shadow-sm border-x lg:border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300"
+        <div class="flex-none w-full lg:w-[380px] flex flex-col bg-white dark:bg-slate-900 lg:rounded-2xl shadow-sm border-x lg:border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300"
              [ngClass]="selectedPublicador() ? 'hidden lg:flex h-full' : 'flex h-full'">
             
             <!-- Floating Header -->
-            <div class="p-5 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm sticky top-0 z-10">
-                <div class="flex items-center justify-between mb-4 hidden lg:flex">
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm sticky top-0 z-10">
+                <div class="flex items-center justify-between mb-3 hidden lg:flex">
                     <h3 class="font-display font-bold text-slate-800 dark:text-white text-lg">Directorio</h3>
                     <button 
                         (click)="exportarPDF()" 
                         [disabled]="downloadingPdf()"
-                        class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors relative disabled:opacity-50 disabled:cursor-not-allowed" 
+                        class="p-2 -mr-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors relative disabled:opacity-50 disabled:cursor-not-allowed" 
                         title="Exportar Lista de Contactos (PDF)">
-                        <svg *ngIf="!downloadingPdf()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        <div *ngIf="downloadingPdf()" class="w-5 h-5 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin"></div>
+                        <svg *ngIf="!downloadingPdf()" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <div *ngIf="downloadingPdf()" class="w-4 h-4 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin"></div>
                     </button>
                 </div>
                 
                 <!-- Search Bar -->
                 <div class="relative group">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors group-focus-within:text-brand-orange">
-                        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within:text-brand-orange">
+                        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
                     <input 
                         type="text" 
                         [ngModel]="searchQuery()" 
                         (ngModelChange)="searchQuery.set($event)"
                         placeholder="Buscar publicador..." 
-                        class="w-full pl-11 pr-4 h-11 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all shadow-sm"
+                        class="w-full pl-9 pr-3 h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 outline-none transition-all shadow-sm"
                     >
                 </div>
                 
-                <!-- Filter Pills (Scrollable) -->
-                <div class="flex gap-2 mt-4 overflow-x-auto no-scrollbar pb-1 mask-linear-fade">
+                <!-- Filter Pills (Compact Flex Wrap) -->
+                <div class="flex flex-wrap justify-between gap-1.5 mt-3">
                     <button (click)="toggleFilter('all')"
-                        class="px-3 py-1.5 rounded-full text-[0.6875rem] font-bold transition-all border shrink-0"
-                        [ngClass]="activeFilters().has('all') ? 'bg-slate-800 dark:bg-slate-100 border-slate-800 dark:border-white text-white dark:text-slate-900 shadow-md shadow-slate-900/10' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                        class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-all border shrink-0 text-center"
+                        [ngClass]="activeFilters().has('all') ? 'bg-slate-800 dark:bg-slate-100 border-slate-800 dark:border-white text-white dark:text-slate-900 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'">
                         Todos
                     </button>
                     <button (click)="toggleFilter('active')"
-                        class="px-3 py-1.5 rounded-full text-[0.6875rem] font-bold transition-all border shrink-0 flex items-center gap-1.5"
-                        [ngClass]="activeFilters().has('active') ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800'">
-                        <span class="w-1.5 h-1.5 rounded-full" [ngClass]="activeFilters().has('active') ? 'bg-emerald-500' : 'bg-emerald-400'"></span>
+                        class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-all border shrink-0 flex items-center justify-center gap-1"
+                        [ngClass]="activeFilters().has('active') ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-50/50'">
+                        <span class="w-1 h-1 rounded-full shrink-0" [ngClass]="activeFilters().has('active') ? 'bg-emerald-500' : 'bg-emerald-400'"></span>
                         Activos
                     </button>
                     <button (click)="toggleFilter('inactive')"
-                        class="px-3 py-1.5 rounded-full text-[0.6875rem] font-bold transition-all border shrink-0"
-                        [ngClass]="activeFilters().has('inactive') ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
+                        class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-all border shrink-0 text-center"
+                        [ngClass]="activeFilters().has('inactive') ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 bg-slate-50/50'">
                         Inactivos
                     </button>
                     <button (click)="toggleFilter('no-phone')"
-                        class="px-3 py-1.5 rounded-full text-[0.6875rem] font-bold transition-all border shrink-0 flex items-center gap-1.5"
-                        [ngClass]="activeFilters().has('no-phone') ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-200 dark:hover:border-amber-800'">
-                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        class="flex-none px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-all border shrink-0 flex items-center justify-center gap-1"
+                        [ngClass]="activeFilters().has('no-phone') ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 bg-slate-50/50'">
+                        <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         Sin Teléfono
                     </button>
                 </div>

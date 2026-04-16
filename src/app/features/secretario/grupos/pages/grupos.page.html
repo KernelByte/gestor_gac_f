@@ -3,11 +3,10 @@
    <!-- Main Content Area -->
    <div class="flex-1 flex flex-col min-w-0 h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
 
-      <div class="flex flex-col gap-5 h-full w-full overflow-hidden">
+      <div class="flex flex-col gap-3 h-full w-full overflow-hidden">
 
          <!-- Top Actions (shrink-0) -->
-         <div class="shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div></div>
+         <div class="shrink-0 flex flex-row justify-end items-center gap-3">
 
             <div class="flex gap-3">
               <button *ngIf="canCreateGrupos()" (click)="goToDynamicAssignment()"
@@ -127,60 +126,60 @@
          </div>
 
          <!-- KPI Cards (shrink-0) -->
-         <div class="shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4">
+         <div class="shrink-0 grid grid-cols-1 md:grid-cols-3 gap-3">
             <!-- Total Grupos -->
             <div
-               class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all">
+               class="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-3 relative overflow-hidden group hover:shadow-md transition-all">
                <div
-                  class="absolute right-0 top-0 w-24 h-24 bg-orange-50/50 dark:bg-orange-900/10 rounded-full -mr-8 -mt-8 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
+                  class="absolute right-0 top-0 w-20 h-20 bg-orange-50/50 dark:bg-orange-900/10 rounded-full -mr-6 -mt-6 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
                </div>
                <div
-                  class="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-brand-orange flex items-center justify-center shrink-0 relative z-10 ring-1 ring-orange-100 dark:ring-orange-900/30">
-                  <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  class="w-9 h-9 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-brand-orange flex items-center justify-center shrink-0 relative z-10 ring-1 ring-orange-100 dark:ring-orange-900/30">
+                  <svg class="w-4.5 h-4.5 w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round"
                         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                </div>
                <div class="relative z-10">
-                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Total Grupos</p>
-                  <h3 class="text-2xl font-display font-black text-slate-800 dark:text-white tracking-tight">{{ grupos().length }}</h3>
+                  <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Grupos</p>
+                  <h3 class="text-lg font-display font-black text-slate-800 dark:text-white tracking-tight leading-tight">{{ grupos().length }}</h3>
                </div>
             </div>
 
             <!-- Publicadores Asignados -->
             <div
-               class="hidden md:flex bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all">
+               class="hidden md:flex bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-3 relative overflow-hidden group hover:shadow-md transition-all">
                <div
-                  class="absolute right-0 top-0 w-24 h-24 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-full -mr-8 -mt-8 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
+                  class="absolute right-0 top-0 w-20 h-20 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-full -mr-6 -mt-6 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
                </div>
                <div
-                  class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 relative z-10 ring-1 ring-emerald-100 dark:ring-emerald-900/30">
-                  <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  class="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 relative z-10 ring-1 ring-emerald-100 dark:ring-emerald-900/30">
+                  <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round"
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                </div>
                <div class="relative z-10">
-                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Asignados</p>
-                  <h3 class="text-2xl font-display font-black text-slate-800 dark:text-white tracking-tight">{{ totalAsignados() }}</h3>
+                  <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Asignados</p>
+                  <h3 class="text-lg font-display font-black text-slate-800 dark:text-white tracking-tight leading-tight">{{ totalAsignados() }}</h3>
                </div>
             </div>
 
             <!-- Sin Asignar -->
             <div
-               class="hidden md:flex bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-4 relative overflow-hidden group hover:shadow-md transition-all">
+               class="hidden md:flex bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-3 relative overflow-hidden group hover:shadow-md transition-all">
                <div
-                  class="absolute right-0 top-0 w-24 h-24 rounded-full -mr-8 -mt-8 blur-2xl transition-opacity opacity-50 group-hover:opacity-100"
+                  class="absolute right-0 top-0 w-20 h-20 rounded-full -mr-6 -mt-6 blur-2xl transition-opacity opacity-50 group-hover:opacity-100"
                   [ngClass]="totalSinAsignar() > 0 ? 'bg-red-50/50 dark:bg-red-900/10' : 'bg-slate-100/50 dark:bg-slate-700/10'"></div>
 
-               <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 relative z-10 ring-1"
+               <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 relative z-10 ring-1"
                   [ngClass]="totalSinAsignar() > 0 ? 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 ring-red-100 dark:ring-red-900/30' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-900/30'">
-                  <svg *ngIf="totalSinAsignar() > 0" class="w-6 h-6" viewBox="0 0 24 24" fill="none"
+                  <svg *ngIf="totalSinAsignar() > 0" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round"
                         d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  <svg *ngIf="totalSinAsignar() === 0" class="w-6 h-6" viewBox="0 0 24 24" fill="none"
+                  <svg *ngIf="totalSinAsignar() === 0" class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round"
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -188,13 +187,13 @@
                </div>
 
                <div class="relative z-10">
-                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-0.5">Sin Asignar</p>
-                  <h3 class="text-2xl font-display font-black tracking-tight"
+                  <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Sin Asignar</p>
+                  <h3 class="text-lg font-display font-black tracking-tight leading-tight"
                      [ngClass]="totalSinAsignar() > 0 ? 'text-red-900 dark:text-red-400' : 'text-slate-700 dark:text-slate-200'">
                      {{ totalSinAsignar() }}
                   </h3>
                   <p *ngIf="totalSinAsignar() === 0"
-                     class="text-[0.625rem] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                     class="text-[0.625rem] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded-full inline-block">
                      ¡Todo en orden!
                   </p>
                </div>

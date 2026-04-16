@@ -4,14 +4,17 @@
    <header class="shrink-0 z-30 pt-6 px-6 sm:px-8 pb-2">
       <div class="flex items-center justify-between gap-4">
          <!-- Left Section: Back & Title (Clean) -->
-         <div class="flex items-center gap-2 min-w-0">
+         <div class="flex items-center gap-3 min-w-0">
             <button (click)="goBack()"
-               class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800 transition-all active:scale-95 shrink-0 group">
-               <svg class="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none"
+               class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200/70 dark:border-orange-700/40 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:border-orange-300 dark:hover:border-orange-600/50 transition-all active:scale-95 shrink-0 group">
+               <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                </svg>
+               <span class="text-sm font-bold hidden sm:inline">Volver a Publicadores</span>
             </button>
+
+            <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 shrink-0 hidden sm:block"></div>
 
             <div class="min-w-0 flex flex-col justify-center">
                <h1 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight truncate leading-none">
@@ -21,10 +24,10 @@
          </div>
 
          <!-- Right Section: Actions -->
-         <div class="flex items-center gap-3 shrink-0">
+         <div class="flex items-center gap-2 shrink-0">
             <!-- Toggle Inactivos -->
             <button (click)="toggleShowInactivePublishers()"
-               class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800 transition-all active:scale-95 border border-slate-200/60 dark:border-slate-700"
+               class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all active:scale-95 shadow-sm"
                [title]="showInactivePublishers() ? 'Ocultar publicadores inactivos' : 'Mostrar publicadores inactivos'">
                <svg *ngIf="showInactivePublishers()" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
@@ -36,9 +39,9 @@
                <span class="text-xs font-bold hidden lg:inline">{{ showInactivePublishers() ? 'Ocultar inactivos' : 'Mostrar inactivos' }}</span>
             </button>
 
-            <!-- Full Screen Toggle (Minimal) -->
+            <!-- Full Screen Toggle -->
             <button (click)="toggleFullScreen()"
-               class="hidden sm:flex items-center justify-center w-10 h-10 rounded-full text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800 transition-all active:scale-95"
+               class="hidden sm:flex items-center justify-center w-10 h-10 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all active:scale-95 shadow-sm"
                title="Pantalla Completa">
                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round"
@@ -46,11 +49,11 @@
                </svg>
             </button>
 
-            <!-- Changes Indicator (Clean) -->
+            <!-- Changes Indicator -->
             <div
-               class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50/50 border border-orange-100/50 text-orange-600 animate-fade-in"
+               class="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200/70 dark:border-orange-700/40 text-orange-600 dark:text-orange-400"
                *ngIf="pendingChangesCount() > 0">
-               <span class="relative flex h-2 w-2">
+               <span class="relative flex h-2 w-2 shrink-0">
                   <span
                      class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
@@ -58,9 +61,9 @@
                <span class="text-xs font-bold">{{ pendingChangesCount() }} cambios</span>
             </div>
 
-            <!-- Save Button (Modern Pill) -->
+            <!-- Save Button -->
             <button (click)="saveChanges()" [disabled]="isSaving() || pendingChangesCount() === 0"
-               class="relative overflow-hidden px-6 h-10 bg-slate-900 dark:bg-brand-orange hover:bg-brand-orange dark:hover:bg-orange-600 text-white rounded-full font-bold text-sm shadow-lg shadow-slate-900/10 dark:shadow-orange-500/20 hover:shadow-orange-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed flex items-center gap-2">
+               class="px-5 h-10 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-sm shadow-sm shadow-orange-500/20 hover:shadow-orange-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed flex items-center gap-2">
                <svg *ngIf="isSaving()" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
                   viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
