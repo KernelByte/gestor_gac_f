@@ -85,22 +85,22 @@ interface TableColumn {
 
         <!-- Quick Filters (Pills) -->
         <div class="hidden md:flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
-            <button 
+            <button
                 (click)="selectedEstado.set(null); currentPage.set(1)"
-                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
-                [ngClass]="selectedEstado() === null 
-                  ? 'bg-brand-orange text-white shadow-sm' 
+                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 ease-out active:scale-[0.97]"
+                [ngClass]="selectedEstado() === null
+                  ? 'bg-brand-orange text-white shadow-sm'
                   : 'bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200'"
             >
                 Todos <span class="text-[0.625rem] opacity-80">{{ totalFilteredCount() }}</span>
             </button>
-            
-            <button 
+
+            <button
                 *ngFor="let e of estadosWithCounts()"
                 (click)="selectedEstado.set(e.id_estado); currentPage.set(1)"
-                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
-                [ngClass]="selectedEstado() === e.id_estado 
-                  ? 'bg-brand-orange text-white shadow-sm' 
+                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 ease-out active:scale-[0.97]"
+                [ngClass]="selectedEstado() === e.id_estado
+                  ? 'bg-brand-orange text-white shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'"
             >
                 {{ e.nombre_estado }} <span class="text-[0.625rem] opacity-60">{{ e.count }}</span>
@@ -492,7 +492,7 @@ interface TableColumn {
         <!-- Action Button (Compact, inside toolbar) -->
         <button *ngIf="canEditPublicadores()"
             (click)="openCreateForm()"
-            class="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 h-9 bg-brand-orange hover:bg-orange-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-orange-900/10 transition-all active:scale-95 whitespace-nowrap"
+            class="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 h-9 bg-brand-orange hover:bg-orange-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-orange-900/10 transition-[background-color,transform,box-shadow] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
         >
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
             <span class="hidden sm:inline">Nuevo</span>
@@ -692,7 +692,7 @@ interface TableColumn {
                       </tr>
                    </thead>
                    <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-                      <tr *ngFor="let p of pagedList(); trackBy: trackById" class="group hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-transparent dark:border-slate-800/50 transition-all">
+                      <tr *ngFor="let p of pagedList(); trackBy: trackById" class="group hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-transparent dark:border-slate-800/50 transition-colors duration-150">
                          
                          <!-- Nombre -->
                          <td class="px-5 py-2.5 relative">
@@ -804,21 +804,21 @@ interface TableColumn {
                                      'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600': !getEstadoNombre(p.id_estado_publicador).includes('Activo') && !getEstadoNombre(p.id_estado_publicador).includes('Inactivo')
                                  }"
                              >
-                                 <span class="w-1.5 h-1.5 rounded-full animate-pulse" [ngClass]="getEstadoDotClass(p.id_estado_publicador)"></span>
+                                 <span class="w-1.5 h-1.5 rounded-full" [ngClass]="[getEstadoDotClass(p.id_estado_publicador), getEstadoNombre(p.id_estado_publicador).includes('Activo') ? 'animate-pulse' : '']"></span>
                                  {{ getEstadoNombre(p.id_estado_publicador) }}
                              </span>
                          </td>
 
                          <!-- Actions -->
                          <td class="px-3 py-2.5 text-right">
-                            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
-                               <button (click)="openQuickView(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-sky-500 transition-all shadow-sm hover:shadow-md hover:shadow-sky-200" title="Ver detalles">
+                            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-150 ease-out translate-x-2 group-hover:translate-x-0">
+                               <button (click)="openQuickView(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-sky-500 transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.9] shadow-sm" title="Ver detalles">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                </button>
-                               <button *ngIf="canEditPublicadores()" (click)="openEditForm(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-brand-orange transition-all shadow-sm hover:shadow-md hover:shadow-orange-200" title="Editar">
+                               <button *ngIf="canEditPublicadores()" (click)="openEditForm(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-brand-orange transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.9] shadow-sm" title="Editar">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                </button>
-                               <button *ngIf="canEditPublicadores()" (click)="confirmDelete(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-red-500 transition-all shadow-sm hover:shadow-md hover:shadow-red-200" title="Eliminar">
+                               <button *ngIf="canEditPublicadores()" (click)="confirmDelete(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-red-500 transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.9] shadow-sm" title="Eliminar">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                                </button>
                             </div>
@@ -858,17 +858,17 @@ interface TableColumn {
                 de <span class="font-bold text-slate-800 dark:text-white">{{ filteredList().length }}</span> publicadores
              </p>
              <div class="flex gap-2">
-                  <button 
-                   (click)="prevPage()" 
+                  <button
+                   (click)="prevPage()"
                    [disabled]="currentPage() === 1"
-                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.93] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                   </button>
-                  <button 
-                   (click)="nextPage()" 
+                  <button
+                   (click)="nextPage()"
                    [disabled]="currentPage() * pageSize >= filteredList().length"
-                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.93] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                   </button>
@@ -880,9 +880,9 @@ interface TableColumn {
     <!-- RIGHT SIDE: Editor Panel (Side Sheet) -->
     <!-- RIGHT SIDE: Editor Panel (Side Sheet with Smooth Transition) -->
     <div 
-      class="shrink-0 flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:h-auto"
-      [ngClass]="panelOpen() 
-        ? 'w-full opacity-100 md:w-[480px] md:ml-5' 
+      class="shrink-0 flex flex-col overflow-hidden transition-[width,opacity,margin] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:h-auto"
+      [ngClass]="panelOpen()
+        ? 'w-full opacity-100 md:w-[480px] md:ml-5'
         : 'w-0 opacity-0 md:ml-0'"
     >
       <!-- Inner Container with premium styling -->
@@ -924,7 +924,7 @@ interface TableColumn {
                          </div>
                      </div>
                     <button (click)="tryClosePanel()" class="p-2.5 -mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-xl hover:bg-white/80 dark:hover:bg-slate-800 hover:shadow-sm group">
-                        <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-200 ease-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
              </div>
@@ -1984,28 +1984,47 @@ interface TableColumn {
       background: #475569;
     }
     .animate-fadeIn {
-        animation: fadeIn 0.3s ease-out forwards;
+        animation: fadeIn 0.25s cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateX(10px); }
+        from { opacity: 0; transform: translateX(8px); }
         to { opacity: 1; transform: translateX(0); }
     }
     .animate-fadeInUp {
-        animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: fadeInUp 0.25s cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
     @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(10px) scale(0.98); }
+        from { opacity: 0; transform: translateY(8px) scale(0.95); }
         to { opacity: 1; transform: translateY(0) scale(1); }
     }
     .box-decoration-clone {
         box-decoration-break: clone;
     }
     .animate-slideInRight {
-      animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: slideInRight 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
     @keyframes slideInRight {
-      from { opacity: 0; transform: translateX(20px); }
+      from { opacity: 0; transform: translateX(16px); }
       to { opacity: 1; transform: translateX(0); }
+    }
+    /* Stagger rows — first 10 rows animate in cascading */
+    tbody tr:nth-child(1) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 0ms; }
+    tbody tr:nth-child(2) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 30ms; }
+    tbody tr:nth-child(3) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 60ms; }
+    tbody tr:nth-child(4) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 90ms; }
+    tbody tr:nth-child(5) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 120ms; }
+    tbody tr:nth-child(6) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 150ms; }
+    tbody tr:nth-child(7) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 180ms; }
+    tbody tr:nth-child(8) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 210ms; }
+    tbody tr:nth-child(9) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 240ms; }
+    tbody tr:nth-child(10) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 270ms; }
+    @keyframes rowIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .animate-fadeIn, .animate-fadeInUp, .animate-slideInRight { animation: none; opacity: 1; transform: none; }
+        tbody tr { animation: none !important; opacity: 1; }
     }
   `]
 })

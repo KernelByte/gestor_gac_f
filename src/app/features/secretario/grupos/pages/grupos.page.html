@@ -1,7 +1,7 @@
 <div class="flex flex-row h-full overflow-hidden">
 
    <!-- Main Content Area -->
-   <div class="flex-1 flex flex-col min-w-0 h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
+   <div class="flex-1 flex flex-col min-w-0 h-full">
 
       <div class="flex flex-col gap-3 h-full w-full overflow-hidden">
 
@@ -10,7 +10,7 @@
 
             <div class="flex gap-3">
               <button *ngIf="canCreateGrupos()" (click)="goToDynamicAssignment()"
-                 class="inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-display font-bold text-sm shadow-sm transition-all active:scale-95">
+                 class="inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-display font-bold text-sm shadow-sm transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.97]">
                  <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2">
                     <rect x="3" y="3" width="7" height="7"></rect>
@@ -26,7 +26,7 @@
                      aria-hidden="true"></div>
 
                   <button (click)="toggleExportMenu()" [disabled]="exporting()"
-                     class="relative z-[9999] inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-display font-bold text-sm shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-wait">
+                     class="relative z-[9999] inline-flex items-center gap-2 px-5 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-display font-bold text-sm shadow-sm transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] disabled:opacity-50 disabled:cursor-wait">
                      <svg *ngIf="!exporting()" class="w-5 h-5 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -59,14 +59,14 @@
                         </p>
                         <div class="flex gap-2 mt-2">
                            <button type="button" (click)="exportFormat.set('pdf')"
-                              class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                              class="flex-1 py-2 rounded-lg text-xs font-bold transition-[background-color,color,border-color,transform] duration-150 ease-out active:scale-[0.97]"
                               [ngClass]="exportFormat() === 'pdf'
                                  ? 'bg-slate-700 dark:bg-slate-600 text-white shadow-sm'
                                  : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500'">
                               PDF
                            </button>
                            <button type="button" (click)="exportFormat.set('excel')"
-                              class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                              class="flex-1 py-2 rounded-lg text-xs font-bold transition-[background-color,color,border-color,transform] duration-150 ease-out active:scale-[0.97]"
                               [ngClass]="exportFormat() === 'excel'
                                  ? 'bg-emerald-600 text-white shadow-sm'
                                  : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500'">
@@ -115,8 +115,8 @@
                   </div>
                </div>
                <button *ngIf="canCreateGrupos()" (click)="openCreatePanel()"
-                  class="inline-flex items-center gap-2 px-6 h-11 bg-brand-orange hover:bg-orange-600 text-white rounded-xl font-display font-bold text-sm shadow-xl shadow-orange-900/20 transition-all active:scale-95 group">
-                  <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24"
+                  class="inline-flex items-center gap-2 px-6 h-11 bg-brand-orange hover:bg-orange-600 text-white rounded-xl font-display font-bold text-sm shadow-xl shadow-orange-900/20 transition-[background-color,transform,box-shadow] duration-150 ease-out active:scale-[0.97] group">
+                  <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" viewBox="0 0 24 24"
                      fill="none" stroke="currentColor" stroke-width="2.5">
                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
                   </svg>
@@ -129,7 +129,7 @@
          <div class="shrink-0 grid grid-cols-1 md:grid-cols-3 gap-3">
             <!-- Total Grupos -->
             <div
-               class="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-3 relative overflow-hidden group hover:shadow-md transition-all">
+               class="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-3 relative overflow-hidden group hover:shadow-md transition-shadow duration-150">
                <div
                   class="absolute right-0 top-0 w-20 h-20 bg-orange-50/50 dark:bg-orange-900/10 rounded-full -mr-6 -mt-6 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
                </div>
@@ -148,7 +148,7 @@
 
             <!-- Publicadores Asignados -->
             <div
-               class="hidden md:flex bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-3 relative overflow-hidden group hover:shadow-md transition-all">
+               class="hidden md:flex bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-3 relative overflow-hidden group hover:shadow-md transition-shadow duration-150">
                <div
                   class="absolute right-0 top-0 w-20 h-20 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-full -mr-6 -mt-6 blur-2xl transition-opacity opacity-50 group-hover:opacity-100">
                </div>
@@ -167,9 +167,9 @@
 
             <!-- Sin Asignar -->
             <div
-               class="hidden md:flex bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-3 relative overflow-hidden group hover:shadow-md transition-all">
+               class="hidden md:flex bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-700 items-center gap-3 relative overflow-hidden group hover:shadow-md transition-shadow duration-150">
                <div
-                  class="absolute right-0 top-0 w-20 h-20 rounded-full -mr-6 -mt-6 blur-2xl transition-opacity opacity-50 group-hover:opacity-100"
+                  class="absolute right-0 top-0 w-20 h-20 rounded-full -mr-6 -mt-6 blur-2xl transition-[opacity] duration-150 opacity-50 group-hover:opacity-100"
                   [ngClass]="totalSinAsignar() > 0 ? 'bg-red-50/50 dark:bg-red-900/10' : 'bg-slate-100/50 dark:bg-slate-700/10'"></div>
 
                <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 relative z-10 ring-1"
@@ -280,7 +280,7 @@
                      <!-- Actions Grid -->
                      <div class="grid grid-cols-2 gap-2">
                         <button (click)="goToAssignment(grupo)"
-                           class="col-span-2 flex items-center justify-center gap-2 h-11 bg-brand-orange text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+                           class="col-span-2 flex items-center justify-center gap-2 h-11 bg-brand-orange text-white rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                               <circle cx="8.5" cy="7" r="4"></circle>
@@ -290,7 +290,7 @@
                            Asignar Miembros
                         </button>
                         <button (click)="editGrupo(grupo)"
-                           class="flex items-center justify-center gap-2 h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all">
+                           class="flex items-center justify-center gap-2 h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -298,7 +298,7 @@
                            Editar
                         </button>
                         <button (click)="confirmDelete(grupo)"
-                           class="flex items-center justify-center gap-2 h-10 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 rounded-lg font-bold text-xs hover:bg-red-100 dark:hover:bg-red-900/20 active:scale-95 transition-all">
+                           class="flex items-center justify-center gap-2 h-10 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 rounded-lg font-bold text-xs hover:bg-red-100 dark:hover:bg-red-900/20 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <polyline points="3 6 5 6 21 6"></polyline>
                               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
@@ -417,7 +417,7 @@
                         <td class="px-6 py-4 text-right">
                            <div class="flex items-center justify-end gap-1">
                               <button *ngIf="canEditGrupos()" (click)="goToAssignment(grupo)"
-                                 class="p-2 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-brand-orange hover:bg-brand-orange hover:text-white transition-all shadow-sm"
+                                 class="p-2 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-brand-orange hover:bg-brand-orange hover:text-white transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.9] shadow-sm"
                                  title="Asignar Miembros">
                                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.5">
@@ -428,7 +428,7 @@
                                  </svg>
                               </button>
                               <button *ngIf="canEditGrupos()" (click)="editGrupo(grupo)"
-                                 class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-600 dark:hover:bg-slate-700 transition-all"
+                                 class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-600 dark:hover:bg-slate-700 transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.9]"
                                  title="Editar">
                                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
@@ -437,7 +437,7 @@
                                  </svg>
                               </button>
                               <button *ngIf="canCreateGrupos()" (click)="confirmDelete(grupo)"
-                                 class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-red-500 transition-all"
+                                 class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-red-500 transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.9]"
                                  title="Eliminar">
                                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
@@ -465,13 +465,13 @@
                </span>
                <div class="flex gap-2">
                   <button (click)="prevPage()" [disabled]="currentPage() === 1"
-                     class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                     class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.93] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                      </svg>
                   </button>
                   <button (click)="nextPage()" [disabled]="currentPage() * pageSize >= filteredGrupos().length"
-                     class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                     class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.93] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                      </svg>
@@ -498,7 +498,7 @@
                   <p class="text-slate-500 dark:text-slate-400 text-sm max-w-sm mb-6">Comienza creando tu primer grupo de predicación para
                      asignar publicadores.</p>
                   <button *ngIf="canCreateGrupos()" (click)="openCreatePanel()"
-                     class="inline-flex items-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-all active:scale-95">
+                     class="inline-flex items-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -514,9 +514,9 @@
 
    <!-- Slide Over Panel (Fluid, sibling) - Premium Design -->
    <div
-      class="shrink-0 flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:h-auto"
-      [ngClass]="panelOpen() 
-         ? 'w-full opacity-100 md:w-[480px] md:ml-5' 
+      class="shrink-0 flex flex-col overflow-hidden transition-[width,opacity,margin] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:h-auto"
+      [ngClass]="panelOpen()
+         ? 'w-full opacity-100 md:w-[480px] md:ml-5'
          : 'w-0 opacity-0 md:ml-0'">
 
       <!-- Inner container with rounded corners and shadow -->
@@ -563,7 +563,7 @@
                   </div>
                   <button (click)="closePanel()"
                      class="p-2.5 -mr-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-all rounded-xl hover:bg-white/80 dark:hover:bg-slate-800/80 hover:shadow-sm group">
-                     <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24"
+                     <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-200 ease-out" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                      </svg>
@@ -587,7 +587,7 @@
                      </label>
                      <div class="relative group">
                         <input formControlName="nombre_grupo" type="text" placeholder="Ej: Grupo Centro"
-                           class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500">
+                           class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-[border-color,box-shadow] duration-150 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500">
                         <div
                            class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity">
                            <svg class="w-5 h-5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -633,7 +633,7 @@
                         <input formControlName="capitan_grupo" type="text"
                            placeholder="Escribe para buscar un publicador..." (input)="onCapitanInput($event)"
                            (focus)="capitanDropdownOpen.set(true)" (blur)="closeCapitanDropdown()" autocomplete="off"
-                           class="w-full h-11 pl-12 pr-9 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                           class="w-full h-11 pl-12 pr-9 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-[border-color,box-shadow] duration-150 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                         <!-- Chevron -->
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -685,7 +685,7 @@
                         <input formControlName="auxiliar_grupo" type="text"
                            placeholder="Escribe para buscar un publicador..." (input)="onAuxiliarInput($event)"
                            (focus)="auxiliarDropdownOpen.set(true)" (blur)="closeAuxiliarDropdown()" autocomplete="off"
-                           class="w-full h-11 pl-12 pr-9 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                           class="w-full h-11 pl-12 pr-9 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-[border-color,box-shadow] duration-150 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                         <!-- Chevron -->
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -727,11 +727,11 @@
                </p>
                <div class="flex items-center gap-3 ml-auto">
                   <button (click)="closePanel()"
-                     class="px-5 h-11 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200 font-bold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-200 active:scale-95">
+                     class="px-5 h-11 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200 font-bold text-sm transition-[background-color,transform] duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-slate-200 active:scale-[0.97]">
                      Cancelar
                   </button>
                   <button *ngIf="editingGrupo() ? canEditGrupos() : canCreateGrupos()" (click)="save()" [disabled]="grupoForm.invalid || saving()"
-                     class="px-6 h-11 rounded-xl bg-gradient-to-r from-brand-orange to-orange-500 text-white font-display font-bold text-sm hover:from-orange-600 hover:to-orange-500 shadow-lg shadow-orange-500/25 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none disabled:from-slate-300 disabled:to-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 flex items-center gap-2">
+                     class="px-6 h-11 rounded-xl bg-gradient-to-r from-brand-orange to-orange-500 text-white font-display font-bold text-sm hover:from-orange-600 hover:to-orange-500 shadow-lg shadow-orange-500/25 transition-[opacity,transform,box-shadow] duration-150 ease-out active:scale-[0.97] disabled:opacity-50 disabled:shadow-none disabled:from-slate-300 disabled:to-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 flex items-center gap-2">
                      <svg *ngIf="!saving()" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />

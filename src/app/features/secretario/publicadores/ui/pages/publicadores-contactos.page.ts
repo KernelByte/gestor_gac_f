@@ -64,23 +64,23 @@ interface ContactoEmergencia {
                 <!-- Filter Pills (Compact Flex Wrap) -->
                 <div class="flex flex-wrap justify-between gap-1.5 mt-3">
                     <button (click)="toggleFilter('all')"
-                        class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-all border shrink-0 text-center"
+                        class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-[background-color,border-color,color] duration-150 border shrink-0 text-center"
                         [ngClass]="activeFilters().has('all') ? 'bg-slate-800 dark:bg-slate-100 border-slate-800 dark:border-white text-white dark:text-slate-900 shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'">
                         Todos
                     </button>
                     <button (click)="toggleFilter('active')"
-                        class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-all border shrink-0 flex items-center justify-center gap-1"
+                        class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-[background-color,border-color,color] duration-150 border shrink-0 flex items-center justify-center gap-1"
                         [ngClass]="activeFilters().has('active') ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-50/50'">
                         <span class="w-1 h-1 rounded-full shrink-0" [ngClass]="activeFilters().has('active') ? 'bg-emerald-500' : 'bg-emerald-400'"></span>
                         Activos
                     </button>
                     <button (click)="toggleFilter('inactive')"
-                        class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-all border shrink-0 text-center"
+                        class="flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-[background-color,border-color,color] duration-150 border shrink-0 text-center"
                         [ngClass]="activeFilters().has('inactive') ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 bg-slate-50/50'">
                         Inactivos
                     </button>
                     <button (click)="toggleFilter('no-phone')"
-                        class="flex-none px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-all border shrink-0 flex items-center justify-center gap-1"
+                        class="flex-none px-2 py-1.5 rounded-lg text-[0.625rem] font-bold transition-[background-color,border-color,color] duration-150 border shrink-0 flex items-center justify-center gap-1"
                         [ngClass]="activeFilters().has('no-phone') ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 bg-slate-50/50'">
                         <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         Sin Teléfono
@@ -96,10 +96,10 @@ interface ContactoEmergencia {
                 </div>
 
                 <div class="divide-y divide-slate-200 dark:divide-slate-800">
-                    <button 
+                    <button
                         *ngFor="let p of filteredList(); trackBy: trackByPublicador"
                         (click)="selectPublicador(p)"
-                        class="w-full text-left p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex items-center gap-4 group relative"
+                        class="w-full text-left p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center gap-4 group relative"
                         [ngClass]="selectedPublicador()?.id_publicador === p.id_publicador 
                             ? 'bg-slate-50 dark:bg-slate-800 relative before:absolute before:left-0 before:top-4 before:bottom-4 before:w-1 before:bg-brand-orange before:rounded-r-full' 
                             : 'bg-white dark:bg-slate-900'"
@@ -193,8 +193,8 @@ interface ContactoEmergencia {
                         </div>
 
                         <!-- Add Button -->
-                        <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="w-full md:w-auto group flex items-center justify-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 hover:bg-orange-600 hover:shadow-orange-600/40 active:scale-95 transition-all">
-                            <span class="bg-white/20 p-1 rounded-lg group-hover:rotate-90 transition-transform duration-300">
+                        <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="w-full md:w-auto group flex items-center justify-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 hover:bg-orange-600 hover:shadow-orange-600/40 active:scale-[0.97] transition-[background-color,box-shadow,transform] duration-150">
+                            <span class="bg-white/20 p-1 rounded-lg group-hover:rotate-90 transition-transform duration-200">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </span>
                             <span>Añadir Contacto</span>
@@ -264,7 +264,7 @@ interface ContactoEmergencia {
                                  <!-- Single Action Buttons Row -->
                                  <div class="flex gap-2">
                                      <button (click)="showForm.set(false)" class="flex-1 h-9 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
-                                     <button (click)="save()" class="flex-[2] h-9 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs shadow hover:bg-slate-800 dark:hover:bg-slate-100 active:scale-95 transition-all">
+                                     <button (click)="save()" class="flex-[2] h-9 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs shadow hover:bg-slate-800 dark:hover:bg-slate-100 active:scale-[0.97] transition-[background-color,transform] duration-150">
                                         {{ editingContacto() ? 'Guardar Cambios' : 'Guardar Contacto' }}
                                      </button>
                                  </div>
@@ -282,15 +282,15 @@ interface ContactoEmergencia {
                              </div>
                              <p class="font-bold text-slate-600 dark:text-slate-300 mb-1">Sin contactos de emergencia</p>
                              <p class="text-sm text-slate-400 dark:text-slate-500 mb-6">Añade al menos un contacto para seguridad.</p>
-                             <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="px-6 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full font-bold text-sm text-slate-700 dark:text-slate-300 hover:border-brand-orange hover:text-brand-orange transition-colors">
+                             <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="px-6 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full font-bold text-sm text-slate-700 dark:text-slate-300 hover:border-brand-orange hover:text-brand-orange active:scale-[0.97] transition-[border-color,color,transform] duration-150">
                                 Añadir Ahora
                              </button>
                         </div>
                         
                         <!-- Card Item -->
-                        <div *ngFor="let c of contactos(); trackBy: trackByContacto" class="group bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50 hover:border-orange-100 dark:hover:border-slate-700 transition-all duration-300 relative overflow-hidden">
+                        <div *ngFor="let c of contactos(); trackBy: trackByContacto" class="contact-card group bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50 hover:border-orange-100 dark:hover:border-slate-700 transition-[box-shadow,border-color] duration-200 relative overflow-hidden">
                              <!-- Action Buttons (Static on mobile, Hover on Desktop) -->
-                             <div *ngIf="canEditContactos()" class="absolute top-4 right-4 flex gap-1 transform translate-x-0 lg:translate-x-12 lg:group-hover:translate-x-0 transition-transform duration-300 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-lg p-1 shadow-sm border border-slate-100 dark:border-slate-700 z-10">
+                             <div *ngIf="canEditContactos()" class="absolute top-4 right-4 flex gap-1 transform translate-x-0 lg:translate-x-12 lg:group-hover:translate-x-0 transition-transform duration-200 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-lg p-1 shadow-sm border border-slate-100 dark:border-slate-700 z-10">
                                  <button (click)="edit(c)" class="p-2 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-md transition-colors" title="Editar">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                  </button>
@@ -335,7 +335,7 @@ interface ContactoEmergencia {
 
                         <!-- Quick Add Card -->
                         <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="group flex flex-col items-center justify-center min-h-[280px] rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-brand-orange hover:bg-orange-50/20 dark:hover:bg-orange-900/10 transition-all p-6 text-center">
-                            <div class="w-14 h-14 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-300 dark:text-slate-500 group-hover:scale-110 group-hover:text-brand-orange group-hover:border-orange-200 dark:group-hover:border-orange-800 transition-all mb-4">
+                            <div class="w-14 h-14 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-300 dark:text-slate-500 group-hover:scale-105 group-hover:text-brand-orange group-hover:border-orange-200 dark:group-hover:border-orange-800 transition-[transform,border-color,color] duration-200 mb-4">
                                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </div>
                             <h4 class="font-bold text-slate-400 dark:text-slate-500 group-hover:text-brand-orange transition-colors">Añadir otro</h4>
@@ -359,10 +359,41 @@ interface ContactoEmergencia {
     :host { display: block; height: 100%; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-    .animate-fadeInUp { animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0); } }
+
+    /* Detail view fade-in: opacity + subtle translateY so it feels grounded */
+    .animate-fadeIn { animation: fadeIn 0.25s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    /* Form overlay: slides up from below with a strong ease-out curve */
+    .animate-fadeInUp { animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* Contact cards stagger — each card delays 40ms after previous */
+    .contact-card:nth-child(1) { animation-delay: 0ms;   }
+    .contact-card:nth-child(2) { animation-delay: 40ms;  }
+    .contact-card:nth-child(3) { animation-delay: 80ms;  }
+    .contact-card:nth-child(4) { animation-delay: 120ms; }
+    .contact-card:nth-child(5) { animation-delay: 160ms; }
+    .contact-card:nth-child(6) { animation-delay: 200ms; }
+    .contact-card {
+      animation: cardEnter 0.3s cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+    @keyframes cardEnter {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .animate-fadeIn,
+      .animate-fadeInUp,
+      .contact-card { animation: none; opacity: 1; transform: none; }
+    }
   `]
 })
 export class PublicadoresContactosComponent {

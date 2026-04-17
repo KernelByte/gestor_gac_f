@@ -20,7 +20,7 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
         @for (tab of visibleTabs(); track tab.id) {
           <button
             (click)="setTab(tab.id)"
-            class="flex-1 sm:flex-none sm:min-w-[110px] px-4 h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+            class="flex-1 sm:flex-none sm:min-w-[110px] px-4 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] flex items-center justify-center gap-1.5"
             [ngClass]="currentTab() === tab.id
               ? 'bg-brand-orange text-white shadow-md shadow-orange-500/20'
               : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'"
@@ -62,10 +62,13 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
   `,
   styles: [`
     :host { display: block; }
-    .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
+    .animate-fadeIn { animation: fadeIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(5px); }
+        from { opacity: 0; transform: translateY(4px); }
         to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .animate-fadeIn { animation: none; opacity: 1; }
     }
   `]
 })

@@ -54,12 +54,35 @@ interface Publicador {
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+    /* Toast: sube desde abajo con un leve scale para sentirse "aterrizado" */
     @keyframes slideInBottom {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      from { transform: translateY(20px) scale(0.97); opacity: 0; }
+      to   { transform: translateY(0)    scale(1);    opacity: 1; }
     }
     .slide-in-bottom {
-      animation: slideInBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: slideInBottom 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Modals: usados en el template como animate-fade-in-up (previamente sin definición) */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0)    scale(1);    }
+    }
+    .animate-fade-in-up {
+      animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Stagger de columnas al cargar el tablero */
+    .kanban-col { animation: colEnter 0.35s cubic-bezier(0.23, 1, 0.32, 1) both; }
+    .kanban-col:nth-child(1) { animation-delay: 0ms;  }
+    .kanban-col:nth-child(2) { animation-delay: 40ms; }
+    .kanban-col:nth-child(3) { animation-delay: 80ms; }
+    .kanban-col:nth-child(4) { animation-delay: 120ms;}
+    .kanban-col:nth-child(5) { animation-delay: 160ms;}
+    .kanban-col:nth-child(6) { animation-delay: 200ms;}
+    @keyframes colEnter {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0);    }
     }
 
     /* ═══════════════════════════════════════
@@ -119,6 +142,13 @@ interface Publicador {
     /* Asegurar que el contenedor del shell no oculte contenido */
     ::ng-deep body.gac-fullscreen-active app-shell > div {
       overflow: visible !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .slide-in-bottom,
+      .animate-fade-in-up,
+      .kanban-col { animation: none; opacity: 1; transform: none; }
+      ::ng-deep .immersive-in { animation: none !important; }
     }
   `]
 })

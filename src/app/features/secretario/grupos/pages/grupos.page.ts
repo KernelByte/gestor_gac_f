@@ -16,7 +16,7 @@ import { CongregacionContextService } from '../../../../core/congregacion-contex
    imports: [CommonModule, ReactiveFormsModule],
    templateUrl: './grupos.page.html',
    styles: [`
-    :host { 
+    :host {
       display: block;
       height: 100%;
       overflow: hidden;
@@ -34,6 +34,24 @@ import { CongregacionContextService } from '../../../../core/congregacion-contex
     }
     .simple-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #cbd5e1;
+    }
+    /* Stagger table rows on load */
+    tbody tr:nth-child(1) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 0ms; }
+    tbody tr:nth-child(2) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 30ms; }
+    tbody tr:nth-child(3) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 60ms; }
+    tbody tr:nth-child(4) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 90ms; }
+    tbody tr:nth-child(5) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 120ms; }
+    tbody tr:nth-child(6) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 150ms; }
+    tbody tr:nth-child(7) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 180ms; }
+    tbody tr:nth-child(8) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 210ms; }
+    tbody tr:nth-child(9) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 240ms; }
+    tbody tr:nth-child(10) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 270ms; }
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      tbody tr { animation: none !important; opacity: 1; }
     }
   `]
 })

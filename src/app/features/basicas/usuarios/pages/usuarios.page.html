@@ -320,14 +320,14 @@
 
          <!-- Form Body -->
          <div class="flex-1 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900">
-            <div class="px-8 py-6 pb-32">
+            <div class="px-8 py-6 pb-8">
                <form [formGroup]="userForm" class="space-y-6">
 
                   <!-- Personal Info -->
                   <div class="space-y-4">
-                     <h3 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span class="w-6 h-px bg-slate-200 dark:bg-slate-700"></span>
+                     <h3 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
                         Datos Personales
+                        <span class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></span>
                      </h3>
 
                      <div class="space-y-3">
@@ -431,9 +431,9 @@
 
                   <!-- Roles & Permissions -->
                   <div class="space-y-4">
-                     <h3 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span class="w-6 h-px bg-slate-200 dark:bg-slate-700"></span>
+                     <h3 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
                         Acceso y Rol
+                        <span class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></span>
                      </h3>
 
                      <div class="bg-purple-50/50 dark:bg-purple-900/10 rounded-2xl p-4 border border-purple-100/50 dark:border-purple-800/20">
@@ -621,9 +621,9 @@
 
                   <!-- Security -->
                   <div class="space-y-4">
-                     <h3 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span class="w-6 h-px bg-slate-200 dark:bg-slate-700"></span>
+                     <h3 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
                         Seguridad
+                        <span class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></span>
                      </h3>
 
                      <div class="space-y-3">
@@ -631,11 +631,17 @@
                            <div class="space-y-1">
                               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Contraseña <span class="text-red-500">*</span></label>
                               <div class="relative group">
+                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                       <path d="M7 11V7a5 5 0 0110 0v4" />
+                                    </svg>
+                                 </div>
                                  <input [type]="showPassword() ? 'text' : 'password'" formControlName="contrasena"
-                                    class="block w-full pl-4 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full pl-9 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
                                     placeholder="Min. 6 caracteres">
                                  <button type="button" (click)="showPassword.set(!showPassword())"
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                                     <svg *ngIf="!showPassword()" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
                                        stroke="currentColor" stroke-width="2">
                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
@@ -653,9 +659,29 @@
                            <div class="space-y-1">
                               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Confirmar Contraseña <span class="text-red-500">*</span></label>
                               <div class="relative group">
+                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                       <path d="M7 11V7a5 5 0 0110 0v4" />
+                                    </svg>
+                                 </div>
                                  <input [type]="showPassword() ? 'text' : 'password'" formControlName="confirmPassword"
-                                    class="block w-full pl-4 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
-                                    [class.border-red-300]="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched">
+                                    class="block w-full pl-9 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    [class.border-red-300]="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched"
+                                    placeholder="Repite tu contraseña">
+                                 <button type="button" (click)="showPassword.set(!showPassword())"
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                                    <svg *ngIf="!showPassword()" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                                       stroke="currentColor" stroke-width="2">
+                                       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                       <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                    <svg *ngIf="showPassword()" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                                       stroke="currentColor" stroke-width="2">
+                                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                       <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                 </button>
                               </div>
                               <p *ngIf="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched"
                                  class="text-[0.625rem] text-red-500 mt-1 font-bold ml-1">No coinciden</p>
