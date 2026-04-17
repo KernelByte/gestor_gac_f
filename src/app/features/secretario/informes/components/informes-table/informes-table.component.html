@@ -93,7 +93,7 @@
               (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" tabindex="-1" />
             <div class="w-9 h-5 rounded-full flex items-center px-0.5 transition-colors"
               [ngClass]="getInformeValue(pub, 'participo') ? 'bg-brand-purple' : 'bg-slate-200 dark:bg-slate-700'">
-              <div class="w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-200"
+              <div class="w-3.5 h-3.5 rounded-full bg-white shadow-sm toggle-thumb"
                 [class.translate-x-4]="getInformeValue(pub, 'participo')"></div>
             </div>
           </label>
@@ -109,7 +109,7 @@
             <div class="w-9 h-5 rounded-full flex items-center px-0.5 transition-colors"
               [ngClass]="getInformeValue(pub, 'es_paux') ? 'bg-amber-400' : 'bg-slate-200 dark:bg-slate-700'">
               <div
-                class="w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 flex items-center justify-center"
+                class="w-3.5 h-3.5 rounded-full bg-white shadow-sm toggle-thumb flex items-center justify-center"
                 [class.translate-x-4]="getInformeValue(pub, 'es_paux')">
                 <span class="text-[8px] font-bold text-amber-600" [class.opacity-0]="!getInformeValue(pub, 'es_paux')"
                   [class.opacity-100]="getInformeValue(pub, 'es_paux')">P</span>
@@ -170,7 +170,7 @@
         período.</p>
     </div>
 
-    <div class="space-y-3 px-3" *ngIf="(resumen?.publicadores_list?.length ?? 0) > 0">
+    <div class="space-y-3 px-3 mobile-cards" *ngIf="(resumen?.publicadores_list?.length ?? 0) > 0">
       <div *ngFor="let pub of resumen?.publicadores_list || []; trackBy: trackByPub"
         class="rounded-xl border bg-white dark:bg-slate-900 overflow-hidden"
         [class.border-brand-purple/50]="getInformeValue(pub, 'participo')"
@@ -348,7 +348,7 @@
 
   <!-- Modal Panel -->
   <div
-    class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+    class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden transform animate-in fade-in zoom-in-95 duration-150">
 
     <!-- Header -->
     <div
@@ -393,7 +393,7 @@
     <!-- Footer -->
     <div class="px-6 py-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-end">
       <button (click)="closeValidationModal()"
-        class="px-5 py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 text-white dark:text-slate-900 text-sm font-bold rounded-xl shadow-lg shadow-slate-900/20 active:scale-95 transition-all flex items-center gap-2">
+        class="px-5 py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 text-white dark:text-slate-900 text-sm font-bold rounded-xl shadow-lg shadow-slate-900/20 active:scale-[0.97] transition-colors flex items-center gap-2">
         <span>Entendido, corregir</span>
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />

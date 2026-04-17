@@ -57,7 +57,7 @@
             <!-- Segunda Fila: Group Selector (Ancho Total) -->
             <div *ngIf="!lockedGroupId; else lockedGroupInfo" class="relative w-full">
                <button (click)="toggleGroupsDropdown()"
-                  class="w-full h-9 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between border shadow-sm"
+                  class="w-full h-9 px-3 rounded-xl text-xs font-bold transition-colors active:scale-[0.98] active:transition-transform flex items-center justify-between border shadow-sm"
                   [ngClass]="isGroupFilterActive()
                       ? 'bg-purple-100 dark:bg-purple-900/30 text-brand-purple dark:text-purple-300 border-purple-200 dark:border-purple-800'
                       : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
@@ -75,7 +75,7 @@
 
                <!-- Dropdown Menu -->
                <div *ngIf="showGroupsDropdown()"
-                  class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-200">
+                  class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                   <button *ngFor="let grupo of sortedGrupos" (click)="selectGroupFilter(grupo.id_grupo)"
                      class="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-between"
                      [ngClass]="{'text-brand-purple bg-purple-50 dark:bg-purple-900/10 font-bold': activeFilter() === grupo.id_grupo, 'text-slate-600 dark:text-slate-300': activeFilter() !== grupo.id_grupo}">
@@ -161,7 +161,7 @@
       <!-- Footer Sidebar: Botón Exportar Global -->
       <div *ngIf="canExport" class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
          <button (click)="onExport('global')" [disabled]="exporting()"
-            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-brand-purple dark:hover:text-brand-purple hover:border-brand-purple/30 transition-all disabled:opacity-50">
+            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-brand-purple dark:hover:text-brand-purple hover:border-brand-purple/30 transition-colors active:scale-[0.97] active:transition-transform disabled:opacity-50 disabled:active:scale-100">
             <ng-container *ngIf="!exporting()">
                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -341,9 +341,9 @@
                </div>
 
                <!-- Month Cards Grid -->
-               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+               <div class="month-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   <div *ngFor="let mes of yearGroup.meses"
-                     class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 relative group hover:shadow-md transition-all duration-300"
+                     class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 relative group hover:shadow-md transition-shadow duration-200"
                      [ngClass]="!mes.participo ? 'opacity-70 grayscale-[0.5] hover:opacity-100 hover:grayscale-0' : ''">
 
                      <div class="flex justify-between items-center mb-3">

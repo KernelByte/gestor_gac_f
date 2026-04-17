@@ -20,7 +20,7 @@ import { saveAs } from 'file-saver';
 
       <!-- Toast — full-width bottom on mobile, top-right on sm+ -->
       @if (toast()) {
-        <div class="fixed bottom-4 left-4 right-4 sm:bottom-auto sm:top-6 sm:left-auto sm:right-6 sm:max-w-xs z-50 animate-slideDown flex items-center gap-3 px-4 py-2.5 rounded-xl border shadow-lg"
+        <div class="fixed bottom-4 left-4 right-4 sm:bottom-auto sm:top-6 sm:left-auto sm:right-6 sm:max-w-xs z-50 toast-enter flex items-center gap-3 px-4 py-2.5 rounded-xl border shadow-lg"
              [class]="toast()!.type === 'success'
                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200/60 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300'
                : 'bg-red-50 dark:bg-red-900/20 border-red-200/60 dark:border-red-800/50 text-red-700 dark:text-red-300'">
@@ -43,17 +43,17 @@ import { saveAs } from 'file-saver';
           <p class="text-slate-500 font-medium text-xs sm:text-sm">Control de asistencia semanal por reunión</p>
         </div>
         @if (activeTab() === 'registro') {
-          <div class="flex gap-2 w-full sm:w-auto">
+          <div class="flex flex-wrap gap-2 w-full sm:w-auto">
             <button (click)="onExportPdf()"
                     [disabled]="!currentPeriodo() || loading()"
-                    class="inline-flex items-center gap-1.5 px-3 sm:px-5 h-9 sm:h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs sm:text-sm shadow-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
+                    class="inline-flex items-center gap-1.5 px-3 sm:px-5 h-9 sm:h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs sm:text-sm shadow-sm [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed">
               <svg class="w-4 h-4 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               <span class="hidden xs:inline">Exportar</span><span class="hidden sm:inline"> PDF</span>
             </button>
             <button (click)="onSave()"
                     *ngIf="hasEditPermission()"
                     [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges()"
-                    class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 sm:px-6 h-9 sm:h-11 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-display font-bold text-xs sm:text-sm shadow-xl shadow-purple-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 sm:px-6 h-9 sm:h-11 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-display font-bold text-xs sm:text-sm shadow-xl shadow-purple-900/20 [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
               @if (saving()) {
                 <svg class="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
                 Guardando...
@@ -70,7 +70,7 @@ import { saveAs } from 'file-saver';
       <div class="shrink-0 flex bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl gap-1">
         <button (click)="activeTab.set('registro')"
                 *ngIf="hasEditPermission()"
-                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all"
+                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold [transition:background-color_150ms_ease-out,color_150ms_ease-out,box-shadow_150ms_ease-out]"
                 [ngClass]="activeTab() === 'registro'
                   ? 'bg-brand-purple text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:text-slate-300 dark:hover:bg-slate-700/50'">
@@ -78,7 +78,7 @@ import { saveAs } from 'file-saver';
           Registro Mensual
         </button>
         <button (click)="activeTab.set('resumen')"
-                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all"
+                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold [transition:background-color_150ms_ease-out,color_150ms_ease-out,box-shadow_150ms_ease-out]"
                 [ngClass]="activeTab() === 'resumen'
                   ? 'bg-brand-purple text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:text-slate-300 dark:hover:bg-slate-700/50'">
@@ -93,7 +93,7 @@ import { saveAs } from 'file-saver';
       <div class="shrink-0 flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-3 sm:px-4 py-2.5 sm:py-3">
         <!-- Date picker pill -->
         <div class="flex items-center gap-0.5">
-          <button (click)="prevMonth()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors">
+          <button (click)="prevMonth()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_ease-out,transform_160ms_ease-out] active:scale-[0.97]">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
           <select [ngModel]="selectedMonth()" (ngModelChange)="selectedMonth.set($event); selectedWeek.set(1)"
@@ -108,7 +108,7 @@ import { saveAs } from 'file-saver';
               <option [value]="a">{{ a }}</option>
             }
           </select>
-          <button (click)="nextMonth()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors">
+          <button (click)="nextMonth()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_ease-out,transform_160ms_ease-out] active:scale-[0.97]">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
           </button>
         </div>
@@ -136,12 +136,12 @@ import { saveAs } from 'file-saver';
         </div>
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-fadeIn flex-1 min-h-0 pb-6">
+      <div class="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-4 c3xl-grid-cols-5 gap-6 animate-fadeIn flex-1 min-h-0 pb-6">
         <!-- Left Column: Main Entry (2/3 width) -->
-        <div class="xl:col-span-2 flex flex-col gap-6">
+        <div class="xl:col-span-2 2xl:col-span-3 c3xl-col-span-4 flex flex-col gap-6">
 
           <!-- Weekly Entry Card -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 md:p-8">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 md:p-8 2xl:p-10 c3xl-p-12">
 
             <!-- Card Header / Tabs -->
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8 border-b border-slate-100 dark:border-slate-700 pb-5 sm:pb-6">
@@ -161,13 +161,12 @@ import { saveAs } from 'file-saver';
                   @for (week of weeksArray(); track week) {
                     <button
                       (click)="selectWeek(week)"
-                      class="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all relative flex flex-col items-center gap-0.5 min-w-[50px] sm:min-w-[60px]"
+                      class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs font-bold [transition:background-color_150ms_ease-out,color_150ms_ease-out,box-shadow_150ms_ease-out] relative flex items-center justify-center min-w-[44px] sm:min-w-[52px]"
                       [ngClass]="{
                         'bg-white dark:bg-slate-800 text-brand-purple dark:text-purple-400 shadow-sm': selectedWeek() === week,
                         'text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800': selectedWeek() !== week
                       }">
-                      <span class="text-[0.5rem] sm:text-[0.625rem] uppercase tracking-wider opacity-70">Sem</span>
-                      <span class="text-sm sm:text-base leading-none">{{ week }}</span>
+                      <span class="text-xs font-bold tracking-wide">S{{ week }}</span>
                       @if (weekHasData(week)) {
                         <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400"></span>
                       }
@@ -190,7 +189,7 @@ import { saveAs } from 'file-saver';
                       <svg class="w-4.5 h-4.5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     </div>
                     <div>
-                      <h3 class="font-bold text-slate-800 dark:text-slate-100">Entre Semana</h3>
+                      <h3 class="font-bold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5">Entre Semana <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6rem] font-black bg-purple-100 dark:bg-purple-900/40 text-brand-purple tabular-nums">{{ midweekMonthTotal() }}</span></h3>
                       @if (congregacionConfig()?.dia_reunion_entre_semana) {
                         <p class="text-[0.625rem] font-bold text-slate-400 leading-none mt-0.5">
                           {{ congregacionConfig()!.dia_reunion_entre_semana }}
@@ -224,7 +223,7 @@ import { saveAs } from 'file-saver';
                   </div>
                 } @else {
                   <!-- Editable inputs: white bg + colored border signals interactivity -->
-                  <div class="grid gap-3" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
+                  <div class="grid gap-3 2xl:gap-4" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
                     <div class="flex flex-col gap-1.5 group">
                       <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-brand-purple uppercase tracking-wide">
                         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -234,7 +233,7 @@ import { saveAs } from 'file-saver';
                              [ngModel]="midweekWeeks()[selectedWeek() - 1]"
                              (ngModelChange)="updateMidweekWeek($event)"
                              [disabled]="!hasEditPermission()"
-                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
+                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 [transition:border-color_150ms_ease-out,box-shadow_150ms_ease-out] outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
                              placeholder="0">
                     </div>
                     @if (congregacionConfig()?.usa_zoom !== 0) {
@@ -247,7 +246,7 @@ import { saveAs } from 'file-saver';
                                [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]"
                                (ngModelChange)="updateMidweekZoomWeek($event)"
                                [disabled]="!hasEditPermission()"
-                               class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
+                               class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 [transition:border-color_150ms_ease-out,box-shadow_150ms_ease-out] outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
                                placeholder="0">
                       </div>
                     }
@@ -284,7 +283,7 @@ import { saveAs } from 'file-saver';
                       <svg class="w-4.5 h-4.5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
                     <div>
-                      <h3 class="font-bold text-slate-800 dark:text-slate-100">Fin de Semana</h3>
+                      <h3 class="font-bold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5">Fin de Semana <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6rem] font-black bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 tabular-nums">{{ weekendMonthTotal() }}</span></h3>
                       @if (congregacionConfig()?.dia_reunion_fin_semana) {
                         <p class="text-[0.625rem] font-bold text-slate-400 leading-none mt-0.5">
                           {{ congregacionConfig()!.dia_reunion_fin_semana }}
@@ -317,7 +316,7 @@ import { saveAs } from 'file-saver';
                     <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
                   </div>
                 } @else {
-                  <div class="grid gap-3" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
+                  <div class="grid gap-3 2xl:gap-4" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
                     <div class="flex flex-col gap-1.5 group">
                       <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-orange-500 uppercase tracking-wide">
                         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -327,7 +326,7 @@ import { saveAs } from 'file-saver';
                              [ngModel]="weekendWeeks()[selectedWeek() - 1]"
                              (ngModelChange)="updateWeekendWeek($event)"
                              [disabled]="!hasEditPermission()"
-                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
+                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 [transition:border-color_150ms_ease-out,box-shadow_150ms_ease-out] outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
                              placeholder="0">
                     </div>
                     @if (congregacionConfig()?.usa_zoom !== 0) {
@@ -340,7 +339,7 @@ import { saveAs } from 'file-saver';
                                [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]"
                                (ngModelChange)="updateWeekendZoomWeek($event)"
                                [disabled]="!hasEditPermission()"
-                               class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 transition-all outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
+                               class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 [transition:border-color_150ms_ease-out,box-shadow_150ms_ease-out] outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
                                placeholder="0">
                       </div>
                     }
@@ -373,7 +372,16 @@ import { saveAs } from 'file-saver';
         </div>
 
         <!-- Right Column: Sidebar Widgets -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4 sm:gap-6 xl:sticky xl:top-0 content-start">
+        <details class="sidebar-details" open>
+          <summary class="xl:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer list-none mb-4">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Estadísticas del mes</span>
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-bold text-slate-500">ES: {{ midweekMonthTotal() }} · FS: {{ weekendMonthTotal() }}</span>
+              <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </summary>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4 sm:gap-6 xl:sticky xl:top-0 content-start">
 
           <!-- Averages Widget -->
           <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
@@ -385,7 +393,7 @@ import { saveAs } from 'file-saver';
             </div>
 
             <div class="space-y-4">
-              <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow">
+              <div class="sidebar-item-hover flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700">
                 <div class="p-2.5 bg-purple-100 dark:bg-purple-900/40 text-brand-purple rounded-lg">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
@@ -400,7 +408,7 @@ import { saveAs } from 'file-saver';
                 </div>
               </div>
 
-              <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow">
+              <div class="sidebar-item-hover flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700">
                 <div class="p-2.5 bg-orange-100 dark:bg-orange-900/40 text-orange-600 rounded-lg">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
@@ -428,7 +436,7 @@ import { saveAs } from 'file-saver';
 
             <div class="grid grid-cols-5 gap-2">
               @for (week of weeksArray(); track week) {
-                <div class="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors"
+                <div class="flex flex-col items-center gap-1.5 p-2 rounded-xl [transition:background-color_150ms_ease-out]"
                      [ngClass]="weekHasData(week) ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-900/30'">
                   <span class="text-[0.625rem] font-bold uppercase text-slate-400">S{{ week }}</span>
                   @if (weekHasData(week)) {
@@ -450,13 +458,9 @@ import { saveAs } from 'file-saver';
               Ingrese la asistencia <b>Presencial</b> y por <b>Zoom</b> por separado. El sistema sumará ambas automáticamente.
             </p>
           </div>
-          
-          <!-- Bottom visual closure -->
-          <div class="flex items-center justify-center py-4 opacity-20 pointer-events-none">
-            <div class="w-12 h-1 bg-slate-400 rounded-full"></div>
-          </div>
 
-        </div>
+          </div>
+        </details>
 
       </div>
 
@@ -518,7 +522,10 @@ import { saveAs } from 'file-saver';
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
                 @for (row of resumenAnualHistorico(); track row.mes) {
-                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <tr [ngClass]="{
+                    'hover:bg-slate-50 dark:hover:bg-slate-800/50 [transition:background-color_150ms_ease-out]': true,
+                    'border-l-2 border-l-brand-purple bg-purple-50/40 dark:bg-purple-950/20': +row.mes === +selectedMonth()
+                  }">
                     <td class="px-5 py-3.5 font-bold text-sm"
                         [ngClass]="row.midweek_total !== null || row.weekend_total !== null ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'">
                       {{ row.nombre_mes }}
@@ -569,29 +576,56 @@ import { saveAs } from 'file-saver';
   `,
   styles: [`
     :host { display: block; height: 100%; }
+
+    /* ── Keyframes con cubic-bezier custom (Emil: nunca ease-out string) ── */
     .animate-fadeIn {
-      animation: fadeIn 0.3s ease-out forwards;
+      animation: fadeIn 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .animate-slideDown {
-      animation: slideDown 0.3s ease-out;
+
+    /* ── Toast: @starting-style (moderno) + fallback keyframe ── */
+    .toast-enter {
+      transition: opacity 300ms cubic-bezier(0.23, 1, 0.32, 1),
+                  transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    @starting-style {
+      .toast-enter {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.97);
+      }
     }
     @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-12px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .text-glow {
-      text-shadow: 0 0 15px rgba(100, 116, 139, 0.1);
+
+    /* ── Hover guard para touch devices ── */
+    @media (hover: hover) and (pointer: fine) {
+      .sidebar-item-hover:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: box-shadow 150ms ease-out;
+      }
     }
-    .text-glow-indigo {
-      text-shadow: 0 0 15px rgba(79, 70, 229, 0.2);
+
+    /* ── Sidebar colapsable en mobile con <details> ── */
+    @media (min-width: 1280px) {
+      details.sidebar-details { display: contents; }
+      details.sidebar-details > summary { display: none; }
     }
-    .shadow-inner-sm {
-      box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+    /* ── 3xl breakpoint (1920px+) para layouts 4K ── */
+    @media (min-width: 1920px) {
+      .c3xl-col-span-4 { grid-column: span 4 / span 4; }
+      .c3xl-grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .c3xl-p-12 { padding: 3rem; }
     }
+
+    .text-glow { text-shadow: 0 0 15px rgba(100, 116, 139, 0.1); }
+    .text-glow-indigo { text-shadow: 0 0 15px rgba(79, 70, 229, 0.2); }
+    .shadow-inner-sm { box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
   `]
 })
 export class ReunionesAsistenciaComponent implements OnInit {

@@ -73,8 +73,8 @@ export class InformesMainPage implements OnInit {
   vistaGrupo = signal(false);
   toastMessage = signal<{ title: string, text?: string, type: 'success' | 'error' | 'info' } | null>(null);
 
-  selectedMes = (new Date().getMonth() === 0 ? '12' : new Date().getMonth().toString());
-  selectedAno = (new Date().getMonth() === 0 ? (new Date().getFullYear() - 1).toString() : new Date().getFullYear().toString());
+  selectedMes: string | null = null;
+  selectedAno: string | null = null;
   selectedGrupo: number | null = null;
   searchQuery = '';
   soloSinInforme = false;
@@ -204,10 +204,31 @@ export class InformesMainPage implements OnInit {
       this.soloSinInforme = savedFilter === 'true';
     }
 
+    // Inicializar el periodo activo
+    try {
+      const contexto = await lastValueFrom(this.informesService.getPeriodoContext());
+      if (contexto?.periodo_informes) {
+        this.selectedAno = contexto.periodo_informes.codigo_ano.toString();
+        this.selectedMes = contexto.periodo_informes.codigo_mes.toString();
+      } else {
+         this.selectedMes = (new Date().getMonth() === 0 ? '12' : new Date().getMonth().toString());
+         this.selectedAno = (new Date().getMonth() === 0 ? (new Date().getFullYear() - 1).toString() : new Date().getFullYear().toString());
+      }
+    } catch (e) {
+      console.error("Error obteniendo periodo contexto", e);
+      this.selectedMes = (new Date().getMonth() === 0 ? '12' : new Date().getMonth().toString());
+      this.selectedAno = (new Date().getMonth() === 0 ? (new Date().getFullYear() - 1).toString() : new Date().getFullYear().toString());
+    }
+
     // Primero inicializar para usuarios restringidos (precargar grupo)
     await this.initializeForRestrictedUser();
     await this.loadHistorialGroupIdIfNeeded();
     this.loadPrivilegiosData();
+
+    // Ahora cargamos el resumen si están definidos (efecto manejará o lo llamamos explícito si effect falla)
+    if (this.selectedMes && this.selectedAno) {
+       this.loadResumen();
+    }
   }
 
   private _cachedUserPublicador: any = null;
@@ -341,6 +362,7 @@ export class InformesMainPage implements OnInit {
 
   loadResumen() {
     if (!this.canViewInformes()) return;
+    if (!this.selectedAno || !this.selectedMes) return;
     const congregacionId = this.congregacionContext.effectiveCongregacionId() ?? 0;
     const periodoId = this.getPeriodoId();
     if (!periodoId) return;
@@ -353,7 +375,8 @@ export class InformesMainPage implements OnInit {
     });
   }
 
-  getPeriodoId(): number {
+  getPeriodoId(): number | null {
+    if (!this.selectedAno || !this.selectedMes) return null;
     const base = (parseInt(this.selectedAno) - 2010) * 12;
     return base + parseInt(this.selectedMes);
   }
@@ -387,6 +410,9 @@ export class InformesMainPage implements OnInit {
   guardarTodo() {
     if (!this.canEditInformes()) return;
     if (this.localChanges.size === 0) return;
+    const pId = this.getPeriodoId();
+    if (!pId) return;
+
     this.saving.set(true);
 
     const items: InformeLoteItem[] = Array.from(this.localChanges.values()).map(c => ({
@@ -398,7 +424,7 @@ export class InformesMainPage implements OnInit {
       es_paux_mes: c.es_paux_mes // Nuevo campo opcional
     }));
 
-    this.informesService.guardarInformesLote({ periodo_id: this.getPeriodoId(), informes: items }).subscribe({
+    this.informesService.guardarInformesLote({ periodo_id: pId, informes: items }).subscribe({
       next: (result) => {
         this.localChanges.clear();
         this.loadResumen();
@@ -415,14 +441,18 @@ export class InformesMainPage implements OnInit {
   async exportarExcel() {
     this.saving.set(true);
     try {
-      const periodo = `${this.selectedAno}-${this.getMesLabel(this.selectedMes)}`;
+      const mesStr = this.selectedMes ? this.getMesLabel(this.selectedMes) : 'Mes';
+      const periodo = `${this.selectedAno}-${mesStr}`;
       const congregacionId = this.congregacionContext.effectiveCongregacionId() ?? 1;
+
+      const pId = this.getPeriodoId();
+      if (!pId) throw new Error("Periodo seleccionado inválido");
 
       if (this.selectedGrupo) {
         // Descargar por grupo
         const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
         const nombreGrupo = g ? g.nombre_grupo : 'Grupo';
-        this.informesService.exportTemplate(this.getPeriodoId(), this.selectedGrupo).subscribe({
+        this.informesService.exportTemplate(pId, this.selectedGrupo).subscribe({
           next: (blob) => {
             const filename = `Informe_${nombreGrupo}_${periodo}.xlsx`;
             saveAs(blob, filename);
@@ -439,7 +469,7 @@ export class InformesMainPage implements OnInit {
         if (!congregacionId) {
           throw new Error("No se pudo identificar la congregación del usuario.");
         }
-        this.informesService.exportTemplateCongregacion(this.getPeriodoId(), congregacionId).subscribe({
+        this.informesService.exportTemplateCongregacion(pId, congregacionId).subscribe({
           next: (blob) => {
             const filename = `Informe_Congregacion_${periodo}.xlsx`;
             saveAs(blob, filename);

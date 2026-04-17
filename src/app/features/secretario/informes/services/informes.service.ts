@@ -36,6 +36,10 @@ export class InformesService {
       return this.http.get<Periodo>(`${this.periodosUrl}/by-ano-mes?ano=${ano}&mes=${mes}`);
    }
 
+   getPeriodoContext(): Observable<{ periodo_calendario: Periodo | null, periodo_informes: Periodo | null }> {
+      return this.http.get<{ periodo_calendario: Periodo | null, periodo_informes: Periodo | null }>(`${this.periodosUrl}/context`);
+   }
+
    // --- Resumen Mensual ---
    getResumenMensual(
       periodoId: number,

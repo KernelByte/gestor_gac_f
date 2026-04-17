@@ -12,7 +12,48 @@ import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.ut
    templateUrl: './informes-table.component.html',
    host: {
       'class': 'flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex flex-col overflow-hidden'
-   }
+   },
+   styles: [`
+      @keyframes rowIn {
+         from { opacity: 0; transform: translateY(6px); }
+         to   { opacity: 1; transform: translateY(0); }
+      }
+      tbody tr:nth-child(1)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 0ms; }
+      tbody tr:nth-child(2)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 25ms; }
+      tbody tr:nth-child(3)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 50ms; }
+      tbody tr:nth-child(4)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 75ms; }
+      tbody tr:nth-child(5)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 100ms; }
+      tbody tr:nth-child(6)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 125ms; }
+      tbody tr:nth-child(7)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 150ms; }
+      tbody tr:nth-child(8)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 175ms; }
+      tbody tr:nth-child(9)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 200ms; }
+      tbody tr:nth-child(10) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 225ms; }
+      tbody tr:nth-child(11) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 250ms; }
+      tbody tr:nth-child(12) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 275ms; }
+      tbody tr:nth-child(13) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 300ms; }
+      tbody tr:nth-child(14) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 325ms; }
+      tbody tr:nth-child(15) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 350ms; }
+      tbody tr:nth-child(16) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 375ms; }
+      tbody tr:nth-child(17) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 400ms; }
+      tbody tr:nth-child(18) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 425ms; }
+      tbody tr:nth-child(19) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 450ms; }
+      tbody tr:nth-child(20) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 475ms; }
+      tbody tr:nth-child(n+21) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 475ms; }
+      .mobile-cards > *:nth-child(1)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 0ms; }
+      .mobile-cards > *:nth-child(2)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 25ms; }
+      .mobile-cards > *:nth-child(3)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 50ms; }
+      .mobile-cards > *:nth-child(4)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 75ms; }
+      .mobile-cards > *:nth-child(5)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 100ms; }
+      .mobile-cards > *:nth-child(6)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 125ms; }
+      .mobile-cards > *:nth-child(7)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 150ms; }
+      .mobile-cards > *:nth-child(8)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 175ms; }
+      .mobile-cards > *:nth-child(9)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 200ms; }
+      .mobile-cards > *:nth-child(10) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 225ms; }
+      @media (prefers-reduced-motion: reduce) {
+         tbody tr { animation: none !important; opacity: 1; }
+         .mobile-cards > * { animation: none !important; opacity: 1; }
+      }
+   `]
 })
 export class InformesTableComponent {
    @Input() resumen: ResumenMensual | null = null;

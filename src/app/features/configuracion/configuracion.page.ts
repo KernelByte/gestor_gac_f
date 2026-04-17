@@ -15,6 +15,7 @@ interface Configuracion {
    codigo_seguridad: string;
    tiene_sala_b: boolean | number;
    usa_zoom: boolean | number;
+   id_periodo_informes_activo?: number | null;
    dia_reunion_entre_semana:  string;
    hora_reunion_entre_semana: string;
    dia_reunion_fin_semana:    string;
@@ -48,7 +49,7 @@ export class ConfiguracionPage implements OnInit {
    private auth = inject(AuthStore);
    private territoriosService = inject(TerritoriosService);
    private API_URL = `${environment.apiUrl}/configuracion/`;
-
+   private PERIODOS_URL = `${environment.apiUrl}/periodos/?limit=24`;
    config: Configuracion = {
       id_congregacion: 0,
       nombre_congregacion: '',
@@ -57,10 +58,20 @@ export class ConfiguracionPage implements OnInit {
       codigo_seguridad: '',
       tiene_sala_b: false,
       usa_zoom: true,
+      id_periodo_informes_activo: null as number | null,
       dia_reunion_entre_semana:  '',
       hora_reunion_entre_semana: '',
       dia_reunion_fin_semana:    '',
       hora_reunion_fin_semana:   '',
+   };
+
+   // Lista de periodos
+   periodosDisponibles: any[] = [];
+
+   private readonly mesesNombre: Record<number, string> = {
+      1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+      5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+      9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
    };
 
    // Clone to check for changes
@@ -71,8 +82,9 @@ export class ConfiguracionPage implements OnInit {
    showSecurityCode = signal(false);
    generatingCode = signal(false);
    notification = signal<{ message: string, type: 'success' | 'error' } | null>(null);
-   dropdownEntreOpen  = signal(false);
-   dropdownFinOpen    = signal(false);
+   dropdownEntreOpen   = signal(false);
+   dropdownFinOpen     = signal(false);
+   dropdownPeriodoOpen = signal(false);
    timePickerEntreOpen = signal(false);
 
    // Tile provider
@@ -98,6 +110,17 @@ export class ConfiguracionPage implements OnInit {
    selectDiaFin(dia: string) {
       this.config.dia_reunion_fin_semana = dia;
       this.dropdownFinOpen.set(false);
+   }
+
+   selectPeriodoInformes(periodo: any | null) {
+      this.config.id_periodo_informes_activo = periodo ? periodo.id_periodo : null;
+      this.dropdownPeriodoOpen.set(false);
+   }
+
+   getPeriodoLabel(): string {
+      if (!this.config.id_periodo_informes_activo) return 'Automático (Mes Anterior)';
+      const p = this.periodosDisponibles.find(x => x.id_periodo === this.config.id_periodo_informes_activo);
+      return p ? p.nombre_periodo : 'Periodo seleccionado';
    }
 
    // ── 24h helpers ──────────────────────────────────────────
@@ -165,7 +188,25 @@ export class ConfiguracionPage implements OnInit {
    ngOnInit() {
       this.loadConfig();
       this.loadTileProvider();
+      this.loadPeriodos();
    }
+
+   loadPeriodos() {
+       this.http.get<any[]>(this.PERIODOS_URL).subscribe({
+          next: (data) => {
+             this.periodosDisponibles = data
+                .map(p => ({
+                   ...p,
+                   nombre_periodo: `${this.mesesNombre[p.codigo_mes] || p.codigo_mes} ${p.codigo_ano}`
+                }))
+                .sort((a, b) => {
+                   if (b.codigo_ano !== a.codigo_ano) return b.codigo_ano - a.codigo_ano;
+                   return b.codigo_mes - a.codigo_mes;
+                });
+          },
+          error: (err) => console.error('Error cargando periodos', err)
+       });
+    }
 
    loadTileProvider() {
       this.territoriosService.getTileProvider().subscribe({
@@ -216,6 +257,7 @@ export class ConfiguracionPage implements OnInit {
          codigo_seguridad:          this.config.codigo_seguridad,
          tiene_sala_b:              this.config.tiene_sala_b ? 1 : 0,
          usa_zoom:                  this.config.usa_zoom ? 1 : 0,
+         id_periodo_informes_activo: this.config.id_periodo_informes_activo,
          dia_reunion_entre_semana:  this.config.dia_reunion_entre_semana  || null,
          hora_reunion_entre_semana: this.config.hora_reunion_entre_semana || null,
          dia_reunion_fin_semana:    this.config.dia_reunion_fin_semana    || null,
@@ -295,6 +337,7 @@ export class ConfiguracionPage implements OnInit {
          this.config.codigo_seguridad !== this.originalConfig.codigo_seguridad ||
          !!this.config.tiene_sala_b !== !!this.originalConfig.tiene_sala_b ||
          !!this.config.usa_zoom !== !!this.originalConfig.usa_zoom ||
+         this.config.id_periodo_informes_activo !== this.originalConfig.id_periodo_informes_activo ||
          (this.config.dia_reunion_entre_semana  || '') !== (this.originalConfig.dia_reunion_entre_semana  || '') ||
          (this.config.hora_reunion_entre_semana || '') !== (this.originalConfig.hora_reunion_entre_semana || '') ||
          (this.config.dia_reunion_fin_semana    || '') !== (this.originalConfig.dia_reunion_fin_semana    || '') ||

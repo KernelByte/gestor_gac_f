@@ -95,12 +95,18 @@
   }
 
   .form-control {
-    @apply w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-medium transition-all duration-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-950 focus:border-brand-purple dark:focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 dark:focus:ring-brand-purple/20;
+    @apply w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-medium outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-950 focus:border-brand-purple dark:focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 dark:focus:ring-brand-purple/20;
+    transition-property: border-color, background-color, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
   }
 
   /* === Custom Select with Brand Chevron === */
   .form-select {
-    @apply w-full appearance-none px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-medium transition-all duration-200 outline-none hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-950 focus:border-brand-purple dark:focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 dark:focus:ring-brand-purple/20 cursor-pointer;
+    @apply w-full appearance-none px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-medium outline-none hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-950 focus:border-brand-purple dark:focus:border-brand-purple focus:ring-4 focus:ring-brand-purple/10 dark:focus:ring-brand-purple/20 cursor-pointer;
+    transition-property: border-color, background-color, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
 
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
     background-position: right 1rem center;
@@ -450,5 +456,88 @@
 
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* === UI Motion — Emil Design Engineering ===            */
+/* ═══════════════════════════════════════════════════════ */
+
+/* Custom easing curves */
+:root {
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Toast: slide up from bottom-right */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.28s var(--ease-out-strong) forwards;
+}
+
+/* Progress bar fast sweep (historial loading indicator) */
+@keyframes progressSweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-progress-fast {
+  animation: progressSweep 1s var(--ease-out-strong) infinite;
+}
+
+/* Stagger entrance for grid cards */
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* KPI cards stagger (resumen-sucursal, first 4 children) */
+.kpi-grid > *:nth-child(1) { animation: cardEnter 0.3s var(--ease-out-strong) 0ms both; }
+.kpi-grid > *:nth-child(2) { animation: cardEnter 0.3s var(--ease-out-strong) 50ms both; }
+.kpi-grid > *:nth-child(3) { animation: cardEnter 0.3s var(--ease-out-strong) 100ms both; }
+.kpi-grid > *:nth-child(4) { animation: cardEnter 0.3s var(--ease-out-strong) 150ms both; }
+
+/* Month cards stagger (historial grid) */
+.month-grid > *:nth-child(1)  { animation: cardEnter 0.25s var(--ease-out-strong) 0ms both; }
+.month-grid > *:nth-child(2)  { animation: cardEnter 0.25s var(--ease-out-strong) 40ms both; }
+.month-grid > *:nth-child(3)  { animation: cardEnter 0.25s var(--ease-out-strong) 80ms both; }
+.month-grid > *:nth-child(4)  { animation: cardEnter 0.25s var(--ease-out-strong) 120ms both; }
+.month-grid > *:nth-child(5)  { animation: cardEnter 0.25s var(--ease-out-strong) 160ms both; }
+.month-grid > *:nth-child(6)  { animation: cardEnter 0.25s var(--ease-out-strong) 200ms both; }
+.month-grid > *:nth-child(n+7) { animation: cardEnter 0.25s var(--ease-out-strong) 240ms both; }
+
+/* Simple spring for toggle thumb */
+.toggle-thumb {
+  transition: transform 200ms var(--ease-spring);
+}
+
+/* Reduce motion: keep opacity/color, remove movement */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeInUp,
+  .animate-progress-fast,
+  .kpi-grid > *,
+  .month-grid > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .toggle-thumb {
+    transition: none;
   }
 }

@@ -337,14 +337,17 @@ export class InformesHistorialComponent implements OnChanges {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            let filename = `Historial_${this.selectedAno}.pdf`;
+            let filename = `Tarjetas_${this.selectedAno}.pdf`;
             if (scope === 'single') {
-               filename = `Historial_${this.selectedPublicador()?.nombre_completo || 'Publicador'}.pdf`;
+               filename = `Tarjeta - ${this.selectedPublicador()?.nombre_completo || 'Publicador'}.pdf`;
             } else {
                const filter = this.activeFilter();
-               if (filter === 'all') filename = `Historial_Todos_${this.selectedAno}.pdf`;
-               else if (filter === 'precursores') filename = `Historial_Precursores_${this.selectedAno}.pdf`;
-               else if (typeof filter === 'number') filename = `Historial_Grupo_${filter}_${this.selectedAno}.pdf`;
+               if (filter === 'all') filename = `Tarjetas - Todos - ${this.selectedAno}.pdf`;
+               else if (filter === 'precursores') filename = `Tarjetas - Precursores - ${this.selectedAno}.pdf`;
+               else if (typeof filter === 'number') {
+                  const g = this.grupos.find(x => x.id_grupo === filter);
+                  filename = `Tarjetas - ${g ? g.nombre_grupo : `Grupo ${filter}`} - ${this.selectedAno}.pdf`;
+               }
             }
             a.download = filename;
             a.click();
