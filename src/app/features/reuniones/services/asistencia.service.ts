@@ -66,4 +66,11 @@ export class AsistenciaService {
       { responseType: 'blob' }
     );
   }
+
+  exportarS88Pdf(congregacionId: number, anoServicio: number): Observable<Blob> {
+    return this.http.get(
+      `${this.asistenciasUrl}/exportar-s88-pdf/${congregacionId}/${anoServicio}`,
+      { responseType: 'blob' }
+    );
+  }
 }

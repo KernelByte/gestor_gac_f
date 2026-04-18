@@ -32,24 +32,20 @@
 
   /* Rescalado fluido para pantallas de alta resolución */
   html {
-    font-size: 16px; /* Base por defecto (1rem = 16px) - Laptops y móviles */
+    font-size: 16px; /* Base por defecto (1rem = 16px) - Laptops y móviles (hasta 1080p) */
   }
 
-  @media (min-width: 1920px) {
-    html {
-      font-size: 18px; /* Pantallas 1080p (Full HD) - ~12% de aumento */
-    }
-  }
-
+  /* Para pantallas 2K y ultrawide (mayores a 1080p pero no 4K) */
   @media (min-width: 2560px) {
     html {
-      font-size: 22px; /* Pantallas 2K (1440p) - ~37.5% de aumento */
+      font-size: 18px; /* Aumento sutil (~12.5%) para que no se vea minúsculo */
     }
   }
 
+  /* Para pantallas 4K */
   @media (min-width: 3840px) {
     html {
-      font-size: 32px; /* Pantallas 4K (Ultra HD) - 200% del tamaño (todo al doble) */
+      font-size: 24px; /* Aumento moderado (50%) en lugar del doble como antes */
     }
   }
 

@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, effect, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, effect, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AsistenciaService, CongregacionConfig } from '../services/asistencia.service';
@@ -16,7 +16,7 @@ import { saveAs } from 'file-saver';
   selector: 'app-reuniones-asistencia',
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex flex-col gap-4 sm:gap-6 min-h-full pb-12 overflow-y-auto">
+    <div class="flex flex-col gap-1.5 sm:gap-2 h-full overflow-hidden">
 
       <!-- Toast — full-width bottom on mobile, top-right on sm+ -->
       @if (toast()) {
@@ -36,139 +36,140 @@ import { saveAs } from 'file-saver';
         </div>
       }
 
-      <!-- Header -->
-      <div class="shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 px-1">
-        <div>
-          <h1 class="font-display font-black text-2xl sm:text-3xl text-slate-900 dark:text-white tracking-tight text-glow">Registro de Asistencia</h1>
-          <p class="text-slate-500 font-medium text-xs sm:text-sm">Control de asistencia semanal por reunión</p>
-        </div>
-        @if (activeTab() === 'registro') {
-          <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-            <button (click)="onExportPdf()"
-                    [disabled]="!currentPeriodo() || loading()"
-                    class="inline-flex items-center gap-1.5 px-3 sm:px-5 h-9 sm:h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs sm:text-sm shadow-sm [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed">
-              <svg class="w-4 h-4 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-              <span class="hidden xs:inline">Exportar</span><span class="hidden sm:inline"> PDF</span>
-            </button>
-            <button (click)="onSave()"
-                    *ngIf="hasEditPermission()"
-                    [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges()"
-                    class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 sm:px-6 h-9 sm:h-11 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-display font-bold text-xs sm:text-sm shadow-xl shadow-purple-900/20 [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
-              @if (saving()) {
-                <svg class="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
-                Guardando...
-              } @else {
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                Guardar Cambios
-              }
-            </button>
-          </div>
-        }
-      </div>
 
-      <!-- Tabs — full width on mobile -->
-      <div class="shrink-0 flex bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl gap-1">
-        <button (click)="activeTab.set('registro')"
-                *ngIf="hasEditPermission()"
-                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold [transition:background-color_150ms_ease-out,color_150ms_ease-out,box-shadow_150ms_ease-out]"
-                [ngClass]="activeTab() === 'registro'
-                  ? 'bg-brand-purple text-white shadow-md'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:text-slate-300 dark:hover:bg-slate-700/50'">
-          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Registro Mensual
-        </button>
-        <button (click)="activeTab.set('resumen')"
-                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold [transition:background-color_150ms_ease-out,color_150ms_ease-out,box-shadow_150ms_ease-out]"
-                [ngClass]="activeTab() === 'resumen'
-                  ? 'bg-brand-purple text-white shadow-md'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:text-slate-300 dark:hover:bg-slate-700/50'">
-          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-          Resumen Anual
-        </button>
-      </div>
 
-      @if (activeTab() === 'registro') {
+      <!-- Unified Main Grid -->
+      <div class="flex flex-col xl:flex-row gap-4 sm:gap-6 xl:gap-8 flex-1 min-h-0 overflow-hidden pr-1 pb-4">
 
-      <!-- Month/Year Navigator -->
-      <div class="shrink-0 flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-3 sm:px-4 py-2.5 sm:py-3">
+        <!-- LEFT PANEL: REGISTRO MENSUAL -->
+        <div class="shrink-0 xl:flex-1 flex flex-col gap-2 sm:gap-3 xl:min-w-[500px] xl:overflow-hidden overflow-visible">
+          <!-- Month/Year Navigator + Actions -->
+      <div class="shrink-0 flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-2 sm:px-3 py-1.5">
         <!-- Date picker pill -->
-        <div class="flex items-center gap-0.5">
-          <button (click)="prevMonth()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_ease-out,transform_160ms_ease-out] active:scale-[0.97]">
+        <div class="flex items-center gap-1">
+          <button (click)="prevMonth()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1),transform_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <select [ngModel]="selectedMonth()" (ngModelChange)="selectedMonth.set($event); selectedWeek.set(1)"
-                  class="bg-transparent border-0 text-sm font-bold text-slate-800 dark:text-slate-100 cursor-pointer focus:ring-0 pr-5">
-            @for (m of meses; track m.value) {
-              <option [value]="m.value">{{ m.label }}</option>
+
+          <!-- Custom Year Dropdown -->
+          <div class="relative" (click)="$event.stopPropagation()">
+            <button
+              (click)="toggleYearDrop()"
+              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition-colors">
+              {{ selectedYear() }}
+              <svg class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" [class.rotate-180]="yearDropOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            @if (yearDropOpen()) {
+              <div class="dropdown-panel absolute top-full left-0 mt-1.5 z-50 bg-white dark:bg-[#1e2535] border border-slate-200 dark:border-slate-600/60 rounded-xl shadow-xl shadow-black/10 dark:shadow-black/40 py-1.5 min-w-[90px] overflow-hidden">
+                @for (a of anos; track a) {
+                  <button
+                    (click)="selectedYear.set(a); yearDropOpen.set(false)"
+                    class="w-full text-left px-3 py-1.5 text-sm font-semibold transition-colors"
+                    [class]="a === +selectedYear()
+                      ? 'bg-brand-purple/10 dark:bg-brand-purple/20 text-brand-purple'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60'">
+                    {{ a }}
+                  </button>
+                }
+              </div>
             }
-          </select>
-          <select [ngModel]="selectedYear()" (ngModelChange)="selectedYear.set($event)"
-                  class="bg-transparent border-0 text-sm font-bold text-slate-800 dark:text-slate-100 cursor-pointer focus:ring-0 pr-5">
-            @for (a of anos; track a) {
-              <option [value]="a">{{ a }}</option>
+          </div>
+
+          <!-- Custom Month Dropdown -->
+          <div class="relative" (click)="$event.stopPropagation()">
+            <button
+              (click)="toggleMonthDrop()"
+              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition-colors">
+              {{ mesLabel() }}
+              <svg class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" [class.rotate-180]="monthDropOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            @if (monthDropOpen()) {
+              <div class="dropdown-panel absolute top-full left-0 mt-1.5 z-50 bg-white dark:bg-[#1e2535] border border-slate-200 dark:border-slate-600/60 rounded-xl shadow-xl shadow-black/10 dark:shadow-black/40 py-1.5 min-w-[130px] overflow-hidden">
+                @for (m of meses; track m.value) {
+                  <button
+                    (click)="selectedMonth.set(m.value); selectedWeek.set(1); monthDropOpen.set(false)"
+                    class="w-full text-left px-3 py-1.5 text-sm font-semibold transition-colors"
+                    [class]="m.value === +selectedMonth()
+                      ? 'bg-brand-purple/10 dark:bg-brand-purple/20 text-brand-purple'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60'">
+                    {{ m.label }}
+                  </button>
+                }
+              </div>
             }
-          </select>
-          <button (click)="nextMonth()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_ease-out,transform_160ms_ease-out] active:scale-[0.97]">
+          </div>
+
+          <button (click)="nextMonth()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1),transform_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
           </button>
         </div>
 
-        <!-- Status indicators -->
+        <!-- Right Side: Status + Actions -->
         <div class="flex items-center gap-2">
           @if (loading()) {
-            <div class="flex items-center gap-1.5 text-xs font-medium text-slate-400">
+            <div class="flex items-center gap-1.5 text-xs font-medium text-slate-400 mr-2">
               <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
               <span class="hidden sm:inline">Cargando...</span>
             </div>
           }
-          @if (currentPeriodo() && !loading() && isViewingCurrentMonth()) {
-            <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0"></span>
-              <span class="hidden xs:inline">Periodo activo</span>
-            </span>
-          }
-          @if (!currentPeriodo() && !loading()) {
-            <span class="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-amber-200 dark:border-amber-800/50">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span class="hidden sm:inline">Sin periodo</span>
-            </span>
-          }
+
+          <div class="flex items-center gap-2">
+            <button (click)="onExportPdf()"
+                    [disabled]="!currentPeriodo() || loading()"
+                    class="inline-flex items-center gap-1.5 px-3 h-8 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs shadow-sm [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+              <span class="hidden sm:inline">PDF</span>
+            </button>
+            <button (click)="onSave()"
+                    *ngIf="hasEditPermission()"
+                    [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges()"
+                    class="inline-flex items-center justify-center gap-1.5 px-4 h-8 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-display font-bold text-xs shadow-xl shadow-purple-900/20 [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
+              @if (saving()) {
+                <svg class="w-3.5 h-3.5 animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
+                <span class="hidden sm:inline">Guardando...</span>
+              } @else {
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span>Guardar</span>
+              }
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-4 c3xl-grid-cols-5 gap-6 animate-fadeIn flex-1 min-h-0 pb-6">
-        <!-- Left Column: Main Entry (2/3 width) -->
-        <div class="xl:col-span-2 2xl:col-span-3 c3xl-col-span-4 flex flex-col gap-6">
+      <!-- SIDE-BY-SIDE CONTAINER FOR REGISTRO & ESTADISTICAS -->
+      <div class="flex flex-col lg:flex-row items-stretch gap-2.5 shrink-0">
+        
+        <!-- REGISTRO SEMANAL -->
+        <div class="flex-1 min-w-0 flex flex-col">
 
           <!-- Weekly Entry Card -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 md:p-8 2xl:p-10 c3xl-p-12">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-2.5 flex flex-col h-full">
 
-            <!-- Card Header / Tabs -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8 border-b border-slate-100 dark:border-slate-700 pb-5 sm:pb-6">
-              <div class="flex items-center gap-3">
-                <div class="p-2 sm:p-2.5 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-brand-purple">
-                  <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <!-- Card Header -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2 border-b border-slate-100 dark:border-slate-700 pb-2 shrink-0">
+              <div class="flex items-center gap-2">
+                <div class="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-brand-purple">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
                 <div>
-                  <h2 class="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-wider">{{ mesLabel() }} {{ selectedYear() }}</h2>
-                  <p class="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-none">Registro Semanal</p>
+                  <p class="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">Registro Semanal</p>
                 </div>
               </div>
 
-              <!-- Week Selector Tabs — scrollable on mobile -->
-              <div class="w-full sm:w-auto overflow-x-auto pb-0.5 -mb-0.5">
-                <div class="flex bg-slate-50 dark:bg-slate-900/50 p-1 rounded-xl w-fit min-w-full sm:min-w-0">
+              <!-- Week Selector -->
+              <div class="w-full sm:w-auto overflow-x-auto">
+                <div class="flex bg-slate-50 dark:bg-slate-900/50 p-0.5 rounded-lg w-fit min-w-full sm:min-w-0">
                   @for (week of weeksArray(); track week) {
                     <button
                       (click)="selectWeek(week)"
-                      class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs font-bold [transition:background-color_150ms_ease-out,color_150ms_ease-out,box-shadow_150ms_ease-out] relative flex items-center justify-center min-w-[44px] sm:min-w-[52px]"
+                      class="px-2.5 py-1 sm:py-1.5 rounded-md text-xs font-bold [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1),color_150ms_cubic-bezier(0.23,1,0.32,1),box-shadow_150ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] relative flex items-center justify-center min-w-[36px]"
                       [ngClass]="{
                         'bg-white dark:bg-slate-800 text-brand-purple dark:text-purple-400 shadow-sm': selectedWeek() === week,
                         'text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800': selectedWeek() !== week
                       }">
-                      <span class="text-xs font-bold tracking-wide">S{{ week }}</span>
+                      <span class="text-[0.65rem] font-bold tracking-wide">S{{ week }}</span>
                       @if (weekHasData(week)) {
-                        <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                       }
                     </button>
                   }
@@ -176,408 +177,355 @@ import { saveAs } from 'file-saver';
               </div>
             </div>
 
-            <!-- Input Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x md:divide-slate-100 dark:md:divide-slate-700">
+            <!-- Grid with new layout -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:gap-x-6 gap-x-4 gap-y-2 md:divide-x md:divide-slate-100 dark:md:divide-slate-700 flex-1 mt-1.5">
 
-              <!-- Midweek Meeting -->
-              <div class="flex flex-col gap-4 sm:gap-5 md:pr-8">
+              <!-- MIDWEEK -->
+              <div class="meeting-col meeting-col--midweek flex flex-col gap-1 lg:pr-4 md:pr-3 h-full">
 
-                <!-- Section header -->
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2.5">
-                    <div class="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/30">
-                      <svg class="w-4.5 h-4.5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <!-- Header block -->
+                <div class="flex justify-between items-center">
+                  <div class="flex flex-col">
+                    <div class="flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <h3 class="font-bold text-slate-800 dark:text-slate-100 text-xs tracking-tight">Entre Semana</h3>
                     </div>
-                    <div>
-                      <h3 class="font-bold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5">Entre Semana <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6rem] font-black bg-purple-100 dark:bg-purple-900/40 text-brand-purple tabular-nums">{{ midweekMonthTotal() }}</span></h3>
-                      @if (congregacionConfig()?.dia_reunion_entre_semana) {
-                        <p class="text-[0.625rem] font-bold text-slate-400 leading-none mt-0.5">
-                          {{ congregacionConfig()!.dia_reunion_entre_semana }}
-                          @if (congregacionConfig()!.hora_reunion_entre_semana) { · {{ formatTime12(congregacionConfig()!.hora_reunion_entre_semana) }} }
-                        </p>
-                      }
-                      @if (nextMidweekDate()) {
-                        <span class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md text-[0.6rem] font-bold"
-                              [class]="nextMidweekDate()!.isToday
-                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                                : 'bg-purple-50 dark:bg-purple-900/20 text-brand-purple'">
-                          <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                          </svg>
-                          {{ nextMidweekDate()!.isToday ? 'Hoy' : 'Próxima: ' + nextMidweekDate()!.label }}
-                        </span>
-                      }
+                     @if (nextMidweekDate()) { <span class="text-[0.6rem] font-bold" [class]="nextMidweekDate()!.isToday ? 'text-emerald-500' : 'text-brand-purple'">{{ nextMidweekDate()!.isToday ? 'Hoy' : 'Próx: ' + nextMidweekDate()!.label }}</span> }
+                  </div>
+                  <div class="flex flex-col items-end leading-none">
+                    <span class="text-[0.55rem] font-bold text-slate-400 uppercase tracking-widest">Subtotal</span>
+                    <span class="text-lg font-bold text-slate-800 dark:text-slate-100 tabular-nums leading-tight">{{ currentMidweekTotal() }}</span>
+                  </div>
+                </div>
+
+                <!-- Inputs block -->
+                <div class="flex-1 flex flex-col justify-end">
+                  @if (selectedWeek() > midweekWeekCount()) {
+                    <div class="flex items-center justify-center flex-1 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-700">
+                      <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
                     </div>
-                  </div>
-                  @if (currentMidweekDate()) {
-                    <span class="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-brand-purple text-[0.6875rem] font-bold border border-purple-100 dark:border-purple-800/40">
-                      {{ currentMidweekDate() }}
-                    </span>
-                  }
-                </div>
-
-                <!-- Inputs or empty state -->
-                @if (selectedWeek() > midweekWeekCount()) {
-                  <div class="flex items-center justify-center h-[8.5rem] rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-dashed border-slate-200 dark:border-slate-700">
-                    <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
-                  </div>
-                } @else {
-                  <!-- Editable inputs: white bg + colored border signals interactivity -->
-                  <div class="grid gap-3 2xl:gap-4" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
-                    <div class="flex flex-col gap-1.5 group">
-                      <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-brand-purple uppercase tracking-wide">
-                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Presencial
-                      </label>
-                      <input type="number" min="0"
-                             [ngModel]="midweekWeeks()[selectedWeek() - 1]"
-                             (ngModelChange)="updateMidweekWeek($event)"
-                             [disabled]="!hasEditPermission()"
-                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 [transition:border-color_150ms_ease-out,box-shadow_150ms_ease-out] outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
-                             placeholder="0">
-                    </div>
-                    @if (congregacionConfig()?.usa_zoom !== 0) {
-                      <div class="flex flex-col gap-1.5 group">
-                        <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-brand-purple uppercase tracking-wide">
-                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          Zoom
-                        </label>
-                        <input type="number" min="0"
-                               [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]"
-                               (ngModelChange)="updateMidweekZoomWeek($event)"
-                               [disabled]="!hasEditPermission()"
-                               class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-purple-400 focus:border-brand-purple focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 [transition:border-color_150ms_ease-out,box-shadow_150ms_ease-out] outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
-                               placeholder="0">
-                      </div>
-                    }
-                  </div>
-                }
-
-                <!-- Read-only total semana: muted, no edit cue -->
-                <div class="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-700/60">
-                  <div class="flex items-center gap-2">
-                    <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Total semana</span>
-                  </div>
-                  <span class="text-2xl font-black text-slate-700 dark:text-slate-200">{{ currentMidweekTotal() }}</span>
-                </div>
-
-                <!-- Read-only total mes: accent color but clearly non-editable -->
-                <div class="flex items-center justify-between px-4 py-3.5 bg-purple-50/60 dark:bg-purple-900/10 rounded-2xl border border-purple-100/80 dark:border-purple-800/30">
-                  <div class="flex items-center gap-2">
-                    <svg class="w-3.5 h-3.5 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Total Mes</span>
-                  </div>
-                  <span class="text-2xl font-black text-brand-purple">{{ midweekMonthTotal() }}</span>
-                </div>
-
-              </div>
-
-              <!-- Weekend Meeting -->
-              <div class="flex flex-col gap-4 sm:gap-5 md:pl-8 mt-6 pt-6 border-t border-slate-100 dark:border-slate-700 md:mt-0 md:pt-0 md:border-0">
-
-                <!-- Section header -->
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2.5">
-                    <div class="p-1.5 rounded-lg bg-orange-50 dark:bg-orange-900/30">
-                      <svg class="w-4.5 h-4.5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </div>
-                    <div>
-                      <h3 class="font-bold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5">Fin de Semana <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6rem] font-black bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 tabular-nums">{{ weekendMonthTotal() }}</span></h3>
-                      @if (congregacionConfig()?.dia_reunion_fin_semana) {
-                        <p class="text-[0.625rem] font-bold text-slate-400 leading-none mt-0.5">
-                          {{ congregacionConfig()!.dia_reunion_fin_semana }}
-                          @if (congregacionConfig()!.hora_reunion_fin_semana) { · {{ formatTime12(congregacionConfig()!.hora_reunion_fin_semana) }} }
-                        </p>
-                      }
-                      @if (nextWeekendDate()) {
-                        <span class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md text-[0.6rem] font-bold"
-                              [class]="nextWeekendDate()!.isToday
-                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                                : 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'">
-                          <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                          </svg>
-                          {{ nextWeekendDate()!.isToday ? 'Hoy' : 'Próxima: ' + nextWeekendDate()!.label }}
-                        </span>
-                      }
-                    </div>
-                  </div>
-                  @if (currentWeekendDate()) {
-                    <span class="px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-[0.6875rem] font-bold border border-orange-100 dark:border-orange-800/40">
-                      {{ currentWeekendDate() }}
-                    </span>
-                  }
-                </div>
-
-                <!-- Inputs or empty state -->
-                @if (selectedWeek() > weekendWeekCount()) {
-                  <div class="flex items-center justify-center h-[8.5rem] rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-dashed border-slate-200 dark:border-slate-700">
-                    <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
-                  </div>
-                } @else {
-                  <div class="grid gap-3 2xl:gap-4" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
-                    <div class="flex flex-col gap-1.5 group">
-                      <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-orange-500 uppercase tracking-wide">
-                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Presencial
-                      </label>
-                      <input type="number" min="0"
-                             [ngModel]="weekendWeeks()[selectedWeek() - 1]"
-                             (ngModelChange)="updateWeekendWeek($event)"
-                             [disabled]="!hasEditPermission()"
-                             class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 [transition:border-color_150ms_ease-out,box-shadow_150ms_ease-out] outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
-                             placeholder="0">
-                    </div>
-                    @if (congregacionConfig()?.usa_zoom !== 0) {
-                      <div class="flex flex-col gap-1.5 group">
-                        <label class="flex items-center gap-1.5 text-[0.625rem] font-bold text-orange-500 uppercase tracking-wide">
-                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          Zoom
-                        </label>
-                        <input type="number" min="0"
-                               [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]"
-                               (ngModelChange)="updateWeekendZoomWeek($event)"
-                               [disabled]="!hasEditPermission()"
-                               class="w-full h-16 bg-white dark:bg-slate-800 border-2 border-orange-200 dark:border-orange-700/60 rounded-xl text-center text-2xl font-black text-slate-800 dark:text-slate-100 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:focus:ring-orange-900/30 [transition:border-color_150ms_ease-out,box-shadow_150ms_ease-out] outline-none cursor-text shadow-sm disabled:bg-slate-50 disabled:border-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed dark:disabled:bg-slate-900/40 dark:disabled:border-slate-800/50"
-                               placeholder="0">
-                      </div>
-                    }
-                  </div>
-                }
-
-                <!-- Read-only total semana -->
-                <div class="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-700/60">
-                  <div class="flex items-center gap-2">
-                    <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Total semana</span>
-                  </div>
-                  <span class="text-2xl font-black text-slate-700 dark:text-slate-200">{{ currentWeekendTotal() }}</span>
-                </div>
-
-                <!-- Read-only total mes -->
-                <div class="flex items-center justify-between px-4 py-3.5 bg-orange-50/60 dark:bg-orange-900/10 rounded-2xl border border-orange-100/80 dark:border-orange-800/30">
-                  <div class="flex items-center gap-2">
-                    <svg class="w-3.5 h-3.5 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Total Mes</span>
-                  </div>
-                  <span class="text-2xl font-black text-orange-500">{{ weekendMonthTotal() }}</span>
-                </div>
-
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Right Column: Sidebar Widgets -->
-        <details class="sidebar-details" open>
-          <summary class="xl:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer list-none mb-4">
-            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Estadísticas del mes</span>
-            <div class="flex items-center gap-3">
-              <span class="text-xs font-bold text-slate-500">ES: {{ midweekMonthTotal() }} · FS: {{ weekendMonthTotal() }}</span>
-              <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-            </div>
-          </summary>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4 sm:gap-6 xl:sticky xl:top-0 content-start">
-
-          <!-- Averages Widget -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-            <div class="flex items-center gap-3 mb-6">
-              <div class="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-              </div>
-              <h3 class="font-bold text-slate-800 dark:text-slate-100 leading-tight text-glow-indigo">Promedios<br>Mes Actual</h3>
-            </div>
-
-            <div class="space-y-4">
-              <div class="sidebar-item-hover flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700">
-                <div class="p-2.5 bg-purple-100 dark:bg-purple-900/40 text-brand-purple rounded-lg">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </div>
-                <div class="flex-1">
-                  <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide">Entre Semana</p>
-                  <div class="flex items-baseline gap-2">
-                    <span class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ midweekAverage() }}</span>
-                    @if (midweekFilledCount() > 0) {
-                      <span class="text-[0.625rem] font-bold text-slate-400">{{ midweekFilledCount() }} sem.</span>
-                    }
-                  </div>
-                </div>
-              </div>
-
-              <div class="sidebar-item-hover flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700">
-                <div class="p-2.5 bg-orange-100 dark:bg-orange-900/40 text-orange-600 rounded-lg">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-                <div class="flex-1">
-                  <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wide">Fin de Semana</p>
-                  <div class="flex items-baseline gap-2">
-                    <span class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ weekendAverage() }}</span>
-                    @if (weekendFilledCount() > 0) {
-                      <span class="text-[0.625rem] font-bold text-slate-400">{{ weekendFilledCount() }} sem.</span>
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Week Summary Widget -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-            <div class="flex items-center gap-3 mb-5">
-              <div class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              </div>
-              <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Semanas Registradas</h3>
-            </div>
-
-            <div class="grid grid-cols-5 gap-2">
-              @for (week of weeksArray(); track week) {
-                <div class="flex flex-col items-center gap-1.5 p-2 rounded-xl [transition:background-color_150ms_ease-out]"
-                     [ngClass]="weekHasData(week) ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-900/30'">
-                  <span class="text-[0.625rem] font-bold uppercase text-slate-400">S{{ week }}</span>
-                  @if (weekHasData(week)) {
-                    <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                   } @else {
-                    <svg class="w-4 h-4 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                    <div class="grid gap-1.5" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
+                      
+                      <!-- Presencial Card MIDWEEK -->
+                      <div class="bg-slate-50 dark:bg-[#171923] border border-brand-purple/20 dark:border-brand-purple/40 rounded-xl p-1.5 flex flex-col shadow-sm transition-colors hover:border-brand-purple/40 dark:hover:border-brand-purple/70 group">
+                        <div class="flex items-center mb-0.5">
+                          <label class="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-brand-purple transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Presencial
+                          </label>
+                        </div>
+                        <div class="mt-auto relative">
+                          <input type="number" min="0" inputmode="numeric"
+                                 [ngModel]="midweekWeeks()[selectedWeek() - 1]"
+                                 (ngModelChange)="updateMidweekWeek($event)"
+                                 [disabled]="!hasEditPermission()"
+                                 class="w-full bg-transparent text-center text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-800 p-0 border-0 focus:ring-0 focus:border-transparent transition-colors duration-150"
+                                 placeholder="0">
+                          <div class="h-[2px] w-3/4 mx-auto bg-slate-200/60 dark:bg-slate-700/50 mt-0.5 transition-colors group-focus-within:bg-brand-purple/50"></div>
+                        </div>
+                      </div>
+
+                      <!-- Zoom Card -->
+                      @if (congregacionConfig()?.usa_zoom !== 0) {
+                        <div class="bg-slate-50 dark:bg-[#171923] border border-brand-purple/20 dark:border-brand-purple/40 rounded-xl p-1.5 flex flex-col shadow-sm transition-colors hover:border-brand-purple/40 dark:hover:border-brand-purple/70 group">
+                          <div class="flex items-center mb-0.5">
+                            <label class="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-brand-purple transition-colors cursor-pointer">
+                              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                              Zoom
+                            </label>
+                          </div>
+                          <div class="mt-auto relative">
+                            <input type="number" min="0" inputmode="numeric"
+                                   [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]"
+                                   (ngModelChange)="updateMidweekZoomWeek($event)"
+                                   [disabled]="!hasEditPermission()"
+                                   class="w-full bg-transparent text-center text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-800 p-0 border-0 focus:ring-0 focus:border-transparent transition-colors duration-150"
+                                   placeholder="0">
+                            <div class="h-[2px] w-3/4 mx-auto bg-slate-200/60 dark:bg-slate-700/50 mt-0.5 transition-colors group-focus-within:bg-brand-purple/50"></div>
+                          </div>
+                        </div>
+                      }
+                    </div>
                   }
                 </div>
-              }
+
+              </div>
+
+
+              <!-- WEEKEND -->
+              <div class="meeting-col meeting-col--weekend flex flex-col gap-1 lg:pl-4 md:pl-3 pt-2 md:pt-0 border-t border-slate-100 dark:border-slate-700 md:border-0 h-full">
+
+                <!-- Header block -->
+                <div class="flex justify-between items-center">
+                  <div class="flex flex-col">
+                    <div class="flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <h3 class="font-bold text-slate-800 dark:text-slate-100 text-xs tracking-tight">Fin de Semana</h3>
+                    </div>
+                     @if (nextWeekendDate()) { <span class="text-[0.6rem] font-bold" [class]="nextWeekendDate()!.isToday ? 'text-emerald-500' : 'text-orange-500'">{{ nextWeekendDate()!.isToday ? 'Hoy' : 'Próx: ' + nextWeekendDate()!.label }}</span> }
+                  </div>
+                  <div class="flex flex-col items-end leading-none">
+                    <span class="text-[0.55rem] font-bold text-slate-400 uppercase tracking-widest">Subtotal</span>
+                    <span class="text-lg font-bold text-slate-800 dark:text-slate-100 tabular-nums leading-tight">{{ currentWeekendTotal() }}</span>
+                  </div>
+                </div>
+
+                <!-- Inputs block -->
+                <div class="flex-1 flex flex-col justify-end">
+                  @if (selectedWeek() > weekendWeekCount()) {
+                    <div class="flex items-center justify-center flex-1 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-700">
+                      <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
+                    </div>
+                  } @else {
+                    <div class="grid gap-1.5" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
+                      
+                      <!-- Presencial Card WEEKEND -->
+                      <div class="bg-slate-50 dark:bg-[#1a1514] border border-orange-500/20 dark:border-orange-500/30 rounded-xl p-1.5 flex flex-col shadow-sm transition-colors hover:border-orange-500/40 dark:hover:border-orange-500/60 group">
+                        <div class="flex items-center mb-0.5">
+                          <label class="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-orange-500 transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Presencial
+                          </label>
+                        </div>
+                        <div class="mt-auto relative">
+                          <input type="number" min="0" inputmode="numeric"
+                                 [ngModel]="weekendWeeks()[selectedWeek() - 1]"
+                                 (ngModelChange)="updateWeekendWeek($event)"
+                                 [disabled]="!hasEditPermission()"
+                                 class="w-full bg-transparent text-center text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-800 p-0 border-0 focus:ring-0 focus:border-transparent transition-colors duration-150"
+                                 placeholder="0">
+                          <div class="h-[2px] w-3/4 mx-auto bg-slate-200/60 dark:bg-slate-700/50 mt-0.5 transition-colors group-focus-within:bg-orange-500/50"></div>
+                        </div>
+                      </div>
+
+                      <!-- Zoom Card -->
+                      @if (congregacionConfig()?.usa_zoom !== 0) {
+                        <div class="bg-slate-50 dark:bg-[#1a1514] border border-orange-500/20 dark:border-orange-500/30 rounded-xl p-1.5 flex flex-col shadow-sm transition-colors hover:border-orange-500/40 dark:hover:border-orange-500/60 group">
+                          <div class="flex items-center mb-0.5">
+                            <label class="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-orange-500 transition-colors cursor-pointer">
+                               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                              Zoom
+                            </label>
+                          </div>
+                          <div class="mt-auto relative">
+                            <input type="number" min="0" inputmode="numeric"
+                                   [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]"
+                                   (ngModelChange)="updateWeekendZoomWeek($event)"
+                                   [disabled]="!hasEditPermission()"
+                                   class="w-full bg-transparent text-center text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-800 p-0 border-0 focus:ring-0 focus:border-transparent transition-colors duration-150"
+                                   placeholder="0">
+                            <div class="h-[2px] w-3/4 mx-auto bg-slate-200/60 dark:bg-slate-700/50 mt-0.5 transition-colors group-focus-within:bg-orange-500/50"></div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+
+              </div>
+
             </div>
           </div>
 
-          <!-- Info Tip -->
-          <div class="bg-amber-50 dark:bg-amber-900/10 rounded-2xl p-5 border border-amber-200/60 dark:border-amber-800/40 flex gap-4">
-            <div class="shrink-0">
-              <svg class="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            </div>
-            <p class="text-xs font-medium text-amber-800 dark:text-amber-300 leading-relaxed">
-              Ingrese la asistencia <b>Presencial</b> y por <b>Zoom</b> por separado. El sistema sumará ambas automáticamente.
-            </p>
-          </div>
+        </div>
 
-          </div>
-        </details>
+        <!-- ESTADÍSTICAS DEL MES -->
+        <div class="w-full lg:w-[320px] xl:w-[400px] 2xl:w-[450px] shrink-0 flex flex-col">
+           <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 flex flex-col h-full justify-center">
+             
+             <div>
+               <div class="flex items-center gap-1.5 mb-2">
+                 <div class="p-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shrink-0">
+                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                 </div>
+                 <h3 class="font-bold text-slate-800 dark:text-slate-100 text-xs leading-none lg:block flex gap-1">Estado <span class="lg:hidden block">del Mes</span><span class="hidden lg:block">Mensual</span></h3>
+               </div>
 
-      </div>
+               <!-- Vertical weeks for lg screens, horizontal for smaller -->
+               <div class="grid grid-cols-5 lg:flex lg:flex-wrap lg:gap-1.5 gap-1 mb-2">
+                 @for (week of weeksArray(); track week) {
+                   <div class="flex flex-col lg:flex-row lg:flex-1 items-center justify-center lg:justify-between p-1 lg:px-2 rounded-lg [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1)]"
+                        [ngClass]="weekHasData(week) ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-900/30'">
+                     <span class="text-[0.6rem] font-bold uppercase text-slate-500">
+                        <span class="lg:hidden">S</span><span class="hidden lg:inline">SEM </span>{{ week }}
+                     </span>
+                     @if (weekHasData(week)) {
+                       <svg class="w-3 h-3 text-emerald-500 shrink-0 mt-0.5 lg:mt-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                     } @else {
+                       <svg class="w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0 mt-0.5 lg:mt-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                     }
+                   </div>
+                 }
+               </div>
+             </div>
 
-      } @else {
+             <!-- Totals -->
+             <div class="grid grid-cols-2 lg:grid-cols-2 gap-1.5 mt-auto pt-1 lg:pt-0 shrink-0">
+               <div class="flex flex-col justify-center items-center py-1 px-1.5 bg-purple-50/60 dark:bg-[#1a1728] rounded-lg border border-purple-100/80 dark:border-brand-purple/20">
+                 <span class="font-bold text-slate-500 dark:text-slate-400 text-[0.55rem] uppercase tracking-widest text-center">T. ES</span>
+                 <span class="text-sm font-black text-brand-purple dark:text-[#a586ff] tabular-nums text-center leading-none">{{ midweekMonthTotal() }}</span>
+               </div>
+               <div class="flex flex-col justify-center items-center py-1 px-1.5 bg-orange-50/60 dark:bg-[#281d1b] rounded-lg border border-orange-100/80 dark:border-orange-500/20">
+                 <span class="font-bold text-slate-500 dark:text-slate-400 text-[0.55rem] uppercase tracking-widest text-center">T. FS</span>
+                 <span class="text-sm font-black text-orange-500 dark:text-[#ff8f3d] tabular-nums text-center leading-none">{{ weekendMonthTotal() }}</span>
+               </div>
+             </div>
 
-      <!-- Resumen Anual Tab -->
-      <div class="animate-fadeIn flex flex-col gap-6">
+           </div>
+        </div>
 
+        </div> <!-- /Left Panel -->
+
+        <!-- RIGHT PANEL: RESUMEN ANUAL -->
+        <div class="flex-1 flex flex-col gap-2 sm:gap-3 xl:min-w-[450px] min-h-0 overflow-hidden">
+        
         <!-- Year selector -->
-        <div class="shrink-0 flex flex-wrap items-center gap-2 sm:gap-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-4 py-3 w-full sm:w-fit">
-          <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Año de Servicio</span>
-          <select [ngModel]="resumenServiceYear()" (ngModelChange)="resumenServiceYear.set(+$event)"
-                  class="bg-transparent border-0 text-sm font-bold text-slate-800 dark:text-slate-100 cursor-pointer focus:ring-0 pr-6">
-            @for (y of serviceYears; track y) {
-              <option [value]="y">{{ y }}</option>
-            }
-          </select>
-          <span class="text-xs font-medium text-slate-400">Sep {{ resumenServiceYear() - 1 }} – Ago {{ resumenServiceYear() }}</span>
+        <div class="shrink-0 flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-3 sm:px-4 py-2.5 sm:py-3">
+          <div class="flex items-center gap-2 sm:gap-3">
+            <svg class="w-4 h-4 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Año de Servicio</span>
+            <select [ngModel]="resumenServiceYear()" (ngModelChange)="resumenServiceYear.set(+$event)"
+                    class="bg-transparent border-0 text-sm font-bold text-slate-800 dark:text-slate-100 cursor-pointer focus:ring-0 pr-6">
+              @for (y of serviceYears; track y) {
+                <option [value]="y">{{ y }}</option>
+              }
+            </select>
+            <span class="hidden sm:inline text-xs font-medium text-slate-400">Sep {{ resumenServiceYear() - 1 }} – Ago {{ resumenServiceYear() }}</span>
+          </div>
+          @if (loadingResumen()) {
+            <div class="flex items-center gap-1.5 text-xs font-medium text-slate-400">
+              <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
+              <span class="hidden sm:inline">Cargando...</span>
+            </div>
+          }
         </div>
 
-        <!-- Summary Table Card -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/30">
-            <div class="flex items-center gap-3">
-              <div class="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+        <!-- Main grid: Table only -->
+        <div class="flex flex-col flex-1 min-h-0">
+
+          <!-- Summary Table Card -->
+          <div class="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-0">
+            <div class="px-4 py-2 sm:px-5 sm:py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between gap-2.5 bg-slate-50/50 dark:bg-slate-900/30">
+              <div class="flex items-center gap-2.5">
+                <div class="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                </div>
+                <div>
+                  <h3 class="font-black text-slate-800 dark:text-slate-100 text-sm sm:text-base leading-none tracking-tight">Desglose Mensual</h3>
+                  <p class="text-[0.65rem] text-slate-400 font-bold mt-0.5">Año de Servicio {{ resumenServiceYear() }}</p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">Resumen Anual</h3>
-                <p class="text-xs text-slate-400 font-medium">Año de Servicio {{ resumenServiceYear() }}</p>
-              </div>
+              <button (click)="onExportS88Pdf()"
+                      class="shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 rounded-lg shadow-sm transition-all shadow-indigo-500/20">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="12" y1="18" x2="12" y2="12"></line>
+                  <line x1="9" y1="15" x2="12" y2="18"></line>
+                  <line x1="15" y1="15" x2="12" y2="18"></line>
+                </svg>
+                <span class="hidden sm:inline">S-88 PDF</span>
+              </button>
             </div>
-            @if (loadingResumen()) {
-              <div class="flex items-center gap-2 text-xs font-medium text-slate-400">
-                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
-                Cargando...
-              </div>
-            }
+
+            <div class="overflow-y-auto overflow-x-auto flex-1 custom-scrollbar">
+              <table class="w-full">
+                <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 sticky top-0 z-10">
+                  <tr>
+                    <th rowspan="2" class="px-4 py-1 text-left text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider align-bottom">Mes</th>
+                    <th colspan="2" class="px-2 py-1 text-center text-[0.65rem] font-bold text-brand-purple uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">
+                      <span class="inline-flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-brand-purple"></span>
+                        Entre Semana
+                      </span>
+                    </th>
+                    <th colspan="2" class="px-2 py-1 text-center text-[0.65rem] font-bold text-orange-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">
+                      <span class="inline-flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                        Fin de Semana
+                      </span>
+                    </th>
+                  </tr>
+                  <tr class="text-[0.6rem] uppercase tracking-wider">
+                    <th class="px-2 py-1 text-center text-slate-400 font-bold border-l border-slate-100 dark:border-slate-700">Reun.</th>
+                    <th class="px-2 py-1 text-center text-brand-purple font-black">Prom.</th>
+                    <th class="px-2 py-1 text-center text-slate-400 font-bold border-l border-slate-100 dark:border-slate-700">Reun.</th>
+                    <th class="px-2 py-1 text-center text-orange-500 font-black">Prom.</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                  @for (row of resumenAnualHistorico(); track row.mes) {
+                    <tr class="resumen-row hover:bg-slate-50/70 dark:hover:bg-slate-800/50 [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1)]"
+                        [class.resumen-row--current]="+row.mes === +selectedMonth()">
+                      <td class="px-4 py-1.5 font-bold text-sm"
+                          [ngClass]="row.midweek_total !== null || row.weekend_total !== null ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'">
+                        <div class="flex items-center gap-2">
+                          @if (+row.mes === +selectedMonth()) {
+                            <span class="w-1 h-4 rounded-full bg-brand-purple shrink-0"></span>
+                          } @else {
+                            <span class="w-1 h-4 shrink-0"></span>
+                          }
+                          <span>{{ row.nombre_mes }}</span>
+                        </div>
+                      </td>
+                      <td class="px-2 py-1.5 text-center text-sm font-medium tabular-nums border-l border-slate-100 dark:border-slate-700"
+                          [ngClass]="row.midweek_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
+                        {{ row.midweek_reuniones > 0 ? row.midweek_reuniones : '–' }}
+                      </td>
+                      <td class="px-2 py-1.5 text-center text-sm font-black tabular-nums"
+                          [ngClass]="row.midweek_promedio !== null ? 'text-brand-purple' : 'text-slate-300 dark:text-slate-600'">
+                        {{ row.midweek_promedio !== null ? row.midweek_promedio : '–' }}
+                      </td>
+                      <td class="px-2 py-1.5 text-center text-sm font-medium tabular-nums border-l border-slate-100 dark:border-slate-700"
+                          [ngClass]="row.weekend_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
+                        {{ row.weekend_reuniones > 0 ? row.weekend_reuniones : '–' }}
+                      </td>
+                      <td class="px-2 py-1.5 text-center text-sm font-black tabular-nums"
+                          [ngClass]="row.weekend_promedio !== null ? 'text-orange-500' : 'text-slate-300 dark:text-slate-600'">
+                        {{ row.weekend_promedio !== null ? row.weekend_promedio : '–' }}
+                      </td>
+                    </tr>
+                  }
+                  @empty {
+                    <tr>
+                      <td colspan="5" class="px-5 py-12 text-center text-sm text-slate-400">
+                        <div class="flex flex-col items-center gap-2">
+                          <svg class="w-8 h-8 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                          <span class="font-bold">Sin datos para este año de servicio</span>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+                @if (resumenMesesConDatos() > 0) {
+                  <tfoot class="bg-slate-50 dark:bg-slate-900/40 border-t-2 border-slate-200 dark:border-slate-700">
+                    <tr class="text-sm font-black">
+                      <td class="px-5 py-3 text-slate-700 dark:text-slate-200 uppercase text-xs tracking-wider">Total</td>
+                      <td class="px-2 py-3 text-center tabular-nums text-slate-500 border-l border-slate-100 dark:border-slate-700">{{ resumenMidweekReuniones() }}</td>
+                      <td class="px-2 py-3 text-center tabular-nums text-brand-purple">{{ resumenMidweekPromedio() }}</td>
+                      <td class="px-2 py-3 text-center tabular-nums text-slate-500 border-l border-slate-100 dark:border-slate-700">{{ resumenWeekendReuniones() }}</td>
+                      <td class="px-2 py-3 text-center tabular-nums text-orange-500">{{ resumenWeekendPromedio() }}</td>
+                    </tr>
+                  </tfoot>
+                }
+              </table>
+            </div>
           </div>
 
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-slate-50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700">
-                <tr>
-                  <th class="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Mes</th>
-                  <th colspan="3" class="px-3 py-3.5 text-center text-xs font-bold text-purple-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">Entre Semana</th>
-                  <th colspan="3" class="px-3 py-3.5 text-center text-xs font-bold text-orange-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">Fin de Semana</th>
-                </tr>
-                <tr class="text-[0.625rem] uppercase tracking-wider">
-                  <th class="px-5 py-2"></th>
-                  <th class="px-2 py-2 text-center text-slate-400 border-l border-slate-100 dark:border-slate-700">Reun.</th>
-                  <th class="px-2 py-2 text-center text-slate-400">Total</th>
-                  <th class="px-2 py-2 text-center text-brand-purple font-extrabold">Prom.</th>
-                  <th class="px-2 py-2 text-center text-slate-400 border-l border-slate-100 dark:border-slate-700">Reun.</th>
-                  <th class="px-2 py-2 text-center text-slate-400">Total</th>
-                  <th class="px-2 py-2 text-center text-orange-600 dark:text-orange-400 font-extrabold">Prom.</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                @for (row of resumenAnualHistorico(); track row.mes) {
-                  <tr [ngClass]="{
-                    'hover:bg-slate-50 dark:hover:bg-slate-800/50 [transition:background-color_150ms_ease-out]': true,
-                    'border-l-2 border-l-brand-purple bg-purple-50/40 dark:bg-purple-950/20': +row.mes === +selectedMonth()
-                  }">
-                    <td class="px-5 py-3.5 font-bold text-sm"
-                        [ngClass]="row.midweek_total !== null || row.weekend_total !== null ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'">
-                      {{ row.nombre_mes }}
-                    </td>
-                    <td class="px-2 py-3.5 text-center text-sm font-medium border-l border-slate-100 dark:border-slate-700"
-                        [ngClass]="row.midweek_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
-                      {{ row.midweek_reuniones > 0 ? row.midweek_reuniones : '–' }}
-                    </td>
-                    <td class="px-2 py-3.5 text-center text-sm font-medium"
-                        [ngClass]="row.midweek_total !== null ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
-                      {{ row.midweek_total !== null ? row.midweek_total : '–' }}
-                    </td>
-                    <td class="px-2 py-3.5 text-center text-sm font-bold"
-                        [ngClass]="row.midweek_promedio !== null ? 'text-brand-purple' : 'text-slate-300 dark:text-slate-600'">
-                      {{ row.midweek_promedio !== null ? row.midweek_promedio : '–' }}
-                    </td>
-                    <td class="px-2 py-3.5 text-center text-sm font-medium border-l border-slate-100 dark:border-slate-700"
-                        [ngClass]="row.weekend_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
-                      {{ row.weekend_reuniones > 0 ? row.weekend_reuniones : '–' }}
-                    </td>
-                    <td class="px-2 py-3.5 text-center text-sm font-medium"
-                        [ngClass]="row.weekend_total !== null ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
-                      {{ row.weekend_total !== null ? row.weekend_total : '–' }}
-                    </td>
-                    <td class="px-2 py-3.5 text-center text-sm font-bold"
-                        [ngClass]="row.weekend_promedio !== null ? 'text-orange-600 dark:text-orange-400' : 'text-slate-300 dark:text-slate-600'">
-                      {{ row.weekend_promedio !== null ? row.weekend_promedio : '–' }}
-                    </td>
-                  </tr>
-                }
-                @empty {
-                  <tr>
-                    <td colspan="7" class="px-5 py-8 text-center text-sm text-slate-400">
-                      Sin datos de resumen para este año de servicio
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+
         </div>
 
       </div>
 
-      }
+      </div> <!-- /Right Panel -->
 
-    </div>
+    </div> <!-- /Unified Layout -->
   `,
   styles: [`
     :host { display: block; height: 100%; }
 
-    /* ── Keyframes con cubic-bezier custom (Emil: nunca ease-out string) ── */
+    /* ── Enter animation (Emil: custom ease-out curve) ── */
     .animate-fadeIn {
       animation: fadeIn 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
@@ -586,7 +534,7 @@ import { saveAs } from 'file-saver';
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Toast: @starting-style (moderno) + fallback keyframe ── */
+    /* ── Toast: @starting-style modern + fallback ── */
     .toast-enter {
       transition: opacity 300ms cubic-bezier(0.23, 1, 0.32, 1),
                   transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -596,10 +544,6 @@ import { saveAs } from 'file-saver';
         opacity: 0;
         transform: translateY(-8px) scale(0.97);
       }
-    }
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     /* ── Hover guard para touch devices ── */
@@ -616,16 +560,93 @@ import { saveAs } from 'file-saver';
       details.sidebar-details > summary { display: none; }
     }
 
-    /* ── 3xl breakpoint (1920px+) para layouts 4K ── */
+    /* ── 3xl breakpoint (1920px+) para 4K / ultrawide ── */
     @media (min-width: 1920px) {
       .c3xl-col-span-4 { grid-column: span 4 / span 4; }
       .c3xl-grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
       .c3xl-p-12 { padding: 3rem; }
     }
 
-    .text-glow { text-shadow: 0 0 15px rgba(100, 116, 139, 0.1); }
-    .text-glow-indigo { text-shadow: 0 0 15px rgba(79, 70, 229, 0.2); }
-    .shadow-inner-sm { box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+    /* ── Attendance input: unified design for both colors ── */
+    .attendance-input {
+      width: 100%;
+      height: 4rem;
+      background-color: #ffffff;
+      border-width: 2px;
+      border-radius: 0.75rem;
+      text-align: center;
+      font-size: 1.75rem;
+      font-weight: 900;
+      color: rgb(30 41 59);
+      outline: none;
+      cursor: text;
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+      font-variant-numeric: tabular-nums;
+      transition: border-color 150ms ease-out, box-shadow 150ms ease-out, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+      -moz-appearance: textfield;
+    }
+    .attendance-input::-webkit-outer-spin-button,
+    .attendance-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .attendance-input:active:not(:disabled) { transform: scale(0.99); }
+    .attendance-input:disabled {
+      background-color: rgb(248 250 252);
+      color: rgb(148 163 184);
+      cursor: not-allowed;
+      border-color: rgb(226 232 240) !important;
+    }
+    :host-context(.dark) .attendance-input {
+      background-color: rgb(30 41 59);
+      color: rgb(241 245 249);
+    }
+    :host-context(.dark) .attendance-input:disabled {
+      background-color: rgb(15 23 42 / 0.4);
+      color: rgb(100 116 139);
+      border-color: rgb(30 41 59 / 0.5) !important;
+    }
+
+    .attendance-input--purple { border-color: rgb(233 213 255); }
+    .attendance-input--purple:hover:not(:disabled) { border-color: rgb(192 132 252); }
+    .attendance-input--purple:focus:not(:disabled) {
+      border-color: rgb(109 40 217);
+      box-shadow: 0 0 0 4px rgb(243 232 255 / 0.8);
+    }
+    :host-context(.dark) .attendance-input--purple { border-color: rgb(107 33 168 / 0.6); }
+    :host-context(.dark) .attendance-input--purple:focus:not(:disabled) {
+      box-shadow: 0 0 0 4px rgb(107 33 168 / 0.3);
+    }
+
+    .attendance-input--orange { border-color: rgb(254 215 170); }
+    .attendance-input--orange:hover:not(:disabled) { border-color: rgb(251 146 60); }
+    .attendance-input--orange:focus:not(:disabled) {
+      border-color: rgb(249 115 22);
+      box-shadow: 0 0 0 4px rgb(255 237 213 / 0.8);
+    }
+    :host-context(.dark) .attendance-input--orange { border-color: rgb(154 52 18 / 0.6); }
+    :host-context(.dark) .attendance-input--orange:focus:not(:disabled) {
+      box-shadow: 0 0 0 4px rgb(154 52 18 / 0.3);
+    }
+
+    /* ── Resumen table: current-month highlight ── */
+    .resumen-row--current {
+      background-color: rgb(250 245 255 / 0.6);
+    }
+    :host-context(.dark) .resumen-row--current {
+      background-color: rgb(59 7 100 / 0.2);
+    }
+
+    /* ── Reduced motion: disable transforms, keep opacity ── */
+    @media (prefers-reduced-motion: reduce) {
+      .animate-fadeIn { animation: none; opacity: 1; }
+      .attendance-input:active:not(:disabled) { transform: none; }
+    }
+    /* ── Custom Dropdown ── */
+    .dropdown-panel {
+      animation: dropdownIn 150ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    @keyframes dropdownIn {
+      from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
   `]
 })
 export class ReunionesAsistenciaComponent implements OnInit {
@@ -667,7 +688,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
     mwZoom: (number | null)[];
     wePres: (number | null)[];
     weZoom: (number | null)[];
-  }>({ mwPres: [null,null,null,null,null], mwZoom: [null,null,null,null,null], wePres: [null,null,null,null,null], weZoom: [null,null,null,null,null] });
+  }>({ mwPres: [null, null, null, null, null], mwZoom: [null, null, null, null, null], wePres: [null, null, null, null, null], weZoom: [null, null, null, null, null] });
 
   // ── Reference data ──
   meses = [
@@ -680,10 +701,86 @@ export class ReunionesAsistenciaComponent implements OnInit {
   serviceYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 4 + i);
 
   // ── Tab & Resumen state ──
-  activeTab = signal<'registro' | 'resumen'>('registro');
   resumenServiceYear = signal<number>(this.defaultResumenServiceYear());
   resumenAnualHistorico = signal<ResumenMensualAsistencia[]>([]);
   loadingResumen = signal(false);
+
+  // ── Dropdown open states ──
+  monthDropOpen = signal(false);
+  yearDropOpen = signal(false);
+
+  toggleMonthDrop(): void {
+    const next = !this.monthDropOpen();
+    this.monthDropOpen.set(next);
+    this.yearDropOpen.set(false);
+  }
+
+  toggleYearDrop(): void {
+    const next = !this.yearDropOpen();
+    this.yearDropOpen.set(next);
+    this.monthDropOpen.set(false);
+  }
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.monthDropOpen.set(false);
+    this.yearDropOpen.set(false);
+  }
+
+  // ── Resumen KPI computeds ──
+  resumenMesesConDatos = computed(() =>
+    this.resumenAnualHistorico().filter(r => r.midweek_total !== null || r.weekend_total !== null).length
+  );
+
+  resumenMidweekTotal = computed(() =>
+    this.resumenAnualHistorico().reduce((sum, r) => sum + (r.midweek_total ?? 0), 0)
+  );
+
+  resumenWeekendTotal = computed(() =>
+    this.resumenAnualHistorico().reduce((sum, r) => sum + (r.weekend_total ?? 0), 0)
+  );
+
+  resumenTotalAnual = computed(() => this.resumenMidweekTotal() + this.resumenWeekendTotal());
+
+  resumenMidweekReuniones = computed(() =>
+    this.resumenAnualHistorico().reduce((sum, r) => sum + (r.midweek_reuniones ?? 0), 0)
+  );
+
+  resumenWeekendReuniones = computed(() =>
+    this.resumenAnualHistorico().reduce((sum, r) => sum + (r.weekend_reuniones ?? 0), 0)
+  );
+
+  resumenMidweekPromedio = computed(() => {
+    const n = this.resumenMidweekReuniones();
+    return n > 0 ? Math.round(this.resumenMidweekTotal() / n) : 0;
+  });
+
+  resumenWeekendPromedio = computed(() => {
+    const n = this.resumenWeekendReuniones();
+    return n > 0 ? Math.round(this.resumenWeekendTotal() / n) : 0;
+  });
+
+  resumenMejorMesMidweek = computed(() => {
+    const rows = this.resumenAnualHistorico().filter(r => r.midweek_promedio !== null);
+    if (!rows.length) return null;
+    return rows.reduce((best, r) => (r.midweek_promedio! > (best.midweek_promedio ?? 0) ? r : best), rows[0]);
+  });
+
+  resumenMejorMesWeekend = computed(() => {
+    const rows = this.resumenAnualHistorico().filter(r => r.weekend_promedio !== null);
+    if (!rows.length) return null;
+    return rows.reduce((best, r) => (r.weekend_promedio! > (best.weekend_promedio ?? 0) ? r : best), rows[0]);
+  });
+
+  /** Máximo valor entre todos los promedios para normalizar barras de la tabla */
+  resumenMaxPromedio = computed(() => {
+    const all: number[] = [];
+    this.resumenAnualHistorico().forEach(r => {
+      if (r.midweek_promedio !== null) all.push(r.midweek_promedio);
+      if (r.weekend_promedio !== null) all.push(r.weekend_promedio);
+    });
+    return all.length ? Math.max(...all) : 0;
+  });
 
   // ── Computed ──
   currentPeriodo = computed(() => {
@@ -784,9 +881,9 @@ export class ReunionesAsistenciaComponent implements OnInit {
     const arrEq = (a: (number | null)[], b: (number | null)[]) =>
       a.every((v, i) => (v ?? null) === (b[i] ?? null));
     return !arrEq(this.midweekWeeks(), snap.mwPres)
-        || !arrEq(this.midweekZoomWeeks(), snap.mwZoom)
-        || !arrEq(this.weekendWeeks(), snap.wePres)
-        || !arrEq(this.weekendZoomWeeks(), snap.weZoom);
+      || !arrEq(this.midweekZoomWeeks(), snap.mwZoom)
+      || !arrEq(this.weekendWeeks(), snap.wePres)
+      || !arrEq(this.weekendZoomWeeks(), snap.weZoom);
   });
 
   currentMidweekDate = computed(() => {
@@ -824,8 +921,8 @@ export class ReunionesAsistenciaComponent implements OnInit {
     const diff = (targetDay - today.getDay() + 7) % 7;
     next.setDate(today.getDate() + diff);
     const isToday = diff === 0;
-    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const dias  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const label = isToday
       ? 'Hoy'
       : `${dias[next.getDay()]} ${next.getDate()} ${meses[next.getMonth()]}`;
@@ -849,12 +946,11 @@ export class ReunionesAsistenciaComponent implements OnInit {
       if (this.selectedWeek() > max) this.selectedWeek.set(max);
     });
 
-    // Load resumen historico when resumen tab is active or year changes
+    // Load resumen historico when year changes
     effect(() => {
-      const tab = this.activeTab();
       const anoServicio = this.resumenServiceYear();
       const congId = this.congregacionCtx.effectiveCongregacionId();
-      if (tab === 'resumen' && congId) {
+      if (congId) {
         this.loadResumenHistorico(anoServicio, congId);
       }
     });
@@ -870,7 +966,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
         this.congregacionConfig.set(cfg);
         this.autoSelectCurrentWeek();
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -1125,6 +1221,19 @@ export class ReunionesAsistenciaComponent implements OnInit {
     });
   }
 
+  onExportS88Pdf(): void {
+    const congId = this.congregacionCtx.effectiveCongregacionId();
+    if (!congId) return;
+
+    this.asistenciaService.exportarS88Pdf(congId, this.resumenServiceYear()).subscribe({
+      next: (blob) => {
+        saveAs(blob, `S-88_${this.resumenServiceYear()}.pdf`);
+        this.showToast('success', 'Formulario S-88 generado correctamente.');
+      },
+      error: () => this.showToast('error', 'Error al generar el S-88 PDF'),
+    });
+  }
+
   // ── Helpers ──
   isCurrentMonth(row: ResumenMensualAsistencia): boolean {
     const now = new Date();
@@ -1166,9 +1275,9 @@ export class ReunionesAsistenciaComponent implements OnInit {
   private calcCurrentWeek(): number {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const year  = today.getFullYear();
+    const year = today.getFullYear();
     const month = today.getMonth() + 1;
-    const d     = today.getDate();
+    const d = today.getDate();
 
     // Día de semana del 1° del mes (0=Dom … 6=Sáb)
     const firstDow = new Date(year, month - 1, 1).getDay();

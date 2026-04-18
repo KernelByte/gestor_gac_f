@@ -23,7 +23,7 @@ import { saveAs } from 'file-saver';
 @Component({
   standalone: true,
   selector: 'app-informes-main',
-  imports: [CommonModule, FormsModule, InformesStatsComponent, InformesFiltersComponent, InformesTableComponent, InformesHistorialComponent, ResumenSucursalComponent],
+  imports: [CommonModule, FormsModule, InformesFiltersComponent, InformesTableComponent, InformesHistorialComponent, ResumenSucursalComponent],
   templateUrl: './informes-main.page.html',
   styles: [`:host { display: flex; flex-direction: column; height: 100%; overflow: hidden; }`]
 })
