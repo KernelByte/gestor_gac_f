@@ -21,9 +21,6 @@ export class ThemeService {
          if (isPlatformBrowser(this.platformId)) {
             const isDark = this.darkMode();
             const html = document.documentElement;
-
-            console.log('Toggling Theme:', isDark ? 'Dark' : 'Light'); // Debug
-
             if (isDark) {
                html.classList.add('dark');
                localStorage.setItem('theme', 'dark');

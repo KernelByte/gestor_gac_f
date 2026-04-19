@@ -408,12 +408,14 @@ export class UsuariosPage implements OnInit {
          }
       }
 
-      try {
-         const congs = await lastValueFrom(this.service.getCongregaciones());
-         this.congregaciones.set(congs || []);
-      } catch (err) {
-         console.warn('Could not load congregaciones', err);
-         this.congregaciones.set([]);
+      if (this.showCongregacionCol()) {
+         try {
+            const congs = await lastValueFrom(this.service.getCongregaciones());
+            this.congregaciones.set(congs || []);
+         } catch (err) {
+            console.warn('Could not load congregaciones', err);
+            this.congregaciones.set([]);
+         }
       }
 
       try {
@@ -441,7 +443,7 @@ export class UsuariosPage implements OnInit {
    }
 
    openCreatePanel() {
-      console.log('openCreatePanel clicked');
+
       this.editingUser.set(null);
       this.userForm.reset({ 
          tipo_identificacion: 'CC',

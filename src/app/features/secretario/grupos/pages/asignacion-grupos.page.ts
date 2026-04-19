@@ -555,7 +555,7 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
   });
 
   ngOnInit() {
-    console.log('AsignacionGruposPage loaded - Kanban Compact Version');
+
   }
 
   ngAfterViewInit() {
@@ -636,8 +636,7 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
         this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/')
       );
 
-      console.log('📌 Privilegios cargados desde API:', allPrivilegios);
-      console.log('📌 Catálogo de privilegios:', this.privilegiosCatalogo());
+
 
       const today = new Date().toISOString().split('T')[0];
       const privilegiosMap = new Map<number, number[]>();
@@ -651,7 +650,7 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      console.log('📌 Mapa de privilegios por publicador:', Object.fromEntries(privilegiosMap));
+
 
       this.publicadorPrivilegiosMap.set(privilegiosMap);
     } catch (err) {

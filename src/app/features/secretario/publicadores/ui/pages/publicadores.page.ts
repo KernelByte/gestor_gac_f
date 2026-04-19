@@ -2869,7 +2869,7 @@ export class PublicadoresListComponent implements OnInit {
       this.publicadorPrivilegiosMap.set(privilegiosMap);
 
       // Debug log to verify data integrity
-      console.log('Aux Data Loaded:', { estados: estados?.length, grupos: grupos?.length, ppCount: allPrivilegios?.length });
+
     } catch (error) {
       console.error('Error loading auxiliary data:', error);
     }
