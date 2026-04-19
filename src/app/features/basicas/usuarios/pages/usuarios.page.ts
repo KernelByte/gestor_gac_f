@@ -398,13 +398,14 @@ export class UsuariosPage implements OnInit {
 
    async loadAuxData() {
       // Intentar cargar cada uno por separado para que el fallo de uno no bloquee los demás
-      
-      try {
-         const roles = await lastValueFrom(this.service.getRoles());
-         this.roles.set(roles || []);
-      } catch (err) {
-         console.warn('Could not load roles (likely permission issue)', err);
-         this.roles.set([]);
+
+      if (this.isAdmin()) {
+         try {
+            const roles = await lastValueFrom(this.service.getRoles());
+            this.roles.set(roles || []);
+         } catch (err) {
+            this.roles.set([]);
+         }
       }
 
       try {

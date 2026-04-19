@@ -137,7 +137,7 @@ export class InformesHistorialComponent implements OnChanges {
             // Only jump to first if previous selection truly no longer exists
             this.selectedPublicadorId.set(pubs[0].id_publicador);
          }
-      }, { allowSignalWrites: true });
+      });
    }
 
    ngOnChanges(changes: SimpleChanges): void {
@@ -170,7 +170,7 @@ export class InformesHistorialComponent implements OnChanges {
    }
 
    loadData() {
-      if (!this.congregacionId) return;
+      if (!this.congregacionId || !this.selectedAno) return;
 
       this.loading.set(true);
 

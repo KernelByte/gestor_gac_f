@@ -158,46 +158,46 @@ interface ContactoEmergencia {
             <!-- DETAIL VIEW -->
             <div *ngIf="selectedPublicador() as p" class="flex flex-col h-full animate-fadeIn relative">
                 
-                <!-- Navbar Mobile Back Button -->
-                <div class="lg:hidden p-4 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-                    <button (click)="selectedPublicador.set(null)" class="p-2 -ml-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                    </button>
-                    <span class="font-bold text-slate-800 dark:text-white">Volver a la lista</span>
-                </div>
-
-                <!-- Header Profile -->
-                <div class="relative bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-5 md:p-8 md:pb-12 overflow-hidden shadow-sm shrink-0">
-                     <!-- Deco BG -->
-                     <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-orange-50 to-transparent dark:from-orange-900/10 rounded-bl-full -mr-12 -mt-12 opacity-60 pointer-events-none"></div>
-                     <div class="absolute bottom-0 left-0 w-32 h-32 bg-slate-50 dark:bg-slate-800 rounded-tr-full -ml-8 -mb-8 pointer-events-none"></div>
+                <!-- Combined Header Profile & Back Nav -->
+                <div class="relative bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-4 md:p-8 md:pb-12 shadow-sm shrink-0 flex items-center gap-3 sticky top-0 z-20 md:static md:flex-col md:items-start md:gap-6">
+                     <!-- Deco BG (Desktop only) -->
+                     <div class="hidden md:block absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-orange-50 to-transparent dark:from-orange-900/10 rounded-bl-full -mr-12 -mt-12 opacity-60 pointer-events-none"></div>
+                     <div class="absolute bottom-0 left-0 w-32 h-32 bg-slate-50 dark:bg-slate-800 rounded-tr-full -ml-8 -mb-8 pointer-events-none hidden md:block"></div>
                      
-                     <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
-                        <div class="flex items-center gap-4 md:gap-6">
-                            <!-- Avatar Large -->
-                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full shadow-sm flex items-center justify-center text-base md:text-lg font-display font-semibold ring-1 ring-white border border-white/50 shrink-0"
-                                 [ngClass]="getAvatarStyle(p)">
-                                {{ getInitials(p) }}
-                            </div>
-                            <div>
-                                <h1 class="text-xl md:text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">{{ p.primer_nombre }} {{ p.primer_apellido }}</h1>
-                                <div class="flex flex-wrap items-center gap-3 md:gap-4 mt-2">
-                                    <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[0.625rem] md:text-xs font-bold border border-slate-200 dark:border-slate-700" title="Número de teléfono personal">
-                                        <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                        <span class="text-slate-400 font-normal mr-1 hidden sm:inline">Personal:</span>
-                                        {{ p.telefono || 'N/A' }}
-                                    </div>
-                                    <span class="text-[0.625rem] md:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100" *ngIf="p.id_estado_publicador === 1">Activo</span>
+                     <div class="flex items-center gap-3 md:gap-6 min-w-0 flex-1 w-full md:w-auto">
+                        <!-- Mobile Back Button -->
+                         <button (click)="selectedPublicador.set(null)" class="lg:hidden p-2 -ml-2 shrink-0 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 focus:outline-none transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-90" title="Volver a la lista">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                     
+                        <!-- Avatar -->
+                        <div class="w-10 h-10 md:w-20 md:h-20 rounded-full shadow-sm flex items-center justify-center text-sm md:text-lg font-display font-semibold ring-1 ring-white border border-white/50 shrink-0"
+                             [ngClass]="getAvatarStyle(p)">
+                            {{ getInitials(p) }}
+                        </div>
+                        
+                         <!-- Details -->
+                        <div class="min-w-0 flex-1">
+                            <h1 class="text-base md:text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">{{ p.primer_nombre }} {{ p.primer_apellido }}</h1>
+                            <div class="flex flex-wrap items-center gap-2 md:gap-4 mt-0.5 md:mt-2">
+                                <div class="flex items-center gap-1.5 md:px-3 md:py-1 rounded-full bg-transparent md:bg-slate-100 md:dark:bg-slate-800 text-slate-500 md:text-slate-600 dark:text-slate-300 text-[0.625rem] md:text-xs font-medium md:font-bold border-transparent md:border-slate-200 dark:border-slate-700" title="Número de teléfono personal">
+                                    <svg class="w-3 md:w-3.5 h-3 md:h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                    <span class="text-slate-400 font-normal mr-1 hidden sm:inline">Personal:</span>
+                                    {{ p.telefono || 'N/A' }}
                                 </div>
+                                <span class="hidden md:inline text-[0.625rem] md:text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100" *ngIf="p.id_estado_publicador === 1">Activo</span>
                             </div>
                         </div>
+                     </div>
 
-                        <!-- Add Button -->
-                        <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="w-full md:w-auto group flex items-center justify-center gap-2 px-6 py-3 bg-brand-orange text-white rounded-xl font-bold shadow-lg shadow-orange-500/30 hover:bg-orange-600 hover:shadow-orange-600/40 active:scale-[0.97] transition-[background-color,box-shadow,transform] duration-150">
-                            <span class="bg-white/20 p-1 rounded-lg group-hover:rotate-90 transition-transform duration-200">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                     <!-- Add Button: Icon on mobile, full text on desktop -->
+                     <!-- Wrapper controls the positioning (top right on mobile inline with flex row, bottom left on desktop flex col overlay) -->
+                     <div class="md:w-full flex md:justify-end md:absolute md:right-8 md:bottom-12 md:w-auto shrink-0 z-10 transition-transform">
+                         <button *ngIf="canEditContactos()" (click)="initNewContacto()" class="group flex items-center justify-center gap-2 w-10 h-10 md:w-auto md:h-auto md:px-6 md:py-3 bg-brand-orange text-white rounded-full md:rounded-xl font-bold shadow-md md:shadow-lg shadow-orange-500/30 hover:bg-orange-600 hover:shadow-orange-600/40 transition-[background-color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.95]" title="Añadir Contacto">
+                            <span class="md:bg-white/20 md:p-1 md:rounded-lg group-hover:rotate-90 transition-transform duration-200">
+                                <svg class="w-5 h-5 md:w-4 md:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </span>
-                            <span>Añadir Contacto</span>
+                            <span class="hidden md:inline">Añadir Contacto</span>
                         </button>
                      </div>
                 </div>
@@ -532,7 +532,7 @@ export class PublicadoresContactosComponent {
                 this.facade.load(params);
                 this.loadEmergencyContactsMap();
             });
-        }, { allowSignalWrites: true });
+        });
 
         // Auto load contacts when selection changes
         effect(async () => {
@@ -554,7 +554,7 @@ export class PublicadoresContactosComponent {
             } else {
                 this.contactos.set([]);
             }
-        }, { allowSignalWrites: true });
+        });
     }
 
     async loadEstados() {

@@ -57,7 +57,7 @@ export class InformesMainPage implements OnInit {
       if (visible.length > 0 && !visible.some(t => t.id === current)) {
         this.activeTab.set(visible[0].id);
       }
-    }, { allowSignalWrites: true });
+    });
   }
 
   tabs = [

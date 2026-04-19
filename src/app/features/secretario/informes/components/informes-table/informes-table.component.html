@@ -161,7 +161,7 @@
     </tbody>
   </table>
 
-  <!-- Vista móvil: simple y compacta -->
+  <!-- Vista móvil: simple, compacta y alineada a Emil Design Principles -->
   <div class="md:hidden flex flex-col gap-3 pb-28">
     <!-- Estado vacío en móvil -->
     <div *ngIf="(resumen?.publicadores_list?.length ?? 0) === 0 && resumen !== null"
@@ -172,18 +172,50 @@
 
     <div class="space-y-3 px-3 mobile-cards" *ngIf="(resumen?.publicadores_list?.length ?? 0) > 0">
       <div *ngFor="let pub of resumen?.publicadores_list || []; trackBy: trackByPub"
-        class="rounded-xl border bg-white dark:bg-slate-900 overflow-hidden"
-        [class.border-brand-purple/50]="getInformeValue(pub, 'participo')"
+        class="rounded-xl border bg-white dark:bg-slate-900 overflow-hidden transform transition-[border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
+        [class.border-brand-purple]="getInformeValue(pub, 'participo')"
+        [class.shadow-md]="getInformeValue(pub, 'participo')"
+        [class.shadow-purple-500/10]="getInformeValue(pub, 'participo')"
         [class.border-slate-200]="!getInformeValue(pub, 'participo')"
-        [class.dark:border-slate-700]="!getInformeValue(pub, 'participo')">
+        [class.dark:border-slate-800]="!getInformeValue(pub, 'participo')"
+        [class.bg-slate-50/50]="!getInformeValue(pub, 'participo')"
+        [class.dark:bg-slate-900/50]="!getInformeValue(pub, 'participo')">
+        
+        <!-- Header del Publicador -->
         <div
-          class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-          <p class="font-bold text-slate-900 dark:text-white text-sm truncate flex-1 min-w-0">{{ pub.nombre_completo }}
-          </p>
-          <div class="flex items-center gap-2 shrink-0">
+          (click)="toggleCard(pub.id_publicador, $event)"
+          class="px-4 py-3 border-b flex items-center justify-between gap-3 cursor-pointer select-none transition-colors"
+          [class.border-slate-100]="!getInformeValue(pub, 'participo')"
+          [class.dark:border-slate-800]="!getInformeValue(pub, 'participo')"
+          [class.border-purple-50]="getInformeValue(pub, 'participo')"
+          [class.dark:border-purple-900/20]="getInformeValue(pub, 'participo')"
+          [class.bg-purple-50/30]="getInformeValue(pub, 'participo')"
+          [class.dark:bg-purple-900/10]="getInformeValue(pub, 'participo')"
+          [class.hover:bg-slate-50/80]="!getInformeValue(pub, 'participo')"
+          [class.dark:hover:bg-slate-800/40]="!getInformeValue(pub, 'participo')">
+          
+          <div class="flex-1 min-w-0 pr-2">
+             <p class="font-bold text-slate-900 dark:text-white text-sm truncate leading-tight flex items-center gap-2">
+                {{ pub.nombre_completo }}
+                <!-- Chevron de expansión -->
+                <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200" [class.-rotate-180]="isCardExpanded(pub.id_publicador)" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+             </p>
+             <!-- Roles tags (only show Pioneers in mobile) -->
+             <div class="flex gap-1 mt-1" *ngIf="getPioneerRoles(pub).length > 0">
+                <ng-container *ngFor="let role of getPioneerRoles(pub)">
+                  <span *ngIf="role.type === 'pill'" class="text-[0.625rem] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider" [ngClass]="role.class">
+                     {{ role.label }}
+                  </span>
+                </ng-container>
+             </div>
+          </div>
+          
+          <div class="flex items-center gap-3 shrink-0">
             <!-- Botón WhatsApp Móvil -->
-            <button *ngIf="canEdit" (click)="notifyWhatsApp.emit(pub)"
-              class="relative w-8 h-8 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-full flex items-center justify-center border border-[#25D366]/30 shadow-sm shrink-0"
+            <button *ngIf="canEdit" (click)="notifyWhatsApp.emit(pub); $event.stopPropagation()"
+              class="relative w-8 h-8 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-full flex items-center justify-center border border-[#25D366]/30 shadow-sm shrink-0 transition-transform active:scale-95"
               [title]="(pub.notificaciones_enviadas ?? 0) > 0 ? 'Notificado ' + pub.notificaciones_enviadas + ' veces. Volver a notificar.' : 'Notificar por WhatsApp'">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path
@@ -195,65 +227,54 @@
               </div>
             </button>
 
-            <!-- Togglers Si/No -->
-            <div class="flex gap-1.5 shrink-0">
-              <label class="flex items-center cursor-pointer relative">
-                <input type="radio" [name]="'participo-' + pub.id_publicador"
-                  [checked]="getInformeValue(pub, 'participo')" [disabled]="!canEdit"
-                  (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="true" tabindex="-1" />
-                <span class="px-3 py-1.5 rounded-lg text-sm font-bold"
-                  [class.bg-brand-purple]="getInformeValue(pub, 'participo')"
-                  [class.text-white]="getInformeValue(pub, 'participo')"
-                  [class.bg-slate-100]="!getInformeValue(pub, 'participo')"
-                  [class.text-slate-500]="!getInformeValue(pub, 'participo')"
-                  [class.dark:bg-slate-800]="!getInformeValue(pub, 'participo')"
-                  [class.dark:text-slate-400]="!getInformeValue(pub, 'participo')">Sí</span>
-              </label>
-              <label class="flex items-center cursor-pointer relative">
-                <input type="radio" [name]="'participo-' + pub.id_publicador"
-                  [checked]="!getInformeValue(pub, 'participo')" [disabled]="!canEdit"
-                  (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only" value="false" tabindex="-1" />
-                <span class="px-3 py-1.5 rounded-lg text-sm font-bold"
-                  [class.bg-slate-200]="!getInformeValue(pub, 'participo')"
-                  [class.dark:bg-slate-700]="!getInformeValue(pub, 'participo')"
-                  [class.text-slate-700]="!getInformeValue(pub, 'participo')"
-                  [class.dark:text-slate-200]="!getInformeValue(pub, 'participo')"
-                  [class.bg-slate-100]="getInformeValue(pub, 'participo')"
-                  [class.text-slate-400]="getInformeValue(pub, 'participo')">No</span>
-              </label>
-            </div>
+            <!-- Modern Toggle para Participó -->
+            <label class="relative inline-flex items-center cursor-pointer" [class.opacity-60]="!canEdit" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="getInformeValue(pub, 'participo')" [disabled]="!canEdit"
+                (change)="onUpdateInforme(pub, 'participo', $event)" class="sr-only peer" tabindex="-1">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-brand-purple"></div>
+            </label>
           </div>
         </div>
 
-        <ng-container *ngIf="getInformeValue(pub, 'participo')">
-          <div class="px-4 py-3 space-y-3">
-            <div *ngIf="!isRegular(pub)" class="flex items-center justify-between gap-2" [class.opacity-60]="!canEdit"
-              [class.pointer-events-none]="!canEdit">
-              <span class="text-xs font-medium text-slate-600 dark:text-slate-400 shrink-0">Auxiliar</span>
-              <input type="checkbox" [checked]="getInformeValue(pub, 'es_paux')" (change)="togglePaux(pub)"
-                class="w-9 h-5 rounded-full accent-amber-500 shrink-0" />
+        <!-- Área de detalle: Expande campos solo al Tocar el Card -->
+        <div class="animate-in slide-in-from-top-2 duration-200 overflow-hidden" *ngIf="isCardExpanded(pub.id_publicador)">
+          <div class="p-3 grid grid-cols-2 gap-3 bg-white dark:bg-slate-900">
+            <!-- Auxiliar Toggle (Width Total) -->
+            <div *ngIf="!isRegular(pub)" class="col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800" [class.opacity-60]="!canEdit" [class.pointer-events-none]="!canEdit">
+              <div class="flex items-center gap-2">
+                 <div class="w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-500 flex items-center justify-center font-bold text-xs">P</div>
+                 <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Precursor Auxiliar</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" [checked]="getInformeValue(pub, 'es_paux')" (change)="togglePaux(pub)" class="sr-only peer" tabindex="-1">
+                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+              </label>
             </div>
-            <div *ngIf="pub.requiere_horas || getInformeValue(pub, 'es_paux') || isRegular(pub)"
-              class="flex items-center gap-2">
-              <span class="text-xs font-medium text-slate-600 dark:text-slate-400 w-14 shrink-0">Horas</span>
+            
+            <!-- Grid 2 Columnas para Horas y Cursos -->
+            <div *ngIf="pub.requiere_horas || getInformeValue(pub, 'es_paux') || isRegular(pub)" class="col-span-1 flex flex-col gap-1">
+              <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider pl-1">Horas</label>
               <input type="number" min="0" [value]="getInformeValue(pub, 'horas') || ''" [disabled]="!canEdit"
                 (input)="onUpdateInforme(pub, 'horas', $event)" placeholder="0"
-                class="flex-1 h-10 px-3 text-base border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30 disabled:opacity-40 disabled:cursor-not-allowed" />
+                class="w-full h-10 px-3 text-center text-lg font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:border-brand-purple focus:bg-white focus:ring-1 focus:ring-brand-purple/30 transition-colors disabled:opacity-40" />
             </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-medium text-slate-600 dark:text-slate-400 w-14 shrink-0">Estudios</span>
+
+            <!-- Si no requiere horas, ocupamos 2 columnas para cursos para no dejar huecos extraños o reubicamos -->
+            <div [ngClass]="(pub.requiere_horas || getInformeValue(pub, 'es_paux') || isRegular(pub)) ? 'col-span-1' : 'col-span-2'" class="flex flex-col gap-1">
+              <label class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider pl-1">Cursos</label>
               <input type="number" min="0" [value]="getInformeValue(pub, 'cursos') || ''" [disabled]="!canEdit"
                 (input)="onUpdateInforme(pub, 'cursos', $event)" placeholder="0"
-                class="flex-1 h-10 px-3 text-base border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30 disabled:opacity-40 disabled:cursor-not-allowed" />
+                class="w-full h-10 px-3 text-center text-lg font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:border-brand-purple focus:bg-white focus:ring-1 focus:ring-brand-purple/30 transition-colors disabled:opacity-40" />
             </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-medium text-slate-600 dark:text-slate-400 w-14 shrink-0">Notas</span>
+
+            <!-- Observaciones -->
+            <div class="col-span-2 flex flex-col gap-1 mt-1">
               <input type="text" [value]="getInformeValue(pub, 'notas') || ''" [disabled]="!canEdit"
-                (input)="onUpdateInforme(pub, 'notas', $event)" placeholder="—"
-                class="flex-1 h-10 px-3 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30 disabled:opacity-40 disabled:cursor-not-allowed" />
+                (input)="onUpdateInforme(pub, 'notas', $event)" placeholder="Observaciones o notas del mes..."
+                class="w-full h-9 px-3 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 focus:border-brand-purple focus:bg-white focus:ring-1 focus:ring-brand-purple/30 transition-colors disabled:opacity-40" />
             </div>
           </div>
-        </ng-container>
+        </div>
       </div>
     </div>
   </div>

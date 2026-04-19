@@ -934,7 +934,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       if (this.activeTab() === 'privilegios' && !this.matrizLoaded) {
         this.loadMatriz();
       }
-    }, { allowSignalWrites: true });
+    });
   }
 
   // ── Lifecycle ──

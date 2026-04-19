@@ -7,159 +7,222 @@
       <!-- Renderización de Tabs inyectados desde informes-main -->
       <ng-content select="[tabs]"></ng-content>
 
-      <!-- Sidebar Wrapper: Lista de Publicadores -->
-      <div class="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden min-h-0">
-         <!-- Header & Filtros -->
-      <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-3">
-
-
-         <!-- Title -->
-         <div class="flex items-center justify-between mb-1">
-            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Publicadores</h3>
-         </div>
-
-         <!-- Search Bar -->
-         <div class="relative">
-            <input type="text" [(ngModel)]="searchQuery"
-               class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 rounded-full text-sm focus:ring-2 focus:ring-brand-purple/20 transition-all placeholder:text-slate-400 text-slate-700 dark:text-slate-200"
-               placeholder="Buscar...">
-            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24"
-               stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-         </div>
-
-         <!-- Filtros Optimizados (Multi-fila) -->
-         <div class="flex flex-col gap-2.5">
-            <!-- Primera Fila: Status Chips -->
-            <div class="grid grid-cols-2 gap-2">
-               <!-- Todos -->
-               <button (click)="setFilter('all')"
-                  class="h-9 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-2 shadow-sm"
-                  [ngClass]="activeFilter() === 'all' 
-                      ? 'bg-brand-purple text-white border-brand-purple shadow-purple-500/10' 
-                      : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
-                  {{ lockedGroupId ? 'Mi grupo' : 'Todos' }}
-               </button>
-
-               <!-- Precursores Only -->
-               <button (click)="setFilter('precursores')"
-                  class="h-9 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-2 shadow-sm"
-                  [ngClass]="activeFilter() === 'precursores' 
-                      ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 shadow-amber-500/10' 
-                      : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
-                  <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                  Precursores
-               </button>
+      <!-- Sidebar Wrapper: Lista de Publicadores -->       <div class="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden min-h-0">
+         
+         <!-- ═══ MOBILE: Ultra-compact single-row toolbar ═══ -->
+         <div class="md:hidden p-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
+            <!-- Search expandible -->
+            <div class="relative group h-9 flex items-center flex-1 min-w-0">
+               <input type="text" [(ngModel)]="searchQuery"
+                  class="w-full h-9 pl-8 pr-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/50 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple placeholder:text-slate-400 text-slate-700 dark:text-slate-200 transition-all"
+                  placeholder="Buscar publicador..." />
+               <div class="absolute left-0 w-8 h-9 flex items-center justify-center text-slate-400 pointer-events-none group-focus-within:text-brand-purple transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+               </div>
             </div>
 
-            <!-- Segunda Fila: Group Selector (Ancho Total) -->
-            <div *ngIf="!lockedGroupId; else lockedGroupInfo" class="relative w-full">
-               <button (click)="toggleGroupsDropdown()"
-                  class="w-full h-9 px-3 rounded-xl text-xs font-bold transition-colors active:scale-[0.98] active:transition-transform flex items-center justify-between border shadow-sm"
-                  [ngClass]="isGroupFilterActive()
-                      ? 'bg-purple-100 dark:bg-purple-900/30 text-brand-purple dark:text-purple-300 border-purple-200 dark:border-purple-800'
-                      : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
-                  <div class="flex items-center gap-2">
-                     <svg class="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                     </svg>
-                     <span>{{ getActiveGroupLabel() }}</span>
-                  </div>
-                  <svg class="w-4 h-4 transition-transform" [ngClass]="{'rotate-180': showGroupsDropdown()}" fill="none"
-                     viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+            <!-- Todos/Mi grupo toggle -->
+            <button (click)="setFilter('all')" title="Ver todos"
+               class="w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90 shrink-0"
+               [ngClass]="activeFilter() === 'all' 
+                  ? 'bg-brand-purple text-white border-brand-purple shadow-sm' 
+                  : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+               </svg>
+            </button>
+
+            <!-- Precursores toggle -->
+            <button (click)="setFilter('precursores')" title="Solo precursores"
+               class="relative w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90 shrink-0"
+               [ngClass]="activeFilter() === 'precursores' 
+                  ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-300 dark:border-amber-700' 
+                  : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+               </svg>
+               <span *ngIf="activeFilter() === 'precursores'" class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-slate-900"></span>
+            </button>
+
+            <!-- Groups dropdown (icon-only trigger) -->
+            <div *ngIf="!lockedGroupId" class="relative shrink-0">
+               <button (click)="toggleGroupsDropdown()" title="Filtrar por grupo"
+                  class="w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90"
+                  [ngClass]="isGroupFilterActive() 
+                     ? 'bg-purple-50 dark:bg-purple-900/20 text-brand-purple border-purple-300 dark:border-purple-700' 
+                     : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
                </button>
-
-               <!-- Dropdown Menu -->
+               <!-- Dropdown -->
                <div *ngIf="showGroupsDropdown()"
-                  class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                  class="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <button (click)="setFilter('all'); showGroupsDropdown.set(false)"
+                     class="w-full text-left px-3 py-2 text-xs font-semibold transition-colors"
+                     [ngClass]="activeFilter() === 'all' ? 'text-brand-purple bg-purple-50 dark:bg-purple-900/10' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                     Todos
+                  </button>
+                  <div class="h-px bg-slate-100 dark:bg-slate-700 mx-2 my-1"></div>
                   <button *ngFor="let grupo of sortedGrupos" (click)="selectGroupFilter(grupo.id_grupo)"
-                     class="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-between"
-                     [ngClass]="{'text-brand-purple bg-purple-50 dark:bg-purple-900/10 font-bold': activeFilter() === grupo.id_grupo, 'text-slate-600 dark:text-slate-300': activeFilter() !== grupo.id_grupo}">
+                     class="w-full text-left px-3 py-2 text-xs font-medium transition-colors flex items-center justify-between"
+                     [ngClass]="activeFilter() === grupo.id_grupo ? 'text-brand-purple bg-purple-50 dark:bg-purple-900/10 font-bold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'">
                      {{ grupo.nombre_grupo }}
-                     <svg *ngIf="activeFilter() === grupo.id_grupo" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                     </svg>
+                     <svg *ngIf="activeFilter() === grupo.id_grupo" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                   </button>
                </div>
             </div>
-            <ng-template #lockedGroupInfo>
-               <div class="w-full h-9 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between border shadow-sm bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
-                  <div class="flex items-center gap-2">
-                     <svg class="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                     </svg>
-                     <span>Solo tu grupo</span>
-                  </div>
-                  <span class="text-slate-400 dark:text-slate-500">{{ getActiveGroupLabel() }}</span>
-               </div>
-            </ng-template>
+
+            <!-- Export icon (mobile) -->
+            <button *ngIf="canExport" (click)="onExport('global')" [disabled]="exporting()" title="Exportar PDF"
+               class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-brand-purple hover:border-brand-purple/30 transition-all active:scale-90 shrink-0 disabled:opacity-50">
+               <svg *ngIf="!exporting()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+               </svg>
+               <svg *ngIf="exporting()" class="animate-spin w-4 h-4 text-brand-purple" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+               </svg>
+            </button>
          </div>
-      </div>
+
+         <!-- ═══ DESKTOP: Original full filters ═══ -->
+         <div class="hidden md:flex flex-col p-3.5 border-b border-slate-100 dark:border-slate-800 gap-3">
+            <div class="flex items-center justify-between mb-1">
+               <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Publicadores</h3>
+            </div>
+
+            <div class="relative">
+               <input type="text" [(ngModel)]="searchQuery"
+                  class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 rounded-full text-sm focus:ring-2 focus:ring-brand-purple/20 transition-all placeholder:text-slate-400 text-slate-700 dark:text-slate-200"
+                  placeholder="Buscar...">
+               <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+               </svg>
+            </div>
+
+            <div class="flex flex-col gap-2.5">
+               <div class="grid grid-cols-2 gap-2">
+                  <button (click)="setFilter('all')"
+                     class="h-9 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-2 shadow-sm"
+                     [ngClass]="activeFilter() === 'all' 
+                         ? 'bg-brand-purple text-white border-brand-purple shadow-purple-500/10' 
+                         : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
+                     {{ lockedGroupId ? 'Mi grupo' : 'Todos' }}
+                  </button>
+                  <button (click)="setFilter('precursores')"
+                     class="h-9 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-2 shadow-sm"
+                     [ngClass]="activeFilter() === 'precursores' 
+                         ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 shadow-amber-500/10' 
+                         : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
+                     <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                     Precursores
+                  </button>
+               </div>
+
+               <div *ngIf="!lockedGroupId; else lockedGroupInfoDesktop" class="relative w-full">
+                  <button (click)="toggleGroupsDropdown()"
+                     class="w-full h-9 px-3 rounded-xl text-xs font-bold transition-colors active:scale-[0.98] active:transition-transform flex items-center justify-between border shadow-sm"
+                     [ngClass]="isGroupFilterActive()
+                         ? 'bg-purple-100 dark:bg-purple-900/30 text-brand-purple dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                         : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
+                     <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>{{ getActiveGroupLabel() }}</span>
+                     </div>
+                     <svg class="w-4 h-4 transition-transform" [ngClass]="{'rotate-180': showGroupsDropdown()}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                     </svg>
+                  </button>
+                  <div *ngIf="showGroupsDropdown()"
+                     class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                     <button *ngFor="let grupo of sortedGrupos" (click)="selectGroupFilter(grupo.id_grupo)"
+                        class="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-between"
+                        [ngClass]="{'text-brand-purple bg-purple-50 dark:bg-purple-900/10 font-bold': activeFilter() === grupo.id_grupo, 'text-slate-600 dark:text-slate-300': activeFilter() !== grupo.id_grupo}">
+                        {{ grupo.nombre_grupo }}
+                        <svg *ngIf="activeFilter() === grupo.id_grupo" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                     </button>
+                  </div>
+               </div>
+               <ng-template #lockedGroupInfoDesktop>
+                  <div class="w-full h-9 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between border shadow-sm bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
+                     <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>Solo tu grupo</span>
+                     </div>
+                     <span class="text-slate-400 dark:text-slate-500">{{ getActiveGroupLabel() }}</span>
+                  </div>
+               </ng-template>
+            </div>
+         </div>
 
       <!-- Lista con Overlay de Carga Discreto -->
       <div #scrollContainer class="flex-1 overflow-y-auto min-h-0 relative">
          
-         <!-- Loading Overlay (Discreto, sobre la lista existente) -->
+         <!-- Loading Overlay -->
          <div *ngIf="loading() && filteredPublicadores().length > 0" 
               class="absolute inset-x-0 top-0 z-20 h-1 bg-brand-purple/20 overflow-hidden">
              <div class="h-full bg-brand-purple animate-progress-fast"></div>
          </div>
 
-         <!-- Loader inicial (solo si la lista está vacía) -->
+         <!-- Loader inicial -->
          <div *ngIf="loading() && filteredPublicadores().length === 0" class="p-4 space-y-3">
             <div *ngFor="let i of [1,2,3,4,5]" class="animate-pulse flex gap-3">
-               <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800"></div>
+               <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-100 dark:bg-slate-800"></div>
                <div class="flex-1 space-y-2 py-1">
-                  <div class="h-4 bg-slate-100 dark:bg-slate-800 rounded w-3/4"></div>
-                  <div class="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/2"></div>
+                  <div class="h-3.5 bg-slate-100 dark:bg-slate-800 rounded w-3/4"></div>
+                  <div class="h-2.5 bg-slate-100 dark:bg-slate-800 rounded w-1/2"></div>
                </div>
             </div>
          </div>
 
-         <!-- Contenido de la Lista -->
+         <!-- Empty State -->
          <div *ngIf="filteredPublicadores().length === 0 && !loading()" class="p-8 text-center text-slate-500 text-sm">
             No se encontraron publicadores.
          </div>
 
-            <button *ngFor="let pub of filteredPublicadores(); trackBy: trackByPubId" (click)="selectPublicador(pub.id_publicador)"
-               class="w-full text-left px-3 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 last:border-0 relative group"
-               [ngClass]="{'bg-purple-50 dark:bg-purple-900/10': selectedPublicadorId() === pub.id_publicador}">
+         <!-- Publisher List Items (compact on mobile) -->
+         <button *ngFor="let pub of filteredPublicadores(); trackBy: trackByPubId" (click)="selectPublicador(pub.id_publicador)"
+            class="w-full text-left px-2.5 py-2 md:px-3 md:py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center gap-2.5 md:gap-3 border-b border-slate-100 dark:border-slate-800/60 last:border-0 relative active:scale-[0.98] active:transition-transform"
+            [ngClass]="{'bg-purple-50/80 dark:bg-purple-900/10': selectedPublicadorId() === pub.id_publicador}">
 
-               <!-- Avatar / Initials -->
-               <div
-                  class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
-                  [ngClass]="getAvatarStyle(pub.nombre_completo)">
-                  {{ pub.nombre_completo.substring(0,2).toUpperCase() }}
-               </div>
+            <!-- Avatar (smaller on mobile) -->
+            <div
+               class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-[11px] md:text-sm shadow-sm ring-1 ring-white/80 border border-white/50"
+               [ngClass]="getAvatarStyle(pub.nombre_completo)">
+               {{ pub.nombre_completo.substring(0,2).toUpperCase() }}
+            </div>
 
-               <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                     <h4 class="text-sm font-semibold truncate transition-colors"
-                        [ngClass]="selectedPublicadorId() === pub.id_publicador ? 'text-brand-purple' : 'text-slate-700 dark:text-slate-200'">
-                        {{ pub.nombre_completo }}
-                     </h4>
-                     <!-- Indicador Inactivo -->
-                     <span *ngIf="pub.nombre_estado?.includes('Inactivo')" 
-                        class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" 
-                        title="Inactivo">
-                     </span>
-                  </div>
-                  <p *ngIf="pub.nombre_estado?.includes('Inactivo')" class="text-[0.625rem] text-red-500 font-bold uppercase tracking-tighter">Inactivo</p>
-               </div>
+            <div class="flex-1 min-w-0">
+               <h4 class="text-[13px] md:text-sm font-semibold truncate transition-colors leading-tight"
+                  [ngClass]="selectedPublicadorId() === pub.id_publicador ? 'text-brand-purple' : 'text-slate-700 dark:text-slate-200'">
+                  {{ pub.nombre_completo }}
+               </h4>
+               <p *ngIf="pub.nombre_estado?.includes('Inactivo')" class="text-[10px] text-red-500 font-bold uppercase tracking-tighter leading-none mt-0.5">Inactivo</p>
+            </div>
 
-               <!-- Selección indicator -->
-               <div *ngIf="selectedPublicadorId() === pub.id_publicador"
-                  class="absolute left-0 top-3 bottom-3 w-1 bg-brand-purple rounded-r-full"></div>
-            </button>
+            <!-- Inactive dot indicator -->
+            <span *ngIf="pub.nombre_estado?.includes('Inactivo')" 
+               class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" 
+               title="Inactivo">
+            </span>
+
+            <!-- Selection indicator -->
+            <div *ngIf="selectedPublicadorId() === pub.id_publicador"
+               class="absolute left-0 top-2 bottom-2 w-[3px] bg-brand-purple rounded-r-full"></div>
+         </button>
       </div>
 
-      <!-- Footer Sidebar: Botón Exportar Global -->
-      <div *ngIf="canExport" class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+      <!-- Footer: Export (Desktop only, mobile has icon in toolbar) -->
+      <div *ngIf="canExport" class="hidden md:block p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
          <button (click)="onExport('global')" [disabled]="exporting()"
             class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-brand-purple dark:hover:text-brand-purple hover:border-brand-purple/30 transition-colors active:scale-[0.97] active:transition-transform disabled:opacity-50 disabled:active:scale-100">
             <ng-container *ngIf="!exporting()">
@@ -170,12 +233,9 @@
                <span>{{ globalExportLabel() }}</span>
             </ng-container>
             <ng-container *ngIf="exporting()">
-               <svg class="animate-spin w-4 h-4 text-brand-purple" xmlns="http://www.w3.org/2000/svg" fill="none"
-                  viewBox="0 0 24 24">
+               <svg class="animate-spin w-4 h-4 text-brand-purple" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor"
-                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                  </path>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                </svg>
                <span class="text-brand-purple">Generando PDF...</span>
             </ng-container>
@@ -192,183 +252,237 @@
          <!-- Header Detalle -->
          <div class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/30">
             
-            <!-- Row 1: Publisher Identity -->
-            <div class="px-4 md:px-5 pt-4 md:pt-5 pb-3">
-               <!-- Botón Volver (Solo Móvil) -->
-               <div class="md:hidden pb-3 mb-3 border-b border-slate-100 dark:border-slate-800 flex items-center">
-                  <button (click)="volverLista()" class="flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-brand-purple dark:text-slate-400 dark:hover:text-purple-400 transition-colors">
-                     <svg class="w-4 h-4 mt-[1px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+            <!-- Mobile: Compact Combined Header -->
+            <div class="md:hidden px-3 pt-3 pb-2">
+               <!-- Row 1: Back + Name + Actions -->
+               <div class="flex items-center gap-2 mb-2">
+                  <button (click)="volverLista()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-brand-purple transition-all active:scale-90 shrink-0" title="Volver">
+                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                      </svg>
-                     Volver a publicadores
+                  </button>
+                  <h2 class="text-sm font-bold text-slate-800 dark:text-white truncate flex-1">{{ selectedPublicador()?.nombre_completo }}</h2>
+                  
+                  <!-- Action Icons -->
+                  <button *ngIf="canExport" (click)="onExport('single')" [disabled]="exporting()" title="Exportar PDF"
+                     class="w-8 h-8 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-brand-purple transition-all active:scale-90 shrink-0 disabled:opacity-50">
+                     <svg *ngIf="!exporting()" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                     </svg>
+                     <svg *ngIf="exporting()" class="animate-spin w-3.5 h-3.5 text-brand-purple" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                     </svg>
+                  </button>
+                  <button *ngIf="canEdit" (click)="abrirEditorHistorial(selectedPublicador()?.id_publicador!, selectedPublicador()?.nombre_completo!)" title="Editar"
+                     class="w-8 h-8 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-500 hover:text-indigo-700 transition-all active:scale-90 shrink-0">
+                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                     </svg>
                   </button>
                </div>
+               
+               <!-- Row 2: Inline Badges + View Toggle -->
+               <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1">
+                  <!-- Status Badges (tiny, inline) -->
+                  <span *ngIf="selectedPublicador()?.es_precursor_regular"
+                     class="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-[9px] font-black gap-0.5 shrink-0" title="Precursor Regular">
+                     <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                     PR
+                  </span>
+                  <span *ngIf="selectedPublicador()?.nombre_estado?.includes('Inactivo')"
+                     class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-600 text-[9px] font-black shrink-0">
+                     Inactivo
+                  </span>
 
-               <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-0">
-                  <div class="flex flex-wrap items-center gap-2 md:gap-3">
-                     <h2 class="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{{ selectedPublicador()?.nombre_completo }}</h2>
-                     
-                     <!-- Grupo Badge -->
-                     <div *ngIf="selectedPublicador()?.nombre_grupo"
-                        class="inline-flex items-center px-2 md:px-2.5 py-0.5 md:py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[0.625rem] md:text-xs font-bold gap-1 border border-slate-200 dark:border-slate-700">
-                        <svg class="w-3 h-3 md:w-3.5 md:h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        {{ selectedPublicador()?.nombre_grupo }}
-                     </div>
+                  <!-- Hours summary -->
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold gap-0.5 shrink-0 tabular-nums" title="Total Horas">
+                     <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                     <ng-container *ngIf="totalHrsCreditos() > 0; else sinCreditosMobile">{{ (selectedPublicador()?.total_horas || 0) + totalHrsCreditos() }}</ng-container>
+                     <ng-template #sinCreditosMobile>{{ selectedPublicador()?.total_horas }}</ng-template>h
+                  </span>
 
-                     <!-- Estado Inactivo Badge -->
-                     <div *ngIf="selectedPublicador()?.nombre_estado?.includes('Inactivo')"
-                        class="inline-flex items-center px-2 md:px-2.5 py-0.5 md:py-1 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[0.625rem] md:text-xs font-bold gap-1.5 border border-red-200 dark:border-red-800/30">
-                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                        Publicador Inactivo
-                     </div>
+                  <!-- Cursos summary -->
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-[10px] font-bold gap-0.5 shrink-0 tabular-nums" title="Total Cursos">
+                     <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                     {{ selectedPublicador()?.total_cursos }}c
+                  </span>
 
-                     <div *ngIf="selectedPublicador()?.es_precursor_regular"
-                        class="inline-flex items-center px-2 md:px-2.5 py-0.5 md:py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[0.625rem] md:text-xs font-bold gap-1">
-                        <svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                        </svg>
-                        Precursor Regular
-                     </div>
-                  </div>
+                  <div class="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5"></div>
 
-                  <!-- Summary Badges -->
-                  <div class="flex flex-wrap items-center gap-2">
-                     <div
-                        class="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[0.6875rem] md:text-xs font-bold gap-1.5 whitespace-nowrap">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <ng-container *ngIf="totalHrsCreditos() > 0; else sinCreditos">
-                           <span class="opacity-70">{{ selectedPublicador()?.total_horas }}</span>
-                           <span class="opacity-50 font-normal">+{{ totalHrsCreditos() }}</span>
-                           <span class="mx-0.5 opacity-40 font-normal">=</span>
-                           <span>{{ (selectedPublicador()?.total_horas || 0) + totalHrsCreditos() }}</span>
-                        </ng-container>
-                        <ng-template #sinCreditos>{{ selectedPublicador()?.total_horas }}</ng-template>
-                        Horas {{ getShortPrivilegeLabel(selectedPublicador()?.privilegio_actual) }}
-                     </div>
-                     <div
-                        class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[0.6875rem] md:text-xs font-bold gap-1.5 whitespace-nowrap">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        {{ selectedPublicador()?.total_cursos }} Cursos
-                     </div>
+                  <!-- View Type Toggle (Short labels) -->
+                  <div class="flex p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
+                     <button (click)="onViewTypeChange('ano_servicio')"
+                        class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider transition-all"
+                        [ngClass]="viewType() === 'ano_servicio' ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400'">
+                        Año
+                     </button>
+                     <button (click)="onViewTypeChange('ultimos_12')"
+                        class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider transition-all"
+                        [ngClass]="viewType() === 'ultimos_12' ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400'">
+                        12M
+                     </button>
+                     <button (click)="onViewTypeChange('maximos_meses')"
+                        class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider transition-all"
+                        [ngClass]="viewType() === 'maximos_meses' ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400'">
+                        Max
+                     </button>
                   </div>
                </div>
             </div>
 
-            <!-- Row 2: Toolbar - View Selector & Actions -->
-            <div class="px-4 md:px-5 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
-               <!-- View Type Selector (Left) -->
-               <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 hide-scrollbar flex-1 min-w-0">
-                  <span class="hidden xl:inline-block text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mr-1 shrink-0">Vista</span>
-                  <div class="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
-                     <button (click)="onViewTypeChange('ano_servicio')"
-                        class="px-2.5 md:px-3 py-1.5 rounded-md text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all"
-                        [ngClass]="viewType() === 'ano_servicio' ? 'bg-white dark:bg-slate-700 text-brand-purple dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
-                        Año Servicio
-                     </button>
-                     <button (click)="onViewTypeChange('ultimos_12')"
-                        class="px-2.5 md:px-3 py-1.5 rounded-md text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all"
-                        [ngClass]="viewType() === 'ultimos_12' ? 'bg-white dark:bg-slate-700 text-brand-purple dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
-                        12 Meses
-                     </button>
-                     <button (click)="onViewTypeChange('maximos_meses')"
-                        class="px-2.5 md:px-3 py-1.5 rounded-md text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all"
-                        [ngClass]="viewType() === 'maximos_meses' ? 'bg-white dark:bg-slate-700 text-brand-purple dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
-                        Máximos
-                     </button>
+            <!-- Desktop: Original Full Header -->
+            <div class="hidden md:block">
+               <div class="px-5 pt-5 pb-3">
+                  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-0">
+                     <div class="flex flex-wrap items-center gap-3">
+                        <h2 class="text-xl font-bold text-slate-800 dark:text-white">{{ selectedPublicador()?.nombre_completo }}</h2>
+                        
+                        <div *ngIf="selectedPublicador()?.nombre_grupo"
+                           class="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold gap-1 border border-slate-200 dark:border-slate-700">
+                           <svg class="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                           </svg>
+                           {{ selectedPublicador()?.nombre_grupo }}
+                        </div>
+
+                        <div *ngIf="selectedPublicador()?.nombre_estado?.includes('Inactivo')"
+                           class="inline-flex items-center px-2.5 py-1 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold gap-1.5 border border-red-200 dark:border-red-800/30">
+                           <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                           Publicador Inactivo
+                        </div>
+
+                        <div *ngIf="selectedPublicador()?.es_precursor_regular"
+                           class="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold gap-1">
+                           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                           </svg>
+                           Precursor Regular
+                        </div>
+                     </div>
+
+                     <div class="flex flex-wrap items-center gap-2">
+                        <div class="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold gap-1.5 whitespace-nowrap">
+                           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                           </svg>
+                           <ng-container *ngIf="totalHrsCreditos() > 0; else sinCreditos">
+                              <span class="opacity-70">{{ selectedPublicador()?.total_horas }}</span>
+                              <span class="opacity-50 font-normal">+{{ totalHrsCreditos() }}</span>
+                              <span class="mx-0.5 opacity-40 font-normal">=</span>
+                              <span>{{ (selectedPublicador()?.total_horas || 0) + totalHrsCreditos() }}</span>
+                           </ng-container>
+                           <ng-template #sinCreditos>{{ selectedPublicador()?.total_horas }}</ng-template>
+                           Horas {{ getShortPrivilegeLabel(selectedPublicador()?.privilegio_actual) }}
+                        </div>
+                        <div class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold gap-1.5 whitespace-nowrap">
+                           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                           </svg>
+                           {{ selectedPublicador()?.total_cursos }} Cursos
+                        </div>
+                     </div>
                   </div>
                </div>
 
-               <!-- Action Buttons (Right) -->
-               <div class="flex items-center gap-2 shrink-0 justify-end">
-                  <!-- Export Single Button -->
-                  <button *ngIf="canExport" (click)="onExport('single')" [disabled]="exporting()" title="Descargar Historial Múltiple (PDF)"
-                     class="group relative flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 shadow-sm hover:text-brand-purple hover:border-brand-purple hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all disabled:opacity-50">
-                     <ng-container *ngIf="!exporting()">
-                        <svg class="w-4 h-4 md:w-4.5 md:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
-                     </ng-container>
-                     <ng-container *ngIf="exporting()">
-                        <svg class="animate-spin w-4 h-4 md:w-4.5 md:h-4.5 text-brand-purple" xmlns="http://www.w3.org/2000/svg" fill="none"
-                           viewBox="0 0 24 24">
-                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                           <path class="opacity-75" fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                           </path>
-                        </svg>
-                     </ng-container>
-                  </button>
+               <!-- Row 2: Toolbar - View Selector & Actions -->
+               <div class="px-5 pb-3 flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 hide-scrollbar flex-1 min-w-0">
+                     <span class="hidden xl:inline-block text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mr-1 shrink-0">Vista</span>
+                     <div class="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0">
+                        <button (click)="onViewTypeChange('ano_servicio')"
+                           class="px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all"
+                           [ngClass]="viewType() === 'ano_servicio' ? 'bg-white dark:bg-slate-700 text-brand-purple dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                           Año Servicio
+                        </button>
+                        <button (click)="onViewTypeChange('ultimos_12')"
+                           class="px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all"
+                           [ngClass]="viewType() === 'ultimos_12' ? 'bg-white dark:bg-slate-700 text-brand-purple dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                           12 Meses
+                        </button>
+                        <button (click)="onViewTypeChange('maximos_meses')"
+                           class="px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all"
+                           [ngClass]="viewType() === 'maximos_meses' ? 'bg-white dark:bg-slate-700 text-brand-purple dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                           Máximos
+                        </button>
+                     </div>
+                  </div>
 
-                  <!-- Edit Historial Button -->
-                  <button *ngIf="canEdit" (click)="abrirEditorHistorial(selectedPublicador()?.id_publicador!, selectedPublicador()?.nombre_completo!)" title="Editar Historial"
-                     class="group relative flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-lg border border-slate-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-800 shadow-sm hover:text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
-                     <svg class="w-4 h-4 md:w-4.5 md:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                     </svg>
-                  </button>
+                  <div class="flex items-center gap-2 shrink-0">
+                     <button *ngIf="canExport" (click)="onExport('single')" [disabled]="exporting()" title="Descargar PDF"
+                        class="flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 shadow-sm hover:text-brand-purple hover:border-brand-purple hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all disabled:opacity-50">
+                        <ng-container *ngIf="!exporting()">
+                           <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                           </svg>
+                        </ng-container>
+                        <svg *ngIf="exporting()" class="animate-spin w-4.5 h-4.5 text-brand-purple" fill="none" viewBox="0 0 24 24">
+                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                     </button>
+                     <button *ngIf="canEdit" (click)="abrirEditorHistorial(selectedPublicador()?.id_publicador!, selectedPublicador()?.nombre_completo!)" title="Editar Historial"
+                        class="flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-800 shadow-sm hover:text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
+                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                     </button>
+                  </div>
                </div>
             </div>
          </div>
 
 
          <!-- Grid / Tabla Agrupada por Año -->
-         <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-            <div *ngFor="let yearGroup of groupedInformesByYear(); let first = first" class="mb-6 last:mb-0">
+         <div class="flex-1 overflow-y-auto p-3 sm:p-6">
+            <div *ngFor="let yearGroup of groupedInformesByYear(); let first = first" class="mb-4 md:mb-6 last:mb-0">
                
-               <!-- Year Header -->
-               <div class="flex items-center gap-3 mb-4" [ngClass]="{'mt-2': !first}">
-                  <div class="flex items-center gap-2">
-                     <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-brand-purple/10 to-indigo-500/10 dark:from-brand-purple/20 dark:to-indigo-500/20">
+               <!-- Year Header (compact on mobile) -->
+               <div class="flex items-center gap-2 md:gap-3 mb-2.5 md:mb-4" [ngClass]="{'mt-1 md:mt-2': !first}">
+                  <div class="flex items-center gap-1.5 md:gap-2">
+                     <div class="hidden md:flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-brand-purple/10 to-indigo-500/10 dark:from-brand-purple/20 dark:to-indigo-500/20">
                         <svg class="w-4 h-4 text-brand-purple dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                      </div>
-                     <h3 class="text-lg font-extrabold text-slate-800 dark:text-white tracking-tight">{{ yearGroup.ano }}</h3>
+                     <h3 class="text-sm md:text-lg font-extrabold text-slate-800 dark:text-white tracking-tight">{{ yearGroup.ano }}</h3>
                   </div>
                   <div class="flex-1 h-px bg-gradient-to-r from-slate-200 dark:from-slate-700 to-transparent"></div>
-                  <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1 rounded-full">
+                  <span class="text-[9px] md:text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-slate-50 dark:bg-slate-800/50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full">
                      {{ yearGroup.meses.length }} {{ yearGroup.meses.length === 1 ? 'mes' : 'meses' }}
                   </span>
                </div>
 
-               <!-- Month Cards Grid -->
-               <div class="month-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+               <!-- Month Cards Grid (2-col on mobile) -->
+               <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4">
                   <div *ngFor="let mes of yearGroup.meses"
-                     class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 relative group hover:shadow-md transition-shadow duration-200"
-                     [ngClass]="!mes.participo ? 'opacity-70 grayscale-[0.5] hover:opacity-100 hover:grayscale-0' : ''">
+                     class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-2.5 md:p-4 relative group hover:shadow-md transition-shadow duration-200"
+                     [ngClass]="!mes.participo ? 'opacity-60 grayscale-[0.5]' : ''">
 
-                     <div class="flex justify-between items-center mb-3">
-                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200 capitalize">{{ mes.mes_nombre }}</span>
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[0.625rem] font-black shrink-0"
+                     <!-- Month Name + Status -->
+                     <div class="flex justify-between items-center mb-1.5 md:mb-3">
+                        <span class="text-[11px] md:text-sm font-bold text-slate-700 dark:text-slate-200 capitalize truncate">{{ mes.mes_nombre }}</span>
+                        <div class="w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[8px] md:text-[0.625rem] font-black shrink-0"
                            [ngClass]="mes.participo 
                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' 
                                : 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400'">
-                           {{ mes.participo ? 'SI' : 'NO' }}
+                           {{ mes.participo ? '✓' : '✗' }}
                         </div>
                      </div>
 
-                     <div class="space-y-3">
+                     <!-- Data: Compact on mobile -->
+                     <div class="space-y-1 md:space-y-3">
                         <!-- Horas -->
                         <div class="flex items-center justify-between">
-                           <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Horas</span>
-                           <div class="flex items-center gap-1.5">
-                              <span class="text-lg font-bold text-slate-800 dark:text-white tabular-nums">
+                           <span class="hidden md:inline text-xs text-slate-500 dark:text-slate-400 font-medium">Horas</span>
+                           <svg class="md:hidden w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                           <div class="flex items-center gap-1">
+                              <span class="text-sm md:text-lg font-bold text-slate-800 dark:text-white tabular-nums">
                                  {{ mes.horas || 0 }}
                               </span>
                               <ng-container *ngIf="getHrsFromObservacion(mes.observaciones) as extraHrs">
-                                 <span class="text-xs text-slate-400 dark:text-slate-500">+</span>
-                                 <span class="text-xs font-bold text-teal-600 dark:text-teal-400 tabular-nums">{{ extraHrs }}</span>
-                                 <span class="text-[0.6rem] text-slate-400 dark:text-slate-500">=</span>
-                                 <span class="text-sm font-extrabold text-teal-600 dark:text-teal-400 tabular-nums bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded-md">
+                                 <span class="text-[10px] text-slate-400">+{{ extraHrs }}</span>
+                                 <span class="text-[10px] md:text-sm font-extrabold text-teal-600 dark:text-teal-400 tabular-nums bg-teal-50 dark:bg-teal-900/30 px-1 py-0 md:px-1.5 md:py-0.5 rounded">
                                     {{ (mes.horas || 0) + extraHrs }}
                                  </span>
                               </ng-container>
@@ -377,30 +491,31 @@
 
                         <!-- Cursos -->
                         <div class="flex items-center justify-between">
-                           <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Cursos</span>
-                           <span class="text-base font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
+                           <span class="hidden md:inline text-xs text-slate-500 dark:text-slate-400 font-medium">Cursos</span>
+                           <svg class="md:hidden w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                           <span class="text-sm md:text-base font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
                               {{ mes.cursos_biblicos || 0 }}
                            </span>
                         </div>
                      </div>
 
-                     <!-- Observaciones Footer (si existe) -->
-                     <div *ngIf="mes.observaciones" class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                        <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 italic">
+                     <!-- Observaciones (truncated on mobile) -->
+                     <div *ngIf="mes.observaciones" class="mt-1.5 md:mt-3 pt-1.5 md:pt-3 border-t border-slate-100 dark:border-slate-700">
+                        <p class="text-[10px] md:text-[0.6875rem] text-slate-500 dark:text-slate-400 leading-snug md:leading-relaxed line-clamp-1 md:line-clamp-2 italic">
                            "{{ mes.observaciones }}"
                         </p>
                      </div>
 
                      <!-- Precursor Auxiliar Badge -->
                      <div *ngIf="mes.paux"
-                        class="absolute -top-2 -right-2 bg-indigo-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
+                        class="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 bg-indigo-500 text-white text-[8px] md:text-[9px] font-bold px-1 md:px-1.5 py-0 md:py-0.5 rounded shadow-sm z-10">
                         PAUX
                      </div>
 
-                     <!-- Precursor Regular Badge (Mes específico) -->
+                     <!-- Precursor Regular Badge -->
                      <div *ngIf="mes.es_regular"
-                        class="absolute -top-2 -right-2 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10"
-                        [ngClass]="{'right-8': mes.paux}">
+                        class="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 bg-amber-500 text-white text-[8px] md:text-[9px] font-bold px-1 md:px-1.5 py-0 md:py-0.5 rounded shadow-sm z-10"
+                        [ngClass]="{'right-6 md:right-8': mes.paux}">
                         PR
                      </div>
 

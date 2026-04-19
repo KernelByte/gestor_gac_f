@@ -137,6 +137,10 @@ export class InformesTableComponent {
       return roles;
    }
 
+   getPioneerRoles(pub: InformeConPublicador): { label: string, type: 'pill' | 'text', class: string }[] {
+      return this.getRoles(pub).filter(role => role.label.includes('PRECURSOR'));
+   }
+
    getInformeValue(pub: InformeConPublicador, field: string): any {
       if (!pub) return null;
       const local = this.localChanges.get(pub.id_publicador);
@@ -164,6 +168,9 @@ export class InformesTableComponent {
          value = el.type === 'radio' ? el.value === 'true' : el.checked;
          // Auto-focus logic: If participating AND (Precursor or Paux)
          if (value) {
+            // Auto-expand mobile card when they mark as participated
+            this.expandedCards.add(pub.id_publicador);
+
             const roles = this.getRoles(pub);
             const isPioneer = roles.some(r => r.label.includes('PRECURSOR'));
             const isPaux = this.getInformeValue(pub, 'es_paux');
@@ -259,6 +266,24 @@ export class InformesTableComponent {
          el.focus({ preventScroll: true });
          (el as HTMLInputElement).select?.();
       }
+   }
+
+   // Mobile expansion state
+   expandedCards: Set<number> = new Set();
+
+   toggleCard(id: number, event?: Event) {
+      if (event) {
+         event.stopPropagation();
+      }
+      if (this.expandedCards.has(id)) {
+         this.expandedCards.delete(id);
+      } else {
+         this.expandedCards.add(id);
+      }
+   }
+
+   isCardExpanded(id: number): boolean {
+      return this.expandedCards.has(id);
    }
 
 }

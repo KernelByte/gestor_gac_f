@@ -293,8 +293,6 @@ export class GruposListComponent implements OnInit {
          params.limit = 1000;
 
          let data = await lastValueFrom(this.gruposService.getGrupos(params));
-         console.log('Grupos cargados:', data);
-         console.log('Total asignados calculado:', data.reduce((acc, g) => acc + (g.cantidad_publicadores || 0), 0));
          if (this.isScopedToGroup()) {
             const idGrupo = this.authStore.user()?.id_grupo_publicador;
             data = idGrupo != null ? data.filter(g => g.id_grupo === idGrupo) : [];

@@ -23,8 +23,53 @@
       <div class="print-container flex flex-col gap-2">
 
 
-         <!-- ═══════════ KPI Cards (ultra-compactos en desktop) ═══════════ -->
-         <div class="kpi-grid grid grid-cols-2 md:grid-cols-4 gap-4">
+         <!-- ═══════════ KPI Cards ═══════════ -->
+         <!-- Mobile: Ultra-compact horizontal KPI strip -->
+         <div class="sm:hidden grid grid-cols-4 gap-1.5">
+            <!-- Publicadores -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-2 border border-slate-100 dark:border-slate-700 text-center">
+               <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-1">
+                  <svg class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+               </div>
+               <p class="text-lg font-black text-slate-800 dark:text-white leading-none tabular-nums">{{ r.total_publicadores_activos }}</p>
+               <p class="text-[8px] font-bold text-slate-400 uppercase mt-0.5">Pub.</p>
+            </div>
+            <!-- Horas -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-2 border border-slate-100 dark:border-slate-700 text-center">
+               <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-1">
+                  <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+               </div>
+               <p class="text-lg font-black text-slate-800 dark:text-white leading-none tabular-nums">{{ r.total_horas | number:'1.0-0' }}</p>
+               <p class="text-[8px] font-bold text-slate-400 uppercase mt-0.5">Hrs</p>
+            </div>
+            <!-- Estudios -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-2 border border-slate-100 dark:border-slate-700 text-center">
+               <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-1">
+                  <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+               </div>
+               <p class="text-lg font-black text-slate-800 dark:text-white leading-none tabular-nums">{{ r.total_cursos_biblicos }}</p>
+               <p class="text-[8px] font-bold text-slate-400 uppercase mt-0.5">Est.</p>
+            </div>
+            <!-- Sin Informe -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl p-2 border border-slate-100 dark:border-slate-700 text-center">
+               <div class="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-1">
+                  <svg class="w-3.5 h-3.5 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+               </div>
+               <p class="text-lg font-black text-slate-800 dark:text-white leading-none tabular-nums">{{ r.sin_informe_count }}</p>
+               <p class="text-[8px] font-bold text-red-400 uppercase mt-0.5">{{ r.sin_informe_porcentaje }}%</p>
+            </div>
+         </div>
+
+         <!-- Desktop: Original KPI cards -->
+         <div class="hidden sm:grid kpi-grid grid-cols-2 md:grid-cols-4 gap-4">
 
             <!-- Publicadores Activos -->
             <div class="group relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl p-4 border-slate-200/60 dark:border-slate-700/60 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
@@ -98,22 +143,22 @@
          </div>
 
          <!-- ═══════════ Informe + Promedios (side by side en desktop) ═══════════ -->
-         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+         <div class="grid grid-cols-1 md:grid-cols-5 gap-2 sm:gap-4">
 
             <!-- Informe a la Sucursal (3/5 del ancho) -->
             <div class="md:col-span-3 print:col-span-5 bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
 
-               <div class="px-4 py-2 lg:px-5 lg:py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                     <div class="w-6 h-6 rounded-md bg-brand-purple/10 dark:bg-purple-900/30 flex items-center justify-center">
-                        <svg class="w-3.5 h-3.5 text-brand-purple dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+               <div class="px-3 py-1.5 sm:px-4 sm:py-2 lg:px-5 lg:py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                  <div class="flex items-center gap-1.5 sm:gap-2">
+                     <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-brand-purple/10 dark:bg-purple-900/30 flex items-center justify-center">
+                        <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-brand-purple dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                            <path stroke-linecap="round" stroke-linejoin="round"
                               d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                      </div>
-                     <p class="text-sm font-display font-bold text-slate-800 dark:text-white">Informe a la Sucursal</p>
+                     <p class="text-xs sm:text-sm font-display font-bold text-slate-800 dark:text-white">Informe a la Sucursal</p>
                   </div>
-                  <span class="text-xs font-semibold text-slate-400 dark:text-slate-500">{{ getMesLabel() }} {{ localAno }}</span>
+                  <span class="text-[10px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500">{{ getMesLabel() }} {{ localAno }}</span>
                </div>
 
                <!-- Desktop table -->
@@ -158,81 +203,55 @@
                   </table>
                </div>
 
-               <!-- Mobile cards -->
-               <div class="sm:hidden divide-y divide-slate-100 dark:divide-slate-700/40">
-                  <div class="px-4 py-3">
-                     <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Publicadores</p>
-                     <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Particip.</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_publicadores.cantidad_informaron }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Est. Bíblicos</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_publicadores.cursos_biblicos }}</p>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="px-4 py-3">
-                     <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Prec. Auxiliares</p>
-                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Particip.</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.cantidad_informaron }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Est. Bíb.</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.cursos_biblicos }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Horas</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.horas_totales | number:'1.0-0' }}</p>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="px-4 py-3">
-                     <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Prec. Regulares</p>
-                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Particip.</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.cantidad_informaron }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Est. Bíb.</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.cursos_biblicos }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Horas</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.horas_totales | number:'1.0-0' }}</p>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="px-4 py-3 bg-slate-50/80 dark:bg-slate-900/40">
-                     <p class="text-[0.625rem] font-display font-black text-slate-900 dark:text-white uppercase tracking-wider mb-2">Totales</p>
-                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-white dark:bg-slate-800 rounded-lg p-2.5 border border-slate-100 dark:border-slate-700">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Particip.</p>
-                           <p class="text-xs font-display font-black text-slate-900 dark:text-white mt-0.5">{{ r.total_informaron }}</p>
-                        </div>
-                        <div class="bg-white dark:bg-slate-800 rounded-lg p-2.5 border border-slate-100 dark:border-slate-700">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Est. Bíb.</p>
-                           <p class="text-xs font-display font-black text-slate-900 dark:text-white mt-0.5">{{ r.total_cursos_biblicos }}</p>
-                        </div>
-                        <div class="bg-white dark:bg-slate-800 rounded-lg p-2.5 border border-slate-100 dark:border-slate-700">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Horas</p>
-                           <p class="text-xs font-display font-black text-slate-900 dark:text-white mt-0.5">{{ r.total_horas | number:'1.0-0' }}</p>
-                        </div>
-                     </div>
-                  </div>
+               <!-- Mobile: Dense inline table -->
+               <div class="sm:hidden">
+                  <table class="w-full text-[11px]">
+                     <thead>
+                        <tr class="bg-slate-50/80 dark:bg-slate-900/40">
+                           <th class="text-left py-1.5 px-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider"></th>
+                           <th class="text-center py-1.5 px-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">Part.</th>
+                           <th class="text-center py-1.5 px-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">Est.</th>
+                           <th class="text-center py-1.5 px-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">Hrs</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        <tr class="border-t border-slate-100 dark:border-slate-700/40">
+                           <td class="py-1.5 px-3 font-bold text-slate-700 dark:text-slate-200">Pub.</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_publicadores.cantidad_informaron }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_publicadores.cursos_biblicos }}</td>
+                           <td class="py-1.5 px-1.5 text-center text-slate-300 dark:text-slate-600">—</td>
+                        </tr>
+                        <tr class="border-t border-slate-100 dark:border-slate-700/40">
+                           <td class="py-1.5 px-3 font-bold text-slate-700 dark:text-slate-200">P.Aux</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_auxiliares.cantidad_informaron }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_auxiliares.cursos_biblicos }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_auxiliares.horas_totales | number:'1.0-0' }}</td>
+                        </tr>
+                        <tr class="border-t border-slate-100 dark:border-slate-700/40">
+                           <td class="py-1.5 px-3 font-bold text-slate-700 dark:text-slate-200">P.Reg</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_regulares.cantidad_informaron }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_regulares.cursos_biblicos }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_regulares.horas_totales | number:'1.0-0' }}</td>
+                        </tr>
+                     </tbody>
+                     <tfoot>
+                        <tr class="border-t-2 border-slate-200 dark:border-slate-600 bg-slate-50/80 dark:bg-slate-900/40">
+                           <td class="py-1.5 px-3 font-black text-slate-900 dark:text-white">Total</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono font-bold text-slate-900 dark:text-white tabular-nums">{{ r.total_informaron }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono font-bold text-slate-900 dark:text-white tabular-nums">{{ r.total_cursos_biblicos }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono font-bold text-slate-900 dark:text-white tabular-nums">{{ r.total_horas | number:'1.0-0' }}</td>
+                        </tr>
+                     </tfoot>
+                  </table>
                </div>
 
                <!-- Indicadores inline -->
-               <div class="px-4 py-2 border-t border-slate-100 dark:border-slate-700/40 flex flex-wrap items-center gap-x-4 gap-y-1">
-                  <span class="text-xs text-slate-500 dark:text-slate-400">
+               <div class="px-3 py-1.5 sm:px-4 sm:py-2 border-t border-slate-100 dark:border-slate-700/40 flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-0.5 sm:gap-y-1">
+                  <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
                      <span class="font-display font-bold text-slate-700 dark:text-slate-300">{{ r.total_irregulares }}</span> irregulares
                      <span class="text-slate-400 dark:text-slate-500">({{ r.total_irregulares_porcentaje }}%)</span>
                   </span>
-                  <span class="text-[0.625rem] lg:text-xs text-slate-500 dark:text-slate-400">
+                  <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
                      <span class="font-display font-bold text-slate-700 dark:text-slate-300">{{ r.no_bautizados_count }}</span> no bautizados
                      <span class="text-slate-400 dark:text-slate-500">({{ r.no_bautizados_porcentaje }}%)</span>
                   </span>
@@ -242,13 +261,13 @@
             <!-- Promedio de Horas (2/5 del ancho) -->
             <div class="md:col-span-2 print:hidden bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
 
-               <div class="px-4 py-2 lg:px-5 lg:py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center gap-2">
-                  <div class="w-7 h-7 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                     <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+               <div class="px-3 py-1.5 sm:px-4 sm:py-2 lg:px-5 lg:py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center gap-1.5 sm:gap-2">
+                  <div class="w-5 h-5 sm:w-7 sm:h-7 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                     <svg class="w-3 h-3 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                      </svg>
                   </div>
-                  <p class="text-sm font-display font-bold text-slate-800 dark:text-white">Promedio de Horas</p>
+                  <p class="text-xs sm:text-sm font-display font-bold text-slate-800 dark:text-white">Promedio de Horas</p>
                </div>
 
                <!-- Desktop table -->
@@ -279,42 +298,32 @@
                   </table>
                </div>
 
-               <!-- Mobile cards -->
-               <div class="sm:hidden divide-y divide-slate-100 dark:divide-slate-700/40">
-                  <div class="px-4 py-3">
-                     <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Prec. Auxiliares</p>
-                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Promedio</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.promedio_horas | number:'1.0-1' }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">3 Meses</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.promedio_horas_3m !== null ? (r.detalle_auxiliares.promedio_horas_3m | number:'1.0-1') : '—' }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">6 Meses</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_auxiliares.promedio_horas_6m !== null ? (r.detalle_auxiliares.promedio_horas_6m | number:'1.0-1') : '—' }}</p>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="px-4 py-3">
-                     <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Prec. Regulares</p>
-                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Promedio</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.promedio_horas | number:'1.0-1' }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">3 Meses</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.promedio_horas_3m !== null ? (r.detalle_regulares.promedio_horas_3m | number:'1.0-1') : '—' }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">6 Meses</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ r.detalle_regulares.promedio_horas_6m !== null ? (r.detalle_regulares.promedio_horas_6m | number:'1.0-1') : '—' }}</p>
-                        </div>
-                     </div>
-                  </div>
+               <!-- Mobile: Dense inline table -->
+               <div class="sm:hidden">
+                  <table class="w-full text-[11px]">
+                     <thead>
+                        <tr class="bg-slate-50/80 dark:bg-slate-900/40">
+                           <th class="text-left py-1.5 px-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider"></th>
+                           <th class="text-center py-1.5 px-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">Prm</th>
+                           <th class="text-center py-1.5 px-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">3m</th>
+                           <th class="text-center py-1.5 px-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">6m</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        <tr class="border-t border-slate-100 dark:border-slate-700/40">
+                           <td class="py-1.5 px-3 font-bold text-slate-700 dark:text-slate-200">P.Aux</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono font-bold text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_auxiliares.promedio_horas | number:'1.0-1' }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-600 dark:text-slate-300 tabular-nums">{{ r.detalle_auxiliares.promedio_horas_3m !== null ? (r.detalle_auxiliares.promedio_horas_3m | number:'1.0-1') : '—' }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-600 dark:text-slate-300 tabular-nums">{{ r.detalle_auxiliares.promedio_horas_6m !== null ? (r.detalle_auxiliares.promedio_horas_6m | number:'1.0-1') : '—' }}</td>
+                        </tr>
+                        <tr class="border-t border-slate-100 dark:border-slate-700/40">
+                           <td class="py-1.5 px-3 font-bold text-slate-700 dark:text-slate-200">P.Reg</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono font-bold text-slate-800 dark:text-slate-200 tabular-nums">{{ r.detalle_regulares.promedio_horas | number:'1.0-1' }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-600 dark:text-slate-300 tabular-nums">{{ r.detalle_regulares.promedio_horas_3m !== null ? (r.detalle_regulares.promedio_horas_3m | number:'1.0-1') : '—' }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-600 dark:text-slate-300 tabular-nums">{{ r.detalle_regulares.promedio_horas_6m !== null ? (r.detalle_regulares.promedio_horas_6m | number:'1.0-1') : '—' }}</td>
+                        </tr>
+                     </tbody>
+                  </table>
                </div>
             </div>
 
@@ -323,14 +332,14 @@
          <!-- ═══════════ Asistencia a las Reuniones ═══════════ -->
          <div *ngIf="showAsistencia" class="bg-white dark:bg-slate-800 rounded-xl lg:rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col shrink-0">
 
-            <div class="px-4 py-2 lg:px-5 lg:py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center gap-2 bg-slate-50/50 dark:bg-slate-800/50">
-               <div class="w-7 h-7 rounded-md bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                  <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <div class="px-3 py-1.5 sm:px-4 sm:py-2 lg:px-5 lg:py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center gap-1.5 sm:gap-2 bg-slate-50/50 dark:bg-slate-800/50">
+               <div class="w-5 h-5 sm:w-7 sm:h-7 rounded-md bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <svg class="w-3 h-3 sm:w-4 sm:h-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round"
                         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                </div>
-               <p class="text-sm font-display font-bold text-slate-800 dark:text-white">Asistencia a las Reuniones</p>
+               <p class="text-xs sm:text-sm font-display font-bold text-slate-800 dark:text-white">Asistencia a las Reuniones</p>
             </div>
 
             <div *ngIf="r.asistencia_entre_semana || r.asistencia_fin_semana; else sinAsistencia">
@@ -380,63 +389,56 @@
                   </table>
                </div>
 
-               <!-- Mobile -->
-               <div class="sm:hidden divide-y divide-slate-100 dark:divide-slate-700/40">
-                  <div *ngIf="r.asistencia_entre_semana as ae" class="px-4 py-3">
-                     <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Entre semana</p>
-                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Reun.</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ ae.num_reuniones }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Total</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ ae.total | number:'1.0-0' }}</p>
-                        </div>
-                        <div class="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100/50 dark:border-indigo-500/20 shadow-sm rounded-lg p-2.5 text-center flex flex-col justify-center">
-                           <p class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wide inline-flex items-center justify-center gap-0.5 w-full">
-                              <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+               <!-- Mobile: Dense inline table -->
+               <div class="sm:hidden">
+                  <table class="w-full text-[11px]">
+                     <thead>
+                        <tr class="bg-slate-50/80 dark:bg-slate-900/40">
+                           <th class="text-left py-1.5 px-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider">Reunión</th>
+                           <th class="text-center py-1.5 px-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">Reun.</th>
+                           <th class="text-center py-1.5 px-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total</th>
+                           <th class="text-center py-1.5 px-1.5 text-[9px] font-bold text-indigo-500 uppercase tracking-wider">
+                              <svg class="w-2.5 h-2.5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                               </svg>
-                              Prom.
-                           </p>
-                           <p class="text-sm font-display font-black text-indigo-700 dark:text-indigo-300 mt-0.5">{{ ae.promedio | number:'1.0-0' }}</p>
-                        </div>
-                     </div>
-                  </div>
-                  <div *ngIf="r.asistencia_fin_semana as af" class="px-4 py-3">
-                     <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Fin de semana</p>
-                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Reun.</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ af.num_reuniones }}</p>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-2.5 text-center">
-                           <p class="text-[10px] text-slate-400 uppercase tracking-wide">Total</p>
-                           <p class="text-xs font-display font-black text-slate-800 dark:text-white mt-0.5">{{ af.total | number:'1.0-0' }}</p>
-                        </div>
-                        <div class="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100/50 dark:border-indigo-500/20 shadow-sm rounded-lg p-2.5 text-center flex flex-col justify-center">
-                           <p class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wide inline-flex items-center justify-center gap-0.5 w-full">
-                              <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                              </svg>
-                              Prom.
-                           </p>
-                           <p class="text-sm font-display font-black text-indigo-700 dark:text-indigo-300 mt-0.5">{{ af.promedio | number:'1.0-0' }}</p>
-                        </div>
-                     </div>
-                  </div>
+                           </th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        <tr *ngIf="r.asistencia_entre_semana as ae" class="border-t border-slate-100 dark:border-slate-700/40">
+                           <td class="py-1.5 px-3 font-bold text-slate-700 dark:text-slate-200">E/S</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ ae.num_reuniones }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ ae.total | number:'1.0-0' }}</td>
+                           <td class="py-1.5 px-1.5 text-center">
+                              <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-mono font-bold tabular-nums">
+                                 {{ ae.promedio | number:'1.0-0' }}
+                              </span>
+                           </td>
+                        </tr>
+                        <tr *ngIf="r.asistencia_fin_semana as af" class="border-t border-slate-100 dark:border-slate-700/40">
+                           <td class="py-1.5 px-3 font-bold text-slate-700 dark:text-slate-200">F/S</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ af.num_reuniones }}</td>
+                           <td class="py-1.5 px-1.5 text-center font-mono text-slate-800 dark:text-slate-200 tabular-nums">{{ af.total | number:'1.0-0' }}</td>
+                           <td class="py-1.5 px-1.5 text-center">
+                              <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-mono font-bold tabular-nums">
+                                 {{ af.promedio | number:'1.0-0' }}
+                              </span>
+                           </td>
+                        </tr>
+                     </tbody>
+                  </table>
                </div>
             </div>
 
             <ng-template #sinAsistencia>
-               <div class="py-6 text-center">
-                  <p class="text-xs text-slate-400 dark:text-slate-500">Sin datos de asistencia para este periodo</p>
+               <div class="py-4 sm:py-6 text-center">
+                  <p class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500">Sin datos de asistencia para este periodo</p>
                </div>
             </ng-template>
          </div>
 
       </div>
    </ng-container>
+
 
 </div>
