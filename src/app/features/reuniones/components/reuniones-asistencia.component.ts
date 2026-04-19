@@ -16,7 +16,7 @@ import { saveAs } from 'file-saver';
   selector: 'app-reuniones-asistencia',
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex flex-col gap-1.5 sm:gap-2 h-full overflow-hidden">
+    <div class="flex flex-col gap-1.5 sm:gap-2 lg:gap-3 2xl:gap-4 h-full overflow-hidden">
 
       <!-- Toast — full-width bottom on mobile, top-right on sm+ -->
       @if (toast()) {
@@ -39,32 +39,34 @@ import { saveAs } from 'file-saver';
 
 
       <!-- Unified Main Grid -->
-      <div class="flex flex-col xl:flex-row gap-4 sm:gap-6 xl:gap-8 flex-1 min-h-0 overflow-hidden pr-1 pb-4">
+      <!-- Add pb-20 on mobile to leave space for the static bottom action bar -->
+      <div class="flex flex-col xl:flex-row gap-4 sm:gap-6 xl:gap-8 flex-1 min-h-0 overflow-hidden pr-1 pb-20 sm:pb-4">
 
         <!-- LEFT PANEL: REGISTRO MENSUAL -->
         <div class="shrink-0 xl:flex-1 flex flex-col gap-2 sm:gap-3 xl:min-w-[500px] xl:overflow-hidden overflow-visible">
           <!-- Month/Year Navigator + Actions -->
-      <div class="shrink-0 flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-2 sm:px-3 py-1.5">
+      <div class="shrink-0 flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-2 sm:px-3 lg:px-4 2xl:px-5 py-1.5 lg:py-2.5 2xl:py-3">
         <!-- Date picker pill -->
-        <div class="flex items-center gap-1">
-          <button (click)="prevMonth()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1),transform_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        <div class="flex items-center gap-1 lg:gap-1.5">
+          <button (click)="prevMonth()" class="p-1.5 lg:p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1),transform_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
+            <svg class="w-4 h-4 lg:w-5 lg:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
 
           <!-- Custom Year Dropdown -->
           <div class="relative" (click)="$event.stopPropagation()">
             <button
               (click)="toggleYearDrop()"
-              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition-colors">
+              class="dropdown-trigger flex items-center gap-1.5 px-2.5 py-1.5 lg:px-3 lg:py-2 2xl:px-4 2xl:py-2.5 rounded-lg text-sm lg:text-base 2xl:text-lg font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/70">
               {{ selectedYear() }}
-              <svg class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" [class.rotate-180]="yearDropOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+              <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 text-slate-400 chevron" [class.rotate-180]="yearDropOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             @if (yearDropOpen()) {
               <div class="dropdown-panel absolute top-full left-0 mt-1.5 z-50 bg-white dark:bg-[#1e2535] border border-slate-200 dark:border-slate-600/60 rounded-xl shadow-xl shadow-black/10 dark:shadow-black/40 py-1.5 min-w-[90px] overflow-hidden">
-                @for (a of anos; track a) {
+                @for (a of anos; track a; let i = $index) {
                   <button
                     (click)="selectedYear.set(a); yearDropOpen.set(false)"
-                    class="w-full text-left px-3 py-1.5 text-sm font-semibold transition-colors"
+                    class="dropdown-item w-full text-left px-3 py-1.5 text-sm font-semibold"
+                    [style.--i]="i"
                     [class]="a === +selectedYear()
                       ? 'bg-brand-purple/10 dark:bg-brand-purple/20 text-brand-purple'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60'">
@@ -79,16 +81,17 @@ import { saveAs } from 'file-saver';
           <div class="relative" (click)="$event.stopPropagation()">
             <button
               (click)="toggleMonthDrop()"
-              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition-colors">
+              class="dropdown-trigger flex items-center gap-1.5 px-2.5 py-1.5 lg:px-3 lg:py-2 2xl:px-4 2xl:py-2.5 rounded-lg text-sm lg:text-base 2xl:text-lg font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/70">
               {{ mesLabel() }}
-              <svg class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" [class.rotate-180]="monthDropOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+              <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 text-slate-400 chevron" [class.rotate-180]="monthDropOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             @if (monthDropOpen()) {
               <div class="dropdown-panel absolute top-full left-0 mt-1.5 z-50 bg-white dark:bg-[#1e2535] border border-slate-200 dark:border-slate-600/60 rounded-xl shadow-xl shadow-black/10 dark:shadow-black/40 py-1.5 min-w-[130px] overflow-hidden">
-                @for (m of meses; track m.value) {
+                @for (m of meses; track m.value; let i = $index) {
                   <button
                     (click)="selectedMonth.set(m.value); selectedWeek.set(1); monthDropOpen.set(false)"
-                    class="w-full text-left px-3 py-1.5 text-sm font-semibold transition-colors"
+                    class="dropdown-item w-full text-left px-3 py-1.5 text-sm font-semibold"
+                    [style.--i]="i"
                     [class]="m.value === +selectedMonth()
                       ? 'bg-brand-purple/10 dark:bg-brand-purple/20 text-brand-purple'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60'">
@@ -99,13 +102,13 @@ import { saveAs } from 'file-saver';
             }
           </div>
 
-          <button (click)="nextMonth()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1),transform_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          <button (click)="nextMonth()" class="p-1.5 lg:p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1),transform_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
+            <svg class="w-4 h-4 lg:w-5 lg:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
           </button>
         </div>
 
-        <!-- Right Side: Status + Actions -->
-        <div class="flex items-center gap-2">
+        <!-- Right Side: Status + Actions (Hidden on mobile, pushed to bottom bar) -->
+        <div class="hidden sm:flex items-center gap-2">
           @if (loading()) {
             <div class="flex items-center gap-1.5 text-xs font-medium text-slate-400 mr-2">
               <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
@@ -116,19 +119,19 @@ import { saveAs } from 'file-saver';
           <div class="flex items-center gap-2">
             <button (click)="onExportPdf()"
                     [disabled]="!currentPeriodo() || loading()"
-                    class="inline-flex items-center gap-1.5 px-3 h-8 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs shadow-sm [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed">
-              <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-              <span class="hidden sm:inline">PDF</span>
+                    class="inline-flex items-center gap-1.5 px-3 lg:px-4 2xl:px-5 h-8 lg:h-9 2xl:h-10 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs lg:text-sm shadow-sm [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+              <span>PDF</span>
             </button>
             <button (click)="onSave()"
                     *ngIf="hasEditPermission()"
                     [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges()"
-                    class="inline-flex items-center justify-center gap-1.5 px-4 h-8 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-display font-bold text-xs shadow-xl shadow-purple-900/20 [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="inline-flex items-center justify-center gap-1.5 px-4 lg:px-5 2xl:px-6 h-8 lg:h-9 2xl:h-10 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-display font-bold text-xs lg:text-sm shadow-xl shadow-purple-900/20 [transition:transform_160ms_cubic-bezier(0.23,1,0.32,1),background-color_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
               @if (saving()) {
-                <svg class="w-3.5 h-3.5 animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
-                <span class="hidden sm:inline">Guardando...</span>
+                <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
+                <span>Guardando...</span>
               } @else {
-                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 <span>Guardar</span>
               }
             </button>
@@ -143,33 +146,33 @@ import { saveAs } from 'file-saver';
         <div class="flex-1 min-w-0 flex flex-col">
 
           <!-- Weekly Entry Card -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-2.5 flex flex-col h-full">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 sm:p-2.5 lg:p-4 2xl:p-5 flex flex-col h-full">
 
             <!-- Card Header -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2 border-b border-slate-100 dark:border-slate-700 pb-2 shrink-0">
-              <div class="flex items-center gap-2">
-                <div class="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-brand-purple">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 lg:gap-3 mb-2 lg:mb-3 border-b border-slate-100 dark:border-slate-700 pb-2 lg:pb-3 shrink-0">
+              <div class="flex items-center gap-2 lg:gap-2.5">
+                <div class="p-1.5 lg:p-2 2xl:p-2.5 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-brand-purple">
+                  <svg class="w-4 h-4 lg:w-5 lg:h-5 2xl:w-6 2xl:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
                 <div>
-                  <p class="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">Registro Semanal</p>
+                  <p class="text-base sm:text-lg lg:text-xl 2xl:text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">Registro Semanal</p>
                 </div>
               </div>
 
               <!-- Week Selector -->
               <div class="w-full sm:w-auto overflow-x-auto">
-                <div class="flex bg-slate-50 dark:bg-slate-900/50 p-0.5 rounded-lg w-fit min-w-full sm:min-w-0">
+                <div class="flex bg-slate-50 dark:bg-slate-900/50 p-0.5 lg:p-1 rounded-lg w-fit min-w-full sm:min-w-0">
                   @for (week of weeksArray(); track week) {
                     <button
                       (click)="selectWeek(week)"
-                      class="px-2.5 py-1 sm:py-1.5 rounded-md text-xs font-bold [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1),color_150ms_cubic-bezier(0.23,1,0.32,1),box-shadow_150ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] relative flex items-center justify-center min-w-[36px]"
+                      class="px-2.5 py-1 sm:py-1.5 lg:px-3.5 lg:py-2 2xl:px-4 2xl:py-2.5 rounded-md text-xs font-bold [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1),color_150ms_cubic-bezier(0.23,1,0.32,1),box-shadow_150ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] relative flex items-center justify-center min-w-[36px] lg:min-w-[44px]"
                       [ngClass]="{
                         'bg-white dark:bg-slate-800 text-brand-purple dark:text-purple-400 shadow-sm': selectedWeek() === week,
                         'text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800': selectedWeek() !== week
                       }">
-                      <span class="text-[0.65rem] font-bold tracking-wide">S{{ week }}</span>
+                      <span class="text-[0.65rem] lg:text-xs 2xl:text-sm font-bold tracking-wide">S{{ week }}</span>
                       @if (weekHasData(week)) {
-                        <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-emerald-400"></span>
                       }
                     </button>
                   }
@@ -177,24 +180,39 @@ import { saveAs } from 'file-saver';
               </div>
             </div>
 
+            <!-- Mobile Meeting Toggle Switcher -->
+            <div class="md:hidden flex bg-slate-50 dark:bg-slate-900/50 p-1 rounded-xl mt-3">
+              <button (click)="activeMobileTab.set('midweek')"
+                      class="flex-1 py-1.5 text-[0.65rem] sm:text-xs font-bold rounded-lg transition-all"
+                      [ngClass]="activeMobileTab() === 'midweek' ? 'bg-white dark:bg-slate-800 text-brand-purple shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
+                Entre Semana
+              </button>
+              <button (click)="activeMobileTab.set('weekend')"
+                      class="flex-1 py-1.5 text-[0.65rem] sm:text-xs font-bold rounded-lg transition-all"
+                      [ngClass]="activeMobileTab() === 'weekend' ? 'bg-white dark:bg-slate-800 text-orange-500 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
+                Fin de Semana
+              </button>
+            </div>
+
             <!-- Grid with new layout -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:gap-x-6 gap-x-4 gap-y-2 md:divide-x md:divide-slate-100 dark:md:divide-slate-700 flex-1 mt-1.5">
+            <div class="flex-1 mt-1.5 lg:mt-3 flex flex-col md:grid md:grid-cols-2 lg:gap-x-8 2xl:gap-x-10 gap-x-4 gap-y-2 lg:gap-y-3 md:divide-x md:divide-slate-100 dark:md:divide-slate-700">
 
               <!-- MIDWEEK -->
-              <div class="meeting-col meeting-col--midweek flex flex-col gap-1 lg:pr-4 md:pr-3 h-full">
+              <div class="meeting-col meeting-col--midweek flex-col gap-1 lg:gap-2.5 lg:pr-5 2xl:pr-6 md:pr-3 h-full"
+                   [ngClass]="activeMobileTab() === 'midweek' ? 'flex' : 'hidden md:flex'">
 
                 <!-- Header block -->
                 <div class="flex justify-between items-center">
                   <div class="flex flex-col">
-                    <div class="flex items-center gap-1">
-                      <svg class="w-3.5 h-3.5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                      <h3 class="font-bold text-slate-800 dark:text-slate-100 text-xs tracking-tight">Entre Semana</h3>
+                    <div class="flex items-center gap-1 lg:gap-1.5">
+                      <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 2xl:w-5 2xl:h-5 text-brand-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      <h3 class="font-bold text-slate-800 dark:text-slate-100 text-xs lg:text-sm 2xl:text-base tracking-tight">Entre Semana</h3>
                     </div>
-                     @if (nextMidweekDate()) { <span class="text-[0.6rem] font-bold" [class]="nextMidweekDate()!.isToday ? 'text-emerald-500' : 'text-brand-purple'">{{ nextMidweekDate()!.isToday ? 'Hoy' : 'Próx: ' + nextMidweekDate()!.label }}</span> }
+                     @if (nextMidweekDate()) { <span class="text-[0.6rem] lg:text-[0.7rem] 2xl:text-xs font-bold mt-0.5" [class]="nextMidweekDate()!.isToday ? 'text-emerald-500' : 'text-brand-purple'">{{ nextMidweekDate()!.isToday ? 'Hoy' : 'Próx: ' + nextMidweekDate()!.label }}</span> }
                   </div>
                   <div class="flex flex-col items-end leading-none">
-                    <span class="text-[0.55rem] font-bold text-slate-400 uppercase tracking-widest">Subtotal</span>
-                    <span class="text-lg font-bold text-slate-800 dark:text-slate-100 tabular-nums leading-tight">{{ currentMidweekTotal() }}</span>
+                    <span class="text-[0.55rem] lg:text-[0.65rem] 2xl:text-xs font-bold text-slate-400 uppercase tracking-widest">Subtotal</span>
+                    <span class="text-lg lg:text-2xl 2xl:text-3xl font-bold text-slate-800 dark:text-slate-100 tabular-nums leading-tight">{{ currentMidweekTotal() }}</span>
                   </div>
                 </div>
 
@@ -205,13 +223,13 @@ import { saveAs } from 'file-saver';
                       <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
                     </div>
                   } @else {
-                    <div class="grid gap-1.5" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
-                      
+                    <div class="grid gap-1.5 lg:gap-2.5 2xl:gap-3" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
+
                       <!-- Presencial Card MIDWEEK -->
-                      <div class="bg-slate-50 dark:bg-[#171923] border border-brand-purple/20 dark:border-brand-purple/40 rounded-xl p-1.5 flex flex-col shadow-sm transition-colors hover:border-brand-purple/40 dark:hover:border-brand-purple/70 group">
-                        <div class="flex items-center mb-0.5">
-                          <label class="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-brand-purple transition-colors cursor-pointer">
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <div class="bg-slate-50 dark:bg-[#171923] border border-brand-purple/20 dark:border-brand-purple/40 rounded-xl p-2 lg:p-3 2xl:p-4 flex flex-col shadow-sm transition-colors hover:border-brand-purple/40 dark:hover:border-brand-purple/70 group">
+                        <div class="flex items-center mb-1.5 lg:mb-2.5">
+                          <label class="flex items-center gap-1 lg:gap-1.5 text-[0.65rem] lg:text-xs 2xl:text-sm font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-brand-purple transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                             Presencial
                           </label>
                         </div>
@@ -220,18 +238,17 @@ import { saveAs } from 'file-saver';
                                  [ngModel]="midweekWeeks()[selectedWeek() - 1]"
                                  (ngModelChange)="updateMidweekWeek($event)"
                                  [disabled]="!hasEditPermission()"
-                                 class="w-full bg-transparent text-center text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-800 p-0 border-0 focus:ring-0 focus:border-transparent transition-colors duration-150"
+                                 class="block w-full attendance-input attendance-input--purple h-12 lg:h-14 2xl:h-16 text-xl lg:text-2xl 2xl:text-3xl placeholder:text-slate-300 dark:placeholder:text-slate-700"
                                  placeholder="0">
-                          <div class="h-[2px] w-3/4 mx-auto bg-slate-200/60 dark:bg-slate-700/50 mt-0.5 transition-colors group-focus-within:bg-brand-purple/50"></div>
                         </div>
                       </div>
 
                       <!-- Zoom Card -->
                       @if (congregacionConfig()?.usa_zoom !== 0) {
-                        <div class="bg-slate-50 dark:bg-[#171923] border border-brand-purple/20 dark:border-brand-purple/40 rounded-xl p-1.5 flex flex-col shadow-sm transition-colors hover:border-brand-purple/40 dark:hover:border-brand-purple/70 group">
-                          <div class="flex items-center mb-0.5">
-                            <label class="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-brand-purple transition-colors cursor-pointer">
-                              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                        <div class="bg-slate-50 dark:bg-[#171923] border border-brand-purple/20 dark:border-brand-purple/40 rounded-xl p-2 lg:p-3 2xl:p-4 flex flex-col shadow-sm transition-colors hover:border-brand-purple/40 dark:hover:border-brand-purple/70 group">
+                          <div class="flex items-center mb-1.5 lg:mb-2.5">
+                            <label class="flex items-center gap-1 lg:gap-1.5 text-[0.65rem] lg:text-xs 2xl:text-sm font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-brand-purple transition-colors cursor-pointer">
+                              <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
                               Zoom
                             </label>
                           </div>
@@ -240,9 +257,8 @@ import { saveAs } from 'file-saver';
                                    [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]"
                                    (ngModelChange)="updateMidweekZoomWeek($event)"
                                    [disabled]="!hasEditPermission()"
-                                   class="w-full bg-transparent text-center text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-800 p-0 border-0 focus:ring-0 focus:border-transparent transition-colors duration-150"
+                                   class="block w-full attendance-input attendance-input--purple h-12 lg:h-14 2xl:h-16 text-xl lg:text-2xl 2xl:text-3xl placeholder:text-slate-300 dark:placeholder:text-slate-700"
                                    placeholder="0">
-                            <div class="h-[2px] w-3/4 mx-auto bg-slate-200/60 dark:bg-slate-700/50 mt-0.5 transition-colors group-focus-within:bg-brand-purple/50"></div>
                           </div>
                         </div>
                       }
@@ -254,20 +270,21 @@ import { saveAs } from 'file-saver';
 
 
               <!-- WEEKEND -->
-              <div class="meeting-col meeting-col--weekend flex flex-col gap-1 lg:pl-4 md:pl-3 pt-2 md:pt-0 border-t border-slate-100 dark:border-slate-700 md:border-0 h-full">
+              <div class="meeting-col meeting-col--weekend flex-col gap-1 lg:gap-2.5 lg:pl-5 2xl:pl-6 md:pl-3 pt-2 md:pt-0 border-t border-slate-100 dark:border-slate-700 md:border-0 h-full"
+                   [ngClass]="activeMobileTab() === 'weekend' ? 'flex' : 'hidden md:flex'">
 
                 <!-- Header block -->
                 <div class="flex justify-between items-center">
                   <div class="flex flex-col">
-                    <div class="flex items-center gap-1">
-                      <svg class="w-3.5 h-3.5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      <h3 class="font-bold text-slate-800 dark:text-slate-100 text-xs tracking-tight">Fin de Semana</h3>
+                    <div class="flex items-center gap-1 lg:gap-1.5">
+                      <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 2xl:w-5 2xl:h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <h3 class="font-bold text-slate-800 dark:text-slate-100 text-xs lg:text-sm 2xl:text-base tracking-tight">Fin de Semana</h3>
                     </div>
-                     @if (nextWeekendDate()) { <span class="text-[0.6rem] font-bold" [class]="nextWeekendDate()!.isToday ? 'text-emerald-500' : 'text-orange-500'">{{ nextWeekendDate()!.isToday ? 'Hoy' : 'Próx: ' + nextWeekendDate()!.label }}</span> }
+                     @if (nextWeekendDate()) { <span class="text-[0.6rem] lg:text-[0.7rem] 2xl:text-xs font-bold mt-0.5" [class]="nextWeekendDate()!.isToday ? 'text-emerald-500' : 'text-orange-500'">{{ nextWeekendDate()!.isToday ? 'Hoy' : 'Próx: ' + nextWeekendDate()!.label }}</span> }
                   </div>
                   <div class="flex flex-col items-end leading-none">
-                    <span class="text-[0.55rem] font-bold text-slate-400 uppercase tracking-widest">Subtotal</span>
-                    <span class="text-lg font-bold text-slate-800 dark:text-slate-100 tabular-nums leading-tight">{{ currentWeekendTotal() }}</span>
+                    <span class="text-[0.55rem] lg:text-[0.65rem] 2xl:text-xs font-bold text-slate-400 uppercase tracking-widest">Subtotal</span>
+                    <span class="text-lg lg:text-2xl 2xl:text-3xl font-bold text-slate-800 dark:text-slate-100 tabular-nums leading-tight">{{ currentWeekendTotal() }}</span>
                   </div>
                 </div>
 
@@ -278,13 +295,13 @@ import { saveAs } from 'file-saver';
                       <span class="text-xs font-bold text-slate-400">Sin reunión esta semana</span>
                     </div>
                   } @else {
-                    <div class="grid gap-1.5" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
-                      
+                    <div class="grid gap-1.5 lg:gap-2.5 2xl:gap-3" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0" [class.grid-cols-1]="congregacionConfig()?.usa_zoom === 0">
+
                       <!-- Presencial Card WEEKEND -->
-                      <div class="bg-slate-50 dark:bg-[#1a1514] border border-orange-500/20 dark:border-orange-500/30 rounded-xl p-1.5 flex flex-col shadow-sm transition-colors hover:border-orange-500/40 dark:hover:border-orange-500/60 group">
-                        <div class="flex items-center mb-0.5">
-                          <label class="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-orange-500 transition-colors cursor-pointer">
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <div class="bg-slate-50 dark:bg-[#1a1514] border border-orange-500/20 dark:border-orange-500/30 rounded-xl p-2 lg:p-3 2xl:p-4 flex flex-col shadow-sm transition-colors hover:border-orange-500/40 dark:hover:border-orange-500/60 group">
+                        <div class="flex items-center mb-1.5 lg:mb-2.5">
+                          <label class="flex items-center gap-1 lg:gap-1.5 text-[0.65rem] lg:text-xs 2xl:text-sm font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-orange-500 transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                             Presencial
                           </label>
                         </div>
@@ -293,18 +310,17 @@ import { saveAs } from 'file-saver';
                                  [ngModel]="weekendWeeks()[selectedWeek() - 1]"
                                  (ngModelChange)="updateWeekendWeek($event)"
                                  [disabled]="!hasEditPermission()"
-                                 class="w-full bg-transparent text-center text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-800 p-0 border-0 focus:ring-0 focus:border-transparent transition-colors duration-150"
+                                 class="block w-full attendance-input attendance-input--orange h-12 lg:h-14 2xl:h-16 text-xl lg:text-2xl 2xl:text-3xl placeholder:text-slate-300 dark:placeholder:text-slate-700"
                                  placeholder="0">
-                          <div class="h-[2px] w-3/4 mx-auto bg-slate-200/60 dark:bg-slate-700/50 mt-0.5 transition-colors group-focus-within:bg-orange-500/50"></div>
                         </div>
                       </div>
 
                       <!-- Zoom Card -->
                       @if (congregacionConfig()?.usa_zoom !== 0) {
-                        <div class="bg-slate-50 dark:bg-[#1a1514] border border-orange-500/20 dark:border-orange-500/30 rounded-xl p-1.5 flex flex-col shadow-sm transition-colors hover:border-orange-500/40 dark:hover:border-orange-500/60 group">
-                          <div class="flex items-center mb-0.5">
-                            <label class="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-orange-500 transition-colors cursor-pointer">
-                               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                        <div class="bg-slate-50 dark:bg-[#1a1514] border border-orange-500/20 dark:border-orange-500/30 rounded-xl p-2 lg:p-3 2xl:p-4 flex flex-col shadow-sm transition-colors hover:border-orange-500/40 dark:hover:border-orange-500/60 group">
+                          <div class="flex items-center mb-1.5 lg:mb-2.5">
+                            <label class="flex items-center gap-1 lg:gap-1.5 text-[0.65rem] lg:text-xs 2xl:text-sm font-semibold text-slate-500 dark:text-slate-400 group-focus-within:text-orange-500 transition-colors cursor-pointer">
+                               <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
                               Zoom
                             </label>
                           </div>
@@ -313,9 +329,8 @@ import { saveAs } from 'file-saver';
                                    [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]"
                                    (ngModelChange)="updateWeekendZoomWeek($event)"
                                    [disabled]="!hasEditPermission()"
-                                   class="w-full bg-transparent text-center text-lg lg:text-xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-300 dark:placeholder:text-slate-800 p-0 border-0 focus:ring-0 focus:border-transparent transition-colors duration-150"
+                                   class="block w-full attendance-input attendance-input--orange h-12 lg:h-14 2xl:h-16 text-xl lg:text-2xl 2xl:text-3xl placeholder:text-slate-300 dark:placeholder:text-slate-700"
                                    placeholder="0">
-                            <div class="h-[2px] w-3/4 mx-auto bg-slate-200/60 dark:bg-slate-700/50 mt-0.5 transition-colors group-focus-within:bg-orange-500/50"></div>
                           </div>
                         </div>
                       }
@@ -332,28 +347,28 @@ import { saveAs } from 'file-saver';
 
         <!-- ESTADÍSTICAS DEL MES -->
         <div class="w-full lg:w-[320px] xl:w-[400px] 2xl:w-[450px] shrink-0 flex flex-col">
-           <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 flex flex-col h-full justify-center">
-             
+           <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 lg:p-4 2xl:p-5 flex flex-col h-full justify-center">
+
              <div>
-               <div class="flex items-center gap-1.5 mb-2">
-                 <div class="p-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shrink-0">
-                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+               <div class="flex items-center gap-1.5 lg:gap-2 mb-2 lg:mb-3">
+                 <div class="p-1 lg:p-1.5 2xl:p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shrink-0">
+                   <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 2xl:w-5 2xl:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                  </div>
-                 <h3 class="font-bold text-slate-800 dark:text-slate-100 text-xs leading-none lg:block flex gap-1">Estado <span class="lg:hidden block">del Mes</span><span class="hidden lg:block">Mensual</span></h3>
+                 <h3 class="font-bold text-slate-800 dark:text-slate-100 text-xs lg:text-sm 2xl:text-base leading-none lg:block flex gap-1 tracking-tight">Estado <span class="lg:hidden block">del Mes</span><span class="hidden lg:block">Mensual</span></h3>
                </div>
 
                <!-- Vertical weeks for lg screens, horizontal for smaller -->
-               <div class="grid grid-cols-5 lg:flex lg:flex-wrap lg:gap-1.5 gap-1 mb-2">
+               <div class="grid grid-cols-5 lg:flex lg:flex-wrap lg:gap-2 2xl:gap-2.5 gap-1 mb-2 lg:mb-3">
                  @for (week of weeksArray(); track week) {
-                   <div class="flex flex-col lg:flex-row lg:flex-1 items-center justify-center lg:justify-between p-1 lg:px-2 rounded-lg [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1)]"
+                   <div class="flex flex-col lg:flex-row lg:flex-1 items-center justify-center lg:justify-between p-1 lg:px-3 lg:py-2 2xl:px-4 2xl:py-2.5 rounded-lg [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1)]"
                         [ngClass]="weekHasData(week) ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-900/30'">
-                     <span class="text-[0.6rem] font-bold uppercase text-slate-500">
+                     <span class="text-[0.6rem] lg:text-xs 2xl:text-sm font-bold uppercase text-slate-500 tracking-wider">
                         <span class="lg:hidden">S</span><span class="hidden lg:inline">SEM </span>{{ week }}
                      </span>
                      @if (weekHasData(week)) {
-                       <svg class="w-3 h-3 text-emerald-500 shrink-0 mt-0.5 lg:mt-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                       <svg class="w-3 h-3 lg:w-4 lg:h-4 2xl:w-5 2xl:h-5 text-emerald-500 shrink-0 mt-0.5 lg:mt-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                      } @else {
-                       <svg class="w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0 mt-0.5 lg:mt-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                       <svg class="w-3 h-3 lg:w-4 lg:h-4 2xl:w-5 2xl:h-5 text-slate-300 dark:text-slate-600 shrink-0 mt-0.5 lg:mt-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
                      }
                    </div>
                  }
@@ -361,14 +376,14 @@ import { saveAs } from 'file-saver';
              </div>
 
              <!-- Totals -->
-             <div class="grid grid-cols-2 lg:grid-cols-2 gap-1.5 mt-auto pt-1 lg:pt-0 shrink-0">
-               <div class="flex flex-col justify-center items-center py-1 px-1.5 bg-purple-50/60 dark:bg-[#1a1728] rounded-lg border border-purple-100/80 dark:border-brand-purple/20">
-                 <span class="font-bold text-slate-500 dark:text-slate-400 text-[0.55rem] uppercase tracking-widest text-center">T. ES</span>
-                 <span class="text-sm font-black text-brand-purple dark:text-[#a586ff] tabular-nums text-center leading-none">{{ midweekMonthTotal() }}</span>
+             <div class="grid grid-cols-2 lg:grid-cols-2 gap-1.5 lg:gap-2.5 2xl:gap-3 mt-auto pt-1 lg:pt-2 shrink-0">
+               <div class="flex flex-col justify-center items-center py-1 px-1.5 lg:py-2.5 lg:px-3 2xl:py-3 2xl:px-4 bg-purple-50/60 dark:bg-[#1a1728] rounded-lg border border-purple-100/80 dark:border-brand-purple/20">
+                 <span class="font-bold text-slate-500 dark:text-slate-400 text-[0.55rem] lg:text-[0.65rem] 2xl:text-xs uppercase tracking-widest text-center">T. ES</span>
+                 <span class="text-sm lg:text-xl 2xl:text-2xl font-black text-brand-purple dark:text-[#a586ff] tabular-nums text-center leading-none mt-0.5 lg:mt-1">{{ midweekMonthTotal() }}</span>
                </div>
-               <div class="flex flex-col justify-center items-center py-1 px-1.5 bg-orange-50/60 dark:bg-[#281d1b] rounded-lg border border-orange-100/80 dark:border-orange-500/20">
-                 <span class="font-bold text-slate-500 dark:text-slate-400 text-[0.55rem] uppercase tracking-widest text-center">T. FS</span>
-                 <span class="text-sm font-black text-orange-500 dark:text-[#ff8f3d] tabular-nums text-center leading-none">{{ weekendMonthTotal() }}</span>
+               <div class="flex flex-col justify-center items-center py-1 px-1.5 lg:py-2.5 lg:px-3 2xl:py-3 2xl:px-4 bg-orange-50/60 dark:bg-[#281d1b] rounded-lg border border-orange-100/80 dark:border-orange-500/20">
+                 <span class="font-bold text-slate-500 dark:text-slate-400 text-[0.55rem] lg:text-[0.65rem] 2xl:text-xs uppercase tracking-widest text-center">T. FS</span>
+                 <span class="text-sm lg:text-xl 2xl:text-2xl font-black text-orange-500 dark:text-[#ff8f3d] tabular-nums text-center leading-none mt-0.5 lg:mt-1">{{ weekendMonthTotal() }}</span>
                </div>
              </div>
 
@@ -378,24 +393,24 @@ import { saveAs } from 'file-saver';
         </div> <!-- /Left Panel -->
 
         <!-- RIGHT PANEL: RESUMEN ANUAL -->
-        <div class="flex-1 flex flex-col gap-2 sm:gap-3 xl:min-w-[450px] min-h-0 overflow-hidden">
+        <div class="hidden xl:flex flex-1 flex-col gap-2 sm:gap-3 xl:min-w-[450px] min-h-0 overflow-hidden">
         
-        <!-- Year selector -->
-        <div class="shrink-0 flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-3 sm:px-4 py-2.5 sm:py-3">
-          <div class="flex items-center gap-2 sm:gap-3">
-            <svg class="w-4 h-4 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Año de Servicio</span>
+        <!-- Year selector (se oculta en laptops 720p para ganar espacio vertical) -->
+        <div class="shrink-0 [@media(min-width:768px)_and_(max-height:800px)]:hidden flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-3 sm:px-4 lg:px-5 2xl:px-6 py-2.5 sm:py-3 lg:py-4 2xl:py-5">
+          <div class="flex items-center gap-2 sm:gap-3 lg:gap-4">
+            <svg class="w-4 h-4 lg:w-5 lg:h-5 2xl:w-6 2xl:h-6 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="text-xs lg:text-sm 2xl:text-base font-bold text-slate-400 uppercase tracking-wider">Año de Servicio</span>
             <select [ngModel]="resumenServiceYear()" (ngModelChange)="resumenServiceYear.set(+$event)"
-                    class="bg-transparent border-0 text-sm font-bold text-slate-800 dark:text-slate-100 cursor-pointer focus:ring-0 pr-6">
+                    class="bg-transparent border-0 text-sm lg:text-base 2xl:text-lg font-bold text-slate-800 dark:text-slate-100 cursor-pointer focus:ring-0 pr-6">
               @for (y of serviceYears; track y) {
                 <option [value]="y">{{ y }}</option>
               }
             </select>
-            <span class="hidden sm:inline text-xs font-medium text-slate-400">Sep {{ resumenServiceYear() - 1 }} – Ago {{ resumenServiceYear() }}</span>
+            <span class="hidden sm:inline text-xs lg:text-sm 2xl:text-base font-medium text-slate-400">Sep {{ resumenServiceYear() - 1 }} – Ago {{ resumenServiceYear() }}</span>
           </div>
           @if (loadingResumen()) {
-            <div class="flex items-center gap-1.5 text-xs font-medium text-slate-400">
-              <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
+            <div class="flex items-center gap-1.5 text-xs lg:text-sm font-medium text-slate-400">
+              <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
               <span class="hidden sm:inline">Cargando...</span>
             </div>
           }
@@ -404,21 +419,21 @@ import { saveAs } from 'file-saver';
         <!-- Main grid: Table only -->
         <div class="flex flex-col flex-1 min-h-0">
 
-          <!-- Summary Table Card -->
-          <div class="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-0">
-            <div class="px-4 py-2 sm:px-5 sm:py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between gap-2.5 bg-slate-50/50 dark:bg-slate-900/30">
-              <div class="flex items-center gap-2.5">
-                <div class="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+          <!-- Summary Table Card (en 720p colapsa a solo el header con el S-88 PDF) -->
+          <div class="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-0 [@media(min-width:768px)_and_(max-height:800px)]:flex-none">
+            <div class="px-4 py-2 sm:px-5 sm:py-2.5 lg:px-6 lg:py-3.5 2xl:px-8 2xl:py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between gap-2.5 bg-slate-50/50 dark:bg-slate-900/30">
+              <div class="flex items-center gap-2.5 lg:gap-3">
+                <div class="p-1.5 lg:p-2 2xl:p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                  <svg class="w-4 h-4 lg:w-5 lg:h-5 2xl:w-6 2xl:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
                 </div>
                 <div>
-                  <h3 class="font-black text-slate-800 dark:text-slate-100 text-sm sm:text-base leading-none tracking-tight">Desglose Mensual</h3>
-                  <p class="text-[0.65rem] text-slate-400 font-bold mt-0.5">Año de Servicio {{ resumenServiceYear() }}</p>
+                  <h3 class="font-black text-slate-800 dark:text-slate-100 text-sm sm:text-base lg:text-lg 2xl:text-xl leading-none tracking-tight">Desglose Mensual</h3>
+                  <p class="text-[0.65rem] lg:text-xs 2xl:text-sm text-slate-400 font-bold mt-0.5 lg:mt-1">Año de Servicio {{ resumenServiceYear() }}</p>
                 </div>
               </div>
               <button (click)="onExportS88Pdf()"
-                      class="shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 rounded-lg shadow-sm transition-all shadow-indigo-500/20">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      class="shrink-0 flex items-center justify-center gap-1.5 px-3 py-1.5 lg:px-4 lg:py-2.5 2xl:px-5 2xl:py-3 text-xs lg:text-sm font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg shadow-sm shadow-indigo-500/20 [transition:background-color_160ms_cubic-bezier(0.23,1,0.32,1),transform_160ms_cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
+                <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
                   <line x1="12" y1="18" x2="12" y2="12"></line>
@@ -429,59 +444,59 @@ import { saveAs } from 'file-saver';
               </button>
             </div>
 
-            <div class="overflow-y-auto overflow-x-auto flex-1 custom-scrollbar">
+            <div class="overflow-y-auto overflow-x-auto flex-1 custom-scrollbar [@media(min-width:768px)_and_(max-height:800px)]:hidden">
               <table class="w-full">
                 <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 sticky top-0 z-10">
                   <tr>
-                    <th rowspan="2" class="px-4 py-1 text-left text-[0.65rem] font-bold text-slate-400 uppercase tracking-wider align-bottom">Mes</th>
-                    <th colspan="2" class="px-2 py-1 text-center text-[0.65rem] font-bold text-brand-purple uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">
-                      <span class="inline-flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-brand-purple"></span>
+                    <th rowspan="2" class="px-4 lg:px-5 2xl:px-6 py-1 lg:py-2 2xl:py-3 text-left text-[0.65rem] lg:text-xs 2xl:text-sm font-bold text-slate-400 uppercase tracking-wider align-bottom">Mes</th>
+                    <th colspan="2" class="px-2 lg:px-3 py-1 lg:py-2 text-center text-[0.65rem] lg:text-xs 2xl:text-sm font-bold text-brand-purple uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">
+                      <span class="inline-flex items-center gap-1.5 lg:gap-2">
+                        <span class="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-brand-purple"></span>
                         Entre Semana
                       </span>
                     </th>
-                    <th colspan="2" class="px-2 py-1 text-center text-[0.65rem] font-bold text-orange-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">
-                      <span class="inline-flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                    <th colspan="2" class="px-2 lg:px-3 py-1 lg:py-2 text-center text-[0.65rem] lg:text-xs 2xl:text-sm font-bold text-orange-500 uppercase tracking-wider border-l border-slate-100 dark:border-slate-700">
+                      <span class="inline-flex items-center gap-1.5 lg:gap-2">
+                        <span class="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-orange-500"></span>
                         Fin de Semana
                       </span>
                     </th>
                   </tr>
-                  <tr class="text-[0.6rem] uppercase tracking-wider">
-                    <th class="px-2 py-1 text-center text-slate-400 font-bold border-l border-slate-100 dark:border-slate-700">Reun.</th>
-                    <th class="px-2 py-1 text-center text-brand-purple font-black">Prom.</th>
-                    <th class="px-2 py-1 text-center text-slate-400 font-bold border-l border-slate-100 dark:border-slate-700">Reun.</th>
-                    <th class="px-2 py-1 text-center text-orange-500 font-black">Prom.</th>
+                  <tr class="text-[0.6rem] lg:text-[0.7rem] 2xl:text-xs uppercase tracking-wider">
+                    <th class="px-2 lg:px-3 py-1 lg:py-1.5 text-center text-slate-400 font-bold border-l border-slate-100 dark:border-slate-700">Reun.</th>
+                    <th class="px-2 lg:px-3 py-1 lg:py-1.5 text-center text-brand-purple font-black">Prom.</th>
+                    <th class="px-2 lg:px-3 py-1 lg:py-1.5 text-center text-slate-400 font-bold border-l border-slate-100 dark:border-slate-700">Reun.</th>
+                    <th class="px-2 lg:px-3 py-1 lg:py-1.5 text-center text-orange-500 font-black">Prom.</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
                   @for (row of resumenAnualHistorico(); track row.mes) {
                     <tr class="resumen-row hover:bg-slate-50/70 dark:hover:bg-slate-800/50 [transition:background-color_150ms_cubic-bezier(0.23,1,0.32,1)]"
                         [class.resumen-row--current]="+row.mes === +selectedMonth()">
-                      <td class="px-4 py-1.5 font-bold text-sm"
+                      <td class="px-4 lg:px-5 2xl:px-6 py-1.5 lg:py-3 2xl:py-4 font-bold text-sm lg:text-base 2xl:text-lg"
                           [ngClass]="row.midweek_total !== null || row.weekend_total !== null ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 lg:gap-2.5">
                           @if (+row.mes === +selectedMonth()) {
-                            <span class="w-1 h-4 rounded-full bg-brand-purple shrink-0"></span>
+                            <span class="w-1 h-4 lg:w-1.5 lg:h-5 rounded-full bg-brand-purple shrink-0"></span>
                           } @else {
-                            <span class="w-1 h-4 shrink-0"></span>
+                            <span class="w-1 h-4 lg:w-1.5 lg:h-5 shrink-0"></span>
                           }
                           <span>{{ row.nombre_mes }}</span>
                         </div>
                       </td>
-                      <td class="px-2 py-1.5 text-center text-sm font-medium tabular-nums border-l border-slate-100 dark:border-slate-700"
+                      <td class="px-2 lg:px-3 py-1.5 lg:py-3 2xl:py-4 text-center text-sm lg:text-base 2xl:text-lg font-medium tabular-nums border-l border-slate-100 dark:border-slate-700"
                           [ngClass]="row.midweek_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
                         {{ row.midweek_reuniones > 0 ? row.midweek_reuniones : '–' }}
                       </td>
-                      <td class="px-2 py-1.5 text-center text-sm font-black tabular-nums"
+                      <td class="px-2 lg:px-3 py-1.5 lg:py-3 2xl:py-4 text-center text-sm lg:text-base 2xl:text-lg font-black tabular-nums"
                           [ngClass]="row.midweek_promedio !== null ? 'text-brand-purple' : 'text-slate-300 dark:text-slate-600'">
                         {{ row.midweek_promedio !== null ? row.midweek_promedio : '–' }}
                       </td>
-                      <td class="px-2 py-1.5 text-center text-sm font-medium tabular-nums border-l border-slate-100 dark:border-slate-700"
+                      <td class="px-2 lg:px-3 py-1.5 lg:py-3 2xl:py-4 text-center text-sm lg:text-base 2xl:text-lg font-medium tabular-nums border-l border-slate-100 dark:border-slate-700"
                           [ngClass]="row.weekend_reuniones > 0 ? 'text-slate-500' : 'text-slate-300 dark:text-slate-600'">
                         {{ row.weekend_reuniones > 0 ? row.weekend_reuniones : '–' }}
                       </td>
-                      <td class="px-2 py-1.5 text-center text-sm font-black tabular-nums"
+                      <td class="px-2 lg:px-3 py-1.5 lg:py-3 2xl:py-4 text-center text-sm lg:text-base 2xl:text-lg font-black tabular-nums"
                           [ngClass]="row.weekend_promedio !== null ? 'text-orange-500' : 'text-slate-300 dark:text-slate-600'">
                         {{ row.weekend_promedio !== null ? row.weekend_promedio : '–' }}
                       </td>
@@ -489,9 +504,9 @@ import { saveAs } from 'file-saver';
                   }
                   @empty {
                     <tr>
-                      <td colspan="5" class="px-5 py-12 text-center text-sm text-slate-400">
-                        <div class="flex flex-col items-center gap-2">
-                          <svg class="w-8 h-8 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                      <td colspan="5" class="px-5 py-12 lg:py-16 text-center text-sm lg:text-base text-slate-400">
+                        <div class="flex flex-col items-center gap-2 lg:gap-3">
+                          <svg class="w-8 h-8 lg:w-10 lg:h-10 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
                           <span class="font-bold">Sin datos para este año de servicio</span>
                         </div>
                       </td>
@@ -500,12 +515,12 @@ import { saveAs } from 'file-saver';
                 </tbody>
                 @if (resumenMesesConDatos() > 0) {
                   <tfoot class="bg-slate-50 dark:bg-slate-900/40 border-t-2 border-slate-200 dark:border-slate-700">
-                    <tr class="text-sm font-black">
-                      <td class="px-5 py-3 text-slate-700 dark:text-slate-200 uppercase text-xs tracking-wider">Total</td>
-                      <td class="px-2 py-3 text-center tabular-nums text-slate-500 border-l border-slate-100 dark:border-slate-700">{{ resumenMidweekReuniones() }}</td>
-                      <td class="px-2 py-3 text-center tabular-nums text-brand-purple">{{ resumenMidweekPromedio() }}</td>
-                      <td class="px-2 py-3 text-center tabular-nums text-slate-500 border-l border-slate-100 dark:border-slate-700">{{ resumenWeekendReuniones() }}</td>
-                      <td class="px-2 py-3 text-center tabular-nums text-orange-500">{{ resumenWeekendPromedio() }}</td>
+                    <tr class="text-sm lg:text-base 2xl:text-lg font-black">
+                      <td class="px-5 lg:px-6 2xl:px-7 py-3 lg:py-4 2xl:py-5 text-slate-700 dark:text-slate-200 uppercase text-xs lg:text-sm 2xl:text-base tracking-wider">Total</td>
+                      <td class="px-2 lg:px-3 py-3 lg:py-4 2xl:py-5 text-center tabular-nums text-slate-500 border-l border-slate-100 dark:border-slate-700">{{ resumenMidweekReuniones() }}</td>
+                      <td class="px-2 lg:px-3 py-3 lg:py-4 2xl:py-5 text-center tabular-nums text-brand-purple">{{ resumenMidweekPromedio() }}</td>
+                      <td class="px-2 lg:px-3 py-3 lg:py-4 2xl:py-5 text-center tabular-nums text-slate-500 border-l border-slate-100 dark:border-slate-700">{{ resumenWeekendReuniones() }}</td>
+                      <td class="px-2 lg:px-3 py-3 lg:py-4 2xl:py-5 text-center tabular-nums text-orange-500">{{ resumenWeekendPromedio() }}</td>
                     </tr>
                   </tfoot>
                 }
@@ -521,6 +536,28 @@ import { saveAs } from 'file-saver';
       </div> <!-- /Right Panel -->
 
     </div> <!-- /Unified Layout -->
+
+    <!-- Mobile Sticky Action Bar -->
+    <div class="sm:hidden fixed bottom-4 left-4 right-4 z-40 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-700/60 p-2 flex gap-2">
+       <button (click)="onExportPdf()"
+               [disabled]="!currentPeriodo() || loading()"
+               class="flex-1 shrink-0 h-12 inline-flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
+         <svg class="w-5 h-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+         PDF
+       </button>
+       <button (click)="onSave()"
+               *ngIf="hasEditPermission()"
+               [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges()"
+               class="flex-[2] shrink-0 h-12 inline-flex items-center justify-center gap-2 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-bold text-sm shadow-md shadow-brand-purple/20 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+         @if (saving()) {
+           <svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
+           Guardando...
+         } @else {
+           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+           Guardar
+         }
+       </button>
+    </div>
   `,
   styles: [`
     :host { display: block; height: 100%; }
@@ -639,13 +676,60 @@ import { saveAs } from 'file-saver';
       .animate-fadeIn { animation: none; opacity: 1; }
       .attendance-input:active:not(:disabled) { transform: none; }
     }
-    /* ── Custom Dropdown ── */
+    /* ── Dropdown trigger: press feedback + hover curve ── */
+    .dropdown-trigger {
+      transition: background-color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+                  transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .dropdown-trigger:active { transform: scale(0.97); }
+
+    /* ── Chevron: strong ease-out, snappy ── */
+    .chevron {
+      transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    /* ── Custom Dropdown: origin-aware (scales from trigger, not center) ── */
     .dropdown-panel {
-      animation: dropdownIn 150ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+      transform-origin: top left;
+      animation: dropdownIn 180ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+      will-change: transform, opacity;
     }
     @keyframes dropdownIn {
-      from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+      from { opacity: 0; transform: translateY(-4px) scale(0.96); }
       to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── Dropdown items: subtle stagger + ease-out color transitions ── */
+    .dropdown-item {
+      transition: background-color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+                  color 150ms cubic-bezier(0.23, 1, 0.32, 1);
+      opacity: 0;
+      animation: itemIn 200ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+      animation-delay: calc(var(--i, 0) * 14ms + 40ms);
+    }
+    @keyframes itemIn {
+      from { opacity: 0; transform: translateY(-2px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Resumen row: current-month pulse on select ── */
+    .resumen-row--current {
+      position: relative;
+    }
+
+    /* ── Reduced motion: keep opacity, drop transforms/stagger ── */
+    @media (prefers-reduced-motion: reduce) {
+      .dropdown-panel { animation: dropdownFade 150ms ease forwards; }
+      .dropdown-item {
+        animation: none;
+        opacity: 1;
+      }
+      .dropdown-trigger:active { transform: none; }
+      .chevron { transition: none; }
+    }
+    @keyframes dropdownFade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
   `]
 })
@@ -681,6 +765,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   toast = signal<{ type: 'success' | 'error'; message: string } | null>(null);
+  activeMobileTab = signal<'midweek' | 'weekend'>('midweek');
 
   // ── Dirty tracking: snapshot of last loaded/saved state ──
   private savedSnapshot = signal<{
@@ -1295,6 +1380,23 @@ export class ReunionesAsistenciaComponent implements OnInit {
   private autoSelectCurrentWeek(): void {
     if (!this.isViewingCurrentMonth()) return;
     this.selectedWeek.set(this.calcCurrentWeek());
+    
+    // Auto-select tab on mobile based on the nearest upcoming meeting
+    const cfg = this.congregacionConfig();
+    // Fallbacks: 3 = Miércoles, 0 = Domingo
+    const mwDay = cfg?.dia_reunion_entre_semana ? this.DAY_MAP[cfg.dia_reunion_entre_semana] : 3; 
+    const weDay = cfg?.dia_reunion_fin_semana ? this.DAY_MAP[cfg.dia_reunion_fin_semana] : 0; 
+
+    const todayDay = new Date().getDay();
+    const diffMw = (mwDay - todayDay + 7) % 7;
+    const diffWe = (weDay - todayDay + 7) % 7;
+
+    // The meeting with the smallest diff is the next one occurring
+    if (diffWe < diffMw) {
+      this.activeMobileTab.set('weekend');
+    } else {
+      this.activeMobileTab.set('midweek');
+    }
   }
 
   private defaultResumenServiceYear(): number {

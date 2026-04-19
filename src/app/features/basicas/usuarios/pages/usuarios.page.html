@@ -4,45 +4,46 @@
    <div class="flex-1 flex flex-col min-w-0 h-full transition-[flex,min-width,max-width] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]">
 
       <div class="flex flex-col gap-5 h-full w-full overflow-hidden">
-
-         <!-- Header Section -->
-         <div class="shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-               <h1 class="text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight">Gestión de Usuarios</h1>
-               <p class="text-slate-500 dark:text-slate-400 mt-1 max-w-2xl text-base">Administra los accesos y credenciales de los miembros
-                  del sistema.</p>
-            </div>
-            <button *ngIf="isPrivilegedRole()" (click)="openCreatePanel()"
-               class="group shrink-0 inline-flex items-center gap-2 px-6 h-12 bg-[#6D28D9] hover:bg-[#5b21b6] text-white rounded-xl font-display font-bold shadow-lg shadow-purple-900/20 transition-all active:scale-95 hover:shadow-purple-900/30">
-               <svg class="w-5 h-5 transition-transform group-hover:rotate-90" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-               </svg>
-               <span>Nuevo Usuario</span>
-            </button>
-         </div>
-
          <!-- Filters & Search Block -->
          <div
-            class="shrink-0 bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center gap-2">
-            <div class="relative flex-1 w-full group">
-               <svg
-                  class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors"
-                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-               </svg>
-               <input [formControl]="searchControl" type="text" placeholder="Buscar por nombre, correo o rol..."
-                  (keydown.escape)="clearSearch()"
-                  class="w-full pl-12 pr-4 py-3 bg-transparent border-none rounded-xl text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none">
+            class="shrink-0 bg-white dark:bg-slate-900 p-1.5 sm:p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-row items-center gap-2 overflow-hidden">
+            
+            <!-- Dedicated Growing Container for Search -->
+            <div class="flex-1 flex items-center min-w-0">
+               <div class="relative group transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                    [ngClass]="searchExpanded() || searchControl.value ? 'w-full max-w-xl bg-slate-50 dark:bg-slate-800' : 'w-11 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800'"
+                    style="border-radius: 12px; height: 44px; overflow: hidden;">
+                   
+                   <label for="searchInput" class="absolute left-0 top-0 w-11 h-full flex items-center justify-center cursor-pointer pointer-events-auto z-10"
+                          (click)="searchExpanded.set(true)">
+                      <svg class="w-5 h-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                   </label>
+   
+                   <input id="searchInput" [formControl]="searchControl" type="text" placeholder="Buscar..."
+                      (focus)="searchExpanded.set(true)"
+                      (blur)="searchExpanded.set(false)"
+                      (keydown.escape)="clearSearch(); searchExpanded.set(false)"
+                      class="absolute left-0 top-0 w-full h-full pl-11 pr-10 bg-transparent border-none text-slate-700 dark:text-slate-200 text-sm font-medium placeholder:text-slate-400 outline-none transition-opacity duration-300"
+                      [ngClass]="searchExpanded() || searchControl.value ? 'opacity-100' : 'opacity-0'">
+   
+                   <button *ngIf="searchControl.value" (click)="clearSearch(); $event.stopPropagation()"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all active:scale-90 z-20"
+                      title="Limpiar búsqueda">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                         <line x1="18" y1="6" x2="6" y2="18"></line>
+                         <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                   </button>
+               </div>
             </div>
 
             <!-- Active Role Filter Badge -->
             <div *ngIf="selectedRolFilter()"
-               class="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-xl">
-               <span class="text-xs font-bold text-purple-700 dark:text-purple-300">Rol: {{ getSelectedRolFilterName() }}</span>
+               class="flex items-center gap-2 px-3 h-11 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-xl shrink-0">
+               <span class="text-xs font-bold text-purple-700 dark:text-purple-300 whitespace-nowrap">Rol: {{ getSelectedRolFilterName() }}</span>
                <button (click)="clearRolFilter()"
                   class="p-1 rounded-full hover:bg-purple-100 dark:hover:bg-purple-800 text-purple-500 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-200 transition-colors"
                   title="Quitar filtro de rol">
@@ -52,26 +53,40 @@
                </button>
             </div>
 
-            <div class="h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block"></div>
+            <!-- Right side Actions (Pinned to the right, won't move) -->
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+               <div class="h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block"></div>
 
-            <!-- Congregation Filter Dropdown -->
-            <div class="w-full sm:w-56 shrink-0 relative" *ngIf="showCongregacionCol()">
-               <select (change)="setCongFilter($event)" [value]="selectedCongregacionFilter() || ''"
-                   class="w-full pl-3 pr-8 py-2 border-none bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-slate-700 dark:text-slate-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all appearance-none cursor-pointer">
-                   <option value="">Todas las Congregaciones</option>
-                   <option *ngFor="let c of congregaciones()" [value]="c.id_congregacion">{{ c.nombre_congregacion }}</option>
-               </select>
-               <svg class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-            </div>
+               <!-- Congregation Filter Dropdown -->
+               <div class="w-auto sm:w-56 shrink-0 relative" *ngIf="showCongregacionCol()">
+                  <select (change)="setCongFilter($event)" [value]="selectedCongregacionFilter() || ''"
+                      class="w-full pl-3 pr-8 h-11 border-none bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-slate-700 dark:text-slate-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all appearance-none cursor-pointer">
+                      <option value="" class="sm:hidden">Todas</option>
+                      <option value="" class="hidden sm:block">Todas las Congregaciones</option>
+                      <option *ngFor="let c of congregaciones()" [value]="c.id_congregacion">{{ c.nombre_congregacion }}</option>
+                  </select>
+                  <svg class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+               </div>
 
-            <div class="hidden sm:block w-full sm:w-auto px-2">
                <button (click)="clearAllFilters()" [disabled]="!searchControl.value && !selectedRolFilter() && !selectedCongregacionFilter()"
-                  class="w-full sm:w-auto flex items-center justify-between gap-3 px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-xl font-bold text-sm transition-colors border border-slate-200 dark:border-slate-700 hover:border-red-200 dark:hover:border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-slate-800 disabled:hover:text-slate-500 dark:disabled:hover:text-slate-400 disabled:hover:border-slate-200 dark:disabled:hover:border-slate-700">
-                  <span>Limpiar Filtros</span>
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                     <path d="M18 6L6 18M6 6l12 12" />
+                  class="flex items-center justify-center w-11 h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-red-200 dark:hover:border-red-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-slate-800 disabled:active:scale-100"
+                  title="Limpiar Filtros">
+                  <svg class="w-5 h-5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                     <path d="M13.013 3H2l8 9.46V19l4 2v-8.54l.9-1.07"/>
+                     <path d="m17 7 5 5"/>
+                     <path d="m22 7-5 5"/>
                   </svg>
+               </button>
+
+               <div class="h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block"></div>
+
+               <button *ngIf="isPrivilegedRole()" (click)="openCreatePanel()"
+                  class="group inline-flex items-center justify-center gap-2 px-0 sm:px-5 w-11 sm:w-auto h-11 bg-[#6D28D9] hover:bg-[#5b21b6] text-white rounded-xl font-display font-bold shadow-lg shadow-purple-900/20 transition-all active:scale-95 hover:shadow-purple-900/30">
+                  <svg class="w-5 h-5 sm:w-4 sm:h-4 transition-transform group-hover:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                     <line x1="12" y1="5" x2="12" y2="19"></line>
+                     <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span class="hidden sm:inline text-sm whitespace-nowrap">Nuevo Usuario</span>
                </button>
             </div>
          </div>
@@ -89,9 +104,9 @@
                            class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 font-semibold text-base shadow-sm ring-1 ring-white border border-white/50">
                            {{ u.nombre.charAt(0).toUpperCase() }}
                         </div>
-                        <div>
-                           <p class="font-bold text-slate-900 text-lg leading-tight">{{ u.nombre }}</p>
-                           <p class="text-sm text-slate-500 font-medium">{{ u.correo }}</p>
+                        <div class="flex-1 min-w-0">
+                           <p class="font-bold text-slate-900 text-lg leading-tight truncate">{{ u.nombre }}</p>
+                           <p class="text-sm text-slate-500 font-medium truncate">{{ u.correo }}</p>
                         </div>
                      </div>
                      <div class="flex items-center justify-between border-t border-slate-100 pt-3">

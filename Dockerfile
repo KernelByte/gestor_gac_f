@@ -17,11 +17,9 @@ FROM base AS builder
 COPY . .
 RUN npm run build -- --configuration production
 
-# Stage 4: Production (Nginx)
-FROM nginx:alpine AS prod
-# Copy custom Nginx configuration
+# Stage 4: Production (Nginx sin root)
+FROM nginxinc/nginx-unprivileged:alpine AS prod
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-# Copy built Angular app from builder stage
 COPY --from=builder /app/dist/*/browser /usr/share/nginx/html
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

@@ -5,7 +5,6 @@ import { HttpClient } from '@angular/common/http';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from '../../core/auth/auth.store';
-import { TerritoriosService } from '../territorios/services/territorios.service';
 
 interface Configuracion {
    id_congregacion: number;
@@ -16,6 +15,7 @@ interface Configuracion {
    tiene_sala_b: boolean | number;
    usa_zoom: boolean | number;
    id_periodo_informes_activo?: number | null;
+   periodo_informes_automatico: number; // 1=automático, 0=manual
    dia_reunion_entre_semana:  string;
    hora_reunion_entre_semana: string;
    dia_reunion_fin_semana:    string;
@@ -47,7 +47,6 @@ interface Configuracion {
 export class ConfiguracionPage implements OnInit {
    private http = inject(HttpClient);
    private auth = inject(AuthStore);
-   private territoriosService = inject(TerritoriosService);
    private API_URL = `${environment.apiUrl}/configuracion/`;
    private PERIODOS_URL = `${environment.apiUrl}/periodos/?limit=24`;
    config: Configuracion = {
@@ -59,6 +58,7 @@ export class ConfiguracionPage implements OnInit {
       tiene_sala_b: false,
       usa_zoom: true,
       id_periodo_informes_activo: null as number | null,
+      periodo_informes_automatico: 1,
       dia_reunion_entre_semana:  '',
       hora_reunion_entre_semana: '',
       dia_reunion_fin_semana:    '',
@@ -86,10 +86,6 @@ export class ConfiguracionPage implements OnInit {
    dropdownFinOpen     = signal(false);
    dropdownPeriodoOpen = signal(false);
    timePickerEntreOpen = signal(false);
-
-   // Tile provider
-   tileProvider = 'osm';
-   savingTileProvider = signal(false);
    timePickerFinOpen   = signal(false);
 
    readonly diasEntreSemana = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
@@ -113,12 +109,17 @@ export class ConfiguracionPage implements OnInit {
    }
 
    selectPeriodoInformes(periodo: any | null) {
-      this.config.id_periodo_informes_activo = periodo ? periodo.id_periodo : null;
+      if (periodo === null) {
+         this.config.periodo_informes_automatico = 1;
+      } else {
+         this.config.id_periodo_informes_activo = periodo.id_periodo;
+         this.config.periodo_informes_automatico = 0;
+      }
       this.dropdownPeriodoOpen.set(false);
    }
 
    getPeriodoLabel(): string {
-      if (!this.config.id_periodo_informes_activo) return 'Automático (Mes Anterior)';
+      if (this.config.periodo_informes_automatico === 1) return 'Automático (Mes Anterior)';
       const p = this.periodosDisponibles.find(x => x.id_periodo === this.config.id_periodo_informes_activo);
       return p ? p.nombre_periodo : 'Periodo seleccionado';
    }
@@ -187,7 +188,6 @@ export class ConfiguracionPage implements OnInit {
 
    ngOnInit() {
       this.loadConfig();
-      this.loadTileProvider();
       this.loadPeriodos();
    }
 
@@ -207,27 +207,6 @@ export class ConfiguracionPage implements OnInit {
           error: (err) => console.error('Error cargando periodos', err)
        });
     }
-
-   loadTileProvider() {
-      this.territoriosService.getTileProvider().subscribe({
-         next: (res) => this.tileProvider = res.tile_provider || 'osm',
-         error: () => this.tileProvider = 'osm',
-      });
-   }
-
-   saveTileProvider() {
-      this.savingTileProvider.set(true);
-      this.territoriosService.updateTileProvider(this.tileProvider).subscribe({
-         next: () => {
-            this.savingTileProvider.set(false);
-            this.showNotification('Proveedor de mapa actualizado', 'success');
-         },
-         error: () => {
-            this.savingTileProvider.set(false);
-            this.showNotification('Error al actualizar el proveedor de mapa', 'error');
-         },
-      });
-   }
 
    loadConfig() {
       this.loading.set(true);
@@ -257,7 +236,8 @@ export class ConfiguracionPage implements OnInit {
          codigo_seguridad:          this.config.codigo_seguridad,
          tiene_sala_b:              this.config.tiene_sala_b ? 1 : 0,
          usa_zoom:                  this.config.usa_zoom ? 1 : 0,
-         id_periodo_informes_activo: this.config.id_periodo_informes_activo,
+         id_periodo_informes_activo: this.config.periodo_informes_automatico === 1 ? this.config.id_periodo_informes_activo : this.config.id_periodo_informes_activo,
+         periodo_informes_automatico: this.config.periodo_informes_automatico,
          dia_reunion_entre_semana:  this.config.dia_reunion_entre_semana  || null,
          hora_reunion_entre_semana: this.config.hora_reunion_entre_semana || null,
          dia_reunion_fin_semana:    this.config.dia_reunion_fin_semana    || null,
@@ -338,6 +318,7 @@ export class ConfiguracionPage implements OnInit {
          !!this.config.tiene_sala_b !== !!this.originalConfig.tiene_sala_b ||
          !!this.config.usa_zoom !== !!this.originalConfig.usa_zoom ||
          this.config.id_periodo_informes_activo !== this.originalConfig.id_periodo_informes_activo ||
+         this.config.periodo_informes_automatico !== this.originalConfig.periodo_informes_automatico ||
          (this.config.dia_reunion_entre_semana  || '') !== (this.originalConfig.dia_reunion_entre_semana  || '') ||
          (this.config.hora_reunion_entre_semana || '') !== (this.originalConfig.hora_reunion_entre_semana || '') ||
          (this.config.dia_reunion_fin_semana    || '') !== (this.originalConfig.dia_reunion_fin_semana    || '') ||

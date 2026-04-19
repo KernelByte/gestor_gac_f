@@ -13,6 +13,7 @@ export interface Publicador {
   fecha_nacimiento?: string | null;
   sexo?: string | null;
   consentimiento_datos?: boolean;
+  archivo_consentimiento?: string | null;
   id_congregacion_publicador?: number | null;
   nombre_congregacion?: string | null;
   id_grupo_publicador?: number | null;

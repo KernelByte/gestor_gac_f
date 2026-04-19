@@ -17,4 +17,8 @@ export interface PublicadorRepo {
   delete(id: number): Promise<void>;
   exportExcel?(params?: PublicadorListParams): Promise<Blob | string>;
   exportPdf?(params?: PublicadorListParams): Promise<Blob | string>;
+  // Consentimiento PDF
+  uploadConsentimientoPdf(id: number, file: File): Promise<Publicador>;
+  downloadConsentimientoPdf(id: number): Promise<Blob>;
+  deleteConsentimientoPdf(id: number): Promise<Publicador>;
 }

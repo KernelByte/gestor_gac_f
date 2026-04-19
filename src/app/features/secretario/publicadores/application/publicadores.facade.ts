@@ -70,4 +70,30 @@ export class PublicadoresFacade {
   async exportPdf() {
     return this.repo.exportPdf?.(this.vm().params);
   }
+
+  // ── Consentimiento PDF ──────────────────────────────────────────────────
+
+  async uploadConsentimientoPdf(id: number, file: File): Promise<Publicador> {
+    const updated = await this.repo.uploadConsentimientoPdf(id, file);
+    // Actualizar el publicador en la lista local
+    this.vm.update((s: VM) => ({
+      ...s,
+      list: s.list.map(p => p.id_publicador === id ? { ...p, ...updated } : p),
+    }));
+    return updated;
+  }
+
+  async downloadConsentimientoPdf(id: number): Promise<Blob> {
+    return this.repo.downloadConsentimientoPdf(id);
+  }
+
+  async deleteConsentimientoPdf(id: number): Promise<Publicador> {
+    const updated = await this.repo.deleteConsentimientoPdf(id);
+    // Actualizar el publicador en la lista local
+    this.vm.update((s: VM) => ({
+      ...s,
+      list: s.list.map(p => p.id_publicador === id ? { ...p, ...updated } : p),
+    }));
+    return updated;
+  }
 }

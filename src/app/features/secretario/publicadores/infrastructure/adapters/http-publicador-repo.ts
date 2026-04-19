@@ -43,4 +43,28 @@ export class HttpPublicadorRepo implements PublicadorRepo {
   async exportPdf(params?: PublicadorListParams): Promise<Blob> {
     return await lastValueFrom(this.http.get(`${API_BASE}export/pdf`, { params: { ...(params || {}) }, responseType: 'blob' }));
   }
+
+  // ── Consentimiento PDF ──────────────────────────────────────────────────
+
+  async uploadConsentimientoPdf(id: number, file: File): Promise<Publicador> {
+    const formData = new FormData();
+    formData.append('archivo', file, file.name);
+    const dto = await lastValueFrom(
+      this.http.post<any>(`${API_BASE}${id}/consentimiento-pdf`, formData)
+    );
+    return dtoToModel(dto);
+  }
+
+  async downloadConsentimientoPdf(id: number): Promise<Blob> {
+    return await lastValueFrom(
+      this.http.get(`${API_BASE}${id}/consentimiento-pdf`, { responseType: 'blob' })
+    );
+  }
+
+  async deleteConsentimientoPdf(id: number): Promise<Publicador> {
+    const dto = await lastValueFrom(
+      this.http.delete<any>(`${API_BASE}${id}/consentimiento-pdf`)
+    );
+    return dtoToModel(dto);
+  }
 }

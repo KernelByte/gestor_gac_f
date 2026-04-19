@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { tap } from 'rxjs';
+import { tap, switchMap, catchError, of } from 'rxjs';
 import { TokenService } from './token.service';
 import { AuthStore, SessionUser } from './auth.store';
 import { environment } from '../../../environments/environment';
@@ -23,7 +23,10 @@ export class AuthService {
     return this.http.post<{ access_token: string; token_type: string }>(
       `${API}/auth/login`,
       body.toString(),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        withCredentials: true, // necesario para recibir la cookie refresh_token
+      }
     ).pipe(tap(res => this.tokens.setAccess(res.access_token)));
   }
 
@@ -36,10 +39,35 @@ export class AuthService {
     );
   }
 
+  /**
+   * Intenta restaurar la sesión al iniciar la app usando el refresh token (cookie HttpOnly).
+   * Si el refresh falla, la sesión queda vacía sin redirigir — el guard lo manejará.
+   */
+  tryRestoreSession() {
+    return this.http.post<{ access_token: string }>(
+      `${API}/auth/refresh`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      tap(res => this.tokens.setAccess(res.access_token)),
+      switchMap(() => this.me()),
+      catchError(() => of(null)), // sin sesión válida → continúa sin usuario
+    );
+  }
+
   logout() {
-    this.tokens.clear();
-    this.store.clear();
-    this.router.navigateByUrl('/login');
+    this.http.post(`${API}/auth/logout`, {}, { withCredentials: true }).subscribe({
+      complete: () => {
+        this.tokens.clear();
+        this.store.clear();
+        this.router.navigateByUrl('/login');
+      },
+      error: () => {
+        this.tokens.clear();
+        this.store.clear();
+        this.router.navigateByUrl('/login');
+      }
+    });
   }
 
   forgotPassword(email: string, codigo_seguridad: string) {

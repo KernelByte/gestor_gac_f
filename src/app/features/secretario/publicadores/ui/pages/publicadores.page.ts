@@ -511,21 +511,25 @@ interface TableColumn {
         <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto simple-scrollbar relative">
              
              <!-- 1. Mobile Card View (Visible < md) -->
-             <div class="md:hidden p-4 space-y-4 pb-4">
-                 <div *ngFor="let p of pagedList(); trackBy: trackById" class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 relative">
-                     <div class="flex items-start justify-between mb-4">
-                         <div class="flex items-center gap-3">
+             <div class="md:hidden p-3 space-y-3 pb-20">
+                 <div *ngFor="let p of pagedList(); trackBy: trackById" 
+                      (click)="openQuickView(p)"
+                      class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 relative flex flex-col gap-3 transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98] cursor-pointer">
+                     
+                     <div class="flex items-start justify-between gap-3">
+                         <div class="flex items-center gap-3 min-w-0">
                              <div 
-                                class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
+                                class="w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-[0.6875rem] shadow-sm ring-1 ring-white border border-white/50"
                                 [ngClass]="getAvatarStyle(getFullName(p))"
                             >
                                {{ getInitials(p) }}
                             </div>
-                            <div>
-                                <h3 class="font-bold text-slate-900 dark:text-white leading-tight mb-1">{{ p.primer_nombre }} {{ p.primer_apellido }}</h3>
-                                <div class="flex flex-wrap gap-1 items-center">
+                            <div class="min-w-0 flex flex-col">
+                                <h3 class="font-bold text-slate-900 dark:text-white leading-tight truncate">{{ p.primer_nombre }} {{ p.primer_apellido }}</h3>
+                                
+                                <div class="flex flex-wrap gap-1 items-center mt-1">
                                      <ng-container *ngFor="let role of getRoles(p)">
-                                          <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[0.625rem] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
+                                          <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-1.5 py-0.5 rounded text-[0.625rem] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
                                               {{ role.label }}
                                           </span>
                                           <span *ngIf="role.type === 'text'" class="text-[0.625rem] uppercase tracking-wider" [ngClass]="role.class">
@@ -533,62 +537,58 @@ interface TableColumn {
                                           </span>
                                      </ng-container>
                                 </div>
+
+                                <div class="flex items-center gap-1.5 mt-1 text-[0.6875rem] text-slate-500">
+                                    <span class="truncate font-medium">{{ getGrupoNombre(p.id_grupo_publicador) }}</span>
+                                    <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                    <span class="flex items-center gap-1 font-medium">
+                                        <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getEstadoDotClass(p.id_estado_publicador)"></span>
+                                        {{ getEstadoNombre(p.id_estado_publicador) }}
+                                    </span>
+                                </div>
                             </div>
                          </div>
-                          <!-- Estado Badge Mobile -->
-                         <span 
-                             class="inline-flex h-2.5 w-2.5 rounded-full"
-                             [ngClass]="getEstadoDotClass(p.id_estado_publicador)"
-                         ></span>
-                     </div>
 
-                     <!-- Info Grid -->
-                     <div class="grid grid-cols-2 gap-3 text-sm mb-3">
-                         <div class="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">
-                             <span class="block text-[0.625rem] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Grupo</span>
-                             <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ getGrupoNombre(p.id_grupo_publicador) }}</span>
-                         </div>
-                         <div class="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">
-                             <span class="block text-[0.625rem] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Estado</span>
-                             <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ getEstadoNombre(p.id_estado_publicador) }}</span>
-                         </div>
-                         <div class="bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg col-span-2 flex items-center gap-2">
-                              <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                              <span class="font-medium text-slate-600 dark:text-slate-300">{{ p.telefono || 'Sin teléfono' }}</span>
+                         <!-- Actions -->
+                         <div class="flex items-center gap-0.5 flex-shrink-0" *ngIf="canEditPublicadores()">
+                             <button (click)="openEditForm(p); $event.stopPropagation()" class="p-2 rounded-full text-slate-400 hover:text-brand-orange hover:bg-orange-50 dark:hover:bg-orange-900/20 active:scale-95 transition-[transform,background-color,color] ease-[cubic-bezier(0.32,0.72,0,1)] duration-200 outline-none">
+                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                             </button>
+                             <button (click)="confirmDelete(p); $event.stopPropagation()" class="p-2 -mr-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95 transition-[transform,background-color,color] ease-[cubic-bezier(0.32,0.72,0,1)] duration-200 outline-none">
+                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                             </button>
                          </div>
                      </div>
 
-                     <!-- Optional Columns (Mobile Chips) -->
-                     <div class="flex flex-wrap gap-1.5 mb-3" *ngIf="isMobileColVisible('sexo') && p.sexo || isMobileColVisible('direccion') && p.direccion || isMobileColVisible('barrio') && p.barrio || isMobileColVisible('consentimiento_datos')">
+                     <!-- Conditionally Visible Data (Chips) -->
+                     <div class="flex flex-wrap gap-1.5 pt-1" *ngIf="p.telefono || isMobileColVisible('fecha_bautismo') && p.fecha_bautismo || isMobileColVisible('sexo') && p.sexo || isMobileColVisible('direccion') && p.direccion || isMobileColVisible('barrio') && p.barrio">
+                         <!-- Telephone -->
+                         <a *ngIf="p.telefono" [href]="'tel:' + p.telefono" (click)="$event.stopPropagation()" class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-600 active:scale-[0.97] transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                              <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                              {{ p.telefono }}
+                         </a>
+                         
                          <span *ngIf="isMobileColVisible('sexo') && p.sexo"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold border"
+                             class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold border"
                              [ngClass]="p.sexo === 'M' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800/50' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800/50'">
-                             {{ p.sexo === 'M' ? '♂ Masculino' : '♀ Femenino' }}
+                             {{ p.sexo === 'M' ? '♂ Masc' : '♀ Fem' }}
                          </span>
+                         
+                         <span *ngIf="isMobileColVisible('fecha_bautismo') && p.fecha_bautismo"
+                             class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
+                             <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                             Bautismo: {{ formatDate(p.fecha_bautismo) }}
+                         </span>
+
                          <span *ngIf="isMobileColVisible('direccion') && p.direccion"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 max-w-[200px] truncate">
-                             <svg class="w-3 h-3 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                             class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 max-w-[200px] truncate">
+                             <svg class="w-3 h-3 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                              <span class="truncate">{{ p.direccion }}</span>
                          </span>
                          <span *ngIf="isMobileColVisible('barrio') && p.barrio && !isMobileColVisible('direccion')"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                             class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300">
                              Barrio: {{ p.barrio }}
                          </span>
-                         <span *ngIf="isMobileColVisible('consentimiento_datos')"
-                             class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[0.6875rem] font-bold border"
-                             [ngClass]="p.consentimiento_datos ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'">
-                             {{ p.consentimiento_datos ? '✓ Con consentimiento' : '✗ Sin consentimiento' }}
-                         </span>
-                     </div>
-
-                     <!-- Actions -->
-                     <div class="flex gap-2" *ngIf="canEditPublicadores()">
-                         <button (click)="openEditForm(p)" class="flex-1 py-2.5 rounded-xl bg-brand-orange/10 text-brand-orange font-bold text-xs hover:bg-brand-orange hover:text-white transition-colors">
-                             Editar
-                         </button>
-                         <button (click)="confirmDelete(p)" class="py-2.5 px-4 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
-                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                         </button>
                      </div>
                  </div>
                   <!-- Empty State Mobile -->
@@ -1165,6 +1165,75 @@ interface TableColumn {
                             </div>
                         </div>
                      </div>
+
+                     <!-- Section: Consentimiento PDF -->
+                     <div class="space-y-4" *ngIf="editingPublicador()">
+                         <div class="flex items-center gap-3 py-2">
+                             <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                             <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Consentimiento</span>
+                             <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                         </div>
+
+                         <!-- Estado actual del consentimiento -->
+                         <div class="p-4 rounded-xl border-2 transition-all"
+                             [ngClass]="editingPublicador()?.consentimiento_datos
+                               ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/40'
+                               : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 border-dashed'">
+                             
+                             <div class="flex items-center justify-between mb-3">
+                                 <div class="flex items-center gap-2">
+                                     <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                                         [ngClass]="editingPublicador()?.consentimiento_datos ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'">
+                                         <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                             <ng-container *ngIf="editingPublicador()?.consentimiento_datos"><polyline points="20 6 9 17 4 12"></polyline></ng-container>
+                                             <ng-container *ngIf="!editingPublicador()?.consentimiento_datos"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></ng-container>
+                                         </svg>
+                                     </div>
+                                     <div>
+                                         <p class="text-sm font-bold" [ngClass]="editingPublicador()?.consentimiento_datos ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'">
+                                             {{ editingPublicador()?.consentimiento_datos ? 'Consentimiento registrado' : 'Sin consentimiento' }}
+                                         </p>
+                                         <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5">
+                                             {{ editingPublicador()?.archivo_consentimiento ? 'Archivo PDF adjunto' : 'Sube el formulario firmado en PDF' }}
+                                         </p>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             <!-- Acciones del PDF -->
+                             <div class="flex flex-wrap gap-2">
+                                 <!-- Botón Subir / Actualizar PDF -->
+                                 <label class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all"
+                                     [ngClass]="uploadingPdf()
+                                       ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                                       : 'bg-brand-orange/10 text-brand-orange hover:bg-brand-orange hover:text-white'">
+                                     <svg *ngIf="!uploadingPdf()" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                     <svg *ngIf="uploadingPdf()" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
+                                     {{ editingPublicador()?.archivo_consentimiento ? 'Cambiar PDF' : 'Subir PDF' }}
+                                     <input type="file" accept=".pdf" class="hidden" (change)="onConsentimientoPdfSelected($event)" [disabled]="uploadingPdf()">
+                                 </label>
+
+                                 <!-- Botón Ver PDF (solo si hay archivo) -->
+                                 <button *ngIf="editingPublicador()?.archivo_consentimiento" type="button"
+                                     (click)="downloadConsentimientoPdf()"
+                                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all">
+                                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                     Ver PDF
+                                 </button>
+
+                                 <!-- Botón Eliminar PDF (solo si hay archivo) -->
+                                 <button *ngIf="editingPublicador()?.archivo_consentimiento" type="button"
+                                     (click)="deleteConsentimientoPdf()"
+                                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all">
+                                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                     Eliminar
+                                 </button>
+                             </div>
+
+                             <!-- Error message -->
+                             <p *ngIf="pdfError()" class="text-[0.6875rem] text-red-500 font-bold mt-2 animate-fadeIn">{{ pdfError() }}</p>
+                         </div>
+                     </div>
                 </div>
 
                 <!-- TAB: TEOCRÁTICO -->
@@ -1313,8 +1382,8 @@ interface TableColumn {
                                       <svg *ngIf="publicadorForm.get('ungido')?.value" class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                   </div>
                               </button>
-                           </div>
-                       </div>
+                                 </div>
+                        </div>
                        
                        <!-- Section: Privilegios (Only in Edit Mode) -->
                        <div *ngIf="editingPublicador()" class="pt-4 space-y-4 border-t border-slate-100 dark:border-slate-800 mt-4">
@@ -1625,17 +1694,20 @@ interface TableColumn {
       <!-- ═══════════════════════════════════════════════════════════════ -->
       <!-- QUICK VIEW MODAL                                              -->
       <!-- ═══════════════════════════════════════════════════════════════ -->
-      <div *ngIf="viewingPublicador()" class="fixed inset-0 z-[55] flex items-center justify-center p-4 md:p-6">
+      <div *ngIf="viewingPublicador()" class="fixed inset-0 z-[55] flex items-end md:items-center justify-center p-0 md:p-6">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="closeQuickView()"></div>
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closeQuickView()"></div>
 
         <!-- Card -->
-        <div class="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl shadow-slate-900/20 dark:shadow-black/60 border border-slate-100 dark:border-slate-800 overflow-hidden animate-fadeInUp">
+        <div class="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-t-[2rem] md:rounded-3xl shadow-2xl shadow-slate-900/40 dark:shadow-black/60 border border-transparent md:border-slate-100 md:dark:border-slate-800 overflow-hidden animate-fadeInUp mt-auto md:mt-0">
+          
+          <!-- Drawer Grabber for Mobile (Visual only) -->
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mt-3 md:hidden z-10 pointer-events-none"></div>
 
           <!-- ── Header ─────────────────────────────────────────────── -->
-          <div class="relative shrink-0 px-6 pt-6 pb-5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800">
-            <button (click)="closeQuickView()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <div class="relative shrink-0 px-6 pt-8 md:pt-6 pb-5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800">
+            <button (click)="closeQuickView()" class="absolute top-4 right-4 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[transform,background-color] ease-out duration-200 active:scale-90">
+              <svg class="w-5 h-5 md:w-4 md:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
             <div class="flex items-center gap-4">
               <!-- Avatar -->
@@ -1753,12 +1825,18 @@ interface TableColumn {
                       <ng-container *ngIf="!viewingPublicador()!.consentimiento_datos"><path d="M18 6L6 18M6 6l12 12"/></ng-container>
                     </svg>
                   </div>
-                  <div>
+                  <div class="flex-1">
                     <p class="text-[0.625rem] font-bold uppercase tracking-wider" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'">Consentimiento de datos</p>
                     <p class="text-sm font-bold mt-0.5" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">
                       {{ viewingPublicador()!.consentimiento_datos ? 'Ha dado consentimiento' : 'Sin consentimiento' }}
                     </p>
                   </div>
+                  <button *ngIf="viewingPublicador()!.archivo_consentimiento" type="button"
+                    (click)="viewConsentimientoPdfFromQuickView()"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[0.6875rem] font-bold bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all shadow-sm">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    PDF
+                  </button>
                 </div>
               </div>
             </div>
@@ -2050,6 +2128,10 @@ export class PublicadoresListComponent implements OnInit {
   publicadorToDelete = signal<Publicador | null>(null);
   activeTab = signal<TabType>('personal');
 
+  // Consentimiento PDF State
+  uploadingPdf = signal(false);
+  pdfError = signal<string | null>(null);
+
   // Client-Side Filter & Pagination State
   searchQuery = signal('');
   selectedEstado = signal<number | null>(null);
@@ -2093,7 +2175,7 @@ export class PublicadoresListComponent implements OnInit {
   });
 
   // ─── Column Manager ──────────────────────────────────────────────────────
-  private readonly COL_STORAGE_KEY = 'gac_pub_col_v1';
+  private readonly COL_STORAGE_KEY = 'gac_pub_col_v2';
   private _draggedColIdx: number | null = null;
   draggedColId = signal<string | null>(null);
   showColumnManager = signal(false);
@@ -2108,7 +2190,7 @@ export class PublicadoresListComponent implements OnInit {
     { id: 'sexo', label: 'Sexo', visible: false, optional: true },
     { id: 'direccion', label: 'Dirección', visible: false, optional: true },
     { id: 'barrio', label: 'Barrio', visible: false, optional: true },
-    { id: 'consentimiento_datos', label: 'Consentimiento', visible: false, optional: true },
+    { id: 'consentimiento_datos', label: 'Consentimiento', visible: true },
     { id: 'fecha_inicio_informe', label: 'Inicio Inf.', visible: false, optional: true },
     { id: 'fecha_inactividad', label: 'Inactividad', visible: false, optional: true },
   ];
@@ -3371,6 +3453,101 @@ export class PublicadoresListComponent implements OnInit {
     if (id !== null) {
       this.deletePublicadorPrivilegio(id);
       this.closeDeletePrivilegioModal();
+    }
+  }
+
+  // ─── Consentimiento PDF Handlers ─────────────────────────────────────────
+
+  async onConsentimientoPdfSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    // Validar tipo
+    if (file.type !== 'application/pdf') {
+      this.pdfError.set('Solo se permiten archivos PDF.');
+      input.value = '';
+      return;
+    }
+
+    // Validar tamaño (10 MB)
+    if (file.size > 10 * 1024 * 1024) {
+      this.pdfError.set('El archivo excede el tamaño máximo de 10 MB.');
+      input.value = '';
+      return;
+    }
+
+    const pub = this.editingPublicador();
+    if (!pub) return;
+
+    this.uploadingPdf.set(true);
+    this.pdfError.set(null);
+
+    try {
+      const updated = await this.facade.uploadConsentimientoPdf(pub.id_publicador, file);
+      // Actualizar publicador en edición con el nuevo estado
+      this.editingPublicador.set({ ...pub, ...updated });
+      
+      // Sincronizar el formulario para que al hacer Guardar Cambios no lo sobreescriba a falso
+      this.publicadorForm.patchValue({
+         consentimiento_datos: updated.consentimiento_datos
+      });
+
+      this.showToast('Consentimiento PDF subido correctamente', 'success');
+    } catch (err: any) {
+      this.pdfError.set(err?.error?.detail || err?.message || 'Error al subir el archivo.');
+    } finally {
+      this.uploadingPdf.set(false);
+      input.value = ''; // Reset input para permitir subir el mismo archivo
+    }
+  }
+
+  async downloadConsentimientoPdf() {
+    const pub = this.editingPublicador();
+    if (!pub) return;
+
+    try {
+      const blob = await this.facade.downloadConsentimientoPdf(pub.id_publicador);
+      // Abrir en nueva pestaña
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      // Liberar URL después de un momento
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (err: any) {
+      this.showToast(err?.error?.detail || 'Error al descargar el archivo.', 'error');
+    }
+  }
+
+  async deleteConsentimientoPdf() {
+    const pub = this.editingPublicador();
+    if (!pub) return;
+
+    try {
+      const updated = await this.facade.deleteConsentimientoPdf(pub.id_publicador);
+      this.editingPublicador.set({ ...pub, ...updated });
+
+      // Sincronizar el formulario para que al hacer Guardar Cambios envíe falso
+      this.publicadorForm.patchValue({
+         consentimiento_datos: updated.consentimiento_datos
+      });
+
+      this.showToast('Consentimiento PDF eliminado', 'success');
+    } catch (err: any) {
+      this.showToast(err?.error?.detail || 'Error al eliminar el archivo.', 'error');
+    }
+  }
+
+  async viewConsentimientoPdfFromQuickView() {
+    const pub = this.viewingPublicador();
+    if (!pub) return;
+
+    try {
+      const blob = await this.facade.downloadConsentimientoPdf(pub.id_publicador);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (err: any) {
+      this.showToast(err?.error?.detail || 'Error al descargar el archivo.', 'error');
     }
   }
 

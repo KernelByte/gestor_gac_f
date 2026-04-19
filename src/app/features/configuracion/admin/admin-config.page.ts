@@ -8,6 +8,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { AIConfigComponent } from './components/ai-config.component';
 import { DbBackupComponent } from './components/db-backup.component';
+import { SystemConfigComponent } from './components/system-config.component';
 
 interface CongregacionUrl {
    id_url: number;
@@ -65,7 +66,7 @@ interface SolicitudAcceso {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent],
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -95,7 +96,7 @@ export class AdminConfigPage implements OnInit {
    private route = inject(ActivatedRoute);
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
-   activeTab = signal<'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos' | 'solicitudes'>('congregaciones');
+   activeTab = signal<'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos' | 'solicitudes' | 'sistema'>('congregaciones');
    loading = signal(false);
 
    // Data Signals
@@ -155,7 +156,7 @@ export class AdminConfigPage implements OnInit {
          const tabParam = params['tab'];
          const savedTab = localStorage.getItem('admin_active_tab');
          const tabToSet = (tabParam || savedTab || 'congregaciones') as any;
-         const validTabs = ['congregaciones', 'auditoria', 'seguridad', 'ai', 'base-datos', 'solicitudes'];
+         const validTabs = ['congregaciones', 'auditoria', 'seguridad', 'ai', 'base-datos', 'solicitudes', 'sistema'];
 
          if (tabToSet && validTabs.includes(tabToSet)) {
             this.activeTab.set(tabToSet);
@@ -188,7 +189,7 @@ export class AdminConfigPage implements OnInit {
       });
    }
 
-   setTab(tab: 'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos' | 'solicitudes') {
+   setTab(tab: 'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos' | 'solicitudes' | 'sistema') {
       this.activeTab.set(tab);
       localStorage.setItem('admin_active_tab', tab);
 

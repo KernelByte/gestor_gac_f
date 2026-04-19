@@ -413,13 +413,21 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
       ].join(';');
 
       // Icono grip dentro del ghost
-      ghost.innerHTML = `
-        <svg width="12" height="16" viewBox="0 0 12 16" fill="rgba(255,255,255,0.6)" style="flex-shrink:0">
-          <circle cx="4" cy="3" r="1.5"/><circle cx="8" cy="3" r="1.5"/>
-          <circle cx="4" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/>
-          <circle cx="4" cy="13" r="1.5"/><circle cx="8" cy="13" r="1.5"/>
-        </svg>
-        <span>${grupo?.nombre_grupo ?? 'Grupo'}</span>`;
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('width', '12'); svg.setAttribute('height', '16');
+      svg.setAttribute('viewBox', '0 0 12 16');
+      svg.setAttribute('fill', 'rgba(255,255,255,0.6)');
+      svg.style.flexShrink = '0';
+      [[4,3],[8,3],[4,8],[8,8],[4,13],[8,13]].forEach(([cx, cy]) => {
+        const c = document.createElementNS(svgNS, 'circle');
+        c.setAttribute('cx', String(cx)); c.setAttribute('cy', String(cy)); c.setAttribute('r', '1.5');
+        svg.appendChild(c);
+      });
+      const span = document.createElement('span');
+      span.textContent = grupo?.nombre_grupo ?? 'Grupo';
+      ghost.appendChild(svg);
+      ghost.appendChild(span);
 
       this.document.body.appendChild(ghost);
       e.dataTransfer.setDragImage(ghost, 110, 22);

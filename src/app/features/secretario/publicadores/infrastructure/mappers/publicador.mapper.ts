@@ -15,6 +15,7 @@ export function dtoToModel(dto: any): Publicador {
     fecha_nacimiento: dto.fecha_nacimiento,
     sexo: dto.sexo,
     consentimiento_datos: dto.consentimiento_datos,
+    archivo_consentimiento: dto.archivo_consentimiento,
     id_congregacion_publicador: dto.id_congregacion_publicador,
     nombre_congregacion: dto.nombre_congregacion,
     id_grupo_publicador: dto.id_grupo_publicador,

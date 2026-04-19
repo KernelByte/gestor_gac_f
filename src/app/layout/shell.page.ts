@@ -406,7 +406,7 @@ export class TimeAgoPipe implements PipeTransform {
                 title="Menú de Usuario"
               >
                 <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-inner [text-shadow:_0_1px_2px_rgb(0_0_0_/_40%)]">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-inner [text-shadow:_0_1px_2px_rgb(0_0_0_/_40%)]">
                     {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
                   </div>
                   <div *ngIf="!collapsed()" class="flex flex-col items-start min-w-0 text-left">
@@ -423,7 +423,7 @@ export class TimeAgoPipe implements PipeTransform {
                    class="absolute bottom-[calc(100%+12px)] left-0 w-[240px] bg-white dark:bg-slate-900 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-black/60 ring-1 ring-slate-200 dark:ring-slate-800 z-50 overflow-hidden animate-fadeIn origin-bottom-left pb-1">
                  
                  <div class="px-4 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-inner">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-inner">
                       {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
                     </div>
                     <div class="flex flex-col min-w-0">
@@ -470,11 +470,49 @@ export class TimeAgoPipe implements PipeTransform {
             <span class="font-bold text-slate-800 dark:text-white text-sm tracking-tight truncate">{{ pageTitle().title }}</span>
           </div>
           
-          <!-- Quick action mobile (User profile just opens sidebar) -->
-          <div class="flex items-center" *ngIf="user() as u">
-             <button class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-xs font-bold shadow-sm" (click)="openMobileMenu()">
+          <!-- Quick action mobile (User profile popup) -->
+          <div class="flex items-center relative" *ngIf="user() as u">
+             <div *ngIf="mobileUserMenuOpen()" class="fixed inset-0 z-40" (click)="mobileUserMenuOpen.set(false)"></div>
+             <button 
+                id="mobile-user-menu-button"
+                class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-xs font-bold shadow-inner [text-shadow:_0_1px_2px_rgb(0_0_0_/_40%)] transition-all hover:opacity-90 active:scale-95" 
+                (click)="toggleMobileUserMenu()"
+                title="Menú de Usuario"
+             >
                 {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
              </button>
+
+             <!-- Mobile User Menu Popup (downwards) -->
+             <div *ngIf="mobileUserMenuOpen()" 
+                  id="mobile-user-menu-panel" 
+                  class="absolute top-[calc(100%+12px)] right-0 w-[240px] bg-white dark:bg-slate-900 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-black/60 ring-1 ring-slate-200 dark:ring-slate-800 z-50 overflow-hidden animate-fadeIn origin-top-right pb-1">
+                
+                <div class="px-4 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                   <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-inner">
+                     {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
+                   </div>
+                   <div class="flex flex-col min-w-0">
+                     <span class="text-sm font-bold text-slate-800 dark:text-white truncate">{{ u.nombre || u.username }}</span>
+                     <span class="text-[0.65rem] text-slate-500 truncate">{{ u.correo }}</span>
+                   </div>
+                </div>
+
+                <div class="p-1.5 space-y-0.5 mt-1">
+                  <button (click)="editProfile()" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-[0.8125rem] font-medium transition-colors">
+                    <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    Mi perfil
+                  </button>
+                </div>
+                <div class="px-3 py-1.5">
+                  <div class="h-px w-full bg-slate-100 dark:bg-slate-800"></div>
+                </div>
+                <div class="px-1.5 pb-1">
+                  <button (click)="logout()" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 text-red-600 dark:text-red-400 text-[0.8125rem] font-medium transition-colors">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    Cerrar sesión
+                  </button>
+                </div>
+             </div>
           </div>
         </header>
 
@@ -536,6 +574,7 @@ export class ShellPage implements OnInit, OnDestroy {
   collapsed = signal(false);
   mobileMenuOpen = signal(false);
   userMenuOpen = signal(false);
+  mobileUserMenuOpen = signal(false);
   notificationsOpen = signal(false);
   congregacionDropdownOpen = signal(false);
   congregacionesList = signal<{ id_congregacion: number; nombre_congregacion: string }[]>([]);
@@ -567,10 +606,17 @@ export class ShellPage implements OnInit, OnDestroy {
     try {
       const btn = document.getElementById('user-menu-button');
       const menu = document.getElementById('user-menu-panel');
+      const mBtn = document.getElementById('mobile-user-menu-button');
+      const mMenu = document.getElementById('mobile-user-menu-panel');
       const target = e.target as Node;
       if (this.userMenuOpen() && btn && menu && target) {
         if (!btn.contains(target) && !menu.contains(target)) {
           this.userMenuOpen.set(false);
+        }
+      }
+      if (this.mobileUserMenuOpen() && mBtn && mMenu && target) {
+        if (!mBtn.contains(target) && !mMenu.contains(target)) {
+          this.mobileUserMenuOpen.set(false);
         }
       }
     } catch (err) { }
@@ -697,6 +743,7 @@ export class ShellPage implements OnInit, OnDestroy {
   closeMobileMenu() { this.mobileMenuOpen.set(false); }
 
   toggleUserMenu() { this.userMenuOpen.update(v => !v); }
+  toggleMobileUserMenu() { this.mobileUserMenuOpen.update(v => !v); }
   toggleNotifications() { this.notificationsOpen.update(v => !v); }
 
   onNotificacionClick(n: Notificacion) {
@@ -725,11 +772,13 @@ export class ShellPage implements OnInit, OnDestroy {
 
   editProfile() {
     this.userMenuOpen.set(false);
+    this.mobileUserMenuOpen.set(false);
     this.router.navigate(['/perfil']);
   }
 
   openSettings() {
     this.userMenuOpen.set(false);
+    this.mobileUserMenuOpen.set(false);
   }
 
   toggleCongregacionDropdown(): void {

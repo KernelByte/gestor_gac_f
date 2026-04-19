@@ -136,6 +136,7 @@ export class UsuariosPage implements OnInit {
    pubSearch = signal('');
    selectedRolFilter = signal<number | null>(null); // Filter by role from query params
    searchQuery = signal(''); // Signal for reactive search
+   searchExpanded = signal(false); // UI state for search expansion
 
    searchControl = this.fb.control('');
 
