@@ -1,4 +1,5 @@
 import { Component, signal, computed, inject, OnInit, effect } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InformesService } from './services/informes.service';
@@ -37,7 +38,21 @@ export class InformesMainPage implements OnInit {
 
   private privilegiosService = inject(PrivilegiosService);
 
-  activeTab = signal(localStorage.getItem('informes_activeTab') || 'entrada');
+  private router = inject(Router);
+
+  activeTab = signal(this.resolveInitialTab());
+
+  /**
+   * Determina la pestaña inicial:
+   * - Si hay una navegación previa en el router → el usuario llegó desde otra ruta (sidebar) → 'entrada'
+   * - Si NO hay navegación previa → es un refresh o carga directa → restaurar desde localStorage
+   */
+  private resolveInitialTab(): string {
+    const hasPreviousNav = !!this.router.getCurrentNavigation()?.previousNavigation;
+    return hasPreviousNav
+      ? 'entrada'
+      : (localStorage.getItem('informes_activeTab') || 'entrada');
+  }
 
   constructor() {
     effect(() => {
@@ -47,6 +62,7 @@ export class InformesMainPage implements OnInit {
       this.loadUrlInformes();
     });
 
+    // Persiste la pestaña activa para restaurarla en caso de refresh
     effect(() => {
       localStorage.setItem('informes_activeTab', this.activeTab());
     });

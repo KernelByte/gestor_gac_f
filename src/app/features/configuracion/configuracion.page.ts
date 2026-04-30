@@ -31,6 +31,8 @@ interface Configuracion {
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; }
     .animate-fadeIn { animation: fadeIn 0.35s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   `],
    animations: [
       trigger('slideIn', [

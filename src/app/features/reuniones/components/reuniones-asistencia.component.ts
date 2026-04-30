@@ -139,11 +139,11 @@ import { saveAs } from 'file-saver';
                   grid gap-3 md:gap-4 2xl:gap-6
                   grid-cols-1
                   md:grid-cols-2 md:grid-rows-[auto_1fr]
-                  xl:grid-cols-[1fr_340px_280px] xl:grid-rows-1
+                  xl:grid-cols-[280px_1fr_320px] xl:grid-rows-1
                   pb-24 md:pb-0">
 
-        <!-- REGISTRO CARD — md: row1 col1 · xl: col2 (middle) -->
-        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-4 lg:p-5 relative overflow-hidden min-h-0 md:order-1 xl:order-2"
+        <!-- REGISTRO CARD — md: row1 col2 · xl: col2 (wider) -->
+        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-4 lg:p-5 relative overflow-hidden min-h-0 md:order-2 xl:order-2"
              [class.flex]="activeMobileTab() === 'registro'"
              [class.hidden]="activeMobileTab() !== 'registro'">
 
@@ -168,10 +168,10 @@ import { saveAs } from 'file-saver';
               </div>
             </div>
 
-            <div class="flex bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto custom-scrollbar">
+            <div class="flex gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl w-full sm:w-auto">
               @for (week of weeksArray(); track week) {
                 <button (click)="selectWeek(week)"
-                        class="press-btn shrink-0 h-9 px-3 rounded-xl text-xs font-black relative"
+                        class="press-btn flex-1 sm:flex-none sm:min-w-[3rem] h-9 px-1 rounded-xl text-xs font-black relative flex items-center justify-center"
                         [ngClass]="selectedWeek() === week ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
                   S{{ week }}
                   @if (weekHasData(week)) { <span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500"></span> }
@@ -250,8 +250,8 @@ import { saveAs } from 'file-saver';
           </div>
         </div>
 
-        <!-- RESUMEN MENSUAL CARD — md: row1 col2 · xl: col3 (narrowest) -->
-        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-4 lg:p-5 min-h-0 overflow-hidden md:order-2 xl:order-3"
+        <!-- RESUMEN MENSUAL CARD — md: row1 col1 · xl: col1 -->
+        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-4 lg:p-5 min-h-0 overflow-hidden md:order-1 xl:order-1"
              [class.flex]="activeMobileTab() === 'resumen'"
              [class.hidden]="activeMobileTab() !== 'resumen'">
           <div class="flex items-center gap-3 mb-4 shrink-0">
@@ -304,8 +304,8 @@ import { saveAs } from 'file-saver';
           </div>
         </div>
 
-        <!-- DESGLOSE ANUAL CARD — md: row2 full-width · xl: col1 (widest) -->
-        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm overflow-hidden md:col-span-2 md:order-3 xl:col-span-1 xl:order-1 min-h-0"
+        <!-- DESGLOSE ANUAL CARD — md: row2 full-width · xl: col3 (narrower) -->
+        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm overflow-hidden md:col-span-2 md:order-3 xl:col-span-1 xl:order-3 min-h-0"
              [class.flex]="activeMobileTab() === 'historial'"
              [class.hidden]="activeMobileTab() !== 'historial'">
           <div class="px-4 lg:px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/20 shrink-0">
@@ -437,58 +437,66 @@ import { saveAs } from 'file-saver';
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Compact attendance input — 52px tall, 1.5rem font */
+    /* Normalized attendance input */
     .attendance-input {
       width: 100%;
-      height: 3.25rem;
-      background-color: #f8fafc;
-      border: 3px solid transparent;
-      border-radius: 1rem;
+      height: 2.75rem; /* h-11 */
+      padding: 0 0.75rem;
+      background-color: #f8fafc; /* slate-50 */
+      border: 2px solid transparent;
+      border-radius: 0.75rem; /* rounded-xl */
       text-align: center;
-      font-size: 1.5rem;
-      font-weight: 900;
-      color: #0f172a;
+      font-size: 1.125rem; /* text-lg */
+      font-weight: 700; /* font-bold */
+      color: #1e293b; /* slate-800 */
       outline: none;
-      transition: background-color 200ms ease,
-                  border-color 200ms ease,
-                  box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1),
-                  transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
-      box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+      transition: all 200ms ease;
       -moz-appearance: textfield;
     }
     .attendance-input::-webkit-outer-spin-button,
     .attendance-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-    .attendance-input:focus {
-      background-color: white;
-      box-shadow: 0 12px 24px -8px rgba(0,0,0,0.08), inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+    .attendance-input:focus:not(:disabled) {
+      background-color: #ffffff;
     }
 
-    /* Lift-on-focus only on pointer devices (avoids jitter with touch keyboard) */
-    @media (hover: hover) and (pointer: fine) {
-      .attendance-input:focus { transform: translateY(-2px); }
+    .attendance-input--purple:hover:not(:disabled) { border-color: rgba(139, 92, 246, 0.3); }
+    .attendance-input--purple:focus:not(:disabled) {
+      border-color: #8b5cf6;
+      box-shadow: none;
     }
 
-    .attendance-input--purple:hover:not(:disabled) { border-color: rgba(139, 92, 246, 0.2); }
-    .attendance-input--purple:focus:not(:disabled) { border-color: #8b5cf6; }
-
-    .attendance-input--orange:hover:not(:disabled) { border-color: rgba(249, 115, 22, 0.2); }
-    .attendance-input--orange:focus:not(:disabled) { border-color: #f97316; }
+    .attendance-input--orange:hover:not(:disabled) { border-color: rgba(249, 115, 22, 0.3); }
+    .attendance-input--orange:focus:not(:disabled) {
+      border-color: #f97316;
+      box-shadow: none;
+    }
 
     :host-context(.dark) .attendance-input {
-      background-color: #0f172a;
-      color: #f1f5f9;
-      box-shadow: inset 0 2px 8px 0 rgb(0 0 0 / 0.4);
-    }
-    :host-context(.dark) .attendance-input:focus {
-      background-color: #1e293b;
-      box-shadow: 0 12px 32px -12px rgba(0,0,0,0.4), inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+      background-color: rgba(30, 41, 59, 0.5); /* slate-800/50 */
+      border-color: transparent;
+      color: #f1f5f9; /* slate-100 */
+      box-shadow: none;
     }
 
+    :host-context(.dark) .attendance-input:focus:not(:disabled) {
+      background-color: rgba(30, 41, 59, 0.8);
+    }
+    
+    /* Ensure dark mode border color overrides the transparent idle state */
+    :host-context(.dark) .attendance-input--purple:hover:not(:disabled) { border-color: rgba(139, 92, 246, 0.4); }
+    :host-context(.dark) .attendance-input--purple:focus:not(:disabled) { border-color: #8b5cf6; }
+    
+    :host-context(.dark) .attendance-input--orange:hover:not(:disabled) { border-color: rgba(249, 115, 22, 0.4); }
+    :host-context(.dark) .attendance-input--orange:focus:not(:disabled) { border-color: #f97316; }
+
     .attendance-input:disabled {
-      opacity: 0.3;
+      opacity: 0.5;
       cursor: not-allowed;
-      transform: none !important;
+      background-color: #f1f5f9;
+    }
+    :host-context(.dark) .attendance-input:disabled {
+      background-color: rgba(15, 23, 42, 0.5);
     }
 
     .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }

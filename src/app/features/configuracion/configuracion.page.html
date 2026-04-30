@@ -1,497 +1,273 @@
-<div class="w-full h-full flex flex-col p-3 sm:p-4 md:p-6 animate-fadeIn">
+<div class="flex flex-col gap-2 md:gap-3 2xl:gap-4 h-full overflow-hidden animate-fadeIn relative">
 
-   <!-- ── Header ── -->
-   <div class="flex items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4 shrink-0">
-      <div class="min-w-0">
-         <h1 class="text-xl sm:text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight truncate">
-            Configuración
-         </h1>
-         <p class="hidden sm:block text-base text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-            Congregación · Reuniones · Seguridad
-         </p>
-      </div>
-      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-         <span *ngIf="!canEdit()"
-            class="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-amber-200/60 dark:border-amber-700/40">
-            <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-               <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            <span class="hidden sm:inline">Solo lectura</span>
-            <span class="sm:hidden">Lectura</span>
-         </span>
-         <button *ngIf="canEdit()" (click)="save()" [disabled]="saving() || !hasChanges()"
-            class="relative px-3 sm:px-5 py-2 bg-brand-purple text-white text-sm font-bold rounded-xl shadow-md shadow-purple-500/20 hover:shadow-purple-500/35 active:scale-95 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed transition-all flex items-center gap-1.5 overflow-hidden"
-            style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), box-shadow 200ms ease, opacity 200ms ease">
-            <span *ngIf="saving()" class="absolute inset-0 flex items-center justify-center bg-brand-purple">
-               <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            </span>
-            <span [class.opacity-0]="saving()" class="flex items-center gap-1.5">
-               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-               </svg>
-               <span class="hidden sm:inline">Guardar cambios</span>
-               <span class="sm:hidden">Guardar</span>
-            </span>
-         </button>
+   <!-- Loading Overlay Global -->
+   <div *ngIf="loading()" class="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center rounded-2xl">
+      <div class="flex items-center gap-3 bg-white dark:bg-slate-800 px-5 py-3 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 border border-slate-100 dark:border-slate-700/60">
+         <div class="w-5 h-5 border-2 border-slate-200 dark:border-slate-700 border-t-brand-purple rounded-full animate-spin"></div>
+         <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Cargando configuración...</span>
       </div>
    </div>
 
-   <!-- ── Main Card ── -->
-   <div class="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm shadow-slate-200/50 dark:shadow-slate-950/40 flex flex-col overflow-hidden relative">
+   <!-- Contenedor Principal (Scrollable) -->
+   <div class="flex-1 overflow-y-auto pb-28 sm:pb-32 no-scrollbar">
+      <div class="space-y-6 sm:space-y-8">
 
-      <!-- Loading Overlay -->
-      <div *ngIf="loading()" class="absolute inset-0 bg-white/85 dark:bg-slate-900/85 backdrop-blur-sm z-50 flex items-center justify-center">
-         <div class="flex items-center gap-3">
-            <div class="w-5 h-5 border-2 border-slate-200 dark:border-slate-700 border-t-brand-purple rounded-full animate-spin"></div>
-            <span class="text-xs font-semibold text-slate-400">Cargando configuración...</span>
-         </div>
-      </div>
-
-      <div class="flex-1 overflow-y-auto">
-
-         <!-- ══ SECCIÓN: Información de la Congregación ══ -->
-         <div class="px-3 sm:px-5 md:px-7 pt-3 sm:pt-5 md:pt-6">
-            <!-- Section label -->
-            <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-               <div class="flex items-center gap-1.5 sm:gap-2">
-                  <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-blue-500/10 flex items-center justify-center">
-                     <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                     </svg>
-                  </div>
-                  <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Congregación</span>
+         <!-- ══ SECCIÓN: Congregación ══ -->
+         <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-4 sm:p-6 lg:p-8">
+            <div class="flex items-center gap-3 mb-6">
+               <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                  </svg>
                </div>
-               <div class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+               <div>
+                  <h2 class="text-lg font-black text-slate-900 dark:text-white tracking-tight">Congregación</h2>
+                  <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Información general y preferencias del salón</p>
+               </div>
             </div>
 
-            <!-- Fields grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-5">
+            <div class="space-y-6 sm:space-y-8">
+               <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-6">
+                  <!-- 1. Nombre -->
+                  <div class="sm:col-span-8 space-y-1.5">
+                     <label class="block text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Nombre de la Congregación</label>
+                     <input [(ngModel)]="config.nombre_congregacion" [readonly]="!canEdit()" type="text"
+                        class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-2 focus:ring-purple-400/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                        placeholder="Ej. Central">
+                  </div>
 
-               <!-- 1. Nombre (identificador principal) -->
-               <div class="sm:col-span-8 space-y-1.5">
-                  <label class="block text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nombre de la Congregación</label>
-                  <input [(ngModel)]="config.nombre_congregacion" [readonly]="!canEdit()" type="text"
-                     class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/15 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                     placeholder="Ej. Central">
+                  <!-- 2. Circuito -->
+                  <div class="sm:col-span-4 space-y-1.5">
+                     <label class="block text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Circuito</label>
+                     <input [(ngModel)]="config.circuito" [readonly]="!canEdit()" type="text"
+                        class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-2 focus:ring-purple-400/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                        placeholder="Ej. CO-01">
+                  </div>
+
+                  <!-- 3. Dirección -->
+                  <div class="sm:col-span-12 space-y-1.5">
+                     <label class="block text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Dirección del Salón del Reino</label>
+                     <input [(ngModel)]="config.direccion" [readonly]="!canEdit()" type="text"
+                        class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-2 focus:ring-purple-400/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                        placeholder="Calle Principal #123, Ciudad...">
+                  </div>
                </div>
 
-               <!-- 2. Circuito (identificador secundario) -->
-               <div class="sm:col-span-4 space-y-1.5">
-                  <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Circuito</label>
-                  <input [(ngModel)]="config.circuito" [readonly]="!canEdit()" type="text"
-                     class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/15 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                     placeholder="Ej. CO-01">
-               </div>
+               <div class="h-px w-full bg-slate-100 dark:bg-slate-800/80"></div>
 
-               <!-- 3. Dirección (ubicación física) -->
-               <div class="sm:col-span-12 space-y-1.5">
-                  <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dirección del Salón del Reino</label>
-                  <input [(ngModel)]="config.direccion" [readonly]="!canEdit()" type="text"
-                     class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-semibold focus:bg-white dark:focus:bg-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/15 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                     placeholder="Calle Principal #123, Ciudad...">
-               </div>
-
-               <!-- 4. Sala B (configuración del espacio físico) -->
-               <div class="sm:col-span-12">
-                  <label class="flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl cursor-pointer select-none hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 hover:border-indigo-200 dark:hover:border-indigo-800/50 transition-all active:scale-[0.99] group"
-                     style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, border-color 200ms ease">
-                     <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
-                           <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                           </svg>
-                        </div>
-                        <div class="min-w-0">
-                           <span class="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Sala B habilitada</span>
-                           <span class="hidden sm:block text-xs text-slate-400 dark:text-slate-500">Permite asignar discursos y partes en una sala auxiliar</span>
-                        </div>
+               <!-- Toggles y Dropdowns -->
+               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- 4. Sala B -->
+                  <label class="flex items-center justify-between gap-3 px-4 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl cursor-pointer select-none hover:border-brand-purple/40 dark:hover:border-purple-500/40 transition-all active:scale-[0.99]">
+                     <div class="flex flex-col min-w-0 pr-2">
+                        <span class="block text-sm font-bold text-slate-800 dark:text-slate-200">Sala Auxiliar (Sala B)</span>
+                        <span class="block text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 leading-snug">Habilita discursos y partes en sala auxiliar.</span>
                      </div>
                      <div class="shrink-0">
                         <input type="checkbox" [(ngModel)]="config.tiene_sala_b" [disabled]="!canEdit()" class="sr-only peer">
-                        <div class="w-10 h-[22px] sm:w-11 sm:h-6 bg-slate-200 dark:bg-slate-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[3px] after:bg-white after:rounded-full after:h-[18px] after:w-[18px] sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-indigo-500 relative"></div>
+                        <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 relative shadow-inner"></div>
                      </div>
                   </label>
-               </div>
 
-               <!-- 5. usa_zoom -->
-               <div class="sm:col-span-12">
-                  <label class="flex items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl cursor-pointer select-none hover:bg-sky-50/50 dark:hover:bg-sky-900/10 hover:border-sky-200 dark:hover:border-sky-800/50 transition-all active:scale-[0.99] group"
-                     style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, border-color 200ms ease">
-                     <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center shrink-0">
-                           <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                           </svg>
-                        </div>
-                        <div class="min-w-0">
-                           <span class="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Reuniones por Zoom</span>
-                           <span class="hidden sm:block text-xs text-slate-400 dark:text-slate-500">Muestra los campos de asistencia virtual</span>
-                        </div>
+                  <!-- 5. usa_zoom -->
+                  <label class="flex items-center justify-between gap-3 px-4 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl cursor-pointer select-none hover:border-brand-purple/40 dark:hover:border-purple-500/40 transition-all active:scale-[0.99]">
+                     <div class="flex flex-col min-w-0 pr-2">
+                        <span class="block text-sm font-bold text-slate-800 dark:text-slate-200">Videoconferencia</span>
+                        <span class="block text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 leading-snug">Asistencia virtual (Zoom/Meet).</span>
                      </div>
                      <div class="shrink-0">
                         <input type="checkbox" [(ngModel)]="config.usa_zoom" [disabled]="!canEdit()" class="sr-only peer">
-                        <div class="w-10 h-[22px] sm:w-11 sm:h-6 bg-slate-200 dark:bg-slate-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[3px] after:bg-white after:rounded-full after:h-[18px] after:w-[18px] sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-sky-500 relative"></div>
+                        <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500 relative shadow-inner"></div>
                      </div>
                   </label>
-               </div>
 
-               <!-- 6. Periodo Activo de Informes -->
-               <div class="sm:col-span-12">
-                  <label class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition-all group">
-                     <div class="flex items-center gap-2.5 sm:gap-3">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                           <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                           </svg>
+                  <!-- 6. Periodo Activo de Informes (Ocupa ambas columnas en MD si queremos, o solo una. Pongamoslo completo abajo) -->
+                  <div class="md:col-span-2 relative">
+                     <label class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl transition-all">
+                        <div class="flex flex-col min-w-0">
+                           <span class="block text-sm font-bold text-slate-800 dark:text-slate-200">Periodo de Informes Activo</span>
+                           <span class="block text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 leading-snug">"Automático" usa el mes anterior al actual.</span>
                         </div>
-                        <div class="min-w-0">
-                           <span class="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Periodo de Informes</span>
-                           <span class="hidden sm:block text-xs text-slate-400 dark:text-slate-500 max-w-sm">Si se deja vacío, el periodo activo de recolección de informes será siempre el mes anterior al actual.</span>
-                        </div>
-                     </div>
-                     <div class="relative shrink-0 sm:w-56">
-                        <!-- Backdrop -->
-                        <div *ngIf="dropdownPeriodoOpen()" class="fixed inset-0 z-[199]" (click)="dropdownPeriodoOpen.set(false)"></div>
-
-                        <!-- Trigger button -->
-                        <button type="button" [disabled]="!canEdit()"
-                           (click)="canEdit() && dropdownPeriodoOpen.set(!dropdownPeriodoOpen())"
-                           class="w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-xl text-sm font-semibold outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                           [class]="dropdownPeriodoOpen()
-                              ? 'border-emerald-400 ring-2 ring-emerald-400/15 text-slate-900 dark:text-white'
-                              : 'border-slate-200 dark:border-slate-700/60 text-slate-900 dark:text-white hover:border-emerald-300 dark:hover:border-emerald-700'">
-                           <span class="truncate" [class.text-emerald-600]="config.id_periodo_informes_activo" [class.dark:text-emerald-400]="config.id_periodo_informes_activo">
-                              {{ getPeriodoLabel() }}
-                           </span>
-                           <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200"
-                              [class.rotate-180]="dropdownPeriodoOpen()"
-                              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                           </svg>
-                        </button>
-
-                        <!-- Dropdown panel -->
-                        <div *ngIf="dropdownPeriodoOpen()"
-                           class="absolute right-0 top-full mt-1.5 w-full min-w-[14rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-lg shadow-slate-200/60 dark:shadow-slate-950/40 z-[200] overflow-hidden py-1">
-                           
-                           <!-- Automático -->
-                           <button type="button" (click)="selectPeriodoInformes(null)"
-                              class="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-left transition-colors"
-                              [class]="!config.id_periodo_informes_activo
-                                 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
-                              <span *ngIf="!config.id_periodo_informes_activo"
-                                 class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                              <span *ngIf="config.id_periodo_informes_activo"
-                                 class="w-1.5 h-1.5 shrink-0"></span>
-                              Automático (Mes Anterior)
+                        <div class="relative shrink-0 sm:w-64">
+                           <div *ngIf="dropdownPeriodoOpen()" class="fixed inset-0 z-[199]" (click)="dropdownPeriodoOpen.set(false)"></div>
+                           <button type="button" [disabled]="!canEdit()"
+                              (click)="canEdit() && dropdownPeriodoOpen.set(!dropdownPeriodoOpen())"
+                              class="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border rounded-xl text-sm font-bold outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                              [class]="dropdownPeriodoOpen()
+                                 ? 'border-emerald-400 ring-2 ring-emerald-400/20 text-slate-900 dark:text-white'
+                                 : 'border-slate-200 dark:border-slate-700/60 text-slate-900 dark:text-white hover:border-emerald-400/50 dark:hover:border-emerald-500/50'">
+                              <span class="truncate" [class.text-emerald-600]="config.id_periodo_informes_activo" [class.dark:text-emerald-400]="config.id_periodo_informes_activo">
+                                 {{ getPeriodoLabel() }}
+                              </span>
+                              <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200" [class.rotate-180]="dropdownPeriodoOpen()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                              </svg>
                            </button>
 
-                           <!-- Divider -->
-                           <div class="h-px bg-slate-100 dark:bg-slate-700/50 mx-2 my-1"></div>
-
-                           <!-- Lista de periodos -->
-                           <div class="max-h-52 overflow-y-auto overscroll-contain">
-                              <button *ngFor="let p of periodosDisponibles" type="button"
-                                 (click)="selectPeriodoInformes(p)"
-                                 class="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-left transition-colors"
-                                 [class]="config.id_periodo_informes_activo === p.id_periodo
-                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
-                                 <span *ngIf="config.id_periodo_informes_activo === p.id_periodo"
-                                    class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                                 <span *ngIf="config.id_periodo_informes_activo !== p.id_periodo"
-                                    class="w-1.5 h-1.5 shrink-0"></span>
-                                 {{ p.nombre_periodo }}
+                           <div *ngIf="dropdownPeriodoOpen()"
+                              class="absolute right-0 top-full mt-2 w-full min-w-[16rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-950/40 z-[200] overflow-hidden py-1.5">
+                              <button type="button" (click)="selectPeriodoInformes(null)"
+                                 class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-left transition-colors"
+                                 [class]="!config.id_periodo_informes_activo ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
+                                 <span *ngIf="!config.id_periodo_informes_activo" class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                 <span *ngIf="config.id_periodo_informes_activo" class="w-1.5 h-1.5 shrink-0"></span>
+                                 Automático (Mes Anterior)
                               </button>
+                              <div class="h-px bg-slate-100 dark:bg-slate-700/50 mx-3 my-1"></div>
+                              <div class="max-h-56 overflow-y-auto overscroll-contain">
+                                 <button *ngFor="let p of periodosDisponibles" type="button" (click)="selectPeriodoInformes(p)"
+                                    class="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-bold text-left transition-colors"
+                                    [class]="config.id_periodo_informes_activo === p.id_periodo ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
+                                    <span *ngIf="config.id_periodo_informes_activo === p.id_periodo" class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <span *ngIf="config.id_periodo_informes_activo !== p.id_periodo" class="w-1.5 h-1.5 shrink-0"></span>
+                                    {{ p.nombre_periodo }}
+                                 </button>
+                              </div>
                            </div>
                         </div>
-                     </div>
-                  </label>
+                     </label>
+                  </div>
                </div>
-
             </div>
          </div>
 
-         <!-- ══ SECCIÓN: Horario de Reuniones ══ -->
-         <div class="px-3 sm:px-5 md:px-7 pb-3 sm:pb-5 md:pb-6">
-            <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-               <div class="flex items-center gap-1.5 sm:gap-2">
-                  <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-violet-500/10 flex items-center justify-center">
-                     <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                     </svg>
-                  </div>
-                  <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Horario de Reuniones</span>
+         <!-- ══ SECCIÓN: Reuniones ══ -->
+         <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-4 sm:p-6 lg:p-8">
+            <div class="flex items-center gap-3 mb-6">
+               <div class="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+                  <svg class="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
                </div>
-               <div class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+               <div>
+                  <h2 class="text-lg font-black text-slate-900 dark:text-white tracking-tight">Horario de Reuniones</h2>
+                  <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Días y horas de congregación</p>
+               </div>
             </div>
 
-            <!-- Dos filas: Entre Semana y Fin de Semana -->
-            <div class="border border-slate-200/80 dark:border-slate-700/50 rounded-2xl divide-y divide-slate-200/80 dark:divide-slate-700/50">
-
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                <!-- Fila: Entre Semana -->
-               <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/20 hover:bg-violet-50/30 dark:hover:bg-violet-900/10 transition-colors">
-                  <!-- Label -->
-                  <div class="flex items-center gap-2 sm:gap-2.5 sm:w-40 shrink-0">
-                     <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-                        <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                     </div>
-                     <div>
-                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Entre Semana</span>
-                        <span class="hidden sm:block text-xs text-slate-400 dark:text-slate-500">Lunes a Viernes</span>
-                     </div>
+               <div class="flex flex-col p-5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl gap-4">
+                  <div>
+                     <span class="block text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Entre Semana</span>
+                     <span class="block text-[11px] font-bold text-slate-400 mt-1 uppercase">Vida y Ministerio Cristianos</span>
                   </div>
-                  <!-- Controls -->
-                  <div class="flex items-center gap-2 flex-1">
-
-                     <!-- Custom dropdown: Entre semana -->
-                     <div class="relative w-36 shrink-0">
-                        <!-- Backdrop para cerrar al hacer clic fuera -->
+                  
+                  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                     <!-- Dropdown día -->
+                     <div class="relative w-full sm:w-auto flex-1">
                         <div *ngIf="dropdownEntreOpen()" class="fixed inset-0 z-[199]" (click)="dropdownEntreOpen.set(false)"></div>
-
-                        <!-- Trigger button -->
                         <button type="button" [disabled]="!canEdit()"
                            (click)="canEdit() && dropdownEntreOpen.set(!dropdownEntreOpen())"
-                           class="w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-xl text-sm font-semibold outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                           [class]="dropdownEntreOpen()
-                              ? 'border-violet-400 ring-2 ring-violet-400/15 text-slate-900 dark:text-white'
-                              : 'border-slate-200 dark:border-slate-700/60 text-slate-900 dark:text-white hover:border-violet-300 dark:hover:border-violet-700'">
-                           <span [class.text-slate-400]="!config.dia_reunion_entre_semana" [class.dark:text-slate-500]="!config.dia_reunion_entre_semana">
+                           class="w-full flex items-center justify-between gap-2 px-4 py-3 bg-white dark:bg-slate-800 border rounded-xl text-sm font-bold outline-none transition-all"
+                           [class]="dropdownEntreOpen() ? 'border-violet-400 ring-2 ring-violet-400/20' : 'border-slate-200 dark:border-slate-700/60 hover:border-violet-300 dark:hover:border-violet-600'">
+                           <span [class.text-slate-400]="!config.dia_reunion_entre_semana">
                               {{ config.dia_reunion_entre_semana ? diasLabel[config.dia_reunion_entre_semana] : 'Día' }}
                            </span>
-                           <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200"
-                              [class.rotate-180]="dropdownEntreOpen()"
-                              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                           </svg>
+                           <svg class="w-4 h-4 text-slate-400" [class.rotate-180]="dropdownEntreOpen()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-
-                        <!-- Dropdown panel -->
-                        <div *ngIf="dropdownEntreOpen()"
-                           class="absolute left-0 top-full mt-1.5 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-lg shadow-slate-200/60 dark:shadow-slate-950/40 z-[200] overflow-hidden py-1">
-                           <button *ngFor="let dia of diasEntreSemana" type="button"
-                              (click)="selectDiaEntre(dia)"
-                              class="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-left transition-colors"
-                              [class]="config.dia_reunion_entre_semana === dia
-                                 ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400'
-                                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
-                              <span *ngIf="config.dia_reunion_entre_semana === dia"
-                                 class="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0"></span>
-                              <span *ngIf="config.dia_reunion_entre_semana !== dia"
-                                 class="w-1.5 h-1.5 shrink-0"></span>
+                        <div *ngIf="dropdownEntreOpen()" class="absolute left-0 top-full mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-xl z-[200] py-1.5">
+                           <button *ngFor="let dia of diasEntreSemana" type="button" (click)="selectDiaEntre(dia)"
+                              class="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-bold text-left"
+                              [class]="config.dia_reunion_entre_semana === dia ? 'bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
                               {{ diasLabel[dia] }}
                            </button>
                         </div>
                      </div>
 
-                     <!-- Custom time picker: Entre semana -->
-                     <div class="relative shrink-0">
+                     <!-- Time picker -->
+                     <div class="relative w-full sm:w-auto shrink-0">
                         <div *ngIf="timePickerEntreOpen()" class="fixed inset-0 z-[199]" (click)="timePickerEntreOpen.set(false)"></div>
-                        <button type="button" [disabled]="!canEdit()"
-                           (click)="canEdit() && timePickerEntreOpen.set(!timePickerEntreOpen())"
-                           class="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border rounded-xl text-sm font-bold tabular-nums outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                           [class]="timePickerEntreOpen()
-                              ? 'border-violet-400 ring-2 ring-violet-400/15 text-violet-600 dark:text-violet-400'
-                              : 'border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:border-violet-300'">
-                           <svg class="w-3.5 h-3.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                           </svg>
+                        <button type="button" [disabled]="!canEdit()" (click)="canEdit() && timePickerEntreOpen.set(!timePickerEntreOpen())"
+                           class="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-3 bg-white dark:bg-slate-800 border rounded-xl text-sm font-black tabular-nums transition-all"
+                           [class]="timePickerEntreOpen() ? 'border-violet-400 ring-2 ring-violet-400/20 text-violet-600 dark:text-violet-400' : 'border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-200'">
+                           <svg class="w-4 h-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                            <span *ngIf="config.hora_reunion_entre_semana">{{ formatDisplay(config.hora_reunion_entre_semana) }}</span>
-                           <span *ngIf="!config.hora_reunion_entre_semana" class="text-slate-400 font-semibold">--:--</span>
+                           <span *ngIf="!config.hora_reunion_entre_semana" class="text-slate-400">--:--</span>
                         </button>
-                        <!-- Panel -->
-                        <div *ngIf="timePickerEntreOpen()"
-                           class="absolute right-0 top-full mt-1.5 z-[200] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-lg shadow-slate-200/60 dark:shadow-slate-950/40 overflow-hidden flex">
-                           <!-- Horas -->
+                        <div *ngIf="timePickerEntreOpen()" class="absolute right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 z-[200] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-xl flex overflow-hidden">
                            <div class="flex flex-col border-r border-slate-100 dark:border-slate-700/50">
-                              <span class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 text-center border-b border-slate-100 dark:border-slate-700/50">H</span>
-                              <div class="overflow-y-auto max-h-44 py-1">
+                              <div class="overflow-y-auto max-h-44 py-1 no-scrollbar">
                                  <button *ngFor="let h of horas12" type="button" (click)="setHoraEntre(h)"
-                                    class="w-full px-4 py-1.5 text-sm font-bold tabular-nums text-center transition-colors"
-                                    [class]="get12Hour(config.hora_reunion_entre_semana) === h
-                                       ? 'bg-violet-500 text-white'
-                                       : 'text-slate-700 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20'">
-                                    {{ h }}
-                                 </button>
+                                    class="w-full px-4 py-2 text-sm font-black tabular-nums text-center hover:bg-violet-50 dark:hover:bg-violet-900/20"
+                                    [class]="get12Hour(config.hora_reunion_entre_semana) === h ? 'bg-violet-500 text-white' : 'text-slate-700 dark:text-slate-300'">{{ h }}</button>
                               </div>
                            </div>
-                           <!-- Minutos -->
                            <div class="flex flex-col border-r border-slate-100 dark:border-slate-700/50">
-                              <span class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 text-center border-b border-slate-100 dark:border-slate-700/50">M</span>
-                              <div class="overflow-y-auto max-h-44 py-1">
+                              <div class="overflow-y-auto max-h-44 py-1 no-scrollbar">
                                  <button *ngFor="let m of minutos" type="button" (click)="setMinutoEntre(m)"
-                                    class="w-full px-4 py-1.5 text-sm font-bold tabular-nums text-center transition-colors"
-                                    [class]="getMinuto(config.hora_reunion_entre_semana) === m
-                                       ? 'bg-violet-500 text-white'
-                                       : 'text-slate-700 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20'">
-                                    {{ m }}
-                                 </button>
+                                    class="w-full px-4 py-2 text-sm font-black tabular-nums text-center hover:bg-violet-50 dark:hover:bg-violet-900/20"
+                                    [class]="getMinuto(config.hora_reunion_entre_semana) === m ? 'bg-violet-500 text-white' : 'text-slate-700 dark:text-slate-300'">{{ m }}</button>
                               </div>
                            </div>
-                           <!-- AM / PM -->
-                           <div class="flex flex-col">
-                              <span class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 text-center border-b border-slate-100 dark:border-slate-700/50">&nbsp;</span>
-                              <div class="flex flex-col justify-center gap-1 px-2 py-2 h-full">
-                                 <button *ngFor="let p of periodos" type="button" (click)="setPeriodoEntre(p)"
-                                    class="px-3 py-1.5 text-xs font-black rounded-lg transition-colors"
-                                    [class]="getPeriodo(config.hora_reunion_entre_semana) === p
-                                       ? 'bg-violet-500 text-white'
-                                       : 'text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'">
-                                    {{ p }}
-                                 </button>
-                              </div>
+                           <div class="flex flex-col p-2 gap-1 justify-center">
+                              <button *ngFor="let p of periodos" type="button" (click)="setPeriodoEntre(p)"
+                                 class="px-4 py-2 text-xs font-black rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20"
+                                 [class]="getPeriodo(config.hora_reunion_entre_semana) === p ? 'bg-violet-500 text-white' : 'text-slate-500'">{{ p }}</button>
                            </div>
                         </div>
-                     </div>
-
-                     <!-- Confirmación (solo desktop, en móvil ya se ve en los controles) -->
-                     <div class="hidden sm:flex flex-1 justify-end">
-                        <span *ngIf="config.dia_reunion_entre_semana && config.hora_reunion_entre_semana"
-                           class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg text-xs font-bold whitespace-nowrap">
-                           <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                           </svg>
-                           {{ diasLabel[config.dia_reunion_entre_semana] }} · {{ formatDisplay(config.hora_reunion_entre_semana) }}
-                        </span>
-                        <span *ngIf="!config.dia_reunion_entre_semana || !config.hora_reunion_entre_semana"
-                           class="text-xs text-slate-400 dark:text-slate-600 italic">Sin configurar</span>
                      </div>
                   </div>
                </div>
 
                <!-- Fila: Fin de Semana -->
-               <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/20 hover:bg-amber-50/30 dark:hover:bg-amber-900/10 transition-colors">
-                  <!-- Label -->
-                  <div class="flex items-center gap-2 sm:gap-2.5 sm:w-40 shrink-0">
-                     <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                        <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
-                     </div>
-                     <div>
-                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Fin de Semana</span>
-                        <span class="hidden sm:block text-xs text-slate-400 dark:text-slate-500">Sábado o Domingo</span>
-                     </div>
+               <div class="flex flex-col p-5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl gap-4">
+                  <div>
+                     <span class="block text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Fin de Semana</span>
+                     <span class="block text-[11px] font-bold text-slate-400 mt-1 uppercase">Discurso y Estudio de La Atalaya</span>
                   </div>
-                  <!-- Controls -->
-                  <div class="flex items-center gap-2 flex-1">
-
-                     <!-- Custom dropdown: Fin de semana -->
-                     <div class="relative w-36 shrink-0">
-                        <!-- Backdrop para cerrar al hacer clic fuera -->
+                  
+                  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                     <div class="relative w-full sm:w-auto flex-1">
                         <div *ngIf="dropdownFinOpen()" class="fixed inset-0 z-[199]" (click)="dropdownFinOpen.set(false)"></div>
-
-                        <!-- Trigger button -->
                         <button type="button" [disabled]="!canEdit()"
                            (click)="canEdit() && dropdownFinOpen.set(!dropdownFinOpen())"
-                           class="w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-xl text-sm font-semibold outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                           [class]="dropdownFinOpen()
-                              ? 'border-amber-400 ring-2 ring-amber-400/15 text-slate-900 dark:text-white'
-                              : 'border-slate-200 dark:border-slate-700/60 text-slate-900 dark:text-white hover:border-amber-300 dark:hover:border-amber-700'">
-                           <span [class.text-slate-400]="!config.dia_reunion_fin_semana" [class.dark:text-slate-500]="!config.dia_reunion_fin_semana">
+                           class="w-full flex items-center justify-between gap-2 px-4 py-3 bg-white dark:bg-slate-800 border rounded-xl text-sm font-bold outline-none transition-all"
+                           [class]="dropdownFinOpen() ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-200 dark:border-slate-700/60 hover:border-amber-300 dark:hover:border-amber-600'">
+                           <span [class.text-slate-400]="!config.dia_reunion_fin_semana">
                               {{ config.dia_reunion_fin_semana ? diasLabel[config.dia_reunion_fin_semana] : 'Día' }}
                            </span>
-                           <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200"
-                              [class.rotate-180]="dropdownFinOpen()"
-                              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                           </svg>
+                           <svg class="w-4 h-4 text-slate-400" [class.rotate-180]="dropdownFinOpen()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-
-                        <!-- Dropdown panel -->
-                        <div *ngIf="dropdownFinOpen()"
-                           class="absolute left-0 top-full mt-1.5 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-lg shadow-slate-200/60 dark:shadow-slate-950/40 z-[200] overflow-hidden py-1">
-                           <button *ngFor="let dia of diasFinSemana" type="button"
-                              (click)="selectDiaFin(dia)"
-                              class="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-left transition-colors"
-                              [class]="config.dia_reunion_fin_semana === dia
-                                 ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
-                                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
-                              <span *ngIf="config.dia_reunion_fin_semana === dia"
-                                 class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
-                              <span *ngIf="config.dia_reunion_fin_semana !== dia"
-                                 class="w-1.5 h-1.5 shrink-0"></span>
+                        <div *ngIf="dropdownFinOpen()" class="absolute left-0 top-full mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-xl z-[200] py-1.5">
+                           <button *ngFor="let dia of diasFinSemana" type="button" (click)="selectDiaFin(dia)"
+                              class="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-bold text-left"
+                              [class]="config.dia_reunion_fin_semana === dia ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
                               {{ diasLabel[dia] }}
                            </button>
                         </div>
                      </div>
 
-                     <!-- Custom time picker: Fin de semana -->
-                     <div class="relative shrink-0">
+                     <div class="relative w-full sm:w-auto shrink-0">
                         <div *ngIf="timePickerFinOpen()" class="fixed inset-0 z-[199]" (click)="timePickerFinOpen.set(false)"></div>
-                        <button type="button" [disabled]="!canEdit()"
-                           (click)="canEdit() && timePickerFinOpen.set(!timePickerFinOpen())"
-                           class="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border rounded-xl text-sm font-bold tabular-nums outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                           [class]="timePickerFinOpen()
-                              ? 'border-amber-400 ring-2 ring-amber-400/15 text-amber-600 dark:text-amber-400'
-                              : 'border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:border-amber-300'">
-                           <svg class="w-3.5 h-3.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                           </svg>
+                        <button type="button" [disabled]="!canEdit()" (click)="canEdit() && timePickerFinOpen.set(!timePickerFinOpen())"
+                           class="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-3 bg-white dark:bg-slate-800 border rounded-xl text-sm font-black tabular-nums transition-all"
+                           [class]="timePickerFinOpen() ? 'border-amber-400 ring-2 ring-amber-400/20 text-amber-600 dark:text-amber-400' : 'border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-200'">
+                           <svg class="w-4 h-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                            <span *ngIf="config.hora_reunion_fin_semana">{{ formatDisplay(config.hora_reunion_fin_semana) }}</span>
-                           <span *ngIf="!config.hora_reunion_fin_semana" class="text-slate-400 font-semibold">--:--</span>
+                           <span *ngIf="!config.hora_reunion_fin_semana" class="text-slate-400">--:--</span>
                         </button>
-                        <!-- Panel -->
-                        <div *ngIf="timePickerFinOpen()"
-                           class="absolute right-0 top-full mt-1.5 z-[200] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-lg shadow-slate-200/60 dark:shadow-slate-950/40 overflow-hidden flex">
-                           <!-- Horas -->
+                        <div *ngIf="timePickerFinOpen()" class="absolute right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 z-[200] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl shadow-xl flex overflow-hidden">
                            <div class="flex flex-col border-r border-slate-100 dark:border-slate-700/50">
-                              <span class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 text-center border-b border-slate-100 dark:border-slate-700/50">H</span>
-                              <div class="overflow-y-auto max-h-44 py-1">
+                              <div class="overflow-y-auto max-h-44 py-1 no-scrollbar">
                                  <button *ngFor="let h of horas12" type="button" (click)="setHoraFin(h)"
-                                    class="w-full px-4 py-1.5 text-sm font-bold tabular-nums text-center transition-colors"
-                                    [class]="get12Hour(config.hora_reunion_fin_semana) === h
-                                       ? 'bg-amber-500 text-white'
-                                       : 'text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-900/20'">
-                                    {{ h }}
-                                 </button>
+                                    class="w-full px-4 py-2 text-sm font-black tabular-nums text-center hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                    [class]="get12Hour(config.hora_reunion_fin_semana) === h ? 'bg-amber-500 text-white' : 'text-slate-700 dark:text-slate-300'">{{ h }}</button>
                               </div>
                            </div>
-                           <!-- Minutos -->
                            <div class="flex flex-col border-r border-slate-100 dark:border-slate-700/50">
-                              <span class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 text-center border-b border-slate-100 dark:border-slate-700/50">M</span>
-                              <div class="overflow-y-auto max-h-44 py-1">
+                              <div class="overflow-y-auto max-h-44 py-1 no-scrollbar">
                                  <button *ngFor="let m of minutos" type="button" (click)="setMinutoFin(m)"
-                                    class="w-full px-4 py-1.5 text-sm font-bold tabular-nums text-center transition-colors"
-                                    [class]="getMinuto(config.hora_reunion_fin_semana) === m
-                                       ? 'bg-amber-500 text-white'
-                                       : 'text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-900/20'">
-                                    {{ m }}
-                                 </button>
+                                    class="w-full px-4 py-2 text-sm font-black tabular-nums text-center hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                    [class]="getMinuto(config.hora_reunion_fin_semana) === m ? 'bg-amber-500 text-white' : 'text-slate-700 dark:text-slate-300'">{{ m }}</button>
                               </div>
                            </div>
-                           <!-- AM / PM -->
-                           <div class="flex flex-col">
-                              <span class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 text-center border-b border-slate-100 dark:border-slate-700/50">&nbsp;</span>
-                              <div class="flex flex-col justify-center gap-1 px-2 py-2 h-full">
-                                 <button *ngFor="let p of periodos" type="button" (click)="setPeriodoFin(p)"
-                                    class="px-3 py-1.5 text-xs font-black rounded-lg transition-colors"
-                                    [class]="getPeriodo(config.hora_reunion_fin_semana) === p
-                                       ? 'bg-amber-500 text-white'
-                                       : 'text-slate-500 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'">
-                                    {{ p }}
-                                 </button>
-                              </div>
+                           <div class="flex flex-col p-2 gap-1 justify-center">
+                              <button *ngFor="let p of periodos" type="button" (click)="setPeriodoFin(p)"
+                                 class="px-4 py-2 text-xs font-black rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                 [class]="getPeriodo(config.hora_reunion_fin_semana) === p ? 'bg-amber-500 text-white' : 'text-slate-500'">{{ p }}</button>
                            </div>
                         </div>
-                     </div>
-
-                     <!-- Confirmación (solo desktop, en móvil ya se ve en los controles) -->
-                     <div class="hidden sm:flex flex-1 justify-end">
-                        <span *ngIf="config.dia_reunion_fin_semana && config.hora_reunion_fin_semana"
-                           class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-bold whitespace-nowrap">
-                           <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                           </svg>
-                           {{ diasLabel[config.dia_reunion_fin_semana] }} · {{ formatDisplay(config.hora_reunion_fin_semana) }}
-                        </span>
-                        <span *ngIf="!config.dia_reunion_fin_semana || !config.hora_reunion_fin_semana"
-                           class="text-xs text-slate-400 dark:text-slate-600 italic">Sin configurar</span>
                      </div>
                   </div>
                </div>
@@ -500,89 +276,114 @@
          </div>
 
          <!-- ══ SECCIÓN: Seguridad ══ -->
-         <div class="px-3 sm:px-5 md:px-7 pb-3 sm:pb-5 md:pb-6">
-            <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-               <div class="flex items-center gap-1.5 sm:gap-2">
-                  <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-rose-500/10 flex items-center justify-center">
-                     <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                     </svg>
-                  </div>
-                  <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Seguridad</span>
+         <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-4 sm:p-6 lg:p-8">
+            <div class="flex items-center gap-3 mb-6">
+               <div class="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0">
+                  <svg class="w-5 h-5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                  </svg>
                </div>
-               <div class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+               <div>
+                  <h2 class="text-lg font-black text-slate-900 dark:text-white tracking-tight">Seguridad</h2>
+                  <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Control de acceso y PIN de operaciones</p>
+               </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20">
-               <!-- Label -->
-               <div class="flex items-center gap-2 sm:gap-2.5 sm:w-40 shrink-0">
-                  <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
-                     <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-                     </svg>
-                  </div>
-                  <div>
-                     <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Código</span>
-                     <span class="hidden sm:block text-xs text-slate-400 dark:text-slate-500">Para operaciones críticas</span>
-                  </div>
+            <div class="flex flex-col md:flex-row gap-5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 sm:p-5 items-start md:items-center">
+               <div class="flex flex-col min-w-0 md:w-1/2">
+                  <span class="block text-sm font-bold text-slate-800 dark:text-slate-200">Código de Autorización</span>
+                  <span class="block text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Este PIN permite ingresar rápidamente informando tu actividad sin exponer la configuración del motor.</span>
                </div>
-               <!-- Controls -->
-               <div class="flex items-center gap-2 flex-1">
+               
+               <div class="flex items-center gap-3 w-full md:w-1/2 shrink-0">
                   <div class="relative flex-1">
                      <input [type]="showSecurityCode() ? 'text' : 'password'" [(ngModel)]="config.codigo_seguridad"
                         [readonly]="!canEdit()"
-                        class="w-full pl-3 pr-9 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-bold tracking-widest focus:border-rose-400 focus:ring-2 focus:ring-rose-400/15 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:tracking-normal"
-                        placeholder="Código de acceso">
+                        class="w-full pl-4 pr-12 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-center text-slate-900 dark:text-white font-black tracking-[0.2em] focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:tracking-normal placeholder:font-semibold"
+                        placeholder="CÓDIGO SECRETO">
                      <button type="button" (click)="showSecurityCode.set(!showSecurityCode())"
-                        class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-300 hover:text-rose-400 transition-colors">
-                        <svg *ngIf="!showSecurityCode()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                        <svg *ngIf="showSecurityCode()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
-                        </svg>
+                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-rose-500 transition-colors">
+                        <svg *ngIf="!showSecurityCode()" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        <svg *ngIf="showSecurityCode()" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                      </button>
                   </div>
                   <button *ngIf="canEdit()" type="button" (click)="regenerateSecurityCode()" [disabled]="generatingCode()"
-                     class="shrink-0 flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 text-[11px] sm:text-xs font-bold text-rose-500 border border-rose-200 dark:border-rose-800/50 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all active:scale-95 disabled:opacity-40"
-                     style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, opacity 200ms ease">
-                     <svg *ngIf="!generatingCode()" class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                     </svg>
-                     <span *ngIf="generatingCode()" class="w-3 h-3 sm:w-3.5 sm:h-3.5 block border-2 border-rose-200 border-t-rose-500 rounded-full animate-spin"></span>
-                     <span class="hidden sm:inline">Regenerar</span>
-                     <span class="sm:hidden">Regen.</span>
+                     class="shrink-0 flex items-center justify-center w-12 h-12 text-rose-500 border border-rose-200 dark:border-rose-800/50 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all active:scale-95 disabled:opacity-40 shadow-sm"
+                     title="Regenerar código aleatorio">
+                     <svg *ngIf="!generatingCode()" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                     <span *ngIf="generatingCode()" class="w-5 h-5 block border-2 border-rose-200 border-t-rose-500 rounded-full animate-spin"></span>
                   </button>
                </div>
             </div>
          </div>
 
+      </div>
    </div>
 
-   <!-- ── Toast ── -->
-   <div *ngIf="notification()" class="fixed bottom-4 right-4 max-w-xs z-50" @slideIn>
+   <!-- ── Floating Action Bar (Sticky Footer) ── -->
+   <div class="absolute bottom-4 sm:bottom-6 left-0 right-0 px-4 flex justify-center pointer-events-none z-40">
+      <div class="pointer-events-auto w-full max-w-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700/80 shadow-2xl shadow-slate-900/10 rounded-2xl p-2 sm:p-2.5 flex items-center justify-between transition-all duration-300"
+           [class.translate-y-24]="!hasChanges() && !canEdit()"> <!-- Si no se puede editar y no hay cambios, tal vez no es tan necesario, pero mantenlo simple -->
+         
+         <!-- Estado -->
+         <div class="flex items-center px-2 sm:px-3 text-xs sm:text-sm font-bold">
+            <span *ngIf="hasChanges() && canEdit()" class="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+               <span class="relative flex h-2.5 w-2.5">
+                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+               </span>
+               <span class="hidden sm:inline">Tienes cambios sin guardar</span>
+               <span class="sm:hidden">Sin guardar</span>
+            </span>
+            <span *ngIf="!hasChanges() && canEdit()" class="flex items-center gap-2 text-slate-400 dark:text-slate-500">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+               Todo al día
+            </span>
+            <span *ngIf="!canEdit()" class="flex items-center gap-2 text-slate-500">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+               Modo lectura
+            </span>
+         </div>
+         
+         <!-- Acciones -->
+         <div class="flex items-center">
+            <button *ngIf="canEdit()" (click)="save()" [disabled]="saving() || !hasChanges()"
+               class="relative px-5 sm:px-6 py-2.5 sm:py-3 bg-brand-purple text-white text-[13px] sm:text-sm font-black uppercase tracking-wide rounded-xl shadow-md shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0 disabled:cursor-not-allowed transition-all flex items-center gap-2 overflow-hidden"
+               style="transition: all 250ms cubic-bezier(0.23,1,0.32,1)">
+               <span *ngIf="saving()" class="absolute inset-0 flex items-center justify-center bg-brand-purple">
+                  <div class="w-5 h-5 border-[2.5px] border-white/30 border-t-white rounded-full animate-spin"></div>
+               </span>
+               <span [class.opacity-0]="saving()" class="flex items-center gap-2">
+                  <svg class="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <span>Guardar</span>
+               </span>
+            </button>
+         </div>
+      </div>
+   </div>
+
+   <!-- ── Toast Notificaciones ── -->
+   <div *ngIf="notification()" class="fixed top-4 right-4 max-w-xs z-[100]" @slideIn>
       <div [ngClass]="{
-            'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/40 dark:border-emerald-800 dark:text-emerald-300': notification()?.type === 'success',
-            'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-900/40 dark:border-rose-800 dark:text-rose-300': notification()?.type === 'error'
-         }" class="flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm">
+            'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/80 dark:border-emerald-800 dark:text-emerald-300': notification()?.type === 'success',
+            'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-900/80 dark:border-rose-800 dark:text-rose-300': notification()?.type === 'error'
+         }" class="flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-xl backdrop-blur-md">
          <div [ngClass]="{
                'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/60': notification()?.type === 'success',
                'bg-rose-100 text-rose-600 dark:bg-rose-900/60': notification()?.type === 'error'
-            }" class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
-            <svg *ngIf="notification()?.type === 'success'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            }" class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
+            <svg *ngIf="notification()?.type === 'success'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
-            <svg *ngIf="notification()?.type === 'error'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <svg *ngIf="notification()?.type === 'error'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
          </div>
-         <p class="text-xs font-semibold flex-1">{{ notification()?.message }}</p>
-         <button (click)="notification.set(null)" class="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-all shrink-0">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+         <p class="text-[13px] font-bold flex-1 leading-tight">{{ notification()?.message }}</p>
+         <button (click)="notification.set(null)" class="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-all shrink-0">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
             </svg>
          </button>

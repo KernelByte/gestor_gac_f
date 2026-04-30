@@ -882,7 +882,7 @@ interface TableColumn {
     <div 
       class="shrink-0 flex flex-col overflow-hidden transition-[width,opacity,margin] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:h-auto"
       [ngClass]="panelOpen()
-        ? 'w-full opacity-100 md:w-[480px] md:ml-5'
+        ? 'w-full opacity-100 md:w-[420px] md:ml-4'
         : 'w-0 opacity-0 md:ml-0'"
     >
       <!-- Inner Container with premium styling -->
@@ -895,13 +895,13 @@ interface TableColumn {
              <div class="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-orange-900/10 transition-colors duration-500"></div>
              <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-orange-100/40 to-transparent dark:from-orange-500/10 dark:to-transparent rounded-full -mr-16 -mt-16 blur-3xl"></div>
              
-             <div class="relative px-4 pt-4 pb-2 md:px-8 md:pt-8 md:pb-4">
+             <div class="relative px-4 pt-4 pb-2 md:px-5 md:pt-5 md:pb-3">
                 <div class="flex items-start justify-between">
-                     <div class="flex gap-4">
+                     <div class="flex gap-3">
                          <!-- Icon with gradient background -->
-                         <div class="hidden md:flex w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-orange to-orange-500 text-white items-center justify-center shrink-0 shadow-lg shadow-orange-500/20 ring-4 ring-white dark:ring-slate-800 relative z-10 transition-shadow duration-300">
-                              <svg *ngIf="!editingPublicador()" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                              <svg *ngIf="editingPublicador()" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                         <div class="hidden md:flex w-11 h-11 rounded-xl bg-gradient-to-br from-brand-orange to-orange-500 text-white items-center justify-center shrink-0 shadow-lg shadow-orange-500/20 ring-3 ring-white dark:ring-slate-800 relative z-10 transition-shadow duration-300">
+                              <svg *ngIf="!editingPublicador()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                              <svg *ngIf="editingPublicador()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                          </div>
                          <div>
                              <div class="flex items-center gap-2 mb-1.5">
@@ -912,7 +912,7 @@ interface TableColumn {
                                   {{ editingPublicador() ? 'Modo Edición' : 'Nuevo Registro' }}
                                 </span>
                              </div>
-                             <h2 class="text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight drop-shadow-sm">
+                             <h2 class="text-xl font-display font-black text-slate-900 dark:text-white tracking-tight drop-shadow-sm">
                                  {{ editingPublicador() ? 'Editar Publicador' : 'Nuevo Publicador' }}
                              </h2>
                              <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-medium" *ngIf="editingPublicador()">
@@ -930,7 +930,7 @@ interface TableColumn {
              </div>
 
              <!-- Tabs Navigation (Dark Bar Style) -->
-             <div class="px-4 pb-4 sm:px-6 sm:pb-6 md:px-8 md:pb-8 relative z-10">
+             <div class="px-4 pb-3 sm:px-5 sm:pb-4 md:px-5 md:pb-4 relative z-10">
                 <div class="flex p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 backdrop-blur-md">
                   <button 
                     (click)="activeTab.set('personal')" 
@@ -967,21 +967,21 @@ interface TableColumn {
         <!-- Divider is not needed with the new design, content scrolls cleanly -->
 
             <!-- 3. Scrollable Content Area -->
-            <div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 scroll-smooth">
-              <form [formGroup]="publicadorForm" (ngSubmit)="onSubmit()" class="space-y-6 pb-20"> <!-- pb-20 para espacio extra al final -->
+            <div class="flex-1 overflow-y-auto px-4 py-3 sm:px-5 sm:py-4 scroll-smooth">
+              <form [formGroup]="publicadorForm" (ngSubmit)="onSubmit()" class="space-y-4 pb-16"> <!-- pb-20 para espacio extra al final -->
 
                 <!-- TAB: PERSONAL -->
-                <div *ngIf="activeTab() === 'personal'" class="space-y-8 animate-fadeIn">
+                <div *ngIf="activeTab() === 'personal'" class="space-y-5 animate-fadeIn">
                      
                      <!-- Section: Identidad -->
-                     <div class="space-y-6">
+                     <div class="space-y-4">
                         <div class="flex items-center gap-3 py-2">
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                            <span class="text-[0.6875rem] font-bold text-slate-400 uppercase tracking-widest">Identidad</span>
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                              <!-- Fila 1: Nombres -->
                              <div class="col-span-1 space-y-2">
                                <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
@@ -1077,14 +1077,14 @@ interface TableColumn {
                      </div>
 
                      <!-- Section: Ubicación y Contacto -->
-                     <div class="space-y-6">
+                     <div class="space-y-4">
                         <div class="flex items-center gap-3 py-2">
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                            <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Ubicación y Contacto</span>
                            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-3">
                             <div class="col-span-2 sm:col-span-1 space-y-2">
                                 <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wide mb-2">
                                   <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></span>
@@ -1663,7 +1663,7 @@ interface TableColumn {
            </div>
 
            <!-- Panel Footer -->
-           <div class="px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 z-20">
+           <div class="px-4 py-3 sm:px-5 sm:py-4 md:px-5 md:py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 z-20">
                <div class="hidden sm:block">
                   <p class="text-[0.625rem] text-slate-400 font-bold uppercase tracking-wider">
                      <span class="text-red-400">*</span> Campo obligatorio
@@ -1673,7 +1673,7 @@ interface TableColumn {
                    <button 
                       type="button"
                       (click)="tryClosePanel()" 
-                      class="flex-1 sm:flex-none min-w-0 px-6 h-11 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-200 transition-all focus:ring-4 focus:ring-slate-100 outline-none"
+                      class="flex-1 sm:flex-none min-w-0 px-5 h-10 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-200 transition-all focus:ring-4 focus:ring-slate-100 outline-none"
                    >
                       Cancelar
                    </button>
@@ -1681,7 +1681,7 @@ interface TableColumn {
                       type="button"
                       (click)="onSubmit()" 
                       [disabled]="publicadorForm.invalid || saving()" 
-                      class="flex-1 sm:flex-none min-w-0 px-8 h-11 rounded-xl bg-gradient-to-r from-brand-orange to-orange-500 text-white font-bold text-sm hover:shadow-lg hover:shadow-brand-orange/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+                      class="flex-1 sm:flex-none min-w-0 px-6 h-10 rounded-xl bg-gradient-to-r from-brand-orange to-orange-500 text-white font-bold text-sm hover:shadow-lg hover:shadow-brand-orange/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
                    >
                       <svg *ngIf="saving()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                       {{ saving() ? 'Guardando...' : (editingPublicador() ? 'Guardar Cambios' : 'Crear Registro') }}
@@ -2883,10 +2883,31 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   loadPublicadorPrivilegios(id: number) {
-    // activos=true → solo registros con fecha_fin IS NULL (el activo actual de cada tipo)
-    this.privilegiosService.getPublicadorPrivilegios(id, true).subscribe({
+    // Obtenemos todos los registros (sin filtrar por activos)
+    this.privilegiosService.getPublicadorPrivilegios(id).subscribe({
       next: (data) => {
-        this.publicadorPrivilegios.set(data);
+        // Agrupar por id_privilegio y quedarnos solo con el más reciente o el activo
+        const latestPrivsMap = new Map<number, any>();
+        data.forEach(pp => {
+          const existing = latestPrivsMap.get(pp.id_privilegio);
+          if (!existing) {
+            latestPrivsMap.set(pp.id_privilegio, pp);
+          } else {
+            // Si el actual no tiene fecha_fin (es activo), lo preferimos
+            if (!pp.fecha_fin) {
+              latestPrivsMap.set(pp.id_privilegio, pp);
+            } 
+            // Si el existente también tiene fecha_fin, nos quedamos con el más reciente
+            else if (existing.fecha_fin) {
+              if (new Date(pp.fecha_inicio).getTime() > new Date(existing.fecha_inicio).getTime()) {
+                latestPrivsMap.set(pp.id_privilegio, pp);
+              }
+            }
+          }
+        });
+        
+        const filteredData = Array.from(latestPrivsMap.values());
+        this.publicadorPrivilegios.set(filteredData);
 
         // Update GLOBAL MAP so the list updates immediately
         const today = new Date().toISOString().split('T')[0];
