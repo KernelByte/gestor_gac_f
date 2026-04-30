@@ -115,5 +115,6 @@ export interface UsuarioCreatePublicador {
    tipo_identificacion?: string;
    id_identificacion?: string;
    id_usuario_publicador: number; // Requerido - debe pertenecer a la misma congregación
+   debe_cambiar_contrasena?: boolean;
 }
 

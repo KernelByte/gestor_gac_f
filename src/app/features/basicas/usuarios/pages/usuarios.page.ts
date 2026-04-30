@@ -116,6 +116,11 @@ export class UsuariosPage implements OnInit {
    showPassword = signal(false);
    editingUser = signal<Usuario | null>(null);
 
+   // Post-creation credentials dialog (WhatsApp)
+   showCredentialsDialog = signal(false);
+   lastCreatedCredentials = signal<{ nombre: string; correo: string; contrasena: string; telefono?: string } | null>(null);
+   sendingWA = signal(false);
+
    // Custom Select States
    roleDropdownOpen = signal(false);
    congDropdownOpen = signal(false);
@@ -154,7 +159,8 @@ export class UsuariosPage implements OnInit {
          id_usuario_estado: [1, Validators.required], // 1 = Activo por defecto
          telefono: [''],
          tipo_identificacion: ['CC'],
-         id_identificacion: ['']
+         id_identificacion: [''],
+         debe_cambiar_contrasena: [true] // Default: true para mayor seguridad
       }, { validators: this.passwordMatchValidator });
    }
 
@@ -437,7 +443,8 @@ export class UsuariosPage implements OnInit {
       this.editingUser.set(null);
       this.userForm.reset({ 
          tipo_identificacion: 'CC',
-         id_usuario_estado: 1 // Activo
+         id_usuario_estado: 1, // Activo
+         debe_cambiar_contrasena: true // Por defecto pedir cambio en primer login
       });
 
       // Re-enable password validators for new users
@@ -574,7 +581,8 @@ export class UsuariosPage implements OnInit {
                   telefono: formValue.telefono,
                   tipo_identificacion: formValue.tipo_identificacion,
                   id_identificacion: formValue.id_identificacion,
-                  id_usuario_estado: 1
+                  id_usuario_estado: 1,
+                  debe_cambiar_contrasena: formValue.debe_cambiar_contrasena ?? false
                };
                newUser = await lastValueFrom(this.service.createUsuario(createPayload));
             } else {
@@ -587,12 +595,22 @@ export class UsuariosPage implements OnInit {
                   id_usuario_publicador: formValue.id_usuario_publicador,
                   telefono: formValue.telefono,
                   tipo_identificacion: formValue.tipo_identificacion,
-                  id_identificacion: formValue.id_identificacion
+                  id_identificacion: formValue.id_identificacion,
+                  debe_cambiar_contrasena: formValue.debe_cambiar_contrasena ?? false
                };
                newUser = await lastValueFrom(this.service.createUsuarioPublicador(restrictedPayload));
             }
 
             this.usuarios.update(list => [newUser, ...list]);
+
+            // Mostrar diálogo de credenciales para enviar por WhatsApp
+            this.lastCreatedCredentials.set({
+               nombre: formValue.nombre,
+               correo: formValue.correo,
+               contrasena: formValue.contrasena,
+               telefono: formValue.telefono
+            });
+            this.showCredentialsDialog.set(true);
          }
 
          this.closePanel();
@@ -714,4 +732,59 @@ export class UsuariosPage implements OnInit {
    clearSearch() {
       this.searchControl.setValue('');
    }
+
+   // --- Credentials Dialog (WhatsApp) ---
+
+   closeCredentialsDialog() {
+      this.showCredentialsDialog.set(false);
+      this.lastCreatedCredentials.set(null);
+   }
+
+   /**
+    * Envía las credenciales del diálogo post-creación por WhatsApp.
+    * Requiere que tengamos la contraseña en texto plano (solo disponible justo después de crear).
+    */
+   sendCredentialsByWhatsApp() {
+      const creds = this.lastCreatedCredentials();
+      if (!creds) return;
+
+      const telefono = this.normalizePhone(creds.telefono || '');
+      const mensaje = this.buildCredentialMessage(creds.nombre, creds.correo, creds.contrasena);
+      this.openWhatsApp(telefono, mensaje);
+   }
+
+   /**
+    * Envía credenciales básicas (solo correo) por WhatsApp directamente desde la tabla.
+    * NO incluye contraseña porque está hasheada en BD.
+    */
+   sendWhatsApp(u: Usuario) {
+      if (!u.telefono) return;
+      const telefono = this.normalizePhone(u.telefono);
+      const mensaje = `Hola ${u.nombre}, te informamos que ya tienes acceso al Sistema GAC.\n\n📧 *Usuario (correo):* ${u.correo}\n\nPara iniciar sesión, ingresa a la plataforma con tu correo y la contraseña que te fue asignada.\n\n_Si tienes alguna duda, contacta al administrador._`;
+      this.openWhatsApp(telefono, mensaje);
+   }
+
+   private buildCredentialMessage(nombre: string, correo: string, contrasena: string): string {
+      return `Hola ${nombre}, aquí están tus credenciales de acceso al Sistema GAC:\n\n📧 *Usuario (correo):* ${correo}\n🔑 *Contraseña:* ${contrasena}\n\nTe recomendamos cambiar tu contraseña al iniciar sesión por primera vez.\n\n_Accede en: https://gac.kernelbyte.cloud_`;
+   }
+
+   private normalizePhone(telefono: string): string {
+      // Remover caracteres no numéricos
+      let digits = telefono.replace(/\D/g, '');
+      // Si no tiene código de país y es un número colombiano de 10 dígitos, agregar 57
+      if (digits.length === 10 && digits.startsWith('3')) {
+         digits = '57' + digits;
+      }
+      // Si tiene 7 u 8 dígitos locales, agregar +57 (Colombia)
+      if (digits.length <= 8) {
+         digits = '57' + digits;
+      }
+      return digits;
+   }
+
+   private openWhatsApp(phone: string, message: string) {
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+   }
 }
+

@@ -83,4 +83,10 @@ export class AuthService {
       new_password
     });
   }
+
+  cambiarContrasenaObligatoria(nueva_contrasena: string) {
+    return this.http.post<{ message: string }>(`${API}/auth/cambiar-contrasena-obligatoria`, {
+      nueva_contrasena
+    });
+  }
 }

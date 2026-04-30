@@ -13,6 +13,7 @@ export interface Usuario {
    telefono?: string;
    tipo_identificacion?: string;
    id_identificacion?: string;
+   debe_cambiar_contrasena?: boolean;
 }
 
 export interface UsuarioCreate {
@@ -25,6 +26,7 @@ export interface UsuarioCreate {
    telefono?: string;
    tipo_identificacion?: string;
    id_identificacion?: string;
+   debe_cambiar_contrasena?: boolean;
 }
 
 export interface UsuarioUpdate {
@@ -36,4 +38,5 @@ export interface UsuarioUpdate {
    telefono?: string;
    tipo_identificacion?: string;
    id_identificacion?: string;
+   debe_cambiar_contrasena?: boolean;
 }

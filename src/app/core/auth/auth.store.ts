@@ -11,6 +11,7 @@ export interface SessionUser {
   id_congregacion?: number | null;
   id_grupo_publicador?: number | null;
   permisos?: string[];
+  debe_cambiar_contrasena?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

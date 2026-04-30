@@ -7,6 +7,7 @@ import { ThemeService } from '../core/services/theme.service';
 import { CongregacionContextService } from '../core/congregacion-context/congregacion-context.service';
 import { NotificacionesService } from '../core/notificaciones/notificaciones.service';
 import { Notificacion } from '../core/notificaciones/notificacion.model';
+import { ForcePasswordChangeComponent } from '../core/components/force-password-change.component';
 
 @Pipe({ name: 'timeAgo', standalone: true })
 export class TimeAgoPipe implements PipeTransform {
@@ -29,9 +30,12 @@ export class TimeAgoPipe implements PipeTransform {
 @Component({
   standalone: true,
   selector: 'app-shell',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TimeAgoPipe],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TimeAgoPipe, ForcePasswordChangeComponent],
   template: `
     <div class="flex h-screen overflow-hidden bg-app-bg dark:bg-slate-950 transition-colors duration-300" [class.dark]="themeService.darkMode()">
+
+      <!-- Cambio de Contraseña Obligatorio (Overlay) -->
+      <app-force-password-change *ngIf="mustChangePassword()"></app-force-password-change>
       
       <!-- Mobile Overlay -->
       <div 
@@ -670,6 +674,7 @@ export class ShellPage implements OnInit, OnDestroy {
   };
 
   user = computed(() => this.store.user());
+  mustChangePassword = computed(() => this.store.user()?.debe_cambiar_contrasena === true);
 
   router = inject(Router); // Re-injecting Router as it might be missing or private
 
