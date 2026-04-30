@@ -4,6 +4,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
+import { provideEchartsCore } from 'ngx-echarts';
 
 import { routes } from './app.routes';
 import { CORE_PROVIDERS } from './core/providers';
@@ -23,6 +24,7 @@ export const appConfig: ApplicationConfig = {
     // global repo binding for Publicadores feature
     { provide: PUBLICADOR_REPO, useClass: HttpPublicadorRepo },
     { provide: TitleStrategy, useClass: CustomTitleStrategy },
-    { provide: LOCALE_ID, useValue: 'es' }
+    { provide: LOCALE_ID, useValue: 'es' },
+    provideEchartsCore({ echarts: () => import('echarts') })
   ]
 };

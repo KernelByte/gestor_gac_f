@@ -523,7 +523,7 @@ export class PublicadoresContactosComponent {
             if (!user) return;
 
             untracked(() => {
-                const params: any = { limit: 100, offset: 0 };
+                const params: any = { limit: 1000, offset: 0 };
                 if (effectiveId != null) params.id_congregacion = effectiveId;
                 if (this.isScopedToGroup()) {
                     const idGrupo = user.id_grupo_publicador;

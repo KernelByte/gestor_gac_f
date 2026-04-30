@@ -124,7 +124,7 @@ export class TimeAgoPipe implements PipeTransform {
             </div>
             
             <!-- Modules Section -->
-            <div *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.entre_semana_ver') || hasPermission('reuniones.fin_semana_ver') || hasPermission('reuniones.asistencia_ver') || hasPermission('reuniones.configuracion_ver') || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver')">
+            <div *ngIf="hasPermission('reuniones.ver') || hasPermission('reuniones.entre_semana_ver') || hasPermission('reuniones.fin_semana_ver') || hasPermission('reuniones.asistencia_ver') || hasPermission('reuniones.configuracion_ver') || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasAnyReportesPermission()">
               <p *ngIf="!collapsed()" class="px-3 mb-2 mt-6 text-[0.75rem] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">Módulos</p>
               
               <!-- Reuniones Accordion -->
@@ -248,6 +248,52 @@ export class TimeAgoPipe implements PipeTransform {
                      [ngClass]="rlaPred.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                     <span class="-ml-[17px] absolute w-[5px] h-[5px] rounded-full shadow-[0_0_0_3px_#ffffff] dark:shadow-[0_0_0_3px_#0f172a] transition-all duration-300"
                           [ngClass]="rlaPred.isActive ? 'bg-brand-green dark:bg-green-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
+                    <span class="truncate">Predicación</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Reportes Accordion -->
+              <div *ngIf="hasAnyReportesPermission()" class="relative mt-1">
+                <button (click)="toggleReportesMenu()"
+                  class="w-full group flex items-center justify-between text-sm transition-all duration-200 relative overflow-hidden rounded-lg"
+                  [ngClass]="{
+                    'p-2.5': collapsed(),
+                    'px-3 py-2.5': !collapsed(),
+                    '!text-brand-blue dark:!text-blue-400 font-semibold bg-brand-blue/10 dark:bg-white/[0.02]': isReportesActive(),
+                    'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/80 dark:hover:bg-white/[0.02]': !isReportesActive()
+                  }" title="Reportes">
+                  <div class="flex items-center" [ngClass]="{ 'justify-center w-full': collapsed(), 'gap-3': !collapsed() }">
+                    <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition-colors duration-200"
+                         [ngClass]="isReportesActive() ? '!text-brand-blue dark:!text-blue-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300'">
+                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3v18h18M7 15l4-4 4 4 6-6" /></svg>
+                    </div>
+                    <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Reportes</span>
+                  </div>
+                  <svg *ngIf="!collapsed()" class="w-4 h-4 transition-transform duration-300 ease-out" [ngClass]="{ 'rotate-180': reportesMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+
+                <!-- Submenu -->
+                <div *ngIf="!collapsed() && reportesMenuOpen()" class="relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800">
+                  <a *ngIf="hasPermission('reportes.precursores')" routerLink="/reportes/precursores" routerLinkActive="sub-active" #rlaRepPrec="routerLinkActive"
+                     class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
+                     [ngClass]="rlaRepPrec.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
+                    <span class="-ml-[17px] absolute w-[5px] h-[5px] rounded-full shadow-[0_0_0_3px_#ffffff] dark:shadow-[0_0_0_3px_#0f172a] transition-all duration-300"
+                          [ngClass]="rlaRepPrec.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
+                    <span class="truncate">Precursores</span>
+                  </a>
+                  <a *ngIf="hasPermission('reportes.publicadores')" routerLink="/reportes/publicadores" routerLinkActive="sub-active" #rlaRepPub="routerLinkActive"
+                     class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
+                     [ngClass]="rlaRepPub.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
+                    <span class="-ml-[17px] absolute w-[5px] h-[5px] rounded-full shadow-[0_0_0_3px_#ffffff] dark:shadow-[0_0_0_3px_#0f172a] transition-all duration-300"
+                          [ngClass]="rlaRepPub.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
+                    <span class="truncate">Publicadores</span>
+                  </a>
+                  <a *ngIf="hasPermission('reportes.predicacion')" routerLink="/reportes/predicacion" routerLinkActive="sub-active" #rlaRepPred="routerLinkActive"
+                     class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
+                     [ngClass]="rlaRepPred.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
+                    <span class="-ml-[17px] absolute w-[5px] h-[5px] rounded-full shadow-[0_0_0_3px_#ffffff] dark:shadow-[0_0_0_3px_#0f172a] transition-all duration-300"
+                          [ngClass]="rlaRepPred.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Predicación</span>
                   </a>
                 </div>
@@ -580,6 +626,7 @@ export class ShellPage implements OnInit, OnDestroy {
   congregacionesList = signal<{ id_congregacion: number; nombre_congregacion: string }[]>([]);
   reunionesMenuOpen = signal(false);
   territoriosMenuOpen = signal(false);
+  reportesMenuOpen = signal(false);
 
   // New Signals & Props
   // darkMode = signal(false); // Removed local signal
@@ -692,6 +739,14 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Configuración de Reuniones', subtitle: 'Asignación de privilegios, plantillas y parámetros del motor.' });
     } else if (url.includes('/reuniones')) {
       this.pageTitle.set({ title: 'Reuniones', subtitle: 'Resumen general de reuniones.' });
+    } else if (url.includes('/reportes/precursores')) {
+      this.pageTitle.set({ title: 'Análisis Precursores', subtitle: 'Panorama general de precursores activos.' });
+    } else if (url.includes('/reportes/publicadores')) {
+      this.pageTitle.set({ title: 'Análisis Publicadores', subtitle: 'Distribución demográfica y por grupo.' });
+    } else if (url.includes('/reportes/predicacion')) {
+      this.pageTitle.set({ title: 'Análisis Predicación', subtitle: 'Resumen de informes de servicio.' });
+    } else if (url.includes('/reportes')) {
+      this.pageTitle.set({ title: 'Reportes', subtitle: 'Análisis e indicadores de la congregación.' });
     } else if (url.includes('/admin/configuracion')) {
       this.pageTitle.set({ title: 'Configuración del Sistema', subtitle: 'Administración global de la plataforma' });
     } else if (url.includes('/configuracion')) {
@@ -733,6 +788,23 @@ export class ShellPage implements OnInit, OnDestroy {
   isTerritoriosActive(): boolean {
     const url = this.router.url;
     return url.startsWith('/territorios') || url.startsWith('/horarios') || url.startsWith('/seguimiento-predicacion');
+  }
+
+  toggleReportesMenu() {
+    this.reportesMenuOpen.update(v => !v);
+  }
+
+  isReportesActive(): boolean {
+    return this.router.url.startsWith('/reportes');
+  }
+
+  hasAnyReportesPermission(): boolean {
+    return (
+      this.hasPermission('reportes.ver') ||
+      this.hasPermission('reportes.precursores') ||
+      this.hasPermission('reportes.publicadores') ||
+      this.hasPermission('reportes.predicacion')
+    );
   }
 
   toggleSidebar() {

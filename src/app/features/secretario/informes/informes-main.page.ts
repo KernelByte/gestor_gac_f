@@ -211,8 +211,8 @@ export class InformesMainPage implements OnInit {
         this.selectedAno = contexto.periodo_informes.codigo_ano.toString();
         this.selectedMes = contexto.periodo_informes.codigo_mes.toString();
       } else {
-         this.selectedMes = (new Date().getMonth() === 0 ? '12' : new Date().getMonth().toString());
-         this.selectedAno = (new Date().getMonth() === 0 ? (new Date().getFullYear() - 1).toString() : new Date().getFullYear().toString());
+        this.selectedMes = (new Date().getMonth() === 0 ? '12' : new Date().getMonth().toString());
+        this.selectedAno = (new Date().getMonth() === 0 ? (new Date().getFullYear() - 1).toString() : new Date().getFullYear().toString());
       }
     } catch (e) {
       console.error("Error obteniendo periodo contexto", e);
@@ -227,7 +227,7 @@ export class InformesMainPage implements OnInit {
 
     // Ahora cargamos el resumen si están definidos (efecto manejará o lo llamamos explícito si effect falla)
     if (this.selectedMes && this.selectedAno) {
-       this.loadResumen();
+      this.loadResumen();
     }
   }
 

@@ -356,7 +356,6 @@ export class UsuariosPage implements OnInit {
    filteredUsuarios = computed(() => {
       const q = this.searchQuery().toLowerCase();
       const rolFilter = this.selectedRolFilter();
-      const congId = this.congregacionContext.effectiveCongregacionId();
       const pageCongFilter = this.selectedCongregacionFilter();
 
       return this.usuarios().filter(u => {
@@ -366,16 +365,7 @@ export class UsuariosPage implements OnInit {
          // Filtro directo seleccionado en el combo local de la página
          const matchesPageFilter = pageCongFilter === null || u.id_congregacion === pageCongFilter;
          
-         // Los administradores o usuarios de sistema (sin congregacion) siempre son visibles
-         // para quien tiene los permisos de ver esta lista (en este caso el Administrador)
-         // o si no hay congregacion seleccionada en el contexto.
-         const isGlobalUser = !u.id_congregacion || 
-                              [1, 2].includes(u.id_rol_usuario || 0) || 
-                              (u.rol && (u.rol.toLowerCase().includes('administrador') || u.rol.toLowerCase().includes('gestor')));
-                              
-         const matchesCongContext = congId === null || isGlobalUser || u.id_congregacion === congId;
-         
-         return matchesSearch && matchesRol && matchesCongContext && matchesPageFilter;
+         return matchesSearch && matchesRol && matchesPageFilter;
       });
    });
 

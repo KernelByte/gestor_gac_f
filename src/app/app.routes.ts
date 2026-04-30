@@ -68,6 +68,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/reuniones/reuniones.routes').then(m => m.REUNIONES_ROUTES),
       },
       {
+        path: 'reportes',
+        loadChildren: () => import('./features/reportes/reportes.routes').then(m => m.REPORTES_ROUTES),
+      },
+      {
         path: 'secretario',
         canActivate: [roleGuard],
         data: { roles: ['Administrador', 'Coordinador', 'Secretario', 'Superintendente de servicio', 'Publicador'] },
