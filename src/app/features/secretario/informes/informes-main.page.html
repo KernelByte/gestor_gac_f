@@ -146,7 +146,7 @@
       <div [ngClass]="activeTab() === 'historial' ? 'flex-1 min-h-0 h-full flex flex-col' : 'hidden'">
          <app-informes-historial [selectedAno]="selectedAno ? +selectedAno : 0"
             [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0" [grupos]="grupos()"
-            [canEdit]="canEditHistorial()" [canExport]="canEditHistorial()"
+            [canEdit]="canEditHistorial()" [canExport]="canViewHistorial()"
             [lockedGroupId]="canEditHistorial() ? null : historialGroupId()"
             class="h-full flex-col flex overflow-hidden">
 
