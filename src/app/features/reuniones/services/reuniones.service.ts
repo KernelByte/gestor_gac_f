@@ -86,6 +86,19 @@ export class ReunionesService {
       );
   }
 
+  deleteDraft(
+    tipo: string,
+    ano: number,
+    semanaIso: number,
+    idCong: number
+  ): Observable<{ message: string }> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.delete<{ message: string }>(
+      `${this.base}/asignaciones/draft/${tipo}/${ano}/${semanaIso}`,
+      { params }
+    );
+  }
+
   crearProgramaMensual(
     payload: ProgramaMensualCreateRequest
   ): Observable<{ message: string }> {

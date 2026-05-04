@@ -1,5 +1,6 @@
 import { Provider, APP_INITIALIZER } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { authInterceptor } from './http/auth.interceptor';
 import { errorInterceptor } from './http/error.interceptor';
 import { APP_CONFIG } from './config/app-config.token';
@@ -8,7 +9,7 @@ import { AuthService } from './auth/auth.service';
 import { LoggerService } from './utils/logger.service';
 
 function initSession(auth: AuthService) {
-  return () => auth.tryRestoreSession();
+  return () => firstValueFrom(auth.tryRestoreSession());
 }
 
 export const CORE_PROVIDERS: any[] = [

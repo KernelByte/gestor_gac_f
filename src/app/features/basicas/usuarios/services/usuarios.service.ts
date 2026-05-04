@@ -61,6 +61,14 @@ export class UsuariosService {
       return this.roles$;
    }
 
+   /**
+    * Roles que puede asignar un Coordinador o Secretario.
+    * Llama al endpoint /roles/permitidos que no requiere rol Admin.
+    */
+   getRolesPermitidos(): Observable<Rol[]> {
+      return this.http.get<Rol[]>(`${this.ROLES_URL}permitidos`);
+   }
+
    getCongregaciones(): Observable<Congregacion[]> {
       if (!this.congregaciones$) {
          this.congregaciones$ = this.http.get<Congregacion[]>(this.CONGREGACIONES_URL).pipe(
@@ -106,7 +114,7 @@ export class UsuariosService {
    }
 }
 
-// Interface para creación restringida (sin campo de rol)
+// Interface para creación restringida (Coordinador/Secretario)
 export interface UsuarioCreatePublicador {
    nombre: string;
    correo: string;
@@ -115,6 +123,7 @@ export interface UsuarioCreatePublicador {
    tipo_identificacion?: string;
    id_identificacion?: string;
    id_usuario_publicador: number; // Requerido - debe pertenecer a la misma congregación
+   id_rol_usuario?: number; // Opcional: 2=Coordinador, 3=Secretario, 6=Publicador (default)
    debe_cambiar_contrasena?: boolean;
 }
 

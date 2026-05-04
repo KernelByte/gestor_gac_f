@@ -26,11 +26,20 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((err: HttpErrorResponse) => {
+      // Función para manejar el cierre de sesión sin interrumpir rutas públicas
+      const handleLogoutRedirect = () => {
+        tokenService.clear();
+        const path = window.location.pathname;
+        const isPublicRoute = path.startsWith('/public/') || path.startsWith('/auth/') || path === '/login';
+        if (!isPublicRoute) {
+          router.navigateByUrl('/login');
+        }
+      };
+
       // Solo intentar refresh en 401 y si no es una URL excluida
       if (err.status !== 401 || isNoRefresh) {
         if (err.status === 401) {
-          tokenService.clear();
-          router.navigateByUrl('/login');
+          handleLogoutRedirect();
         }
         return throwError(() => err);
       }
@@ -48,8 +57,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }),
         catchError(() => {
           // Refresh falló (expirado, revocado) → logout total
-          tokenService.clear();
-          router.navigateByUrl('/login');
+          handleLogoutRedirect();
           return throwError(() => err);
         })
       );

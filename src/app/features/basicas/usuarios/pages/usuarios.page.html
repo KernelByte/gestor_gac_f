@@ -474,56 +474,74 @@
 
                      <div class="bg-purple-50/50 dark:bg-purple-900/10 rounded-2xl p-4 border border-purple-100/50 dark:border-purple-800/20">
                         <div class="grid grid-cols-1 gap-4">
-                           <!-- Rol fijo para Coordinador/Secretario -->
-                           <div *ngIf="!isAdmin()" class="space-y-1">
-                              <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">Rol de Usuario</label>
-                              <div
-                                 class="w-full bg-white dark:bg-slate-900 border border-purple-100 dark:border-purple-800/30 rounded-xl px-4 py-2.5 flex items-center gap-2 shadow-sm shadow-purple-500/5">
-                                 <svg class="w-4 h-4 text-[#6D28D9] dark:text-purple-400" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                                 </svg>
-                                 <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">Usuario Publicador</span>
-                                 <span class="text-[0.625rem] text-slate-400 dark:text-slate-500 ml-auto font-medium">Auto</span>
-                              </div>
-                           </div>
+                            <!-- Rol selector para Coordinador/Secretario (roles 2=Coord, 3=Sec, 6=Pub) -->
+                            <div *ngIf="isCoordSecretario()" class="space-y-1 relative">
+                               <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
+                                  Rol de Usuario <span class="text-red-500">*</span>
+                               </label>
+                               <button type="button" (click)="roleDropdownOpen.set(!roleDropdownOpen())"
+                                  class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group"
+                                  [class.border-red-300]="userForm.get('id_rol_usuario')?.invalid && userForm.get('id_rol_usuario')?.touched">
+                                  <span [class.text-slate-400]="!userForm.get('id_rol_usuario')?.value"
+                                     class="font-medium text-slate-700 dark:text-slate-200 block truncate text-sm">
+                                     {{ getSelectedRoleName() || 'Seleccione un rol...' }}
+                                  </span>
+                                  <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                                     [class.rotate-180]="roleDropdownOpen()" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                     <path d="M6 9l6 6 6-6" />
+                                  </svg>
+                               </button>
+                               <div *ngIf="roleDropdownOpen()" (click)="roleDropdownOpen.set(false)"
+                                  class="fixed inset-0 z-[9998] cursor-default"></div>
+                               <div *ngIf="roleDropdownOpen()" @fadeIn
+                                  class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-[9999] overflow-hidden max-h-60 overflow-y-auto simple-scrollbar origin-top">
+                                  <div class="p-1 space-y-0.5">
+                                     <button type="button" *ngFor="let r of rolesCoordSec()" (click)="selectRole(r.id_rol)"
+                                        class="w-full px-4 py-2 text-sm transition-all flex items-center justify-between rounded-lg group"
+                                        [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isRoleSelected(r.id_rol), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isRoleSelected(r.id_rol)}">
+                                        <span>{{ r.descripcion_rol }}</span>
+                                     </button>
+                                  </div>
+                               </div>
+                            </div>
 
-                           <!-- Custom Role Select (Solo Admin) -->
-                           <div *ngIf="isAdmin()" class="space-y-1 relative">
-                              <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">Rol de Usuario</label>
+                            <!-- Custom Role Select (Admin/Gestor: todos los roles) -->
+                            <div *ngIf="isAdmin() || isGestor()" class="space-y-1 relative">
+                               <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">Rol de Usuario</label>
 
-                              <button type="button" (click)="roleDropdownOpen.set(!roleDropdownOpen())"
-                                 class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group">
-                                 <span [class.text-slate-400]="!userForm.get('id_rol_usuario')?.value"
-                                    class="font-medium text-slate-700 dark:text-slate-200 block truncate text-sm">
-                                    {{ getSelectedRoleName() || 'Seleccione un rol...' }}
-                                 </span>
-                                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
-                                    [class.rotate-180]="roleDropdownOpen()" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M6 9l6 6 6-6" />
-                                 </svg>
-                              </button>
+                               <button type="button" (click)="roleDropdownOpen.set(!roleDropdownOpen())"
+                                  class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-left flex items-center justify-between outline-none focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all hover:bg-white dark:hover:bg-slate-700 active:bg-slate-50 group">
+                                  <span [class.text-slate-400]="!userForm.get('id_rol_usuario')?.value"
+                                     class="font-medium text-slate-700 dark:text-slate-200 block truncate text-sm">
+                                     {{ getSelectedRoleName() || 'Seleccione un rol...' }}
+                                  </span>
+                                  <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                                     [class.rotate-180]="roleDropdownOpen()" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round">
+                                     <path d="M6 9l6 6 6-6" />
+                                  </svg>
+                               </button>
 
-                              <div *ngIf="roleDropdownOpen()" (click)="roleDropdownOpen.set(false)"
-                                 class="fixed inset-0 z-[9998] cursor-default"></div>
+                               <div *ngIf="roleDropdownOpen()" (click)="roleDropdownOpen.set(false)"
+                                  class="fixed inset-0 z-[9998] cursor-default"></div>
 
-                              <div *ngIf="roleDropdownOpen()" @fadeIn
-                                 class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-[9999] overflow-hidden max-h-60 overflow-y-auto simple-scrollbar origin-top">
-                                 <div class="p-1 space-y-0.5">
-                                    <button type="button" *ngFor="let r of roles()" (click)="selectRole(r.id_rol)"
-                                       class="w-full px-4 py-2 text-sm transition-all flex items-center justify-between rounded-lg group"
-                                       [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isRoleSelected(r.id_rol), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isRoleSelected(r.id_rol)}">
-                                       <span>{{ r.descripcion_rol }}</span>
-                                    </button>
-                                 </div>
-                              </div>
-                           </div>
+                               <div *ngIf="roleDropdownOpen()" @fadeIn
+                                  class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-[9999] overflow-hidden max-h-60 overflow-y-auto simple-scrollbar origin-top">
+                                  <div class="p-1 space-y-0.5">
+                                     <button type="button" *ngFor="let r of roles()" (click)="selectRole(r.id_rol)"
+                                        class="w-full px-4 py-2 text-sm transition-all flex items-center justify-between rounded-lg group"
+                                        [ngClass]="{'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20': isRoleSelected(r.id_rol), 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700': !isRoleSelected(r.id_rol)}">
+                                        <span>{{ r.descripcion_rol }}</span>
+                                     </button>
+                                  </div>
+                               </div>
+                            </div>
 
                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <!-- Custom Congregation Select (Solo Admin) -->
-                              <div *ngIf="isAdmin()" class="space-y-1 relative">
+                              <!-- Custom Congregation Select (Admin/Gestor) -->
+                              <div *ngIf="isAdmin() || isGestor()" class="space-y-1 relative">
                                  <label class="block text-xs font-bold text-[#6D28D9] dark:text-purple-400 ml-1">
                                     Congregación <span *ngIf="isCongregationRequired()" class="text-red-500">*</span>
                                  </label>

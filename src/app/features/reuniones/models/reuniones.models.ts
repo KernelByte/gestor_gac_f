@@ -2,6 +2,8 @@ export interface PlantillaOption {
   id_plantilla: number;
   nombre: string;
   tipo: string;
+  mes_inicio?: number | null;
+  ano_inicio?: number | null;
 }
 
 export interface CandidatoAlternativo {
@@ -17,6 +19,7 @@ export interface AsignacionDraft {
   id_publicador: number;
   nombre_completo: string;
   es_reemplazo: boolean;
+  es_ayudante?: boolean;
   sala?: string;
   estado: 'draft' | 'conflict' | 'confirmado';
   alternativos: CandidatoAlternativo[];
@@ -176,6 +179,8 @@ export interface PlantillaParteDetail {
   orden_visual: number;
   fuente_informacion?: string;
   semana_ordinal?: number;
+  titulo_semana?: string;
+  lectura_semanal?: string;
 }
 
 export interface PlantillaDetailResponse {

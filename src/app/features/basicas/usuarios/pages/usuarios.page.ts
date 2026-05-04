@@ -70,6 +70,19 @@ export class UsuariosPage implements OnInit {
       return roles.map(r => (r || '').toLowerCase()).includes('administrador');
    });
 
+   isGestor = computed(() => {
+      const user = this.authStore.user();
+      const roles = user?.roles ?? (user?.rol ? [user.rol] : []);
+      return roles.map(r => (r || '').toLowerCase()).includes('gestor aplicación');
+   });
+
+   isCoordSecretario = computed(() => {
+      if (this.isAdmin() || this.isGestor()) return false;
+      const user = this.authStore.user();
+      const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
+      return roles.some(r => ['secretario', 'coordinador'].includes(r));
+   });
+
    isPrivilegedRole = computed(() => {
       if (this.isAdmin()) return true;
       const user = this.authStore.user();
@@ -98,6 +111,10 @@ export class UsuariosPage implements OnInit {
       const roles = user?.roles ?? (user?.rol ? [user.rol] : []);
       return roles.map(r => (r || '').toLowerCase()).some(r => r.includes('administrador') || r.includes('gestor'));
    });
+
+   // Roles que puede asignar un Coordinador/Secretario (IDs: 2=Coordinador, 3=Secretario, 6=Publicador)
+   readonly ROLES_COORD_SEC_IDS = [2, 3, 6];
+   rolesCoordSec = computed(() => this.roles().filter(r => this.ROLES_COORD_SEC_IDS.includes(r.id_rol)));
 
    getCongregacionNameForUser(u: Usuario): string {
       const roles = u.roles ?? (u.rol ? [u.rol] : []);
@@ -379,8 +396,8 @@ export class UsuariosPage implements OnInit {
       try {
          // Usar endpoint apropiado según rol del usuario
          let data: Usuario[];
-         if (this.isAdmin()) {
-            // Admin: ver todos los usuarios
+         if (this.isAdmin() || this.isGestor()) {
+            // Admin/Gestor: ver todos los usuarios
             data = await lastValueFrom(this.service.getUsuarios());
          } else {
             // Coordinador/Secretario: solo usuarios de su congregación
@@ -395,11 +412,22 @@ export class UsuariosPage implements OnInit {
    async loadAuxData() {
       // Intentar cargar cada uno por separado para que el fallo de uno no bloquee los demás
 
-      if (this.isAdmin()) {
+      if (this.isAdmin() || this.isGestor()) {
+         // Admin/Gestor: cargar todos los roles desde el API
          try {
             const roles = await lastValueFrom(this.service.getRoles());
             this.roles.set(roles || []);
          } catch (err) {
+            this.roles.set([]);
+         }
+      } else if (this.isCoordSecretario()) {
+         // Coordinador/Secretario: usar endpoint propio que no requiere rol Admin
+         try {
+            const roles = await lastValueFrom(this.service.getRolesPermitidos());
+            this.roles.set(roles || []);
+         } catch (err) {
+            // Fallback si el endpoint falla (no debería ocurrir para usuarios autenticados)
+            console.warn('No se pudieron cargar los roles permitidos', err);
             this.roles.set([]);
          }
       }
@@ -452,16 +480,17 @@ export class UsuariosPage implements OnInit {
       this.userForm.get('confirmPassword')?.setValidators([Validators.required]);
 
       try {
-         if (this.isAdmin()) {
-            // Admin: opcional hasta que seleccione rol que lo requiera
+         if (this.isAdmin() || this.isGestor()) {
+            // Admin/Gestor: opcional hasta que seleccione rol que lo requiera
             this.userForm.get('id_congregacion')?.clearValidators();
             this.userForm.get('id_usuario_publicador')?.clearValidators();
             this.userForm.get('id_rol_usuario')?.setValidators([Validators.required]);
-         } else {
-            // Coordinador/Secretario: publicador requerido, rol NO requerido (forzado en servidor)
-            this.userForm.get('id_rol_usuario')?.clearValidators();
+         } else if (this.isCoordSecretario()) {
+            // Coordinador/Secretario: publicador y rol requeridos
+            // El servidor valida que el rol sea 2, 3 o 6
             this.userForm.get('id_congregacion')?.clearValidators();
             this.userForm.get('id_usuario_publicador')?.setValidators([Validators.required]);
+            this.userForm.get('id_rol_usuario')?.setValidators([Validators.required]);
 
             // Auto-cargar publicadores de su congregación
             const congId = this.currentUserCongregacion();
@@ -553,10 +582,14 @@ export class UsuariosPage implements OnInit {
                id_identificacion: formValue.id_identificacion
             };
 
-            // Solo Admin/Gestor pueden editar campos críticos como rol y publicador
-            if (this.isAdmin()) {
+            // Admin/Gestor: pueden editar cualquier campo crítico
+            // Coordinador/Secretario: pueden cambiar rol entre 2, 3 o 6 (validado en servidor)
+            if (this.isAdmin() || this.isGestor()) {
                updatePayload.id_rol_usuario = formValue.id_rol_usuario;
                updatePayload.id_usuario_publicador = formValue.id_usuario_publicador;
+            } else if (this.isCoordSecretario()) {
+               updatePayload.id_rol_usuario = formValue.id_rol_usuario;
+               // No se permite cambiar publicador por seguridad desde este flujo
             }
 
             if (formValue.contrasena) {
@@ -570,8 +603,8 @@ export class UsuariosPage implements OnInit {
             // --- Modo creación ---
             let newUser: Usuario;
 
-            if (this.isAdmin()) {
-               // Admin: crear usuario con cualquier rol
+            if (this.isAdmin() || this.isGestor()) {
+               // Admin/Gestor: crear usuario con cualquier rol
                const createPayload = {
                   nombre: formValue.nombre,
                   correo: formValue.correo,
@@ -587,12 +620,13 @@ export class UsuariosPage implements OnInit {
                newUser = await lastValueFrom(this.service.createUsuario(createPayload));
             } else {
                // Coordinador/Secretario: usar endpoint restringido
-               // El rol se fuerza a 6 (Usuario Publicador) en el servidor
+               // El servidor valida que el rol elegido sea 2, 3 o 6
                const restrictedPayload: UsuarioCreatePublicador = {
                   nombre: formValue.nombre,
                   correo: formValue.correo,
                   contrasena: formValue.contrasena,
                   id_usuario_publicador: formValue.id_usuario_publicador,
+                  id_rol_usuario: formValue.id_rol_usuario ?? 6,  // 6=Publicador por defecto
                   telefono: formValue.telefono,
                   tipo_identificacion: formValue.tipo_identificacion,
                   id_identificacion: formValue.id_identificacion,

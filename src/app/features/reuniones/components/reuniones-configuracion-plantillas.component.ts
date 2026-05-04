@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ReunionesService } from '../services/reuniones.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
+import { TokenService } from '../../../core/auth/token.service';
 import { environment } from '../../../../environments/environment';
 import {
   MWBImportPreviewResponse,
@@ -27,56 +28,6 @@ import {
   template: `
     <div class="flex flex-col gap-5 h-full">
 
-       <!-- ===== PAGE HEADER ===== -->
-       <div class="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-           <div>
-               <h2 class="text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">Configuración de Reuniones</h2>
-               <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Plantillas, parámetros del motor y asignación de privilegios.</p>
-           </div>
-           <!-- Save button for parametros tab -->
-           @if (activeTab() === 'parametros') {
-             <div class="flex items-center gap-2 shrink-0">
-               @if (algoHasDirty()) {
-                 <span class="text-[0.625rem] font-bold text-amber-500 dark:text-amber-400 animate-pulse">Cambios sin guardar</span>
-               }
-               <button
-                 *ngIf="hasEditPermission()"
-                 (click)="saveAlgoParams()"
-                 [disabled]="!algoHasDirty() || !algoValid() || algoSaving()"
-                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
-                   @if (algoSaving()) {
-                     <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                   } @else {
-                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                   }
-                   Guardar
-               </button>
-             </div>
-           }
-           <!-- Save button for privilegios tab -->
-           @if (activeTab() === 'privilegios') {
-             <div class="flex items-center gap-2 shrink-0">
-               @if (matrizHasPending()) {
-                 <span class="text-[0.625rem] font-bold text-amber-500 dark:text-amber-400 animate-pulse">
-                   {{ matrizPendingCount() }} cambio{{ matrizPendingCount() > 1 ? 's' : '' }}
-                 </span>
-               }
-               <button
-                 *ngIf="hasEditPermission()"
-                 (click)="guardarMatriz()"
-                 [disabled]="!matrizHasPending() || matrizSaving()"
-                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
-                   @if (matrizSaving()) {
-                     <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                   } @else {
-                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                   }
-                   Guardar
-               </button>
-             </div>
-           }
-       </div>
-
        <!-- Toast -->
        @if (toast()) {
          <div class="shrink-0 animate-slideDown flex items-center gap-3 px-4 py-2.5 rounded-xl border shadow-sm"
@@ -95,19 +46,115 @@ import {
          </div>
        }
 
-       <!-- ===== TAB PILLS ===== -->
-       <div class="shrink-0 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-1.5 flex items-center gap-1 overflow-x-auto no-scrollbar">
-         @for (tab of visibleTabs(); track tab.id) {
-           <button
-             (click)="activeTab.set(tab.id)"
-             class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
-             [class]="activeTab() === tab.id
-               ? 'bg-[#6D28D9] text-white shadow-sm'
-               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'">
-             <span [innerHTML]="tab.icon"></span>
-             {{ tab.label }}
-           </button>
-         }
+       <!-- ===== TAB PILLS + FILTROS (misma línea) ===== -->
+       <div class="shrink-0 flex items-center gap-3 w-full">
+           <!-- Tabs -->
+           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-1.5 flex items-center gap-1 overflow-x-auto no-scrollbar">
+             @for (tab of visibleTabs(); track tab.id) {
+               <button
+                 (click)="activeTab.set(tab.id)"
+                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
+                 [class]="activeTab() === tab.id
+                   ? 'bg-[#6D28D9] text-white shadow-sm'
+                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'">
+                 <span [innerHTML]="tab.icon"></span>
+                 {{ tab.label }}
+               </button>
+             }
+           </div>
+
+           <!-- Acciones contextuales (botones Guardar + filtros) -->
+           <div class="flex items-center gap-2 ml-auto">
+
+           <!-- Guardar parametros -->
+           @if (activeTab() === 'parametros') {
+             @if (algoHasDirty()) {
+               <span class="text-[0.625rem] font-bold text-amber-500 dark:text-amber-400 animate-pulse">Cambios sin guardar</span>
+             }
+             <button
+               *ngIf="hasEditPermission()"
+               (click)="saveAlgoParams()"
+               [disabled]="!algoHasDirty() || !algoValid() || algoSaving()"
+               class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
+                 @if (algoSaving()) {
+                   <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                 } @else {
+                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                 }
+                 Guardar
+             </button>
+           }
+
+           <!-- Guardar privilegios -->
+           @if (activeTab() === 'privilegios') {
+             @if (matrizHasPending()) {
+               <span class="text-[0.625rem] font-bold text-amber-500 dark:text-amber-400 animate-pulse">
+                 {{ matrizPendingCount() }} cambio{{ matrizPendingCount() > 1 ? 's' : '' }}
+               </span>
+             }
+             <button
+               *ngIf="hasEditPermission()"
+               (click)="guardarMatriz()"
+               [disabled]="!matrizHasPending() || matrizSaving()"
+               class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
+               @if (matrizSaving()) {
+                 <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+               } @else {
+                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+               }
+               Guardar
+             </button>
+           }
+
+           <!-- Guardar plantilla (cuando se edita) -->
+           @if (activeTab() === 'plantillas' && plantillaEditing()) {
+             <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
+               @if (plantillasLoading()) {
+                 <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+               } @else {
+                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+               }
+               Guardar
+             </button>
+           }
+
+           <!-- Filtros buscador (solo para tab privilegios) -->
+           @if (activeTab() === 'privilegios') {
+               <!-- Search -->
+               <div class="relative w-[220px]">
+                   <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                       <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                   </div>
+                   <input type="text"
+                     [ngModel]="searchQuery()"
+                     (ngModelChange)="searchQuery.set($event)"
+                     placeholder="Buscar publicador..."
+                     class="w-full h-9 pl-10 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#6D28D9]/50 focus:ring-2 focus:ring-[#6D28D9]/20 transition-all outline-none shadow-sm">
+               </div>
+               <!-- Filter Icons -->
+               <div class="hidden lg:flex items-center gap-1.5">
+                   <button
+                     (click)="setFiltroSexo('solo_hombres')"
+                     title="Filtrar Hermanos"
+                     class="w-9 h-9 flex items-center justify-center rounded-lg transition-all border"
+                     [class]="filtroSexo() === 'solo_hombres'
+                       ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-300 hover:text-blue-500'">
+                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+                   </button>
+                   <button
+                     (click)="setFiltroSexo('solo_mujeres')"
+                     title="Filtrar Hermanas"
+                     class="w-9 h-9 flex items-center justify-center rounded-lg transition-all border"
+                     [class]="filtroSexo() === 'solo_mujeres'
+                       ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
+                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-rose-300 hover:text-rose-500'">
+                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M12 21v-8"/><path d="M9 14l3-3 3 3"/></svg>
+                   </button>
+               </div>
+           }
+
+           </div>
        </div>
 
        <!-- ===== TAB: PLANTILLAS ===== -->
@@ -121,24 +168,12 @@ import {
               </div>
               <div>
                   <h3 class="font-bold text-slate-800 dark:text-white text-sm">Generador de Plantillas (Motor IA)</h3>
-                  <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 hidden sm:block">Suba el PDF de la Guía de Actividades para estructurar reuniones o crear nuevas plantillas.</p>
               </div>
            </div>
 
            <input type="file" #fileInput (change)="onFileSelected($event)" accept=".pdf" class="hidden">
 
-           @if (mwbLoading()) {
-             <div class="w-full sm:w-48 mt-1 sm:mt-0">
-               <div class="flex items-center justify-between mb-1.5">
-                 <span class="text-[0.625rem] font-bold text-slate-600 dark:text-slate-300">{{ mwbProgressMessage() || 'Analizando mediante IA...' }}</span>
-                 <span class="text-[0.625rem] font-mono font-bold text-[#6D28D9]">{{ mwbProgress() }}%</span>
-               </div>
-               <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                 <div class="bg-gradient-to-r from-[#6D28D9] to-[#8B5CF6] h-full rounded-full transition-all duration-500 ease-out"
-                   [style.width.%]="mwbProgress()"></div>
-               </div>
-             </div>
-           } @else {
+           @if (!mwbLoading()) {
              <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                <!-- Filtros mes y año -->
                <div class="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700 h-9 shrink-0">
@@ -164,17 +199,12 @@ import {
                
                <button *ngIf="hasEditPermission()" (click)="fileInput.click()" [disabled]="mwbConfirming()" class="h-9 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                 <span>Subir PDF MWB</span>
+                 <span>Subir PDF Vida y ministerio</span>
                </button>
                <button *ngIf="hasEditPermission()" (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())" class="h-9 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                  <span>Pegar JSON</span>
                </button>
-               @if (plantillaEditing()) {
-                 <button (click)="closePlantillaEditor()" class="h-9 px-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[0.6875rem] font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all justify-center sm:flex hidden w-full sm:w-auto">
-                   Cerrar Editor
-                 </button>
-               }
              </div>
            }
        </div>
@@ -207,13 +237,17 @@ import {
                  </div>
                  <div class="flex items-center gap-2">
                    @if (plantillaEditing()) {
-                     <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="h-8 px-4 bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-1.5">
-                       @if (plantillasLoading()) {
-                         <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                       }
-                       Guardar
-                     </button>
-                   } @else {
+                    <button (click)="closePlantillaEditor()" class="h-8 px-3 border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[0.6875rem] font-bold rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-all flex items-center gap-1.5">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                      Cerrar
+                    </button>
+                    <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="h-8 px-4 bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+                      @if (plantillasLoading()) {
+                        <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      }
+                      Guardar
+                    </button>
+                  } @else {
                      <button (click)="confirmMWB()" [disabled]="mwbConfirming()" class="h-8 px-4 bg-emerald-500 hover:bg-emerald-600 text-white text-[0.6875rem] font-bold rounded-lg shadow-sm shadow-emerald-900/20 transition-all flex items-center gap-1.5 disabled:opacity-50">
                        @if (mwbConfirming()) {
                          <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -255,7 +289,7 @@ import {
                                  [ngModel]="mwbDates().get(i) || ''"
                                  (ngModelChange)="updateMwbDate(i, $event)"
                                  [class.border-red-500]="!!mwbDates().get(i) === false"
-                                 class="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[0.625rem] sm:text-[0.6875rem] font-medium focus:ring-2 focus:ring-[#6D28D9]/50 outline-none w-[110px] sm:w-[120px]">
+                                 class="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-[0.625rem] sm:text-[0.6875rem] font-medium focus:ring-2 focus:ring-[#6D28D9]/50 outline-none w-[110px] sm:w-[120px]">
                          </div>
                        </div>
                        <div class="p-0 bg-white dark:bg-slate-900">
@@ -301,28 +335,53 @@ import {
 
                  <!-- EDITING Mode -->
                  @if (plantillaEditing() && selectedPlantilla()) {
+                   <!-- Nombre de la plantilla -->
                    <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
                      <div class="bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 border-b border-slate-200 dark:border-slate-700 flex items-center">
                        <input [(ngModel)]="selectedPlantilla()!.nombre" placeholder="Nombre Único de Plantilla" class="flex-1 w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] sm:text-xs outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
                      </div>
-                     <div class="p-0 bg-white dark:bg-slate-900 overflow-y-auto flex-1 simple-scrollbar">
-                        @for (week of plantillaByWeek(); track week.ordinal) {
-                          <div class="bg-slate-50/40 dark:bg-slate-800/20 px-4 py-2 border-b border-t first:border-t-0 border-slate-200 dark:border-slate-700">
-                             <h5 class="text-[0.625rem] font-black uppercase text-slate-500 tracking-widest text-[#6366F1]">Semana {{ week.ordinal }}</h5>
-                          </div>
-                          <table class="w-full text-left border-collapse mb-4 last:mb-0">
-                            <tbody>
-                              @for (parte of week.partes; track $index) {
-                             <tr class="border-b last:border-b-0 border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
-                               <td class="py-2 px-3 sm:px-4 w-1/4 min-w-[90px] sm:min-w-[120px] align-middle">
-                                   <div class="text-[9px] sm:text-[0.625rem] font-black uppercase tracking-widest"
-                                        [style.color]="getSectionColor(parte.seccion)">
-                                     {{ parte.seccion }}
+                   </div>
+
+                   <!-- Cards por semana -->
+                   @for (week of plantillaByWeek(); track week.ordinal) {
+                     <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
+                       <!-- Header de la semana -->
+                       <div class="bg-slate-50 dark:bg-slate-800/80 px-3 sm:px-4 py-2 sm:py-2.5 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2.5">
+                         <div class="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-[0.625rem] shrink-0">W{{ week.ordinal }}</div>
+                         <div class="flex flex-col gap-0.5 min-w-0 flex-1">
+                           <input [ngModel]="week.titulo_semana || ''"
+                                  (ngModelChange)="updateSemanaMeta(week.ordinal, 'titulo_semana', $event)"
+                                  placeholder="Título de la semana"
+                                  class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] sm:text-xs outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 min-w-0">
+                           <div class="flex items-center gap-1 px-1">
+                             <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                             <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500">Lectura:</span>
+                             <input [ngModel]="week.lectura_semanal || ''"
+                                    (ngModelChange)="updateSemanaMeta(week.ordinal, 'lectura_semanal', $event)"
+                                    placeholder="—"
+                                    class="flex-1 bg-transparent border-none text-[9px] font-bold text-slate-500 dark:text-slate-400 outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 min-w-0">
+                           </div>
+                         </div>
+                       </div>
+
+                       <!-- Partes -->
+                       <div class="p-0 bg-white dark:bg-slate-900">
+                         <table class="w-full text-left border-collapse">
+                           <tbody>
+                             @for (parte of week.partes; track $index) {
+                               <tr class="border-b last:border-b-0 border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
+                                 <td class="py-2 px-3 sm:px-4 w-1/4 min-w-[90px] sm:min-w-[120px] align-middle">
+                                   <div class="text-[9px] sm:text-[0.625rem] font-black uppercase tracking-widest" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</div>
+                                 </td>
+                                 <td class="py-2 px-2 sm:px-4 align-middle">
+                                   <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+                                     <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] sm:text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 flex-1 min-w-0 w-full overflow-hidden text-ellipsis">
+                                     @if (parte.fuente_informacion) {
+                                       <div class="text-[9px] text-slate-400 dark:text-slate-500 font-medium px-1 italic truncate">
+                                         {{ parte.fuente_informacion }}
+                                       </div>
+                                     }
                                    </div>
-                               </td>
-                               <td class="py-2 px-2 sm:px-4 align-middle">
-                                 <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                   <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] sm:text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 flex-1 min-w-0 w-full overflow-hidden text-ellipsis">
                                    <div class="flex items-center gap-1 shrink-0 px-1 mt-1 sm:mt-0">
                                      <button (click)="parte.aplica_sala_b = !parte.aplica_sala_b"
                                              [class]="parte.aplica_sala_b ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 ring-1 ring-purple-500/30' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'"
@@ -331,21 +390,20 @@ import {
                                              [class]="parte.requiere_pareja ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 ring-1 ring-amber-500/30' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'"
                                              class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase transition-all whitespace-nowrap">Pareja</button>
                                    </div>
-                                 </div>
-                               </td>
-                               <td class="py-2 px-3 sm:px-4 text-right w-16 sm:w-24 align-middle">
-                                 <div class="flex items-center justify-end gap-1">
-                                   <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-8 sm:w-10 h-6 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded text-[9px] sm:text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-all">
-                                   <span class="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest">min</span>
-                                 </div>
-                               </td>
-                             </tr>
-                           }
-                         </tbody>
-                       </table>
-                     }
-                      </div>
-                   </div>
+                                 </td>
+                                 <td class="py-2 px-3 sm:px-4 text-right w-16 sm:w-24 align-middle">
+                                   <div class="flex items-center justify-end gap-1">
+                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-8 sm:w-10 h-6 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded text-[9px] sm:text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-all">
+                                     <span class="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest">min</span>
+                                   </div>
+                                 </td>
+                               </tr>
+                             }
+                           </tbody>
+                         </table>
+                       </div>
+                     </div>
+                   }
                  }
                </div>
              </div>
@@ -368,10 +426,12 @@ import {
                    <div class="group flex items-center justify-between px-3.5 py-2.5 rounded-[12px] bg-white dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/90 shadow-sm hover:shadow-md transition-all cursor-default">
                      <div class="min-w-0 pr-3 flex-1 flex flex-col justify-center">
                        <h4 class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-200 truncate mb-0.5 leading-tight" [title]="p.nombre">{{ p.nombre }}</h4>
-                       <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider self-start"
-                             [class]="p.tipo === 'entre_semana' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'">
-                         {{ p.tipo === 'entre_semana' ? 'Estudio' : 'Fin de Sem' }}
-                       </span>
+                       <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                         <span class="inline-block px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider"
+                               [class]="p.tipo === 'entre_semana' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'">
+                           {{ p.tipo === 'entre_semana' ? 'Estudio' : 'Fin de Sem' }}
+                         </span>
+                       </div>
                      </div>
 
                      <div class="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
@@ -398,6 +458,30 @@ import {
 
        </div>
        } <!-- end plantillas tab -->
+
+      <!-- ===== MODAL: CONFIRMAR ELIMINAR PLANTILLA ===== -->
+      @if (confirmDeleteId() !== null) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="confirmDeleteId.set(null)">
+          <div class="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"></div>
+          <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 w-full max-w-sm p-6 flex flex-col gap-5 animate-fadeIn" (click)="$event.stopPropagation()">
+            <!-- Icon -->
+            <div class="flex flex-col items-center gap-3 text-center">
+              <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/40 flex items-center justify-center">
+                <svg class="w-6 h-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-slate-900 dark:text-white">Eliminar plantilla</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Esta acción es permanente. Los programas ya creados <span class="font-bold text-slate-700 dark:text-slate-300">no se verán afectados</span>.</p>
+              </div>
+            </div>
+            <!-- Actions -->
+            <div class="flex items-center gap-2">
+              <button (click)="confirmDeleteId.set(null)" class="flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
+              <button (click)="confirmDelete()" class="flex-1 h-9 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold shadow-sm shadow-rose-900/20 transition-all">Sí, eliminar</button>
+            </div>
+          </div>
+        </div>
+      }
 
        <!-- ===== TAB: PARÁMETROS DEL ALGORITMO ===== -->
        @if (activeTab() === 'parametros') {
@@ -531,39 +615,6 @@ import {
        <!-- ===== TAB: ASIGNACIÓN DE PRIVILEGIOS ===== -->
        @if (activeTab() === 'privilegios') {
 
-       <!-- Search + Filters Toolbar -->
-       <div class="shrink-0 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-1.5 flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
-           <div class="relative flex-1 min-w-[200px]">
-               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                   <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-               </div>
-               <input type="text"
-                 [ngModel]="searchQuery()"
-                 (ngModelChange)="searchQuery.set($event)"
-                 placeholder="Buscar publicador..."
-                 class="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-800/50 border border-transparent dark:border-slate-700/50 rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-[#6D28D9]/50 focus:ring-2 focus:ring-[#6D28D9]/20 transition-all outline-none">
-           </div>
-           <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden lg:block shrink-0"></div>
-           <div class="hidden md:flex items-center gap-1 shrink-0">
-               <button
-                 (click)="setFiltroSexo('solo_hombres')"
-                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
-                 [class]="filtroSexo() === 'solo_hombres'
-                   ? 'bg-blue-500 text-white shadow-sm'
-                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'">
-                   Hermanos
-               </button>
-               <button
-                 (click)="setFiltroSexo('solo_mujeres')"
-                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
-                 [class]="filtroSexo() === 'solo_mujeres'
-                   ? 'bg-rose-500 text-white shadow-sm'
-                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'">
-                   Hermanas
-               </button>
-           </div>
-       </div>
-
        <!-- Matriz Content -->
        <div class="flex-1 min-h-0 flex flex-col gap-4 animate-fadeIn">
 
@@ -592,23 +643,23 @@ import {
            }
 
            @if (!matrizLoading() && !matrizErrorMsg()) {
-             <!-- Stats bar -->
-             <div class="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-3">
-               <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
-                 <p class="text-xl font-black text-slate-800 dark:text-white tabular-nums">{{ filteredPublicadores().length }}</p>
-                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Publicadores</p>
+             <!-- Stats bar compact -->
+             <div class="shrink-0 grid grid-cols-4 gap-2">
+               <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-700/60 py-1.5 px-2 text-center shadow-sm">
+                 <p class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ filteredPublicadores().length }}</p>
+                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Publicadores</p>
                </div>
-               <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
-                 <p class="text-xl font-black text-amber-600 dark:text-amber-400 tabular-nums">{{ countPrivilegio('Anciano') }}</p>
-                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Ancianos</p>
+               <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-700/60 py-1.5 px-2 text-center shadow-sm">
+                 <p class="text-base font-black text-amber-600 dark:text-amber-400 tabular-nums leading-none">{{ countPrivilegio('Anciano') }}</p>
+                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Ancianos</p>
                </div>
-               <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
-                 <p class="text-xl font-black text-blue-600 dark:text-blue-400 tabular-nums">{{ countPrivilegio('Siervo Ministerial') }}</p>
-                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">S. Ministeriales</p>
+               <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-700/60 py-1.5 px-2 text-center shadow-sm">
+                 <p class="text-base font-black text-blue-600 dark:text-blue-400 tabular-nums leading-none">{{ countPrivilegio('Siervo Ministerial') }}</p>
+                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">S. Ministeriales</p>
                </div>
-               <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
-                 <p class="text-xl font-black text-slate-600 dark:text-slate-300 tabular-nums">{{ countPrecursores() }}</p>
-                 <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Precursores</p>
+               <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-700/60 py-1.5 px-2 text-center shadow-sm">
+                 <p class="text-base font-black text-slate-600 dark:text-slate-300 tabular-nums leading-none">{{ countPrecursores() }}</p>
+                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Precursores</p>
                </div>
              </div>
 
@@ -666,6 +717,7 @@ import {
                                          <label class="inline-flex items-center justify-center cursor-pointer p-1">
                                            <input type="checkbox"
                                              [checked]="getPermiso(pub, col.key)"
+                                             (change)="togglePermiso(pub, col.key)"
                                              [disabled]="!hasEditPermission()"
                                              class="w-4 h-4 text-[#6D28D9] rounded border-slate-300 dark:border-slate-600 focus:ring-[#6D28D9] focus:ring-offset-0 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                          </label>
@@ -772,6 +824,59 @@ import {
          </div>
        }
 
+      <!-- ===== AI LOADING OVERLAY ===== -->
+      @if (mwbLoading()) {
+        <div class="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-fadeIn">
+          <!-- Backdrop -->
+          <div class="absolute inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-md"></div>
+
+          <!-- Card -->
+          <div class="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-700/60 w-full max-w-sm p-8 flex flex-col items-center gap-6">
+
+            <!-- AI orb with double ping rings -->
+            <div class="relative flex items-center justify-center">
+              <div class="absolute w-24 h-24 rounded-full bg-purple-400/10 animate-ping" style="animation-duration:2s"></div>
+              <div class="absolute w-16 h-16 rounded-full bg-purple-400/15 animate-ping" style="animation-duration:1.5s;animation-delay:0.3s"></div>
+              <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#6D28D9] to-[#a78bfa] flex items-center justify-center shadow-xl shadow-purple-500/40">
+                <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>
+              </div>
+            </div>
+
+            <!-- Text content -->
+            <div class="text-center flex flex-col gap-2 w-full">
+              <p class="text-[0.6875rem] font-black uppercase tracking-widest text-[#6D28D9] dark:text-purple-400">Motor IA activo</p>
+              <p class="text-sm font-bold text-slate-800 dark:text-white leading-snug min-h-[2.5rem] flex items-center justify-center text-center px-2">
+                {{ mwbProgressMessage() || 'Analizando documento PDF...' }}
+              </p>
+              <p class="text-[0.625rem] text-slate-400 dark:text-slate-500">Este proceso puede tardar unos momentos</p>
+            </div>
+
+            <!-- Percentage -->
+            <div class="text-4xl font-black tabular-nums text-[#6D28D9] dark:text-purple-400 leading-none">
+              {{ mwbProgress() }}<span class="text-xl font-bold">%</span>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="w-full flex flex-col gap-1.5">
+              <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden relative">
+                <div class="bg-gradient-to-r from-[#6D28D9] via-[#8B5CF6] to-[#a78bfa] h-full rounded-full transition-all duration-500 ease-out"
+                     [style.width.%]="mwbProgress()"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_1.8s_ease-in-out_infinite]"></div>
+              </div>
+              <!-- Animated dots -->
+              <div class="flex items-center justify-center gap-1 pt-0.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9]/40 animate-bounce" style="animation-delay:0ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9]/60 animate-bounce" style="animation-delay:200ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9] animate-bounce" style="animation-delay:400ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9]/60 animate-bounce" style="animation-delay:600ms"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-[#6D28D9]/40 animate-bounce" style="animation-delay:800ms"></span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      }
+
     </div>
   `,
   styles: [`
@@ -790,6 +895,10 @@ import {
        from { opacity: 0; transform: translateY(-8px); }
        to { opacity: 1; transform: translateY(0); }
      }
+     @keyframes shimmer {
+       0% { transform: translateX(-100%); }
+       100% { transform: translateX(200%); }
+     }
      /* Sticky column shadow */
      td.sticky, th.sticky {
        box-shadow: 2px 0 6px -2px rgba(0,0,0,0.06);
@@ -801,6 +910,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   private reunionesSvc = inject(ReunionesService);
   private congregacionCtx = inject(CongregacionContextService);
   private authStore = inject(AuthStore);
+  private tokenSvc = inject(TokenService);
 
   hasEditPermission = computed(() => {
     return this.authStore.hasPermission('reuniones.configuracion_editar') || !!this.authStore.user()?.roles?.includes('Secretario');
@@ -872,18 +982,25 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   plantillasLoading = signal(false);
   selectedPlantilla = signal<PlantillaDetailResponse | null>(null);
   plantillaEditing = signal(false);
+  confirmDeleteId = signal<number | null>(null);
   plantillaByWeek = computed(() => {
     const p = this.selectedPlantilla();
     if (!p) return [];
-    const weeksMap = new Map<number, PlantillaParteDetail[]>();
+    const weeksMap = new Map<number, { partes: PlantillaParteDetail[]; titulo_semana?: string; lectura_semanal?: string }>();
     p.partes.forEach(parte => {
-      const ord = parte.semana_ordinal || 0;
-      if (!weeksMap.has(ord)) weeksMap.set(ord, []);
-      weeksMap.get(ord)!.push(parte);
+      const ord = parte.semana_ordinal || 1;
+      if (!weeksMap.has(ord)) {
+        weeksMap.set(ord, {
+          partes: [],
+          titulo_semana: parte.titulo_semana,
+          lectura_semanal: parte.lectura_semanal,
+        });
+      }
+      weeksMap.get(ord)!.partes.push(parte);
     });
     return Array.from(weeksMap.entries())
       .sort((a, b) => a[0] - b[0])
-      .map(([ordinal, partes]) => ({ ordinal, partes }));
+      .map(([ordinal, data]) => ({ ordinal, ...data }));
   });
 
   // ── Matriz de Publicadores (Privilegios) ──
@@ -895,7 +1012,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   searchQuery = signal('');
   filtroSexo = signal<'todos' | 'solo_hombres' | 'solo_mujeres'>('todos');
   currentPage = signal(1);
-  pageSize = signal(11);
+  pageSize = signal(20);
   private dirtyMap = new Map<number, Record<string, boolean>>();
   private dirtyOratoriaMap = new Map<number, number>();
   matrizPendingCount = signal(0);
@@ -964,7 +1081,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       const formData = new FormData();
       formData.append('file', file);
 
-      const token = localStorage.getItem('access_token') || '';
+      const token = this.tokenSvc.accessToken() || '';
       const response = await fetch(
         `${environment.apiUrl}/reuniones/programas/importar-mwb/stream`,
         {
@@ -1228,6 +1345,11 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     return '#64748b';
   }
 
+  formatMesAno(mes: number, ano: number): string {
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${meses[mes - 1] ?? mes} ${ano}`;
+  }
+
   // ── Plantillas Management ──
   loadSavedPlantillas() {
     const idCongregacion = this.congregacionCtx.effectiveCongregacionId();
@@ -1267,8 +1389,25 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     this.plantillaEditing.set(false);
   }
 
+  updateSemanaMeta(ordinal: number, field: 'titulo_semana' | 'lectura_semanal', value: string) {
+    const p = this.selectedPlantilla();
+    if (!p) return;
+    p.partes.forEach(parte => {
+      if ((parte.semana_ordinal || 1) === ordinal) {
+        (parte as any)[field] = value;
+      }
+    });
+    this.selectedPlantilla.set({ ...p, partes: [...p.partes] });
+  }
+
   deletePlantilla(id: number) {
-    if (!confirm('¿Está seguro de eliminar esta plantilla? No afectará programas ya creados.')) return;
+    this.confirmDeleteId.set(id);
+  }
+
+  confirmDelete() {
+    const id = this.confirmDeleteId();
+    if (id === null) return;
+    this.confirmDeleteId.set(null);
 
     this.reunionesSvc.deletePlantilla(id).subscribe({
       next: (res) => {

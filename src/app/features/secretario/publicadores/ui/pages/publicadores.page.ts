@@ -12,6 +12,7 @@ import { Privilegio } from '../../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../../privilegios/domain/models/publicador-privilegio';
 import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
+import { environment } from '../../../../../../environments/environment';
 
 interface Estado {
   id_estado: number;
@@ -1154,14 +1155,25 @@ interface TableColumn {
                                     </div>
                                 </div>
 
-                                <!-- Regenerar PIN -->
-                                <button type="button"
-                                        (click)="regenerarPin(editingPublicador()!.id_publicador)"
-                                        [disabled]="savingPin() || !publicadorForm.get('permite_login_simple')?.value"
-                                        class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-sky-100 dark:border-sky-900/30 text-xs font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all disabled:opacity-50 shrink-0 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" [ngClass]="savingPin() ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                                    Nuevo PIN
-                                </button>
+                                <!-- Acciones PIN -->
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button"
+                                            (click)="enviarCredencialesWhatsapp()"
+                                            [disabled]="!editingPublicador()?.codigo_pin || !publicadorForm.get('permite_login_simple')?.value || sendingWhatsapp()"
+                                            class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 text-xs font-bold text-[#1da851] dark:text-[#25D366] hover:bg-[#25D366]/20 transition-all disabled:opacity-50 shadow-sm"
+                                            title="Enviar por WhatsApp">
+                                        <svg *ngIf="sendingWhatsapp()" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                        <svg *ngIf="!sendingWhatsapp()" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                        Enviar
+                                    </button>
+                                    <button type="button"
+                                            (click)="regenerarPin(editingPublicador()!.id_publicador)"
+                                            [disabled]="savingPin() || !publicadorForm.get('permite_login_simple')?.value"
+                                            class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-sky-100 dark:border-sky-900/30 text-xs font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all disabled:opacity-50 shadow-sm">
+                                        <svg class="w-3.5 h-3.5" [ngClass]="savingPin() ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                        Nuevo PIN
+                                    </button>
+                                </div>
                             </div>
                         </div>
                      </div>
@@ -2299,6 +2311,46 @@ export class PublicadoresListComponent implements OnInit {
     } finally {
       this.savingPin.set(false);
     }
+  }
+
+  sendingWhatsapp = signal(false);
+
+  enviarCredencialesWhatsapp() {
+    const pub = this.editingPublicador();
+    if (!pub || !pub.codigo_pin) return;
+    
+    this.sendingWhatsapp.set(true);
+    
+    // Obtenemos la configuracion para el codigo de la congregacion
+    this.http.get<any>(`${environment.apiUrl}/configuracion/`).subscribe({
+      next: (config) => {
+        this.sendingWhatsapp.set(false);
+        const codigoCongregacion = config.codigo_seguridad || 'No configurado';
+        const pin = pub.codigo_pin;
+        const nombre = pub.primer_nombre || 'Publicador';
+        
+        let telefono = pub.telefono;
+        if (!telefono) {
+            this.showToast('El publicador no tiene un teléfono registrado.', 'error');
+            return;
+        }
+
+        telefono = telefono.replace(/\D/g, '');
+        if (!telefono.startsWith('57') && telefono.length === 10) {
+            telefono = '57' + telefono;
+        }
+
+        const mensaje = `Hola ${nombre},\n\nTus datos de acceso a la App Móvil son:\n\n*Código de Congregación:* ${codigoCongregacion}\n*CÓDIGO PIN:* ${pin}\n\nPuedes ingresar de forma segura usando estos datos.`;
+        
+        const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
+      },
+      error: (err) => {
+        console.error('Error obteniendo código de congregación:', err);
+        this.sendingWhatsapp.set(false);
+        this.showToast('No se pudo obtener el código de congregación.', 'error');
+      }
+    });
   }
 
   copyPin(pin?: string | null) {

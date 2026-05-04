@@ -5,11 +5,11 @@ import {
   inject,
   OnInit,
 } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { ReunionesService } from '../services/reuniones.service';
+import { AsistenciaService } from '../services/asistencia.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import {
@@ -27,7 +27,6 @@ import {
   selector: 'app-reuniones-entre-semana',
   standalone: true,
   imports: [CommonModule],
-  providers: [DatePipe],
   template: `
     <div class="flex flex-col gap-5 h-full">
 
@@ -45,7 +44,6 @@ import {
           </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-  // ── Navigation ─────────────────────────────────────────────────
           <button
             *ngIf="hasEditPermission()"
             (click)="openModal()"
@@ -61,6 +59,14 @@ import {
             class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#059669] hover:bg-[#047857] disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-emerald-900/20 active:scale-95">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             Confirmar
+          </button>
+          <button
+            *ngIf="hasEditPermission()"
+            (click)="borrarBorrador()"
+            [disabled]="!canBorrarBorrador()"
+            class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-red-900/20 active:scale-95">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            Borrar borrador
           </button>
         </div>
       </div>
@@ -158,7 +164,7 @@ import {
 
           <!-- Parts list -->
           <div class="flex-1 overflow-y-auto simple-scrollbar divide-y divide-slate-200 dark:divide-slate-800">
-            @for (asig of semana.partes; track asig.id_programa_parte + (asig.sala || 'Principal')) {
+            @for (asig of semana.partes; track asig.id_programa_parte + (asig.sala || 'Principal') + (asig.es_ayudante ? 'ayudante' : '')) {
               <div
                 [class]="parteCardClass(asig)"
                 class="group px-6 py-3.5 transition-colors">
@@ -266,64 +272,20 @@ import {
             </button>
           </div>
 
-          <!-- Grid 2 cols: Mes + Año -->
-          <div class="grid grid-cols-2 gap-3 mb-3">
-            <div>
-              <div class="flex items-center gap-1.5 mb-1.5">
-                <span class="w-1 h-3 rounded-full bg-[#6D28D9]"></span>
-                <label class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mes</label>
-              </div>
-              <select
-                [value]="modalForm().mes"
-                (change)="updateModal('mes', +$any($event.target).value)"
-                class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-800 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-[#6D28D9]/20 focus:border-[#6D28D9] outline-none transition-all">
-                @for (m of meses; track m.value) {
-                  <option [value]="m.value" [selected]="modalForm().mes === m.value">{{ m.label }}</option>
-                }
-              </select>
-            </div>
-            <div>
-              <div class="flex items-center gap-1.5 mb-1.5">
-                <span class="w-1 h-3 rounded-full bg-[#6D28D9]"></span>
-                <label class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Año</label>
-              </div>
-              <select
-                [value]="modalForm().ano"
-                (change)="updateModal('ano', +$any($event.target).value)"
-                class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-800 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-[#6D28D9]/20 focus:border-[#6D28D9] outline-none transition-all">
-                @for (a of anos; track a) {
-                  <option [value]="a" [selected]="modalForm().ano === a">{{ a }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          <!-- Dia de reunion -->
-          <div class="mb-3">
-            <div class="flex items-center gap-1.5 mb-1.5">
-              <span class="w-1 h-3 rounded-full bg-blue-400"></span>
-              <label class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dia de reunion</label>
-            </div>
-            <select
-              [value]="modalForm().dia_reunion"
-              (change)="updateModal('dia_reunion', +$any($event.target).value)"
-              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-800 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-[#6D28D9]/20 focus:border-[#6D28D9] outline-none transition-all">
-              @for (d of diasSemana; track d.value) {
-                <option [value]="d.value" [selected]="modalForm().dia_reunion === d.value">{{ d.label }}</option>
-              }
-            </select>
-          </div>
-
           <!-- Plantilla -->
           <div class="mb-4">
             <div class="flex items-center gap-1.5 mb-1.5">
               <span class="w-1 h-3 rounded-full bg-emerald-400"></span>
               <label class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Plantilla</label>
             </div>
-            @if (plantillas().length === 0) {
+            @if (loadingPlantillas()) {
               <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-400">
                 <div class="w-3.5 h-3.5 border-2 border-slate-300 dark:border-slate-600 border-t-[#6D28D9] rounded-full animate-spin"></div>
                 Cargando plantillas...
+              </div>
+            } @else if (plantillas().length === 0) {
+              <div class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-400">
+                No hay plantillas disponibles.
               </div>
             } @else {
               <select
@@ -352,7 +314,7 @@ import {
             </button>
             <button
               (click)="onModalSubmit()"
-              [disabled]="plantillas().length === 0 || modalForm().id_plantilla === 0"
+              [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0"
               class="flex-1 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-bold transition-all shadow-sm shadow-purple-900/20 active:scale-95">
               Generar Programa
             </button>
@@ -376,10 +338,9 @@ import {
 export class ReunionesEntreSemanaComponent implements OnInit {
 
   private reunionesSvc = inject(ReunionesService);
+  private asistenciaSvc = inject(AsistenciaService);
   congregacionCtx = inject(CongregacionContextService);
   private authStore = inject(AuthStore);
-  private router = inject(Router);
-  private datePipe = inject(DatePipe);
 
   hasEditPermission = computed(() => {
     return this.authStore.hasPermission('reuniones.entre_semana_editar') || !!this.authStore.user()?.roles?.includes('Secretario');
@@ -393,6 +354,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
   semanas = signal<ProgramaSemana[]>([]);
   selectedWeekIdx = signal(0);
   plantillas = signal<PlantillaOption[]>([]);
+  loadingPlantillas = signal(false);
 
   // ── Modal ──────────────────────────────────────────────────────
   showModal = signal(false);
@@ -409,30 +371,11 @@ export class ReunionesEntreSemanaComponent implements OnInit {
   // ── Computed ───────────────────────────────────────────────────
   currentSemana = computed(() => this.semanas()[this.selectedWeekIdx()] ?? null);
   canConfirmar = computed(() => this.estado() === 'draft' && this.semanas().length > 0);
+  canBorrarBorrador = computed(() => this.estado() === 'draft' && this.semanas().length > 0);
   fechasPreview = computed(() => {
     const { mes, ano, dia_reunion } = this.modalForm();
     return this.calcFechas(ano, mes, dia_reunion);
   });
-
-  // ── Static data ────────────────────────────────────────────────
-  meses = [
-    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' },
-    { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' },
-    { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
-    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Septiembre' }, { value: 10, label: 'Octubre' },
-    { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
-  ];
-  anos = [
-    new Date().getFullYear() - 1,
-    new Date().getFullYear(),
-    new Date().getFullYear() + 1,
-  ];
-  diasSemana = [
-    { value: 1, label: 'Lunes' }, { value: 2, label: 'Martes' },
-    { value: 3, label: 'Miercoles' }, { value: 4, label: 'Jueves' },
-    { value: 5, label: 'Viernes' },
-  ];
 
   // ── Lifecycle ──────────────────────────────────────────────────
   ngOnInit(): void {
@@ -478,19 +421,59 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong) return;
     this.showModal.set(true);
-    this.reunionesSvc.getPlantillas('entre_semana', idCong).subscribe({
-      next: (p) => {
-        this.plantillas.set(p);
-        if (p.length > 0 && this.modalForm().id_plantilla === 0) {
-          this.modalForm.update((f) => ({ ...f, id_plantilla: p[0].id_plantilla }));
+    this.loadingPlantillas.set(true);
+    forkJoin({
+      plantillas: this.reunionesSvc.getPlantillas('entre_semana', idCong),
+      config: this.asistenciaSvc.getCongregacionConfig().pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ plantillas, config }) => {
+        const diaReunion = this.diaReunionToNumber(config?.dia_reunion_entre_semana ?? null);
+        this.plantillas.set(plantillas);
+        this.modalForm.update((f) => ({ ...f, dia_reunion: diaReunion }));
+        if (plantillas.length > 0) {
+          const selected =
+            plantillas.find((p) => p.id_plantilla === this.modalForm().id_plantilla) ?? plantillas[0];
+          this.applyPlantillaPeriodo(selected);
         }
+        this.loadingPlantillas.set(false);
       },
-      error: () => this.plantillas.set([]),
+      error: () => {
+        this.plantillas.set([]);
+        this.loadingPlantillas.set(false);
+        this.errorMsg.set('No se pudieron cargar las plantillas.');
+      },
     });
   }
 
   updateModal(field: keyof GenerarMesForm, value: number): void {
+    if (field === 'id_plantilla') {
+      const plantilla = this.plantillas().find((p) => p.id_plantilla === value);
+      if (plantilla) {
+        this.applyPlantillaPeriodo(plantilla);
+        return;
+      }
+    }
     this.modalForm.update((f) => ({ ...f, [field]: value }));
+  }
+
+  private applyPlantillaPeriodo(plantilla: PlantillaOption): void {
+    this.modalForm.update((f) => ({
+      ...f,
+      id_plantilla: plantilla.id_plantilla,
+      mes: plantilla.mes_inicio ?? f.mes,
+      ano: plantilla.ano_inicio ?? f.ano,
+    }));
+  }
+
+  private diaReunionToNumber(dia: string | null): number {
+    const map: Record<string, number> = {
+      Lunes: 1,
+      Martes: 2,
+      Miercoles: 3,
+      Jueves: 4,
+      Viernes: 5,
+    };
+    return dia ? map[dia] ?? 2 : 2;
   }
 
   onModalSubmit(): void {
@@ -523,7 +506,16 @@ export class ReunionesEntreSemanaComponent implements OnInit {
 
     this.reunionesSvc
       .crearProgramaMensual(createPayload)
-      .pipe(switchMap(() => this.reunionesSvc.generarAsignaciones(genPayload)))
+      .pipe(
+        catchError((err) => {
+          const detail = err?.error?.detail ?? '';
+          if (err?.status === 400 && typeof detail === 'string' && detail.includes('Ya existen programas')) {
+            return of({ message: detail });
+          }
+          throw err;
+        }),
+        switchMap(() => this.reunionesSvc.generarAsignaciones(genPayload))
+      )
       .subscribe({
         next: (resp) => {
           this.semanas.set(resp.semanas);
@@ -592,6 +584,34 @@ export class ReunionesEntreSemanaComponent implements OnInit {
       next: () => this.estado.set('confirmado'),
       error: (err) => {
         const msg = err?.error?.detail ?? 'Error al confirmar las asignaciones.';
+        this.errorMsg.set(msg);
+        this.estado.set('error');
+      },
+    });
+  }
+
+  borrarBorrador(): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    const semanas = this.semanas();
+    if (!idCong || semanas.length === 0 || this.estado() !== 'draft') return;
+    if (!window.confirm('¿Deseas borrar este borrador? Esta accion no se puede deshacer.')) return;
+
+    const ano = new Date(semanas[0].fecha).getFullYear();
+    const requests = semanas.map((sem) =>
+      this.reunionesSvc.deleteDraft('entre_semana', ano, sem.semana_iso, idCong)
+    );
+
+    this.estado.set('loading');
+    this.errorMsg.set(null);
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.semanas.set([]);
+        this.selectedWeekIdx.set(0);
+        this.estado.set('idle');
+      },
+      error: (err) => {
+        const msg = err?.error?.detail ?? 'Error al borrar el borrador.';
         this.errorMsg.set(msg);
         this.estado.set('error');
       },

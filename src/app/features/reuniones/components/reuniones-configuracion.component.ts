@@ -315,7 +315,7 @@ export class ReunionesConfiguracionComponent implements OnInit {
   searchQuery = signal('');
   filtroSexo = signal<'todos' | 'solo_hombres' | 'solo_mujeres'>('todos');
   currentPage = signal(1);
-  pageSize = signal(11);
+  pageSize = signal(20);
   protected readonly Math = Math;
 
   // ── Change tracking ──
