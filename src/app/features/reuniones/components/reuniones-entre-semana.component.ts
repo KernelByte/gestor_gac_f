@@ -113,7 +113,7 @@ import {
                   (click)="selectedWeekIdx.set(i)"
                   class="flex items-center gap-1 px-2.5 h-7 rounded-md text-[0.7rem] font-bold whitespace-nowrap transition-all shrink-0"
                   [class]="weekTabClass(i)">
-                  <span>{{ sem.fecha | date:'d MMM' }}</span>
+                  <span>{{ sem.fecha | date:'d MMMM' }}</span>
                 </button>
               }
             </div>
@@ -209,10 +209,6 @@ import {
                           ? 'background:' + seccion.color + '; color:white; box-shadow:0 1px 4px rgba(0,0,0,0.18)'
                           : 'color:' + seccion.color + '; opacity:0.55'">
                         Sala B
-                        <span style="font-size:0.55rem; font-weight:900; font-family:monospace; padding:1px 5px; border-radius:4px;"
-                          [style.background]="selectedSala() === 'Auxiliar' ? 'rgba(255,255,255,0.25)' : seccionColor(seccion.color, 0.15)">
-                          {{ salaCounts().auxiliar }}
-                        </span>
                       </button>
                     </div>
                   }
