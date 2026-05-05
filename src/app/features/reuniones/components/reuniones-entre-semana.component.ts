@@ -12,6 +12,7 @@ import { ReunionesService } from '../services/reuniones.service';
 import { AsistenciaService } from '../services/asistencia.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
+import { ThemeService } from '../../../core/services/theme.service';
 import {
   ProgramaSemana,
   AsignacionDraft,
@@ -56,10 +57,7 @@ import {
             *ngIf="hasEditPermission()"
             (click)="confirmar()"
             [disabled]="!canConfirmar()"
-            class="flex items-center gap-1.5 px-3 h-9 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95"
-            style="background:rgba(5,150,105,0.08); border-color:rgba(5,150,105,0.25); color:#047857;"
-            onmouseenter="if(!this.disabled)this.style.background='rgba(5,150,105,0.14)'"
-            onmouseleave="this.style.background='rgba(5,150,105,0.08)'">
+            class="btn-confirmar flex items-center gap-1.5 px-3 h-9 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             Confirmar
           </button>
@@ -67,10 +65,7 @@ import {
             *ngIf="hasEditPermission()"
             (click)="borrarBorrador()"
             [disabled]="!canBorrarBorrador()"
-            class="flex items-center gap-1.5 px-3 h-9 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95"
-            style="background:rgba(220,38,38,0.07); border-color:rgba(220,38,38,0.22); color:#b91c1c;"
-            onmouseenter="if(!this.disabled)this.style.background='rgba(220,38,38,0.13)'"
-            onmouseleave="this.style.background='rgba(220,38,38,0.07)'">
+            class="btn-borrar flex items-center gap-1.5 px-3 h-9 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             Borrar borrador
           </button>
@@ -118,7 +113,6 @@ import {
                   (click)="selectedWeekIdx.set(i)"
                   class="flex items-center gap-1 px-2.5 h-7 rounded-md text-[0.7rem] font-bold whitespace-nowrap transition-all shrink-0"
                   [class]="weekTabClass(i)">
-                  <span class="font-mono opacity-70">S{{ sem.semana_iso }}</span>
                   <span>{{ sem.fecha | date:'d MMM' }}</span>
                 </button>
               }
@@ -164,7 +158,7 @@ import {
                 <p class="text-[0.78rem] font-bold text-slate-700 dark:text-slate-200 truncate">{{ semana.titulo_guia }}</p>
               }
               <p class="text-[0.6rem] text-slate-400 dark:text-slate-500 font-medium leading-none mt-0.5">
-                {{ semana.partes.length }} partes · semana {{ semana.semana_iso }}
+                {{ semana.partes.length }} partes
               </p>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
@@ -174,7 +168,7 @@ import {
           </div>
 
           <!-- Parts list grouped by section -->
-          <div class="flex-1 overflow-y-auto simple-scrollbar" style="background:#f8f9fb">
+          <div class="flex-1 overflow-y-auto simple-scrollbar bg-[#f8f9fb] dark:bg-slate-950">
             @for (seccion of seccionesActuales(); track seccion.id) {
 
               <!-- Section header -->
@@ -222,12 +216,7 @@ import {
                       </button>
                     </div>
                   }
-                  <!-- Count -->
-                  <span class="text-[0.58rem] font-bold px-1.5 py-0.5 rounded-md shrink-0"
-                    [style.color]="seccion.color"
-                    [style.background-color]="seccion.badgeBg">
-                    {{ seccion.partes.length }}
-                  </span>
+
                 </div>
                 <!-- Bottom border line using section color -->
                 <div class="h-px" [style.background]="seccion.headerBorder"></div>
@@ -245,7 +234,7 @@ import {
 
                       <!-- Pair divider -->
                       @if (pi > 0) {
-                        <div class="mx-4 h-px" style="background:rgba(0,0,0,0.06)"></div>
+                        <div class="mx-4 h-px bg-black/[0.06] dark:bg-white/[0.07]"></div>
                       }
 
                       <div class="px-3.5 py-2.5 flex items-center justify-between gap-3">
@@ -309,21 +298,17 @@ import {
 
                           @if (openDropdownId() === asig.id_programa_parte + (asig.es_ayudante ? 10000 : 0) && asig.alternativos.length > 0) {
                             <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden"
-                              style="border-radius:14px; background:white; border:1px solid rgba(0,0,0,0.08); box-shadow:0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)">
-                              <div class="px-3.5 py-2.5 flex items-center gap-2"
-                                style="border-bottom:1px solid rgba(0,0,0,0.06); background:rgba(0,0,0,0.02)">
+                              style="border-radius:14px">
+                              <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
                                 <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
-                                <span class="text-[0.6rem] font-bold uppercase tracking-widest" style="color:#94a3b8">Candidatos</span>
+                                <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest">Candidatos</span>
                               </div>
                               <div class="p-1.5 flex flex-col gap-0.5">
                                 @for (alt of asig.alternativos; track alt.id_publicador) {
                                   <button
                                     (click)="swapAsignacion(selectedWeekIdx(), asig.id_programa_parte, alt, asig.es_ayudante)"
-                                    class="w-full flex items-center justify-between gap-3 px-3 py-2 text-left rounded-[8px]"
-                                    style="transition: background-color 100ms ease;"
-                                    onmouseenter="this.style.background='rgba(0,0,0,0.04)'"
-                                    onmouseleave="this.style.background='transparent'">
-                                    <span class="text-[0.75rem] font-semibold truncate" style="color:#334155">{{ alt.nombre_completo }}</span>
+                                    class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2 text-left rounded-[8px]">
+                                    <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
                                     <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
                                       [style.color]="seccion.color"
                                       [style.background-color]="seccion.badgeBg">
@@ -454,7 +439,7 @@ import {
     .parte-card.is-open {
       z-index: 50;
     }
-    .dark .parte-card {
+    :host-context(.dark) .parte-card {
       background: rgba(30,41,59,0.9);
       border-color: rgba(255,255,255,0.07);
     }
@@ -464,6 +449,10 @@ import {
       .parte-card:hover {
         border-color: rgba(0,0,0,0.14);
         box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      }
+      :host-context(.dark) .parte-card:hover {
+        border-color: rgba(255,255,255,0.12);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
       }
     }
     .parte-card:nth-child(1)  { animation-delay:  15ms; }
@@ -504,7 +493,7 @@ import {
       border-color: rgba(109,40,217,0.18);
       box-shadow: 0 1px 2px rgba(109,40,217,0.06);
     }
-    .dark .assignee-btn.normal {
+    :host-context(.dark) .assignee-btn.normal {
       background: rgba(139,92,246,0.12);
       color: #c4b5fd;
       border-color: rgba(139,92,246,0.22);
@@ -521,7 +510,7 @@ import {
       color: #dc2626;
       border-color: rgba(239,68,68,0.25);
     }
-    .dark .assignee-btn.conflict {
+    :host-context(.dark) .assignee-btn.conflict {
       background: rgba(239,68,68,0.12);
       color: #fca5a5;
       border-color: rgba(239,68,68,0.3);
@@ -532,7 +521,7 @@ import {
       color: #b45309;
       border-color: rgba(245,158,11,0.28);
     }
-    .dark .assignee-btn.swapped {
+    :host-context(.dark) .assignee-btn.swapped {
       background: rgba(245,158,11,0.12);
       color: #fcd34d;
       border-color: rgba(245,158,11,0.3);
@@ -546,7 +535,33 @@ import {
     .dropdown-panel {
       transform-origin: top right;
       animation: dropIn 160ms var(--ease-out-expo);
+      background: white;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
     }
+    :host-context(.dark) .dropdown-panel {
+      background: #1e293b;
+      border-color: rgba(255,255,255,0.1);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .dropdown-header {
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      background: rgba(0,0,0,0.02);
+    }
+    :host-context(.dark) .dropdown-header {
+      background: rgba(255,255,255,0.03);
+      border-bottom-color: rgba(255,255,255,0.08);
+    }
+    .dropdown-label { color: #94a3b8; }
+    :host-context(.dark) .dropdown-label { color: #cbd5e1; }
+    .dropdown-alt-name { color: #334155; }
+    :host-context(.dark) .dropdown-alt-name { color: #e2e8f0; }
+    .dropdown-alt-row {
+      transition: background-color 100ms ease;
+      background: transparent;
+    }
+    .dropdown-alt-row:hover { background: rgba(0,0,0,0.04); }
+    :host-context(.dark) .dropdown-alt-row:hover { background: rgba(255,255,255,0.06); }
 
     /* ── Chevron rotate ── */
     .chevron {
@@ -560,6 +575,40 @@ import {
       to   { opacity: 1; transform: translateY(0); }
     }
     .animate-fadeIn { animation: fadeIn 0.15s ease-out; }
+
+    /* ── Action buttons (Confirmar / Borrar) ── */
+    .btn-confirmar {
+      background: rgba(5,150,105,0.08);
+      border-color: rgba(5,150,105,0.25);
+      color: #047857;
+    }
+    .btn-confirmar:not(:disabled):hover {
+      background: rgba(5,150,105,0.14);
+    }
+    :host-context(.dark) .btn-confirmar {
+      background: rgba(52,211,153,0.1);
+      border-color: rgba(52,211,153,0.22);
+      color: #6ee7b7;
+    }
+    :host-context(.dark) .btn-confirmar:not(:disabled):hover {
+      background: rgba(52,211,153,0.18);
+    }
+    .btn-borrar {
+      background: rgba(220,38,38,0.07);
+      border-color: rgba(220,38,38,0.22);
+      color: #b91c1c;
+    }
+    .btn-borrar:not(:disabled):hover {
+      background: rgba(220,38,38,0.13);
+    }
+    :host-context(.dark) .btn-borrar {
+      background: rgba(248,113,113,0.1);
+      border-color: rgba(248,113,113,0.2);
+      color: #fca5a5;
+    }
+    :host-context(.dark) .btn-borrar:not(:disabled):hover {
+      background: rgba(248,113,113,0.16);
+    }
   `]
 })
 export class ReunionesEntreSemanaComponent implements OnInit {
@@ -568,6 +617,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
   private asistenciaSvc = inject(AsistenciaService);
   congregacionCtx = inject(CongregacionContextService);
   private authStore = inject(AuthStore);
+  private themeService = inject(ThemeService);
 
   hasEditPermission = computed(() => {
     return this.authStore.hasPermission('reuniones.entre_semana_editar') || !!this.authStore.user()?.roles?.includes('Secretario');
@@ -639,6 +689,15 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     return `rgb(${r},${g},${b})`;
   }
 
+  /** Mezcla el color de sección con slate-950 (#0f172a) para dark mode */
+  seccionColorSolidDark(color: string, mix: number): string {
+    const darkR = 15, darkG = 23, darkB = 42;
+    const r = Math.round(darkR * (1 - mix) + parseInt(color.slice(1, 3), 16) * mix);
+    const g = Math.round(darkG * (1 - mix) + parseInt(color.slice(3, 5), 16) * mix);
+    const b = Math.round(darkB * (1 - mix) + parseInt(color.slice(5, 7), 16) * mix);
+    return `rgb(${r},${g},${b})`;
+  }
+
   // ── Computed ───────────────────────────────────────────────────
   currentSemana = computed(() => this.semanas()[this.selectedWeekIdx()] ?? null);
 
@@ -672,13 +731,14 @@ export class ReunionesEntreSemanaComponent implements OnInit {
   seccionesActuales = computed(() => {
     const semana = this.currentSemana();
     if (!semana) return [];
+    const isDark = this.themeService.darkMode();
     const sala = this.selectedSala();
     const filtered = semana.partes.filter(p => {
       if (p.sala === 'Auxiliar') return sala === 'Auxiliar';
       if (p.aplica_sala_b) return sala === 'Principal';
       return true;
     });
-    return this._buildSecciones(filtered);
+    return this._buildSecciones(filtered, isDark);
   });
 
   private _inferSeccion(p: AsignacionDraft): string {
@@ -704,7 +764,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     return 'tesoros';
   }
 
-  private _buildSecciones(partes: AsignacionDraft[]) {
+  private _buildSecciones(partes: AsignacionDraft[], isDark: boolean) {
     const map = new Map<string, AsignacionDraft[]>();
     for (const p of partes) {
       const key = this._inferSeccion(p);
@@ -722,11 +782,11 @@ export class ReunionesEntreSemanaComponent implements OnInit {
         color: cfg.color,
         orden: cfg.orden,
         iconPath: cfg.iconPath,
-        // fondo sólido opaco para el sticky header (mezcla con blanco)
-        headerBg: this.seccionColorSolid(cfg.color, 0.12),
-        headerBorder: this.seccionColor(cfg.color, 0.25),
-        // badge y chips
-        badgeBg: this.seccionColor(cfg.color, 0.14),
+        headerBg: isDark
+          ? this.seccionColorSolidDark(cfg.color, 0.08)
+          : this.seccionColorSolid(cfg.color, 0.12),
+        headerBorder: this.seccionColor(cfg.color, isDark ? 0.4 : 0.25),
+        badgeBg: this.seccionColor(cfg.color, isDark ? 0.18 : 0.14),
         partes: seccionPartes,
         grupos,
       });
