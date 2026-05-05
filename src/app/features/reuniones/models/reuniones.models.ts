@@ -4,6 +4,8 @@ export interface PlantillaOption {
   tipo: string;
   mes_inicio?: number | null;
   ano_inicio?: number | null;
+  mes_fin?: number | null;
+  ano_fin?: number | null;
 }
 
 export interface CandidatoAlternativo {
@@ -16,11 +18,15 @@ export interface CandidatoAlternativo {
 export interface AsignacionDraft {
   id_programa_parte: number;
   nombre_parte?: string;
+  seccion?: string;
+  sala?: string;
+  orden_visual?: number;
+  duracion_minutos?: number;
+  aplica_sala_b?: boolean;
   id_publicador: number;
   nombre_completo: string;
   es_reemplazo: boolean;
   es_ayudante?: boolean;
-  sala?: string;
   estado: 'draft' | 'conflict' | 'confirmado';
   alternativos: CandidatoAlternativo[];
   _swapped?: boolean;
@@ -65,6 +71,8 @@ export interface ConfirmarDraftRequest {
 export interface GenerarMesForm {
   mes: number;
   ano: number;
+  mes_fin: number;
+  ano_fin: number;
   id_plantilla: number;
   dia_reunion: number;
 }
