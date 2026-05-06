@@ -160,19 +160,12 @@ export class TimeAgoPipe implements PipeTransform {
                             [ngClass]="rlaResumen.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Resumen Hoy</span>
                    </a>
-                   <a *ngIf="hasPermission('reuniones.entre_semana_ver')" routerLink="/reuniones/entre-semana" routerLinkActive="sub-active" #rlaEntre="routerLinkActive"
+                   <a *ngIf="hasPermission('reuniones.entre_semana_ver') || hasPermission('reuniones.fin_semana_ver')" routerLink="/reuniones/programacion" routerLinkActive="sub-active" #rlaProg="routerLinkActive"
                       class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
-                      [ngClass]="rlaEntre.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
+                      [ngClass]="rlaProg.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
                       <span class="-ml-[17px] absolute w-[5px] h-[5px] rounded-full shadow-[0_0_0_3px_#ffffff] dark:shadow-[0_0_0_3px_#0f172a] transition-all duration-300"
-                            [ngClass]="rlaEntre.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
-                      <span class="truncate">Entre Semana</span>
-                   </a>
-                   <a *ngIf="hasPermission('reuniones.fin_semana_ver')" routerLink="/reuniones/fin-semana" routerLinkActive="sub-active" #rlaFin="routerLinkActive"
-                      class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
-                      [ngClass]="rlaFin.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/[0.02]'">
-                      <span class="-ml-[17px] absolute w-[5px] h-[5px] rounded-full shadow-[0_0_0_3px_#ffffff] dark:shadow-[0_0_0_3px_#0f172a] transition-all duration-300"
-                            [ngClass]="rlaFin.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
-                      <span class="truncate">Fin de Semana</span>
+                            [ngClass]="rlaProg.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-100' : 'bg-slate-200 dark:bg-slate-800 scale-[0.6] group-hover:scale-75'"></span>
+                      <span class="truncate">Programación</span>
                    </a>
                    <a *ngIf="hasPermission('reuniones.asistencia_ver')" routerLink="/reuniones/asistencia" routerLinkActive="sub-active" #rlaAsist="routerLinkActive"
                       class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
@@ -734,10 +727,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Territorios', subtitle: 'Gestión de mapas y asignaciones.' });
     } else if (url.includes('/exhibidores')) {
       this.pageTitle.set({ title: 'Exhibidores', subtitle: 'Gestión de puntos de predicación pública.' });
-    } else if (url.includes('/reuniones/entre-semana')) {
-      this.pageTitle.set({ title: 'Vida y Ministerio', subtitle: 'Programa y asignaciones de la reunión entre semana.' });
-    } else if (url.includes('/reuniones/fin-semana')) {
-      this.pageTitle.set({ title: 'Reunión Fin de Semana', subtitle: 'Discurso público y Atalaya.' });
+    } else if (url.includes('/reuniones/programacion') || url.includes('/reuniones/entre-semana') || url.includes('/reuniones/fin-semana')) {
+      this.pageTitle.set({ title: 'Programación de Reuniones', subtitle: 'Programa y asignaciones por congregación.' });
     } else if (url.includes('/reuniones/asistencia')) {
       this.pageTitle.set({ title: 'Asistencia', subtitle: 'Registro y seguimiento de asistencia semanal.' });
     } else if (url.includes('/reuniones/configuracion')) {

@@ -22,10 +22,11 @@ import {
   GenerarAsignacionesRequest,
   ProgramaMensualCreateRequest,
   ConfirmarDraftRequest,
+  EditarAsignacionRequest,
 } from '../models/reuniones.models';
 
 @Component({
-  selector: 'app-reuniones-entre-semana',
+  selector: 'app-reuniones-programacion',
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -35,7 +36,7 @@ import {
       <div class="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 class="text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-            Vida y Ministerio Cristianos
+            {{ tituloReunion() }}
           </h1>
           <div class="flex items-center gap-2 mt-1">
             <span [class]="estadoBadgeClass()">{{ estadoLabel() }}</span>
@@ -72,6 +73,32 @@ import {
         </div>
       </div>
 
+      <!-- ===== MEETING TYPE SELECTOR ===== -->
+      @if (showTipoTabs()) {
+        <div class="shrink-0 flex items-center justify-center sm:justify-start">
+          <div class="tipo-tabs inline-flex items-center rounded-xl p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+            <button
+              (click)="onTipoChange('entre_semana')"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95"
+              [class]="tipoReunionActivo() === 'entre_semana'
+                ? 'bg-white dark:bg-slate-700 text-[#6D28D9] dark:text-purple-300 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+              Vida y Ministerio
+            </button>
+            <button
+              (click)="onTipoChange('fin_semana')"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95"
+              [class]="tipoReunionActivo() === 'fin_semana'
+                ? 'bg-white dark:bg-slate-700 text-[#6D28D9] dark:text-purple-300 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+              Reunión Pública
+            </button>
+          </div>
+        </div>
+      }
+
       <!-- ===== ERROR ===== -->
       @if (estado() === 'error') {
         <div class="shrink-0 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 p-4 flex items-center gap-3">
@@ -104,7 +131,7 @@ import {
       <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
 
         <!-- ── CARD TOOLBAR: week navigation + sala filter ── -->
-        @if (estado() === 'draft' || estado() === 'confirmado') {
+        @if (estado() === 'draft' || estado() === 'confirmado' || estado() === 'historial') {
           <div class="shrink-0 flex items-center justify-between gap-3 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
             <!-- Week pills (scrollable) -->
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
@@ -117,6 +144,14 @@ import {
                 </button>
               }
             </div>
+            @if (estado() === 'historial') {
+              <button
+                (click)="semanas.set([]); estado.set('idle')"
+                class="shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-full text-[0.65rem] font-bold border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400 transition-all active:scale-95">
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Volver
+              </button>
+            }
           </div>
         }
 
@@ -145,11 +180,47 @@ import {
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Generar Mes
             </button>
+
+            <!-- Ver historial de programaciones confirmadas -->
+            @if (loadingPeriodos()) {
+              <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 w-full max-w-xs flex justify-center">
+                <div class="w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-violet-500 animate-spin"></div>
+              </div>
+            } @else if (periodos().length > 0) {
+              <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 w-full max-w-sm">
+                <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-3 text-center">Ver programación confirmada</p>
+                <div class="flex flex-col gap-1.5">
+                  @for (p of periodos(); track p.ano + '-' + p.mes) {
+                    <div class="flex items-center gap-1.5">
+                      <button
+                        (click)="loadHistorial(p.mes, p.ano)"
+                        [disabled]="loadingHistorial()"
+                        class="flex-1 flex items-center justify-between px-4 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-40 group">
+                        <span>{{ p.label }}</span>
+                        <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </button>
+                      @if (periodoEliminable(p) && hasEditPermission()) {
+                        <button
+                          (click)="eliminarHistorial(p, $event)"
+                          title="Eliminar programación de {{ p.label }}"
+                          class="shrink-0 w-9 h-9 rounded-xl border border-red-100 dark:border-red-900/30 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-700 text-red-400 hover:text-red-600 dark:hover:text-red-400 transition-all active:scale-95 flex items-center justify-center">
+                          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                          </svg>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
           </div>
         }
 
-        <!-- DRAFT / CONFIRMADO: assignment list -->
-        @if ((estado() === 'draft' || estado() === 'confirmado') && currentSemana(); as semana) {
+        <!-- DRAFT / CONFIRMADO / HISTORIAL: assignment list -->
+        @if ((estado() === 'draft' || estado() === 'confirmado' || estado() === 'historial') && currentSemana(); as semana) {
 
           <!-- Sticky content header: week title + estado -->
           <div class="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-2 flex items-center justify-between gap-4">
@@ -162,7 +233,8 @@ import {
               </p>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="estado() === 'confirmado' ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+              <span class="w-1.5 h-1.5 rounded-full shrink-0"
+                [class]="estado() === 'confirmado' ? 'bg-emerald-400' : estado() === 'historial' ? 'bg-violet-400' : 'bg-amber-400'"></span>
               <span class="text-[0.6rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ estadoLabel() }}</span>
             </div>
           </div>
@@ -264,7 +336,7 @@ import {
                         @for (asig of grupo.partes; track asig.id_programa_parte; let pi = $index) {
                           <div class="relative">
                             <button
-                              (click)="toggleDropdown(asig.id_programa_parte)"
+                              (click)="estado() === 'historial' ? openHistorialEdit(asig) : toggleDropdown(asig.id_programa_parte)"
                               [disabled]="estado() === 'confirmado' || !hasEditPermission()"
                               [class]="assigneeButtonClass(asig)">
                               <!-- Role badge inside pill (only for paired parts) -->
@@ -275,28 +347,33 @@ import {
                                 <span class="opacity-30 text-[0.6rem] leading-none shrink-0">·</span>
                               }
                               <span>{{ asig.nombre_completo }}</span>
-                              @if (estado() !== 'confirmado' && asig.alternativos.length > 0) {
+                              @if (estado() === 'draft' && asig.alternativos.length > 0) {
                                 <svg class="chevron w-3 h-3 shrink-0"
                                   [class.open]="openDropdownId() === asig.id_programa_parte"
                                   fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                                 </svg>
                               }
+                              @if (estado() === 'historial' && hasEditPermission()) {
+                                <svg class="w-3 h-3 shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.414-6.414a2 2 0 112.828 2.828L11.828 13.828A2 2 0 0111 14.414V16h1.586a2 2 0 001.414-.586l.586-.586"/>
+                                </svg>
+                              }
                               <!-- × para eliminar ayudante -->
-                              @if (asig.es_ayudante && estado() !== 'confirmado' && hasEditPermission()) {
+                              @if (asig.es_ayudante && estado() !== 'confirmado' && estado() !== 'historial' && hasEditPermission()) {
                                 <span
                                   (click)="onEliminarAyudante(asig, selectedWeekIdx(), $event)"
                                   class="opacity-40 hover:opacity-90 leading-none shrink-0 ml-0.5 cursor-pointer active:scale-90 transition-all"
                                   title="Quitar ayudante">✕</span>
                               }
                             </button>
-                            @if (openDropdownId() === asig.id_programa_parte && asig.alternativos.length > 0) {
+                            <!-- Draft dropdown -->
+                            @if (estado() === 'draft' && openDropdownId() === asig.id_programa_parte && asig.alternativos.length > 0) {
                               <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden"
                                 style="border-radius:14px">
                                 <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
                                   <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
                                   <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Candidatos</span>
-                                  <!-- Filtro de sexo (solo para ayudantes) -->
                                   @if (asig.es_ayudante) {
                                     <div class="flex items-center gap-0.5">
                                       @for (opt of sexoOpts; track opt.v) {
@@ -324,6 +401,38 @@ import {
                                         {{ alt.score | number:'1.2-2' }}
                                       </span>
                                     </button>
+                                  }
+                                </div>
+                              </div>
+                            }
+                            <!-- Historial edit dropdown -->
+                            @if (estado() === 'historial' && editingHistorialId() === asig.id_asignacion) {
+                              <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden"
+                                style="border-radius:14px">
+                                <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
+                                  <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
+                                  <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Cambiar asignado</span>
+                                </div>
+                                <div class="p-1.5 flex flex-col gap-0.5">
+                                  @if (loadingCandidatos()) {
+                                    <div class="flex items-center justify-center py-3">
+                                      <div class="w-4 h-4 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
+                                    </div>
+                                  } @else if (historialCandidatos().length === 0) {
+                                    <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin candidatos disponibles</p>
+                                  } @else {
+                                    @for (alt of historialCandidatos(); track alt.id_publicador) {
+                                      <button
+                                        (click)="selectHistorialCandidato(selectedWeekIdx(), asig, alt)"
+                                        class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2 text-left rounded-[8px]">
+                                        <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
+                                        <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
+                                          [style.color]="seccion.color"
+                                          [style.background-color]="seccion.badgeBg">
+                                          {{ alt.score | number:'1.2-2' }}
+                                        </span>
+                                      </button>
+                                    }
                                   }
                                 </div>
                               </div>
@@ -637,7 +746,7 @@ import {
     }
   `]
 })
-export class ReunionesEntreSemanaComponent implements OnInit {
+export class ReunionesProgramacionComponent implements OnInit {
 
   private reunionesSvc = inject(ReunionesService);
   private asistenciaSvc = inject(AsistenciaService);
@@ -646,11 +755,13 @@ export class ReunionesEntreSemanaComponent implements OnInit {
   private themeService = inject(ThemeService);
 
   hasEditPermission = computed(() => {
-    return this.authStore.hasPermission('reuniones.entre_semana_editar') || !!this.authStore.user()?.roles?.includes('Secretario');
+    const tipo = this.tipoReunionActivo();
+    const perm = tipo === 'entre_semana' ? 'reuniones.entre_semana_editar' : 'reuniones.fin_semana_editar';
+    return this.authStore.hasPermission(perm) || !!this.authStore.user()?.roles?.includes('Secretario');
   });
 
   // ── State machine ──────────────────────────────────────────────
-  estado = signal<'idle' | 'loading' | 'draft' | 'confirmado' | 'error'>('idle');
+  estado = signal<'idle' | 'loading' | 'draft' | 'confirmado' | 'historial' | 'error'>('idle');
   errorMsg = signal<string | null>(null);
 
   // ── Data signals ───────────────────────────────────────────────
@@ -658,6 +769,14 @@ export class ReunionesEntreSemanaComponent implements OnInit {
   selectedWeekIdx = signal(0);
   plantillas = signal<PlantillaOption[]>([]);
   loadingPlantillas = signal(false);
+
+  // ── Historial signals ──────────────────────────────────────────
+  periodos = signal<{ ano: number; mes: number; label: string }[]>([]);
+  loadingPeriodos = signal(false);
+  loadingHistorial = signal(false);
+  editingHistorialId = signal<number | null>(null);
+  historialCandidatos = signal<CandidatoAlternativo[]>([]);
+  loadingCandidatos = signal(false);
 
   // ── Modal ──────────────────────────────────────────────────────
   showModal = signal(false);
@@ -674,30 +793,79 @@ export class ReunionesEntreSemanaComponent implements OnInit {
   openDropdownId = signal<number | null>(null);
   selectedSala = signal<'Principal' | 'Auxiliar'>('Principal');
 
+  // ── Meeting type toggle ────────────────────────────────────────
+  tipoReunionActivo = signal<'entre_semana' | 'fin_semana'>('entre_semana');
+
+  canViewEntreSemana = computed(() =>
+    this.authStore.hasPermission('reuniones.entre_semana_ver') ||
+    !!this.authStore.user()?.roles?.includes('Secretario')
+  );
+  canViewFinSemana = computed(() =>
+    this.authStore.hasPermission('reuniones.fin_semana_ver') ||
+    !!this.authStore.user()?.roles?.includes('Secretario')
+  );
+  showTipoTabs = computed(() => this.canViewEntreSemana() && this.canViewFinSemana());
+
+  tituloReunion = computed(() =>
+    this.tipoReunionActivo() === 'entre_semana'
+      ? 'Vida y Ministerio Cristianos'
+      : 'Reunión Pública y Atalaya'
+  );
+
   // ── Section config ─────────────────────────────────────────────
-  private readonly SECCIONES_CONFIG: Record<string, { titulo: string; color: string; orden: number; iconPath: string; iconViewBox?: string }> = {
+  private readonly SECCIONES_ENTRE_SEMANA: Record<string, { titulo: string; color: string; orden: number; iconPath: string; iconViewBox?: string }> = {
     tesoros: {
       titulo: 'Tesoros de la Biblia',
       color: '#3c7f8b',
       orden: 0,
-      // book-open icon
       iconPath: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
     },
     seamos_mejores: {
       titulo: 'Seamos Mejores Maestros',
       color: '#d68f00',
       orden: 1,
-      // microphone icon
       iconPath: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z',
     },
     nuestra_vida: {
       titulo: 'Nuestra Vida Cristiana',
       color: '#bf2f13',
       orden: 2,
-      // users icon
       iconPath: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
     },
   };
+
+  private readonly SECCIONES_FIN_SEMANA: Record<string, { titulo: string; color: string; orden: number; iconPath: string; iconViewBox?: string }> = {
+    introduccion: {
+      titulo: 'Introducción',
+      color: '#6366f1',
+      orden: 0,
+      iconPath: 'M9 18V5l12-2v13M6 18a3 3 0 100-6 3 3 0 000 6zM18 16a3 3 0 100-6 3 3 0 000 6z',
+    },
+    discurso_publico: {
+      titulo: 'Discurso Público',
+      color: '#2563eb',
+      orden: 1,
+      iconPath: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z',
+    },
+    estudio_atalaya: {
+      titulo: 'Estudio de La Atalaya',
+      color: '#059669',
+      orden: 2,
+      iconPath: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+    },
+    conclusion: {
+      titulo: 'Conclusión',
+      color: '#64748b',
+      orden: 3,
+      iconPath: 'M9 18V5l12-2v13M6 18a3 3 0 100-6 3 3 0 000 6zM18 16a3 3 0 100-6 3 3 0 000 6z',
+    },
+  };
+
+  private get seccionesConfig() {
+    return this.tipoReunionActivo() === 'entre_semana'
+      ? this.SECCIONES_ENTRE_SEMANA
+      : this.SECCIONES_FIN_SEMANA;
+  }
 
 
   seccionColor(color: string, alpha: number): string {
@@ -768,25 +936,41 @@ export class ReunionesEntreSemanaComponent implements OnInit {
   });
 
   private _inferSeccion(p: AsignacionDraft): string {
+    const cfg = this.seccionesConfig;
     // 1. Key exacto (seed-based programs)
-    if (p.seccion && this.SECCIONES_CONFIG[p.seccion]) return p.seccion;
+    if (p.seccion && cfg[p.seccion]) return p.seccion;
 
-    // 2. Mapeo flexible del string de sección que guarda el parser MWB
+    // 2. Mapeo flexible del string de sección
     const s = (p.seccion || '').toLowerCase();
+
+    // -- Fin de semana mappings --
+    if (this.tipoReunionActivo() === 'fin_semana') {
+      if (s.includes('discurso') || s.includes('publico') || s.includes('público')) return 'discurso_publico';
+      if (s.includes('atalaya') || s.includes('estudio')) return 'estudio_atalaya';
+      if (s.includes('apertura') || s.includes('introduccion') || s.includes('introducción')) return 'introduccion';
+      if (s.includes('clausura') || s.includes('conclusion') || s.includes('conclusión') || s.includes('final')) return 'conclusion';
+      // fallback by part name
+      const n = (p.nombre_parte || '').toLowerCase();
+      if (n.includes('discurso') || n.includes('orador')) return 'discurso_publico';
+      if (n.includes('atalaya') || n.includes('conductor') || n.includes('lector')) return 'estudio_atalaya';
+      if (n.includes('presidente') || n.includes('oración inicial') || n.includes('oracion inicial') || n.includes('canto')) return 'introduccion';
+      if (n.includes('oración final') || n.includes('oracion final')) return 'conclusion';
+      return 'introduccion';
+    }
+
+    // -- Entre semana mappings --
     if (s.includes('tesoro')) return 'tesoros';
     if (s.includes('mejor') || s.includes('maestro')) return 'seamos_mejores';
     if (s.includes('vida') || s.includes('cristian')) return 'nuestra_vida';
-    // apertura/clausura van a tesoros (presidente, oraciones de apertura)
     if (s.includes('apertura')) return 'tesoros';
     if (s.includes('clausura')) return 'nuestra_vida';
 
-    // 3. Inferencia por nombre de parte (fallback para drafts sin seccion)
+    // 3. Inferencia por nombre de parte
     const n = (p.nombre_parte || '').toLowerCase();
     if (n.includes('tesoros') || n.includes('lectura de la biblia') || n.includes('busquemos') || n.includes('perlas') || n.includes('presidente') || n.includes('oración inicial') || n.includes('oracion inicial')) return 'tesoros';
     if (n.includes('empiece') || n.includes('revisita') || n.includes('discípulo') || n.includes('haga discí') || n.includes('seamos') || n.includes('maestro')) return 'seamos_mejores';
     if (n.includes('estudio bíblico') || n.includes('estudio biblico') || n.includes('necesidades') || n.includes('oración final') || n.includes('oracion final') || n.includes('conductor') || n.includes('hospitalario') || n.includes('anuncio')) return 'nuestra_vida';
 
-    // 4. Sin suficiente información — usa el orden visual si existiera, o tesoros como último recurso
     return 'tesoros';
   }
 
@@ -800,7 +984,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
 
     const result: any[] = [];
     for (const [seccionKey, seccionPartes] of map) {
-      const cfg = this.SECCIONES_CONFIG[seccionKey] ?? this.SECCIONES_CONFIG['tesoros'];
+      const cfg = this.seccionesConfig[seccionKey] ?? Object.values(this.seccionesConfig)[0];
       const grupos = this._buildGrupos(seccionPartes);
       result.push({
         id: seccionKey,
@@ -883,6 +1067,10 @@ export class ReunionesEntreSemanaComponent implements OnInit {
 
   // ── Lifecycle ──────────────────────────────────────────────────
   ngOnInit(): void {
+    // Set initial type based on user permissions
+    if (!this.canViewEntreSemana() && this.canViewFinSemana()) {
+      this.tipoReunionActivo.set('fin_semana');
+    }
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong) {
       this.errorMsg.set('No hay congregacion seleccionada. Selecciona una en el panel de administracion.');
@@ -890,19 +1078,29 @@ export class ReunionesEntreSemanaComponent implements OnInit {
       return;
     }
     this.tryLoadDrafts(idCong);
+    this.loadPeriodos(idCong);
+  }
+
+  private loadPeriodos(idCong: number): void {
+    this.loadingPeriodos.set(true);
+    this.reunionesSvc.getPeriodosConfirmados(this.tipoReunionActivo(), idCong).subscribe({
+      next: (p) => { this.periodos.set(p); this.loadingPeriodos.set(false); },
+      error: () => this.loadingPeriodos.set(false),
+    });
   }
 
   // ── Load existing drafts ───────────────────────────────────────
   private tryLoadDrafts(idCong: number): void {
     const now = new Date();
-    const fechas = this.calcFechas(now.getFullYear(), now.getMonth() + 1, 2);
+    const defaultDay = this.tipoReunionActivo() === 'entre_semana' ? 2 : 7;
+    const fechas = this.calcFechas(now.getFullYear(), now.getMonth() + 1, defaultDay);
     if (fechas.length === 0) { this.estado.set('idle'); return; }
 
     this.estado.set('loading');
     const ano = now.getFullYear();
     const requests = fechas.map((f) =>
       this.reunionesSvc
-        .getDraft('entre_semana', ano, this.getIsoWeek(f), idCong)
+        .getDraft(this.tipoReunionActivo(), ano, this.getIsoWeek(f), idCong)
         .pipe(catchError(() => of(null)))
     );
 
@@ -927,11 +1125,12 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     this.showModal.set(true);
     this.loadingPlantillas.set(true);
     forkJoin({
-      plantillas: this.reunionesSvc.getPlantillas('entre_semana', idCong),
+      plantillas: this.reunionesSvc.getPlantillas(this.tipoReunionActivo(), idCong),
       config: this.asistenciaSvc.getCongregacionConfig().pipe(catchError(() => of(null))),
     }).subscribe({
       next: ({ plantillas, config }) => {
-        const diaReunion = this.diaReunionToNumber(config?.dia_reunion_entre_semana ?? null);
+        const configKey = this.tipoReunionActivo() === 'entre_semana' ? 'dia_reunion_entre_semana' : 'dia_reunion_fin_semana';
+        const diaReunion = this.diaReunionToNumber(config?.[configKey as keyof typeof config] as string | null ?? null);
         this.plantillas.set(plantillas);
         this.modalForm.update((f) => ({ ...f, dia_reunion: diaReunion }));
         if (plantillas.length > 0) {
@@ -981,8 +1180,11 @@ export class ReunionesEntreSemanaComponent implements OnInit {
       Miercoles: 3,
       Jueves: 4,
       Viernes: 5,
+      Sabado: 6,
+      Domingo: 7,
     };
-    return dia ? map[dia] ?? 2 : 2;
+    const defaultDay = this.tipoReunionActivo() === 'entre_semana' ? 2 : 7;
+    return dia ? map[dia] ?? defaultDay : defaultDay;
   }
 
   onModalSubmit(): void {
@@ -999,7 +1201,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
 
     const createPayload: ProgramaMensualCreateRequest = {
       id_congregacion: idCong,
-      tipo_reunion: 'entre_semana',
+      tipo_reunion: this.tipoReunionActivo(),
       mes: form.mes,
       ano: form.ano,
       semanas: fechas,
@@ -1007,7 +1209,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     };
 
     const genPayload: GenerarAsignacionesRequest = {
-      tipo_reunion: 'entre_semana',
+      tipo_reunion: this.tipoReunionActivo(),
       fecha_inicio: fechas[0],
       fecha_fin: fechas[fechas.length - 1],
       id_congregacion: idCong,
@@ -1087,7 +1289,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     this.estado.set('loading');
 
     const payload: ConfirmarDraftRequest = {
-      tipo_reunion: 'entre_semana',
+      tipo_reunion: this.tipoReunionActivo(),
       semanas_iso: semanasIso,
       ano,
       id_congregacion: idCong,
@@ -1111,7 +1313,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
 
     const ano = new Date(semanas[0].fecha).getFullYear();
     const requests = semanas.map((sem) =>
-      this.reunionesSvc.deleteDraft('entre_semana', ano, sem.semana_iso, idCong)
+      this.reunionesSvc.deleteDraft(this.tipoReunionActivo(), ano, sem.semana_iso, idCong)
     );
 
     this.estado.set('loading');
@@ -1140,6 +1342,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
       loading:    base + 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 animate-pulse',
       draft:      base + 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
       confirmado: base + 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+      historial:  base + 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800',
       error:      base + 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
     };
     return map[this.estado()] ?? map['idle'];
@@ -1151,6 +1354,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
       loading: 'Procesando...',
       draft: 'Borrador',
       confirmado: 'Confirmado',
+      historial: 'Historial',
       error: 'Error',
     };
     return map[this.estado()] ?? '';
@@ -1291,6 +1495,96 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     });
   }
 
+  // ── Historial ──────────────────────────────────────────────────
+  readonly MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  periodoEliminable(p: { ano: number; mes: number }): boolean {
+    const hoy = new Date();
+    const limite = new Date(hoy.getFullYear(), hoy.getMonth() - 4, 1);
+    const periodo = new Date(p.ano, p.mes - 1, 1);
+    return periodo >= limite;
+  }
+
+  eliminarHistorial(p: { ano: number; mes: number; label: string }, event: Event): void {
+    event.stopPropagation();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+    if (!window.confirm(`¿Eliminar todas las asignaciones confirmadas de ${p.label}? Esta acción no se puede deshacer.`)) return;
+    this.reunionesSvc.eliminarHistorialMes(this.tipoReunionActivo(), p.ano, p.mes, idCong).subscribe({
+      next: () => {
+        this.periodos.update(list => list.filter(x => !(x.ano === p.ano && x.mes === p.mes)));
+        if (this.estado() === 'historial') { this.semanas.set([]); this.estado.set('idle'); }
+      },
+    });
+  }
+
+  loadHistorial(mes: number, ano: number): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+    this.loadingHistorial.set(true);
+    this.reunionesSvc.getHistorialConfirmado(this.tipoReunionActivo(), ano, mes, idCong).subscribe({
+      next: (semanas) => {
+        if (semanas.length === 0) {
+          this.errorMsg.set(`No hay programas confirmados para ${this.MESES[mes - 1]} ${ano}.`);
+          this.estado.set('error');
+        } else {
+          this.semanas.set(semanas);
+          this.selectedWeekIdx.set(0);
+          this.selectedSala.set('Principal');
+          this.estado.set('historial');
+        }
+        this.loadingHistorial.set(false);
+      },
+      error: () => {
+        this.errorMsg.set('Error al cargar el historial.');
+        this.estado.set('error');
+        this.loadingHistorial.set(false);
+      },
+    });
+  }
+
+  openHistorialEdit(asig: AsignacionDraft): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong || !asig.id_asignacion) return;
+    if (this.editingHistorialId() === asig.id_asignacion) {
+      this.editingHistorialId.set(null);
+      return;
+    }
+    this.editingHistorialId.set(asig.id_asignacion);
+    this.historialCandidatos.set([]);
+    this.loadingCandidatos.set(true);
+    this.reunionesSvc.getCandidatosConfirmados(asig.id_asignacion, idCong).subscribe({
+      next: (candidatos) => {
+        this.historialCandidatos.set(candidatos);
+        this.loadingCandidatos.set(false);
+      },
+      error: () => this.loadingCandidatos.set(false),
+    });
+  }
+
+  selectHistorialCandidato(semanaIdx: number, asig: AsignacionDraft, candidato: CandidatoAlternativo): void {
+    if (!asig.id_asignacion) return;
+    const payload: EditarAsignacionRequest = { id_publicador_nuevo: candidato.id_publicador };
+    this.reunionesSvc.editarAsignacion(asig.id_asignacion, payload).subscribe({
+      next: (result) => {
+        this.semanas.update((semanas) =>
+          semanas.map((sem, si) => {
+            if (si !== semanaIdx) return sem;
+            return {
+              ...sem,
+              partes: sem.partes.map((p) => {
+                if (p.id_asignacion !== asig.id_asignacion) return p;
+                return { ...p, id_publicador: result.id_publicador, nombre_completo: result.nombre_completo, _swapped: true };
+              }),
+            };
+          })
+        );
+        this.editingHistorialId.set(null);
+      },
+      error: () => this.editingHistorialId.set(null),
+    });
+  }
+
   // ── Date utilities ─────────────────────────────────────────────
   private calcFechasRango(
     anoInicio: number, mesInicio: number,
@@ -1325,5 +1619,26 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
     const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
     return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  }
+
+  // ── Meeting type toggle ────────────────────────────────────────
+  onTipoChange(tipo: 'entre_semana' | 'fin_semana'): void {
+    if (tipo === this.tipoReunionActivo()) return;
+    this.tipoReunionActivo.set(tipo);
+    // Reset state for new type
+    this.semanas.set([]);
+    this.selectedWeekIdx.set(0);
+    this.selectedSala.set('Principal');
+    this.estado.set('idle');
+    this.errorMsg.set(null);
+    this.periodos.set([]);
+    this.openDropdownId.set(null);
+    this.editingHistorialId.set(null);
+    // Reload for the new type
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (idCong) {
+      this.tryLoadDrafts(idCong);
+      this.loadPeriodos(idCong);
+    }
   }
 }

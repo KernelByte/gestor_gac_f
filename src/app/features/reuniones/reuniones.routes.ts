@@ -13,15 +13,11 @@ const generalReunionesGuard: CanActivateFn = () => {
   return inject(Router).createUrlTree(['/']);
 };
 
-const entreSemanaGuard: CanActivateFn = () => {
+const programacionGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.entre_semana_ver') || store.user()?.roles?.includes('Secretario')) return true;
-  return inject(Router).createUrlTree(['/reuniones']);
-};
-
-const finSemanaGuard: CanActivateFn = () => {
-  const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.fin_semana_ver') || store.user()?.roles?.includes('Secretario')) return true;
+  if (store.hasPermission('reuniones.entre_semana_ver') ||
+      store.hasPermission('reuniones.fin_semana_ver') ||
+      store.user()?.roles?.includes('Secretario')) return true;
   return inject(Router).createUrlTree(['/reuniones']);
 };
 
@@ -52,17 +48,14 @@ export const REUNIONES_ROUTES: Routes = [
     loadComponent: () => import('./components/reuniones-asistencia.component').then(m => m.ReunionesAsistenciaComponent)
   },
   {
-    path: 'entre-semana',
-    title: 'Reunión Vida y Ministerio',
-    canActivate: [entreSemanaGuard],
-    loadComponent: () => import('./components/reuniones-entre-semana.component').then(m => m.ReunionesEntreSemanaComponent)
+    path: 'programacion',
+    title: 'Programación de Reuniones',
+    canActivate: [programacionGuard],
+    loadComponent: () => import('./components/reuniones-entre-semana.component').then(m => m.ReunionesProgramacionComponent)
   },
-  {
-    path: 'fin-semana',
-    title: 'Reunión de Fin de Semana',
-    canActivate: [finSemanaGuard],
-    loadComponent: () => import('./components/reuniones-fin-semana.component').then(m => m.ReunionesFinSemanaComponent)
-  },
+  // Backward-compatible redirects
+  { path: 'entre-semana', redirectTo: 'programacion', pathMatch: 'full' },
+  { path: 'fin-semana', redirectTo: 'programacion', pathMatch: 'full' },
   {
     path: 'configuracion',
     title: 'Configuración de Reuniones',

@@ -8,6 +8,7 @@ import {
   PlantillaUpdateRequest,
   ProgramaSemana,
   AsignacionDraft,
+  CandidatoAlternativo,
   GenerarAsignacionesResponse,
   GenerarAsignacionesRequest,
   ProgramaMensualCreateRequest,
@@ -18,6 +19,8 @@ import {
   MWBImportConfirmRequest,
   AlgorithmParamsResponse,
   AlgorithmParamsUpdate,
+  AlgoProfile,
+  EditarAsignacionRequest,
 } from '../models/reuniones.models';
 
 @Injectable({ providedIn: 'root' })
@@ -186,6 +189,73 @@ export class ReunionesService {
 
   updateAlgorithmParams(payload: AlgorithmParamsUpdate): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/configuracion/parametros`, payload);
+  }
+
+  getAlgorithmProfiles(): Observable<{ perfiles: AlgoProfile[]; perfil_activo: string; algo_max_partes_cruzadas: number }> {
+    return this.http.get<{ perfiles: AlgoProfile[]; perfil_activo: string; algo_max_partes_cruzadas: number }>(`${this.base}/configuracion/perfiles`);
+  }
+
+  setAlgorithmProfile(perfilId: string): Observable<{ message: string; perfil_id: string }> {
+    return this.http.put<{ message: string; perfil_id: string }>(`${this.base}/configuracion/perfil`, { perfil_id: perfilId });
+  }
+
+  // ──────────────────────────────────────────────────
+  // HISTORIAL CONFIRMADO
+  // ──────────────────────────────────────────────────
+
+  getPeriodosConfirmados(tipo: string, idCong: number): Observable<{ ano: number; mes: number; label: string }[]> {
+    const params = new HttpParams()
+      .set('tipo_reunion', tipo)
+      .set('id_congregacion', idCong);
+    return this.http.get<{ ano: number; mes: number; label: string }[]>(
+      `${this.base}/asignaciones/periodos-confirmados`, { params }
+    );
+  }
+
+  getHistorialConfirmado(
+    tipo: string,
+    ano: number,
+    mes: number,
+    idCong: number
+  ): Observable<ProgramaSemana[]> {
+    const params = new HttpParams()
+      .set('tipo_reunion', tipo)
+      .set('ano', ano)
+      .set('mes', mes)
+      .set('id_congregacion', idCong);
+    return this.http
+      .get<any[]>(`${this.base}/asignaciones/historial`, { params })
+      .pipe(map((semanas) => semanas.map((s) => this.normalizeSemana(s))));
+  }
+
+  eliminarHistorialMes(tipo: string, ano: number, mes: number, idCong: number): Observable<{ eliminadas: number }> {
+    const params = new HttpParams()
+      .set('tipo_reunion', tipo)
+      .set('ano', ano)
+      .set('mes', mes)
+      .set('id_congregacion', idCong);
+    return this.http.delete<{ eliminadas: number }>(`${this.base}/asignaciones/historial`, { params });
+  }
+
+  getCandidatosConfirmados(
+    idAsignacion: number,
+    idCong: number
+  ): Observable<CandidatoAlternativo[]> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.get<CandidatoAlternativo[]>(
+      `${this.base}/asignaciones/${idAsignacion}/candidatos`,
+      { params }
+    );
+  }
+
+  editarAsignacion(
+    idAsignacion: number,
+    payload: EditarAsignacionRequest
+  ): Observable<{ id_asignacion: number; id_publicador: number; nombre_completo: string }> {
+    return this.http.patch<{ id_asignacion: number; id_publicador: number; nombre_completo: string }>(
+      `${this.base}/asignaciones/${idAsignacion}`,
+      payload
+    );
   }
 
   private normalizeSemana(raw: any): ProgramaSemana {

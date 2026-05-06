@@ -18,11 +18,13 @@ export interface CandidatoAlternativo {
 
 export interface AsignacionDraft {
   id_programa_parte: number;
+  id_asignacion?: number;
   nombre_parte?: string;
   seccion?: string;
   sala?: string;
   orden_visual?: number;
   duracion_minutos?: number;
+  fuente_informacion?: string;
   aplica_sala_b?: boolean;
   id_publicador: number;
   nombre_completo: string;
@@ -31,6 +33,10 @@ export interface AsignacionDraft {
   estado: 'draft' | 'conflict' | 'confirmado';
   alternativos: CandidatoAlternativo[];
   _swapped?: boolean;
+}
+
+export interface EditarAsignacionRequest {
+  id_publicador_nuevo: number;
 }
 
 export interface ProgramaSemana {
@@ -174,6 +180,12 @@ export interface AlgorithmParamsResponse {
 
 export interface AlgorithmParamsUpdate {
   parametros: Record<string, number>;
+}
+
+export interface AlgoProfile {
+  id: string;
+  label: string;
+  description: string;
 }
 
 export interface PlantillaParteDetail {

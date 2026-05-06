@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, OnInit, effect } from '@angular/core';
+﻿import { Component, signal, computed, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReunionesService } from '../services/reuniones.service';
@@ -14,7 +14,7 @@ import {
   PlantillaDetailResponse,
   PlantillaParteDetail,
   PlantillaUpdateRequest,
-  AlgorithmParam,
+  AlgoProfile,
   PublicadorMatrizItem,
   ColumnaPermiso,
   CambioPermisoPublicador,
@@ -66,24 +66,13 @@ import {
            <!-- Acciones contextuales (botones Guardar + filtros) -->
            <div class="flex items-center gap-2 ml-auto">
 
-           <!-- Guardar parametros -->
-           @if (activeTab() === 'parametros') {
-             @if (algoHasDirty()) {
-               <span class="text-[0.625rem] font-bold text-amber-500 dark:text-amber-400 animate-pulse">Cambios sin guardar</span>
-             }
-             <button
-               *ngIf="hasEditPermission()"
-               (click)="saveAlgoParams()"
-               [disabled]="!algoHasDirty() || !algoValid() || algoSaving()"
-               class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
-                 @if (algoSaving()) {
-                   <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                 } @else {
-                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                 }
-                 Guardar
-             </button>
-           }
+            <!-- Perfil del algoritmo (solo indicador de guardado) -->
+            @if (activeTab() === 'parametros' && profileSaving()) {
+              <div class="flex items-center gap-1.5 text-[0.625rem] font-bold text-[#6D28D9] dark:text-purple-400">
+                <div class="w-3 h-3 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
+                Guardando perfil...
+              </div>
+            }
 
            <!-- Guardar privilegios -->
            @if (activeTab() === 'privilegios') {
@@ -129,7 +118,7 @@ import {
                      [ngModel]="searchQuery()"
                      (ngModelChange)="searchQuery.set($event)"
                      placeholder="Buscar publicador..."
-                     class="w-full h-9 pl-10 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#6D28D9]/50 focus:ring-2 focus:ring-[#6D28D9]/20 transition-all outline-none shadow-sm">
+                     class="priv-search w-full h-9 pl-10 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm">
                </div>
                <!-- Filter Icons -->
                <div class="hidden lg:flex items-center gap-1.5">
@@ -486,128 +475,84 @@ import {
        <!-- ===== TAB: PARÁMETROS DEL ALGORITMO ===== -->
        @if (activeTab() === 'parametros') {
         <div class="flex-1 min-h-0 flex flex-col gap-4 animate-fadeIn overflow-y-auto">
-
           @if (algoLoading()) {
             <div class="flex items-center justify-center py-12">
               <div class="w-6 h-6 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
             </div>
-          }
+          } @else if (algoProfiles().length > 0) {
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 shrink-0">
+              <h4 class="text-sm font-black text-slate-800 dark:text-slate-100 mb-1">Perfil del Algoritmo</h4>
+              <p class="text-[0.625rem] text-slate-500 dark:text-slate-400 mb-6">Selecciona el comportamiento del motor de asignaciones. Estos perfiles ajustan automáticamente los pesos heurísticos y ventanas de tiempo.</p>
 
-          @if (!algoLoading() && algoParams().length > 0) {
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                @for (perfil of algoProfiles(); track perfil.id) {
+                  <button
+                    (click)="selectProfile(perfil.id)"
+                    class="relative flex flex-col items-start p-5 rounded-xl border-2 text-left transition-all overflow-hidden"
+                    [class.border-[#6D28D9]]="activeProfileId() === perfil.id"
+                    [class.bg-[#6D28D9]/5]="activeProfileId() === perfil.id"
+                    [class.border-slate-200]="activeProfileId() !== perfil.id"
+                    [class.dark:border-slate-700]="activeProfileId() !== perfil.id"
+                    [class.hover:border-slate-300]="activeProfileId() !== perfil.id"
+                    [class.dark:hover:border-slate-600]="activeProfileId() !== perfil.id"
+                  >
+                    @if (activeProfileId() === perfil.id) {
+                      <div class="absolute top-0 right-0 w-16 h-16 bg-[#6D28D9]/10 rounded-bl-full flex items-start justify-end p-2">
+                        <svg class="w-5 h-5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                    }
 
-            <!-- Indicador suma de pesos -->
-            <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
-              <div class="flex items-center flex-wrap gap-2 w-full sm:w-auto">
-                <svg class="w-4 h-4 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Suma de pesos heurísticos:</span>
-                <span class="text-sm font-black font-mono shrink-0"
-                  [class]="Math.abs(algoWeightSum() - 1.0) > 0.05 ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400'">
-                  {{ algoWeightSum().toFixed(2) }}
-                </span>
-                @if (Math.abs(algoWeightSum() - 1.0) > 0.05) {
-                  <span class="text-[0.625rem] text-amber-500 font-bold block sm:inline w-full sm:w-auto ml-0 sm:ml-1 mt-1 sm:mt-0">Los pesos deben sumar ~1.0</span>
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
+                      [class.bg-[#6D28D9]]="activeProfileId() === perfil.id"
+                      [class.bg-slate-100]="activeProfileId() !== perfil.id"
+                      [class.dark:bg-slate-800]="activeProfileId() !== perfil.id"
+                      [class.text-white]="activeProfileId() === perfil.id"
+                      [class.text-slate-500]="activeProfileId() !== perfil.id"
+                      [class.dark:text-slate-400]="activeProfileId() !== perfil.id"
+                    >
+                      @if (perfil.id === 'balanceado') {
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      } @else if (perfil.id === 'rotacion') {
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                      } @else {
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      }
+                    </div>
+
+                    <h5 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-1"
+                      [class.text-[#6D28D9]]="activeProfileId() === perfil.id"
+                      [class.dark:text-[#a78bfa]]="activeProfileId() === perfil.id"
+                    >
+                      {{ perfil.label }}
+                    </h5>
+                    <p class="text-[0.625rem] text-slate-500 dark:text-slate-400 leading-relaxed">{{ perfil.description }}</p>
+                  </button>
                 }
               </div>
-              <div class="flex items-center justify-end w-full sm:w-auto">
-                <button (click)="resetAlgoDefaults()"
-                  class="text-[0.625rem] font-bold px-3 py-1.5 rounded-md hover:bg-slate-100 text-slate-500 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-slate-300 hover:text-[#6D28D9] transition-all shrink-0">
-                  Restaurar por defecto
-                </button>
-              </div>
             </div>
 
-            <!-- Pesos Heuristicos -->
-            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0">
+            <!-- Restricciones Duras adicionales -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0 mt-2">
               <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-                <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Pesos Heurísticos</h4>
-                <p class="text-[0.625rem] text-slate-400 mt-0.5">Controlan la prioridad relativa de cada criterio al asignar publicadores.</p>
+                <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Ajustes Adicionales</h4>
+                <p class="text-[0.625rem] text-slate-400 mt-0.5">Límites estrictos que aplican independientemente del perfil.</p>
               </div>
-              @for (param of algoByCategory().peso_heuristico; track param.key) {
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 border-b border-slate-50 dark:border-slate-800/50 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ param.label }}</div>
-                    <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">{{ param.description }}</div>
-                  </div>
-                  <div class="flex items-center shrink-0 pr-2 pb-1 sm:pb-0 sm:pr-0">
-                    <input type="range"
-                      [min]="param.min_val" [max]="param.max_val" [step]="param.step"
-                      [ngModel]="getAlgoValue(param)"
-                      (ngModelChange)="onAlgoParamChange(param.key, $event)"
-                      class="w-32 h-1.5 accent-[#6D28D9] cursor-pointer block">
-                    <span class="w-12 text-center font-mono text-sm font-black text-slate-700 dark:text-slate-200 block"
-                      [class.text-amber-500]="isAlgoDirty(param.key)">
-                      {{ getAlgoValue(param).toFixed(2) }}
-                    </span>
-                  </div>
+              <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-bold text-slate-700 dark:text-slate-200">Límite de partes cruzadas</div>
+                  <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">Número máximo de partes permitidas para un publicador en la misma semana.</div>
                 </div>
-              }
-            </div>
-
-            <!-- Ventanas de Tiempo -->
-            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0">
-              <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-                <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Ventanas de Tiempo</h4>
-                <p class="text-[0.625rem] text-slate-400 mt-0.5">Periodos en días usados para normalizar y evaluar asignaciones.</p>
+                <div class="flex items-center shrink-0 pr-2 pb-1 sm:pb-0 sm:pr-0">
+                  <input type="number" min="1" max="5" step="1"
+                    [ngModel]="algoMaxPartesCruzadas()"
+                    (ngModelChange)="onMaxPartesChange($event)"
+                    class="w-20 h-8 px-2 text-center rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm font-mono font-bold text-slate-700 dark:text-slate-200 focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 outline-none transition-all block"
+                  >
+                </div>
               </div>
-              @for (param of algoByCategory().ventana_tiempo; track param.key) {
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 border-b border-slate-50 dark:border-slate-800/50 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ param.label }}</div>
-                    <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">{{ param.description }}</div>
-                  </div>
-                  <div class="flex items-center shrink-0 pr-2 pb-1 sm:pb-0 sm:pr-0">
-                    <input type="number"
-                      [min]="param.min_val" [max]="param.max_val" [step]="param.step"
-                      [ngModel]="getAlgoValue(param)"
-                      (ngModelChange)="onAlgoParamChange(param.key, $event)"
-                      class="w-20 h-8 px-2 text-center rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm font-mono font-bold text-slate-700 dark:text-slate-200 focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 outline-none transition-all block"
-                      [class.border-amber-400]="isAlgoDirty(param.key)">
-                    <span class="text-[0.625rem] text-slate-400 w-8 pl-1 block">días</span>
-                  </div>
-                </div>
-              }
             </div>
-
-            <!-- Restricciones Duras -->
-            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0">
-              <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-                <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Restricciones Duras</h4>
-                <p class="text-[0.625rem] text-slate-400 mt-0.5">Límites estrictos que el motor respeta como reglas absolutas.</p>
-              </div>
-              @for (param of algoByCategory().restriccion_dura; track param.key) {
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 border-b border-slate-50 dark:border-slate-800/50 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ param.label }}</div>
-                    <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">{{ param.description }}</div>
-                  </div>
-                  <div class="flex items-center shrink-0 pr-2 pb-1 sm:pb-0 sm:pr-0">
-                    @if (param.key === 'algo_nivel_oratoria_default') {
-                      <select
-                        [ngModel]="getAlgoValue(param)"
-                        (ngModelChange)="onAlgoParamChange(param.key, $event)"
-                        class="h-8 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 outline-none transition-all cursor-pointer block"
-                        [class.border-amber-400]="isAlgoDirty(param.key)">
-                        <option [ngValue]="1">Principante (1)</option>
-                        <option [ngValue]="2">Básico (2)</option>
-                        <option [ngValue]="3">Intermedio (3)</option>
-                        <option [ngValue]="4">Avanzado (4)</option>
-                        <option [ngValue]="5">Experto (5)</option>
-                      </select>
-                    } @else {
-                      <input type="number"
-                        [min]="param.min_val" [max]="param.max_val" [step]="param.step"
-                        [ngModel]="getAlgoValue(param)"
-                        (ngModelChange)="onAlgoParamChange(param.key, $event)"
-                        class="w-20 h-8 px-2 text-center rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm font-mono font-bold text-slate-700 dark:text-slate-200 focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 outline-none transition-all block"
-                        [class.border-amber-400]="isAlgoDirty(param.key)">
-                      <div class="w-8 pl-1 block"></div>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-
-            <div class="h-12 w-full shrink-0"><!-- Spacer bottom for scrolling --></div>
+            
+            <div class="h-12 w-full shrink-0"><!-- Spacer bottom --></div>
           }
         </div>
        }
@@ -644,22 +589,42 @@ import {
 
            @if (!matrizLoading() && !matrizErrorMsg()) {
              <!-- Stats bar compact -->
-             <div class="shrink-0 grid grid-cols-4 gap-2">
-               <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-700/60 py-1.5 px-2 text-center shadow-sm">
-                 <p class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ filteredPublicadores().length }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Publicadores</p>
+             <div class="shrink-0 grid grid-cols-4 gap-2.5">
+               <div class="priv-stat bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 py-2 pl-3.5 pr-2.5 shadow-sm flex items-center gap-2.5" style="--accent: #6D28D9;">
+                 <div class="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                   <svg class="w-3.5 h-3.5 text-[#6D28D9] dark:text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                 </div>
+                 <div class="min-w-0">
+                   <p class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ filteredPublicadores().length }}</p>
+                   <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">Publicadores</p>
+                 </div>
                </div>
-               <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-700/60 py-1.5 px-2 text-center shadow-sm">
-                 <p class="text-base font-black text-amber-600 dark:text-amber-400 tabular-nums leading-none">{{ countPrivilegio('Anciano') }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Ancianos</p>
+               <div class="priv-stat bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 py-2 pl-3.5 pr-2.5 shadow-sm flex items-center gap-2.5" style="--accent: #f59e0b;">
+                 <div class="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                   <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+                 </div>
+                 <div class="min-w-0">
+                   <p class="text-base font-black text-amber-600 dark:text-amber-400 tabular-nums leading-none">{{ countPrivilegio('Anciano') }}</p>
+                   <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">Ancianos</p>
+                 </div>
                </div>
-               <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-700/60 py-1.5 px-2 text-center shadow-sm">
-                 <p class="text-base font-black text-blue-600 dark:text-blue-400 tabular-nums leading-none">{{ countPrivilegio('Siervo Ministerial') }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">S. Ministeriales</p>
+               <div class="priv-stat bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 py-2 pl-3.5 pr-2.5 shadow-sm flex items-center gap-2.5" style="--accent: #2563eb;">
+                 <div class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                   <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 7L9 18l-5-5"/></svg>
+                 </div>
+                 <div class="min-w-0">
+                   <p class="text-base font-black text-blue-600 dark:text-blue-400 tabular-nums leading-none">{{ countPrivilegio('Siervo Ministerial') }}</p>
+                   <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">S. Ministeriales</p>
+                 </div>
                </div>
-               <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-700/60 py-1.5 px-2 text-center shadow-sm">
-                 <p class="text-base font-black text-slate-600 dark:text-slate-300 tabular-nums leading-none">{{ countPrecursores() }}</p>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Precursores</p>
+               <div class="priv-stat bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 py-2 pl-3.5 pr-2.5 shadow-sm flex items-center gap-2.5" style="--accent: #10b981;">
+                 <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                   <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 12l3 3L21 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"/></svg>
+                 </div>
+                 <div class="min-w-0">
+                   <p class="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums leading-none">{{ countPrecursores() }}</p>
+                   <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">Precursores</p>
+                 </div>
                </div>
              </div>
 
@@ -667,67 +632,69 @@ import {
              <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
                  <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto simple-scrollbar">
                      <table class="w-full min-w-max text-left border-collapse">
-                         <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
-                             <tr class="border-b border-slate-200 dark:border-slate-700">
-                                 <th class="px-4 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md z-10 min-w-[150px]">Publicador</th>
-                                 <th class="px-2 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[80px]">Privilegio</th>
+                          <thead class="priv-thead sticky top-0 z-10">
+                              <tr>
+                                  <th class="is-sticky px-4 py-2.5 text-[0.625rem] font-black text-white uppercase tracking-[0.08em] sticky left-0 z-10 min-w-[170px] text-left">Publicador</th>
                                  <th *ngFor="let col of columnas()"
-                                     class="px-2 py-2 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[70px] leading-tight whitespace-normal">
-                                   {{ col.label }}
-                                 </th>
-                                 <th class="px-2 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[90px] leading-tight whitespace-normal">
-                                   Nivel Oratoria
-                                 </th>
+                                      class="px-2 py-2.5 text-[9px] font-black text-purple-100 uppercase tracking-wider text-center min-w-[70px] leading-tight whitespace-normal border-l border-white/10">
+                                    {{ col.label }}
+                                  </th>
+                                  <th class="px-2 py-2.5 text-[0.625rem] font-black text-purple-100 uppercase tracking-wider text-center min-w-[100px] leading-tight whitespace-normal border-l border-white/10">
+                                    Oratoria
+                                  </th>
                              </tr>
                          </thead>
-                         <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-                              @for (pub of paginatedPublicadores(); track pub.id_publicador) {
-                                <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-                                    [class.bg-amber-50/30]="isDirty(pub.id_publicador)"
-                                    [class.dark:bg-amber-900/10]="isDirty(pub.id_publicador)">
-                                   <td class="px-4 py-2 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/40 transition-colors border-r border-slate-100 dark:border-slate-800/50">
-                                       <div class="flex items-center gap-3">
-                                           <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[0.6875rem] shrink-0 ring-1 ring-white dark:ring-slate-800"
+                         <tbody>
+                              @for (pub of paginatedPublicadores(); track pub.id_publicador; let idx = $index) {
+                                <tr class="priv-row group border-b border-slate-100 dark:border-slate-800/60 hover:bg-purple-50/40 dark:hover:bg-purple-900/10"
+                                    [class.is-dirty]="isDirty(pub.id_publicador)"
+                                    [ngClass]="isDirty(pub.id_publicador)
+                                      ? 'bg-amber-50/40 dark:bg-amber-900/10'
+                                      : (idx % 2 === 1 ? 'bg-slate-50/40 dark:bg-slate-800/20' : '')">
+                                   <td class="px-4 py-1.5 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-purple-50/40 dark:group-hover:bg-purple-900/10 transition-colors border-r border-slate-100 dark:border-slate-800/60">
+                                       <div class="flex items-center gap-2.5">
+                                           <div class="priv-avatar w-8 h-8 rounded-xl flex items-center justify-center font-black text-[0.6875rem] shrink-0"
                                                 [class]="avatarClass(pub)">
                                              {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
                                            </div>
-                                           <div>
-                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[140px] leading-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
+                                           <div class="min-w-0">
+                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[140px] leading-tight tracking-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
                                          {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
                                      </div>
-                                     <div class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium">
-                                         {{ isHermano(pub) ? 'Hermano' : 'Hermana' }}
+                                     <div class="flex flex-wrap gap-1 mt-1">
+                                         @if (pub.privilegios.length > 0) {
+                                           @for (priv of pub.privilegios; track priv) {
+                                             <div class="text-[9px] font-bold px-1.5 py-0.5 inline-block rounded-md leading-none"
+                                                  [title]="priv"
+                                                  [class]="privilegioBadgeClass(priv)">
+                                               {{ privilegioLabel(priv) }}
+                                             </div>
+                                           }
+                                         } @else {
+                                           <span class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-semibold tracking-wide">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
+                                         }
                                      </div>
                                            </div>
-                                       </div>
-                                   </td>
-                                   <td class="px-2 py-2 text-center">
-                                       <div class="flex flex-wrap gap-1 justify-center">
-                                         @for (priv of pub.privilegios; track priv) {
-                                           <div class="text-[9px] font-bold px-1.5 py-0.5 inline-block rounded-md"
-                                                [title]="priv"
-                                                [class]="privilegioBadgeClass(priv)">
-                                             {{ privilegioLabel(priv) }}
-                                           </div>
-                                         }
                                        </div>
                                    </td>
                                    <td *ngFor="let col of columnas()"
-                                       class="px-1 py-2 text-center">
-                                         <label class="inline-flex items-center justify-center cursor-pointer p-1">
+                                       class="priv-cell px-1 py-1.5 text-center border-l border-slate-100/70 dark:border-slate-800/40">
+                                         <label class="inline-flex items-center justify-center cursor-pointer p-1" [title]="col.label">
                                            <input type="checkbox"
                                              [checked]="getPermiso(pub, col.key)"
                                              (change)="togglePermiso(pub, col.key)"
                                              [disabled]="!hasEditPermission()"
-                                             class="w-4 h-4 text-[#6D28D9] rounded border-slate-300 dark:border-slate-600 focus:ring-[#6D28D9] focus:ring-offset-0 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                             class="priv-check">
                                          </label>
                                    </td>
-                                   <td class="px-2 py-2 text-center">
+                                   <td class="px-2 py-1.5 text-center border-l border-slate-100/70 dark:border-slate-800/40">
                                      <select
                                        [ngModel]="getOratoria(pub)"
+                                       [attr.data-level]="getOratoria(pub)"
                                        [disabled]="!hasEditPermission()"
-                                       class="h-7 px-1 w-[85px] rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[9px] font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all cursor-pointer truncate disabled:opacity-50 disabled:cursor-not-allowed"
-                                       [class.border-amber-400]="isOratoriaDirty(pub.id_publicador)">
+                                       class="priv-select h-7 px-2 w-[92px] rounded-lg border bg-white dark:bg-slate-900 text-[10px] outline-none cursor-pointer truncate disabled:opacity-50 disabled:cursor-not-allowed"
+                                       [class.ring-2]="isOratoriaDirty(pub.id_publicador)"
+                                       [class.ring-amber-300]="isOratoriaDirty(pub.id_publicador)">
                                        <option [value]="1">Principiante</option>
                                        <option [value]="2">Básico</option>
                                        <option [value]="3">Intermedio</option>
@@ -751,7 +718,7 @@ import {
                     <div class="flex items-center gap-0.5">
                         <button (click)="prevPage()"
                                 [disabled]="currentPage() === 1"
-                                class="w-7 h-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-25 disabled:cursor-not-allowed transition-colors text-slate-400 dark:text-slate-500 flex items-center justify-center">
+                                class="priv-page-btn w-7 h-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-25 disabled:cursor-not-allowed text-slate-400 dark:text-slate-500 flex items-center justify-center">
                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
                         </button>
                         @for (item of getPagesArray(); track $index) {
@@ -759,7 +726,7 @@ import {
                             <span class="w-7 h-7 flex items-center justify-center text-[0.6875rem] text-slate-300 dark:text-slate-600 select-none">···</span>
                           } @else {
                             <button (click)="setPage(item)"
-                                    class="w-7 h-7 rounded-lg text-xs font-bold transition-all"
+                                    class="priv-page-btn w-7 h-7 rounded-lg text-xs font-bold"
                                     [class]="currentPage() === item
                                       ? 'bg-[#6D28D9] text-white shadow-sm'
                                       : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200'">
@@ -769,7 +736,7 @@ import {
                         }
                         <button (click)="nextPage()"
                                 [disabled]="currentPage() === totalPages()"
-                                class="w-7 h-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-25 disabled:cursor-not-allowed transition-colors text-slate-400 dark:text-slate-500 flex items-center justify-center">
+                                class="priv-page-btn w-7 h-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-25 disabled:cursor-not-allowed text-slate-400 dark:text-slate-500 flex items-center justify-center">
                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg>
                         </button>
                     </div>
@@ -880,13 +847,13 @@ import {
     </div>
   `,
   styles: [`
-     :host { display: block; height: 100%; }
-     .animate-fadeIn {
-       animation: fadeIn 0.2s ease-out;
+     :host {
+       display: block;
+       height: 100%;
+       --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
      }
-     .animate-slideDown {
-       animation: slideDown 0.25s ease-out;
-     }
+     .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+     .animate-slideDown { animation: slideDown 0.25s ease-out; }
      @keyframes fadeIn {
        from { opacity: 0; transform: translateY(4px); }
        to { opacity: 1; transform: translateY(0); }
@@ -899,9 +866,159 @@ import {
        0% { transform: translateX(-100%); }
        100% { transform: translateX(200%); }
      }
+
      /* Sticky column shadow */
-     td.sticky, th.sticky {
-       box-shadow: 2px 0 6px -2px rgba(0,0,0,0.06);
+     td.sticky, th.sticky { box-shadow: 2px 0 6px -2px rgba(0,0,0,0.06); }
+
+     /* ─────── Privilegios Tab ─────── */
+
+     /* Stats cards with accent bar + lift */
+     .priv-stat {
+       position: relative;
+       overflow: hidden;
+       transition: transform 200ms var(--ease-out-strong),
+                   box-shadow 200ms var(--ease-out-strong),
+                   border-color 160ms ease;
+     }
+     .priv-stat:hover {
+       transform: translateY(-1px);
+       box-shadow: 0 6px 16px -6px rgba(15,23,42,0.12);
+       border-color: rgba(109,40,217,0.22);
+     }
+     .priv-stat::before {
+       content: '';
+       position: absolute;
+       left: 0; top: 0; bottom: 0;
+       width: 3px;
+       background: var(--accent, #cbd5e1);
+       border-radius: 3px 0 0 3px;
+     }
+
+     /* Header row gradient + ring */
+     .priv-thead {
+       background: linear-gradient(180deg, #7c3aed 0%, #6D28D9 60%, #5b21b6 100%) !important;
+       box-shadow: 0 2px 10px -4px rgba(91,33,182,0.5);
+     }
+     .priv-thead th { background: transparent !important; }
+     .priv-thead th.is-sticky { background: linear-gradient(180deg, #7c3aed 0%, #6D28D9 60%, #5b21b6 100%) !important; }
+
+     /* Row with hover accent bar */
+     .priv-row { position: relative; transition: background-color 160ms var(--ease-out-strong); }
+     .priv-row > td:first-child::before {
+       content: '';
+       position: absolute;
+       left: 0; top: 4px; bottom: 4px;
+       width: 3px;
+       border-radius: 0 3px 3px 0;
+       background: #6D28D9;
+       transform: scaleY(0);
+       transform-origin: center;
+       transition: transform 220ms var(--ease-out-strong);
+     }
+     .priv-row:hover > td:first-child::before { transform: scaleY(1); }
+     .priv-row.is-dirty > td:first-child::before { background: #f59e0b; transform: scaleY(1); }
+
+     /* Cell tint when checkbox is checked — guides the eye */
+     td.priv-cell { transition: background-color 200ms ease; }
+     td.priv-cell:has(.priv-check:checked) {
+       background: linear-gradient(180deg, rgba(109,40,217,0.05), rgba(109,40,217,0.10));
+     }
+     :host-context(.dark) td.priv-cell:has(.priv-check:checked) {
+       background: linear-gradient(180deg, rgba(167,139,250,0.10), rgba(167,139,250,0.18));
+     }
+
+     /* Custom checkbox */
+     .priv-check {
+       appearance: none;
+       -webkit-appearance: none;
+       width: 18px; height: 18px;
+       border-radius: 6px;
+       border: 1.5px solid #cbd5e1;
+       background: #fff;
+       cursor: pointer;
+       position: relative;
+       display: inline-block;
+       transition: transform 140ms var(--ease-out-strong),
+                   background-color 180ms var(--ease-out-strong),
+                   border-color 180ms var(--ease-out-strong),
+                   box-shadow 180ms var(--ease-out-strong);
+     }
+     :host-context(.dark) .priv-check { background: #0f172a; border-color: #475569; }
+     @media (hover: hover) and (pointer: fine) {
+       .priv-check:hover:not(:disabled) {
+         border-color: #6D28D9;
+         box-shadow: 0 0 0 4px rgba(109,40,217,0.10);
+       }
+     }
+     .priv-check:active:not(:disabled) { transform: scale(0.9); }
+     .priv-check:checked {
+       background: linear-gradient(180deg, #7c3aed, #6D28D9);
+       border-color: #6D28D9;
+       box-shadow: 0 3px 8px -2px rgba(109,40,217,0.45);
+     }
+     .priv-check:checked::after {
+       content: '';
+       position: absolute;
+       left: 5px; top: 1.5px;
+       width: 5px; height: 10px;
+       border-right: 2px solid #fff;
+       border-bottom: 2px solid #fff;
+       transform: rotate(45deg);
+       animation: checkPop 200ms var(--ease-out-strong);
+     }
+     @keyframes checkPop {
+       0% { opacity: 0; transform: rotate(45deg) scale(0.4); }
+       60% { opacity: 1; transform: rotate(45deg) scale(1.1); }
+       100% { opacity: 1; transform: rotate(45deg) scale(1); }
+     }
+     .priv-check:disabled { opacity: 0.35; cursor: not-allowed; }
+
+     /* Oratoria select — color-coded levels with custom chevron */
+     .priv-select {
+       appearance: none;
+       -webkit-appearance: none;
+       background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+       background-repeat: no-repeat;
+       background-position: right 7px center;
+       padding-right: 22px !important;
+       font-weight: 700;
+       transition: border-color 160ms var(--ease-out-strong),
+                   box-shadow 160ms var(--ease-out-strong),
+                   background-color 160ms ease,
+                   color 160ms ease,
+                   transform 140ms var(--ease-out-strong);
+     }
+     .priv-select:active:not(:disabled) { transform: scale(0.96); }
+     .priv-select:focus { box-shadow: 0 0 0 4px rgba(109,40,217,0.18); border-color: #6D28D9 !important; outline: none; }
+     .priv-select[data-level="1"] { background-color: #f8fafc; color: #475569; border-color: #e2e8f0 !important; }
+     .priv-select[data-level="2"] { background-color: #f0f9ff; color: #0369a1; border-color: #bae6fd !important; }
+     .priv-select[data-level="3"] { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe !important; }
+     .priv-select[data-level="4"] { background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe !important; }
+     .priv-select[data-level="5"] { background-color: #faf5ff; color: #6b21a8; border-color: #ddd6fe !important; }
+     :host-context(.dark) .priv-select[data-level="1"] { background-color: #1e293b; color: #cbd5e1; border-color: #334155 !important; }
+     :host-context(.dark) .priv-select[data-level="2"] { background-color: rgba(2,132,199,0.18); color: #7dd3fc; border-color: rgba(2,132,199,0.4) !important; }
+     :host-context(.dark) .priv-select[data-level="3"] { background-color: rgba(37,99,235,0.18); color: #93c5fd; border-color: rgba(37,99,235,0.4) !important; }
+     :host-context(.dark) .priv-select[data-level="4"] { background-color: rgba(79,70,229,0.18); color: #a5b4fc; border-color: rgba(79,70,229,0.4) !important; }
+     :host-context(.dark) .priv-select[data-level="5"] { background-color: rgba(124,58,237,0.18); color: #c4b5fd; border-color: rgba(124,58,237,0.4) !important; }
+
+     /* Search input refinement */
+     .priv-search { transition: border-color 160ms var(--ease-out-strong), box-shadow 160ms var(--ease-out-strong); }
+     .priv-search:focus { box-shadow: 0 0 0 4px rgba(109,40,217,0.15); border-color: #6D28D9; }
+
+     /* Avatar */
+     .priv-avatar {
+       box-shadow: 0 1px 3px rgba(15,23,42,0.10), inset 0 0 0 1.5px rgba(255,255,255,0.6);
+       transition: transform 220ms var(--ease-out-strong), box-shadow 200ms ease;
+     }
+     .priv-row:hover .priv-avatar { transform: scale(1.06); box-shadow: 0 3px 8px rgba(15,23,42,0.14), inset 0 0 0 1.5px rgba(255,255,255,0.7); }
+
+     /* Pagination button feedback */
+     .priv-page-btn { transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out-strong); }
+     .priv-page-btn:active:not(:disabled) { transform: scale(0.92); }
+
+     @media (prefers-reduced-motion: reduce) {
+       .priv-stat, .priv-row, .priv-check, .priv-select, .priv-avatar, .priv-page-btn,
+       .priv-row > td:first-child::before { transition: none !important; animation: none !important; }
      }
   `]
 })
@@ -930,32 +1047,14 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
   activeTab = signal('privilegios');
 
-  // ── Algorithm Params ──
-  algoParams = signal<AlgorithmParam[]>([]);
+  // ── Algorithm Profiles ──
+  algoProfiles = signal<AlgoProfile[]>([]);
+  activeProfileId = signal<string>('balanceado');
+  algoMaxPartesCruzadas = signal<number>(2);
   algoLoading = signal(false);
-  algoSaving = signal(false);
-  algoDirtyMap = signal<Map<string, number>>(new Map());
+  profileSaving = signal(false);
   private algoLoaded = false;
   protected readonly Math = Math;
-
-  algoByCategory = computed(() => {
-    const params = this.algoParams();
-    return {
-      peso_heuristico: params.filter(p => p.category === 'peso_heuristico'),
-      ventana_tiempo: params.filter(p => p.category === 'ventana_tiempo'),
-      restriccion_dura: params.filter(p => p.category === 'restriccion_dura'),
-    };
-  });
-
-  algoWeightSum = computed(() => {
-    const params = this.algoParams();
-    return params
-      .filter(p => p.key.startsWith('algo_w_'))
-      .reduce((sum, p) => sum + this.getAlgoValue(p), 0);
-  });
-
-  algoHasDirty = computed(() => this.algoDirtyMap().size > 0);
-  algoValid = computed(() => Math.abs(this.algoWeightSum() - 1.0) <= 0.05);
 
   // ── Toast ──
   toast = signal<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -1046,7 +1145,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   constructor() {
     effect(() => {
       if (this.activeTab() === 'parametros' && !this.algoLoaded) {
-        this.loadAlgoParams();
+        this.loadAlgoProfiles();
       }
       if (this.activeTab() === 'privilegios' && !this.matrizLoaded) {
         this.loadMatriz();
@@ -1447,89 +1546,56 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     });
   }
 
-  // ── Algorithm Params Methods ──
-  loadAlgoParams(): void {
+  // ── Algorithm Profiles Methods ──
+  loadAlgoProfiles(): void {
     this.algoLoading.set(true);
-    this.reunionesSvc.getAlgorithmParams().subscribe({
+    this.reunionesSvc.getAlgorithmProfiles().subscribe({
       next: (res) => {
-        this.algoParams.set(res.parametros);
-        this.algoDirtyMap.set(new Map());
+        this.algoProfiles.set(res.perfiles);
+        this.activeProfileId.set(res.perfil_activo);
+        this.algoMaxPartesCruzadas.set(res.algo_max_partes_cruzadas);
         this.algoLoaded = true;
         this.algoLoading.set(false);
       },
       error: (err) => {
-        this.showToast('error', err?.error?.detail || 'Error al cargar parámetros del algoritmo');
+        this.showToast('error', err?.error?.detail || 'Error al cargar perfiles del algoritmo');
         this.algoLoading.set(false);
       }
     });
   }
 
-  getAlgoValue(param: AlgorithmParam): number {
-    const dirty = this.algoDirtyMap();
-    return dirty.has(param.key) ? dirty.get(param.key)! : param.value;
-  }
-
-  isAlgoDirty(key: string): boolean {
-    return this.algoDirtyMap().has(key);
-  }
-
-  onAlgoParamChange(key: string, value: any): void {
-    const param = this.algoParams().find(p => p.key === key);
-    if (!param) return;
-
-    const numValue = Number(value);
-    this.algoDirtyMap.update(map => {
-      const newMap = new Map(map);
-      if (numValue === param.value) {
-        newMap.delete(key);
-      } else {
-        newMap.set(key, numValue);
-      }
-      return newMap;
-    });
-  }
-
-  resetAlgoDefaults(): void {
-    this.algoParams.update(params =>
-      params.map(p => ({ ...p, value: p.default }))
-    );
-
-    const newDirty = new Map<string, number>();
-    const params = this.algoParams();
-    for (const p of params) {
-      if (p.value !== p.default) {
-        newDirty.set(p.key, p.default);
-      }
-    }
-    this.algoDirtyMap.set(newDirty);
-  }
-
-  saveAlgoParams(): void {
-    const currentDirty = this.algoDirtyMap();
-    if (currentDirty.size === 0) return;
-
-    this.algoSaving.set(true);
-    const parametros: Record<string, number> = {};
-    currentDirty.forEach((val, key) => {
-      parametros[key] = val;
-    });
-
-    this.reunionesSvc.updateAlgorithmParams({ parametros }).subscribe({
+  selectProfile(perfilId: string): void {
+    if (this.activeProfileId() === perfilId) return;
+    
+    this.profileSaving.set(true);
+    this.reunionesSvc.setAlgorithmProfile(perfilId).subscribe({
       next: (res) => {
-        this.algoParams.update(params =>
-          params.map(p => currentDirty.has(p.key) ? { ...p, value: currentDirty.get(p.key)! } : p)
-        );
-        this.algoDirtyMap.set(new Map());
-        this.algoSaving.set(false);
+        this.activeProfileId.set(perfilId);
+        this.profileSaving.set(false);
         this.showToast('success', res.message);
       },
       error: (err) => {
-        this.algoSaving.set(false);
-        this.showToast('error', err?.error?.detail || 'Error al guardar parámetros');
+        this.profileSaving.set(false);
+        this.showToast('error', err?.error?.detail || 'Error al activar el perfil');
       }
     });
   }
 
+  onMaxPartesChange(value: number): void {
+    const num = Number(value);
+    if (isNaN(num) || num < 1 || num > 5) return;
+    
+    this.algoMaxPartesCruzadas.set(num);
+    // Auto-save just this parameter
+    this.reunionesSvc.updateAlgorithmParams({ parametros: { algo_max_partes_cruzadas: num } }).subscribe({
+      next: () => {
+        this.showToast('success', 'Límite actualizado');
+      },
+      error: (err) => {
+        this.showToast('error', err?.error?.detail || 'Error al guardar límite');
+      }
+    });
+  }
   // ── Matriz de Publicadores Methods ──
   loadMatriz(): void {
     const idCong = this.congregacionCtx.effectiveCongregacionId();
