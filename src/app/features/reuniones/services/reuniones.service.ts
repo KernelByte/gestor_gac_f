@@ -158,6 +158,25 @@ export class ReunionesService {
   }
 
   // ──────────────────────────────────────────────────
+  // AYUDANTES (add / remove en draft)
+  // ──────────────────────────────────────────────────
+
+  agregarAyudante(idProgramaParte: number, idCongregacion: number, sexoFilter?: string): Observable<AsignacionDraft> {
+    let params = new HttpParams().set('id_congregacion', idCongregacion);
+    if (sexoFilter) params = params.set('sexo_filter', sexoFilter);
+    return this.http.post<AsignacionDraft>(
+      `${this.base}/programas/partes/${idProgramaParte}/ayudante`, {}, { params }
+    );
+  }
+
+  eliminarAyudante(idProgramaParte: number, idCongregacion: number): Observable<{ ok: boolean }> {
+    const params = new HttpParams().set('id_congregacion', idCongregacion);
+    return this.http.delete<{ ok: boolean }>(
+      `${this.base}/programas/partes/${idProgramaParte}/ayudante`, { params }
+    );
+  }
+
+  // ──────────────────────────────────────────────────
   // PARÁMETROS DEL ALGORITMO
   // ──────────────────────────────────────────────────
 

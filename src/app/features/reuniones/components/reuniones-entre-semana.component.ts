@@ -107,11 +107,11 @@ import {
         @if (estado() === 'draft' || estado() === 'confirmado') {
           <div class="shrink-0 flex items-center justify-between gap-3 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
             <!-- Week pills (scrollable) -->
-            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0">
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
               @for (sem of semanas(); track sem.semana_iso; let i = $index) {
                 <button
                   (click)="selectedWeekIdx.set(i)"
-                  class="flex items-center gap-1 px-2.5 h-7 rounded-md text-[0.7rem] font-bold whitespace-nowrap transition-all shrink-0"
+                  class="flex items-center gap-1 px-3 h-7 rounded-full text-[0.7rem] font-bold whitespace-nowrap transition-all shrink-0 border active:scale-95"
                   [class]="weekTabClass(i)">
                   <span>{{ sem.fecha | date:'d MMMM' }}</span>
                 </button>
@@ -222,102 +222,132 @@ import {
               <div class="px-3 py-2 flex flex-col gap-1.5">
                 @for (grupo of seccion.grupos; track grupo.key) {
                   <div class="parte-card"
-                    [class.has-conflict]="grupo.partes[0].estado === 'conflict'"
-                    [class.has-swapped]="grupo.partes[0]._swapped"
+                    [class.has-conflict]="grupoHasConflict(grupo.partes)"
+                    [class.has-swapped]="grupoHasSwapped(grupo.partes)"
                     [class.is-open]="isGroupOpen(grupo)">
 
-                    @for (asig of grupo.partes; track asig.id_programa_parte + (asig.sala || '') + (asig.es_ayudante ? 'h' : ''); let pi = $index) {
+                    <div class="px-3.5 py-2.5 flex items-center gap-3">
+                      <!-- Color dot -->
+                      <div class="w-2 h-2 rounded-full shrink-0 mt-px"
+                        [style.background-color]="grupoDotColor(grupo.partes, seccion.color)">
+                      </div>
 
-                      <!-- Pair divider -->
-                      @if (pi > 0) {
-                        <div class="mx-4 h-px bg-black/[0.06] dark:bg-white/[0.07]"></div>
-                      }
-
-                      <div class="px-3.5 py-2.5 flex items-center justify-between gap-3">
-                        <!-- Color dot accent + Part info -->
-                        <div class="flex-1 min-w-0 flex items-start gap-3">
-                          <!-- Colored dot -->
-                          <div class="w-2 h-2 rounded-full mt-[5px] shrink-0"
-                            [style.background-color]="asig.estado === 'conflict' ? '#ef4444' : asig._swapped ? '#f59e0b' : seccion.color">
-                          </div>
-                          <div class="min-w-0 flex-1">
-                            <!-- Role chip (above name) -->
-                            @if (grupo.partes.length > 1) {
-                              <div class="flex items-center gap-1.5 flex-wrap mb-1">
-                                <span class="text-[0.55rem] font-black uppercase tracking-[0.08em] px-1.5 py-[2px] rounded shrink-0 leading-none"
-                                  [style.color]="seccion.color"
-                                  [style.background-color]="seccion.badgeBg">
-                                  {{ pi === 0 ? grupo.role0 : grupo.role1 }}
-                                </span>
-                              </div>
-                            }
-                            <!-- Part name · duration chip -->
-                            <div class="flex items-baseline gap-1.5 min-w-0">
-                              <p class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate leading-snug flex-1 min-w-0">{{ asig.nombre_parte }}</p>
-                              @if (asig.duracion_minutos) {
-                                <span class="text-[0.55rem] font-black shrink-0 px-1.5 py-[2px] rounded leading-none"
-                                  [style.color]="seccion.color"
-                                  [style.background-color]="seccion.badgeBg">{{ asig.duracion_minutos }}&nbsp;min</span>
-                              }
-                            </div>
-                            <!-- Status badges -->
-                            <div class="flex items-center gap-1.5 mt-0.5">
-                              @if (asig.estado === 'conflict') {
-                                <span class="inline-flex items-center gap-1 text-[0.6rem] font-semibold leading-none" style="color:#dc2626">
-                                  Sin candidato
-                                </span>
-                              } @else if (asig.es_reemplazo) {
-                                <span class="text-[0.6rem] leading-none" style="color:#94a3b8">Reemplazo</span>
-                              }
-                              @if (asig._swapped) {
-                                <span class="text-[0.6rem] font-semibold leading-none" style="color:#b45309">Modificado</span>
-                              }
-                            </div>
-                          </div>
+                      <!-- Part name + duration (once per group) -->
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline gap-1.5 min-w-0">
+                          <p class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate leading-snug flex-1 min-w-0">
+                            {{ displayNombreParte(grupo.partes[0]) }}
+                          </p>
+                          @if (grupo.partes[0].duracion_minutos) {
+                            <span class="text-[0.55rem] font-black shrink-0 px-1.5 py-[2px] rounded leading-none"
+                              [style.color]="seccion.color"
+                              [style.background-color]="seccion.badgeBg">
+                              {{ grupo.partes[0].duracion_minutos }}&nbsp;min
+                            </span>
+                          }
                         </div>
-
-                        <!-- Assignee pill + dropdown -->
-                        <div class="relative shrink-0">
-                          <button
-                            (click)="toggleDropdown(asig.id_programa_parte + (asig.es_ayudante ? 10000 : 0))"
-                            [disabled]="estado() === 'confirmado' || !hasEditPermission()"
-                            [class]="assigneeButtonClass(asig)">
-                            <span class="truncate max-w-[140px]">{{ asig.nombre_completo }}</span>
-                            @if (estado() !== 'confirmado' && asig.alternativos.length > 0) {
-                              <svg class="chevron w-3 h-3 shrink-0"
-                                [class.open]="openDropdownId() === asig.id_programa_parte + (asig.es_ayudante ? 10000 : 0)"
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                              </svg>
-                            }
-                          </button>
-
-                          @if (openDropdownId() === asig.id_programa_parte + (asig.es_ayudante ? 10000 : 0) && asig.alternativos.length > 0) {
-                            <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden"
-                              style="border-radius:14px">
-                              <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
-                                <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
-                                <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest">Candidatos</span>
-                              </div>
-                              <div class="p-1.5 flex flex-col gap-0.5">
-                                @for (alt of asig.alternativos; track alt.id_publicador) {
-                                  <button
-                                    (click)="swapAsignacion(selectedWeekIdx(), asig.id_programa_parte, alt, asig.es_ayudante)"
-                                    class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2 text-left rounded-[8px]">
-                                    <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
-                                    <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
-                                      [style.color]="seccion.color"
-                                      [style.background-color]="seccion.badgeBg">
-                                      {{ alt.score | number:'1.2-2' }}
-                                    </span>
-                                  </button>
-                                }
-                              </div>
-                            </div>
+                        <!-- Status badges (any part) -->
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                          @if (grupoHasConflict(grupo.partes)) {
+                            <span class="text-[0.6rem] font-semibold leading-none" style="color:#dc2626">Sin candidato</span>
+                          } @else if (grupoHasReemplazo(grupo.partes)) {
+                            <span class="text-[0.6rem] leading-none" style="color:#94a3b8">Reemplazo</span>
+                          }
+                          @if (grupoHasSwapped(grupo.partes)) {
+                            <span class="text-[0.6rem] font-semibold leading-none" style="color:#b45309">Modificado</span>
                           }
                         </div>
                       </div>
-                    }
+
+                      <!-- Assignee pills: one per part, side by side -->
+                      <div class="flex items-center gap-2 shrink-0">
+                        @for (asig of grupo.partes; track asig.id_programa_parte; let pi = $index) {
+                          <div class="relative">
+                            <button
+                              (click)="toggleDropdown(asig.id_programa_parte)"
+                              [disabled]="estado() === 'confirmado' || !hasEditPermission()"
+                              [class]="assigneeButtonClass(asig)">
+                              <!-- Role badge inside pill (only for paired parts) -->
+                              @if (grupo.partes.length > 1) {
+                                <span class="text-[0.48rem] font-black uppercase tracking-wide leading-none shrink-0 opacity-60">
+                                  {{ grupoRoleLabel(grupo, pi) }}
+                                </span>
+                                <span class="opacity-30 text-[0.6rem] leading-none shrink-0">·</span>
+                              }
+                              <span>{{ asig.nombre_completo }}</span>
+                              @if (estado() !== 'confirmado' && asig.alternativos.length > 0) {
+                                <svg class="chevron w-3 h-3 shrink-0"
+                                  [class.open]="openDropdownId() === asig.id_programa_parte"
+                                  fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                              }
+                              <!-- × para eliminar ayudante -->
+                              @if (asig.es_ayudante && estado() !== 'confirmado' && hasEditPermission()) {
+                                <span
+                                  (click)="onEliminarAyudante(asig, selectedWeekIdx(), $event)"
+                                  class="opacity-40 hover:opacity-90 leading-none shrink-0 ml-0.5 cursor-pointer active:scale-90 transition-all"
+                                  title="Quitar ayudante">✕</span>
+                              }
+                            </button>
+                            @if (openDropdownId() === asig.id_programa_parte && asig.alternativos.length > 0) {
+                              <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden"
+                                style="border-radius:14px">
+                                <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
+                                  <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
+                                  <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Candidatos</span>
+                                  <!-- Filtro de sexo (solo para ayudantes) -->
+                                  @if (asig.es_ayudante) {
+                                    <div class="flex items-center gap-0.5">
+                                      @for (opt of sexoOpts; track opt.v) {
+                                        <button
+                                          (click)="setSexoFilter(asig.id_programa_parte, opt.v); $event.stopPropagation()"
+                                          class="px-1.5 h-5 rounded text-[0.55rem] font-black transition-all active:scale-95"
+                                          [style]="getSexoFilter(asig.id_programa_parte) === opt.v
+                                            ? 'background:' + seccion.color + '; color:white'
+                                            : 'opacity:0.4'">
+                                          {{ opt.l }}
+                                        </button>
+                                      }
+                                    </div>
+                                  }
+                                </div>
+                                <div class="p-1.5 flex flex-col gap-0.5">
+                                  @for (alt of filteredAlternativos(asig); track alt.id_publicador) {
+                                    <button
+                                      (click)="swapAsignacion(selectedWeekIdx(), asig.id_programa_parte, alt, asig.es_ayudante)"
+                                      class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2 text-left rounded-[8px]">
+                                      <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
+                                      <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
+                                        [style.color]="seccion.color"
+                                        [style.background-color]="seccion.badgeBg">
+                                        {{ alt.score | number:'1.2-2' }}
+                                      </span>
+                                    </button>
+                                  }
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
+                        <!-- + Ayudante -->
+                        @if (puedeAgregarAyudante(grupo, seccion) && estado() !== 'confirmado' && hasEditPermission()) {
+                          <button
+                            (click)="onAgregarAyudante(grupo, selectedWeekIdx())"
+                            [disabled]="loadingAyudante() === grupo.partes[0].id_programa_parte"
+                            class="flex items-center gap-1 px-2 h-7 rounded-full text-[0.6rem] font-bold border transition-all active:scale-95 disabled:opacity-40"
+                            [style]="'border-color:' + seccionColor(seccion.color, 0.3) + '; color:' + seccion.color + '; opacity:0.7'">
+                            @if (loadingAyudante() === grupo.partes[0].id_programa_parte) {
+                              <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                            } @else {
+                              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            }
+                            Ayudante
+                          </button>
+                        }
+                      </div>
+                    </div>
+
                   </div>
                 }
               </div>
@@ -792,44 +822,62 @@ export class ReunionesEntreSemanaComponent implements OnInit {
 
   private _buildGrupos(partes: AsignacionDraft[]) {
     const grupos: { key: string; partes: AsignacionDraft[]; role0: string; role1: string }[] = [];
-    const used = new Set<string>();
+    // Clave compuesta: id + tipo (maestro vs ayudante) para que no colisionen cuando comparten id_programa_parte
+    const pKey = (p: AsignacionDraft) => `${p.id_programa_parte}|${p.es_ayudante ? '1' : '0'}`;
+    const usedKeys = new Set<string>();
 
-    for (const p of partes) {
-      const uid = p.id_programa_parte + '_' + (p.es_ayudante ? 'h' : 'p') + '_' + (p.sala || '');
-      if (used.has(uid)) continue;
-      used.add(uid);
+    const maestros = partes.filter(p => !p.es_ayudante);
+    const ayudantes = partes.filter(p => p.es_ayudante);
+
+    for (const p of maestros) {
+      const pk = pKey(p);
+      if (usedKeys.has(pk)) continue;
+      usedKeys.add(pk);
 
       const nombre = (p.nombre_parte || '').toLowerCase();
       const esConductor = nombre.includes('conductor') || nombre.includes('estudio bíblico');
-      const esMaestro = !p.es_ayudante && (nombre.includes('empiece') || nombre.includes('revisita') || nombre.includes('discípulo'));
+      const esMaestro = nombre.includes('empiece') || nombre.includes('revisita') || nombre.includes('discípulo') || nombre.includes('haga disc');
+      const uid = pk;
 
-      // Try to find paired part: ayudante shares same id_programa_parte
-      const pareja = partes.find((q) => {
-        const quid = q.id_programa_parte + '_' + (q.es_ayudante ? 'h' : 'p') + '_' + (q.sala || '');
-        if (used.has(quid)) return false;
-        // Pair: same id_programa_parte, one is ayudante
-        if (q.id_programa_parte === p.id_programa_parte && q.es_ayudante !== p.es_ayudante) return true;
-        // Pair: EBC Conductor + Lector (same seccion, consecutive orden)
-        if (esConductor) {
-          const qNombre = (q.nombre_parte || '').toLowerCase();
-          if (qNombre.includes('lector') && qNombre.includes('estudio')) return true;
+      if (esConductor) {
+        // EBC: pair Conductor with Lector
+        const lector = ayudantes.find(q => {
+          if (usedKeys.has(pKey(q))) return false;
+          const qn = (q.nombre_parte || '').toLowerCase();
+          return qn.includes('lector') && qn.includes('estudio');
+        });
+        if (lector) {
+          usedKeys.add(pKey(lector));
+          grupos.push({ key: uid, partes: [p, lector], role0: 'Conductor', role1: 'Lector' });
+        } else {
+          grupos.push({ key: uid, partes: [p], role0: '', role1: '' });
         }
-        return false;
-      });
-
-      if (pareja) {
-        const parejaNombre = (pareja.nombre_parte || '').toLowerCase();
-        const pairUid = pareja.id_programa_parte + '_' + (pareja.es_ayudante ? 'h' : 'p') + '_' + (pareja.sala || '');
-        used.add(pairUid);
-        // Determine roles
-        let role0 = 'Conductor';
-        let role1 = pareja.es_ayudante ? 'Ayudante' : (parejaNombre.includes('lector') ? 'Lector' : 'Pareja');
-        if (esMaestro) { role0 = 'Maestro'; role1 = 'Ayudante'; }
-        grupos.push({ key: uid, partes: [p, pareja], role0, role1 });
+      } else if (esMaestro || p.aplica_sala_b) {
+        // Normaliza nombre quitando sufijos de sala/ayudante para comparar la base
+        const stripSuffix = (n: string) =>
+          n.replace(/\s*\((sala b[^)]*|ayudante[^)]*)\)/gi, '').trim();
+        const nombreBase = stripSuffix(nombre);
+        // Recoger hasta 2 ayudantes cuya base de nombre coincida con la del maestro
+        const misAyudantes = nombreBase.length > 2
+          ? ayudantes.filter(q => {
+              if (usedKeys.has(pKey(q))) return false;
+              return stripSuffix((q.nombre_parte || '').toLowerCase()).startsWith(nombreBase);
+            }).slice(0, 2)
+          : [];
+        misAyudantes.forEach(a => usedKeys.add(pKey(a)));
+        grupos.push({ key: uid, partes: [p, ...misAyudantes], role0: 'Maestro', role1: 'Ayudante' });
       } else {
         grupos.push({ key: uid, partes: [p], role0: '', role1: '' });
       }
     }
+
+    // Ayudantes huérfanos (sin maestro emparejado)
+    for (const a of ayudantes) {
+      if (!usedKeys.has(pKey(a))) {
+        grupos.push({ key: pKey(a), partes: [a], role0: '', role1: '' });
+      }
+    }
+
     return grupos;
   }
 
@@ -1023,7 +1071,7 @@ export class ReunionesEntreSemanaComponent implements OnInit {
   isGroupOpen(grupo: any): boolean {
     const openId = this.openDropdownId();
     if (openId === null) return false;
-    return grupo.partes.some((p: any) => (p.id_programa_parte + (p.es_ayudante ? 10000 : 0)) === openId);
+    return grupo.partes.some((p: any) => p.id_programa_parte === openId);
   }
 
   // ── Confirm ────────────────────────────────────────────────────
@@ -1110,8 +1158,8 @@ export class ReunionesEntreSemanaComponent implements OnInit {
 
   weekTabClass(i: number): string {
     return i === this.selectedWeekIdx()
-      ? 'bg-[#6D28D9] text-white shadow-sm'
-      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200';
+      ? 'bg-[#6D28D9] text-white border-[#6D28D9] shadow-sm shadow-purple-900/20'
+      : 'text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-[#6D28D9]/40 hover:text-[#6D28D9] dark:hover:border-[#6D28D9]/30 dark:hover:text-[#a78bfa] bg-white dark:bg-slate-800';
   }
 
   salaTabClass(sala: 'Principal' | 'Auxiliar'): string {
@@ -1141,6 +1189,106 @@ export class ReunionesEntreSemanaComponent implements OnInit {
     if (asig.estado === 'conflict') return 'assignee-btn conflict';
     if (asig._swapped)              return 'assignee-btn swapped';
     return 'assignee-btn normal';
+  }
+
+  grupoHasConflict(partes: AsignacionDraft[]): boolean {
+    return partes.some(p => p.estado === 'conflict');
+  }
+  grupoHasSwapped(partes: AsignacionDraft[]): boolean {
+    return partes.some(p => p._swapped === true);
+  }
+  grupoHasReemplazo(partes: AsignacionDraft[]): boolean {
+    return partes.some(p => p.es_reemplazo);
+  }
+  grupoDotColor(partes: AsignacionDraft[], seccionColor: string): string {
+    if (partes.some(p => p.estado === 'conflict')) return '#ef4444';
+    if (partes.some(p => p._swapped)) return '#f59e0b';
+    return seccionColor;
+  }
+
+  displayNombreParte(asig: AsignacionDraft): string {
+    const n = asig.nombre_parte || '';
+    const nl = n.toLowerCase();
+    if ((nl.includes('palabras de introducci') || nl.includes('introducción y oración') || nl.includes('introduccion y oracion'))
+        && !nl.includes('presidente')) {
+      return `${n} (Presidente)`;
+    }
+    return n;
+  }
+
+  grupoRoleLabel(grupo: { partes: AsignacionDraft[]; role0: string; role1: string }, pi: number): string {
+    if (pi === 0) return grupo.role0;
+    if (pi === 1) return grupo.role1;
+    return 'Ayudante 2';
+  }
+
+  // ── Ayudantes: add / remove ─────────────────────────────────────
+  loadingAyudante = signal<number | null>(null);
+
+  readonly sexoOpts = [
+    { v: null as string | null, l: 'Todos' },
+    { v: 'F', l: '♀' },
+    { v: 'M', l: '♂' },
+  ];
+
+  private _sexoFilters = new Map<number, string | null>();
+
+  setSexoFilter(idParte: number, sexo: string | null): void {
+    this._sexoFilters.set(idParte, sexo);
+  }
+
+  getSexoFilter(idParte: number): string | null {
+    return this._sexoFilters.get(idParte) ?? null;
+  }
+
+  filteredAlternativos(asig: AsignacionDraft): CandidatoAlternativo[] {
+    if (!asig.es_ayudante) return asig.alternativos;
+    const filtro = this._sexoFilters.get(asig.id_programa_parte) ?? null;
+    if (!filtro) return asig.alternativos;
+    return asig.alternativos.filter(a => {
+      const sexo = (a as any).sexo;
+      if (!sexo) return true;
+      return sexo.toUpperCase().startsWith(filtro);
+    });
+  }
+
+  puedeAgregarAyudante(grupo: { partes: AsignacionDraft[] }, seccion: any): boolean {
+    if (seccion?.id !== 'seamos_mejores') return false;
+    const ayudantes = grupo.partes.filter(p => p.es_ayudante);
+    return ayudantes.length < 2 && grupo.partes[0]?.aplica_sala_b === true;
+  }
+
+  onAgregarAyudante(grupo: { partes: AsignacionDraft[] }, semanaIdx: number): void {
+    const maestro = grupo.partes.find(p => !p.es_ayudante);
+    if (!maestro) return;
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+    this.loadingAyudante.set(maestro.id_programa_parte);
+    this.reunionesSvc.agregarAyudante(maestro.id_programa_parte, idCong).subscribe({
+      next: (nuevaAsig) => {
+        this.semanas.update(semanas => semanas.map((sem, si) => {
+          if (si !== semanaIdx) return sem;
+          return { ...sem, partes: [...sem.partes, nuevaAsig] };
+        }));
+        this.loadingAyudante.set(null);
+      },
+      error: () => this.loadingAyudante.set(null),
+    });
+  }
+
+  onEliminarAyudante(asig: AsignacionDraft, semanaIdx: number, event: Event): void {
+    event.stopPropagation();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+    this.reunionesSvc.eliminarAyudante(asig.id_programa_parte, idCong).subscribe({
+      next: () => {
+        this.semanas.update(semanas => semanas.map((sem, si) => {
+          if (si !== semanaIdx) return sem;
+          return { ...sem, partes: sem.partes.filter(p => p.id_programa_parte !== asig.id_programa_parte) };
+        }));
+        this._sexoFilters.delete(asig.id_programa_parte);
+      },
+    });
   }
 
   // ── Date utilities ─────────────────────────────────────────────

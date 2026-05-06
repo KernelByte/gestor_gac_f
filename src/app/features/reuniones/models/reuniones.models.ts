@@ -13,6 +13,7 @@ export interface CandidatoAlternativo {
   nombre_completo: string;
   score: number;
   notas_score: string[];
+  sexo?: string;
 }
 
 export interface AsignacionDraft {
