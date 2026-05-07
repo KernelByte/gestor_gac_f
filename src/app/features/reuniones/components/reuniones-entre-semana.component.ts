@@ -7,6 +7,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { forkJoin, of } from 'rxjs'; // 'of' used in tryLoadDrafts catchError
+import { ReunionesLogisticaComponent } from './reuniones-logistica.component';
+import { ReunionesDiscursosComponent } from './reuniones-discursos.component';
 import { catchError, switchMap } from 'rxjs/operators';
 import { ReunionesService } from '../services/reuniones.service';
 import { AsistenciaService } from '../services/asistencia.service';
@@ -31,78 +33,55 @@ import {
 @Component({
   selector: 'app-reuniones-programacion',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReunionesLogisticaComponent, ReunionesDiscursosComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
-      <!-- ===== PAGE HEADER ===== -->
-      <div class="shrink-0 flex items-center justify-between gap-3 pb-3">
-        <div class="min-w-0">
-          <h1 class="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
-            {{ tituloReunion() }}
-          </h1>
-        </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          <!-- Generar Mes — visible en móvil (md:hidden), en desktop está en el sidebar -->
+      <!-- ===== MEETING TYPE SELECTOR ===== -->
+      <div class="shrink-0 flex items-center pb-3">
+        <div class="inline-flex items-center gap-1 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800">
+          @if (canViewEntreSemana()) {
+            <button
+              (click)="onTipoChange('entre_semana')"
+              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
+              [class]="tipoReunionActivo() === 'entre_semana'
+                ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+              Entre semana
+            </button>
+          }
+          @if (canViewFinSemana()) {
+            <button
+              (click)="onTipoChange('fin_semana')"
+              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
+              [class]="tipoReunionActivo() === 'fin_semana'
+                ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+              Fin de semana
+            </button>
+          }
           <button
-            *ngIf="hasEditPermission()"
-            (click)="openModal()"
-            [disabled]="estado() === 'loading'"
-            title="Generar Mes"
-            class="md:hidden flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95">
-            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span class="hidden sm:inline">Generar Mes</span>
+            (click)="onTipoChange('logistica')"
+            class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
+            [class]="tipoReunionActivo() === 'logistica'
+              ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Logística
           </button>
-          <!-- Confirmar -->
           <button
-            *ngIf="hasEditPermission()"
-            (click)="confirmar()"
-            [disabled]="!canConfirmar()"
-            title="Confirmar borrador"
-            class="btn-confirmar flex items-center gap-1.5 px-3 h-10 rounded-xl border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95">
-            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span class="hidden sm:inline">Confirmar</span>
-          </button>
-          <!-- Borrar borrador -->
-          <button
-            *ngIf="hasEditPermission()"
-            (click)="borrarBorrador()"
-            [disabled]="!canBorrarBorrador()"
-            title="Borrar borrador"
-            class="btn-borrar flex items-center gap-1.5 px-3 h-10 rounded-xl border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95">
-            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-            <span class="hidden sm:inline">Borrar borrador</span>
+            (click)="onTipoChange('discursos')"
+            class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
+            [class]="tipoReunionActivo() === 'discursos'
+              ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/><path d="M5 3l14 0"/></svg>
+            Discursos
           </button>
         </div>
       </div>
-
-      <!-- ===== MEETING TYPE SELECTOR ===== -->
-      @if (showTipoTabs()) {
-        <div class="shrink-0 flex items-center pb-3">
-          <div class="tipo-tabs inline-flex items-center rounded-xl p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
-            <button
-              (click)="onTipoChange('entre_semana')"
-              class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95"
-              [class]="tipoReunionActivo() === 'entre_semana'
-                ? 'bg-white dark:bg-slate-700 text-[#6D28D9] dark:text-purple-300 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-              <span class="hidden xs:inline">Reunion entre semana</span>
-              <span class="xs:hidden">Entre semana</span>
-            </button>
-            <button
-              (click)="onTipoChange('fin_semana')"
-              class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95"
-              [class]="tipoReunionActivo() === 'fin_semana'
-                ? 'bg-white dark:bg-slate-700 text-[#6D28D9] dark:text-purple-300 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-              <span class="hidden xs:inline">Reunion Fin de semana</span>
-              <span class="xs:hidden">Fin de semana</span>
-            </button>
-          </div>
-        </div>
-      }
 
       <!-- ===== ERROR ===== -->
       @if (estado() === 'error') {
@@ -125,7 +104,43 @@ import {
         </div>
       }
 
+      <!-- ===== LOGÍSTICA ===== -->
+      @if (tipoReunionActivo() === 'logistica') {
+        <app-reuniones-logistica class="flex-1 min-h-0 block overflow-hidden" />
+      }
+
+      <!-- ===== DISCURSOS PÚBLICOS ===== -->
+      @if (tipoReunionActivo() === 'discursos') {
+        <app-reuniones-discursos class="flex-1 min-h-0 block overflow-hidden" />
+      }
+
       <!-- ===== ÁREA PRINCIPAL: sidebar + contenido ===== -->
+      @if (tipoReunionActivo() !== 'logistica' && tipoReunionActivo() !== 'discursos') {
+
+      <!-- Header interno igual que logística -->
+      <div class="shrink-0 flex items-center justify-between gap-3 pb-3">
+        <div class="min-w-0">
+          <h1 class="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
+            {{ tituloReunion() }}
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            @if (tipoReunionActivo() === 'entre_semana') { Tesoros · Seamos Mejores Maestros · Nuestra Vida Cristiana }
+            @if (tipoReunionActivo() === 'fin_semana') { Discurso Público · Estudio de La Atalaya }
+          </p>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button
+            *ngIf="hasEditPermission()"
+            (click)="openModal()"
+            [disabled]="estado() === 'loading'"
+            title="Generar Mes"
+            class="md:hidden flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="hidden sm:inline">Generar Mes</span>
+          </button>
+        </div>
+      </div>
+
       <div class="flex-1 min-h-0 flex flex-col md:flex-row gap-3 md:gap-4 overflow-hidden">
 
         <!-- ── SIDEBAR DESKTOP (oculto en móvil) ── -->
@@ -235,6 +250,28 @@ import {
                   <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                   Volver
                 </button>
+              }
+              @if (estado() === 'draft' && hasEditPermission()) {
+                <div class="flex items-center gap-1 shrink-0">
+                  <!-- Confirmar -->
+                  <button
+                    (click)="confirmar()"
+                    [disabled]="!canConfirmar()"
+                    title="Confirmar borrador"
+                    class="btn-confirmar flex items-center gap-1 px-2.5 h-9 md:h-7 rounded-full border disabled:opacity-40 disabled:cursor-not-allowed text-[0.65rem] font-bold transition-all active:scale-95">
+                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span class="hidden sm:inline">Confirmar</span>
+                  </button>
+                  <!-- Borrar borrador -->
+                  <button
+                    (click)="borrarBorrador()"
+                    [disabled]="!canBorrarBorrador()"
+                    title="Borrar borrador"
+                    class="btn-borrar flex items-center gap-1 px-2.5 h-9 md:h-7 rounded-full border disabled:opacity-40 disabled:cursor-not-allowed text-[0.65rem] font-bold transition-all active:scale-95">
+                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    <span class="hidden sm:inline">Borrar</span>
+                  </button>
+                </div>
               }
             </div>
           }
@@ -595,6 +632,7 @@ import {
         }
 
       </div>
+      } <!-- end @if tipoReunionActivo !== logistica -->
     </div>
 
     <!-- ===== MODAL GENERAR MES ===== -->
@@ -1101,7 +1139,7 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   hasEditPermission = computed(() => {
     const tipo = this.tipoReunionActivo();
-    const perm = tipo === 'entre_semana' ? 'reuniones.entre_semana_editar' : 'reuniones.fin_semana_editar';
+    const perm = tipo === 'fin_semana' ? 'reuniones.fin_semana_editar' : 'reuniones.entre_semana_editar';
     return this.authStore.hasPermission(perm) || !!this.authStore.user()?.roles?.includes('Secretario');
   });
 
@@ -1188,7 +1226,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   selectedSala = signal<'Principal' | 'Auxiliar'>('Principal');
 
   // ── Meeting type toggle ────────────────────────────────────────
-  tipoReunionActivo = signal<'entre_semana' | 'fin_semana'>('entre_semana');
+  tipoReunionActivo = signal<'entre_semana' | 'fin_semana' | 'logistica' | 'discursos'>('entre_semana');
 
   canViewEntreSemana = computed(() =>
     this.authStore.hasPermission('reuniones.entre_semana_ver') ||
@@ -1200,11 +1238,15 @@ export class ReunionesProgramacionComponent implements OnInit {
   );
   showTipoTabs = computed(() => this.canViewEntreSemana() && this.canViewFinSemana());
 
-  tituloReunion = computed(() =>
-    this.tipoReunionActivo() === 'entre_semana'
-      ? 'Vida y Ministerio Cristianos'
-      : 'Reunión Pública y Atalaya'
-  );
+  tituloReunion = computed(() => {
+    switch (this.tipoReunionActivo()) {
+      case 'entre_semana': return 'Vida y Ministerio Cristianos';
+      case 'fin_semana':   return 'Reunión Pública y Atalaya';
+      case 'logistica':    return 'Logística de Reuniones';
+      case 'discursos':    return 'Discursos Públicos';
+      default:             return '';
+    }
+  });
 
   // ── Section config ─────────────────────────────────────────────
   private readonly SECCIONES_ENTRE_SEMANA: Record<string, { titulo: string; color: string; orden: number; iconPath: string; iconViewBox?: string }> = {
@@ -2226,9 +2268,10 @@ export class ReunionesProgramacionComponent implements OnInit {
   }
 
   // ── Meeting type toggle ────────────────────────────────────────
-  onTipoChange(tipo: 'entre_semana' | 'fin_semana'): void {
+  onTipoChange(tipo: 'entre_semana' | 'fin_semana' | 'logistica' | 'discursos'): void {
     if (tipo === this.tipoReunionActivo()) return;
     this.tipoReunionActivo.set(tipo);
+    if (tipo === 'logistica' || tipo === 'discursos') return;
     // Reset state for new type
     this.semanas.set([]);
     this.selectedWeekIdx.set(0);
