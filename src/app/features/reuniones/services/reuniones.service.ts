@@ -293,6 +293,17 @@ export class ReunionesService {
     );
   }
 
+  buscarPublicadoresCong(
+    idCong: number,
+    q: string
+  ): Observable<{ id_publicador: number; nombre_completo: string; sexo?: string }[]> {
+    const params = new HttpParams().set('id_congregacion', idCong).set('q', q);
+    return this.http.get<{ id_publicador: number; nombre_completo: string; sexo?: string }[]>(
+      `${this.base}/asignaciones/buscar-publicadores`,
+      { params }
+    );
+  }
+
   editarAsignacion(
     idAsignacion: number,
     payload: EditarAsignacionRequest

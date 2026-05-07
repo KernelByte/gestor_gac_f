@@ -68,6 +68,13 @@
     caret-color: white !important;
   }
 
+  /* === Hide scrollbar (for overflow-x scroll containers like tab bars) === */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+
   /* === Custom Scrollbar === */
   ::-webkit-scrollbar {
     width: 6px;

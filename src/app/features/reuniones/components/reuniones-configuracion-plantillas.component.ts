@@ -47,13 +47,13 @@ import {
        }
 
        <!-- ===== TAB PILLS + FILTROS (misma línea) ===== -->
-       <div class="shrink-0 flex items-center gap-3 w-full">
+       <div class="shrink-0 flex flex-wrap items-center gap-2 sm:gap-3 w-full">
            <!-- Tabs -->
-           <div class="shrink-0 flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors">
+           <div class="flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors overflow-x-auto max-w-full scrollbar-none">
              @for (tab of visibleTabs(); track tab.id) {
                <button
                  (click)="activeTab.set(tab.id)"
-                 class="px-4 h-9 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
+                 class="px-2.5 sm:px-4 h-9 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap shrink-0"
                  [class]="activeTab() === tab.id
                    ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20'
                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
@@ -72,13 +72,13 @@ import {
                      <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                    </span>
                  }
-                 <span>{{ tab.label }}</span>
+                 <span class="hidden xs:inline sm:inline">{{ tab.label }}</span>
                </button>
              }
            </div>
 
            <!-- Acciones contextuales (botones Guardar + filtros) -->
-           <div class="flex items-center gap-2 ml-auto">
+           <div class="flex items-center gap-2 ml-auto flex-wrap justify-end">
 
             <!-- Perfil del algoritmo (solo indicador de guardado) -->
             @if (activeTab() === 'parametros' && profileSaving()) {
@@ -123,37 +123,37 @@ import {
 
            <!-- Filtros buscador (solo para tab privilegios) -->
            @if (activeTab() === 'privilegios') {
+               <!-- Filter Icons -->
+               <div class="flex items-center gap-1">
+                   <button
+                     (click)="setFiltroSexo('solo_hombres')"
+                     title="Solo Hermanos"
+                     class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg transition-all border"
+                     [class]="filtroSexo() === 'solo_hombres'
+                       ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-300 hover:text-blue-500'">
+                       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+                   </button>
+                   <button
+                     (click)="setFiltroSexo('solo_mujeres')"
+                     title="Solo Hermanas"
+                     class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg transition-all border"
+                     [class]="filtroSexo() === 'solo_mujeres'
+                       ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
+                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-rose-300 hover:text-rose-500'">
+                       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M12 21v-8"/><path d="M9 14l3-3 3 3"/></svg>
+                   </button>
+               </div>
                <!-- Search -->
-               <div class="relative w-[220px]">
+               <div class="relative w-full sm:w-[200px]">
                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                       <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                       <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                    </div>
                    <input type="text"
                      [ngModel]="searchQuery()"
                      (ngModelChange)="searchQuery.set($event)"
                      placeholder="Buscar publicador..."
-                     class="priv-search w-full h-9 pl-10 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm">
-               </div>
-               <!-- Filter Icons -->
-               <div class="hidden lg:flex items-center gap-1.5">
-                   <button
-                     (click)="setFiltroSexo('solo_hombres')"
-                     title="Filtrar Hermanos"
-                     class="w-9 h-9 flex items-center justify-center rounded-lg transition-all border"
-                     [class]="filtroSexo() === 'solo_hombres'
-                       ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-300 hover:text-blue-500'">
-                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
-                   </button>
-                   <button
-                     (click)="setFiltroSexo('solo_mujeres')"
-                     title="Filtrar Hermanas"
-                     class="w-9 h-9 flex items-center justify-center rounded-lg transition-all border"
-                     [class]="filtroSexo() === 'solo_mujeres'
-                       ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
-                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-rose-300 hover:text-rose-500'">
-                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M12 21v-8"/><path d="M9 14l3-3 3 3"/></svg>
-                   </button>
+                     class="priv-search w-full h-9 pl-9 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm">
                </div>
            }
 
@@ -163,95 +163,157 @@ import {
        <!-- ===== TAB: PLANTILLAS ===== -->
        @if (activeTab() === 'plantillas') {
 
-       <!-- Compact Toolbar for Upload -->
-       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 transition-all">
+       <!-- Toolbar -->
+       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-blue-900/20 dark:via-slate-800 dark:to-cyan-900/10 rounded-xl flex items-center justify-center shadow-sm border border-blue-100/50 dark:border-blue-800/30 shrink-0">
-                 <svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <div class="w-9 h-9 bg-[#6D28D9]/10 dark:bg-[#6D28D9]/20 rounded-xl flex items-center justify-center shrink-0">
+                 <svg class="w-4.5 h-4.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               </div>
-              <div>
-                  <h3 class="font-bold text-slate-800 dark:text-white text-sm">Generador de Plantillas (Motor IA)</h3>
-              </div>
+              <h3 class="font-bold text-slate-800 dark:text-white text-[0.8125rem]">Generador de Plantillas <span class="text-[#6D28D9] dark:text-purple-400 font-black">Motor IA</span></h3>
            </div>
 
            <input type="file" #fileInput (change)="onFileSelected($event)" accept=".pdf" class="hidden">
 
            @if (!mwbLoading()) {
-             <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-               <!-- Filtros mes y año -->
-               <div class="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700 h-9 shrink-0">
-                   <div class="px-2 border-r border-slate-100 dark:border-slate-700 mr-1 hidden md:block">
-                     <span class="text-[9px] uppercase tracking-wider font-black text-slate-400 dark:text-slate-500">Mes Inicial</span>
-                   </div>
-                   <select [ngModel]="mwbTargetMonth()" (ngModelChange)="mwbTargetMonth.set(+$event)" class="text-[0.6875rem] font-bold bg-transparent outline-none p-1 text-slate-700 dark:text-slate-200 focus:ring-1 rounded cursor-pointer">
-                     <option [value]="1">Enero</option>
-                     <option [value]="2">Febrero</option>
-                     <option [value]="3">Marzo</option>
-                     <option [value]="4">Abril</option>
-                     <option [value]="5">Mayo</option>
-                     <option [value]="6">Junio</option>
-                     <option [value]="7">Julio</option>
-                     <option [value]="8">Agosto</option>
-                     <option [value]="9">Septiembre</option>
-                     <option [value]="10">Octubre</option>
-                     <option [value]="11">Noviembre</option>
-                     <option [value]="12">Diciembre</option>
-                  </select>
-                  <input type="number" [ngModel]="mwbTargetYear()" (ngModelChange)="mwbTargetYear.set(+$event)" class="w-14 text-[0.6875rem] font-bold bg-transparent outline-none p-1 text-slate-700 dark:text-slate-200 focus:ring-1 rounded text-center" min="2020" max="2100">
+             <div class="flex items-center gap-2 flex-wrap">
+               <!-- Selector mes / año -->
+               <div class="flex items-center gap-0 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 h-9 overflow-hidden shrink-0">
+                 <span class="pl-3 pr-2 text-[9px] uppercase tracking-wider font-black text-slate-400 dark:text-slate-500 border-r border-slate-200 dark:border-slate-700 h-full flex items-center shrink-0">Mes</span>
+                 <select [ngModel]="mwbTargetMonth()" (ngModelChange)="mwbTargetMonth.set(+$event)" class="h-full text-[0.6875rem] font-bold bg-transparent outline-none px-2 text-slate-700 dark:text-slate-200 cursor-pointer">
+                   <option [value]="1">Enero</option><option [value]="2">Febrero</option><option [value]="3">Marzo</option>
+                   <option [value]="4">Abril</option><option [value]="5">Mayo</option><option [value]="6">Junio</option>
+                   <option [value]="7">Julio</option><option [value]="8">Agosto</option><option [value]="9">Septiembre</option>
+                   <option [value]="10">Octubre</option><option [value]="11">Noviembre</option><option [value]="12">Diciembre</option>
+                 </select>
+                 <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1 shrink-0"></span>
+                 <input type="number" [ngModel]="mwbTargetYear()" (ngModelChange)="mwbTargetYear.set(+$event)"
+                        class="w-16 h-full text-[0.6875rem] font-bold bg-transparent outline-none pl-1 pr-3 text-slate-700 dark:text-slate-200 text-center" min="2020" max="2100">
                </div>
-               
-               <button *ngIf="hasEditPermission()" (click)="fileInput.click()" [disabled]="mwbConfirming()" class="h-9 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
+
+               <button *ngIf="hasEditPermission()" (click)="fileInput.click()" [disabled]="mwbConfirming()"
+                       class="plt-btn-primary h-9 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[0.6875rem] font-bold rounded-lg shadow-sm flex items-center gap-2 shrink-0">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                 <span>Subir PDF Vida y ministerio</span>
+                 <span>Subir PDF</span>
                </button>
-               <button *ngIf="hasEditPermission()" (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())" class="h-9 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
-                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                 <span>Pegar JSON</span>
+               <button *ngIf="hasEditPermission()" (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())"
+                       class="plt-btn-secondary h-9 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg flex items-center gap-2 shrink-0">
+                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                 <span>JSON</span>
                </button>
              </div>
            }
        </div>
 
        @if (mwbJsonInputOpen()) {
-         <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner p-4 shrink-0 transition-all animate-fadeIn mb-4">
+         <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shrink-0 animate-fadeIn">
            <h4 class="text-xs font-bold text-slate-800 dark:text-white mb-2">Pega aquí el JSON generado</h4>
-           <textarea [ngModel]="mwbJsonText()" (ngModelChange)="mwbJsonText.set($event)" rows="6" class="w-full text-xs font-mono p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-[#6D28D9]/50 outline-none resize-y mb-3 h-48" placeholder='{"mensaje": "OK", "semanas": [{ "titulo_semana": "...", "partes": [] }]}'></textarea>
+           <textarea [ngModel]="mwbJsonText()" (ngModelChange)="mwbJsonText.set($event)" rows="6"
+                     class="w-full text-xs font-mono p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-[#6D28D9]/50 outline-none resize-y mb-3 h-40"
+                     placeholder='{"mensaje": "OK", "semanas": [{ "titulo_semana": "...", "partes": [] }]}'></textarea>
            <div class="flex items-center gap-2 justify-end">
-              <button (click)="mwbJsonInputOpen.set(false)" class="h-8 px-4 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 text-[0.6875rem] font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancelar</button>
-              <button (click)="processJsonInput()" class="h-8 px-4 bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all">Procesar JSON</button>
+              <button (click)="mwbJsonInputOpen.set(false)" class="plt-btn-secondary h-8 px-4 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 text-[0.6875rem] font-bold rounded-lg">Cancelar</button>
+              <button (click)="processJsonInput()" class="plt-btn-primary h-8 px-4 bg-[#6D28D9] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm">Procesar JSON</button>
            </div>
          </div>
        }
 
-       <!-- Split Content Area -->
+       <!-- Split Content Area — en móvil el histórico aparece primero (colapsable), luego el editor -->
        <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-4">
+
+           <!-- Historical Archive Panel — en móvil va arriba colapsable -->
+           <div class="lg:flex-[1] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col lg:min-h-0"
+                [class]="historialExpanded() ? 'min-h-0' : 'shrink-0'">
+             <button class="plt-history-header px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20 w-full text-left"
+                     (click)="toggleHistorial()">
+               <h3 class="text-[0.6875rem] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
+                 <svg class="w-3.5 h-3.5 text-[#6D28D9] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                 Histórico Guardado
+                 @if (savedPlantillas().length > 0) {
+                   <span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 text-[9px] font-black tabular-nums">{{ savedPlantillas().length }}</span>
+                 }
+               </h3>
+               <div class="flex items-center gap-2">
+                 @if (plantillasLoading()) {
+                   <div class="w-3 h-3 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
+                 }
+                 <!-- Flecha solo visible en móvil -->
+                 <svg class="w-4 h-4 text-slate-400 lg:hidden transition-transform duration-200 ease-out shrink-0"
+                      [class.rotate-180]="historialExpanded()"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+               </div>
+             </button>
+
+             <div class="overflow-y-auto flex-1 p-3 flex flex-col gap-1.5 simple-scrollbar"
+                  [class.hidden]="!historialExpanded()"
+                  [class.lg:flex]="true">
+               @for (p of savedPlantillas(); track p.id_plantilla) {
+                 <div class="plt-hist-item group flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 cursor-default">
+                   <!-- Left border accent -->
+                   <div class="w-1 self-stretch rounded-full shrink-0"
+                        [class]="p.tipo === 'entre_semana' ? 'bg-[#6D28D9]/30' : 'bg-emerald-400/40'"></div>
+                   <div class="min-w-0 flex-1">
+                     <h4 class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-200 truncate leading-tight" [title]="p.nombre">{{ p.nombre }}</h4>
+                     <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider"
+                           [class]="p.tipo === 'entre_semana' ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'">
+                       {{ p.tipo === 'entre_semana' ? 'Estudio' : 'Fin de Sem' }}
+                     </span>
+                   </div>
+                   <!-- Acciones siempre visibles -->
+                   <div class="flex items-center gap-0.5 shrink-0">
+                     <button (click)="editPlantilla(p.id_plantilla)"
+                             class="plt-icon-btn w-8 h-8 flex items-center justify-center text-[#6D28D9]/60 dark:text-purple-400/60 rounded-lg" title="Editar">
+                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                     </button>
+                     <button (click)="deletePlantilla(p.id_plantilla)"
+                             class="plt-icon-btn w-8 h-8 flex items-center justify-center text-rose-400/60 rounded-lg" title="Eliminar">
+                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                     </button>
+                   </div>
+                 </div>
+               } @empty {
+                 @if (!plantillasLoading()) {
+                   <div class="flex-1 flex flex-col items-center justify-center opacity-50 text-center px-4 py-8">
+                     <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2">
+                       <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                     </div>
+                     <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400">Sin plantillas guardadas</p>
+                   </div>
+                 }
+               }
+             </div>
+           </div>
 
            <!-- Main Logic Panel (Preview / Editor) -->
            @if (mwbPreview() || (plantillaEditing() && selectedPlantilla())) {
-             <div class="flex-[2] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 sm:p-5 flex flex-col min-h-0 animate-fadeIn">
-               <div class="flex items-center justify-between mb-4 shrink-0 px-1 border-b border-transparent">
-                 <div>
-                   <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+             <div class="lg:flex-[2] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col min-h-0 animate-fadeIn overflow-hidden">
+               <!-- Panel header -->
+               <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                 <div class="min-w-0">
+                   <h3 class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate">
                      {{ plantillaEditing() ? 'Modificando Plantilla' : (mwbPreview()?.mensaje || 'Confirmación de Estructura') }}
                    </h3>
-                   <span class="text-[0.6875rem] font-medium text-emerald-600 dark:text-emerald-400 hidden sm:block">
+                   <p class="text-[0.625rem] font-medium mt-0.5"
+                      [class]="plantillaEditing() ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'">
                      {{ plantillaEditing() ? 'Los cambios afectarán solo a las generaciones futuras.' : 'Verifique y confirme la estructura propuesta por la IA.' }}
-                   </span>
+                   </p>
                  </div>
-                 <div class="flex items-center gap-2">
+                 <div class="flex items-center gap-2 shrink-0 ml-3">
                    @if (plantillaEditing()) {
-                    <button (click)="closePlantillaEditor()" class="h-8 px-3 border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[0.6875rem] font-bold rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-all flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                      Cerrar
+                    <button (click)="closePlantillaEditor()"
+                            class="plt-btn-secondary h-8 px-3 border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[0.6875rem] font-bold rounded-lg flex items-center gap-1.5">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                      <span class="hidden sm:inline">Cerrar</span>
                     </button>
-                    <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="h-8 px-4 bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+                    <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()"
+                            class="plt-btn-primary h-8 px-4 bg-[#6D28D9] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm shadow-purple-500/20 flex items-center gap-1.5">
                       @if (plantillasLoading()) {
                         <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       }
                       Guardar
                     </button>
                   } @else {
-                     <button (click)="confirmMWB()" [disabled]="mwbConfirming()" class="h-8 px-4 bg-emerald-500 hover:bg-emerald-600 text-white text-[0.6875rem] font-bold rounded-lg shadow-sm shadow-emerald-900/20 transition-all flex items-center gap-1.5 disabled:opacity-50">
+                     <button (click)="confirmMWB()" [disabled]="mwbConfirming()"
+                             class="plt-btn-primary h-8 px-4 bg-emerald-500 text-white text-[0.6875rem] font-bold rounded-lg shadow-sm shadow-emerald-900/20 flex items-center gap-1.5 disabled:opacity-50">
                        @if (mwbConfirming()) {
                          <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                          <span>Importando...</span>
@@ -264,140 +326,123 @@ import {
                  </div>
                </div>
 
-               <div class="overflow-y-auto min-h-0 space-y-3 pr-1 sm:pr-2 simple-scrollbar">
+               <div class="overflow-y-auto min-h-0 space-y-3 p-4 simple-scrollbar">
                  <!-- MWB PREVIEW Mode -->
                  @if (mwbPreview()) {
                    @for (semana of mwbPreview()?.semanas; track $index; let i = $index) {
                      <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
-                       <div class="bg-slate-50 dark:bg-slate-800/80 px-3 sm:px-4 py-2 sm:py-2.5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                         <div class="flex items-center gap-2.5 flex-1 w-full">
-                             <div class="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-[0.625rem] shrink-0">W{{ i + 1 }}</div>
-                             <div class="flex flex-col gap-0.5 min-w-0 flex-1">
-                               <input [(ngModel)]="semana.titulo_semana" class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] sm:text-xs outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 min-w-0">
-                               @if (semana.lectura_semanal) {
-                                 <div class="text-[9px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1 px-1">
-                                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                                   Lectura: {{ semana.lectura_semanal }}
-                                 </div>
-                               }
-                             </div>
+                       <div class="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                         <div class="flex items-center gap-2.5 flex-1 min-w-0">
+                           <div class="w-6 h-6 rounded-lg bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 flex items-center justify-center font-black text-[0.6rem] shrink-0">W{{ i + 1 }}</div>
+                           <div class="flex flex-col gap-0.5 min-w-0 flex-1">
+                             <input [(ngModel)]="semana.titulo_semana" class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
+                             @if (semana.lectura_semanal) {
+                               <div class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1 px-1">
+                                 <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                 Lectura: {{ semana.lectura_semanal }}
+                               </div>
+                             }
+                           </div>
                          </div>
-
-                         <div class="flex items-center gap-2 sm:ml-auto shrink-0">
-                             <div class="flex items-center gap-1.5 shrink-0 hidden sm:flex">
-                                 <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                 <label class="text-[0.625rem] font-bold text-slate-500 uppercase">Lunes:</label>
-                             </div>
-                             <input type="date"
-                                 [ngModel]="mwbDates().get(i) || ''"
-                                 (ngModelChange)="updateMwbDate(i, $event)"
-                                 [class.border-red-500]="!!mwbDates().get(i) === false"
-                                 class="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-[0.625rem] sm:text-[0.6875rem] font-medium focus:ring-2 focus:ring-[#6D28D9]/50 outline-none w-[110px] sm:w-[120px]">
+                         <div class="flex items-center gap-1.5 shrink-0">
+                           <svg class="w-3.5 h-3.5 text-slate-400 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                           <input type="date" [ngModel]="mwbDates().get(i) || ''" (ngModelChange)="updateMwbDate(i, $event)"
+                                  class="h-7 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-[0.625rem] font-medium focus:ring-2 focus:ring-[#6D28D9]/50 outline-none w-[130px]">
                          </div>
                        </div>
-                       <div class="p-0 bg-white dark:bg-slate-900">
+                       <div class="bg-white dark:bg-slate-900">
                          <table class="w-full text-left border-collapse">
                            <tbody>
                              @for (parte of semana.partes; track $index) {
-                               <tr class="border-b last:border-b-0 border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
-                                 <td class="py-2 px-3 sm:px-4 w-1/4 min-w-[90px] sm:min-w-[120px] align-middle">
-                                     <div class="text-[9px] sm:text-[0.625rem] font-black uppercase tracking-widest" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</div>
+                               <tr class="plt-parte-row border-b last:border-b-0 border-slate-100 dark:border-slate-800/50">
+                                 <td class="py-2 px-3 w-[100px] sm:w-[130px] align-top pt-2.5">
+                                   <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest leading-none" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</span>
                                  </td>
-                                 <td class="py-2 px-2 sm:px-4 align-middle">
-                                    <div class="flex flex-col gap-0.5 flex-1 min-w-0">
-                                      <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] sm:text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 flex-1 min-w-0 w-full overflow-hidden text-ellipsis">
-                                      @if (parte.fuente_informacion) {
-                                        <div class="text-[9px] text-slate-400 dark:text-slate-500 font-medium px-1 italic truncate">
-                                          {{ parte.fuente_informacion }}
-                                        </div>
-                                      }
-                                    </div>
-                                     <div class="flex items-center gap-1 shrink-0 px-1 mt-1 sm:mt-0">
+                                 <td class="py-2 px-2 align-middle">
+                                   <div class="flex flex-col gap-1">
+                                     <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-[#6D28D9]/40 rounded px-1 w-full">
+                                     @if (parte.fuente_informacion) {
+                                       <div class="text-[9px] text-slate-400 dark:text-slate-500 italic px-1 truncate">{{ parte.fuente_informacion }}</div>
+                                     }
+                                     <div class="flex items-center gap-1.5 px-1">
                                        <button (click)="parte.aplica_sala_b = !parte.aplica_sala_b"
-                                               [class]="parte.aplica_sala_b ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 ring-1 ring-purple-500/30' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'"
-                                               class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase transition-all whitespace-nowrap">Sala B</button>
+                                               class="plt-tag-toggle px-2 py-1 rounded-md text-[8px] font-black uppercase leading-none"
+                                               [class]="parte.aplica_sala_b ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 ring-1 ring-[#6D28D9]/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Sala B</button>
                                        <button (click)="parte.requiere_pareja = !parte.requiere_pareja"
-                                               [class]="parte.requiere_pareja ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 ring-1 ring-amber-500/30' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'"
-                                               class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase transition-all whitespace-nowrap">Pareja</button>
+                                               class="plt-tag-toggle px-2 py-1 rounded-md text-[8px] font-black uppercase leading-none"
+                                               [class]="parte.requiere_pareja ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 ring-1 ring-amber-500/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Pareja</button>
                                      </div>
+                                   </div>
                                  </td>
-                                 <td class="py-2 px-3 sm:px-4 text-right w-16 sm:w-24 align-middle">
+                                 <td class="py-2 px-3 text-right w-16 sm:w-20 align-middle">
                                    <div class="flex items-center justify-end gap-1">
-                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-8 sm:w-10 h-6 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded text-[9px] sm:text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-all">
-                                     <span class="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest">min</span>
+                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-9 h-7 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded-lg text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-[#6D28D9]/40 focus:bg-white dark:focus:bg-slate-900 transition-colors">
+                                     <span class="text-[8px] font-bold text-slate-400 uppercase">min</span>
                                    </div>
                                  </td>
                                </tr>
                              }
                            </tbody>
                          </table>
-                      </div>
+                       </div>
                      </div>
                    }
                  }
 
                  <!-- EDITING Mode -->
                  @if (plantillaEditing() && selectedPlantilla()) {
-                   <!-- Nombre de la plantilla -->
                    <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
-                     <div class="bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 border-b border-slate-200 dark:border-slate-700 flex items-center">
-                       <input [(ngModel)]="selectedPlantilla()!.nombre" placeholder="Nombre Único de Plantilla" class="flex-1 w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] sm:text-xs outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
+                     <div class="bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 border-b border-slate-200 dark:border-slate-700">
+                       <input [(ngModel)]="selectedPlantilla()!.nombre" placeholder="Nombre Único de Plantilla"
+                              class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1">
                      </div>
                    </div>
 
-                   <!-- Cards por semana -->
                    @for (week of plantillaByWeek(); track week.ordinal) {
                      <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
-                       <!-- Header de la semana -->
-                       <div class="bg-slate-50 dark:bg-slate-800/80 px-3 sm:px-4 py-2 sm:py-2.5 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2.5">
-                         <div class="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-[0.625rem] shrink-0">W{{ week.ordinal }}</div>
+                       <div class="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2.5">
+                         <div class="w-6 h-6 rounded-lg bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 flex items-center justify-center font-black text-[0.6rem] shrink-0">W{{ week.ordinal }}</div>
                          <div class="flex flex-col gap-0.5 min-w-0 flex-1">
-                           <input [ngModel]="week.titulo_semana || ''"
-                                  (ngModelChange)="updateSemanaMeta(week.ordinal, 'titulo_semana', $event)"
+                           <input [ngModel]="week.titulo_semana || ''" (ngModelChange)="updateSemanaMeta(week.ordinal, 'titulo_semana', $event)"
                                   placeholder="Título de la semana"
-                                  class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] sm:text-xs outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 min-w-0">
+                                  class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
                            <div class="flex items-center gap-1 px-1">
-                             <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                             <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500">Lectura:</span>
-                             <input [ngModel]="week.lectura_semanal || ''"
-                                    (ngModelChange)="updateSemanaMeta(week.ordinal, 'lectura_semanal', $event)"
+                             <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                             <span class="text-[9px] font-bold text-slate-400">Lectura:</span>
+                             <input [ngModel]="week.lectura_semanal || ''" (ngModelChange)="updateSemanaMeta(week.ordinal, 'lectura_semanal', $event)"
                                     placeholder="—"
-                                    class="flex-1 bg-transparent border-none text-[9px] font-bold text-slate-500 dark:text-slate-400 outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 min-w-0">
+                                    class="flex-1 bg-transparent border-none text-[9px] font-bold text-slate-500 dark:text-slate-400 outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
                            </div>
                          </div>
                        </div>
-
-                       <!-- Partes -->
-                       <div class="p-0 bg-white dark:bg-slate-900">
+                       <div class="bg-white dark:bg-slate-900">
                          <table class="w-full text-left border-collapse">
                            <tbody>
                              @for (parte of week.partes; track $index) {
-                               <tr class="border-b last:border-b-0 border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
-                                 <td class="py-2 px-3 sm:px-4 w-1/4 min-w-[90px] sm:min-w-[120px] align-middle">
-                                   <div class="text-[9px] sm:text-[0.625rem] font-black uppercase tracking-widest" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</div>
+                               <tr class="plt-parte-row border-b last:border-b-0 border-slate-100 dark:border-slate-800/50">
+                                 <td class="py-2 px-3 w-[100px] sm:w-[130px] align-top pt-2.5">
+                                   <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest leading-none" [style.color]="getSectionColor(parte.seccion)">{{ parte.seccion }}</span>
                                  </td>
-                                 <td class="py-2 px-2 sm:px-4 align-middle">
-                                   <div class="flex flex-col gap-0.5 flex-1 min-w-0">
-                                     <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] sm:text-xs font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 flex-1 min-w-0 w-full overflow-hidden text-ellipsis">
+                                 <td class="py-2 px-2 align-middle">
+                                   <div class="flex flex-col gap-1">
+                                     <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-[#6D28D9]/40 rounded px-1 w-full">
                                      @if (parte.fuente_informacion) {
-                                       <div class="text-[9px] text-slate-400 dark:text-slate-500 font-medium px-1 italic truncate">
-                                         {{ parte.fuente_informacion }}
-                                       </div>
+                                       <div class="text-[9px] text-slate-400 dark:text-slate-500 italic px-1 truncate">{{ parte.fuente_informacion }}</div>
                                      }
-                                   </div>
-                                   <div class="flex items-center gap-1 shrink-0 px-1 mt-1 sm:mt-0">
-                                     <button (click)="parte.aplica_sala_b = !parte.aplica_sala_b"
-                                             [class]="parte.aplica_sala_b ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 ring-1 ring-purple-500/30' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'"
-                                             class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase transition-all whitespace-nowrap">Sala B</button>
-                                     <button (click)="parte.requiere_pareja = !parte.requiere_pareja"
-                                             [class]="parte.requiere_pareja ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 ring-1 ring-amber-500/30' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600'"
-                                             class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase transition-all whitespace-nowrap">Pareja</button>
+                                     <div class="flex items-center gap-1.5 px-1">
+                                       <button (click)="parte.aplica_sala_b = !parte.aplica_sala_b"
+                                               class="plt-tag-toggle px-2 py-1 rounded-md text-[8px] font-black uppercase leading-none"
+                                               [class]="parte.aplica_sala_b ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 ring-1 ring-[#6D28D9]/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Sala B</button>
+                                       <button (click)="parte.requiere_pareja = !parte.requiere_pareja"
+                                               class="plt-tag-toggle px-2 py-1 rounded-md text-[8px] font-black uppercase leading-none"
+                                               [class]="parte.requiere_pareja ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 ring-1 ring-amber-500/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'">Pareja</button>
+                                     </div>
                                    </div>
                                  </td>
-                                 <td class="py-2 px-3 sm:px-4 text-right w-16 sm:w-24 align-middle">
+                                 <td class="py-2 px-3 text-right w-16 sm:w-20 align-middle">
                                    <div class="flex items-center justify-end gap-1">
-                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-8 sm:w-10 h-6 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded text-[9px] sm:text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-all">
-                                     <span class="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest">min</span>
+                                     <input type="number" [(ngModel)]="parte.duracion_minutos" class="w-9 h-7 text-center bg-slate-100 dark:bg-slate-800/70 text-slate-800 dark:text-slate-200 rounded-lg text-[0.625rem] font-black outline-none border border-transparent focus:ring-1 focus:ring-[#6D28D9]/40 focus:bg-white dark:focus:bg-slate-900 transition-colors">
+                                     <span class="text-[8px] font-bold text-slate-400 uppercase">min</span>
                                    </div>
                                  </td>
                                </tr>
@@ -411,53 +456,6 @@ import {
                </div>
              </div>
            }
-
-           <!-- Historical Archive Panel -->
-           <div class="flex-[1] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col transition-all min-h-[300px]">
-             <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20 shrink-0">
-               <h3 class="text-[0.6875rem] font-bold text-slate-800 dark:text-white flex items-center gap-1.5 uppercase tracking-wide">
-                 <svg class="w-3.5 h-3.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                 Histórico Guardado
-               </h3>
-               @if (plantillasLoading()) {
-                 <div class="w-3 h-3 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
-               }
-             </div>
-
-             <div class="overflow-y-auto flex-1 p-3 flex flex-col gap-2 simple-scrollbar">
-                 @for (p of savedPlantillas(); track p.id_plantilla) {
-                   <div class="group flex items-center justify-between px-3.5 py-2.5 rounded-[12px] bg-white dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/90 shadow-sm hover:shadow-md transition-all cursor-default">
-                     <div class="min-w-0 pr-3 flex-1 flex flex-col justify-center">
-                       <h4 class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-200 truncate mb-0.5 leading-tight" [title]="p.nombre">{{ p.nombre }}</h4>
-                       <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
-                         <span class="inline-block px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider"
-                               [class]="p.tipo === 'entre_semana' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'">
-                           {{ p.tipo === 'entre_semana' ? 'Estudio' : 'Fin de Sem' }}
-                         </span>
-                       </div>
-                     </div>
-
-                     <div class="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
-                       <button (click)="editPlantilla(p.id_plantilla)" class="w-6 h-6 flex items-center justify-center text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-all" title="Editar">
-                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                       </button>
-                       <button (click)="deletePlantilla(p.id_plantilla)" class="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded-md transition-all" title="Eliminar">
-                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                       </button>
-                     </div>
-                   </div>
-                 } @empty {
-                   @if (!plantillasLoading()) {
-                     <div class="flex-1 flex flex-col items-center justify-center opacity-50 text-center px-4 py-8">
-                       <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2">
-                         <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                       </div>
-                       <p class="text-[0.625rem] font-bold text-slate-500 dark:text-slate-400">Sin plantillas</p>
-                     </div>
-                   }
-                 }
-             </div>
-           </div>
 
        </div>
        } <!-- end plantillas tab -->
@@ -488,55 +486,55 @@ import {
 
        <!-- ===== TAB: PARÁMETROS DEL ALGORITMO ===== -->
        @if (activeTab() === 'parametros') {
-        <div class="flex-1 min-h-0 flex flex-col gap-4 animate-fadeIn overflow-y-auto">
+        <div class="flex-1 min-h-0 flex flex-col gap-5 algo-tab animate-fadeIn overflow-y-auto simple-scrollbar pb-8">
           @if (algoLoading()) {
-            <div class="flex items-center justify-center py-12">
+            <div class="flex items-center justify-center py-16">
               <div class="w-6 h-6 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
             </div>
           } @else if (algoProfiles().length > 0) {
-            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 shrink-0">
-              <h4 class="text-sm font-black text-slate-800 dark:text-slate-100 mb-1">Perfil del Algoritmo</h4>
-              <p class="text-[0.625rem] text-slate-500 dark:text-slate-400 mb-6">Selecciona el comportamiento del motor de asignaciones. Estos perfiles ajustan automáticamente los pesos heurísticos y ventanas de tiempo.</p>
 
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                @for (perfil of algoProfiles(); track perfil.id) {
+            <!-- Sección Perfil -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 shrink-0">
+              <div class="mb-5">
+                <h4 class="text-sm font-black text-slate-800 dark:text-slate-100 mb-0.5">Perfil del Algoritmo</h4>
+                <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 leading-relaxed">Selecciona el comportamiento del motor de asignaciones. Estos perfiles ajustan automáticamente los pesos heurísticos y ventanas de tiempo.</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                @for (perfil of algoProfiles(); track perfil.id; let i = $index) {
                   <button
                     (click)="selectProfile(perfil.id)"
-                    class="relative flex flex-col items-start p-5 rounded-xl border-2 text-left transition-all overflow-hidden"
-                    [class.border-[#6D28D9]]="activeProfileId() === perfil.id"
-                    [class.bg-[#6D28D9]/5]="activeProfileId() === perfil.id"
-                    [class.border-slate-200]="activeProfileId() !== perfil.id"
-                    [class.dark:border-slate-700]="activeProfileId() !== perfil.id"
-                    [class.hover:border-slate-300]="activeProfileId() !== perfil.id"
-                    [class.dark:hover:border-slate-600]="activeProfileId() !== perfil.id"
+                    class="algo-profile-card relative flex flex-col items-start p-4 rounded-xl border-2 text-left overflow-hidden"
+                    [class]="activeProfileId() === perfil.id
+                      ? 'border-[#6D28D9] bg-gradient-to-br from-[#6D28D9]/[0.06] to-[#6D28D9]/[0.02] dark:from-[#6D28D9]/20 dark:to-[#6D28D9]/5 shadow-md shadow-purple-500/10'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'"
+                    [style.animation-delay]="(i * 60) + 'ms'"
                   >
+                    <!-- Check badge activo -->
                     @if (activeProfileId() === perfil.id) {
-                      <div class="absolute top-0 right-0 w-16 h-16 bg-[#6D28D9]/10 rounded-bl-full flex items-start justify-end p-2">
-                        <svg class="w-5 h-5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                      <div class="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#6D28D9] flex items-center justify-center shadow-sm shadow-purple-500/30">
+                        <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       </div>
                     }
 
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                      [class.bg-[#6D28D9]]="activeProfileId() === perfil.id"
-                      [class.bg-slate-100]="activeProfileId() !== perfil.id"
-                      [class.dark:bg-slate-800]="activeProfileId() !== perfil.id"
-                      [class.text-white]="activeProfileId() === perfil.id"
-                      [class.text-slate-500]="activeProfileId() !== perfil.id"
-                      [class.dark:text-slate-400]="activeProfileId() !== perfil.id"
-                    >
+                    <!-- Ícono -->
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-all duration-200"
+                      [class]="activeProfileId() === perfil.id
+                        ? 'bg-[#6D28D9] text-white shadow-lg shadow-purple-500/30'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'">
                       @if (perfil.id === 'balanceado') {
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                       } @else if (perfil.id === 'rotacion') {
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
                       } @else {
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                       }
                     </div>
 
-                    <h5 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-1"
-                      [class.text-[#6D28D9]]="activeProfileId() === perfil.id"
-                      [class.dark:text-[#a78bfa]]="activeProfileId() === perfil.id"
-                    >
+                    <h5 class="text-[0.8125rem] font-bold mb-1 transition-colors duration-150"
+                      [class]="activeProfileId() === perfil.id
+                        ? 'text-[#6D28D9] dark:text-[#a78bfa]'
+                        : 'text-slate-800 dark:text-slate-100'">
                       {{ perfil.label }}
                     </h5>
                     <p class="text-[0.625rem] text-slate-500 dark:text-slate-400 leading-relaxed">{{ perfil.description }}</p>
@@ -545,28 +543,36 @@ import {
               </div>
             </div>
 
-            <!-- Restricciones Duras adicionales -->
-            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0 mt-2">
-              <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-                <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Ajustes Adicionales</h4>
-                <p class="text-[0.625rem] text-slate-400 mt-0.5">Límites estrictos que aplican independientemente del perfil.</p>
+            <!-- Ajustes adicionales -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden shrink-0">
+              <div class="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/80">
+                <h4 class="text-[0.6875rem] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ajustes Adicionales</h4>
+                <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5">Límites estrictos que aplican independientemente del perfil.</p>
               </div>
-              <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4">
                 <div class="flex-1 min-w-0">
-                  <div class="text-sm font-bold text-slate-700 dark:text-slate-200">Límite de partes cruzadas</div>
-                  <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug whitespace-normal break-words">Número máximo de partes permitidas para un publicador en la misma semana.</div>
+                  <div class="text-[0.8125rem] font-bold text-slate-700 dark:text-slate-200">Límite de partes cruzadas</div>
+                  <div class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug">Número máximo de partes permitidas para un publicador en la misma semana.</div>
                 </div>
-                <div class="flex items-center shrink-0 pr-2 pb-1 sm:pb-0 sm:pr-0">
-                  <input type="number" min="1" max="5" step="1"
-                    [ngModel]="algoMaxPartesCruzadas()"
-                    (ngModelChange)="onMaxPartesChange($event)"
-                    class="w-20 h-8 px-2 text-center rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-sm font-mono font-bold text-slate-700 dark:text-slate-200 focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 outline-none transition-all block"
-                  >
+                <!-- Stepper +/- -->
+                <div class="flex items-center gap-0 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 self-start sm:self-auto">
+                  <button (click)="onMaxPartesChange(algoMaxPartesCruzadas() - 1)"
+                          [disabled]="algoMaxPartesCruzadas() <= 1"
+                          class="algo-stepper-btn w-9 h-9 flex items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 disabled:opacity-30 border-r border-slate-200 dark:border-slate-700">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                  <div class="w-12 h-9 flex items-center justify-center text-base font-black tabular-nums text-slate-800 dark:text-white bg-white dark:bg-slate-900 select-none">
+                    {{ algoMaxPartesCruzadas() }}
+                  </div>
+                  <button (click)="onMaxPartesChange(algoMaxPartesCruzadas() + 1)"
+                          [disabled]="algoMaxPartesCruzadas() >= 5"
+                          class="algo-stepper-btn w-9 h-9 flex items-center justify-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 disabled:opacity-30 border-l border-slate-200 dark:border-slate-700">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
                 </div>
               </div>
             </div>
-            
-            <div class="h-12 w-full shrink-0"><!-- Spacer bottom --></div>
+
           }
         </div>
        }
@@ -603,60 +609,153 @@ import {
 
            @if (!matrizLoading() && !matrizErrorMsg()) {
              <!-- Stats bar compact -->
-             <div class="shrink-0 grid grid-cols-4 gap-2.5">
-               <div class="priv-stat bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 py-2 pl-3.5 pr-2.5 shadow-sm flex items-center gap-2.5" style="--accent: #6D28D9;">
-                 <div class="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
-                   <svg class="w-3.5 h-3.5 text-[#6D28D9] dark:text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                 </div>
-                 <div class="min-w-0">
-                   <p class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ filteredPublicadores().length }}</p>
-                   <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">Publicadores</p>
-                 </div>
+             <div class="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-200/60 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-slate-200/60 dark:border-slate-700/50">
+               <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900">
+                 <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ filteredPublicadores().length }}</span>
+                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">Publicadores</span>
                </div>
-               <div class="priv-stat bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 py-2 pl-3.5 pr-2.5 shadow-sm flex items-center gap-2.5" style="--accent: #f59e0b;">
-                 <div class="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
-                   <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
-                 </div>
-                 <div class="min-w-0">
-                   <p class="text-base font-black text-amber-600 dark:text-amber-400 tabular-nums leading-none">{{ countPrivilegio('Anciano') }}</p>
-                   <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">Ancianos</p>
-                 </div>
+               <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900">
+                 <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ countPrivilegio('Anciano') }}</span>
+                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">Ancianos</span>
                </div>
-               <div class="priv-stat bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 py-2 pl-3.5 pr-2.5 shadow-sm flex items-center gap-2.5" style="--accent: #2563eb;">
-                 <div class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                   <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 7L9 18l-5-5"/></svg>
-                 </div>
-                 <div class="min-w-0">
-                   <p class="text-base font-black text-blue-600 dark:text-blue-400 tabular-nums leading-none">{{ countPrivilegio('Siervo Ministerial') }}</p>
-                   <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">S. Ministeriales</p>
-                 </div>
+               <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900">
+                 <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ countPrivilegio('Siervo Ministerial') }}</span>
+                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">S. Ministeriales</span>
                </div>
-               <div class="priv-stat bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-700/70 py-2 pl-3.5 pr-2.5 shadow-sm flex items-center gap-2.5" style="--accent: #10b981;">
-                 <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                   <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 12l3 3L21 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"/></svg>
-                 </div>
-                 <div class="min-w-0">
-                   <p class="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums leading-none">{{ countPrecursores() }}</p>
-                   <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">Precursores</p>
-                 </div>
+               <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900">
+                 <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ countPrecursores() }}</span>
+                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">Precursores</span>
                </div>
              </div>
 
-             <!-- Data Table -->
+             <!-- Data Table / Cards -->
              <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-                 <div class="flex-1 min-h-0 overflow-x-auto overflow-y-auto simple-scrollbar">
+
+                 <!-- ── VISTA MÓVIL: acordeón (< md) ── -->
+                 <div class="flex md:hidden flex-col overflow-y-auto simple-scrollbar flex-1 min-h-0 divide-y divide-slate-100 dark:divide-slate-800/60">
+                   @for (pub of paginatedPublicadores(); track pub.id_publicador) {
+                     <div [class]="isDirty(pub.id_publicador) ? 'bg-amber-50/40 dark:bg-amber-900/10' : ''">
+                       <!-- Fila colapsada — siempre visible, toque para expandir -->
+                       <div class="px-3 py-3 flex items-center gap-3 cursor-pointer select-none active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors duration-100"
+                            (click)="toggleCard(pub.id_publicador)">
+                         <div class="priv-avatar w-9 h-9 rounded-xl flex items-center justify-center font-black text-[0.6875rem] shrink-0"
+                              [class]="avatarClass(pub)">
+                           {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
+                         </div>
+                         <div class="flex-1 min-w-0">
+                           <p class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate leading-tight">
+                             {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
+                           </p>
+                           <div class="flex flex-wrap gap-1 mt-0.5">
+                             @if (pub.privilegios.length > 0) {
+                               @for (priv of pub.privilegios; track priv) {
+                                 <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md leading-none" [class]="privilegioBadgeClass(priv)">{{ privilegioLabel(priv) }}</span>
+                               }
+                             } @else {
+                               <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
+                             }
+                           </div>
+                         </div>
+                         <!-- Indicador de cambios pendientes -->
+                         @if (isDirty(pub.id_publicador)) {
+                           <div class="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse"></div>
+                         }
+                         <!-- Flecha -->
+                         <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ease-out"
+                              [class.rotate-180]="isExpanded(pub.id_publicador)"
+                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                           <polyline points="6 9 12 15 18 9"/>
+                         </svg>
+                       </div>
+
+                       <!-- Panel expandido -->
+                       @if (isExpanded(pub.id_publicador)) {
+                         <div class="px-3 pb-3 animate-slideDown">
+                           <!-- Permisos regulares -->
+                           <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 mb-3">
+                             @for (col of regularColumnas(); track col.key) {
+                               <label class="flex items-center gap-2 cursor-pointer" [class.opacity-50]="!hasEditPermission()"
+                                      [title]="permisoTooltip(col.key)">
+                                 <input type="checkbox"
+                                        [checked]="getPermiso(pub, col.key)"
+                                        (change)="togglePermiso(pub, col.key)"
+                                        [disabled]="!hasEditPermission()"
+                                        class="priv-check shrink-0">
+                                 <span class="text-[11px] font-semibold leading-snug text-slate-600 dark:text-slate-300">
+                                   {{ col.label }}
+                                 </span>
+                               </label>
+                             }
+                           </div>
+                           <!-- Restricciones (fondo ámbar) -->
+                           @if (restriccionColumnas().length > 0) {
+                             <div class="rounded-lg bg-amber-50/60 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-700/30 px-3 py-2.5 mb-3">
+                               <p class="text-[9px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-2">Restricciones</p>
+                               <div class="grid grid-cols-1 gap-y-2">
+                                 @for (col of restriccionColumnas(); track col.key) {
+                                   <label class="flex items-center gap-2 cursor-pointer" [class.opacity-50]="!hasEditPermission()"
+                                          [title]="permisoTooltip(col.key)">
+                                     <input type="checkbox"
+                                            [checked]="getPermiso(pub, col.key)"
+                                            (change)="togglePermiso(pub, col.key)"
+                                            [disabled]="!hasEditPermission()"
+                                            class="priv-check shrink-0">
+                                     <span class="text-[11px] font-semibold leading-snug text-amber-700 dark:text-amber-400">
+                                       {{ col.label }}
+                                     </span>
+                                   </label>
+                                 }
+                               </div>
+                             </div>
+                           }
+                           <!-- Oratoria -->
+                           <div class="flex items-center gap-3 pt-1">
+                             <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">Oratoria</span>
+                             <select [ngModel]="getOratoria(pub)"
+                                     (ngModelChange)="setOratoria(pub, $event)"
+                                     [attr.data-level]="getOratoria(pub)"
+                                     [disabled]="!hasEditPermission()"
+                                     class="priv-select flex-1 max-w-[180px]"
+                                     [class.ring-2]="isOratoriaDirty(pub.id_publicador)"
+                                     [class.ring-amber-300]="isOratoriaDirty(pub.id_publicador)">
+                               <option [value]="1">Principiante</option>
+                               <option [value]="2">Básico</option>
+                               <option [value]="3">Intermedio</option>
+                               <option [value]="4">Avanzado</option>
+                               <option [value]="5">Experto</option>
+                             </select>
+                           </div>
+                         </div>
+                       }
+                     </div>
+                   }
+                 </div>
+
+                 <!-- ── VISTA ESCRITORIO: tabla (≥ md) ── -->
+                 <div class="hidden md:flex flex-1 min-h-0 overflow-x-auto overflow-y-auto simple-scrollbar">
                      <table class="w-full min-w-max text-left border-collapse">
-                          <thead class="priv-thead sticky top-0 z-10">
-                              <tr>
-                                  <th class="is-sticky px-4 py-2.5 text-[0.625rem] font-black text-white uppercase tracking-[0.08em] sticky left-0 z-10 min-w-[170px] text-left">Publicador</th>
-                                 <th *ngFor="let col of columnas()"
-                                      class="px-2 py-2.5 text-[9px] font-black text-purple-100 uppercase tracking-wider text-center min-w-[70px] leading-tight whitespace-normal border-l border-white/10">
-                                    {{ col.label }}
-                                  </th>
-                                  <th class="px-2 py-2.5 text-[0.625rem] font-black text-purple-100 uppercase tracking-wider text-center min-w-[100px] leading-tight whitespace-normal border-l border-white/10">
-                                    Oratoria
-                                  </th>
-                             </tr>
+                          <thead class="priv-thead sticky top-0 z-30">
+                           <tr>
+                             <th class="priv-th-publisher is-sticky px-3 py-2 sticky left-0 z-40 min-w-[160px] text-left">
+                               <span class="text-[9px] font-black text-white uppercase tracking-[0.14em]">Publicador</span>
+                             </th>
+                             @for (col of regularColumnas(); track col.key) {
+                               <th class="priv-th px-1 py-1.5 text-center min-w-[48px] border-l border-white/[0.07]" [title]="permisoTooltip(col.key)">
+                                 <span class="text-[8px] font-black text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">{{ col.label }}</span>
+                               </th>
+                             }
+                             @for (col of restriccionColumnas(); track col.key) {
+                               <th class="priv-th priv-restrict-header px-1 py-1.5 text-center min-w-[56px] border-l border-amber-400/[0.18]" [title]="permisoTooltip(col.key)">
+                                 <div class="inline-flex items-center gap-0.5 justify-center">
+                                   <svg class="w-2 h-2 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                   <span class="text-[8px] font-black text-amber-200 uppercase tracking-[0.02em] leading-tight whitespace-normal">{{ col.label }}</span>
+                                 </div>
+                               </th>
+                             }
+                             <th class="priv-th px-1 py-1.5 text-center min-w-[80px] border-l border-white/[0.07]">
+                               <span class="text-[8px] font-black text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">Oratoria</span>
+                             </th>
+                           </tr>
                          </thead>
                          <tbody>
                               @for (pub of paginatedPublicadores(); track pub.id_publicador; let idx = $index) {
@@ -672,7 +771,7 @@ import {
                                              {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
                                            </div>
                                            <div class="min-w-0">
-                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[140px] leading-tight tracking-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
+                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[130px] leading-tight tracking-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
                                          {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
                                      </div>
                                      <div class="flex flex-wrap gap-1 mt-1">
@@ -692,8 +791,11 @@ import {
                                        </div>
                                    </td>
                                    <td *ngFor="let col of columnas()"
-                                       class="priv-cell px-1 py-1.5 text-center border-l border-slate-100/70 dark:border-slate-800/40">
-                                         <label class="inline-flex items-center justify-center cursor-pointer p-1" [title]="col.label">
+                                       class="priv-cell px-1 py-1.5 text-center border-l"
+                                       [class]="col.key.startsWith('no_')
+                                         ? 'border-amber-200/40 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-900/10'
+                                         : 'border-slate-100/70 dark:border-slate-800/40'">
+                                         <label class="inline-flex items-center justify-center cursor-pointer p-1" [title]="permisoTooltip(col.key)">
                                            <input type="checkbox"
                                              [checked]="getPermiso(pub, col.key)"
                                              (change)="togglePermiso(pub, col.key)"
@@ -704,6 +806,7 @@ import {
                                    <td class="px-2 py-1.5 text-center border-l border-slate-100/70 dark:border-slate-800/40">
                                      <select
                                        [ngModel]="getOratoria(pub)"
+                                       (ngModelChange)="setOratoria(pub, $event)"
                                        [attr.data-level]="getOratoria(pub)"
                                        [disabled]="!hasEditPermission()"
                                        class="priv-select w-[92px]"
@@ -723,7 +826,7 @@ import {
                   </div>
 
                   <!-- Pagination -->
-                  <div class="shrink-0 px-5 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                  <div class="shrink-0 px-4 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
                     <span class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium tabular-nums">
                       {{ (currentPage() - 1) * pageSize() + 1 }}–{{ Math.min(currentPage() * pageSize(), filteredPublicadores().length) }}
                       <span class="text-slate-300 dark:text-slate-600">de</span>
@@ -886,35 +989,51 @@ import {
 
      /* ─────── Privilegios Tab ─────── */
 
-     /* Stats cards with accent bar + lift */
+     /* Stats cards */
      .priv-stat {
-       position: relative;
-       overflow: hidden;
-       transition: transform 200ms var(--ease-out-strong),
-                   box-shadow 200ms var(--ease-out-strong),
+       transition: box-shadow 200ms var(--ease-out-strong),
                    border-color 160ms ease;
      }
      .priv-stat:hover {
-       transform: translateY(-1px);
-       box-shadow: 0 6px 16px -6px rgba(15,23,42,0.12);
-       border-color: rgba(109,40,217,0.22);
-     }
-     .priv-stat::before {
-       content: '';
-       position: absolute;
-       left: 0; top: 0; bottom: 0;
-       width: 3px;
-       background: var(--accent, #cbd5e1);
-       border-radius: 3px 0 0 3px;
+       box-shadow: 0 4px 14px -4px rgba(15,23,42,0.08);
+       border-color: rgba(109,40,217,0.18);
      }
 
-     /* Header row gradient + ring */
+     /* Header */
      .priv-thead {
-       background: linear-gradient(180deg, #7c3aed 0%, #6D28D9 60%, #5b21b6 100%) !important;
-       box-shadow: 0 2px 10px -4px rgba(91,33,182,0.5);
+       background: #6d28d9 !important;
+       box-shadow: 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px -4px rgba(109,40,217,0.3);
      }
      .priv-thead th { background: transparent !important; }
-     .priv-thead th.is-sticky { background: linear-gradient(180deg, #7c3aed 0%, #6D28D9 60%, #5b21b6 100%) !important; }
+
+     /* Sticky publisher column */
+     .priv-thead .priv-th-publisher {
+       background: #6d28d9 !important;
+       z-index: 40 !important;
+       box-shadow: inset -1px 0 0 rgba(255,255,255,0.12);
+     }
+
+     /* Regular column headers — hover */
+     .priv-thead .priv-th {
+       transition: background-color 150ms cubic-bezier(0.23, 1, 0.32, 1);
+       border-bottom: 1px solid rgba(255,255,255,0.12);
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .priv-thead .priv-th:hover {
+         background: rgba(255,255,255,0.08) !important;
+       }
+     }
+
+     /* Restriction column */
+     .priv-thead .priv-restrict-header {
+       background: rgba(146, 64, 14, 0.5) !important;
+       border-bottom: 1px solid rgba(251,191,36,0.3) !important;
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .priv-thead .priv-restrict-header:hover {
+         background: rgba(146, 64, 14, 0.68) !important;
+       }
+     }
 
      /* Row with hover accent bar */
      .priv-row { position: relative; transition: background-color 160ms var(--ease-out-strong); }
@@ -1030,9 +1149,114 @@ import {
      .priv-page-btn { transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out-strong); }
      .priv-page-btn:active:not(:disabled) { transform: scale(0.92); }
 
+     /* ─────── Plantillas Tab ─────── */
+
+     /* Primary action buttons */
+     .plt-btn-primary {
+       transition: background-color 160ms cubic-bezier(0.23,1,0.32,1),
+                   box-shadow 160ms cubic-bezier(0.23,1,0.32,1),
+                   transform 120ms cubic-bezier(0.23,1,0.32,1);
+     }
+     .plt-btn-primary:active:not(:disabled) { transform: scale(0.97); }
+
+     /* Secondary action buttons */
+     .plt-btn-secondary {
+       transition: background-color 160ms cubic-bezier(0.23,1,0.32,1),
+                   border-color 160ms cubic-bezier(0.23,1,0.32,1),
+                   transform 120ms cubic-bezier(0.23,1,0.32,1);
+     }
+     .plt-btn-secondary:active { transform: scale(0.97); }
+
+     /* Icon buttons in history */
+     .plt-icon-btn {
+       transition: background-color 140ms cubic-bezier(0.23,1,0.32,1),
+                   color 140ms cubic-bezier(0.23,1,0.32,1),
+                   transform 120ms cubic-bezier(0.23,1,0.32,1);
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .plt-icon-btn:hover { background-color: rgba(109,40,217,0.08); color: #6D28D9; }
+       .plt-icon-btn[title="Eliminar"]:hover { background-color: rgba(244,63,94,0.08); color: #f43f5e; }
+     }
+     .plt-icon-btn:active { transform: scale(0.88); }
+
+     /* Tag toggles (Sala B / Pareja) */
+     .plt-tag-toggle {
+       transition: background-color 140ms cubic-bezier(0.23,1,0.32,1),
+                   color 140ms cubic-bezier(0.23,1,0.32,1),
+                   box-shadow 140ms cubic-bezier(0.23,1,0.32,1),
+                   transform 120ms cubic-bezier(0.23,1,0.32,1);
+     }
+     .plt-tag-toggle:active { transform: scale(0.93); }
+
+     /* Part row hover */
+     .plt-parte-row {
+       transition: background-color 140ms cubic-bezier(0.23,1,0.32,1);
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .plt-parte-row:hover { background-color: rgba(109,40,217,0.025); }
+       :host-context(.dark) .plt-parte-row:hover { background-color: rgba(167,139,250,0.06); }
+     }
+
+     /* History item */
+     .plt-hist-item {
+       transition: border-color 160ms cubic-bezier(0.23,1,0.32,1),
+                   box-shadow 160ms cubic-bezier(0.23,1,0.32,1),
+                   background-color 160ms cubic-bezier(0.23,1,0.32,1);
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .plt-hist-item:hover { border-color: #e2e8f0; box-shadow: 0 2px 8px -2px rgba(15,23,42,0.08); }
+       :host-context(.dark) .plt-hist-item:hover { border-color: #334155; }
+     }
+
+     /* History header button (mobile toggle) */
+     .plt-history-header {
+       transition: background-color 140ms cubic-bezier(0.23,1,0.32,1);
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .plt-history-header:hover { background-color: rgba(109,40,217,0.03); }
+     }
+
+     /* ─────── Parámetros Tab ─────── */
+
+     /* Profile cards stagger entry */
+     .algo-tab .algo-profile-card {
+       opacity: 0;
+       transform: translateY(6px);
+       animation: algo-card-in 260ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+     }
+     @keyframes algo-card-in {
+       to { opacity: 1; transform: translateY(0); }
+     }
+
+     /* Hover only on pointer devices */
+     @media (hover: hover) and (pointer: fine) {
+       .algo-profile-card:hover {
+         border-color: #c4b5fd !important;
+         box-shadow: 0 4px 16px -4px rgba(109,40,217,0.12);
+       }
+     }
+
+     /* Press feedback */
+     .algo-profile-card:active {
+       transform: scale(0.98);
+       transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+     }
+
+     /* Stepper buttons */
+     .algo-stepper-btn {
+       transition: background-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+                   transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .algo-stepper-btn:not(:disabled):hover { background-color: #ede9fe; color: #6D28D9; }
+       :host-context(.dark) .algo-stepper-btn:not(:disabled):hover { background-color: rgba(109,40,217,0.20); color: #a78bfa; }
+     }
+     .algo-stepper-btn:not(:disabled):active { transform: scale(0.88); }
+
      @media (prefers-reduced-motion: reduce) {
        .priv-stat, .priv-row, .priv-check, .priv-select, .priv-avatar, .priv-page-btn,
-       .priv-row > td:first-child::before { transition: none !important; animation: none !important; }
+       .priv-row > td:first-child::before,
+       .algo-profile-card, .algo-stepper-btn { transition: none !important; animation: none !important; }
      }
   `]
 })
@@ -1119,16 +1343,57 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   // ── Matriz de Publicadores (Privilegios) ──
   publicadores = signal<PublicadorMatrizItem[]>([]);
   columnas = signal<ColumnaPermiso[]>([]);
+  regularColumnas = computed(() => this.columnas().filter(c => !c.key.startsWith('no_')));
+  restriccionColumnas = computed(() => this.columnas().filter(c => c.key.startsWith('no_')));
+
+  private readonly PERMISO_LABELS: Record<string, string> = {
+    presidente_entre_semana:       'Presidente de la reunión entre semana',
+    presidente_fin_semana:         'Presidente de la reunión fin de semana',
+    orador:                        'Conferenciante / Orador público',
+    lector_libro:                  'Lector del Libro (Estudio de Libro)',
+    lector_atalaya:                'Lector de La Atalaya',
+    oracion:                       'Oración pública',
+    acomodador:                    'Acomodador',
+    microfono:                     'Micrófono',
+    audio:                         'Mesa de audio',
+    video:                         'Mesa de video',
+    vigilancia:                    'Vigilancia',
+    sala_principal:                'Sala principal',
+    sala_auxiliar:                 'Sala auxiliar (Sala B)',
+    capitan_predicacion:           'Capitán de predicación',
+    plataforma:                    'Plataforma (presentaciones y multimedia)',
+    no_discursa_mejores_maestros:  'No participa en partes de Seamos Mejores Maestros',
+  };
+
+  permisoTooltip(key: string): string {
+    return this.PERMISO_LABELS[key] ?? key.replace(/_/g, ' ');
+  }
   matrizLoading = signal(false);
   matrizSaving = signal(false);
   matrizErrorMsg = signal<string | null>(null);
   searchQuery = signal('');
   filtroSexo = signal<'todos' | 'solo_hombres' | 'solo_mujeres'>('todos');
   currentPage = signal(1);
-  pageSize = signal(20);
+  pageSize = signal(50);
   private dirtyMap = new Map<number, Record<string, boolean>>();
   private dirtyOratoriaMap = new Map<number, number>();
   matrizPendingCount = signal(0);
+  historialExpanded = signal(true);
+  toggleHistorial() { this.historialExpanded.update(v => !v); }
+
+  expandedCards = signal<Set<number>>(new Set());
+
+  toggleCard(id: number) {
+    this.expandedCards.update(s => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  isExpanded(id: number): boolean {
+    return this.expandedCards().has(id);
+  }
 
   filteredPublicadores = computed(() => {
     let list = this.publicadores();

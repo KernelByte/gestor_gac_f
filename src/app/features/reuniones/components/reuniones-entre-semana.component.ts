@@ -430,29 +430,61 @@ import {
                               }
                               <!-- Dropdown historial -->
                               @if (estado() === 'historial' && editingHistorialId() === asig.id_asignacion) {
-                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden" style="border-radius:14px">
+                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-64 overflow-hidden" style="border-radius:14px">
                                   <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
                                     <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
                                     <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Cambiar asignado</span>
                                   </div>
-                                  <div class="p-1.5 flex flex-col gap-0.5">
-                                    @if (loadingCandidatos()) {
-                                      <div class="flex items-center justify-center py-3">
-                                        <div class="w-4 h-4 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
-                                      </div>
-                                    } @else if (historialCandidatos().length === 0) {
-                                      <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin candidatos disponibles</p>
-                                    } @else {
-                                      @for (alt of historialCandidatos(); track alt.id_publicador) {
+                                  <!-- Buscador -->
+                                  <div class="px-2 pb-1.5">
+                                    <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                      <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                      <input
+                                        type="text"
+                                        placeholder="Buscar persona..."
+                                        [value]="busquedaCandidato()"
+                                        (input)="onBusquedaCandidatoChange($any($event.target).value)"
+                                        class="flex-1 bg-transparent text-[0.72rem] text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none min-w-0"
+                                      />
+                                      @if (loadingBusqueda()) {
+                                        <div class="w-3 h-3 rounded-full border-2 border-slate-300 border-t-[#6D28D9] animate-spin shrink-0"></div>
+                                      }
+                                    </div>
+                                  </div>
+                                  <div class="px-1.5 pb-1.5 flex flex-col gap-0.5 max-h-56 overflow-y-auto">
+                                    @if (busquedaCandidato().trim()) {
+                                      <!-- Resultados de búsqueda libre -->
+                                      @if (busquedaResultados().length === 0 && !loadingBusqueda()) {
+                                        <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin resultados</p>
+                                      }
+                                      @for (pub of busquedaResultados(); track pub.id_publicador) {
                                         <button
-                                          (click)="selectHistorialCandidato(selectedWeekIdx(), asig, alt)"
-                                          class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-[8px]">
-                                          <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
-                                          <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
-                                            [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
-                                            {{ alt.score | number:'1.2-2' }}
-                                          </span>
+                                          (click)="selectHistorialCandidato(selectedWeekIdx(), asig, { id_publicador: pub.id_publicador, nombre_completo: pub.nombre_completo, score: 0, notas_score: [], sexo: pub.sexo })"
+                                          class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-[8px]">
+                                          <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
                                         </button>
+                                      }
+                                    } @else {
+                                      <!-- Sugeridos por algoritmo -->
+                                      @if (loadingCandidatos()) {
+                                        <div class="flex items-center justify-center py-3">
+                                          <div class="w-4 h-4 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
+                                        </div>
+                                      } @else if (historialCandidatos().length === 0) {
+                                        <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin candidatos disponibles</p>
+                                      } @else {
+                                        <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5">Sugeridos</p>
+                                        @for (alt of historialCandidatos(); track alt.id_publicador) {
+                                          <button
+                                            (click)="selectHistorialCandidato(selectedWeekIdx(), asig, alt)"
+                                            class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-[8px]">
+                                            <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
+                                            <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
+                                              [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
+                                              {{ alt.score | number:'1.2-2' }}
+                                            </span>
+                                          </button>
+                                        }
                                       }
                                     }
                                   </div>
@@ -602,14 +634,55 @@ import {
                 No hay plantillas disponibles.
               </div>
             } @else {
-              <select
-                [value]="modalForm().id_plantilla"
-                (change)="updateModal('id_plantilla', +$any($event.target).value)"
-                class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-800 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-[#6D28D9]/20 focus:border-[#6D28D9] outline-none transition-all">
-                @for (p of plantillas(); track p.id_plantilla) {
-                  <option [value]="p.id_plantilla" [selected]="modalForm().id_plantilla === p.id_plantilla">{{ p.nombre }}</option>
+              <div class="relative">
+                <button
+                  type="button"
+                  (click)="showPlantillaDropdown.set(!showPlantillaDropdown())"
+                  class="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/50 border rounded-xl text-left transition-all outline-none"
+                  [class]="showPlantillaDropdown()
+                    ? 'border-[#6D28D9] ring-2 ring-[#6D28D9]/20 dark:border-[#7c3aed]'
+                    : 'border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600'">
+                  <span class="flex-1 min-w-0">
+                    @if (plantillaSeleccionada; as sel) {
+                      <span class="block text-[0.78rem] font-semibold text-slate-800 dark:text-slate-100 truncate">{{ sel.nombre }}</span>
+                    } @else {
+                      <span class="block text-[0.78rem] text-slate-400">Seleccionar plantilla...</span>
+                    }
+                  </span>
+                  <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200"
+                    [class.rotate-180]="showPlantillaDropdown()"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+                @if (showPlantillaDropdown()) {
+                  <div class="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl shadow-black/10 overflow-hidden py-1">
+                    @for (p of plantillas(); track p.id_plantilla) {
+                      <button
+                        type="button"
+                        (click)="updateModal('id_plantilla', p.id_plantilla); showPlantillaDropdown.set(false)"
+                        class="w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors"
+                        [class]="modalForm().id_plantilla === p.id_plantilla
+                          ? 'bg-purple-50 dark:bg-purple-900/20'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800'">
+                        <span class="w-4 h-4 rounded-full shrink-0 flex items-center justify-center border-2 transition-colors"
+                          [class]="modalForm().id_plantilla === p.id_plantilla
+                            ? 'border-[#6D28D9] bg-[#6D28D9]'
+                            : 'border-slate-300 dark:border-slate-600'">
+                          @if (modalForm().id_plantilla === p.id_plantilla) {
+                            <svg class="w-2 h-2 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M20 6 9 17l-5-5"/></svg>
+                          }
+                        </span>
+                        <span class="flex-1 min-w-0">
+                          <span class="block text-[0.78rem] font-semibold text-slate-800 dark:text-slate-100 truncate">{{ p.nombre }}</span>
+                        </span>
+                      </button>
+                    }
+                  </div>
+                  <!-- Overlay para cerrar al hacer click fuera -->
+                  <div class="fixed inset-0 z-40" (click)="showPlantillaDropdown.set(false)"></div>
                 }
-              </select>
+              </div>
             }
           </div>
 
@@ -1066,6 +1139,12 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   gruposExpandidos = signal<Set<string>>(new Set());
 
+  showPlantillaDropdown = signal(false);
+
+  get plantillaSeleccionada(): PlantillaOption | undefined {
+    return this.plantillas().find(p => p.id_plantilla === this.modalForm().id_plantilla);
+  }
+
   // ── Diálogo de confirmación personalizado ─────────────────────
   confirmDialog = signal<{ title: string; body: string; resolve: (v: boolean) => void } | null>(null);
 
@@ -1088,6 +1167,10 @@ export class ReunionesProgramacionComponent implements OnInit {
   editingHistorialId = signal<number | null>(null);
   historialCandidatos = signal<CandidatoAlternativo[]>([]);
   loadingCandidatos = signal(false);
+  busquedaCandidato = signal('');
+  busquedaResultados = signal<{ id_publicador: number; nombre_completo: string; sexo?: string }[]>([]);
+  loadingBusqueda = signal(false);
+  private _busquedaTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── Modal ──────────────────────────────────────────────────────
   showModal = signal(false);
@@ -2037,10 +2120,14 @@ export class ReunionesProgramacionComponent implements OnInit {
     if (!idCong || !asig.id_asignacion) return;
     if (this.editingHistorialId() === asig.id_asignacion) {
       this.editingHistorialId.set(null);
+      this.busquedaCandidato.set('');
+      this.busquedaResultados.set([]);
       return;
     }
     this.editingHistorialId.set(asig.id_asignacion);
     this.historialCandidatos.set([]);
+    this.busquedaCandidato.set('');
+    this.busquedaResultados.set([]);
     this.loadingCandidatos.set(true);
     this.reunionesSvc.getCandidatosConfirmados(asig.id_asignacion, idCong).subscribe({
       next: (candidatos) => {
@@ -2049,6 +2136,28 @@ export class ReunionesProgramacionComponent implements OnInit {
       },
       error: () => this.loadingCandidatos.set(false),
     });
+  }
+
+  onBusquedaCandidatoChange(q: string): void {
+    this.busquedaCandidato.set(q);
+    if (this._busquedaTimer) clearTimeout(this._busquedaTimer);
+    if (!q.trim()) {
+      this.busquedaResultados.set([]);
+      this.loadingBusqueda.set(false);
+      return;
+    }
+    this.loadingBusqueda.set(true);
+    this._busquedaTimer = setTimeout(() => {
+      const idCong = this.congregacionCtx.effectiveCongregacionId();
+      if (!idCong) return;
+      this.reunionesSvc.buscarPublicadoresCong(idCong, q).subscribe({
+        next: (res) => {
+          this.busquedaResultados.set(res);
+          this.loadingBusqueda.set(false);
+        },
+        error: () => this.loadingBusqueda.set(false),
+      });
+    }, 300);
   }
 
   selectHistorialCandidato(semanaIdx: number, asig: AsignacionDraft, candidato: CandidatoAlternativo): void {
