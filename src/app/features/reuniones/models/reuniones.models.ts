@@ -75,6 +75,32 @@ export interface ConfirmarDraftRequest {
   id_congregacion: number;
 }
 
+export interface PeriodoConfirmado {
+  ano: number;
+  mes: number;
+  label: string;
+  id_plantilla: number | null;
+  nombre_plantilla: string | null;
+}
+
+export interface ConflictoMes {
+  ano: number;
+  mes: number;
+  label: string;
+}
+
+export interface ConflictosPlantillaResponse {
+  tiene_conflictos: boolean;
+  conflictos: ConflictoMes[];
+  meses_faltantes: ConflictoMes[];
+}
+
+export interface GrupoPlantilla {
+  id_plantilla: number | null;
+  nombre_plantilla: string;
+  periodos: PeriodoConfirmado[];
+}
+
 export interface GenerarMesForm {
   mes: number;
   ano: number;
@@ -179,6 +205,7 @@ export interface AlgorithmParamsResponse {
 }
 
 export interface AlgorithmParamsUpdate {
+  id_congregacion: number;
   parametros: Record<string, number>;
 }
 

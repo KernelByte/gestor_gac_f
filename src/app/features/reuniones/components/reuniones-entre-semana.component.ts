@@ -23,6 +23,9 @@ import {
   ProgramaMensualCreateRequest,
   ConfirmarDraftRequest,
   EditarAsignacionRequest,
+  PeriodoConfirmado,
+  ConflictoMes,
+  GrupoPlantilla,
 } from '../models/reuniones.models';
 
 @Component({
@@ -30,70 +33,72 @@ import {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="flex flex-col gap-3 h-full">
+    <div class="flex flex-col h-full gap-0">
 
       <!-- ===== PAGE HEADER ===== -->
-      <div class="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 class="text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+      <div class="shrink-0 flex items-center justify-between gap-3 pb-3">
+        <div class="min-w-0">
+          <h1 class="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
             {{ tituloReunion() }}
           </h1>
-          <div class="flex items-center gap-2 mt-1">
-            <span [class]="estadoBadgeClass()">{{ estadoLabel() }}</span>
-            @if (congregacionCtx.selectedCongregacionName()) {
-              <span class="text-xs text-slate-400 dark:text-slate-500">· {{ congregacionCtx.selectedCongregacionName() }}</span>
-            }
-          </div>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-1.5 shrink-0">
+          <!-- Generar Mes — visible en móvil (md:hidden), en desktop está en el sidebar -->
           <button
             *ngIf="hasEditPermission()"
             (click)="openModal()"
             [disabled]="estado() === 'loading'"
-            class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Generar Mes
+            title="Generar Mes"
+            class="md:hidden flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="hidden sm:inline">Generar Mes</span>
           </button>
+          <!-- Confirmar -->
           <button
             *ngIf="hasEditPermission()"
             (click)="confirmar()"
             [disabled]="!canConfirmar()"
-            class="btn-confirmar flex items-center gap-1.5 px-3 h-9 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Confirmar
+            title="Confirmar borrador"
+            class="btn-confirmar flex items-center gap-1.5 px-3 h-10 rounded-xl border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="hidden sm:inline">Confirmar</span>
           </button>
+          <!-- Borrar borrador -->
           <button
             *ngIf="hasEditPermission()"
             (click)="borrarBorrador()"
             [disabled]="!canBorrarBorrador()"
-            class="btn-borrar flex items-center gap-1.5 px-3 h-9 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-            Borrar borrador
+            title="Borrar borrador"
+            class="btn-borrar flex items-center gap-1.5 px-3 h-10 rounded-xl border disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            <span class="hidden sm:inline">Borrar borrador</span>
           </button>
         </div>
       </div>
 
       <!-- ===== MEETING TYPE SELECTOR ===== -->
       @if (showTipoTabs()) {
-        <div class="shrink-0 flex items-center justify-center sm:justify-start">
+        <div class="shrink-0 flex items-center pb-3">
           <div class="tipo-tabs inline-flex items-center rounded-xl p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
             <button
               (click)="onTipoChange('entre_semana')"
-              class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95"
+              class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95"
               [class]="tipoReunionActivo() === 'entre_semana'
                 ? 'bg-white dark:bg-slate-700 text-[#6D28D9] dark:text-purple-300 shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-              Vida y Ministerio
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+              <span class="hidden xs:inline">Reunion entre semana</span>
+              <span class="xs:hidden">Entre semana</span>
             </button>
             <button
               (click)="onTipoChange('fin_semana')"
-              class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95"
+              class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95"
               [class]="tipoReunionActivo() === 'fin_semana'
                 ? 'bg-white dark:bg-slate-700 text-[#6D28D9] dark:text-purple-300 shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-              Reunión Pública
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+              <span class="hidden xs:inline">Reunion Fin de semana</span>
+              <span class="xs:hidden">Fin de semana</span>
             </button>
           </div>
         </div>
@@ -101,371 +106,463 @@ import {
 
       <!-- ===== ERROR ===== -->
       @if (estado() === 'error') {
-        <div class="shrink-0 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 p-4 flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0">
-            <svg class="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-red-700 dark:text-red-300 text-sm font-bold">Ocurrio un error</p>
-            <p class="text-red-500 dark:text-red-400/80 text-xs truncate">{{ errorMsg() }}</p>
-          </div>
+        <div class="shrink-0 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 px-4 py-3 mb-3 flex items-center gap-3">
+          <svg class="w-4 h-4 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p class="flex-1 min-w-0 text-red-600 dark:text-red-400 text-xs font-medium truncate">{{ errorMsg() }}</p>
           <button
             (click)="estado.set('idle')"
-            class="shrink-0 px-3 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-900/60 text-xs text-red-600 dark:text-red-400 font-bold transition-all">
-            Reintentar
+            class="shrink-0 px-3 h-7 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-900/60 text-xs text-red-600 dark:text-red-400 font-bold transition-all">
+            Cerrar
           </button>
         </div>
       }
 
       <!-- ===== CONFIRMADO — banner ===== -->
       @if (estado() === 'confirmado') {
-        <div class="shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/50 p-3.5 flex items-center gap-3">
-          <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <p class="text-emerald-700 dark:text-emerald-300 text-xs font-bold">Asignaciones confirmadas y guardadas en la base de datos.</p>
+        <div class="shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/50 px-4 py-3 mb-3 flex items-center gap-3">
+          <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <p class="text-emerald-700 dark:text-emerald-300 text-xs font-bold">Asignaciones confirmadas correctamente.</p>
         </div>
       }
 
-      <!-- ===== MAIN CONTENT AREA ===== -->
-      <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+      <!-- ===== ÁREA PRINCIPAL: sidebar + contenido ===== -->
+      <div class="flex-1 min-h-0 flex flex-col md:flex-row gap-3 md:gap-4 overflow-hidden">
 
-        <!-- ── CARD TOOLBAR: week navigation + sala filter ── -->
-        @if (estado() === 'draft' || estado() === 'confirmado' || estado() === 'historial') {
-          <div class="shrink-0 flex items-center justify-between gap-3 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-            <!-- Week pills (scrollable) -->
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
-              @for (sem of semanas(); track sem.semana_iso; let i = $index) {
-                <button
-                  (click)="selectedWeekIdx.set(i)"
-                  class="flex items-center gap-1 px-3 h-7 rounded-full text-[0.7rem] font-bold whitespace-nowrap transition-all shrink-0 border active:scale-95"
-                  [class]="weekTabClass(i)">
-                  <span>{{ sem.fecha | date:'d MMMM' }}</span>
-                </button>
-              }
+        <!-- ── SIDEBAR DESKTOP (oculto en móvil) ── -->
+        <aside class="hidden md:flex md:w-60 lg:w-64 xl:w-72 shrink-0 flex-col gap-3 overflow-y-auto simple-scrollbar py-0.5 pr-0.5">
+
+          <!-- Botón Generar Mes -->
+          <button
+            *ngIf="hasEditPermission()"
+            (click)="openModal()"
+            [disabled]="estado() === 'loading'"
+            class="w-full flex items-center justify-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95 shrink-0">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Generar Mes
+          </button>
+
+          <!-- Historial de programaciones -->
+          @if (loadingPeriodos()) {
+            <div class="flex justify-center py-4">
+              <div class="w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-violet-500 animate-spin"></div>
             </div>
-            @if (estado() === 'historial') {
-              <button
-                (click)="semanas.set([]); estado.set('idle')"
-                class="shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-full text-[0.65rem] font-bold border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400 transition-all active:scale-95">
-                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                Volver
-              </button>
-            }
-          </div>
-        }
-
-        <!-- Loading overlay -->
-        @if (estado() === 'loading') {
-          <div class="absolute inset-0 z-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-[2px] flex items-center justify-center rounded-2xl">
-            <div class="flex flex-col items-center gap-3">
-              <div class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#6D28D9] animate-spin"></div>
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Generando programa...</p>
-            </div>
-          </div>
-        }
-
-        <!-- IDLE state (empty) -->
-        @if (estado() === 'idle' || (estado() !== 'loading' && estado() !== 'error' && semanas().length === 0)) {
-          <div class="flex-1 flex flex-col items-center justify-center py-16 text-center px-6">
-            <div class="w-16 h-16 mx-auto bg-gradient-to-br from-violet-50 via-white to-purple-50 dark:from-violet-900/20 dark:via-slate-800 dark:to-purple-900/10 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-purple-100/50 dark:border-purple-800/30">
-              <svg class="w-8 h-8 text-purple-300 dark:text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
-            </div>
-            <h3 class="text-slate-800 dark:text-white font-bold mb-1">No hay programa generado</h3>
-            <p class="text-slate-400 dark:text-slate-500 text-sm mb-5 max-w-xs">Genera el programa del mes para asignar automaticamente a los publicadores.</p>
-            <button
-              *ngIf="hasEditPermission()"
-              (click)="openModal()"
-              class="inline-flex items-center gap-2 px-4 h-9 bg-[#6D28D9] hover:bg-[#5b21b6] text-white rounded-lg text-xs font-bold shadow-sm shadow-purple-900/20 transition-all active:scale-95">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Generar Mes
-            </button>
-
-            <!-- Ver historial de programaciones confirmadas -->
-            @if (loadingPeriodos()) {
-              <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 w-full max-w-xs flex justify-center">
-                <div class="w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-violet-500 animate-spin"></div>
-              </div>
-            } @else if (periodos().length > 0) {
-              <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 w-full max-w-sm">
-                <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-3 text-center">Ver programación confirmada</p>
-                <div class="flex flex-col gap-1.5">
-                  @for (p of periodos(); track p.ano + '-' + p.mes) {
-                    <div class="flex items-center gap-1.5">
+          } @else if (gruposPlantilla().length > 0) {
+            <div class="flex flex-col gap-1.5">
+              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 pb-0.5">Programación confirmada</p>
+              @for (grupo of gruposPlantilla(); track grupoKey(grupo)) {
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900">
+                  <!-- Cabecera del grupo -->
+                  <div class="flex items-center gap-1 px-2.5 h-9 bg-slate-50 dark:bg-slate-800/80">
+                    <button
+                      (click)="toggleGrupo(grupoKey(grupo), $event)"
+                      class="flex-1 flex items-center gap-2 text-left min-w-0 py-2">
+                      <svg
+                        [class.rotate-90]="gruposExpandidos().has(grupoKey(grupo))"
+                        class="w-3 h-3 text-slate-400 shrink-0 transition-transform duration-150"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                      </svg>
+                      <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{{ abreviarNombreGuia(grupo.nombre_plantilla) }}</span>
+                      <span class="text-[0.65rem] text-slate-400 shrink-0">({{ grupo.periodos.length }})</span>
+                    </button>
+                    @if (hasEditPermission()) {
                       <button
-                        (click)="loadHistorial(p.mes, p.ano)"
-                        [disabled]="loadingHistorial()"
-                        class="flex-1 flex items-center justify-between px-4 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-40 group">
-                        <span>{{ p.label }}</span>
-                        <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                        </svg>
+                        (click)="eliminarGuiaCompleta(grupo, $event)"
+                        title="Eliminar guía completa"
+                        class="shrink-0 w-7 h-7 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
-                      @if (periodoEliminable(p) && hasEditPermission()) {
-                        <button
-                          (click)="eliminarHistorial(p, $event)"
-                          title="Eliminar programación de {{ p.label }}"
-                          class="shrink-0 w-9 h-9 rounded-xl border border-red-100 dark:border-red-900/30 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-700 text-red-400 hover:text-red-600 dark:hover:text-red-400 transition-all active:scale-95 flex items-center justify-center">
-                          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                          </svg>
-                        </button>
+                    }
+                  </div>
+                  <!-- Meses del grupo -->
+                  @if (gruposExpandidos().has(grupoKey(grupo))) {
+                    <div class="flex flex-col gap-0.5 p-1.5">
+                      @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
+                        <div class="flex items-center gap-1">
+                          <button
+                            (click)="loadHistorial(p.mes, p.ano)"
+                            [disabled]="loadingHistorial()"
+                            class="flex-1 flex items-center justify-between px-2.5 h-8 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-40 group">
+                            <span>{{ p.label }}</span>
+                            <svg class="w-3 h-3 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                          </button>
+                          <button
+                            (click)="descargarPdfMes(p, $event)"
+                            [disabled]="descargandoPdf()"
+                            title="Descargar PDF de {{ p.label }}"
+                            class="shrink-0 w-7 h-7 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-500 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-all active:scale-95 flex items-center justify-center disabled:opacity-40">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                          </button>
+                          @if (periodoEliminable(p) && hasEditPermission()) {
+                            <button
+                              (click)="eliminarHistorial(p, $event)"
+                              title="Eliminar {{ p.label }}"
+                              class="shrink-0 w-7 h-7 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
+                              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                          }
+                        </div>
                       }
                     </div>
                   }
                 </div>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- DRAFT / CONFIRMADO / HISTORIAL: assignment list -->
-        @if ((estado() === 'draft' || estado() === 'confirmado' || estado() === 'historial') && currentSemana(); as semana) {
-
-          <!-- Sticky content header: week title + estado -->
-          <div class="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-2 flex items-center justify-between gap-4">
-            <div class="min-w-0">
-              @if (semana.titulo_guia) {
-                <p class="text-[0.78rem] font-bold text-slate-700 dark:text-slate-200 truncate">{{ semana.titulo_guia }}</p>
               }
-              <p class="text-[0.6rem] text-slate-400 dark:text-slate-500 font-medium leading-none mt-0.5">
-                {{ semana.partes.length }} partes
-              </p>
             </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <span class="w-1.5 h-1.5 rounded-full shrink-0"
-                [class]="estado() === 'confirmado' ? 'bg-emerald-400' : estado() === 'historial' ? 'bg-violet-400' : 'bg-amber-400'"></span>
-              <span class="text-[0.6rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ estadoLabel() }}</span>
-            </div>
-          </div>
+          }
+        </aside>
 
-          <!-- Parts list grouped by section -->
-          <div class="flex-1 overflow-y-auto simple-scrollbar bg-[#f8f9fb] dark:bg-slate-950">
-            @for (seccion of seccionesActuales(); track seccion.id) {
+        <!-- ── PANEL PRINCIPAL ── -->
+        <div class="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative">
 
-              <!-- Section header -->
-              <div class="sticky top-0 z-10"
-                [style]="'background:' + seccion.headerBg">
-                <div class="px-4 py-2 flex items-center gap-2.5"
-                  [style]="'border-left:3px solid ' + seccion.color">
-                  <!-- Icon -->
-                  <div class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
-                    [style.background-color]="seccion.color">
-                    <svg class="w-3 h-3 text-white"
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <path [attr.d]="seccion.iconPath"/>
-                    </svg>
-                  </div>
-                  <!-- Title -->
-                  <div class="flex-1 min-w-0">
-                    <p class="text-[0.65rem] font-black uppercase tracking-widest leading-none" [style.color]="seccion.color">
-                      {{ seccion.titulo }}
-                    </p>
-                  </div>
-                  <!-- Sala B toggle (only in seamos_mejores when there are Sala B parts) -->
-                  @if (salaCountsPorSeccion()[seccion.id] > 0) {
-                    <div class="flex items-center rounded-lg p-0.5 gap-0.5 shrink-0"
-                      [style]="'border:1px solid ' + seccionColor(seccion.color, 0.3) + '; background:' + seccionColor(seccion.color, 0.06)">
-                      <button
-                        (click)="selectedSala.set('Principal'); $event.stopPropagation()"
-                        class="flex items-center gap-1 px-2.5 h-6 rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-all active:scale-95"
-                        [style]="selectedSala() === 'Principal'
-                          ? 'background:' + seccion.color + '; color:white; box-shadow:0 1px 4px rgba(0,0,0,0.18)'
-                          : 'color:' + seccion.color + '; opacity:0.55'">
-                        Principal
-                      </button>
-                      <button
-                        (click)="selectedSala.set('Auxiliar'); $event.stopPropagation()"
-                        class="flex items-center gap-1 px-2.5 h-6 rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-all active:scale-95"
-                        [style]="selectedSala() === 'Auxiliar'
-                          ? 'background:' + seccion.color + '; color:white; box-shadow:0 1px 4px rgba(0,0,0,0.18)'
-                          : 'color:' + seccion.color + '; opacity:0.55'">
-                        Sala B
-                      </button>
-                    </div>
-                  }
-
-                </div>
-                <!-- Bottom border line using section color -->
-                <div class="h-px" [style.background]="seccion.headerBorder"></div>
+          <!-- Week toolbar (draft / confirmado / historial) -->
+          @if (estado() === 'draft' || estado() === 'confirmado' || estado() === 'historial') {
+            <div class="shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+              <!-- Week pills (scroll horizontal con snap) -->
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar min-w-0 snap-x snap-mandatory">
+                @for (sem of semanas(); track sem.semana_iso; let i = $index) {
+                  <button
+                    (click)="selectedWeekIdx.set(i)"
+                    class="snap-start shrink-0 flex items-center gap-1 px-3 h-9 md:h-7 rounded-full text-[0.7rem] font-bold whitespace-nowrap transition-all border active:scale-95"
+                    [class]="weekTabClass(i)">
+                    {{ sem.fecha | date:'d MMMM' }}
+                  </button>
+                }
               </div>
+              @if (estado() === 'historial') {
+                <button
+                  (click)="semanas.set([]); estado.set('idle')"
+                  class="shrink-0 flex items-center gap-1 px-3 h-9 md:h-7 rounded-full text-[0.65rem] font-bold border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400 transition-all active:scale-95">
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                  Volver
+                </button>
+              }
+            </div>
+          }
 
-              <!-- Groups in section -->
-              <div class="px-3 py-2 flex flex-col gap-1.5">
-                @for (grupo of seccion.grupos; track grupo.key) {
-                  <div class="parte-card"
-                    [class.has-conflict]="grupoHasConflict(grupo.partes)"
-                    [class.has-swapped]="grupoHasSwapped(grupo.partes)"
-                    [class.is-open]="isGroupOpen(grupo)">
+          <!-- Loading overlay -->
+          @if (estado() === 'loading') {
+            <div class="absolute inset-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-[2px] flex items-center justify-center rounded-2xl">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#6D28D9] animate-spin"></div>
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Generando programa...</p>
+              </div>
+            </div>
+          }
 
-                    <div class="px-3.5 py-2.5 flex items-center gap-3">
-                      <!-- Color dot -->
-                      <div class="w-2 h-2 rounded-full shrink-0 mt-px"
-                        [style.background-color]="grupoDotColor(grupo.partes, seccion.color)">
+          <!-- IDLE state (simplificado) -->
+          @if (estado() === 'idle' || (estado() !== 'loading' && estado() !== 'error' && semanas().length === 0)) {
+            <div class="flex-1 flex flex-col items-center justify-center py-12 text-center px-6">
+              <div class="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                <svg class="w-7 h-7 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <h3 class="text-slate-700 dark:text-slate-300 font-bold text-sm mb-1">Ninguna programación seleccionada</h3>
+              <p class="hidden md:block text-slate-400 dark:text-slate-500 text-xs max-w-xs">Elige un mes del panel lateral para verlo, o genera uno nuevo con el botón Generar Mes.</p>
+              <p class="md:hidden text-slate-400 dark:text-slate-500 text-xs max-w-xs">Selecciona una programación o genera una nueva.</p>
+              <!-- Botón solo en móvil (en desktop está el sidebar) -->
+              <button
+                *ngIf="hasEditPermission()"
+                (click)="openModal()"
+                class="md:hidden mt-5 inline-flex items-center gap-2 px-4 h-10 bg-[#6D28D9] hover:bg-[#5b21b6] text-white rounded-xl text-xs font-bold shadow-sm shadow-purple-900/20 transition-all active:scale-95">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Generar Mes
+              </button>
+            </div>
+          }
+
+          <!-- DRAFT / CONFIRMADO / HISTORIAL: lista de asignaciones -->
+          @if ((estado() === 'draft' || estado() === 'confirmado' || estado() === 'historial') && currentSemana(); as semana) {
+
+            <!-- Sticky info bar: título semana + estado -->
+            <div class="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 py-2 flex items-center justify-between gap-4">
+              <div class="min-w-0">
+                @if (semana.titulo_guia) {
+                  <p class="text-[0.78rem] font-bold text-slate-700 dark:text-slate-200 truncate">{{ semana.titulo_guia }}</p>
+                }
+                <p class="text-[0.6rem] text-slate-400 dark:text-slate-500 font-medium leading-none mt-0.5">{{ semana.partes.length }} partes</p>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full shrink-0"
+                  [class]="estado() === 'confirmado' ? 'bg-emerald-400' : estado() === 'historial' ? 'bg-violet-400' : 'bg-amber-400'"></span>
+                <span class="text-[0.6rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ estadoLabel() }}</span>
+              </div>
+            </div>
+
+            <!-- Lista de partes por sección -->
+            <div class="flex-1 overflow-y-auto simple-scrollbar bg-[#f8f9fb] dark:bg-slate-950">
+              @for (seccion of seccionesActuales(); track seccion.id) {
+
+                <!-- Encabezado de sección -->
+                <div class="sticky top-0 z-10" [style]="'background:' + seccion.headerBg">
+                  <div class="px-4 py-2 flex items-center gap-2.5" [style]="'border-left:3px solid ' + seccion.color">
+                    <div class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" [style.background-color]="seccion.color">
+                      <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path [attr.d]="seccion.iconPath"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-[0.65rem] font-black uppercase tracking-widest leading-none" [style.color]="seccion.color">{{ seccion.titulo }}</p>
+                    </div>
+                    @if (salaCountsPorSeccion()[seccion.id] > 0) {
+                      <div class="flex items-center rounded-lg p-0.5 gap-0.5 shrink-0"
+                        [style]="'border:1px solid ' + seccionColor(seccion.color, 0.3) + '; background:' + seccionColor(seccion.color, 0.06)">
+                        <button
+                          (click)="selectedSala.set('Principal'); $event.stopPropagation()"
+                          class="flex items-center gap-1 px-2.5 h-6 rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-all active:scale-95"
+                          [style]="selectedSala() === 'Principal'
+                            ? 'background:' + seccion.color + '; color:white; box-shadow:0 1px 4px rgba(0,0,0,0.18)'
+                            : 'color:' + seccion.color + '; opacity:0.55'">
+                          Principal
+                        </button>
+                        <button
+                          (click)="selectedSala.set('Auxiliar'); $event.stopPropagation()"
+                          class="flex items-center gap-1 px-2.5 h-6 rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-all active:scale-95"
+                          [style]="selectedSala() === 'Auxiliar'
+                            ? 'background:' + seccion.color + '; color:white; box-shadow:0 1px 4px rgba(0,0,0,0.18)'
+                            : 'color:' + seccion.color + '; opacity:0.55'">
+                          Sala B
+                        </button>
                       </div>
+                    }
+                  </div>
+                  <div class="h-px" [style.background]="seccion.headerBorder"></div>
+                </div>
 
-                      <!-- Part name + duration (once per group) -->
-                      <div class="flex-1 min-w-0">
-                        <div class="flex items-baseline gap-1.5 min-w-0">
-                          <p class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate leading-snug flex-1 min-w-0">
-                            {{ displayNombreParte(grupo.partes[0]) }}
-                          </p>
-                          @if (grupo.partes[0].duracion_minutos) {
-                            <span class="text-[0.55rem] font-black shrink-0 px-1.5 py-[2px] rounded leading-none"
-                              [style.color]="seccion.color"
-                              [style.background-color]="seccion.badgeBg">
-                              {{ grupo.partes[0].duracion_minutos }}&nbsp;min
-                            </span>
-                          }
-                        </div>
-                        <!-- Status badges (any part) -->
-                        <div class="flex items-center gap-1.5 mt-0.5">
-                          @if (grupoHasConflict(grupo.partes)) {
-                            <span class="text-[0.6rem] font-semibold leading-none" style="color:#dc2626">Sin candidato</span>
-                          } @else if (grupoHasReemplazo(grupo.partes)) {
-                            <span class="text-[0.6rem] leading-none" style="color:#94a3b8">Reemplazo</span>
-                          }
-                          @if (grupoHasSwapped(grupo.partes)) {
-                            <span class="text-[0.6rem] font-semibold leading-none" style="color:#b45309">Modificado</span>
-                          }
-                        </div>
-                      </div>
-
-                      <!-- Assignee pills: one per part, side by side -->
-                      <div class="flex items-center gap-2 shrink-0">
-                        @for (asig of grupo.partes; track asig.id_programa_parte; let pi = $index) {
-                          <div class="relative">
-                            <button
-                              (click)="estado() === 'historial' ? openHistorialEdit(asig) : toggleDropdown(asig.id_programa_parte)"
-                              [disabled]="estado() === 'confirmado' || !hasEditPermission()"
-                              [class]="assigneeButtonClass(asig)">
-                              <!-- Role badge inside pill (only for paired parts) -->
-                              @if (grupo.partes.length > 1) {
-                                <span class="text-[0.48rem] font-black uppercase tracking-wide leading-none shrink-0 opacity-60">
-                                  {{ grupoRoleLabel(grupo, pi) }}
-                                </span>
-                                <span class="opacity-30 text-[0.6rem] leading-none shrink-0">·</span>
-                              }
-                              <span>{{ asig.nombre_completo }}</span>
-                              @if (estado() === 'draft' && asig.alternativos.length > 0) {
-                                <svg class="chevron w-3 h-3 shrink-0"
-                                  [class.open]="openDropdownId() === asig.id_programa_parte"
-                                  fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                              }
-                              @if (estado() === 'historial' && hasEditPermission()) {
-                                <svg class="w-3 h-3 shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.414-6.414a2 2 0 112.828 2.828L11.828 13.828A2 2 0 0111 14.414V16h1.586a2 2 0 001.414-.586l.586-.586"/>
-                                </svg>
-                              }
-                              <!-- × para eliminar ayudante -->
-                              @if (asig.es_ayudante && estado() !== 'confirmado' && estado() !== 'historial' && hasEditPermission()) {
-                                <span
-                                  (click)="onEliminarAyudante(asig, selectedWeekIdx(), $event)"
-                                  class="opacity-40 hover:opacity-90 leading-none shrink-0 ml-0.5 cursor-pointer active:scale-90 transition-all"
-                                  title="Quitar ayudante">✕</span>
-                              }
-                            </button>
-                            <!-- Draft dropdown -->
-                            @if (estado() === 'draft' && openDropdownId() === asig.id_programa_parte && asig.alternativos.length > 0) {
-                              <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden"
-                                style="border-radius:14px">
-                                <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
-                                  <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
-                                  <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Candidatos</span>
-                                  @if (asig.es_ayudante) {
-                                    <div class="flex items-center gap-0.5">
-                                      @for (opt of sexoOpts; track opt.v) {
-                                        <button
-                                          (click)="setSexoFilter(asig.id_programa_parte, opt.v); $event.stopPropagation()"
-                                          class="px-1.5 h-5 rounded text-[0.55rem] font-black transition-all active:scale-95"
-                                          [style]="getSexoFilter(asig.id_programa_parte) === opt.v
-                                            ? 'background:' + seccion.color + '; color:white'
-                                            : 'opacity:0.4'">
-                                          {{ opt.l }}
-                                        </button>
-                                      }
-                                    </div>
-                                  }
-                                </div>
-                                <div class="p-1.5 flex flex-col gap-0.5">
-                                  @for (alt of filteredAlternativos(asig); track alt.id_publicador) {
-                                    <button
-                                      (click)="swapAsignacion(selectedWeekIdx(), asig.id_programa_parte, alt, asig.es_ayudante)"
-                                      class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2 text-left rounded-[8px]">
-                                      <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
-                                      <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
-                                        [style.color]="seccion.color"
-                                        [style.background-color]="seccion.badgeBg">
-                                        {{ alt.score | number:'1.2-2' }}
-                                      </span>
-                                    </button>
-                                  }
-                                </div>
-                              </div>
+                <!-- Grupos de partes -->
+                <div class="px-3 py-2 flex flex-col gap-1.5">
+                  @for (grupo of seccion.grupos; track grupo.key) {
+                    <div class="parte-card"
+                      [class.has-conflict]="grupoHasConflict(grupo.partes)"
+                      [class.has-swapped]="grupoHasSwapped(grupo.partes)"
+                      [class.is-open]="isGroupOpen(grupo)"
+                      [class.dropdown-active]="grupoDropdownActivo(grupo.partes)">
+                      <div class="px-3.5 py-2.5 flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full shrink-0 mt-px" [style.background-color]="grupoDotColor(grupo.partes, seccion.color)"></div>
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-baseline gap-1.5 min-w-0">
+                            <p class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate leading-snug flex-1 min-w-0">
+                              {{ displayNombreParte(grupo.partes[0]) }}
+                            </p>
+                            @if (grupo.partes[0].duracion_minutos) {
+                              <span class="text-[0.55rem] font-black shrink-0 px-1.5 py-[2px] rounded leading-none"
+                                [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
+                                {{ grupo.partes[0].duracion_minutos }}&nbsp;min
+                              </span>
                             }
-                            <!-- Historial edit dropdown -->
-                            @if (estado() === 'historial' && editingHistorialId() === asig.id_asignacion) {
-                              <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden"
-                                style="border-radius:14px">
-                                <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
-                                  <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
-                                  <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Cambiar asignado</span>
-                                </div>
-                                <div class="p-1.5 flex flex-col gap-0.5">
-                                  @if (loadingCandidatos()) {
-                                    <div class="flex items-center justify-center py-3">
-                                      <div class="w-4 h-4 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
-                                    </div>
-                                  } @else if (historialCandidatos().length === 0) {
-                                    <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin candidatos disponibles</p>
-                                  } @else {
-                                    @for (alt of historialCandidatos(); track alt.id_publicador) {
+                          </div>
+                          <div class="flex items-center gap-1.5 mt-0.5">
+                            @if (grupoHasConflict(grupo.partes)) {
+                              <span class="text-[0.6rem] font-semibold leading-none" style="color:#dc2626">Sin candidato</span>
+                            } @else if (grupoHasReemplazo(grupo.partes)) {
+                              <span class="text-[0.6rem] leading-none" style="color:#94a3b8">Reemplazo</span>
+                            }
+                            @if (grupoHasSwapped(grupo.partes)) {
+                              <span class="text-[0.6rem] font-semibold leading-none" style="color:#b45309">Modificado</span>
+                            }
+                          </div>
+                        </div>
+                        <!-- Pills de asignados -->
+                        <div class="flex items-center gap-2 shrink-0">
+                          @for (asig of grupo.partes; track asig.id_programa_parte; let pi = $index) {
+                            <div class="relative">
+                              <button
+                                (click)="estado() === 'historial' ? openHistorialEdit(asig) : toggleDropdown(asig)"
+                                [disabled]="estado() === 'confirmado' || !hasEditPermission()"
+                                [class]="assigneeButtonClass(asig)">
+                                @if (grupo.partes.length > 1) {
+                                  <span class="text-[0.48rem] font-black uppercase tracking-wide leading-none shrink-0 opacity-60">{{ grupoRoleLabel(grupo, pi) }}</span>
+                                  <span class="opacity-30 text-[0.6rem] leading-none shrink-0">·</span>
+                                }
+                                <span>{{ asig.nombre_completo }}</span>
+                                @if (estado() === 'draft' && asig.alternativos.length > 0) {
+                                  <svg class="chevron w-3 h-3 shrink-0"
+                                    [class.open]="openDropdownId() === pillKey(asig)"
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                  </svg>
+                                }
+                                @if (estado() === 'historial' && hasEditPermission()) {
+                                  <svg class="w-3 h-3 shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.414-6.414a2 2 0 112.828 2.828L11.828 13.828A2 2 0 0111 14.414V16h1.586a2 2 0 001.414-.586l.586-.586"/>
+                                  </svg>
+                                }
+                                @if (asig.es_ayudante && estado() !== 'confirmado' && estado() !== 'historial' && hasEditPermission()) {
+                                  <span
+                                    (click)="onEliminarAyudante(asig, selectedWeekIdx(), $event)"
+                                    class="opacity-40 hover:opacity-90 leading-none shrink-0 ml-0.5 cursor-pointer active:scale-90 transition-all"
+                                    title="Quitar ayudante">✕</span>
+                                }
+                              </button>
+                              <!-- Dropdown draft -->
+                              @if (estado() === 'draft' && openDropdownId() === pillKey(asig) && asig.alternativos.length > 0) {
+                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden" style="border-radius:14px">
+                                  <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
+                                    <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
+                                    <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Candidatos</span>
+                                    @if (asig.es_ayudante) {
+                                      <div class="flex items-center gap-0.5">
+                                        @for (opt of sexoOpts; track opt.v) {
+                                          <button
+                                            (click)="setSexoFilter(asig, opt.v); $event.stopPropagation()"
+                                            class="px-1.5 h-5 rounded text-[0.55rem] font-black transition-all active:scale-95"
+                                            [style]="getSexoFilter(asig) === opt.v
+                                              ? 'background:' + seccion.color + '; color:white'
+                                              : 'opacity:0.4'">
+                                            {{ opt.l }}
+                                          </button>
+                                        }
+                                      </div>
+                                    }
+                                  </div>
+                                  <div class="p-1.5 flex flex-col gap-0.5">
+                                    @for (alt of filteredAlternativos(asig); track alt.id_publicador) {
                                       <button
-                                        (click)="selectHistorialCandidato(selectedWeekIdx(), asig, alt)"
-                                        class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2 text-left rounded-[8px]">
+                                        (click)="swapAsignacion(selectedWeekIdx(), asig, alt)"
+                                        class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-[8px]">
                                         <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
                                         <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
-                                          [style.color]="seccion.color"
-                                          [style.background-color]="seccion.badgeBg">
+                                          [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
                                           {{ alt.score | number:'1.2-2' }}
                                         </span>
                                       </button>
                                     }
-                                  }
+                                  </div>
                                 </div>
-                              </div>
+                              }
+                              <!-- Dropdown historial -->
+                              @if (estado() === 'historial' && editingHistorialId() === asig.id_asignacion) {
+                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden" style="border-radius:14px">
+                                  <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
+                                    <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
+                                    <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Cambiar asignado</span>
+                                  </div>
+                                  <div class="p-1.5 flex flex-col gap-0.5">
+                                    @if (loadingCandidatos()) {
+                                      <div class="flex items-center justify-center py-3">
+                                        <div class="w-4 h-4 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
+                                      </div>
+                                    } @else if (historialCandidatos().length === 0) {
+                                      <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin candidatos disponibles</p>
+                                    } @else {
+                                      @for (alt of historialCandidatos(); track alt.id_publicador) {
+                                        <button
+                                          (click)="selectHistorialCandidato(selectedWeekIdx(), asig, alt)"
+                                          class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-[8px]">
+                                          <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
+                                          <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
+                                            [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
+                                            {{ alt.score | number:'1.2-2' }}
+                                          </span>
+                                        </button>
+                                      }
+                                    }
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                          <!-- + Ayudante -->
+                          @if (puedeAgregarAyudante(grupo, seccion) && estado() !== 'confirmado' && hasEditPermission()) {
+                            <button
+                              (click)="onAgregarAyudante(grupo, selectedWeekIdx())"
+                              [disabled]="loadingAyudante() === grupo.partes[0].id_programa_parte"
+                              class="flex items-center gap-1 px-2 h-7 rounded-full text-[0.6rem] font-bold border transition-all active:scale-95 disabled:opacity-40"
+                              [style]="'border-color:' + seccionColor(seccion.color, 0.3) + '; color:' + seccion.color + '; opacity:0.7'">
+                              @if (loadingAyudante() === grupo.partes[0].id_programa_parte) {
+                                <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                              } @else {
+                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                              }
+                              Ayudante
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+        </div>
+
+        <!-- ── HISTORIAL MÓVIL (acordeón, oculto en desktop) ── -->
+        @if (gruposPlantilla().length > 0 || loadingPeriodos()) {
+          <details class="md:hidden shrink-0 group rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+            <summary class="flex items-center justify-between px-4 h-11 cursor-pointer list-none select-none">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Programación confirmada</span>
+              <svg class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </summary>
+            <div class="border-t border-slate-100 dark:border-slate-800 p-2 flex flex-col gap-1.5 max-h-64 overflow-y-auto simple-scrollbar">
+              @if (loadingPeriodos()) {
+                <div class="flex justify-center py-3">
+                  <div class="w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-violet-500 animate-spin"></div>
+                </div>
+              } @else {
+                @for (grupo of gruposPlantilla(); track grupoKey(grupo)) {
+                  <div class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div class="flex items-center gap-1 px-3 h-10 bg-slate-50 dark:bg-slate-800/80">
+                      <button
+                        (click)="toggleGrupo(grupoKey(grupo), $event)"
+                        class="flex-1 flex items-center gap-2 text-left min-w-0 py-2">
+                        <svg
+                          [class.rotate-90]="gruposExpandidos().has(grupoKey(grupo))"
+                          class="w-3 h-3 text-slate-400 shrink-0 transition-transform duration-150"
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{{ abreviarNombreGuia(grupo.nombre_plantilla) }}</span>
+                        <span class="text-[0.65rem] text-slate-400 shrink-0">({{ grupo.periodos.length }})</span>
+                      </button>
+                      @if (hasEditPermission()) {
+                        <button
+                          (click)="eliminarGuiaCompleta(grupo, $event)"
+                          title="Eliminar guía completa"
+                          class="shrink-0 w-9 h-9 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
+                          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                      }
+                    </div>
+                    @if (gruposExpandidos().has(grupoKey(grupo))) {
+                      <div class="flex flex-col gap-0.5 p-1.5">
+                        @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
+                          <div class="flex items-center gap-1">
+                            <button
+                              (click)="loadHistorial(p.mes, p.ano)"
+                              [disabled]="loadingHistorial()"
+                              class="flex-1 flex items-center justify-between px-3 h-10 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-40 group">
+                              <span>{{ p.label }}</span>
+                              <svg class="w-3 h-3 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                            </button>
+                            <button
+                              (click)="descargarPdfMes(p, $event)"
+                              [disabled]="descargandoPdf()"
+                              title="Descargar PDF de {{ p.label }}"
+                              class="shrink-0 w-10 h-10 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-500 hover:text-violet-700 dark:text-violet-400 transition-all active:scale-95 flex items-center justify-center disabled:opacity-40">
+                              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                            </button>
+                            @if (periodoEliminable(p) && hasEditPermission()) {
+                              <button
+                                (click)="eliminarHistorial(p, $event)"
+                                title="Eliminar {{ p.label }}"
+                                class="shrink-0 w-10 h-10 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                              </button>
                             }
                           </div>
                         }
-                        <!-- + Ayudante -->
-                        @if (puedeAgregarAyudante(grupo, seccion) && estado() !== 'confirmado' && hasEditPermission()) {
-                          <button
-                            (click)="onAgregarAyudante(grupo, selectedWeekIdx())"
-                            [disabled]="loadingAyudante() === grupo.partes[0].id_programa_parte"
-                            class="flex items-center gap-1 px-2 h-7 rounded-full text-[0.6rem] font-bold border transition-all active:scale-95 disabled:opacity-40"
-                            [style]="'border-color:' + seccionColor(seccion.color, 0.3) + '; color:' + seccion.color + '; opacity:0.7'">
-                            @if (loadingAyudante() === grupo.partes[0].id_programa_parte) {
-                              <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                            } @else {
-                              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            }
-                            Ayudante
-                          </button>
-                        }
                       </div>
-                    </div>
-
+                    }
                   </div>
                 }
-              </div>
-            }
-          </div>
+              }
+            </div>
+          </details>
         }
 
       </div>
-
     </div>
 
     <!-- ===== MODAL GENERAR MES ===== -->
@@ -479,18 +576,17 @@ import {
           <div class="flex items-center justify-between mb-5">
             <div>
               <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">Generar Programa del Mes</h2>
-              <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Configura los parametros para crear el programa</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Configura los parámetros para crear el programa</p>
             </div>
             <button
               (click)="showModal.set(false)"
-              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+              class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
 
-          <!-- Plantilla -->
           <div class="mb-4">
             <div class="flex items-center gap-1.5 mb-1.5">
               <span class="w-1 h-3 rounded-full bg-emerald-400"></span>
@@ -517,23 +613,21 @@ import {
             }
           </div>
 
-          <!-- Preview de fechas -->
           <div class="mb-5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
             <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">{{ fechasPreview().length }} semanas a crear</p>
             <p class="text-xs text-slate-500 dark:text-slate-400 font-mono leading-relaxed">{{ fechasPreview().join('  ·  ') }}</p>
           </div>
 
-          <!-- Botones -->
           <div class="flex gap-2">
             <button
               (click)="showModal.set(false)"
-              class="flex-1 h-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
+              class="flex-1 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
               Cancelar
             </button>
             <button
               (click)="onModalSubmit()"
               [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0"
-              class="flex-1 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-bold transition-all shadow-sm shadow-purple-900/20 active:scale-95">
+              class="flex-1 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-bold transition-all shadow-sm shadow-purple-900/20 active:scale-95">
               Generar Programa
             </button>
           </div>
@@ -542,9 +636,92 @@ import {
       </div>
     }
 
-    <!-- Close dropdown on outside click -->
+    <!-- ===== MODAL CONFLICTOS DE REGENERACIÓN ===== -->
+    @if (showConflictoModal()) {
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-fadeIn" (click)="cancelarConflictoModal()"></div>
+      <div class="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
+        <div class="pointer-events-auto w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 animate-slideUp">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white">Meses ya generados</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Los siguientes meses ya tienen programa:</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mb-4">
+            @for (c of conflictosDetectados(); track c.ano + '-' + c.mes) {
+              <span class="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                {{ c.label }}
+              </span>
+            }
+          </div>
+          @if (mesesFaltantes().length > 0) {
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Se pueden generar los meses faltantes:</p>
+            <div class="flex flex-wrap gap-1.5 mb-5">
+              @for (m of mesesFaltantes(); track m.ano + '-' + m.mes) {
+                <span class="px-2.5 py-1 rounded-full bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 text-xs font-semibold text-violet-700 dark:text-violet-400">
+                  {{ m.label }}
+                </span>
+              }
+            </div>
+            <div class="flex gap-2">
+              <button
+                (click)="cancelarConflictoModal()"
+                class="flex-1 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
+                Cancelar
+              </button>
+              <button
+                (click)="confirmarGenerarFaltantes()"
+                class="flex-1 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-xs text-white font-bold transition-all shadow-sm shadow-purple-900/20 active:scale-95">
+                Generar faltantes
+              </button>
+            </div>
+          } @else {
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              Todos los meses de esta guía ya están generados. Para regenerar un mes, elimínalo primero desde el historial.
+            </p>
+            <button
+              (click)="cancelarConflictoModal()"
+              class="w-full h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
+              Entendido
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Cerrar dropdown al hacer clic fuera -->
     @if (openDropdownId() !== null) {
       <div class="fixed inset-0 z-30" (click)="openDropdownId.set(null)"></div>
+    }
+
+    <!-- ===== DIÁLOGO DE CONFIRMACIÓN ===== -->
+    @if (confirmDialog(); as dlg) {
+      <div class="confirm-overlay" (click)="onConfirmDialogAction(false)">
+        <div class="confirm-dialog" (click)="$event.stopPropagation()">
+          <!-- Icono -->
+          <div class="confirm-icon-wrap">
+            <svg class="confirm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <!-- Texto -->
+          <div class="confirm-text">
+            <p class="confirm-title">{{ dlg.title }}</p>
+            <p class="confirm-body">{{ dlg.body }}</p>
+          </div>
+          <!-- Acciones -->
+          <div class="confirm-actions">
+            <button class="confirm-btn-cancel" (click)="onConfirmDialogAction(false)">Cancelar</button>
+            <button class="confirm-btn-delete" (click)="onConfirmDialogAction(true)">Eliminar</button>
+          </div>
+        </div>
+      </div>
     }
   `,
   styles: [`
@@ -571,7 +748,8 @@ import {
                   border-color 150ms var(--ease-out-expo);
       animation: cardIn 220ms var(--ease-out-expo) both;
     }
-    .parte-card.is-open {
+    .parte-card.is-open,
+    .parte-card.dropdown-active {
       z-index: 50;
     }
     :host-context(.dark) .parte-card {
@@ -744,6 +922,100 @@ import {
     :host-context(.dark) .btn-borrar:not(:disabled):hover {
       background: rgba(248,113,113,0.16);
     }
+
+    /* ── Diálogo de confirmación ── */
+    @keyframes overlayIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes dialogIn {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(4px);
+      animation: overlayIn 160ms ease;
+    }
+    .confirm-dialog {
+      width: 100%;
+      max-width: 380px;
+      border-radius: 18px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      animation: dialogIn 200ms var(--ease-out-expo);
+      background: white;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+    }
+    :host-context(.dark) .confirm-dialog {
+      background: #1e293b;
+      border-color: rgba(255,255,255,0.1);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .confirm-icon-wrap {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(220,38,38,0.08);
+      border: 1px solid rgba(220,38,38,0.18);
+      flex-shrink: 0;
+    }
+    :host-context(.dark) .confirm-icon-wrap {
+      background: rgba(239,68,68,0.12);
+      border-color: rgba(239,68,68,0.25);
+    }
+    .confirm-icon { width: 22px; height: 22px; stroke: #dc2626; }
+    :host-context(.dark) .confirm-icon { stroke: #f87171; }
+    .confirm-text { display: flex; flex-direction: column; gap: 0.3rem; }
+    .confirm-title {
+      font-size: 0.95rem; font-weight: 800;
+      color: #0f172a; line-height: 1.3;
+    }
+    :host-context(.dark) .confirm-title { color: #f1f5f9; }
+    .confirm-body {
+      font-size: 0.8rem; line-height: 1.55;
+      color: #64748b;
+    }
+    :host-context(.dark) .confirm-body { color: #94a3b8; }
+    .confirm-actions {
+      display: flex; gap: 0.5rem; justify-content: flex-end; padding-top: 0.25rem;
+    }
+    .confirm-btn-cancel, .confirm-btn-delete {
+      height: 36px; padding: 0 1.1rem;
+      border-radius: 10px;
+      font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; transition: all 120ms ease;
+      border: 1px solid transparent;
+    }
+    .confirm-btn-cancel:active, .confirm-btn-delete:active { transform: scale(0.97); }
+    .confirm-btn-cancel {
+      background: rgba(0,0,0,0.04);
+      border-color: rgba(0,0,0,0.1);
+      color: #475569;
+    }
+    .confirm-btn-cancel:hover { background: rgba(0,0,0,0.08); }
+    :host-context(.dark) .confirm-btn-cancel {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.12);
+      color: #94a3b8;
+    }
+    :host-context(.dark) .confirm-btn-cancel:hover { background: rgba(255,255,255,0.1); }
+    .confirm-btn-delete {
+      background: #dc2626;
+      color: white;
+      box-shadow: 0 2px 8px rgba(220,38,38,0.3);
+    }
+    .confirm-btn-delete:hover { background: #b91c1c; box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
   `]
 })
 export class ReunionesProgramacionComponent implements OnInit {
@@ -771,9 +1043,48 @@ export class ReunionesProgramacionComponent implements OnInit {
   loadingPlantillas = signal(false);
 
   // ── Historial signals ──────────────────────────────────────────
-  periodos = signal<{ ano: number; mes: number; label: string }[]>([]);
+  periodos = signal<PeriodoConfirmado[]>([]);
   loadingPeriodos = signal(false);
   loadingHistorial = signal(false);
+  descargandoPdf = signal(false);
+
+  gruposPlantilla = computed<GrupoPlantilla[]>(() => {
+    const mapa = new Map<string, GrupoPlantilla>();
+    for (const p of this.periodos()) {
+      const key = p.id_plantilla !== null ? String(p.id_plantilla) : 'sin-plantilla';
+      if (!mapa.has(key)) {
+        mapa.set(key, {
+          id_plantilla: p.id_plantilla,
+          nombre_plantilla: p.nombre_plantilla ?? 'Sin guía asociada',
+          periodos: [],
+        });
+      }
+      mapa.get(key)!.periodos.push(p);
+    }
+    return Array.from(mapa.values());
+  });
+
+  gruposExpandidos = signal<Set<string>>(new Set());
+
+  // ── Diálogo de confirmación personalizado ─────────────────────
+  confirmDialog = signal<{ title: string; body: string; resolve: (v: boolean) => void } | null>(null);
+
+  private openConfirmDialog(title: string, body: string): Promise<boolean> {
+    return new Promise(resolve => this.confirmDialog.set({ title, body, resolve }));
+  }
+
+  onConfirmDialogAction(accept: boolean): void {
+    const d = this.confirmDialog();
+    this.confirmDialog.set(null);
+    d?.resolve(accept);
+  }
+
+  // ── Conflictos de regeneración ────────────────────────────────
+  showConflictoModal = signal(false);
+  conflictosDetectados = signal<ConflictoMes[]>([]);
+  mesesFaltantes = signal<ConflictoMes[]>([]);
+  pendingCreatePayload = signal<ProgramaMensualCreateRequest | null>(null);
+  pendingGenPayload = signal<GenerarAsignacionesRequest | null>(null);
   editingHistorialId = signal<number | null>(null);
   historialCandidatos = signal<CandidatoAlternativo[]>([]);
   loadingCandidatos = signal(false);
@@ -790,7 +1101,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   });
 
   // ── UI ─────────────────────────────────────────────────────────
-  openDropdownId = signal<number | null>(null);
+  openDropdownId = signal<string | null>(null);
   selectedSala = signal<'Principal' | 'Auxiliar'>('Principal');
 
   // ── Meeting type toggle ────────────────────────────────────────
@@ -1006,61 +1317,70 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   private _buildGrupos(partes: AsignacionDraft[]) {
     const grupos: { key: string; partes: AsignacionDraft[]; role0: string; role1: string }[] = [];
-    // Clave compuesta: id + tipo (maestro vs ayudante) para que no colisionen cuando comparten id_programa_parte
-    const pKey = (p: AsignacionDraft) => `${p.id_programa_parte}|${p.es_ayudante ? '1' : '0'}`;
-    const usedKeys = new Set<string>();
+    // Track by object reference — avoids key collisions when conductor+lector share id_programa_parte
+    const used = new Set<AsignacionDraft>();
+    const uid = (p: AsignacionDraft, i: number) =>
+      p.id_asignacion != null ? `a${p.id_asignacion}` : `i${i}`;
 
     const maestros = partes.filter(p => !p.es_ayudante);
     const ayudantes = partes.filter(p => p.es_ayudante);
 
-    for (const p of maestros) {
-      const pk = pKey(p);
-      if (usedKeys.has(pk)) continue;
-      usedKeys.add(pk);
+    maestros.forEach((p, i) => {
+      if (used.has(p)) return;
+      used.add(p);
 
       const nombre = (p.nombre_parte || '').toLowerCase();
-      const esConductor = nombre.includes('conductor') || nombre.includes('estudio bíblico');
+      const esConductor = nombre.includes('conductor') || 
+                          (nombre.includes('estudio bíblico') && !nombre.includes('lector')) ||
+                          (nombre.includes('estudio biblico') && !nombre.includes('lector')) ||
+                          (nombre.includes('estudio de la atalaya') && !nombre.includes('lector'));
       const esMaestro = nombre.includes('empiece') || nombre.includes('revisita') || nombre.includes('discípulo') || nombre.includes('haga disc');
-      const uid = pk;
+      const key = uid(p, i);
 
       if (esConductor) {
-        // EBC: pair Conductor with Lector
-        const lector = ayudantes.find(q => {
-          if (usedKeys.has(pKey(q))) return false;
+        // EBC lector shares same id_programa_parte, has "lector" in nombre_parte, es_ayudante=false
+        const lectorM = maestros.find(q => {
+          if (used.has(q)) return false;
           const qn = (q.nombre_parte || '').toLowerCase();
-          return qn.includes('lector') && qn.includes('estudio');
+          return (q.id_programa_parte === p.id_programa_parte && qn.includes('lector')) ||
+                 (qn === nombre) ||
+                 (qn.includes('lector') && (nombre.includes('estudio') || nombre.includes('atalaya')));
         });
+        const lectorA = !lectorM ? ayudantes.find(q => {
+          if (used.has(q)) return false;
+          const qn = (q.nombre_parte || '').toLowerCase();
+          return qn.includes('lector') && (qn.includes('estudio') || qn.includes('atalaya'));
+        }) : null;
+        const lector = lectorM ?? lectorA;
         if (lector) {
-          usedKeys.add(pKey(lector));
-          grupos.push({ key: uid, partes: [p, lector], role0: 'Conductor', role1: 'Lector' });
+          used.add(lector);
+          grupos.push({ key, partes: [p, lector], role0: 'Conductor', role1: 'Lector' });
         } else {
-          grupos.push({ key: uid, partes: [p], role0: '', role1: '' });
+          grupos.push({ key, partes: [p], role0: '', role1: '' });
         }
       } else if (esMaestro || p.aplica_sala_b) {
-        // Normaliza nombre quitando sufijos de sala/ayudante para comparar la base
         const stripSuffix = (n: string) =>
           n.replace(/\s*\((sala b[^)]*|ayudante[^)]*)\)/gi, '').trim();
         const nombreBase = stripSuffix(nombre);
-        // Recoger hasta 2 ayudantes cuya base de nombre coincida con la del maestro
         const misAyudantes = nombreBase.length > 2
           ? ayudantes.filter(q => {
-              if (usedKeys.has(pKey(q))) return false;
+              if (used.has(q)) return false;
               return stripSuffix((q.nombre_parte || '').toLowerCase()).startsWith(nombreBase);
             }).slice(0, 2)
           : [];
-        misAyudantes.forEach(a => usedKeys.add(pKey(a)));
-        grupos.push({ key: uid, partes: [p, ...misAyudantes], role0: 'Maestro', role1: 'Ayudante' });
+        misAyudantes.forEach(a => used.add(a));
+        grupos.push({ key, partes: [p, ...misAyudantes], role0: 'Maestro', role1: 'Ayudante' });
       } else {
-        grupos.push({ key: uid, partes: [p], role0: '', role1: '' });
+        grupos.push({ key, partes: [p], role0: '', role1: '' });
       }
-    }
+    });
 
     // Ayudantes huérfanos (sin maestro emparejado)
-    for (const a of ayudantes) {
-      if (!usedKeys.has(pKey(a))) {
-        grupos.push({ key: pKey(a), partes: [a], role0: '', role1: '' });
+    ayudantes.forEach((a, i) => {
+      if (!used.has(a)) {
+        grupos.push({ key: uid(a, maestros.length + i), partes: [a], role0: '', role1: '' });
       }
-    }
+    });
 
     return grupos;
   }
@@ -1195,10 +1515,6 @@ export class ReunionesProgramacionComponent implements OnInit {
     const fechas = this.calcFechasRango(form.ano, form.mes, form.ano_fin, form.mes_fin, form.dia_reunion);
     if (fechas.length === 0) return;
 
-    this.showModal.set(false);
-    this.estado.set('loading');
-    this.errorMsg.set(null);
-
     const createPayload: ProgramaMensualCreateRequest = {
       id_congregacion: idCong,
       tipo_reunion: this.tipoReunionActivo(),
@@ -1215,11 +1531,69 @@ export class ReunionesProgramacionComponent implements OnInit {
       id_congregacion: idCong,
     };
 
+    // Verificar conflictos antes de generar
+    this.reunionesSvc.verificarConflictosPlantilla(createPayload).subscribe({
+      next: (resultado) => {
+        if (resultado.tiene_conflictos) {
+          this.showModal.set(false);
+          this.conflictosDetectados.set(resultado.conflictos);
+          this.mesesFaltantes.set(resultado.meses_faltantes);
+          this.pendingCreatePayload.set(createPayload);
+          this.pendingGenPayload.set(genPayload);
+          this.showConflictoModal.set(true);
+        } else {
+          this.showModal.set(false);
+          this._ejecutarGeneracion(createPayload, genPayload);
+        }
+      },
+      error: () => {
+        // Si falla la verificación, proceder directamente
+        this.showModal.set(false);
+        this._ejecutarGeneracion(createPayload, genPayload);
+      },
+    });
+  }
+
+  confirmarGenerarFaltantes(): void {
+    const createPayload = this.pendingCreatePayload();
+    const genPayload = this.pendingGenPayload();
+    const faltantes = this.mesesFaltantes();
+    this.showConflictoModal.set(false);
+    if (!createPayload || !genPayload) return;
+
+    if (faltantes.length === 0) return;
+
+    // Pasamos la lista COMPLETA de semanas a crearProgramaMensual para que el backend
+    // calcule los índices ordinales correctamente respecto a la guía completa.
+    // El backend ya omite internamente las semanas que ya existen en la DB.
+    const mesesSet = new Set(faltantes.map(m => `${m.ano}-${m.mes}`));
+    const semanasFiltradas = createPayload.semanas.filter(f => {
+      const d = new Date(f + 'T00:00:00');
+      return mesesSet.has(`${d.getFullYear()}-${d.getMonth() + 1}`);
+    });
+
+    // generar solo trae las semanas nuevas al UI
+    const genFiltrado: GenerarAsignacionesRequest = {
+      ...genPayload,
+      fecha_inicio: semanasFiltradas[0],
+      fecha_fin: semanasFiltradas[semanasFiltradas.length - 1],
+    };
+    // createPayload sin filtrar → ordinales correctos en el backend
+    this._ejecutarGeneracion(createPayload, genFiltrado);
+  }
+
+  cancelarConflictoModal(): void {
+    this.showConflictoModal.set(false);
+    this.pendingCreatePayload.set(null);
+    this.pendingGenPayload.set(null);
+  }
+
+  private _ejecutarGeneracion(createPayload: ProgramaMensualCreateRequest, genPayload: GenerarAsignacionesRequest): void {
+    this.estado.set('loading');
+    this.errorMsg.set(null);
     this.reunionesSvc
       .crearProgramaMensual(createPayload)
-      .pipe(
-        switchMap(() => this.reunionesSvc.generarAsignaciones(genPayload))
-      )
+      .pipe(switchMap(() => this.reunionesSvc.generarAsignaciones(genPayload)))
       .subscribe({
         next: (resp) => {
           const seen = new Set<number>();
@@ -1228,10 +1602,10 @@ export class ReunionesProgramacionComponent implements OnInit {
           this.selectedWeekIdx.set(0);
           this.selectedSala.set('Principal');
           this.estado.set('draft');
+          this.loadPeriodos(this.congregacionCtx.effectiveCongregacionId()!);
         },
         error: (err) => {
-          const msg =
-            err?.error?.detail ?? err?.message ?? 'Error al generar el programa.';
+          const msg = err?.error?.detail ?? err?.message ?? 'Error al generar el programa.';
           this.errorMsg.set(msg);
           this.estado.set('error');
         },
@@ -1239,20 +1613,26 @@ export class ReunionesProgramacionComponent implements OnInit {
   }
 
   // ── Manual swap ────────────────────────────────────────────────
+  // Unique key per pill — disambiguates conductor vs lector sharing the same id_programa_parte
+  pillKey(asig: AsignacionDraft): string {
+    return asig.id_asignacion != null
+      ? `a${asig.id_asignacion}`
+      : `p${asig.id_programa_parte}|${asig.nombre_parte ?? ''}|${asig.es_ayudante ? '1' : '0'}`;
+  }
+
   swapAsignacion(
     semanaIdx: number,
-    parteId: number,
+    asigRef: AsignacionDraft,
     candidato: CandidatoAlternativo,
-    esAyudante?: boolean
   ): void {
+    const targetKey = this.pillKey(asigRef);
     this.semanas.update((semanas) =>
       semanas.map((sem, si) => {
         if (si !== semanaIdx) return sem;
         return {
           ...sem,
           partes: sem.partes.map((asig) => {
-            if (asig.id_programa_parte !== parteId) return asig;
-            if (esAyudante !== undefined && asig.es_ayudante !== esAyudante) return asig;
+            if (this.pillKey(asig) !== targetKey) return asig;
             return {
               ...asig,
               id_publicador: candidato.id_publicador,
@@ -1264,16 +1644,31 @@ export class ReunionesProgramacionComponent implements OnInit {
       })
     );
     this.openDropdownId.set(null);
+
+    // Persist the swap to Redis so confirmation uses the updated assignment
+    if (this.estado() === 'draft') {
+      const semana = this.semanas()[semanaIdx];
+      const idCong = this.congregacionCtx.effectiveCongregacionId();
+      if (semana && idCong) {
+        const ano = new Date(semana.fecha).getFullYear();
+        this.reunionesSvc.swapDraftAsignacion(
+          this.tipoReunionActivo(), ano, semana.semana_iso, idCong,
+          asigRef.id_programa_parte, asigRef.nombre_parte ?? '',
+          candidato.id_publicador, candidato.nombre_completo,
+        ).subscribe(); // fire-and-forget; local state already updated
+      }
+    }
   }
 
-  toggleDropdown(parteId: number): void {
-    this.openDropdownId.update((id) => (id === parteId ? null : parteId));
+  toggleDropdown(asig: AsignacionDraft): void {
+    const key = this.pillKey(asig);
+    this.openDropdownId.update((id) => (id === key ? null : key));
   }
 
   isGroupOpen(grupo: any): boolean {
     const openId = this.openDropdownId();
     if (openId === null) return false;
-    return grupo.partes.some((p: any) => p.id_programa_parte === openId);
+    return grupo.partes.some((p: any) => this.pillKey(p) === openId);
   }
 
   // ── Confirm ────────────────────────────────────────────────────
@@ -1296,7 +1691,10 @@ export class ReunionesProgramacionComponent implements OnInit {
     };
 
     this.reunionesSvc.confirmarDrafts(payload).subscribe({
-      next: () => this.estado.set('confirmado'),
+      next: () => {
+        this.estado.set('confirmado');
+        this.loadPeriodos(idCong);
+      },
       error: (err) => {
         const msg = err?.error?.detail ?? 'Error al confirmar las asignaciones.';
         this.errorMsg.set(msg);
@@ -1305,11 +1703,15 @@ export class ReunionesProgramacionComponent implements OnInit {
     });
   }
 
-  borrarBorrador(): void {
+  async borrarBorrador(): Promise<void> {
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     const semanas = this.semanas();
     if (!idCong || semanas.length === 0 || this.estado() !== 'draft') return;
-    if (!window.confirm('¿Deseas borrar este borrador? Esta accion no se puede deshacer.')) return;
+    const ok = await this.openConfirmDialog(
+      'Borrar borrador',
+      '¿Deseas borrar este borrador? Las asignaciones generadas se perderán y no se podrán recuperar.'
+    );
+    if (!ok) return;
 
     const ano = new Date(semanas[0].fecha).getFullYear();
     const requests = semanas.map((sem) =>
@@ -1401,6 +1803,11 @@ export class ReunionesProgramacionComponent implements OnInit {
   grupoHasSwapped(partes: AsignacionDraft[]): boolean {
     return partes.some(p => p._swapped === true);
   }
+  grupoDropdownActivo(partes: AsignacionDraft[]): boolean {
+    const openId = this.openDropdownId();
+    const editId = this.editingHistorialId();
+    return partes.some(p => openId === this.pillKey(p) || editId === p.id_asignacion);
+  }
   grupoHasReemplazo(partes: AsignacionDraft[]): boolean {
     return partes.some(p => p.es_reemplazo);
   }
@@ -1435,19 +1842,19 @@ export class ReunionesProgramacionComponent implements OnInit {
     { v: 'M', l: '♂' },
   ];
 
-  private _sexoFilters = new Map<number, string | null>();
+  private _sexoFilters = new Map<string, string | null>();
 
-  setSexoFilter(idParte: number, sexo: string | null): void {
-    this._sexoFilters.set(idParte, sexo);
+  setSexoFilter(asig: AsignacionDraft, sexo: string | null): void {
+    this._sexoFilters.set(this.pillKey(asig), sexo);
   }
 
-  getSexoFilter(idParte: number): string | null {
-    return this._sexoFilters.get(idParte) ?? null;
+  getSexoFilter(asig: AsignacionDraft): string | null {
+    return this._sexoFilters.get(this.pillKey(asig)) ?? null;
   }
 
   filteredAlternativos(asig: AsignacionDraft): CandidatoAlternativo[] {
     if (!asig.es_ayudante) return asig.alternativos;
-    const filtro = this._sexoFilters.get(asig.id_programa_parte) ?? null;
+    const filtro = this._sexoFilters.get(this.pillKey(asig)) ?? null;
     if (!filtro) return asig.alternativos;
     return asig.alternativos.filter(a => {
       const sexo = (a as any).sexo;
@@ -1490,7 +1897,7 @@ export class ReunionesProgramacionComponent implements OnInit {
           if (si !== semanaIdx) return sem;
           return { ...sem, partes: sem.partes.filter(p => p.id_programa_parte !== asig.id_programa_parte) };
         }));
-        this._sexoFilters.delete(asig.id_programa_parte);
+        this._sexoFilters.delete(this.pillKey(asig));
       },
     });
   }
@@ -1505,17 +1912,99 @@ export class ReunionesProgramacionComponent implements OnInit {
     return periodo >= limite;
   }
 
-  eliminarHistorial(p: { ano: number; mes: number; label: string }, event: Event): void {
+  toggleGrupo(key: string, event: Event): void {
+    event.stopPropagation();
+    this.gruposExpandidos.update(set => {
+      const next = new Set(set);
+      if (next.has(key)) { next.delete(key); } else { next.add(key); }
+      return next;
+    });
+  }
+
+  grupoKey(grupo: GrupoPlantilla): string {
+    return grupo.id_plantilla !== null ? String(grupo.id_plantilla) : 'sin-plantilla';
+  }
+
+  abreviarNombreGuia(nombre: string): string {
+    // "Guía de Actividades - Mayo 2026" → "GDA - Mayo 2026"
+    return nombre.replace(/Gu[ií]a\s+de\s+Actividades/i, 'GDA');
+  }
+
+  descargarPdfMes(p: PeriodoConfirmado, event: Event): void {
+    event.stopPropagation();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong || this.descargandoPdf()) return;
+    this.descargandoPdf.set(true);
+    this.reunionesSvc
+      .descargarProgramacionPdf(this.tipoReunionActivo(), p.ano, p.mes, idCong)
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `programacion_${this.tipoReunionActivo()}_${p.ano}_${String(p.mes).padStart(2, '0')}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          this.descargandoPdf.set(false);
+        },
+        error: () => this.descargandoPdf.set(false),
+      });
+  }
+
+  async eliminarHistorial(p: PeriodoConfirmado, event: Event): Promise<void> {
     event.stopPropagation();
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong) return;
-    if (!window.confirm(`¿Eliminar todas las asignaciones confirmadas de ${p.label}? Esta acción no se puede deshacer.`)) return;
+    const ok = await this.openConfirmDialog(
+      `Eliminar ${p.label}`,
+      `Se borrarán todas las semanas, partes y asignaciones confirmadas de este mes. Esta acción no se puede deshacer.`
+    );
+    if (!ok) return;
     this.reunionesSvc.eliminarHistorialMes(this.tipoReunionActivo(), p.ano, p.mes, idCong).subscribe({
       next: () => {
         this.periodos.update(list => list.filter(x => !(x.ano === p.ano && x.mes === p.mes)));
-        if (this.estado() === 'historial') { this.semanas.set([]); this.estado.set('idle'); }
+        this.semanas.set([]);
+        this.estado.set('idle');
       },
     });
+  }
+
+  async eliminarGuiaCompleta(grupo: GrupoPlantilla, event: Event): Promise<void> {
+    event.stopPropagation();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+    const mesesLabel = grupo.periodos.map(p => p.label).join(', ');
+    const ok = await this.openConfirmDialog(
+      `Eliminar "${grupo.nombre_plantilla}"`,
+      `Se eliminarán todos los programas de ${mesesLabel}. Las semanas, partes y asignaciones confirmadas se perderán permanentemente.`
+    );
+    if (!ok) return;
+
+    const mesSet = new Set(grupo.periodos.map(p => `${p.ano}-${p.mes}`));
+    const limpiar = () => {
+      this.periodos.update(list => list.filter(p => !mesSet.has(`${p.ano}-${p.mes}`)));
+      this.semanas.set([]);
+      this.estado.set('idle');
+    };
+
+    if (grupo.id_plantilla !== null) {
+      this.reunionesSvc.eliminarHistorialPlantilla(grupo.id_plantilla, idCong).subscribe({ next: limpiar });
+    } else {
+      // "Sin guía asociada": eliminar mes a mes en serie
+      const tipo = this.tipoReunionActivo();
+      const periodos = [...grupo.periodos];
+      const deleteNext = (idx: number) => {
+        if (idx >= periodos.length) { limpiar(); return; }
+        const p = periodos[idx];
+        this.reunionesSvc.eliminarHistorialMes(tipo, p.ano, p.mes, idCong).subscribe({
+          next: () => deleteNext(idx + 1),
+          error: () => deleteNext(idx + 1),
+        });
+      };
+      deleteNext(0);
+    }
   }
 
   loadHistorial(mes: number, ano: number): void {
@@ -1599,7 +2088,13 @@ export class ReunionesProgramacionComponent implements OnInit {
     let current = new Date(anoInicio, mesInicio - 1, 1 + offset);
     // límite: primer día del mes siguiente al mes de fin
     const limite = new Date(anoFin, mesFin, 1);
-    while (current < limite) {
+    while (true) {
+      // Comparar el LUNES ISO de la semana, no la fecha de reunión.
+      // Una semana pertenece al rango si su lunes cae dentro del rango,
+      // aunque el día de reunión caiga en el mes siguiente (ej: semana 27abr–3may).
+      const dow = current.getDay() === 0 ? 7 : current.getDay();
+      const lunes = new Date(current.getFullYear(), current.getMonth(), current.getDate() - (dow - 1));
+      if (lunes >= limite) break;
       const y = current.getFullYear();
       const m = String(current.getMonth() + 1).padStart(2, '0');
       const d = String(current.getDate()).padStart(2, '0');

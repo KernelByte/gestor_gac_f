@@ -220,8 +220,10 @@ import {
                                      <select
                                        [ngModel]="getOratoria(pub)"
                                        (ngModelChange)="setOratoria(pub, $event)"
-                                       class="h-7 px-1 w-[85px] rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[9px] font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all cursor-pointer truncate"
-                                       [class.border-amber-400]="isOratoriaDirty(pub.id_publicador)">
+                                       class="priv-select w-[92px]"
+                                       [class.border-amber-400]="isOratoriaDirty(pub.id_publicador)"
+                                       [class.ring-2]="isOratoriaDirty(pub.id_publicador)"
+                                       [class.ring-amber-300]="isOratoriaDirty(pub.id_publicador)">
                                        <option [value]="1">Principiante</option>
                                        <option [value]="2">Básico</option>
                                        <option [value]="3">Intermedio</option>

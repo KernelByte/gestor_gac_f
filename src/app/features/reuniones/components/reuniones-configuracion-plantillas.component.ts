@@ -49,16 +49,30 @@ import {
        <!-- ===== TAB PILLS + FILTROS (misma línea) ===== -->
        <div class="shrink-0 flex items-center gap-3 w-full">
            <!-- Tabs -->
-           <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-1.5 flex items-center gap-1 overflow-x-auto no-scrollbar">
+           <div class="shrink-0 flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors">
              @for (tab of visibleTabs(); track tab.id) {
                <button
                  (click)="activeTab.set(tab.id)"
-                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
+                 class="px-4 h-9 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
                  [class]="activeTab() === tab.id
-                   ? 'bg-[#6D28D9] text-white shadow-sm'
-                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'">
-                 <span [innerHTML]="tab.icon"></span>
-                 {{ tab.label }}
+                   ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20'
+                   : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+                 @if (tab.id === 'privilegios') {
+                   <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
+                     <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                   </span>
+                 }
+                 @if (tab.id === 'parametros') {
+                   <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
+                     <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                   </span>
+                 }
+                 @if (tab.id === 'plantillas') {
+                   <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
+                     <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                   </span>
+                 }
+                 <span>{{ tab.label }}</span>
                </button>
              }
            </div>
@@ -692,7 +706,7 @@ import {
                                        [ngModel]="getOratoria(pub)"
                                        [attr.data-level]="getOratoria(pub)"
                                        [disabled]="!hasEditPermission()"
-                                       class="priv-select h-7 px-2 w-[92px] rounded-lg border bg-white dark:bg-slate-900 text-[10px] outline-none cursor-pointer truncate disabled:opacity-50 disabled:cursor-not-allowed"
+                                       class="priv-select w-[92px]"
                                        [class.ring-2]="isOratoriaDirty(pub.id_publicador)"
                                        [class.ring-amber-300]="isOratoriaDirty(pub.id_publicador)">
                                        <option [value]="1">Principiante</option>
@@ -1035,9 +1049,9 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
   // ── Tabs ──
   private allTabs = [
-    { id: 'privilegios', label: 'Asignación de Privilegios', icon: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', adminOnly: false },
-    { id: 'plantillas', label: 'Plantillas de Reunión', icon: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', adminOnly: true },
-    { id: 'parametros', label: 'Parámetros del Algoritmo', icon: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>', adminOnly: true }
+    { id: 'privilegios', label: 'Asignación de Privilegios', adminOnly: false },
+    { id: 'parametros', label: 'Parámetros del Algoritmo', adminOnly: true },
+    { id: 'plantillas', label: 'Plantillas de Reunión', adminOnly: true }
   ];
 
   visibleTabs = computed(() => {
@@ -1548,8 +1562,11 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
   // ── Algorithm Profiles Methods ──
   loadAlgoProfiles(): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+
     this.algoLoading.set(true);
-    this.reunionesSvc.getAlgorithmProfiles().subscribe({
+    this.reunionesSvc.getAlgorithmProfiles(idCong).subscribe({
       next: (res) => {
         this.algoProfiles.set(res.perfiles);
         this.activeProfileId.set(res.perfil_activo);
@@ -1566,9 +1583,11 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
   selectProfile(perfilId: string): void {
     if (this.activeProfileId() === perfilId) return;
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
     
     this.profileSaving.set(true);
-    this.reunionesSvc.setAlgorithmProfile(perfilId).subscribe({
+    this.reunionesSvc.setAlgorithmProfile(perfilId, idCong).subscribe({
       next: (res) => {
         this.activeProfileId.set(perfilId);
         this.profileSaving.set(false);
@@ -1584,10 +1603,11 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   onMaxPartesChange(value: number): void {
     const num = Number(value);
     if (isNaN(num) || num < 1 || num > 5) return;
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
     
     this.algoMaxPartesCruzadas.set(num);
-    // Auto-save just this parameter
-    this.reunionesSvc.updateAlgorithmParams({ parametros: { algo_max_partes_cruzadas: num } }).subscribe({
+    this.reunionesSvc.updateAlgorithmParams({ id_congregacion: idCong, parametros: { algo_max_partes_cruzadas: num } }).subscribe({
       next: () => {
         this.showToast('success', 'Límite actualizado');
       },

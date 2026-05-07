@@ -21,6 +21,8 @@ import {
   AlgorithmParamsUpdate,
   AlgoProfile,
   EditarAsignacionRequest,
+  PeriodoConfirmado,
+  ConflictosPlantillaResponse,
 } from '../models/reuniones.models';
 
 @Injectable({ providedIn: 'root' })
@@ -172,6 +174,22 @@ export class ReunionesService {
     );
   }
 
+  swapDraftAsignacion(
+    tipo: string,
+    ano: number,
+    semanaIso: number,
+    idCongregacion: number,
+    idProgramaParte: number,
+    nombreParte: string,
+    idPublicador: number,
+    nombreCompleto: string,
+  ): Observable<{ ok: boolean }> {
+    return this.http.patch<{ ok: boolean }>(
+      `${this.base}/asignaciones/draft/${tipo}/${ano}/${semanaIso}/asignacion`,
+      { id_congregacion: idCongregacion, id_programa_parte: idProgramaParte, nombre_parte: nombreParte, id_publicador: idPublicador, nombre_completo: nombreCompleto }
+    );
+  }
+
   eliminarAyudante(idProgramaParte: number, idCongregacion: number): Observable<{ ok: boolean }> {
     const params = new HttpParams().set('id_congregacion', idCongregacion);
     return this.http.delete<{ ok: boolean }>(
@@ -183,31 +201,33 @@ export class ReunionesService {
   // PARÁMETROS DEL ALGORITMO
   // ──────────────────────────────────────────────────
 
-  getAlgorithmParams(): Observable<AlgorithmParamsResponse> {
-    return this.http.get<AlgorithmParamsResponse>(`${this.base}/configuracion/parametros`);
+  getAlgorithmParams(idCong: number): Observable<AlgorithmParamsResponse> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.get<AlgorithmParamsResponse>(`${this.base}/configuracion/parametros`, { params });
   }
 
   updateAlgorithmParams(payload: AlgorithmParamsUpdate): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/configuracion/parametros`, payload);
   }
 
-  getAlgorithmProfiles(): Observable<{ perfiles: AlgoProfile[]; perfil_activo: string; algo_max_partes_cruzadas: number }> {
-    return this.http.get<{ perfiles: AlgoProfile[]; perfil_activo: string; algo_max_partes_cruzadas: number }>(`${this.base}/configuracion/perfiles`);
+  getAlgorithmProfiles(idCong: number): Observable<{ perfiles: AlgoProfile[]; perfil_activo: string; algo_max_partes_cruzadas: number }> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.get<{ perfiles: AlgoProfile[]; perfil_activo: string; algo_max_partes_cruzadas: number }>(`${this.base}/configuracion/perfiles`, { params });
   }
 
-  setAlgorithmProfile(perfilId: string): Observable<{ message: string; perfil_id: string }> {
-    return this.http.put<{ message: string; perfil_id: string }>(`${this.base}/configuracion/perfil`, { perfil_id: perfilId });
+  setAlgorithmProfile(perfilId: string, idCong: number): Observable<{ message: string; perfil_id: string }> {
+    return this.http.put<{ message: string; perfil_id: string }>(`${this.base}/configuracion/perfil`, { perfil_id: perfilId, id_congregacion: idCong });
   }
 
   // ──────────────────────────────────────────────────
   // HISTORIAL CONFIRMADO
   // ──────────────────────────────────────────────────
 
-  getPeriodosConfirmados(tipo: string, idCong: number): Observable<{ ano: number; mes: number; label: string }[]> {
+  getPeriodosConfirmados(tipo: string, idCong: number): Observable<PeriodoConfirmado[]> {
     const params = new HttpParams()
       .set('tipo_reunion', tipo)
       .set('id_congregacion', idCong);
-    return this.http.get<{ ano: number; mes: number; label: string }[]>(
+    return this.http.get<PeriodoConfirmado[]>(
       `${this.base}/asignaciones/periodos-confirmados`, { params }
     );
   }
@@ -228,13 +248,38 @@ export class ReunionesService {
       .pipe(map((semanas) => semanas.map((s) => this.normalizeSemana(s))));
   }
 
-  eliminarHistorialMes(tipo: string, ano: number, mes: number, idCong: number): Observable<{ eliminadas: number }> {
+  descargarProgramacionPdf(tipo: string, ano: number, mes: number, idCong: number): Observable<Blob> {
     const params = new HttpParams()
       .set('tipo_reunion', tipo)
       .set('ano', ano)
       .set('mes', mes)
       .set('id_congregacion', idCong);
-    return this.http.delete<{ eliminadas: number }>(`${this.base}/asignaciones/historial`, { params });
+    return this.http.get(`${this.base}/asignaciones/historial/pdf`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
+  eliminarHistorialMes(tipo: string, ano: number, mes: number, idCong: number): Observable<{ eliminados: number }> {
+    const params = new HttpParams()
+      .set('tipo_reunion', tipo)
+      .set('ano', ano)
+      .set('mes', mes)
+      .set('id_congregacion', idCong);
+    return this.http.delete<{ eliminados: number }>(`${this.base}/asignaciones/historial`, { params });
+  }
+
+  eliminarHistorialPlantilla(idPlantilla: number, idCong: number): Observable<{ eliminados: number }> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.delete<{ eliminados: number }>(
+      `${this.base}/programas/plantilla/${idPlantilla}`, { params }
+    );
+  }
+
+  verificarConflictosPlantilla(payload: ProgramaMensualCreateRequest): Observable<ConflictosPlantillaResponse> {
+    return this.http.post<ConflictosPlantillaResponse>(
+      `${this.base}/programas/verificar-conflictos`, payload
+    );
   }
 
   getCandidatosConfirmados(
