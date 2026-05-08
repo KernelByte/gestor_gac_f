@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { DiscursosService } from '../services/discursos.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -22,7 +23,7 @@ type SubTab = 'entrantes' | 'salientes';
 @Component({
   selector: 'app-reuniones-discursos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DatePickerComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -182,8 +183,7 @@ type SubTab = 'entrantes' | 'salientes';
             <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar">
 
               <!-- ENTRANTES -->
-              @if (subTab() === 'entrantes') {
-                <div class="flex flex-col gap-3">
+              <div [hidden]="subTab() !== 'entrantes'" class="flex flex-col gap-3">
                   @for (entrante of mesDatos()!.entrantes; track entrante.id_discurso_entrante) {
                     <div class="rounded-xl border bg-white dark:bg-slate-900 overflow-hidden transition-colors"
                       [class]="isEditandoEntrante(entrante.id_discurso_entrante)
@@ -265,12 +265,10 @@ type SubTab = 'entrantes' | 'salientes';
                       </div>
                     </div>
                   }
-                </div>
-              }
+              </div>
 
               <!-- SALIENTES -->
-              @if (subTab() === 'salientes') {
-                <div class="flex flex-col gap-3">
+              <div [hidden]="subTab() !== 'salientes'" class="flex flex-col gap-3">
                   @if (hasEditPermission() && !mesDatos()!.confirmado) {
                     <button (click)="abrirModalSaliente()"
                       class="self-start flex items-center gap-2 px-4 h-9 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-xs font-bold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95">
@@ -362,8 +360,7 @@ type SubTab = 'entrantes' | 'salientes';
                       </div>
                     </div>
                   }
-                </div>
-              }
+              </div>
             </div>
           }
         </div>
@@ -375,18 +372,34 @@ type SubTab = 'entrantes' | 'salientes';
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarModalGenerar()">
         <div class="bg-white dark:bg-[#1a1b26] rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4" (click)="$event.stopPropagation()">
           <h2 class="text-base font-black text-slate-900 dark:text-white">Generar Mes — Discursos Públicos</h2>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-bold text-slate-500">Mes</label>
-              <select [(ngModel)]="genMes" class="h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500">
-                @for (m of MESES; track m.v) {
-                  <option [value]="m.v">{{ m.l }}</option>
-                }
-              </select>
+
+          <!-- Año -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Año</label>
+            <div class="flex items-center gap-2">
+              <button (click)="genAno = genAno - 1" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-500 hover:text-violet-600 transition-all flex items-center justify-center active:scale-95">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <span class="flex-1 text-center text-sm font-black text-slate-900 dark:text-white tabular-nums">{{ genAno }}</span>
+              <button (click)="genAno = genAno + 1" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-500 hover:text-violet-600 transition-all flex items-center justify-center active:scale-95">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+              </button>
             </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-bold text-slate-500">Año</label>
-              <input type="number" [(ngModel)]="genAno" min="2020" max="2099" class="h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500">
+          </div>
+
+          <!-- Mes grid -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Mes</label>
+            <div class="grid grid-cols-4 gap-1.5">
+              @for (m of MESES; track m.v) {
+                <button (click)="genMes = m.v"
+                  class="h-9 rounded-xl text-xs font-bold transition-all active:scale-95"
+                  [class]="genMes === m.v
+                    ? 'bg-[#6D28D9] text-white shadow-md shadow-violet-200 dark:shadow-violet-900/40'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-violet-100 dark:hover:bg-violet-900/30 hover:text-violet-700 dark:hover:text-violet-300 border border-transparent hover:border-violet-200 dark:hover:border-violet-800'">
+                  {{ m.l.slice(0, 3) }}
+                </button>
+              }
             </div>
           </div>
           <div class="flex gap-2 justify-end">
@@ -408,12 +421,10 @@ type SubTab = 'entrantes' | 'salientes';
           <div class="flex flex-col gap-3">
             <div class="flex flex-col gap-1">
               <label class="text-xs font-bold text-slate-500">Fecha</label>
-              <select [(ngModel)]="nuevoSaliente.fecha" class="h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500">
-                <option value="">Seleccionar fecha</option>
-                @for (f of mesDatos()!.fechas; track f) {
-                  <option [value]="f">{{ formatFecha(f) }}</option>
-                }
-              </select>
+              <app-date-picker
+                [(ngModel)]="nuevoSaliente.fecha"
+                placeholder="Seleccionar fecha">
+              </app-date-picker>
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-xs font-bold text-slate-500">Publicador</label>
@@ -518,6 +529,19 @@ export class ReunionesDiscursosComponent implements OnInit {
 
   mesLabel(ano: number, mes: number): string {
     return `${MESES_ES[mes - 1]} ${ano}`;
+  }
+
+  mesMinDate(): string {
+    const d = this.mesDatos();
+    if (!d) return '';
+    return `${d.ano}-${String(d.mes).padStart(2, '0')}-01`;
+  }
+
+  mesMaxDate(): string {
+    const d = this.mesDatos();
+    if (!d) return '';
+    const last = new Date(d.ano, d.mes, 0).getDate();
+    return `${d.ano}-${String(d.mes).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
   }
 
   formatFecha(fechaStr: string): string {

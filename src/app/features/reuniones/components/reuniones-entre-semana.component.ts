@@ -1637,16 +1637,34 @@ export class ReunionesProgramacionComponent implements OnInit {
   private tryLoadDrafts(idCong: number): void {
     const now = new Date();
     const defaultDay = this.tipoReunionActivo() === 'entre_semana' ? 2 : 7;
-    const fechas = this.calcFechas(now.getFullYear(), now.getMonth() + 1, defaultDay);
+    
+    // Rango de 4 meses (1 anterior, actual, 2 futuros) para recuperar borradores
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    
+    let startYear = currentYear;
+    let startMonth = currentMonth - 1;
+    if (startMonth < 1) {
+      startMonth = 12;
+      startYear -= 1;
+    }
+
+    const futureMonth = currentMonth + 2;
+    const endYear = currentYear + Math.floor((futureMonth - 1) / 12);
+    const endMonth = ((futureMonth - 1) % 12) + 1;
+
+    const fechas = this.calcFechasRango(startYear, startMonth, endYear, endMonth, defaultDay);
     if (fechas.length === 0) { this.estado.set('idle'); return; }
 
     this.estado.set('loading');
-    const ano = now.getFullYear();
-    const requests = fechas.map((f) =>
-      this.reunionesSvc
-        .getDraft(this.tipoReunionActivo(), ano, this.getIsoWeek(f), idCong)
-        .pipe(catchError(() => of(null)))
-    );
+    const requests = fechas.map((f) => {
+      // Determinar el año basado en la fecha calculada (para soportar cambios de año)
+      const d = new Date(f);
+      const anoIso = d.getFullYear(); 
+      return this.reunionesSvc
+        .getDraft(this.tipoReunionActivo(), anoIso, this.getIsoWeek(f), idCong)
+        .pipe(catchError(() => of(null)));
+    });
 
     forkJoin(requests).subscribe({
       next: (results) => {
