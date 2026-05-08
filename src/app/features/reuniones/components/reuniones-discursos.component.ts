@@ -1,6 +1,7 @@
 import {
-  Component, signal, computed, inject, OnInit,
+  Component, signal, computed, inject, OnInit, effect,
 } from '@angular/core';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, EMPTY } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
@@ -243,13 +244,13 @@ type SubTab = 'entrantes' | 'salientes';
                         <div class="flex flex-col gap-1">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Hospitalidad</label>
                           <select
-                            [value]="entrante.id_grupo_hospitalidad ?? ''"
+                            [value]="entrante.id_grupo_hospitalidad ? entrante.id_grupo_hospitalidad + '' : ''"
                             [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
                             (change)="onEntranteGrupoChange(entrante, $event)"
                             class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#2E5FA3] disabled:opacity-60 disabled:cursor-not-allowed transition-colors w-full">
                             <option value="">— Sin asignar —</option>
                             @for (g of grupos(); track g.id_grupo) {
-                              <option [value]="g.id_grupo">{{ g.nombre_grupo }}</option>
+                              <option [value]="g.id_grupo + ''">{{ g.nombre_grupo }}</option>
                             }
                           </select>
                         </div>
@@ -320,13 +321,13 @@ type SubTab = 'entrantes' | 'salientes';
                         <div class="flex flex-col gap-1">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Publicador</label>
                           <select
-                            [value]="saliente.id_publicador ?? ''"
+                            [value]="saliente.id_publicador ? saliente.id_publicador + '' : ''"
                             [disabled]="!hasEditPermission() || (saliente.confirmado && !isEditandoSaliente(saliente.id_discurso_saliente))"
                             (change)="onSalientePublicadorChange(saliente, $event)"
                             class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500 disabled:opacity-60 disabled:cursor-not-allowed w-full">
                             <option value="">— Sin asignar —</option>
                             @for (p of publicadores(); track p.id_publicador) {
-                              <option [value]="p.id_publicador">{{ p.nombre_completo }}</option>
+                              <option [value]="p.id_publicador + ''">{{ p.nombre_completo }}</option>
                             }
                           </select>
                         </div>
@@ -423,17 +424,50 @@ type SubTab = 'entrantes' | 'salientes';
               <label class="text-xs font-bold text-slate-500">Fecha</label>
               <app-date-picker
                 [(ngModel)]="nuevoSaliente.fecha"
+                [minDate]="mesMinDate()"
+                [maxDate]="mesMaxDate()"
                 placeholder="Seleccionar fecha">
               </app-date-picker>
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-xs font-bold text-slate-500">Publicador</label>
-              <select [(ngModel)]="nuevoSaliente.id_publicador" class="h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500">
-                <option [value]="null">— Sin asignar —</option>
-                @for (p of publicadores(); track p.id_publicador) {
-                  <option [value]="p.id_publicador">{{ p.nombre_completo }}</option>
+              <div class="relative">
+                <input
+                  type="text"
+                  [value]="busquedaPublicador()"
+                  (input)="onBusquedaPublicadorInput($any($event.target).value)"
+                  (focus)="mostrarDropdownBusqueda.set(true); resultadosBusqueda.set(publicadores())"
+                  (blur)="$any($event.relatedTarget)?.closest('.pub-dropdown') ? null : mostrarDropdownBusqueda.set(false)"
+                  placeholder="Buscar conferenciante…"
+                  class="h-9 px-3 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500">
+                @if (nuevoSaliente.id_publicador) {
+                  <button type="button"
+                    (click)="nuevoSaliente.id_publicador = null; busquedaPublicador.set('')"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
                 }
-              </select>
+                @if (mostrarDropdownBusqueda()) {
+                  <div class="pub-dropdown absolute z-10 mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg max-h-48 overflow-y-auto">
+                    @if (buscandoPublicador()) {
+                      <div class="px-3 py-2 text-xs text-slate-400">Buscando…</div>
+                    } @else if (resultadosBusqueda().length === 0) {
+                      <div class="px-3 py-2 text-xs text-slate-400">Sin resultados</div>
+                    } @else {
+                      @for (p of resultadosBusqueda(); track p.id_publicador) {
+                        <button type="button"
+                          (mousedown)="seleccionarPublicadorBusqueda(p)"
+                          class="w-full text-left px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
+                          {{ p.nombre_completo }}
+                        </button>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+              @if (nuevoSaliente.id_publicador) {
+                <p class="text-[10px] text-violet-600 dark:text-violet-400 font-medium mt-0.5">✓ {{ publicadorSeleccionadoNombre() }}</p>
+              }
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-xs font-bold text-slate-500">Congregación Destino</label>
@@ -478,6 +512,12 @@ export class ReunionesDiscursosComponent implements OnInit {
   modalGenerarVisible = signal(false);
   modalSalienteVisible = signal(false);
 
+  busquedaPublicador = signal('');
+  resultadosBusqueda = signal<PublicadorSimple[]>([]);
+  buscandoPublicador = signal(false);
+  mostrarDropdownBusqueda = signal(false);
+  private busqueda$ = new Subject<string>();
+
   editandoEntrantes = signal<Set<number>>(new Set());
   editandoSalientes = signal<Set<number>>(new Set());
 
@@ -512,10 +552,34 @@ export class ReunionesDiscursosComponent implements OnInit {
     return this.congCtx.effectiveCongregacionId();
   }
 
+  constructor() {
+    effect(() => {
+      const id = this.idCong;
+      if (id) {
+        this.cargarMeses();
+        this.cargarGrupos();
+        this.cargarPublicadores();
+      }
+    });
+  }
+
   ngOnInit(): void {
-    this.cargarMeses();
-    this.cargarGrupos();
-    this.cargarPublicadores();
+    this.busqueda$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap((q) => {
+        if (!q.trim()) {
+          this.resultadosBusqueda.set(this.publicadores());
+          this.buscandoPublicador.set(false);
+          return EMPTY;
+        }
+        this.buscandoPublicador.set(true);
+        return this.svc.buscarPublicadores(this.idCong, q.trim());
+      }),
+    ).subscribe({
+      next: (r) => { this.resultadosBusqueda.set(r); this.buscandoPublicador.set(false); },
+      error: () => this.buscandoPublicador.set(false),
+    });
   }
 
   hasEditPermission(): boolean {
@@ -552,6 +616,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   private cargarMeses(): void {
+    if (!this.idCong) return;
     this.svc.getMeses(this.idCong).subscribe({
       next: (m) => this.mesesDisponibles.set(m),
       error: () => {},
@@ -559,6 +624,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   private cargarGrupos(): void {
+    if (!this.idCong) return;
     this.svc.getGrupos(this.idCong).subscribe({
       next: (g) => this.grupos.set(g),
       error: () => {},
@@ -566,6 +632,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   private cargarPublicadores(): void {
+    if (!this.idCong) return;
     this.svc.getPublicadores(this.idCong).subscribe({
       next: (p) => this.publicadores.set(p),
       error: () => {},
@@ -740,7 +807,28 @@ export class ReunionesDiscursosComponent implements OnInit {
 
   abrirModalSaliente(): void {
     this.nuevoSaliente = { fecha: '', id_publicador: null, congregacion_destino: '', tema_discurso: '' };
+    this.busquedaPublicador.set('');
+    this.resultadosBusqueda.set(this.publicadores());
+    this.mostrarDropdownBusqueda.set(false);
     this.modalSalienteVisible.set(true);
+  }
+
+  onBusquedaPublicadorInput(valor: string): void {
+    this.busquedaPublicador.set(valor);
+    this.mostrarDropdownBusqueda.set(true);
+    this.busqueda$.next(valor);
+  }
+
+  seleccionarPublicadorBusqueda(p: PublicadorSimple): void {
+    this.nuevoSaliente.id_publicador = p.id_publicador;
+    this.busquedaPublicador.set(p.nombre_completo);
+    this.mostrarDropdownBusqueda.set(false);
+  }
+
+  publicadorSeleccionadoNombre(): string {
+    if (!this.nuevoSaliente.id_publicador) return '';
+    const p = [...this.publicadores(), ...this.resultadosBusqueda()].find(x => x.id_publicador === this.nuevoSaliente.id_publicador);
+    return p?.nombre_completo ?? '';
   }
 
   cerrarModalSaliente(): void {

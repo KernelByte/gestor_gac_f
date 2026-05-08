@@ -19,8 +19,7 @@ type ViewMode = 'calendar' | 'months' | 'years';
     <div class="relative">
       <!-- Backdrop -->
       <div *ngIf="isOpen()" (click)="close()" class="fixed inset-0 z-40"></div>
-      
-      <!-- Trigger Button -->
+
       <!-- Trigger Button -->
       <button
         type="button"
@@ -45,29 +44,41 @@ type ViewMode = 'calendar' | 'months' | 'years';
 
       <!-- Calendar Dropdown -->
       <div *ngIf="isOpen()" class="absolute top-full left-0 mt-1.5 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 z-50 overflow-hidden w-[280px]" style="animation: fadeIn 0.15s ease-out;">
-        
+
         <!-- Header -->
         <div class="px-3 py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-          <button type="button" (click)="prev()" class="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors">
+          <button type="button" (click)="prev()" [disabled]="isPrevDisabled()"
+            class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+            [ngClass]="isPrevDisabled()
+              ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+              : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400'">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
             </svg>
           </button>
-          
-          <button 
-            type="button" 
+
+          <button
+            type="button"
             (click)="toggleViewMode()"
-            class="px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-1"
+            [disabled]="isRangeLockedToSingleMonth()"
+            class="px-2 py-1 rounded-lg transition-colors flex items-center gap-1"
+            [ngClass]="isRangeLockedToSingleMonth()
+              ? 'cursor-default'
+              : 'hover:bg-slate-100 dark:hover:bg-slate-700'"
           >
             <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {{ viewMode() === 'years' ? 'Seleccionar año' : viewMode() === 'months' ? currentYear() : monthNames[currentMonth()] + ' ' + currentYear() }}
             </span>
-            <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg *ngIf="!isRangeLockedToSingleMonth()" class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
             </svg>
           </button>
-          
-          <button type="button" (click)="next()" class="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors">
+
+          <button type="button" (click)="next()" [disabled]="isNextDisabled()"
+            class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+            [ngClass]="isNextDisabled()
+              ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+              : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400'">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
@@ -125,12 +136,13 @@ type ViewMode = 'calendar' | 'months' | 'years';
               <button
                 *ngIf="day !== null"
                 type="button"
-                (click)="selectDay(day)"
+                (click)="!isDayDisabled(day) && selectDay(day)"
                 class="w-8 h-8 mx-auto rounded-lg text-xs font-medium transition-all"
                 [ngClass]="{
-                  'bg-brand-orange text-white': isSelected(day),
-                  'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200': !isSelected(day) && !isToday(day),
-                  'text-brand-orange font-bold hover:bg-slate-50 dark:hover:bg-slate-800': isToday(day) && !isSelected(day)
+                  'bg-brand-orange text-white shadow-sm': isSelected(day),
+                  'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200': !isSelected(day) && !isToday(day) && !isDayDisabled(day),
+                  'text-brand-orange font-bold hover:bg-slate-50 dark:hover:bg-slate-800': isToday(day) && !isSelected(day) && !isDayDisabled(day),
+                  'text-slate-300 dark:text-slate-600 cursor-not-allowed': isDayDisabled(day)
                 }"
               >
                 {{ day }}
@@ -145,7 +157,9 @@ type ViewMode = 'calendar' | 'months' | 'years';
           <button type="button" (click)="clear()" class="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors">
             Borrar
           </button>
-          <button type="button" (click)="selectToday()" class="text-xs font-semibold text-brand-orange hover:text-orange-600 transition-colors">
+          <button type="button" (click)="selectToday()" [disabled]="isTodayDisabled()"
+            class="text-xs font-semibold transition-colors"
+            [ngClass]="isTodayDisabled() ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed' : 'text-brand-orange hover:text-orange-600'">
             Hoy
           </button>
         </div>
@@ -163,6 +177,8 @@ type ViewMode = 'calendar' | 'months' | 'years';
 export class DatePickerComponent implements ControlValueAccessor {
    @Input() placeholder = 'dd/mm/aaaa';
    @Input() disabled = false;
+   @Input() minDate: string | null = null;
+   @Input() maxDate: string | null = null;
 
    isOpen = signal(false);
    selectedDate = signal<Date | null>(null);
@@ -177,6 +193,64 @@ export class DatePickerComponent implements ControlValueAccessor {
 
    private onChange: (value: string | null) => void = () => { };
    private onTouched: () => void = () => { };
+
+   private parseDate(value: string | null): Date | null {
+      if (!value) return null;
+      const parts = value.split('-');
+      if (parts.length !== 3) return null;
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+   }
+
+   private get parsedMin(): Date | null { return this.parseDate(this.minDate); }
+   private get parsedMax(): Date | null { return this.parseDate(this.maxDate); }
+
+   isDayDisabled(day: number): boolean {
+      const min = this.parsedMin;
+      const max = this.parsedMax;
+      if (!min && !max) return false;
+      const d = new Date(this.currentYear(), this.currentMonth(), day);
+      if (min && d < min) return true;
+      if (max && d > max) return true;
+      return false;
+   }
+
+   isPrevDisabled(): boolean {
+      const min = this.parsedMin;
+      if (!min) return false;
+      if (this.viewMode() === 'calendar') {
+         return this.currentYear() < min.getFullYear() ||
+            (this.currentYear() === min.getFullYear() && this.currentMonth() <= min.getMonth());
+      }
+      if (this.viewMode() === 'months') return this.currentYear() <= min.getFullYear();
+      return false;
+   }
+
+   isNextDisabled(): boolean {
+      const max = this.parsedMax;
+      if (!max) return false;
+      if (this.viewMode() === 'calendar') {
+         return this.currentYear() > max.getFullYear() ||
+            (this.currentYear() === max.getFullYear() && this.currentMonth() >= max.getMonth());
+      }
+      if (this.viewMode() === 'months') return this.currentYear() >= max.getFullYear();
+      return false;
+   }
+
+   isRangeLockedToSingleMonth(): boolean {
+      const min = this.parsedMin;
+      const max = this.parsedMax;
+      if (!min || !max) return false;
+      return min.getFullYear() === max.getFullYear() && min.getMonth() === max.getMonth();
+   }
+
+   isTodayDisabled(): boolean {
+      const today = new Date();
+      const min = this.parsedMin;
+      const max = this.parsedMax;
+      if (min && today < min) return true;
+      if (max && today > max) return true;
+      return false;
+   }
 
    displayValue = computed(() => {
       const date = this.selectedDate();
@@ -213,7 +287,7 @@ export class DatePickerComponent implements ControlValueAccessor {
       if (!this.disabled) {
          this.isOpen.update(v => !v);
          if (this.isOpen()) {
-            const date = this.selectedDate() || new Date();
+            const date = this.selectedDate() || this.parsedMin || new Date();
             this.currentMonth.set(date.getMonth());
             this.currentYear.set(date.getFullYear());
             this.yearRangeStart.set(date.getFullYear() - 11);
@@ -229,6 +303,7 @@ export class DatePickerComponent implements ControlValueAccessor {
    }
 
    toggleViewMode() {
+      if (this.isRangeLockedToSingleMonth()) return;
       const current = this.viewMode();
       if (current === 'calendar') {
          this.viewMode.set('years');
@@ -240,6 +315,7 @@ export class DatePickerComponent implements ControlValueAccessor {
    }
 
    prev() {
+      if (this.isPrevDisabled()) return;
       if (this.viewMode() === 'years') {
          this.yearRangeStart.update(y => y - 12);
       } else if (this.viewMode() === 'months') {
@@ -255,6 +331,7 @@ export class DatePickerComponent implements ControlValueAccessor {
    }
 
    next() {
+      if (this.isNextDisabled()) return;
       if (this.viewMode() === 'years') {
          this.yearRangeStart.update(y => y + 12);
       } else if (this.viewMode() === 'months') {
@@ -280,6 +357,7 @@ export class DatePickerComponent implements ControlValueAccessor {
    }
 
    selectDay(day: number) {
+      if (this.isDayDisabled(day)) return;
       const date = new Date(this.currentYear(), this.currentMonth(), day);
       this.selectedDate.set(date);
       this.emitValue(date);
@@ -287,6 +365,7 @@ export class DatePickerComponent implements ControlValueAccessor {
    }
 
    selectToday() {
+      if (this.isTodayDisabled()) return;
       const today = new Date();
       this.selectedDate.set(today);
       this.currentMonth.set(today.getMonth());
@@ -326,7 +405,6 @@ export class DatePickerComponent implements ControlValueAccessor {
 
    writeValue(value: string | null): void {
       if (value) {
-         // Parse "YYYY-MM-DD" as local date to avoid timezone shifts
          const parts = value.split('-');
          if (parts.length === 3) {
             const year = parseInt(parts[0], 10);
@@ -334,7 +412,6 @@ export class DatePickerComponent implements ControlValueAccessor {
             const day = parseInt(parts[2], 10);
             this.selectedDate.set(new Date(year, month, day));
          } else {
-            // Fallback for full ISO strings or other formats
             this.selectedDate.set(new Date(value));
          }
       } else {

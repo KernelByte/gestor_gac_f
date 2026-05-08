@@ -69,8 +69,14 @@ export class DiscursosService {
     return this.http.get<GrupoSimple[]>(`${this.base}/grupos`, { params: this.congParams(idCong) });
   }
 
-  getPublicadores(idCong: number | null): Observable<PublicadorSimple[]> {
-    return this.http.get<PublicadorSimple[]>(`${this.base}/publicadores`, { params: this.congParams(idCong) });
+  getPublicadores(idCong: number | null, soloConferenciantes = true): Observable<PublicadorSimple[]> {
+    const params = this.congParams(idCong).set('solo_conferenciantes', soloConferenciantes);
+    return this.http.get<PublicadorSimple[]>(`${this.base}/publicadores`, { params });
+  }
+
+  buscarPublicadores(idCong: number | null, q: string): Observable<PublicadorSimple[]> {
+    const params = this.congParams(idCong).set('q', q);
+    return this.http.get<PublicadorSimple[]>(`${this.base}/publicadores/buscar`, { params });
   }
 
   descargarPdfEntrantes(ano: number, mes: number, idCong: number | null): Observable<Blob> {

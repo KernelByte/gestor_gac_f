@@ -2364,12 +2364,8 @@ export class ReunionesProgramacionComponent implements OnInit {
     // límite: primer día del mes siguiente al mes de fin
     const limite = new Date(anoFin, mesFin, 1);
     while (true) {
-      // Comparar el LUNES ISO de la semana, no la fecha de reunión.
-      // Una semana pertenece al rango si su lunes cae dentro del rango,
-      // aunque el día de reunión caiga en el mes siguiente (ej: semana 27abr–3may).
-      const dow = current.getDay() === 0 ? 7 : current.getDay();
-      const lunes = new Date(current.getFullYear(), current.getMonth(), current.getDate() - (dow - 1));
-      if (lunes >= limite) break;
+      // Límite estricto por mes calendario de la fecha de reunión.
+      if (current >= limite) break;
       const y = current.getFullYear();
       const m = String(current.getMonth() + 1).padStart(2, '0');
       const d = String(current.getDate()).padStart(2, '0');
