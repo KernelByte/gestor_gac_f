@@ -739,25 +739,25 @@ import {
                      <table class="w-full min-w-max text-left border-collapse">
                           <thead class="priv-thead sticky top-0 z-30">
                            <tr>
-                             <th class="priv-th-publisher is-sticky px-3 py-2 sticky left-0 z-40 min-w-[160px] text-left">
-                               <span class="text-[9px] font-black text-white uppercase tracking-[0.14em]">Publicador</span>
-                             </th>
-                             @for (col of regularColumnas(); track col.key) {
-                               <th class="priv-th px-1 py-1.5 text-center min-w-[48px] border-l border-white/[0.07]" [title]="permisoTooltip(col.key)">
-                                 <span class="text-[8px] font-black text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">{{ col.label }}</span>
-                               </th>
-                             }
-                             @for (col of restriccionColumnas(); track col.key) {
-                               <th class="priv-th priv-restrict-header px-1 py-1.5 text-center min-w-[56px] border-l border-amber-400/[0.18]" [title]="permisoTooltip(col.key)">
-                                 <div class="inline-flex items-center gap-0.5 justify-center">
-                                   <svg class="w-2 h-2 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                                   <span class="text-[8px] font-black text-amber-200 uppercase tracking-[0.02em] leading-tight whitespace-normal">{{ col.label }}</span>
-                                 </div>
-                               </th>
-                             }
-                             <th class="priv-th px-1 py-1.5 text-center min-w-[80px] border-l border-white/[0.07]">
-                               <span class="text-[8px] font-black text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">Oratoria</span>
-                             </th>
+                              <th class="priv-th-publisher is-sticky px-2 py-1.5 sticky left-0 z-40 min-w-[130px] text-left">
+                                <span class="text-[9px] font-black text-white uppercase tracking-[0.14em]">Publicador</span>
+                              </th>
+                              @for (col of regularColumnas(); track col.key) {
+                                <th class="priv-th px-0.5 py-1 text-center min-w-[36px] border-l border-white/[0.07]" [title]="permisoTooltip(col.key)">
+                                  <span class="text-[8px] font-black text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">{{ col.label }}</span>
+                                </th>
+                              }
+                              @for (col of restriccionColumnas(); track col.key) {
+                                <th class="priv-th priv-restrict-header px-0.5 py-1 text-center min-w-[42px] border-l border-amber-400/[0.18]" [title]="permisoTooltip(col.key)">
+                                  <div class="inline-flex items-center gap-0.5 justify-center">
+                                    <svg class="w-2 h-2 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                    <span class="text-[8px] font-black text-amber-200 uppercase tracking-[0.02em] leading-tight whitespace-normal">{{ col.label }}</span>
+                                  </div>
+                                </th>
+                              }
+                              <th class="priv-th px-0.5 py-1 text-center min-w-[64px] border-l border-white/[0.07]">
+                                <span class="text-[8px] font-black text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">Oratoria</span>
+                              </th>
                            </tr>
                          </thead>
                          <tbody>
@@ -767,61 +767,61 @@ import {
                                     [ngClass]="isDirty(pub.id_publicador)
                                       ? 'bg-amber-50/40 dark:bg-amber-900/10'
                                       : (idx % 2 === 1 ? 'bg-slate-50/40 dark:bg-slate-800/20' : '')">
-                                    <td class="px-4 py-2.5 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-purple-50/40 dark:group-hover:bg-purple-900/10 transition-colors border-r border-slate-100 dark:border-slate-800/60">
-                                       <div class="flex items-center gap-2.5">
-                                            <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
-                                                 [ngClass]="getAvatarClass(pub)">
-                                              {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
-                                            </div>
-                                           <div class="min-w-0">
-                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[130px] leading-tight tracking-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
-                                         {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
-                                     </div>
-                                     <div class="flex flex-wrap gap-1 mt-1">
-                                         @if (pub.privilegios.length > 0) {
-                                           @for (priv of pub.privilegios; track priv) {
-                                             <div class="text-[9px] font-bold px-1.5 py-0.5 inline-block rounded-md leading-none"
-                                                  [title]="priv"
-                                                  [class]="privilegioBadgeClass(priv)">
-                                               {{ privilegioLabel(priv) }}
+                                     <td class="px-2.5 py-1.5 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-purple-50/40 dark:group-hover:bg-purple-900/10 transition-colors border-r border-slate-100 dark:border-slate-800/60">
+                                        <div class="flex items-center gap-1.5">
+                                             <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-semibold text-[0.625rem] shadow-sm ring-1 ring-white border border-white/50"
+                                                  [ngClass]="getAvatarClass(pub)">
+                                               {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
                                              </div>
-                                           }
-                                         } @else {
-                                           <span class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-semibold tracking-wide">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
-                                         }
-                                     </div>
-                                           </div>
-                                       </div>
-                                   </td>
-                                    <td *ngFor="let col of columnas()"
-                                        class="priv-cell px-1 py-2.5 text-center border-l"
-                                        [class]="col.key.startsWith('no_')
-                                         ? 'border-amber-200/40 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-900/10'
-                                         : 'border-slate-100/70 dark:border-slate-800/40'">
-                                         <label class="inline-flex items-center justify-center cursor-pointer p-1" [title]="permisoTooltip(col.key)">
-                                           <input type="checkbox"
-                                             [checked]="getPermiso(pub, col.key)"
-                                             (change)="togglePermiso(pub, col.key)"
-                                             [disabled]="!hasEditPermission()"
-                                             class="priv-check">
-                                         </label>
-                                   </td>
-                                    <td class="px-2 py-2.5 text-center border-l border-slate-100/70 dark:border-slate-800/40">
-                                     <select
-                                       [ngModel]="getOratoria(pub)"
-                                       (ngModelChange)="setOratoria(pub, $event)"
-                                       [attr.data-level]="getOratoria(pub)"
-                                       [disabled]="!hasEditPermission()"
-                                       class="priv-select w-[92px]"
-                                       [class.ring-2]="isOratoriaDirty(pub.id_publicador)"
-                                       [class.ring-amber-300]="isOratoriaDirty(pub.id_publicador)">
-                                       <option [value]="1">Principiante</option>
-                                       <option [value]="2">Básico</option>
-                                       <option [value]="3">Intermedio</option>
-                                       <option [value]="4">Avanzado</option>
-                                       <option [value]="5">Experto</option>
-                                     </select>
-                                   </td>
+                                            <div class="min-w-0">
+                                                <div class="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[100px] leading-tight tracking-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
+                                          {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
+                                      </div>
+                                      <div class="flex flex-wrap gap-0.5 mt-0.5">
+                                          @if (pub.privilegios.length > 0) {
+                                            @for (priv of pub.privilegios; track priv) {
+                                              <div class="text-[8px] font-bold px-1 py-0.5 inline-block rounded-md leading-none"
+                                                   [title]="priv"
+                                                   [class]="privilegioBadgeClass(priv)">
+                                                {{ privilegioLabel(priv) }}
+                                              </div>
+                                            }
+                                          } @else {
+                                            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold tracking-wide">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
+                                          }
+                                      </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                     <td *ngFor="let col of columnas()"
+                                         class="priv-cell px-0.5 py-1.5 text-center border-l"
+                                         [class]="col.key.startsWith('no_')
+                                          ? 'border-amber-200/40 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-900/10'
+                                          : 'border-slate-100/70 dark:border-slate-800/40'">
+                                          <label class="inline-flex items-center justify-center cursor-pointer p-0.5" [title]="permisoTooltip(col.key)">
+                                            <input type="checkbox"
+                                              [checked]="getPermiso(pub, col.key)"
+                                              (change)="togglePermiso(pub, col.key)"
+                                              [disabled]="!hasEditPermission()"
+                                              class="priv-check">
+                                          </label>
+                                    </td>
+                                     <td class="px-1 py-1.5 text-center border-l border-slate-100/70 dark:border-slate-800/40">
+                                      <select
+                                        [ngModel]="getOratoria(pub)"
+                                        (ngModelChange)="setOratoria(pub, $event)"
+                                        [attr.data-level]="getOratoria(pub)"
+                                        [disabled]="!hasEditPermission()"
+                                        class="priv-select w-[72px]"
+                                        [class.ring-2]="isOratoriaDirty(pub.id_publicador)"
+                                        [class.ring-amber-300]="isOratoriaDirty(pub.id_publicador)">
+                                        <option [value]="1">Principiante</option>
+                                        <option [value]="2">Básico</option>
+                                        <option [value]="3">Intermedio</option>
+                                        <option [value]="4">Avanzado</option>
+                                        <option [value]="5">Experto</option>
+                                      </select>
+                                    </td>
                                </tr>
                              }
                          </tbody>
@@ -1040,17 +1040,17 @@ import {
 
      /* Row with hover accent bar */
      .priv-row { position: relative; transition: background-color 160ms var(--ease-out-strong); }
-     .priv-row > td:first-child::before {
-       content: '';
-       position: absolute;
-       left: 0; top: 4px; bottom: 4px;
-       width: 3px;
-       border-radius: 0 3px 3px 0;
-       background: #6D28D9;
-       transform: scaleY(0);
-       transform-origin: center;
-       transition: transform 220ms var(--ease-out-strong);
-     }
+      .priv-row > td:first-child::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 3px; bottom: 3px;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: #6D28D9;
+        transform: scaleY(0);
+        transform-origin: center;
+        transition: transform 220ms var(--ease-out-strong);
+      }
      .priv-row:hover > td:first-child::before { transform: scaleY(1); }
      .priv-row.is-dirty > td:first-child::before { background: #f59e0b; transform: scaleY(1); }
 
@@ -1067,41 +1067,41 @@ import {
      .priv-check {
        appearance: none;
        -webkit-appearance: none;
-       width: 18px; height: 18px;
-       border-radius: 6px;
-       border: 1.5px solid #cbd5e1;
-       background: #fff;
-       cursor: pointer;
-       position: relative;
-       display: inline-block;
-       transition: transform 140ms var(--ease-out-strong),
-                   background-color 180ms var(--ease-out-strong),
-                   border-color 180ms var(--ease-out-strong),
-                   box-shadow 180ms var(--ease-out-strong);
-     }
-     :host-context(.dark) .priv-check { background: #0f172a; border-color: #475569; }
-     @media (hover: hover) and (pointer: fine) {
-       .priv-check:hover:not(:disabled) {
-         border-color: #6D28D9;
-         box-shadow: 0 0 0 4px rgba(109,40,217,0.10);
-       }
-     }
-     .priv-check:active:not(:disabled) { transform: scale(0.9); }
-     .priv-check:checked {
-       background: linear-gradient(180deg, #7c3aed, #6D28D9);
-       border-color: #6D28D9;
-       box-shadow: 0 3px 8px -2px rgba(109,40,217,0.45);
-     }
-     .priv-check:checked::after {
-       content: '';
-       position: absolute;
-       left: 5px; top: 1.5px;
-       width: 5px; height: 10px;
-       border-right: 2px solid #fff;
-       border-bottom: 2px solid #fff;
-       transform: rotate(45deg);
-       animation: checkPop 200ms var(--ease-out-strong);
-     }
+        width: 16px; height: 16px;
+        border-radius: 5px;
+        border: 1.5px solid #cbd5e1;
+        background: #fff;
+        cursor: pointer;
+        position: relative;
+        display: inline-block;
+        transition: transform 140ms var(--ease-out-strong),
+                    background-color 180ms var(--ease-out-strong),
+                    border-color 180ms var(--ease-out-strong),
+                    box-shadow 180ms var(--ease-out-strong);
+      }
+      :host-context(.dark) .priv-check { background: #0f172a; border-color: #475569; }
+      @media (hover: hover) and (pointer: fine) {
+        .priv-check:hover:not(:disabled) {
+          border-color: #6D28D9;
+          box-shadow: 0 0 0 3px rgba(109,40,217,0.10);
+        }
+      }
+      .priv-check:active:not(:disabled) { transform: scale(0.9); }
+      .priv-check:checked {
+        background: linear-gradient(180deg, #7c3aed, #6D28D9);
+        border-color: #6D28D9;
+        box-shadow: 0 2px 6px -2px rgba(109,40,217,0.45);
+      }
+      .priv-check:checked::after {
+        content: '';
+        position: absolute;
+        left: 4px; top: 1px;
+        width: 4px; height: 9px;
+        border-right: 2px solid #fff;
+        border-bottom: 2px solid #fff;
+        transform: rotate(45deg);
+        animation: checkPop 200ms var(--ease-out-strong);
+      }
      @keyframes checkPop {
        0% { opacity: 0; transform: rotate(45deg) scale(0.4); }
        60% { opacity: 1; transform: rotate(45deg) scale(1.1); }
@@ -1113,10 +1113,10 @@ import {
      .priv-select {
        appearance: none;
        -webkit-appearance: none;
-       background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-       background-repeat: no-repeat;
-       background-position: right 7px center;
-       padding-right: 22px !important;
+        background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 5px center;
+        padding-right: 18px !important;
        font-weight: 700;
        transition: border-color 160ms var(--ease-out-strong),
                    box-shadow 160ms var(--ease-out-strong),
