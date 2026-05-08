@@ -28,6 +28,10 @@ export class AsistenciaService {
     return this.http.get<CongregacionConfig>(`${environment.apiUrl}/configuracion/`);
   }
 
+  getCongregacionConfigById(idCong: number): Observable<CongregacionConfig> {
+    return this.http.get<CongregacionConfig>(`${environment.apiUrl}/congregaciones/${idCong}`);
+  }
+
   getPeriodos(ano?: number): Observable<Periodo[]> {
     let params = new HttpParams().set('limit', 500);
     if (ano) params = params.set('ano', ano);

@@ -6,6 +6,7 @@ import {
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { forkJoin, of } from 'rxjs'; // 'of' used in tryLoadDrafts catchError
 import { ReunionesLogisticaComponent } from './reuniones-logistica.component';
 import { ReunionesDiscursosComponent } from './reuniones-discursos.component';
@@ -33,7 +34,7 @@ import {
 @Component({
   selector: 'app-reuniones-programacion',
   standalone: true,
-  imports: [CommonModule, ReunionesLogisticaComponent, ReunionesDiscursosComponent],
+  imports: [CommonModule, FormsModule, ReunionesLogisticaComponent, ReunionesDiscursosComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -410,7 +411,7 @@ import {
                                   <span class="opacity-30 text-[0.6rem] leading-none shrink-0">·</span>
                                 }
                                 <span>{{ asig.nombre_completo }}</span>
-                                @if (estado() === 'draft' && asig.alternativos.length > 0) {
+                                @if (estado() === 'draft') {
                                   <svg class="chevron w-3 h-3 shrink-0"
                                     [class.open]="openDropdownId() === pillKey(asig)"
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -430,8 +431,8 @@ import {
                                 }
                               </button>
                               <!-- Dropdown draft -->
-                              @if (estado() === 'draft' && openDropdownId() === pillKey(asig) && asig.alternativos.length > 0) {
-                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-60 overflow-hidden" style="border-radius:14px">
+                              @if (estado() === 'draft' && openDropdownId() === pillKey(asig)) {
+                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-64 overflow-hidden" style="border-radius:14px">
                                   <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
                                     <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
                                     <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Candidatos</span>
@@ -450,17 +451,51 @@ import {
                                       </div>
                                     }
                                   </div>
-                                  <div class="p-1.5 flex flex-col gap-0.5">
-                                    @for (alt of filteredAlternativos(asig); track alt.id_publicador) {
-                                      <button
-                                        (click)="swapAsignacion(selectedWeekIdx(), asig, alt)"
-                                        class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-[8px]">
-                                        <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
-                                        <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
-                                          [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
-                                          {{ alt.score | number:'1.2-2' }}
-                                        </span>
-                                      </button>
+                                  <!-- Buscador draft -->
+                                  <div class="px-2 pb-1.5">
+                                    <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                      <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                      <input
+                                        type="text"
+                                        placeholder="Buscar persona..."
+                                        [value]="busquedaCandidato()"
+                                        (input)="onBusquedaCandidatoChange($any($event.target).value)"
+                                        class="flex-1 bg-transparent text-[0.72rem] text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none min-w-0"
+                                      />
+                                      @if (loadingBusqueda()) {
+                                        <div class="w-3 h-3 rounded-full border-2 border-slate-300 border-t-[#6D28D9] animate-spin shrink-0"></div>
+                                      }
+                                    </div>
+                                  </div>
+                                  <div class="px-1.5 pb-1.5 flex flex-col gap-0.5 max-h-56 overflow-y-auto">
+                                    @if (busquedaCandidato().trim()) {
+                                      <!-- Resultados de búsqueda libre -->
+                                      @if (busquedaResultados().length === 0 && !loadingBusqueda()) {
+                                        <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin resultados</p>
+                                      }
+                                      @for (pub of busquedaResultados(); track pub.id_publicador) {
+                                        <button
+                                          (click)="swapAsignacion(selectedWeekIdx(), asig, { id_publicador: pub.id_publicador, nombre_completo: pub.nombre_completo, score: 0, notas_score: [], sexo: pub.sexo })"
+                                          class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-[8px]">
+                                          <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
+                                        </button>
+                                      }
+                                    } @else {
+                                      <!-- Sugeridos por algoritmo -->
+                                      @for (alt of filteredAlternativos(asig); track alt.id_publicador) {
+                                        <button
+                                          (click)="swapAsignacion(selectedWeekIdx(), asig, alt)"
+                                          class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-[8px]">
+                                          <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
+                                          <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
+                                            [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
+                                            {{ alt.score | number:'1.2-2' }}
+                                          </span>
+                                        </button>
+                                      }
+                                      @if (filteredAlternativos(asig).length === 0) {
+                                        <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin sugerencias</p>
+                                      }
                                     }
                                   </div>
                                 </div>
@@ -723,6 +758,53 @@ import {
               </div>
             }
           </div>
+
+          @if (plantillaSeleccionada && plantillaSeleccionada.mes_inicio == null) {
+            <div class="mb-4 grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Desde</label>
+                <div class="flex gap-2">
+                  <select
+                    [ngModel]="modalForm().mes"
+                    (ngModelChange)="updateModal('mes', $event)"
+                    class="flex-1 h-9 px-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 transition-all">
+                    @for (m of mesesList; track m.value) {
+                      <option [value]="m.value">{{ m.label }}</option>
+                    }
+                  </select>
+                  <select
+                    [ngModel]="modalForm().ano"
+                    (ngModelChange)="updateModal('ano', $event)"
+                    class="w-20 h-9 px-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 transition-all">
+                    @for (a of anosList; track a) {
+                      <option [value]="a">{{ a }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Hasta</label>
+                <div class="flex gap-2">
+                  <select
+                    [ngModel]="modalForm().mes_fin"
+                    (ngModelChange)="updateModal('mes_fin', $event)"
+                    class="flex-1 h-9 px-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 transition-all">
+                    @for (m of mesesList; track m.value) {
+                      <option [value]="m.value">{{ m.label }}</option>
+                    }
+                  </select>
+                  <select
+                    [ngModel]="modalForm().ano_fin"
+                    (ngModelChange)="updateModal('ano_fin', $event)"
+                    class="w-20 h-9 px-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/20 transition-all">
+                    @for (a of anosList; track a) {
+                      <option [value]="a">{{ a }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
+          }
 
           <div class="mb-5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
             <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">{{ fechasPreview().length }} semanas a crear</p>
@@ -1183,6 +1265,14 @@ export class ReunionesProgramacionComponent implements OnInit {
     return this.plantillas().find(p => p.id_plantilla === this.modalForm().id_plantilla);
   }
 
+  mesesList = [
+    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
+    { value: 4, label: 'Abril' }, { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
+    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
+    { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' }
+  ];
+  anosList = Array.from({length: 5}, (_, i) => new Date().getFullYear() - 1 + i);
+
   // ── Diálogo de confirmación personalizado ─────────────────────
   confirmDialog = signal<{ title: string; body: string; resolve: (v: boolean) => void } | null>(null);
 
@@ -1364,6 +1454,15 @@ export class ReunionesProgramacionComponent implements OnInit {
     const isDark = this.themeService.darkMode();
     const sala = this.selectedSala();
     const filtered = semana.partes.filter(p => {
+      // Filtrar partes de logística si estamos en una vista de programa regular
+      const isLogistica = (p.seccion || '').toLowerCase() === 'logistica' || 
+                          ['acomodador', 'vigilancia', 'micrófono', 'microfono', 'audio', 'video', 'plataforma']
+                            .some(key => (p.nombre_parte || '').toLowerCase().includes(key));
+      
+      if (this.tipoReunionActivo() !== 'logistica' && isLogistica) {
+        return false;
+      }
+
       if (p.sala === 'Auxiliar') return sala === 'Auxiliar';
       if (p.aplica_sala_b) return sala === 'Principal';
       return true;
@@ -1569,9 +1668,13 @@ export class ReunionesProgramacionComponent implements OnInit {
     if (!idCong) return;
     this.showModal.set(true);
     this.loadingPlantillas.set(true);
+    const configReq = this.congregacionCtx.isAdmin() 
+      ? this.asistenciaSvc.getCongregacionConfigById(idCong).pipe(catchError(() => of(null)))
+      : this.asistenciaSvc.getCongregacionConfig().pipe(catchError(() => of(null)));
+
     forkJoin({
       plantillas: this.reunionesSvc.getPlantillas(this.tipoReunionActivo(), idCong),
-      config: this.asistenciaSvc.getCongregacionConfig().pipe(catchError(() => of(null))),
+      config: configReq,
     }).subscribe({
       next: ({ plantillas, config }) => {
         const configKey = this.tipoReunionActivo() === 'entre_semana' ? 'dia_reunion_entre_semana' : 'dia_reunion_fin_semana';
@@ -1606,10 +1709,11 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   private applyPlantillaPeriodo(plantilla: PlantillaOption): void {
     const f = this.modalForm();
-    const mesIni = plantilla.mes_inicio ?? f.mes;
-    const anoIni = plantilla.ano_inicio ?? f.ano;
-    const mesFin = plantilla.mes_fin    ?? mesIni;
-    const anoFin = plantilla.ano_fin    ?? anoIni;
+    const isGeneric = plantilla.mes_inicio == null;
+    const mesIni = isGeneric ? f.mes : plantilla.mes_inicio!;
+    const anoIni = isGeneric ? f.ano : plantilla.ano_inicio!;
+    const mesFin = isGeneric ? f.mes_fin : plantilla.mes_fin!;
+    const anoFin = isGeneric ? f.ano_fin : plantilla.ano_fin!;
     this.modalForm.update((prev) => ({
       ...prev,
       id_plantilla: plantilla.id_plantilla,
@@ -1619,17 +1723,19 @@ export class ReunionesProgramacionComponent implements OnInit {
   }
 
   private diaReunionToNumber(dia: string | null): number {
+    if (!dia) return this.tipoReunionActivo() === 'entre_semana' ? 2 : 7;
+    const norm = dia.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const map: Record<string, number> = {
-      Lunes: 1,
-      Martes: 2,
-      Miercoles: 3,
-      Jueves: 4,
-      Viernes: 5,
-      Sabado: 6,
-      Domingo: 7,
+      lunes: 1,
+      martes: 2,
+      miercoles: 3,
+      jueves: 4,
+      viernes: 5,
+      sabado: 6,
+      domingo: 7,
     };
     const defaultDay = this.tipoReunionActivo() === 'entre_semana' ? 2 : 7;
-    return dia ? map[dia] ?? defaultDay : defaultDay;
+    return map[norm] ?? defaultDay;
   }
 
   onModalSubmit(): void {
