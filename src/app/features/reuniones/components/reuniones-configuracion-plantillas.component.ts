@@ -6,6 +6,7 @@ import { CongregacionContextService } from '../../../core/congregacion-context/c
 import { AuthStore } from '../../../core/auth/auth.store';
 import { TokenService } from '../../../core/auth/token.service';
 import { environment } from '../../../../environments/environment';
+import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import {
   MWBImportPreviewResponse,
   MWBImportConfirmRequest,
@@ -608,40 +609,42 @@ import {
            }
 
            @if (!matrizLoading() && !matrizErrorMsg()) {
-             <!-- Stats bar compact -->
-             <div class="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-200/60 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-slate-200/60 dark:border-slate-700/50">
-               <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900">
-                 <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ filteredPublicadores().length }}</span>
-                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">Publicadores</span>
-               </div>
-               <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900">
-                 <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ countPrivilegio('Anciano') }}</span>
-                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">Ancianos</span>
-               </div>
-               <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900">
-                 <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ countPrivilegio('Siervo Ministerial') }}</span>
-                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">S. Ministeriales</span>
-               </div>
-               <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900">
-                 <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ countPrecursores() }}</span>
-                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">Precursores</span>
-               </div>
-             </div>
+              <!-- Stats bar -->
+              <div class="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/50">
+                  <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ filteredPublicadores().length }}</span>
+                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">Publicadores</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/50">
+                  <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ countPrivilegio('Anciano') }}</span>
+                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">Ancianos</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/50">
+                  <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ countPrivilegio('Siervo Ministerial') }}</span>
+                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">S. Ministeriales</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/50">
+                  <span class="text-base font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ countPrecursores() }}</span>
+                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide leading-none">Precursores</span>
+                </div>
+              </div>
 
              <!-- Data Table / Cards -->
              <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
 
                  <!-- ── VISTA MÓVIL: acordeón (< md) ── -->
-                 <div class="flex md:hidden flex-col overflow-y-auto simple-scrollbar flex-1 min-h-0 divide-y divide-slate-100 dark:divide-slate-800/60">
-                   @for (pub of paginatedPublicadores(); track pub.id_publicador) {
-                     <div [class]="isDirty(pub.id_publicador) ? 'bg-amber-50/40 dark:bg-amber-900/10' : ''">
+                  <div class="flex md:hidden flex-col overflow-y-auto simple-scrollbar flex-1 min-h-0 gap-y-2 p-2">
+                    @for (pub of paginatedPublicadores(); track pub.id_publicador) {
+                      <div class="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-700"
+                           [class.bg-amber-50/40]="isDirty(pub.id_publicador)"
+                           [class.dark:bg-amber-900/10]="isDirty(pub.id_publicador)">
                        <!-- Fila colapsada — siempre visible, toque para expandir -->
                        <div class="px-3 py-3 flex items-center gap-3 cursor-pointer select-none active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors duration-100"
                             (click)="toggleCard(pub.id_publicador)">
-                         <div class="priv-avatar w-9 h-9 rounded-xl flex items-center justify-center font-black text-[0.6875rem] shrink-0"
-                              [class]="avatarClass(pub)">
-                           {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
-                         </div>
+                          <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
+                               [ngClass]="getAvatarClass(pub)">
+                            {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
+                          </div>
                          <div class="flex-1 min-w-0">
                            <p class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate leading-tight">
                              {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
@@ -759,17 +762,17 @@ import {
                          </thead>
                          <tbody>
                               @for (pub of paginatedPublicadores(); track pub.id_publicador; let idx = $index) {
-                                <tr class="priv-row group border-b border-slate-100 dark:border-slate-800/60 hover:bg-purple-50/40 dark:hover:bg-purple-900/10"
+                                 <tr class="priv-row group border-b border-slate-200 dark:border-slate-800/60 hover:bg-purple-50/40 dark:hover:bg-purple-900/10"
                                     [class.is-dirty]="isDirty(pub.id_publicador)"
                                     [ngClass]="isDirty(pub.id_publicador)
                                       ? 'bg-amber-50/40 dark:bg-amber-900/10'
                                       : (idx % 2 === 1 ? 'bg-slate-50/40 dark:bg-slate-800/20' : '')">
-                                   <td class="px-4 py-1.5 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-purple-50/40 dark:group-hover:bg-purple-900/10 transition-colors border-r border-slate-100 dark:border-slate-800/60">
+                                    <td class="px-4 py-2.5 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-purple-50/40 dark:group-hover:bg-purple-900/10 transition-colors border-r border-slate-100 dark:border-slate-800/60">
                                        <div class="flex items-center gap-2.5">
-                                           <div class="priv-avatar w-8 h-8 rounded-xl flex items-center justify-center font-black text-[0.6875rem] shrink-0"
-                                                [class]="avatarClass(pub)">
-                                             {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
-                                           </div>
+                                            <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
+                                                 [ngClass]="getAvatarClass(pub)">
+                                              {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
+                                            </div>
                                            <div class="min-w-0">
                                                <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[130px] leading-tight tracking-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
                                          {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
@@ -790,9 +793,9 @@ import {
                                            </div>
                                        </div>
                                    </td>
-                                   <td *ngFor="let col of columnas()"
-                                       class="priv-cell px-1 py-1.5 text-center border-l"
-                                       [class]="col.key.startsWith('no_')
+                                    <td *ngFor="let col of columnas()"
+                                        class="priv-cell px-1 py-2.5 text-center border-l"
+                                        [class]="col.key.startsWith('no_')
                                          ? 'border-amber-200/40 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-900/10'
                                          : 'border-slate-100/70 dark:border-slate-800/40'">
                                          <label class="inline-flex items-center justify-center cursor-pointer p-1" [title]="permisoTooltip(col.key)">
@@ -803,7 +806,7 @@ import {
                                              class="priv-check">
                                          </label>
                                    </td>
-                                   <td class="px-2 py-1.5 text-center border-l border-slate-100/70 dark:border-slate-800/40">
+                                    <td class="px-2 py-2.5 text-center border-l border-slate-100/70 dark:border-slate-800/40">
                                      <select
                                        [ngModel]="getOratoria(pub)"
                                        (ngModelChange)="setOratoria(pub, $event)"
@@ -1138,14 +1141,7 @@ import {
      .priv-search { transition: border-color 160ms var(--ease-out-strong), box-shadow 160ms var(--ease-out-strong); }
      .priv-search:focus { box-shadow: 0 0 0 4px rgba(109,40,217,0.15); border-color: #6D28D9; }
 
-     /* Avatar */
-     .priv-avatar {
-       box-shadow: 0 1px 3px rgba(15,23,42,0.10), inset 0 0 0 1.5px rgba(255,255,255,0.6);
-       transition: transform 220ms var(--ease-out-strong), box-shadow 200ms ease;
-     }
-     .priv-row:hover .priv-avatar { transform: scale(1.06); box-shadow: 0 3px 8px rgba(15,23,42,0.14), inset 0 0 0 1.5px rgba(255,255,255,0.7); }
-
-     /* Pagination button feedback */
+      /* Pagination button feedback */
      .priv-page-btn { transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out-strong); }
      .priv-page-btn:active:not(:disabled) { transform: scale(0.92); }
 
@@ -2065,18 +2061,9 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     ).length;
   }
 
-  avatarClass(pub: PublicadorMatrizItem): string {
-    const base = 'bg-gradient-to-br ';
-    if (pub.privilegios.includes('Anciano') || pub.privilegios.includes('Superintendente')) {
-      return base + 'from-amber-100 to-yellow-100 text-amber-700';
-    }
-    if (pub.privilegios.includes('Siervo Ministerial')) {
-      return base + 'from-blue-100 to-cyan-100 text-blue-700';
-    }
-    if (!this.isHermano(pub)) {
-      return base + 'from-pink-100 to-rose-100 text-pink-600';
-    }
-    return base + 'from-slate-100 to-slate-200 text-slate-600';
+  getAvatarClass(pub: PublicadorMatrizItem): string {
+    const name = (pub.primer_nombre || '') + ' ' + (pub.primer_apellido || '');
+    return getInitialAvatarStyle(name.trim() || '');
   }
 
   privilegioLabel(priv: string): string {
