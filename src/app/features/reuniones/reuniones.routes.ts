@@ -4,32 +4,40 @@ import { AuthStore } from '../../core/auth/auth.store';
 
 const generalReunionesGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.ver') || 
-      store.hasPermission('reuniones.entre_semana_ver') || 
-      store.hasPermission('reuniones.fin_semana_ver') || 
-      store.hasPermission('reuniones.asistencia_ver') || 
-      store.hasPermission('reuniones.configuracion_ver') || 
-      store.user()?.roles?.includes('Secretario')) return true;
+  if (
+    store.hasPermission('reuniones.ver') ||
+    store.hasPermission('reuniones.entre_semana') ||
+    store.hasPermission('reuniones.fin_semana') ||
+    store.hasPermission('reuniones.logistica') ||
+    store.hasPermission('reuniones.discursos') ||
+    store.hasPermission('reuniones.asistencia') ||
+    store.hasPermission('reuniones.configuracion') ||
+    store.user()?.roles?.includes('Secretario')
+  ) return true;
   return inject(Router).createUrlTree(['/']);
 };
 
 const programacionGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.entre_semana_ver') ||
-      store.hasPermission('reuniones.fin_semana_ver') ||
-      store.user()?.roles?.includes('Secretario')) return true;
+  if (
+    store.hasPermission('reuniones.entre_semana') ||
+    store.hasPermission('reuniones.fin_semana') ||
+    store.hasPermission('reuniones.logistica') ||
+    store.hasPermission('reuniones.discursos') ||
+    store.user()?.roles?.includes('Secretario')
+  ) return true;
   return inject(Router).createUrlTree(['/reuniones']);
 };
 
 const asistenciaGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.asistencia_ver') || store.user()?.roles?.includes('Secretario')) return true;
+  if (store.hasPermission('reuniones.asistencia') || store.user()?.roles?.includes('Secretario')) return true;
   return inject(Router).createUrlTree(['/reuniones']);
 };
 
 const configuracionGuard: CanActivateFn = () => {
   const store = inject(AuthStore);
-  if (store.hasPermission('reuniones.configuracion_ver') || store.user()?.roles?.includes('Secretario')) return true;
+  if (store.hasPermission('reuniones.configuracion') || store.user()?.roles?.includes('Secretario')) return true;
   return inject(Router).createUrlTree(['/reuniones']);
 };
 

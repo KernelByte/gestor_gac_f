@@ -314,6 +314,19 @@ export class ReunionesService {
     );
   }
 
+  crearAsignacionConfirmada(
+    idProgramaParte: number,
+    idPublicador: number,
+    idCong: number
+  ): Observable<{ id_asignacion: number; id_publicador: number; nombre_completo: string }> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.post<{ id_asignacion: number; id_publicador: number; nombre_completo: string }>(
+      `${this.base}/partes/${idProgramaParte}/asignacion`,
+      { id_publicador: idPublicador },
+      { params }
+    );
+  }
+
   private normalizeSemana(raw: any): ProgramaSemana {
     const partes: AsignacionDraft[] = (
       raw.partes ?? raw.asignaciones ?? []

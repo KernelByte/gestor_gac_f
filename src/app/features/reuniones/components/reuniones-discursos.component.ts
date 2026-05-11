@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { DiscursosService } from '../services/discursos.service';
+import { ConflictosService } from '../services/conflictos.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import {
@@ -39,12 +40,33 @@ type SubTab = 'entrantes' | 'salientes';
         <div class="flex items-center gap-1.5 shrink-0 md:hidden">
           @if (hasEditPermission()) {
             <button (click)="abrirModalGenerar()" [disabled]="estado() === 'loading'"
+              aria-label="Generar mes"
               class="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 text-xs font-bold text-white transition-all shadow-sm active:scale-95">
               <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </button>
           }
         </div>
       </div>
+
+      <!-- MOBILE month chips (sidebar oculta en móvil) -->
+      @if (mesesDisponibles().length > 0) {
+        <div class="md:hidden shrink-0 -mx-1 px-1 pb-3 overflow-x-auto simple-scrollbar">
+          <div class="flex items-center gap-1.5 w-max">
+            @for (m of mesesDisponibles(); track m.ano + '-' + m.mes) {
+              <button (click)="cargarMes(m.ano, m.mes)" [disabled]="estado() === 'loading'"
+                class="flex items-center gap-1.5 px-3 h-8 rounded-full border text-xs font-bold whitespace-nowrap transition-all active:scale-95 disabled:opacity-40"
+                [class]="mesDatos()?.ano === m.ano && mesDatos()?.mes === m.mes
+                  ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'">
+                @if (m.confirmado) {
+                  <svg class="w-3 h-3 shrink-0" [class.text-emerald-500]="mesDatos()?.ano !== m.ano || mesDatos()?.mes !== m.mes" [class.text-white]="mesDatos()?.ano === m.ano && mesDatos()?.mes === m.mes" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12" stroke-linecap="round"/></svg>
+                }
+                {{ mesLabel(m.ano, m.mes) }}
+              </button>
+            }
+          </div>
+        </div>
+      }
 
       <!-- ERROR -->
       @if (estado() === 'error') {
@@ -63,11 +85,38 @@ type SubTab = 'entrantes' | 'salientes';
         </div>
       }
 
+      <!-- MODAL DE CONFIRMACIÓN (reemplaza window.confirm) -->
+      @if (confirmPendiente()) {
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div class="bg-white dark:bg-[#1a1b26] rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 border border-slate-200 dark:border-slate-700">
+            <div class="flex items-start gap-3">
+              <div class="shrink-0 w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <svg class="w-4.5 h-4.5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ confirmPendiente()!.titulo }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ confirmPendiente()!.mensaje }}</p>
+              </div>
+            </div>
+            <div class="flex gap-2 justify-end">
+              <button (click)="cancelarConfirm()"
+                class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                Cancelar
+              </button>
+              <button (click)="aceptarConfirm()"
+                class="px-4 h-9 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white transition-all active:scale-95">
+                {{ confirmPendiente()!.accionLabel }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- LAYOUT -->
       <div class="flex-1 min-h-0 flex flex-col md:flex-row gap-3 md:gap-4 overflow-hidden">
 
         <!-- SIDEBAR -->
-        <aside class="hidden md:flex md:w-60 lg:w-64 xl:w-72 shrink-0 flex-col gap-3 overflow-y-auto simple-scrollbar py-0.5 pr-0.5">
+        <aside class="hidden md:flex md:w-56 lg:w-64 xl:w-72 2xl:w-80 shrink-0 flex-col gap-3 overflow-y-auto simple-scrollbar py-0.5 pr-0.5">
 
           @if (hasEditPermission()) {
             <button (click)="abrirModalGenerar()" [disabled]="estado() === 'loading'"
@@ -122,8 +171,19 @@ type SubTab = 'entrantes' | 'salientes';
               </div>
               <div>
                 <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Sin programación seleccionada</p>
-                <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Genera un mes o selecciona uno del historial</p>
+                @if (hasEditPermission()) {
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Elige un mes del panel lateral o genera uno nuevo.</p>
+                } @else {
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">No hay discursos programados. Consulta con el secretario.</p>
+                }
               </div>
+              @if (hasEditPermission()) {
+                <button (click)="abrirModalGenerar()"
+                  class="flex items-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-xs font-bold text-white transition-all shadow-sm active:scale-95">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Generar primer mes
+                </button>
+              }
             </div>
           } @else {
             <!-- MES header -->
@@ -136,48 +196,64 @@ type SubTab = 'entrantes' | 'salientes';
                 <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
                   @if (!mesDatos()!.confirmado) {
                     <button (click)="confirmarMes()" [disabled]="estado() === 'loading'"
-                      class="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-95">
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round"/></svg>
-                      Confirmar
+                      title="Confirmar" aria-label="Confirmar"
+                      class="flex items-center gap-1.5 px-2.5 sm:px-3 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-95">
+                      <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round"/></svg>
+                      <span class="hidden sm:inline">Confirmar</span>
                     </button>
                   }
                   <button (click)="descargarPdf('entrantes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
-                    title="PDF Entrantes" class="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-95">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                    PDF Entrantes
+                    title="PDF Entrantes" aria-label="PDF Entrantes"
+                    class="flex items-center gap-1.5 px-2.5 sm:px-3 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-95">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span class="hidden sm:inline">PDF Entrantes</span>
                   </button>
                   <button (click)="descargarPdf('salientes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
-                    title="PDF Salientes" class="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-95">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                    PDF Salientes
+                    title="PDF Salientes" aria-label="PDF Salientes"
+                    class="flex items-center gap-1.5 px-2.5 sm:px-3 h-8 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-95">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span class="hidden sm:inline">PDF Salientes</span>
                   </button>
                   <button (click)="borrarMes()" [disabled]="estado() === 'loading'"
-                    class="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-95">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    Borrar
+                    title="Borrar" aria-label="Borrar"
+                    class="flex items-center gap-1.5 px-2.5 sm:px-3 h-8 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-95">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span class="hidden sm:inline">Borrar</span>
                   </button>
                 </div>
               }
             </div>
 
             <!-- Sub-tab selector -->
-            <div class="shrink-0 inline-flex items-center gap-1 bg-white dark:bg-[#1a1b26] rounded-xl p-1 shadow-sm border border-slate-200/60 dark:border-slate-800 self-start">
-              <button (click)="subTab.set('entrantes')"
-                class="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97]"
-                [class]="subTab() === 'entrantes'
-                  ? 'bg-[#2E5FA3] text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18M10 4v16"/></svg>
-                Entrantes
-              </button>
-              <button (click)="subTab.set('salientes')"
-                class="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97]"
-                [class]="subTab() === 'salientes'
-                  ? 'bg-[#2E5FA3] text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                Salientes
-              </button>
+            <div class="shrink-0 flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between">
+              <div class="inline-flex items-center gap-1 bg-white dark:bg-[#1a1b26] rounded-xl p-1 shadow-sm border border-slate-200/60 dark:border-slate-800 self-start" role="tablist">
+                <button (click)="subTab.set('entrantes')"
+                  role="tab" [attr.aria-selected]="subTab() === 'entrantes'"
+                  class="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97]"
+                  [class]="subTab() === 'entrantes'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+                  <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18M10 4v16"/></svg>
+                  Entrantes
+                </button>
+                <button (click)="subTab.set('salientes')"
+                  role="tab" [attr.aria-selected]="subTab() === 'salientes'"
+                  class="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97]"
+                  [class]="subTab() === 'salientes'
+                    ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+                  <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                  Salientes
+                </button>
+              </div>
+              <!-- Subtítulo contextual del sub-tab activo -->
+              <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 pb-1 hidden sm:block">
+                @if (subTab() === 'entrantes') {
+                  Oradores de otras congregaciones que visitan
+                } @else {
+                  Publicadores que salen a predicar en otras congregaciones
+                }
+              </p>
             </div>
 
             <!-- CONTENT area -->
@@ -192,7 +268,7 @@ type SubTab = 'entrantes' | 'salientes';
                         : 'border-slate-200 dark:border-slate-700'">
                       <!-- fecha header -->
                       <div class="bg-slate-50 dark:bg-slate-800/80 px-4 py-2 flex items-center gap-2">
-                        <svg class="w-3.5 h-3.5 text-[#2E5FA3] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <svg class="w-3.5 h-3.5 text-violet-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         <span class="text-xs font-black text-slate-800 dark:text-slate-200">{{ formatFecha(entrante.fecha) }}</span>
                         @if (entrante.confirmado) {
                           @if (isEditandoEntrante(entrante.id_discurso_entrante)) {
@@ -213,7 +289,7 @@ type SubTab = 'entrantes' | 'salientes';
                         }
                       </div>
                       <!-- fields -->
-                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4">
                         <div class="flex flex-col gap-1">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Discurso / Tema</label>
                           <input type="text"
@@ -221,7 +297,7 @@ type SubTab = 'entrantes' | 'salientes';
                             [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
                             (blur)="onEntranteChange(entrante, 'titulo_discurso', $event)"
                             placeholder="Título del discurso"
-                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#2E5FA3] disabled:opacity-60 disabled:cursor-not-allowed transition-colors w-full">
+                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-colors w-full">
                         </div>
                         <div class="flex flex-col gap-1">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Orador</label>
@@ -230,7 +306,7 @@ type SubTab = 'entrantes' | 'salientes';
                             [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
                             (blur)="onEntranteChange(entrante, 'nombre_orador', $event)"
                             placeholder="Nombre del orador"
-                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#2E5FA3] disabled:opacity-60 disabled:cursor-not-allowed transition-colors w-full">
+                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-colors w-full">
                         </div>
                         <div class="flex flex-col gap-1">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Congregación Origen</label>
@@ -239,29 +315,28 @@ type SubTab = 'entrantes' | 'salientes';
                             [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
                             (blur)="onEntranteChange(entrante, 'congregacion_origen', $event)"
                             placeholder="Congregación"
-                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#2E5FA3] disabled:opacity-60 disabled:cursor-not-allowed transition-colors w-full">
+                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-colors w-full">
                         </div>
                         <div class="flex flex-col gap-1">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Hospitalidad</label>
                           <select
-                            [value]="entrante.id_grupo_hospitalidad ? entrante.id_grupo_hospitalidad + '' : ''"
                             [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
                             (change)="onEntranteGrupoChange(entrante, $event)"
-                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#2E5FA3] disabled:opacity-60 disabled:cursor-not-allowed transition-colors w-full">
-                            <option value="">— Sin asignar —</option>
+                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-colors w-full">
+                            <option value="" [selected]="!entrante.id_grupo_hospitalidad">— Sin asignar —</option>
                             @for (g of grupos(); track g.id_grupo) {
-                              <option [value]="g.id_grupo + ''">{{ g.nombre_grupo }}</option>
+                              <option [value]="g.id_grupo + ''" [selected]="entrante.id_grupo_hospitalidad === g.id_grupo">{{ g.nombre_grupo }}</option>
                             }
                           </select>
                         </div>
-                        <div class="flex flex-col gap-1 sm:col-span-2">
+                        <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3 xl:col-span-4">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Notas</label>
                           <input type="text"
                             [value]="entrante.notas ?? ''"
                             [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
                             (blur)="onEntranteChange(entrante, 'notas', $event)"
                             placeholder="Notas adicionales"
-                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#2E5FA3] disabled:opacity-60 disabled:cursor-not-allowed transition-colors w-full">
+                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-colors w-full">
                         </div>
                       </div>
                     </div>
@@ -270,7 +345,7 @@ type SubTab = 'entrantes' | 'salientes';
 
               <!-- SALIENTES -->
               <div [hidden]="subTab() !== 'salientes'" class="flex flex-col gap-3">
-                  @if (hasEditPermission() && !mesDatos()!.confirmado) {
+                  @if (hasEditPermission()) {
                     <button (click)="abrirModalSaliente()"
                       class="self-start flex items-center gap-2 px-4 h-9 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-xs font-bold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -310,8 +385,9 @@ type SubTab = 'entrantes' | 'salientes';
                             }
                           }
                         }
-                        @if (hasEditPermission() && !saliente.confirmado) {
+                        @if (hasEditPermission() && !isEditandoSaliente(saliente.id_discurso_saliente)) {
                           <button (click)="eliminarSaliente(saliente)"
+                            aria-label="Eliminar saliente"
                             class="ml-auto w-7 h-7 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 flex items-center justify-center transition-all active:scale-95">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                           </button>
@@ -321,13 +397,12 @@ type SubTab = 'entrantes' | 'salientes';
                         <div class="flex flex-col gap-1">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Publicador</label>
                           <select
-                            [value]="saliente.id_publicador ? saliente.id_publicador + '' : ''"
                             [disabled]="!hasEditPermission() || (saliente.confirmado && !isEditandoSaliente(saliente.id_discurso_saliente))"
                             (change)="onSalientePublicadorChange(saliente, $event)"
-                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500 disabled:opacity-60 disabled:cursor-not-allowed w-full">
-                            <option value="">— Sin asignar —</option>
+                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-colors w-full">
+                            <option value="" [selected]="!saliente.id_publicador">— Sin asignar —</option>
                             @for (p of publicadores(); track p.id_publicador) {
-                              <option [value]="p.id_publicador + ''">{{ p.nombre_completo }}</option>
+                              <option [value]="p.id_publicador + ''" [selected]="saliente.id_publicador === p.id_publicador">{{ p.nombre_completo }}</option>
                             }
                           </select>
                         </div>
@@ -338,7 +413,7 @@ type SubTab = 'entrantes' | 'salientes';
                             [disabled]="!hasEditPermission() || (saliente.confirmado && !isEditandoSaliente(saliente.id_discurso_saliente))"
                             (blur)="onSalienteChange(saliente, 'congregacion_destino', $event)"
                             placeholder="Congregación destino"
-                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500 disabled:opacity-60 disabled:cursor-not-allowed w-full">
+                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-colors w-full">
                         </div>
                         <div class="flex flex-col gap-1">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Tema del Discurso</label>
@@ -347,7 +422,7 @@ type SubTab = 'entrantes' | 'salientes';
                             [disabled]="!hasEditPermission() || (saliente.confirmado && !isEditandoSaliente(saliente.id_discurso_saliente))"
                             (blur)="onSalienteChange(saliente, 'tema_discurso', $event)"
                             placeholder="Título del tema"
-                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500 disabled:opacity-60 disabled:cursor-not-allowed w-full">
+                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-colors w-full">
                         </div>
                         <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Notas</label>
@@ -356,7 +431,7 @@ type SubTab = 'entrantes' | 'salientes';
                             [disabled]="!hasEditPermission() || (saliente.confirmado && !isEditandoSaliente(saliente.id_discurso_saliente))"
                             (blur)="onSalienteChange(saliente, 'notas', $event)"
                             placeholder="Notas adicionales"
-                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500 disabled:opacity-60 disabled:cursor-not-allowed w-full">
+                            class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-colors w-full">
                         </div>
                       </div>
                     </div>
@@ -494,6 +569,7 @@ type SubTab = 'entrantes' | 'salientes';
 })
 export class ReunionesDiscursosComponent implements OnInit {
   private svc = inject(DiscursosService);
+  private conflictosSvc = inject(ConflictosService);
   private congCtx = inject(CongregacionContextService);
   private auth = inject(AuthStore);
 
@@ -518,8 +594,18 @@ export class ReunionesDiscursosComponent implements OnInit {
   mostrarDropdownBusqueda = signal(false);
   private busqueda$ = new Subject<string>();
 
+  confirmPendiente = signal<{ titulo: string; mensaje: string; accionLabel: string; callback: () => void } | null>(null);
   editandoEntrantes = signal<Set<number>>(new Set());
   editandoSalientes = signal<Set<number>>(new Set());
+
+  aceptarConfirm(): void {
+    this.confirmPendiente()?.callback();
+    this.confirmPendiente.set(null);
+  }
+
+  cancelarConfirm(): void {
+    this.confirmPendiente.set(null);
+  }
 
   isEditandoEntrante(id: number): boolean {
     return this.editandoEntrantes().has(id);
@@ -588,7 +674,7 @@ export class ReunionesDiscursosComponent implements OnInit {
     const rol = (user as any).rol ?? '';
     if (['Administrador', 'Secretario', 'Gestor Aplicación'].includes(rol)) return true;
     const permisos: string[] = (user as any).permisos ?? [];
-    return permisos.includes('reuniones.fin_semana_editar');
+    return permisos.includes('reuniones.discursos');
   }
 
   mesLabel(ano: number, mes: number): string {
@@ -701,17 +787,23 @@ export class ReunionesDiscursosComponent implements OnInit {
   borrarMes(): void {
     const d = this.mesDatos();
     if (!d) return;
-    if (!confirm(`¿Eliminar toda la programación de discursos de ${this.mesLabel(d.ano, d.mes)}? Esta acción no se puede deshacer.`)) return;
-    this.estado.set('loading');
-    this.svc.eliminarMes(d.ano, d.mes, this.idCong).subscribe({
-      next: () => {
-        this.mesDatos.set(null);
-        this.estado.set('idle');
-        this.cargarMeses();
-      },
-      error: (e) => {
-        this.errorMsg.set(e?.error?.detail ?? 'Error al borrar el mes');
-        this.estado.set('error');
+    this.confirmPendiente.set({
+      titulo: `Eliminar ${this.mesLabel(d.ano, d.mes)}`,
+      mensaje: 'Se eliminará toda la programación de discursos de este mes. Esta acción no se puede deshacer.',
+      accionLabel: 'Eliminar',
+      callback: () => {
+        this.estado.set('loading');
+        this.svc.eliminarMes(d.ano, d.mes, this.idCong).subscribe({
+          next: () => {
+            this.mesDatos.set(null);
+            this.estado.set('idle');
+            this.cargarMeses();
+          },
+          error: (e) => {
+            this.errorMsg.set(e?.error?.detail ?? 'Error al borrar el mes');
+            this.estado.set('error');
+          },
+        });
       },
     });
   }
@@ -739,7 +831,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   onEntranteChange(entrante: DiscursoEntranteOut, campo: string, event: Event): void {
     const val = (event.target as HTMLInputElement).value.trim() || null;
     if ((entrante as any)[campo] === val) return;
-    this.svc.editarEntrante(entrante.id_discurso_entrante, { [campo]: val }).subscribe({
+    this.svc.editarEntrante(entrante.id_discurso_entrante, { [campo]: val }, this.idCong).subscribe({
       next: (updated) => this.updateEntrante(updated),
       error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
     });
@@ -748,7 +840,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   onEntranteGrupoChange(entrante: DiscursoEntranteOut, event: Event): void {
     const val = (event.target as HTMLSelectElement).value;
     const id = val ? +val : null;
-    this.svc.editarEntrante(entrante.id_discurso_entrante, { id_grupo_hospitalidad: id }).subscribe({
+    this.svc.editarEntrante(entrante.id_discurso_entrante, { id_grupo_hospitalidad: id }, this.idCong).subscribe({
       next: (updated) => this.updateEntrante(updated),
       error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
     });
@@ -766,7 +858,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   onSalienteChange(saliente: DiscursoSalienteOut, campo: string, event: Event): void {
     const val = (event.target as HTMLInputElement).value.trim() || null;
     if ((saliente as any)[campo] === val) return;
-    this.svc.editarSaliente(saliente.id_discurso_saliente, { [campo]: val }).subscribe({
+    this.svc.editarSaliente(saliente.id_discurso_saliente, { [campo]: val }, this.idCong).subscribe({
       next: (updated) => this.updateSaliente(updated),
       error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
     });
@@ -775,10 +867,29 @@ export class ReunionesDiscursosComponent implements OnInit {
   onSalientePublicadorChange(saliente: DiscursoSalienteOut, event: Event): void {
     const val = (event.target as HTMLSelectElement).value;
     const id = val ? +val : null;
-    this.svc.editarSaliente(saliente.id_discurso_saliente, { id_publicador: id }).subscribe({
-      next: (updated) => this.updateSaliente(updated),
-      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
-    });
+    const idCong = this.idCong;
+
+    const doEditar = () => {
+      this.svc.editarSaliente(saliente.id_discurso_saliente, { id_publicador: id }, this.idCong).subscribe({
+        next: (updated) => this.updateSaliente(updated),
+        error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
+      });
+    };
+
+    if (!id || !idCong) {
+      doEditar();
+      return;
+    }
+
+    const pub = this.publicadores().find(p => p.id_publicador === id);
+    const nombre = pub?.nombre_completo ?? 'Este publicador';
+
+    this.conflictosSvc
+      .confirmarSiHayConflicto(
+        id, saliente.fecha, idCong, nombre,
+        { tipo: 'discurso_saliente', id: saliente.id_discurso_saliente },
+      )
+      .subscribe((proceder) => { if (proceder) doEditar(); });
   }
 
   private updateSaliente(updated: DiscursoSalienteOut): void {
@@ -791,17 +902,24 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   eliminarSaliente(saliente: DiscursoSalienteOut): void {
-    if (!confirm('¿Eliminar este saliente?')) return;
-    this.svc.eliminarSaliente(saliente.id_discurso_saliente).subscribe({
-      next: () => {
-        const d = this.mesDatos();
-        if (!d) return;
-        this.mesDatos.set({
-          ...d,
-          salientes: d.salientes.filter(s => s.id_discurso_saliente !== saliente.id_discurso_saliente),
+    const pubNombre = saliente.publicador?.nombre_completo ?? 'este saliente';
+    this.confirmPendiente.set({
+      titulo: 'Eliminar saliente',
+      mensaje: `Se eliminará a ${pubNombre} del ${this.formatFecha(saliente.fecha)}. Esta acción no se puede deshacer.`,
+      accionLabel: 'Eliminar',
+      callback: () => {
+        this.svc.eliminarSaliente(saliente.id_discurso_saliente, this.idCong).subscribe({
+          next: () => {
+            const d = this.mesDatos();
+            if (!d) return;
+            this.mesDatos.set({
+              ...d,
+              salientes: d.salientes.filter(s => s.id_discurso_saliente !== saliente.id_discurso_saliente),
+            });
+          },
+          error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al eliminar'),
         });
       },
-      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al eliminar'),
     });
   }
 
@@ -837,19 +955,37 @@ export class ReunionesDiscursosComponent implements OnInit {
 
   guardarSaliente(): void {
     if (!this.nuevoSaliente.fecha) return;
-    this.cerrarModalSaliente();
-    this.svc.crearSaliente({
-      fecha: this.nuevoSaliente.fecha,
-      id_publicador: this.nuevoSaliente.id_publicador,
-      congregacion_destino: this.nuevoSaliente.congregacion_destino || null,
-      tema_discurso: this.nuevoSaliente.tema_discurso || null,
-    }, this.idCong).subscribe({
-      next: (nuevo) => {
-        const d = this.mesDatos();
-        if (!d) return;
-        this.mesDatos.set({ ...d, salientes: [...d.salientes, nuevo] });
-      },
-      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al añadir saliente'),
-    });
+    const idCong = this.idCong;
+    if (!idCong) return;
+
+    const doCrear = () => {
+      this.cerrarModalSaliente();
+      this.svc.crearSaliente({
+        fecha: this.nuevoSaliente.fecha!,
+        id_publicador: this.nuevoSaliente.id_publicador,
+        congregacion_destino: this.nuevoSaliente.congregacion_destino || null,
+        tema_discurso: this.nuevoSaliente.tema_discurso || null,
+      }, idCong).subscribe({
+        next: (nuevo) => {
+          const d = this.mesDatos();
+          if (!d) return;
+          this.mesDatos.set({ ...d, salientes: [...d.salientes, nuevo] });
+        },
+        error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al añadir saliente'),
+      });
+    };
+
+    // Solo verificar conflicto si hay publicador seleccionado
+    if (!this.nuevoSaliente.id_publicador) {
+      doCrear();
+      return;
+    }
+
+    const pub = this.publicadores().find(p => p.id_publicador === this.nuevoSaliente.id_publicador);
+    const nombre = pub?.nombre_completo ?? 'Este publicador';
+
+    this.conflictosSvc
+      .confirmarSiHayConflicto(this.nuevoSaliente.id_publicador, this.nuevoSaliente.fecha, idCong, nombre)
+      .subscribe((proceder) => { if (proceder) doCrear(); });
   }
 }

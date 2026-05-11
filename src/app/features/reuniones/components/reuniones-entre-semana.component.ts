@@ -3,6 +3,8 @@ import {
   signal,
   computed,
   inject,
+  effect,
+  untracked,
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -12,6 +14,7 @@ import { ReunionesLogisticaComponent } from './reuniones-logistica.component';
 import { ReunionesDiscursosComponent } from './reuniones-discursos.component';
 import { catchError, switchMap } from 'rxjs/operators';
 import { ReunionesService } from '../services/reuniones.service';
+import { ConflictosService } from '../services/conflictos.service';
 import { AsistenciaService } from '../services/asistencia.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -39,7 +42,8 @@ import {
     <div class="flex flex-col h-full gap-0">
 
       <!-- ===== MEETING TYPE SELECTOR ===== -->
-      <div class="shrink-0 flex items-center pb-3">
+      <div class="shrink-0 pb-3 overflow-x-auto no-scrollbar"
+        style="mask-image: linear-gradient(to right, black calc(100% - 16px), transparent 100%); -webkit-mask-image: linear-gradient(to right, black calc(100% - 16px), transparent 100%);">
         <div class="inline-flex items-center gap-1 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800">
           @if (canViewEntreSemana()) {
             <button
@@ -63,24 +67,28 @@ import {
               Fin de semana
             </button>
           }
-          <button
-            (click)="onTipoChange('logistica')"
-            class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
-            [class]="tipoReunionActivo() === 'logistica'
-              ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
-              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-            Logística
-          </button>
-          <button
-            (click)="onTipoChange('discursos')"
-            class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
-            [class]="tipoReunionActivo() === 'discursos'
-              ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
-              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/><path d="M5 3l14 0"/></svg>
-            Discursos
-          </button>
+          @if (canViewLogistica()) {
+            <button
+              (click)="onTipoChange('logistica')"
+              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
+              [class]="tipoReunionActivo() === 'logistica'
+                ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              Logística
+            </button>
+          }
+          @if (canViewDiscursos()) {
+            <button
+              (click)="onTipoChange('discursos')"
+              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
+              [class]="tipoReunionActivo() === 'discursos'
+                ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/><path d="M5 3l14 0"/></svg>
+              Discursos
+            </button>
+          }
         </div>
       </div>
 
@@ -130,12 +138,22 @@ import {
           </p>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
+          @if (gruposPlantilla().length > 0 || loadingPeriodos()) {
+            <button
+              (click)="showMesesMobile.set(true)"
+              title="Cambiar mes"
+              aria-label="Cambiar mes"
+              class="md:hidden flex items-center gap-1.5 px-3 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold transition-[transform,background-color,border-color] duration-150 ease-out active:scale-[0.97] hover:border-violet-300 dark:hover:border-violet-600">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="hidden sm:inline">Meses</span>
+            </button>
+          }
           <button
             *ngIf="hasEditPermission()"
             (click)="openModal()"
             [disabled]="estado() === 'loading'"
             title="Generar Mes"
-            class="md:hidden flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95">
+            class="md:hidden flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-[transform,background-color] duration-150 ease-out shadow-sm shadow-purple-900/20 active:scale-[0.97]">
             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <span class="hidden sm:inline">Generar Mes</span>
           </button>
@@ -232,13 +250,19 @@ import {
 
           <!-- Week toolbar (draft / confirmado / historial) -->
           @if (estado() === 'draft' || estado() === 'confirmado' || estado() === 'historial') {
-            <div class="shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-              <!-- Week pills (scroll horizontal con snap) -->
-              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar min-w-0 snap-x snap-mandatory">
+            <div class="shrink-0 flex flex-col md:flex-row md:items-center md:justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+              <!-- Week pills (scroll horizontal con snap + fade lateral) -->
+              <div
+                class="flex items-center gap-1.5 overflow-x-auto no-scrollbar min-w-0 snap-x snap-mandatory order-1 md:order-none"
+                style="mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%); -webkit-mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);"
+                role="tablist"
+                aria-label="Semanas del mes">
                 @for (sem of semanas(); track sem.semana_iso; let i = $index) {
                   <button
                     (click)="selectedWeekIdx.set(i)"
-                    class="snap-start shrink-0 flex items-center gap-1 px-3 h-9 md:h-7 rounded-full text-[0.7rem] font-bold whitespace-nowrap transition-all border active:scale-95"
+                    role="tab"
+                    [attr.aria-selected]="selectedWeekIdx() === i"
+                    class="snap-start shrink-0 flex items-center gap-1 px-3 h-9 md:h-7 rounded-full text-xs md:text-[0.7rem] font-bold whitespace-nowrap transition-[transform,background-color,border-color,color] duration-150 ease-out border active:scale-[0.97]"
                     [class]="weekTabClass(i)">
                     {{ sem.fecha | date:'d MMMM' }}
                   </button>
@@ -247,13 +271,13 @@ import {
               @if (estado() === 'historial') {
                 <button
                   (click)="semanas.set([]); estado.set('idle')"
-                  class="shrink-0 flex items-center gap-1 px-3 h-9 md:h-7 rounded-full text-[0.65rem] font-bold border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400 transition-all active:scale-95">
+                  class="self-end md:self-auto shrink-0 flex items-center gap-1 px-3 h-9 md:h-7 rounded-full text-[0.65rem] font-bold border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400 transition-[transform,border-color,color] duration-150 ease-out active:scale-[0.97]">
                   <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                   Volver
                 </button>
               }
               @if (estado() === 'draft' && hasEditPermission()) {
-                <div class="flex items-center gap-1 shrink-0">
+                <div class="self-end md:self-auto flex items-center gap-1 shrink-0">
                   <!-- Confirmar -->
                   <button
                     (click)="confirmar()"
@@ -338,14 +362,14 @@ import {
                       </svg>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <p class="text-[0.65rem] font-black uppercase tracking-widest leading-none" [style.color]="seccion.color">{{ seccion.titulo }}</p>
+                      <p class="text-[0.65rem] font-black uppercase tracking-widest leading-none truncate" [style.color]="seccion.color">{{ seccion.titulo }}</p>
                     </div>
                     @if (salaCountsPorSeccion()[seccion.id] > 0) {
                       <div class="flex items-center rounded-lg p-0.5 gap-0.5 shrink-0"
                         [style]="'border:1px solid ' + seccionColor(seccion.color, 0.3) + '; background:' + seccionColor(seccion.color, 0.06)">
                         <button
                           (click)="selectedSala.set('Principal'); $event.stopPropagation()"
-                          class="flex items-center gap-1 px-2.5 h-6 rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-all active:scale-95"
+                          class="flex items-center justify-center gap-1 px-2.5 h-8 md:h-6 min-w-[56px] rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-[transform,background-color,color,opacity] duration-150 ease-out active:scale-[0.97]"
                           [style]="selectedSala() === 'Principal'
                             ? 'background:' + seccion.color + '; color:white; box-shadow:0 1px 4px rgba(0,0,0,0.18)'
                             : 'color:' + seccion.color + '; opacity:0.55'">
@@ -353,7 +377,7 @@ import {
                         </button>
                         <button
                           (click)="selectedSala.set('Auxiliar'); $event.stopPropagation()"
-                          class="flex items-center gap-1 px-2.5 h-6 rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-all active:scale-95"
+                          class="flex items-center justify-center gap-1 px-2.5 h-8 md:h-6 min-w-[56px] rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-[transform,background-color,color,opacity] duration-150 ease-out active:scale-[0.97]"
                           [style]="selectedSala() === 'Auxiliar'
                             ? 'background:' + seccion.color + '; color:white; box-shadow:0 1px 4px rgba(0,0,0,0.18)'
                             : 'color:' + seccion.color + '; opacity:0.55'">
@@ -373,33 +397,36 @@ import {
                       [class.has-swapped]="grupoHasSwapped(grupo.partes)"
                       [class.is-open]="isGroupOpen(grupo)"
                       [class.dropdown-active]="grupoDropdownActivo(grupo.partes)">
-                      <div class="px-3.5 py-2.5 flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full shrink-0 mt-px" [style.background-color]="grupoDotColor(grupo.partes, seccion.color)"></div>
-                        <div class="flex-1 min-w-0">
-                          <div class="flex items-baseline gap-1.5 min-w-0">
-                            <p class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate leading-snug flex-1 min-w-0">
-                              {{ displayNombreParte(grupo.partes[0]) }}
-                            </p>
-                            @if (grupo.partes[0].duracion_minutos) {
-                              <span class="text-[0.55rem] font-black shrink-0 px-1.5 py-[2px] rounded leading-none"
-                                [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
-                                {{ grupo.partes[0].duracion_minutos }}&nbsp;min
-                              </span>
-                            }
-                          </div>
-                          <div class="flex items-center gap-1.5 mt-0.5">
-                            @if (grupoHasConflict(grupo.partes)) {
-                              <span class="text-[0.6rem] font-semibold leading-none" style="color:#dc2626">Sin candidato</span>
-                            } @else if (grupoHasReemplazo(grupo.partes)) {
-                              <span class="text-[0.6rem] leading-none" style="color:#94a3b8">Reemplazo</span>
-                            }
-                            @if (grupoHasSwapped(grupo.partes)) {
-                              <span class="text-[0.6rem] font-semibold leading-none" style="color:#b45309">Modificado</span>
-                            }
+                      <div class="px-3.5 pt-2.5 pb-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3 sm:py-2.5">
+                        <!-- Fila 1: dot + título + duración + badges de estado -->
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                          <div class="w-2 h-2 rounded-full shrink-0 mt-px" [style.background-color]="grupoDotColor(grupo.partes, seccion.color)"></div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-baseline gap-1.5 min-w-0">
+                              <p class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate leading-snug flex-1 min-w-0">
+                                {{ displayNombreParte(grupo.partes[0]) }}
+                              </p>
+                              @if (grupo.partes[0].duracion_minutos) {
+                                <span class="text-[0.55rem] font-black shrink-0 px-1.5 py-[2px] rounded leading-none"
+                                  [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
+                                  {{ grupo.partes[0].duracion_minutos }}&nbsp;min
+                                </span>
+                              }
+                            </div>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                              @if (grupoHasConflict(grupo.partes)) {
+                                <span class="text-[0.6rem] font-semibold leading-none" style="color:#dc2626">Sin candidato</span>
+                              } @else if (grupoHasReemplazo(grupo.partes)) {
+                                <span class="text-[0.6rem] leading-none" style="color:#94a3b8">Reemplazo</span>
+                              }
+                              @if (grupoHasSwapped(grupo.partes)) {
+                                <span class="text-[0.6rem] font-semibold leading-none" style="color:#b45309">Modificado</span>
+                              }
+                            </div>
                           </div>
                         </div>
-                        <!-- Pills de asignados -->
-                        <div class="flex items-center gap-2 shrink-0">
+                        <!-- Fila 2 (móvil) / columna derecha (sm+): pills de asignados -->
+                        <div class="flex flex-wrap items-center justify-end gap-1.5 pl-5 sm:pl-0 sm:shrink-0">
                           @for (asig of grupo.partes; track asig.id_programa_parte; let pi = $index) {
                             <div class="relative">
                               <button
@@ -410,7 +437,7 @@ import {
                                   <span class="text-[0.48rem] font-black uppercase tracking-wide leading-none shrink-0 opacity-60">{{ grupoRoleLabel(grupo, pi) }}</span>
                                   <span class="opacity-30 text-[0.6rem] leading-none shrink-0">·</span>
                                 }
-                                <span>{{ asig.nombre_completo }}</span>
+                                <span class="truncate max-w-[9rem]">{{ asig.nombre_completo || 'Sin asignar' }}</span>
                                 @if (estado() === 'draft') {
                                   <svg class="chevron w-3 h-3 shrink-0"
                                     [class.open]="openDropdownId() === pillKey(asig)"
@@ -432,7 +459,7 @@ import {
                               </button>
                               <!-- Dropdown draft -->
                               @if (estado() === 'draft' && openDropdownId() === pillKey(asig)) {
-                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-64 overflow-hidden" style="border-radius:14px">
+                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-[min(16rem,calc(100vw-2rem))] max-w-[16rem] overflow-hidden" style="border-radius:14px">
                                   <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
                                     <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
                                     <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Candidatos</span>
@@ -501,8 +528,8 @@ import {
                                 </div>
                               }
                               <!-- Dropdown historial -->
-                              @if (estado() === 'historial' && editingHistorialId() === asig.id_asignacion) {
-                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-64 overflow-hidden" style="border-radius:14px">
+                              @if (estado() === 'historial' && editingHistorialId() === (asig.id_asignacion ?? -asig.id_programa_parte)) {
+                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-[min(16rem,calc(100vw-2rem))] max-w-[16rem] overflow-hidden" style="border-radius:14px">
                                   <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
                                     <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
                                     <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Cambiar asignado</span>
@@ -590,16 +617,31 @@ import {
 
         </div>
 
-        <!-- ── HISTORIAL MÓVIL (acordeón, oculto en desktop) ── -->
-        @if (gruposPlantilla().length > 0 || loadingPeriodos()) {
-          <details class="md:hidden shrink-0 group rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
-            <summary class="flex items-center justify-between px-4 h-11 cursor-pointer list-none select-none">
-              <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Programación confirmada</span>
-              <svg class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </summary>
-            <div class="border-t border-slate-100 dark:border-slate-800 p-2 flex flex-col gap-1.5 max-h-64 overflow-y-auto simple-scrollbar">
+        <!-- ── SHEET DE MESES (móvil, abierto desde header) ── -->
+        @if (showMesesMobile()) {
+          <div
+            class="md:hidden fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+            (click)="showMesesMobile.set(false)"
+            aria-hidden="true">
+          </div>
+          <div
+            class="md:hidden fixed left-0 right-0 bottom-0 z-[61] bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-700 flex flex-col max-h-[80vh] animate-slideUp"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Programación confirmada">
+            <div class="shrink-0 flex items-center justify-center pt-2.5 pb-1">
+              <span class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+            </div>
+            <div class="shrink-0 flex items-center justify-between px-4 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+              <span class="text-sm font-bold text-slate-800 dark:text-slate-100">Programación confirmada</span>
+              <button
+                (click)="showMesesMobile.set(false)"
+                aria-label="Cerrar"
+                class="w-9 h-9 -mr-2 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 active:scale-[0.95] transition-[transform,color] duration-150 ease-out">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="flex-1 min-h-0 p-2 flex flex-col gap-1.5 overflow-y-auto simple-scrollbar">
               @if (loadingPeriodos()) {
                 <div class="flex justify-center py-3">
                   <div class="w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-violet-500 animate-spin"></div>
@@ -634,9 +676,9 @@ import {
                         @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
                           <div class="flex items-center gap-1">
                             <button
-                              (click)="loadHistorial(p.mes, p.ano)"
+                              (click)="loadHistorial(p.mes, p.ano); showMesesMobile.set(false)"
                               [disabled]="loadingHistorial()"
-                              class="flex-1 flex items-center justify-between px-3 h-10 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-40 group">
+                              class="flex-1 flex items-center justify-between px-3 h-11 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-[transform,background-color] duration-150 ease-out active:scale-[0.98] disabled:opacity-40 group">
                               <span>{{ p.label }}</span>
                               <svg class="w-3 h-3 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                             </button>
@@ -644,14 +686,15 @@ import {
                               (click)="descargarPdfMes(p, $event)"
                               [disabled]="descargandoPdf()"
                               title="Descargar PDF de {{ p.label }}"
-                              class="shrink-0 w-10 h-10 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-500 hover:text-violet-700 dark:text-violet-400 transition-all active:scale-95 flex items-center justify-center disabled:opacity-40">
+                              class="shrink-0 w-11 h-11 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-500 hover:text-violet-700 dark:text-violet-400 transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.97] flex items-center justify-center disabled:opacity-40">
                               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
                             </button>
                             @if (periodoEliminable(p) && hasEditPermission()) {
                               <button
                                 (click)="eliminarHistorial(p, $event)"
                                 title="Eliminar {{ p.label }}"
-                                class="shrink-0 w-10 h-10 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
+                                aria-label="Eliminar {{ p.label }}"
+                                class="shrink-0 w-11 h-11 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.97] flex items-center justify-center">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                               </button>
                             }
@@ -663,7 +706,7 @@ import {
                 }
               }
             </div>
-          </details>
+          </div>
         }
 
       </div>
@@ -691,6 +734,23 @@ import {
               </svg>
             </button>
           </div>
+
+          @if (diaReunionSinConfigurar()) {
+            <div class="mb-4 flex items-start gap-3 px-3.5 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50">
+              <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-amber-700 dark:text-amber-300">Día de reunión no configurado</p>
+                <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5 leading-relaxed">
+                  Esta congregación no tiene configurado el día de
+                  {{ tipoReunionActivo() === 'entre_semana' ? 'reunión entre semana' : 'la reunión pública' }}.
+                  Las fechas se calcularán con el día por defecto.
+                  Configúralo en <span class="font-semibold">Configuración → Congregación</span> antes de generar.
+                </p>
+              </div>
+            </div>
+          }
 
           <div class="mb-4">
             <div class="flex items-center gap-1.5 mb-1.5">
@@ -807,8 +867,14 @@ import {
           }
 
           <div class="mb-5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-            <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">{{ fechasPreview().length }} semanas a crear</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400 font-mono leading-relaxed">{{ fechasPreview().join('  ·  ') }}</p>
+            <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">{{ fechasPreview().length }} semanas a crear</p>
+            <div class="flex flex-wrap justify-center gap-1.5">
+              @for (fecha of fechasPreview(); track fecha) {
+                <span class="flex items-center justify-center py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[0.65rem] font-mono font-medium text-slate-600 dark:text-slate-300 shadow-sm w-[calc(33.3%-0.25rem)]">
+                  {{ fecha }}
+                </span>
+              }
+            </div>
           </div>
 
           <div class="flex gap-2">
@@ -1082,6 +1148,13 @@ import {
     }
     .animate-fadeIn { animation: fadeIn 0.15s ease-out; }
 
+    /* ── Bottom-sheet slide up (mobile meses) ── */
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    .animate-slideUp { animation: slideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+
     /* ── Action buttons (Confirmar / Borrar) ── */
     .btn-confirmar {
       background: rgba(5,150,105,0.08);
@@ -1215,6 +1288,7 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   private reunionesSvc = inject(ReunionesService);
   private asistenciaSvc = inject(AsistenciaService);
+  private conflictosSvc = inject(ConflictosService);
   congregacionCtx = inject(CongregacionContextService);
   private authStore = inject(AuthStore);
   private themeService = inject(ThemeService);
@@ -1302,6 +1376,7 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   // ── Modal ──────────────────────────────────────────────────────
   showModal = signal(false);
+  diaReunionSinConfigurar = signal(false);
   modalForm = signal<GenerarMesForm>({
     mes:      new Date().getMonth() + 1,
     ano:      new Date().getFullYear(),
@@ -1314,19 +1389,29 @@ export class ReunionesProgramacionComponent implements OnInit {
   // ── UI ─────────────────────────────────────────────────────────
   openDropdownId = signal<string | null>(null);
   selectedSala = signal<'Principal' | 'Auxiliar'>('Principal');
+  showMesesMobile = signal(false);
 
   // ── Meeting type toggle ────────────────────────────────────────
   tipoReunionActivo = signal<'entre_semana' | 'fin_semana' | 'logistica' | 'discursos'>('entre_semana');
 
+  private isSecretario = computed(() => !!this.authStore.user()?.roles?.includes('Secretario'));
+
   canViewEntreSemana = computed(() =>
-    this.authStore.hasPermission('reuniones.entre_semana_ver') ||
-    !!this.authStore.user()?.roles?.includes('Secretario')
+    this.authStore.hasPermission('reuniones.entre_semana') || this.isSecretario()
   );
   canViewFinSemana = computed(() =>
-    this.authStore.hasPermission('reuniones.fin_semana_ver') ||
-    !!this.authStore.user()?.roles?.includes('Secretario')
+    this.authStore.hasPermission('reuniones.fin_semana') || this.isSecretario()
   );
-  showTipoTabs = computed(() => this.canViewEntreSemana() && this.canViewFinSemana());
+  canViewLogistica = computed(() =>
+    this.authStore.hasPermission('reuniones.logistica') || this.isSecretario()
+  );
+  canViewDiscursos = computed(() =>
+    this.authStore.hasPermission('reuniones.discursos') || this.isSecretario()
+  );
+  showTipoTabs = computed(() =>
+    [this.canViewEntreSemana(), this.canViewFinSemana(), this.canViewLogistica(), this.canViewDiscursos()]
+      .filter(Boolean).length > 1
+  );
 
   tituloReunion = computed(() => {
     switch (this.tipoReunionActivo()) {
@@ -1610,19 +1695,46 @@ export class ReunionesProgramacionComponent implements OnInit {
   }
 
   // ── Lifecycle ──────────────────────────────────────────────────
+  constructor() {
+    effect(() => {
+      const idCong = this.congregacionCtx.effectiveCongregacionId();
+      // Reset state whenever the congregation changes
+      untracked(() => {
+        this.semanas.set([]);
+        this.selectedWeekIdx.set(0);
+        this.estado.set('idle');
+        this.errorMsg.set(null);
+        this.periodos.set([]);
+        this.openDropdownId.set(null);
+        this.editingHistorialId.set(null);
+      });
+      if (!idCong) {
+        untracked(() => {
+          this.errorMsg.set('No hay congregación seleccionada. Selecciona una en el panel de administración.');
+          this.estado.set('error');
+        });
+        return;
+      }
+      untracked(() => {
+        const tipo = this.tipoReunionActivo();
+        if (tipo === 'logistica' || tipo === 'discursos') return;
+        this.tryLoadDrafts(idCong);
+        this.loadPeriodos(idCong);
+      });
+    });
+  }
+
   ngOnInit(): void {
-    // Set initial type based on user permissions
-    if (!this.canViewEntreSemana() && this.canViewFinSemana()) {
+    // Seleccionar el primer tab al que el usuario tiene acceso
+    if (this.canViewEntreSemana()) {
+      this.tipoReunionActivo.set('entre_semana');
+    } else if (this.canViewFinSemana()) {
       this.tipoReunionActivo.set('fin_semana');
+    } else if (this.canViewLogistica()) {
+      this.tipoReunionActivo.set('logistica');
+    } else if (this.canViewDiscursos()) {
+      this.tipoReunionActivo.set('discursos');
     }
-    const idCong = this.congregacionCtx.effectiveCongregacionId();
-    if (!idCong) {
-      this.errorMsg.set('No hay congregacion seleccionada. Selecciona una en el panel de administracion.');
-      this.estado.set('error');
-      return;
-    }
-    this.tryLoadDrafts(idCong);
-    this.loadPeriodos(idCong);
   }
 
   private loadPeriodos(idCong: number): void {
@@ -1638,20 +1750,18 @@ export class ReunionesProgramacionComponent implements OnInit {
     const now = new Date();
     const defaultDay = this.tipoReunionActivo() === 'entre_semana' ? 2 : 7;
     
-    // Rango de 4 meses (1 anterior, actual, 2 futuros) para recuperar borradores
+    // Rango amplio (4 meses anteriores, actual, 4 futuros) para no perder borradores
+    // generados para meses pasados o lejanos. Los drafts viven 72h en Redis.
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
-    
-    let startYear = currentYear;
-    let startMonth = currentMonth - 1;
-    if (startMonth < 1) {
-      startMonth = 12;
-      startYear -= 1;
-    }
 
-    const futureMonth = currentMonth + 2;
-    const endYear = currentYear + Math.floor((futureMonth - 1) / 12);
-    const endMonth = ((futureMonth - 1) % 12) + 1;
+    const startTotalMonth = (currentYear * 12 + (currentMonth - 1)) - 4;
+    const startYear = Math.floor(startTotalMonth / 12);
+    const startMonth = (startTotalMonth % 12) + 1;
+
+    const endTotalMonth = (currentYear * 12 + (currentMonth - 1)) + 4;
+    const endYear = Math.floor(endTotalMonth / 12);
+    const endMonth = (endTotalMonth % 12) + 1;
 
     const fechas = this.calcFechasRango(startYear, startMonth, endYear, endMonth, defaultDay);
     if (fechas.length === 0) { this.estado.set('idle'); return; }
@@ -1696,7 +1806,9 @@ export class ReunionesProgramacionComponent implements OnInit {
     }).subscribe({
       next: ({ plantillas, config }) => {
         const configKey = this.tipoReunionActivo() === 'entre_semana' ? 'dia_reunion_entre_semana' : 'dia_reunion_fin_semana';
-        const diaReunion = this.diaReunionToNumber(config?.[configKey as keyof typeof config] as string | null ?? null);
+        const diaRaw = config?.[configKey as keyof typeof config] as string | null ?? null;
+        this.diaReunionSinConfigurar.set(!diaRaw);
+        const diaReunion = this.diaReunionToNumber(diaRaw);
         this.plantillas.set(plantillas);
         this.modalForm.update((f) => ({ ...f, dia_reunion: diaReunion }));
         if (plantillas.length > 0) {
@@ -1874,31 +1986,35 @@ export class ReunionesProgramacionComponent implements OnInit {
     asigRef: AsignacionDraft,
     candidato: CandidatoAlternativo,
   ): void {
-    const targetKey = this.pillKey(asigRef);
-    this.semanas.update((semanas) =>
-      semanas.map((sem, si) => {
-        if (si !== semanaIdx) return sem;
-        return {
-          ...sem,
-          partes: sem.partes.map((asig) => {
-            if (this.pillKey(asig) !== targetKey) return asig;
-            return {
-              ...asig,
-              id_publicador: candidato.id_publicador,
-              nombre_completo: candidato.nombre_completo,
-              _swapped: true,
-            };
-          }),
-        };
-      })
-    );
-    this.openDropdownId.set(null);
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    const semana = this.semanas()[semanaIdx];
+    if (!idCong || !semana) return;
 
-    // Persist the swap to Redis so confirmation uses the updated assignment
-    if (this.estado() === 'draft') {
-      const semana = this.semanas()[semanaIdx];
-      const idCong = this.congregacionCtx.effectiveCongregacionId();
-      if (semana && idCong) {
+    const fecha = semana.fecha;
+
+    const doSwap = () => {
+      const targetKey = this.pillKey(asigRef);
+      this.semanas.update((semanas) =>
+        semanas.map((sem, si) => {
+          if (si !== semanaIdx) return sem;
+          return {
+            ...sem,
+            partes: sem.partes.map((asig) => {
+              if (this.pillKey(asig) !== targetKey) return asig;
+              return {
+                ...asig,
+                id_publicador: candidato.id_publicador,
+                nombre_completo: candidato.nombre_completo,
+                _swapped: true,
+              };
+            }),
+          };
+        })
+      );
+      this.openDropdownId.set(null);
+
+      // Persist the swap to Redis so confirmation uses the updated assignment
+      if (this.estado() === 'draft') {
         const ano = new Date(semana.fecha).getFullYear();
         this.reunionesSvc.swapDraftAsignacion(
           this.tipoReunionActivo(), ano, semana.semana_iso, idCong,
@@ -1906,7 +2022,13 @@ export class ReunionesProgramacionComponent implements OnInit {
           candidato.id_publicador, candidato.nombre_completo,
         ).subscribe(); // fire-and-forget; local state already updated
       }
-    }
+    };
+
+    this.conflictosSvc
+      .confirmarSiHayConflicto(candidato.id_publicador, fecha, idCong, candidato.nombre_completo)
+      .subscribe((proceder) => {
+        if (proceder) doSwap();
+      });
   }
 
   toggleDropdown(asig: AsignacionDraft): void {
@@ -2055,7 +2177,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   grupoDropdownActivo(partes: AsignacionDraft[]): boolean {
     const openId = this.openDropdownId();
     const editId = this.editingHistorialId();
-    return partes.some(p => openId === this.pillKey(p) || editId === p.id_asignacion);
+    return partes.some(p => openId === this.pillKey(p) || editId === (p.id_asignacion ?? -p.id_programa_parte));
   }
   grupoHasReemplazo(partes: AsignacionDraft[]): boolean {
     return partes.some(p => p.es_reemplazo);
@@ -2283,17 +2405,21 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   openHistorialEdit(asig: AsignacionDraft): void {
     const idCong = this.congregacionCtx.effectiveCongregacionId();
-    if (!idCong || !asig.id_asignacion) return;
-    if (this.editingHistorialId() === asig.id_asignacion) {
+    if (!idCong) return;
+    // Usar id_programa_parte como clave de toggle para partes sin asignar (id_asignacion = null)
+    const toggleKey = asig.id_asignacion ?? -asig.id_programa_parte;
+    if (this.editingHistorialId() === toggleKey) {
       this.editingHistorialId.set(null);
       this.busquedaCandidato.set('');
       this.busquedaResultados.set([]);
       return;
     }
-    this.editingHistorialId.set(asig.id_asignacion);
+    this.editingHistorialId.set(toggleKey);
     this.historialCandidatos.set([]);
     this.busquedaCandidato.set('');
     this.busquedaResultados.set([]);
+    // Partes sin asignar: no hay candidatos sugeridos previos, solo búsqueda libre
+    if (!asig.id_asignacion) return;
     this.loadingCandidatos.set(true);
     this.reunionesSvc.getCandidatosConfirmados(asig.id_asignacion, idCong).subscribe({
       next: (candidatos) => {
@@ -2327,26 +2453,59 @@ export class ReunionesProgramacionComponent implements OnInit {
   }
 
   selectHistorialCandidato(semanaIdx: number, asig: AsignacionDraft, candidato: CandidatoAlternativo): void {
-    if (!asig.id_asignacion) return;
-    const payload: EditarAsignacionRequest = { id_publicador_nuevo: candidato.id_publicador };
-    this.reunionesSvc.editarAsignacion(asig.id_asignacion, payload).subscribe({
-      next: (result) => {
-        this.semanas.update((semanas) =>
-          semanas.map((sem, si) => {
-            if (si !== semanaIdx) return sem;
-            return {
-              ...sem,
-              partes: sem.partes.map((p) => {
-                if (p.id_asignacion !== asig.id_asignacion) return p;
-                return { ...p, id_publicador: result.id_publicador, nombre_completo: result.nombre_completo, _swapped: true };
-              }),
-            };
-          })
-        );
-        this.editingHistorialId.set(null);
-      },
-      error: () => this.editingHistorialId.set(null),
-    });
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    const semana = this.semanas()[semanaIdx];
+    if (!idCong || !semana) return;
+
+    const applyResult = (result: { id_asignacion: number; id_publicador: number; nombre_completo: string }) => {
+      this.semanas.update((semanas) =>
+        semanas.map((sem, si) => {
+          if (si !== semanaIdx) return sem;
+          return {
+            ...sem,
+            partes: sem.partes.map((p) => {
+              if (p.id_programa_parte !== asig.id_programa_parte) return p;
+              if (asig.id_asignacion && p.id_asignacion !== asig.id_asignacion) return p;
+              return { ...p, id_asignacion: result.id_asignacion, id_publicador: result.id_publicador, nombre_completo: result.nombre_completo, estado: 'confirmado', _swapped: true };
+            }),
+          };
+        })
+      );
+      this.editingHistorialId.set(null);
+    };
+
+    const doEdit = () => {
+      if (!asig.id_asignacion) {
+        // Parte sin asignar: crear nueva asignación confirmada
+        this.reunionesSvc.crearAsignacionConfirmada(asig.id_programa_parte, candidato.id_publicador, idCong).subscribe({
+          next: (result) => applyResult(result),
+          error: () => this.editingHistorialId.set(null),
+        });
+        return;
+      }
+      const payload: EditarAsignacionRequest = { id_publicador_nuevo: candidato.id_publicador };
+      this.reunionesSvc.editarAsignacion(asig.id_asignacion, payload).subscribe({
+        next: (result) => applyResult(result),
+        error: () => this.editingHistorialId.set(null),
+      });
+    };
+
+    if (!asig.id_asignacion) {
+      doEdit();
+      return;
+    }
+    this.conflictosSvc
+      .confirmarSiHayConflicto(
+        candidato.id_publicador,
+        semana.fecha,
+        idCong,
+        candidato.nombre_completo,
+        { tipo: 'entre_semana', id: asig.id_asignacion },
+      )
+      .subscribe((proceder) => {
+        if (proceder) doEdit();
+        else this.editingHistorialId.set(null);
+      });
   }
 
   // ── Date utilities ─────────────────────────────────────────────

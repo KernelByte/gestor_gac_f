@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   ConfirmarLogisticaRequest,
@@ -59,9 +59,15 @@ export class LogisticaService {
     });
   }
 
-  getCandidatos(puesto: string, idCong: number | null): Observable<PublicadorBase[]> {
-    let params = this.congParams(idCong).set('puesto', puesto);
+  getCandidatos(puesto: string, idCong: number | null, incluirHermanas = false): Observable<PublicadorBase[]> {
+    let params = this.congParams(idCong).set('puesto', puesto).set('incluir_hermanas', incluirHermanas);
     return this.http.get<PublicadorBase[]>(`${this.base}/candidatos`, { params });
+  }
+
+  buscarPublicadores(q: string, idCong: number | null): Observable<PublicadorBase[]> {
+    if (!q || q.trim().length === 0) return of([]);
+    let params = this.congParams(idCong).set('q', q.trim());
+    return this.http.get<PublicadorBase[]>(`${this.base}/publicadores/buscar`, { params });
   }
 
   getGrupos(idCong: number | null): Observable<GrupoBase[]> {

@@ -37,10 +37,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       };
 
       // Solo intentar refresh en 401 y si no es una URL excluida
+      // Para URLs excluidas (login, refresh, logout), el guard maneja el redirect
       if (err.status !== 401 || isNoRefresh) {
-        if (err.status === 401) {
-          handleLogoutRedirect();
-        }
         return throwError(() => err);
       }
 

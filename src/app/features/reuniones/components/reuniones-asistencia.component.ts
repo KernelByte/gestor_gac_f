@@ -531,7 +531,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
   private store = inject(AuthStore);
 
   hasEditPermission = computed(() => {
-    return this.store.hasPermission('reuniones.asistencia_editar') || !!this.store.user()?.roles?.includes('Secretario');
+    return this.store.hasPermission('reuniones.asistencia') || !!this.store.user()?.roles?.includes('Secretario');
   });
 
   // ── Selection state ──

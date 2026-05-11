@@ -1,4 +1,4 @@
-﻿import { Component, signal, computed, inject, OnInit, effect } from '@angular/core';
+﻿import { Component, signal, computed, inject, OnInit, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReunionesService } from '../services/reuniones.service';
@@ -125,7 +125,7 @@ import {
 
            <!-- Filtros buscador (solo para tab privilegios) -->
            @if (activeTab() === 'privilegios') {
-               <!-- Filter Icons -->
+               <!-- Filter Icons sexo -->
                <div class="flex items-center gap-1">
                    <button
                      (click)="setFiltroSexo('solo_hombres')"
@@ -148,6 +148,67 @@ import {
                        <span class="hidden sm:inline text-[11px] font-bold">Hermanas</span>
                    </button>
                </div>
+               <!-- Permission dropdown custom -->
+               <div class="relative shrink-0 permiso-dropdown-root">
+                 <!-- Trigger -->
+                 <button
+                   (click)="permisoDropdownOpen.set(!permisoDropdownOpen())"
+                   class="h-9 pl-3 pr-2.5 flex items-center gap-2 rounded-lg text-[11px] font-bold border transition-all whitespace-nowrap"
+                   [class]="filtroPermiso()
+                     ? 'border-[#6D28D9] bg-[#6D28D9]/10 dark:bg-[#6D28D9]/20 text-[#6D28D9] dark:text-purple-300 ring-2 ring-[#6D28D9]/20'
+                     : 'bg-white dark:bg-[#1a1b26] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
+                   <svg class="w-3.5 h-3.5 shrink-0 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                   <span>{{ filtroPermiso() ? getColLabel(filtroPermiso()!) : 'Con permiso...' }}</span>
+                   <svg class="w-3 h-3 shrink-0 opacity-50 transition-transform" [class.rotate-180]="permisoDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                 </button>
+                 <!-- Panel -->
+                 @if (permisoDropdownOpen()) {
+                   <div class="absolute top-full left-0 mt-1.5 z-50 w-52 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#1a1b26] shadow-xl shadow-black/20 overflow-hidden py-1">
+                     <!-- Clear option -->
+                     <button
+                       (click)="setFiltroPermiso(null)"
+                       class="w-full px-3 py-2 flex items-center gap-2.5 text-[11px] font-bold transition-colors text-left"
+                       [class]="!filtroPermiso()
+                         ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-300'
+                         : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-600 dark:hover:text-slate-300'">
+                       <span class="w-4 h-4 rounded flex items-center justify-center shrink-0"
+                             [class]="!filtroPermiso() ? 'bg-[#6D28D9]/20' : ''">
+                         @if (!filtroPermiso()) {
+                           <svg class="w-2.5 h-2.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                         }
+                       </span>
+                       Todos los publicadores
+                     </button>
+                     <!-- Divider -->
+                     <div class="mx-3 my-1 border-t border-slate-100 dark:border-slate-800"></div>
+                     <!-- Columns -->
+                     @for (col of columnas(); track col.key) {
+                       <button
+                         (click)="setFiltroPermiso(col.key)"
+                         class="w-full px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-semibold transition-colors text-left"
+                         [class]="filtroPermiso() === col.key
+                           ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-300'
+                           : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'">
+                         <span class="w-4 h-4 rounded flex items-center justify-center shrink-0"
+                               [class]="filtroPermiso() === col.key ? 'bg-[#6D28D9]/20' : ''">
+                           @if (filtroPermiso() === col.key) {
+                             <svg class="w-2.5 h-2.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                           }
+                         </span>
+                         {{ col.label }}
+                       </button>
+                     }
+                   </div>
+                 }
+               </div>
+               <!-- Clear button -->
+               @if (hasMatrizActiveFilters()) {
+                 <button (click)="clearMatrizFilters()"
+                         class="h-9 px-2.5 flex items-center gap-1 rounded-lg text-[11px] font-bold text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-all border border-transparent whitespace-nowrap">
+                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                   Limpiar
+                 </button>
+               }
                <!-- Search -->
                <div class="relative w-full sm:w-[200px]">
                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -155,7 +216,7 @@ import {
                    </div>
                    <input type="text"
                      [ngModel]="searchQuery()"
-                     (ngModelChange)="searchQuery.set($event)"
+                     (ngModelChange)="searchQuery.set($event); currentPage.set(1)"
                      placeholder="Buscar publicador..."
                      class="priv-search w-full h-9 pl-9 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm">
                </div>
@@ -770,15 +831,37 @@ import {
                                 <span class="text-[9px] font-black text-white uppercase tracking-[0.14em]">Publicador</span>
                               </th>
                               @for (col of regularColumnas(); track col.key) {
-                                <th class="priv-th px-0.5 py-1.5 text-center min-w-[40px] border-l border-white/[0.07]" [title]="permisoTooltip(col.key)">
-                                  <span class="text-[9px] font-black text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">{{ col.label }}</span>
+                                <th class="priv-th px-0.5 py-1.5 text-center min-w-[40px] border-l border-white/[0.07] cursor-pointer select-none transition-colors hover:bg-white/10"
+                                    [class.bg-amber-400]="filtroPermiso() === col.key"
+                                    [class.!text-slate-900]="filtroPermiso() === col.key"
+                                    [title]="'Filtrar por ' + col.label + (filtroPermiso() === col.key ? ' (activo — clic para quitar)' : '')"
+                                    (click)="setFiltroPermiso(filtroPermiso() === col.key ? null : col.key)">
+                                  <span class="text-[9px] font-black uppercase tracking-[0.02em] leading-tight whitespace-normal block"
+                                        [class]="filtroPermiso() === col.key ? 'text-slate-900' : 'text-white'">
+                                    {{ col.label }}
+                                    @if (filtroPermiso() === col.key) {
+                                      <span class="block text-[8px] mt-0.5 opacity-80">✓ filtrado</span>
+                                    }
+                                  </span>
                                 </th>
                               }
                               @for (col of restriccionColumnas(); track col.key) {
-                                <th class="priv-th priv-restrict-header px-0.5 py-1.5 text-center min-w-[46px] border-l border-amber-400/[0.18]" [title]="permisoTooltip(col.key)">
+                                <th class="priv-th priv-restrict-header px-0.5 py-1.5 text-center min-w-[46px] border-l border-amber-400/[0.18] cursor-pointer select-none transition-colors hover:bg-amber-400/10"
+                                    [class.bg-amber-400]="filtroPermiso() === col.key"
+                                    [title]="'Filtrar por ' + col.label + (filtroPermiso() === col.key ? ' (activo — clic para quitar)' : '')"
+                                    (click)="setFiltroPermiso(filtroPermiso() === col.key ? null : col.key)">
                                   <div class="inline-flex items-center gap-0.5 justify-center">
-                                    <svg class="w-2 h-2 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                                    <span class="text-[9px] font-black text-amber-200 uppercase tracking-[0.02em] leading-tight whitespace-normal">{{ col.label }}</span>
+                                    <svg class="w-2 h-2 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                         [class]="filtroPermiso() === col.key ? 'text-slate-900' : 'text-amber-300'">
+                                      <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                                    </svg>
+                                    <span class="text-[9px] font-black uppercase tracking-[0.02em] leading-tight whitespace-normal"
+                                          [class]="filtroPermiso() === col.key ? 'text-slate-900' : 'text-amber-200'">
+                                      {{ col.label }}
+                                      @if (filtroPermiso() === col.key) {
+                                        <span class="block text-[8px] mt-0.5 opacity-80">✓ filtrado</span>
+                                      }
+                                    </span>
                                   </div>
                                 </th>
                               }
@@ -1295,20 +1378,17 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   private tokenSvc = inject(TokenService);
 
   hasEditPermission = computed(() => {
-    return this.authStore.hasPermission('reuniones.configuracion_editar') || !!this.authStore.user()?.roles?.includes('Secretario');
+    return this.authStore.hasPermission('reuniones.configuracion') || !!this.authStore.user()?.roles?.includes('Secretario');
   });
 
-  // ── Tabs ──
+  // ── Tabs — visibles para cualquiera con reuniones.configuracion ──
   private allTabs = [
-    { id: 'privilegios', label: 'Asignación de Privilegios', adminOnly: false },
-    { id: 'parametros', label: 'Parámetros del Algoritmo', adminOnly: true },
-    { id: 'plantillas', label: 'Plantillas de Reunión', adminOnly: true }
+    { id: 'privilegios', label: 'Asignación de Privilegios' },
+    { id: 'parametros', label: 'Parámetros del Algoritmo' },
+    { id: 'plantillas', label: 'Plantillas de Reunión' }
   ];
 
-  visibleTabs = computed(() => {
-    const isAdmin = this.hasRole('Administrador') || this.hasRole('Gestor Aplicación');
-    return this.allTabs.filter(t => !t.adminOnly || isAdmin);
-  });
+  visibleTabs = computed(() => this.allTabs);
 
   activeTab = signal('privilegios');
 
@@ -1400,7 +1480,19 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   matrizErrorMsg = signal<string | null>(null);
   searchQuery = signal('');
   filtroSexo = signal<'todos' | 'solo_hombres' | 'solo_mujeres'>('todos');
+  filtroPrivilegio = signal<string | null>(null);
+  filtroPermiso = signal<string | null>(null);
+  permisoDropdownOpen = signal(false);
   currentPage = signal(1);
+
+  readonly privilegioOptions = [
+    { key: 'Anciano', label: 'Anciano', color: 'amber' },
+    { key: 'Siervo Ministerial', label: 'S. Ministerial', color: 'blue' },
+    { key: 'Precursor Regular', label: 'P. Regular', color: 'emerald' },
+    { key: 'Precursor Especial', label: 'P. Especial', color: 'emerald' },
+    { key: 'Precursor Auxiliar', label: 'P. Auxiliar', color: 'teal' },
+    { key: 'Publicador', label: 'Publicador', color: 'slate' },
+  ];
   pageSize = signal(50);
   private dirtyMap = new Map<number, Record<string, boolean>>();
   private dirtyOratoriaMap = new Map<number, number>();
@@ -1426,6 +1518,8 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     let list = this.publicadores();
     const q = this.searchQuery().toLowerCase().trim();
     const sexoFilter = this.filtroSexo();
+    const privFilter = this.filtroPrivilegio();
+    const permisoFilter = this.filtroPermiso();
     if (q) {
       list = list.filter(p => `${p.primer_nombre} ${p.primer_apellido}`.toLowerCase().includes(q));
     }
@@ -1433,6 +1527,12 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       list = list.filter(p => this.isHermano(p));
     } else if (sexoFilter === 'solo_mujeres') {
       list = list.filter(p => !this.isHermano(p));
+    }
+    if (privFilter) {
+      list = list.filter(p => p.privilegios.includes(privFilter));
+    }
+    if (permisoFilter) {
+      list = list.filter(p => this.getPermiso(p, permisoFilter));
     }
     return list;
   });
@@ -2002,6 +2102,56 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     } else {
       this.filtroSexo.set(filter);
     }
+    this.currentPage.set(1);
+  }
+
+  setFiltroPrivilegio(priv: string): void {
+    this.filtroPrivilegio.set(this.filtroPrivilegio() === priv ? null : priv);
+    this.currentPage.set(1);
+  }
+
+  setFiltroPermiso(key: string | null): void {
+    this.filtroPermiso.set(key);
+    this.permisoDropdownOpen.set(false);
+    this.currentPage.set(1);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(e: MouseEvent): void {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.permiso-dropdown-root')) {
+      this.permisoDropdownOpen.set(false);
+    }
+  }
+
+  clearMatrizFilters(): void {
+    this.searchQuery.set('');
+    this.filtroSexo.set('todos');
+    this.filtroPrivilegio.set(null);
+    this.filtroPermiso.set(null);
+    this.currentPage.set(1);
+  }
+
+  hasMatrizActiveFilters = computed(() =>
+    this.searchQuery().trim() !== '' ||
+    this.filtroSexo() !== 'todos' ||
+    this.filtroPrivilegio() !== null ||
+    this.filtroPermiso() !== null
+  );
+
+  getColLabel(key: string): string {
+    return this.columnas().find(c => c.key === key)?.label ?? key;
+  }
+
+  privilegioActiveClass(color: string): string {
+    const map: Record<string, string> = {
+      amber: 'bg-amber-50 dark:bg-amber-900/30 border-amber-400 text-amber-700 dark:text-amber-300',
+      blue: 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 text-blue-700 dark:text-blue-300',
+      emerald: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 text-emerald-700 dark:text-emerald-300',
+      teal: 'bg-teal-50 dark:bg-teal-900/30 border-teal-400 text-teal-700 dark:text-teal-300',
+      slate: 'bg-slate-100 dark:bg-slate-700 border-slate-400 text-slate-700 dark:text-slate-200',
+    };
+    return map[color] ?? map['slate'];
   }
 
   guardarMatriz(): void {

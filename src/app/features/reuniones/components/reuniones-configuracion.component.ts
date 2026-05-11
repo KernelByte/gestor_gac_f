@@ -62,7 +62,10 @@ import {
        }
 
        <!-- ===== COMPACT TOOLBAR: Search + Filters ===== -->
-       <div class="shrink-0 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-1.5 flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
+       <div class="shrink-0 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-1.5 flex flex-col gap-1.5">
+
+         <!-- Row 1: Search + Sex filters + Clear -->
+         <div class="flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
 
            <!-- Search -->
            <div class="relative flex-1 min-w-[200px]">
@@ -71,7 +74,7 @@ import {
                </div>
                <input type="text"
                  [ngModel]="searchQuery()"
-                 (ngModelChange)="searchQuery.set($event)"
+                 (ngModelChange)="searchQuery.set($event); currentPage.set(1)"
                  placeholder="Buscar publicador..."
                  class="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-800/50 border border-transparent dark:border-slate-700/50 rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-[#6D28D9]/50 focus:ring-2 focus:ring-[#6D28D9]/20 transition-all outline-none">
            </div>
@@ -80,7 +83,7 @@ import {
            <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden lg:block shrink-0"></div>
 
            <!-- Sex filter pills -->
-           <div class="hidden md:flex items-center gap-1 shrink-0">
+           <div class="flex items-center gap-1 shrink-0">
                <button
                  (click)="setFiltroSexo('solo_hombres')"
                  class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-all"
@@ -98,6 +101,62 @@ import {
                    Hermanas
                </button>
            </div>
+
+           <!-- Clear filters -->
+           @if (hasActiveFilters()) {
+             <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+             <button (click)="clearAllFilters()"
+                     class="flex items-center gap-1 px-2.5 h-9 rounded-lg text-xs font-bold text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition-all whitespace-nowrap shrink-0">
+               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+               Limpiar
+             </button>
+           }
+         </div>
+
+         <!-- Row 2: Privilege + Permission filters -->
+         <div class="flex items-center gap-1.5 flex-wrap border-t border-slate-100 dark:border-slate-800 pt-1.5">
+
+           <!-- Label -->
+           <span class="text-[0.6rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0 pl-1">Filtrar por:</span>
+
+           <!-- Privilege pills -->
+           @for (item of privilegioOptions; track item.key) {
+             <button
+               (click)="setFiltroPrivilegio(item.key)"
+               class="flex items-center gap-1 px-2.5 h-7 rounded-lg text-[0.6875rem] font-bold whitespace-nowrap transition-all border"
+               [class]="filtroPrivilegio() === item.key
+                 ? privilegioActiveClass(item.color)
+                 : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-slate-300 bg-white dark:bg-slate-800/50'">
+               {{ item.label }}
+               @if (filtroPrivilegio() === item.key) {
+                 <svg class="w-3 h-3 ml-0.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+               }
+             </button>
+           }
+
+           <!-- Separator -->
+           <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-1"></div>
+
+           <!-- Permission column dropdown -->
+           <div class="relative shrink-0">
+             <select
+               [ngModel]="filtroPermiso()"
+               (ngModelChange)="setFiltroPermiso($event || null)"
+               class="h-7 pl-2.5 pr-7 rounded-lg text-[0.6875rem] font-bold border transition-all outline-none appearance-none cursor-pointer"
+               [class]="filtroPermiso()
+                 ? 'border-[#6D28D9] bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-300 ring-2 ring-[#6D28D9]/20'
+                 : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800/50 hover:border-slate-300'">
+               <option value="">Con permiso...</option>
+               @for (col of columnas(); track col.key) {
+                 <option [value]="col.key">{{ col.label }}</option>
+               }
+             </select>
+             <div class="pointer-events-none absolute inset-y-0 right-0 pr-2 flex items-center">
+               <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+             </div>
+           </div>
+
+         </div>
        </div>
 
        <!-- ===== MATRIZ DE PUBLICADORES ===== -->
@@ -316,9 +375,21 @@ export class ReunionesConfiguracionComponent implements OnInit {
   // ── Filters & Pagination ──
   searchQuery = signal('');
   filtroSexo = signal<'todos' | 'solo_hombres' | 'solo_mujeres'>('todos');
+  filtroPrivilegio = signal<string | null>(null);
+  filtroPermiso = signal<string | null>(null);
   currentPage = signal(1);
   pageSize = signal(20);
   protected readonly Math = Math;
+
+  // ── Filter options ──
+  readonly privilegioOptions = [
+    { key: 'Anciano', label: 'Anciano', color: 'amber' },
+    { key: 'Siervo Ministerial', label: 'S. Ministerial', color: 'blue' },
+    { key: 'Precursor Regular', label: 'P. Regular', color: 'emerald' },
+    { key: 'Precursor Especial', label: 'P. Especial', color: 'emerald' },
+    { key: 'Precursor Auxiliar', label: 'P. Auxiliar', color: 'teal' },
+    { key: 'Publicador', label: 'Publicador', color: 'slate' },
+  ];
 
   // ── Change tracking ──
   private dirtyMap = new Map<number, Record<string, boolean>>();
@@ -329,6 +400,8 @@ export class ReunionesConfiguracionComponent implements OnInit {
     let list = this.publicadores();
     const q = this.searchQuery().toLowerCase().trim();
     const sexoFilter = this.filtroSexo();
+    const privFilter = this.filtroPrivilegio();
+    const permisoFilter = this.filtroPermiso();
 
     if (q) {
       list = list.filter(p =>
@@ -341,6 +414,15 @@ export class ReunionesConfiguracionComponent implements OnInit {
     } else if (sexoFilter === 'solo_mujeres') {
       list = list.filter(p => !this.isHermano(p));
     }
+
+    if (privFilter) {
+      list = list.filter(p => p.privilegios.includes(privFilter));
+    }
+
+    if (permisoFilter) {
+      list = list.filter(p => this.getPermiso(p, permisoFilter));
+    }
+
     return list;
   });
 
@@ -457,11 +539,37 @@ export class ReunionesConfiguracionComponent implements OnInit {
 
   setFiltroSexo(filter: 'solo_hombres' | 'solo_mujeres'): void {
     if (this.filtroSexo() === filter) {
-      this.filtroSexo.set('todos'); // Toggle off
+      this.filtroSexo.set('todos');
     } else {
-      this.filtroSexo.set(filter); // Toggle on
+      this.filtroSexo.set(filter);
     }
+    this.currentPage.set(1);
   }
+
+  setFiltroPrivilegio(priv: string): void {
+    this.filtroPrivilegio.set(this.filtroPrivilegio() === priv ? null : priv);
+    this.currentPage.set(1);
+  }
+
+  setFiltroPermiso(key: string | null): void {
+    this.filtroPermiso.set(key);
+    this.currentPage.set(1);
+  }
+
+  clearAllFilters(): void {
+    this.searchQuery.set('');
+    this.filtroSexo.set('todos');
+    this.filtroPrivilegio.set(null);
+    this.filtroPermiso.set(null);
+    this.currentPage.set(1);
+  }
+
+  hasActiveFilters = computed(() =>
+    this.searchQuery().trim() !== '' ||
+    this.filtroSexo() !== 'todos' ||
+    this.filtroPrivilegio() !== null ||
+    this.filtroPermiso() !== null
+  );
 
   // ── Save ──
   guardarCambios(): void {
@@ -613,6 +721,17 @@ export class ReunionesConfiguracionComponent implements OnInit {
       default:
         return 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400';
     }
+  }
+
+  privilegioActiveClass(color: string): string {
+    const map: Record<string, string> = {
+      amber: 'border-amber-400 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
+      blue: 'border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+      emerald: 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
+      teal: 'border-teal-400 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300',
+      slate: 'border-slate-400 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200',
+    };
+    return map[color] ?? map['slate'];
   }
 
   private showToast(type: 'success' | 'error', message: string): void {

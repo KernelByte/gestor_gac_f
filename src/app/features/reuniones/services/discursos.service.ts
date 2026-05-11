@@ -44,16 +44,16 @@ export class DiscursosService {
     return this.http.post<DiscursoSalienteOut>(`${this.base}/salientes`, payload, { params: this.congParams(idCong) });
   }
 
-  editarSaliente(id: number, payload: EditarSalienteRequest): Observable<DiscursoSalienteOut> {
-    return this.http.put<DiscursoSalienteOut>(`${this.base}/salientes/${id}`, payload);
+  editarSaliente(id: number, payload: EditarSalienteRequest, idCong: number | null): Observable<DiscursoSalienteOut> {
+    return this.http.put<DiscursoSalienteOut>(`${this.base}/salientes/${id}`, payload, { params: this.congParams(idCong) });
   }
 
-  eliminarSaliente(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/salientes/${id}`);
+  eliminarSaliente(id: number, idCong: number | null): Observable<void> {
+    return this.http.delete<void>(`${this.base}/salientes/${id}`, { params: this.congParams(idCong) });
   }
 
-  editarEntrante(id: number, payload: EditarEntranteRequest): Observable<DiscursoEntranteOut> {
-    return this.http.put<DiscursoEntranteOut>(`${this.base}/entrantes/${id}`, payload);
+  editarEntrante(id: number, payload: EditarEntranteRequest, idCong: number | null): Observable<DiscursoEntranteOut> {
+    return this.http.put<DiscursoEntranteOut>(`${this.base}/entrantes/${id}`, payload, { params: this.congParams(idCong) });
   }
 
   confirmar(payload: ConfirmarDiscursosRequest, idCong: number | null): Observable<DiscursosMesOut> {
