@@ -90,6 +90,14 @@ export class ConfiguracionPage implements OnInit {
    timePickerEntreOpen = signal(false);
    timePickerFinOpen   = signal(false);
 
+   // Import Modal Signals
+   showImportModal = signal(false);
+   importing = signal(false);
+   importResult = signal<any | null>(null);
+   importError = signal<string | null>(null);
+   selectedFileName = signal<string | null>(null);
+   isDragOver = signal(false);
+
    readonly diasEntreSemana = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
    readonly diasFinSemana   = ['Sabado', 'Domingo'];
    readonly diasLabel: Record<string, string> = {
@@ -338,5 +346,121 @@ export class ConfiguracionPage implements OnInit {
       }
 
       return this.auth.hasPermission('configuracion.editar');
+   }
+
+   // ===== Import Modal Methods =====
+   openImportModal() {
+      this.showImportModal.set(true);
+      this.importResult.set(null);
+      this.importError.set(null);
+      this.selectedFileName.set(null);
+   }
+
+   closeImportModal() {
+      const wasSuccess = this.importResult()?.success;
+      this.showImportModal.set(false);
+      this.importResult.set(null);
+      this.importError.set(null);
+      this.selectedFileName.set(null);
+      this.isDragOver.set(false);
+      if (wasSuccess) {
+         this.loadConfig();
+      }
+   }
+
+   onDragOver(event: DragEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.isDragOver.set(true);
+   }
+
+   onDragLeave(event: DragEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.isDragOver.set(false);
+   }
+
+   onFileDrop(event: DragEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.isDragOver.set(false);
+
+      const files = event.dataTransfer?.files;
+      if (files && files.length > 0) {
+         this.processFile(files[0]);
+      }
+   }
+
+   onFileSelected(event: Event) {
+      const input = event.target as HTMLInputElement;
+      if (input.files && input.files.length > 0) {
+         this.processFile(input.files[0]);
+      }
+   }
+
+   private processFile(file: File) {
+      // Validate extension
+      const name = file.name.toLowerCase();
+      if (!name.endsWith('.xls') && !name.endsWith('.xlsx')) {
+         this.importError.set('Formato no soportado. Solo se aceptan archivos .xls o .xlsx');
+         return;
+      }
+
+      // Validate size (5MB max)
+      const sizeMB = file.size / (1024 * 1024);
+      if (sizeMB > 5) {
+         this.importError.set(`El archivo excede el tamaño máximo permitido (5 MB). Tamaño: ${sizeMB.toFixed(2)} MB`);
+         return;
+      }
+
+      this.selectedFileName.set(file.name);
+      this.uploadFile(file);
+   }
+
+   private uploadFile(file: File) {
+      this.importing.set(true);
+      this.importError.set(null);
+      this.importResult.set(null);
+
+      const formData = new FormData();
+      formData.append('archivo', file);
+
+      const idCong = this.config.id_congregacion;
+      const url = `${environment.apiUrl}/import/congregaciones?id_congregacion=${idCong}`;
+
+      this.http.post<any>(url, formData)
+         .subscribe({
+            next: (result) => {
+               this.importResult.set(result);
+               this.importing.set(false);
+            },
+            error: (err: any) => {
+               console.error('Import error:', err);
+               const message = err.error?.detail || err.message || 'Error inesperado al procesar el archivo';
+               this.importError.set(message);
+               this.importing.set(false);
+            }
+         });
+   }
+
+   downloadTemplate() {
+      this.http.get(`${environment.apiUrl}/export/plantilla`, {
+         responseType: 'blob'
+      }).subscribe({
+         next: (blob: Blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Plantilla_Importacion_GAC.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+         },
+         error: (err: any) => {
+            console.error('Template download error:', err);
+            alert('Error al descargar la plantilla');
+         }
+      });
    }
 }

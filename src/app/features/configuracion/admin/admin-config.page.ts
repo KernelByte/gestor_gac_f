@@ -27,6 +27,10 @@ interface CongregacionAdmin {
    tiene_sala_b: number;
    usa_zoom: number;
    miembros: number; // Computed field from backend?
+   dia_reunion_entre_semana: string | null;
+   hora_reunion_entre_semana: string | null;
+   dia_reunion_fin_semana: string | null;
+   hora_reunion_fin_semana: string | null;
 }
 
 interface ImportResult {
@@ -179,7 +183,11 @@ export class AdminConfigPage implements OnInit {
          direccion: ['', [Validators.required]],
          codigo_seguridad: [''],
          tiene_sala_b: [false],
-         usa_zoom: [true]
+         usa_zoom: [true],
+         dia_reunion_entre_semana: [''],
+         hora_reunion_entre_semana: [''],
+         dia_reunion_fin_semana: [''],
+         hora_reunion_fin_semana: ['']
       });
 
       this.urlForm = this.fb.group({
@@ -247,7 +255,11 @@ export class AdminConfigPage implements OnInit {
             direccion: cong.direccion || '',
             codigo_seguridad: cong.codigo_seguridad,
             tiene_sala_b: !!cong.tiene_sala_b,
-            usa_zoom: !!cong.usa_zoom
+            usa_zoom: !!cong.usa_zoom,
+            dia_reunion_entre_semana: cong.dia_reunion_entre_semana || '',
+            hora_reunion_entre_semana: cong.hora_reunion_entre_semana || '',
+            dia_reunion_fin_semana: cong.dia_reunion_fin_semana || '',
+            hora_reunion_fin_semana: cong.hora_reunion_fin_semana || ''
          });
          this.loadCongregacionUrls(id);
          this.panelOpen.set(true);
@@ -480,7 +492,11 @@ export class AdminConfigPage implements OnInit {
          direccion: data.direccion,
          codigo_seguridad: data.codigo_seguridad,
          tiene_sala_b: data.tiene_sala_b ? 1 : 0,
-         usa_zoom: data.usa_zoom ? 1 : 0
+         usa_zoom: data.usa_zoom ? 1 : 0,
+         dia_reunion_entre_semana: data.dia_reunion_entre_semana || null,
+         hora_reunion_entre_semana: data.hora_reunion_entre_semana || null,
+         dia_reunion_fin_semana: data.dia_reunion_fin_semana || null,
+         hora_reunion_fin_semana: data.hora_reunion_fin_semana || null
       };
 
       let req;

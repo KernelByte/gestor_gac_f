@@ -157,95 +157,115 @@ import { saveAs } from 'file-saver';
           }
 
           <!-- Weekly Navigator -->
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-5 shrink-0">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 shrink-0">
             <div class="flex items-center gap-3">
               <div class="hidden lg:flex w-10 h-10 rounded-2xl bg-brand-purple/10 items-center justify-center text-brand-purple shrink-0">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </div>
               <div>
                 <h3 class="text-base lg:text-lg font-black text-slate-900 dark:text-white tracking-tight">Registro de Asistencia</h3>
-                <p class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mt-0.5">Semana {{ selectedWeek() }}</p>
+                <p class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mt-0.5">{{ mesLabel() }} {{ selectedYear() }}</p>
               </div>
             </div>
 
             <div class="flex gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl w-full sm:w-auto">
               @for (week of weeksArray(); track week) {
                 <button (click)="selectWeek(week)"
-                        class="press-btn flex-1 sm:flex-none sm:min-w-[3rem] h-9 px-1 rounded-xl text-xs font-black relative flex items-center justify-center"
+                        class="press-btn flex-1 sm:flex-none sm:min-w-[3rem] h-11 px-1 rounded-xl relative flex flex-col items-center justify-center gap-0.5"
                         [ngClass]="selectedWeek() === week ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
-                  S{{ week }}
-                  @if (weekHasData(week)) { <span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500"></span> }
+                  <span class="text-xs font-black leading-none">S{{ week }}</span>
+                  @if (fechasReuniones()[week - 1]?.fecha_entre_semana) {
+                    <span class="text-[0.48rem] font-bold tabular-nums leading-none opacity-50">{{ formatWeekDate(fechasReuniones()[week - 1].fecha_entre_semana) }}</span>
+                  }
+                  @if (weekHasData(week)) { <span class="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500"></span> }
                 </button>
               }
             </div>
           </div>
 
-          <!-- Entry Fields: on mobile only the closest meeting section shows; md+ shows both -->
-          <div class="flex-1 min-h-0 flex flex-col gap-0">
+          <!-- Entry Fields: side-by-side on md+, one at a time on mobile -->
+          <div class="flex-1 min-h-0 grid md:grid-cols-2 gap-3">
 
-            <!-- MIDWEEK: hidden on mobile when weekend is closer; always shown md+ -->
-            <div class="md:flex flex-col gap-3 pb-4"
+            <!-- MIDWEEK -->
+            <div class="md:flex flex-col gap-3 p-4 rounded-2xl border border-brand-purple/10 dark:border-brand-purple/15 bg-brand-purple/[0.025] dark:bg-brand-purple/[0.07]"
                  [class.flex]="activeMeetingSection() === 'midweek'"
                  [class.hidden]="activeMeetingSection() !== 'midweek'">
-              <div class="flex justify-between items-end">
-                <div>
-                  <h4 class="text-[0.65rem] font-black text-brand-purple uppercase tracking-[0.2em] mb-1">Entre Semana</h4>
-                  <div class="flex items-center gap-2">
-                     <p class="text-xl font-black text-slate-900 dark:text-white leading-none tabular-nums">{{ currentMidweekTotal() }}</p>
-                     <span class="text-[0.6rem] font-bold text-slate-400">Asistentes</span>
-                  </div>
+
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-brand-purple shrink-0"></div>
+                  <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-300 uppercase tracking-[0.15em]">Entre Semana</span>
                 </div>
                 @if (nextMidweekDate()) {
-                   <span class="text-[0.6rem] font-bold px-2 py-1 rounded-lg" [class]="nextMidweekDate()!.isToday ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'">{{ nextMidweekDate()!.isToday ? 'HOY' : nextMidweekDate()!.label }}</span>
+                  <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border"
+                        [class]="nextMidweekDate()!.isToday
+                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'">
+                    {{ nextMidweekDate()!.isToday ? 'HOY' : nextMidweekDate()!.label }}
+                  </span>
                 }
               </div>
 
-              <div class="grid gap-3" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0">
-                <div class="flex flex-col gap-1.5">
-                   <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Presencial</label>
-                   <input type="number" min="0" inputmode="numeric" [ngModel]="midweekWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="0">
+              <div class="flex flex-col gap-2.5">
+                <div>
+                  <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Presencial</label>
+                  <input type="number" min="0" inputmode="numeric" [ngModel]="midweekWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                 </div>
                 @if (congregacionConfig()?.usa_zoom !== 0) {
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Zoom</label>
-                    <input type="number" min="0" inputmode="numeric" [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="0">
+                  <div>
+                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Zoom</label>
+                    <input type="number" min="0" inputmode="numeric" [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                   </div>
                 }
               </div>
+
+              @if (midweekWeeks()[selectedWeek() - 1] !== null) {
+                <div class="flex items-center justify-between pt-2.5 mt-auto border-t border-brand-purple/10">
+                  <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
+                  <span class="text-sm font-black text-brand-purple tabular-nums">{{ currentMidweekTotal() }}</span>
+                </div>
+              }
             </div>
 
-            <!-- Divider: only shown on md+ when both sections are visible -->
-            <div class="hidden md:block h-px bg-slate-100 dark:bg-slate-800 my-4 shrink-0"></div>
-
-            <!-- WEEKEND: hidden on mobile when midweek is closer; always shown md+ -->
-            <div class="md:flex flex-col gap-3"
+            <!-- WEEKEND -->
+            <div class="md:flex flex-col gap-3 p-4 rounded-2xl border border-orange-500/10 dark:border-orange-500/15 bg-orange-500/[0.025] dark:bg-orange-500/[0.07]"
                  [class.flex]="activeMeetingSection() === 'weekend'"
                  [class.hidden]="activeMeetingSection() !== 'weekend'">
-              <div class="flex justify-between items-end">
-                <div>
-                  <h4 class="text-[0.65rem] font-black text-orange-500 uppercase tracking-[0.2em] mb-1">Fin de Semana</h4>
-                  <div class="flex items-center gap-2">
-                     <p class="text-xl font-black text-slate-900 dark:text-white leading-none tabular-nums">{{ currentWeekendTotal() }}</p>
-                     <span class="text-[0.6rem] font-bold text-slate-400">Asistentes</span>
-                  </div>
+
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div>
+                  <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-300 uppercase tracking-[0.15em]">Fin de Semana</span>
                 </div>
                 @if (nextWeekendDate()) {
-                   <span class="text-[0.6rem] font-bold px-2 py-1 rounded-lg" [class]="nextWeekendDate()!.isToday ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'">{{ nextWeekendDate()!.isToday ? 'HOY' : nextWeekendDate()!.label }}</span>
+                  <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border"
+                        [class]="nextWeekendDate()!.isToday
+                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'">
+                    {{ nextWeekendDate()!.isToday ? 'HOY' : nextWeekendDate()!.label }}
+                  </span>
                 }
               </div>
 
-              <div class="grid gap-3" [class.grid-cols-2]="congregacionConfig()?.usa_zoom !== 0">
-                <div class="flex flex-col gap-1.5">
-                   <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Presencial</label>
-                   <input type="number" min="0" inputmode="numeric" [ngModel]="weekendWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="0">
+              <div class="flex flex-col gap-2.5">
+                <div>
+                  <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Presencial</label>
+                  <input type="number" min="0" inputmode="numeric" [ngModel]="weekendWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                 </div>
                 @if (congregacionConfig()?.usa_zoom !== 0) {
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Zoom</label>
-                    <input type="number" min="0" inputmode="numeric" [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="0">
+                  <div>
+                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Zoom</label>
+                    <input type="number" min="0" inputmode="numeric" [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                   </div>
                 }
               </div>
+
+              @if (weekendWeeks()[selectedWeek() - 1] !== null) {
+                <div class="flex items-center justify-between pt-2.5 mt-auto border-t border-orange-500/10">
+                  <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
+                  <span class="text-sm font-black text-orange-500 tabular-nums">{{ currentWeekendTotal() }}</span>
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -443,14 +463,14 @@ import { saveAs } from 'file-saver';
       height: 2.75rem; /* h-11 */
       padding: 0 0.75rem;
       background-color: #f8fafc; /* slate-50 */
-      border: 2px solid transparent;
+      border: 2px solid #e2e8f0; /* slate-200 — visible en light mode */
       border-radius: 0.75rem; /* rounded-xl */
       text-align: center;
       font-size: 1.125rem; /* text-lg */
       font-weight: 700; /* font-bold */
       color: #1e293b; /* slate-800 */
       outline: none;
-      transition: all 200ms ease;
+      transition: border-color 200ms ease, background-color 200ms ease;
       -moz-appearance: textfield;
     }
     .attendance-input::-webkit-outer-spin-button,
@@ -494,6 +514,7 @@ import { saveAs } from 'file-saver';
       opacity: 0.5;
       cursor: not-allowed;
       background-color: #f1f5f9;
+      border-color: #e2e8f0;
     }
     :host-context(.dark) .attendance-input:disabled {
       background-color: rgba(15, 23, 42, 0.5);
@@ -692,7 +713,11 @@ export class ReunionesAsistenciaComponent implements OnInit {
     return this.countDayOccurrences(+this.selectedYear(), +this.selectedMonth(), cfg.dia_reunion_fin_semana);
   });
 
-  totalWeeksInMonth = computed(() => Math.max(this.midweekWeekCount(), this.weekendWeekCount()));
+  totalWeeksInMonth = computed(() => {
+    const fromFechas = this.fechasReuniones().length;
+    if (fromFechas > 0) return fromFechas;
+    return Math.max(this.midweekWeekCount(), this.weekendWeekCount());
+  });
   weeksArray = computed(() => Array.from({ length: this.totalWeeksInMonth() }, (_, i) => i + 1));
 
   hasChanges = computed(() => {
@@ -705,13 +730,20 @@ export class ReunionesAsistenciaComponent implements OnInit {
       || !arrEq(this.weekendZoomWeeks(), snap.weZoom);
   });
 
+  private isViewingCurrentMonth = computed(() => {
+    const now = new Date();
+    return +this.selectedYear() === now.getFullYear() && +this.selectedMonth() === now.getMonth() + 1;
+  });
+
   nextMidweekDate = computed(() => {
+    if (!this.isViewingCurrentMonth()) return null;
     const cfg = this.congregacionConfig();
     if (!cfg?.dia_reunion_entre_semana) return null;
     return this.calcNextMeetingDate(cfg.dia_reunion_entre_semana);
   });
 
   nextWeekendDate = computed(() => {
+    if (!this.isViewingCurrentMonth()) return null;
     const cfg = this.congregacionConfig();
     if (!cfg?.dia_reunion_fin_semana) return null;
     return this.calcNextMeetingDate(cfg.dia_reunion_fin_semana);
@@ -757,6 +789,13 @@ export class ReunionesAsistenciaComponent implements OnInit {
         this.loadResumenHistorico(anoServicio, congId);
       }
     });
+
+    effect(() => {
+      const congId = this.congregacionCtx.effectiveCongregacionId();
+      if (congId) {
+        this.loadCongregacionConfig(congId);
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -764,12 +803,27 @@ export class ReunionesAsistenciaComponent implements OnInit {
       next: (periodos) => this.periodos.set(periodos),
       error: () => this.showToast('error', 'Error al cargar periodos'),
     });
-    this.asistenciaService.getCongregacionConfig().subscribe({
-      next: (cfg) => {
-        this.congregacionConfig.set(cfg);
-      },
-      error: () => { },
-    });
+  }
+
+  private loadCongregacionConfig(congId: number): void {
+    const user = this.store.user();
+    const rol = user?.rol ?? '';
+    const roles = user?.roles ?? [];
+    const hasRole = (r: string) => rol === r || roles.includes(r);
+
+    if (hasRole('Administrador') || hasRole('Gestor Aplicación')) {
+      this.asistenciaService.getCongregacionConfigById(congId).subscribe({
+        next: (cfg) => this.congregacionConfig.set(cfg),
+        error: () => {},
+      });
+    } else if (hasRole('Secretario') || hasRole('Coordinador')) {
+      this.asistenciaService.getCongregacionConfig().subscribe({
+        next: (cfg) => this.congregacionConfig.set(cfg),
+        error: () => {},
+      });
+    }
+    // Publicador y otros roles sin acceso a config: no llamar ningún endpoint.
+    // totalWeeksInMonth usa fechasReuniones como fallback.
   }
 
   private loadData(year: number, month: number, congId: number): void {
@@ -796,6 +850,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
         error: () => {
           this.resetWeekArrays();
           this.loading.set(false);
+          this.showToast('error', 'Error al cargar los datos de asistencia');
         }
       });
     } else {
@@ -964,6 +1019,12 @@ export class ReunionesAsistenciaComponent implements OnInit {
   }
 
   selectWeek(w: number): void { this.selectedWeek.set(w); }
+
+  formatWeekDate(dateStr: string | null | undefined): string {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    return `${parseInt(parts[2])}/${parseInt(parts[1])}`;
+  }
 
   weekHasData(w: number): boolean {
     const i = w - 1;

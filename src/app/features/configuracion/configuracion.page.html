@@ -24,6 +24,16 @@
                   <h2 class="text-lg font-black text-slate-900 dark:text-white tracking-tight">Congregación</h2>
                   <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Información general y preferencias del salón</p>
                </div>
+               
+               <div class="ml-auto">
+                  <button *ngIf="canEdit()" (click)="openImportModal()" type="button"
+                     class="bg-brand-purple hover:bg-purple-700 active:bg-purple-800 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-md shadow-brand-purple/20 transition-all flex items-center justify-center gap-2 touch-manipulation">
+                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                     </svg>
+                     <span class="hidden sm:inline">Cargar Plantilla</span>
+                  </button>
+               </div>
             </div>
 
             <div class="space-y-6 sm:space-y-8">
@@ -387,6 +397,214 @@
                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
             </svg>
          </button>
+      </div>
+   </div>
+
+   <!-- IMPORT MODAL -->
+   <div *ngIf="showImportModal()"
+      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+
+      <!-- Modal Card (scrollable on small screens) -->
+      <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col transition-colors duration-300 border border-slate-200 dark:border-slate-800">
+
+         <!-- Header -->
+         <div class="bg-gradient-to-r from-brand-purple to-purple-600 px-6 py-5 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+               <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+               </div>
+               <div>
+                  <h2 class="text-lg font-bold text-white">Cargar Plantilla</h2>
+                  <p class="text-white/70 text-sm">
+                     {{ config.nombre_congregacion }} · ID #{{ config.id_congregacion }}
+                  </p>
+               </div>
+            </div>
+            <button (click)="closeImportModal()"
+               class="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all">
+               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+               </svg>
+            </button>
+         </div>
+
+         <!-- Body (scrollable when content overflows) -->
+         <div class="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
+
+            <!-- Loading State -->
+            <div *ngIf="importing()" class="py-12 flex flex-col items-center justify-center">
+               <div
+                  class="w-16 h-16 border-4 border-brand-purple/20 border-t-brand-purple rounded-full animate-spin mb-4">
+               </div>
+               <p class="text-slate-600 dark:text-slate-300 font-bold">Procesando importación...</p>
+               <p class="text-slate-400 text-sm mt-1">{{ selectedFileName() }}</p>
+            </div>
+
+            <!-- Error State -->
+            <div *ngIf="importError() && !importing()" class="py-8 flex flex-col items-center">
+               <div class="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+                  <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+               </div>
+               <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Error en la importación</h3>
+               <p class="text-red-500 dark:text-red-400 text-sm text-center max-w-xs">{{ importError() }}</p>
+               <button (click)="importError.set(null)"
+                  class="mt-4 px-4 py-2 text-sm font-bold text-brand-purple dark:text-purple-400 hover:underline">
+                  Intentar de nuevo
+               </button>
+            </div>
+
+            <!-- Success Result State -->
+            <div *ngIf="importResult() && !importing()" class="animate-fadeIn">
+               <div class="flex items-center gap-3 mb-6">
+                  <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center">
+                     <svg class="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                     </svg>
+                  </div>
+                  <div>
+                     <h3 class="text-lg font-bold text-slate-900 dark:text-white">Importación Exitosa</h3>
+                     <p class="text-slate-500 dark:text-slate-400 text-sm">{{ importResult()?.resumen?.msg }}</p>
+                  </div>
+               </div>
+
+               <!-- Stats Grid -->
+               <div class="grid grid-cols-2 gap-3 mb-6">
+                  <div class="bg-emerald-50 dark:bg-emerald-900/10 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/50">
+                     <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400">{{ importResult()?.resumen?.insertados || 0 }}
+                     </div>
+                     <div class="text-xs font-bold text-emerald-600/70 dark:text-emerald-500 uppercase tracking-wide">Insertados</div>
+                  </div>
+                  <div class="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-900/50">
+                     <div class="text-2xl font-black text-blue-600 dark:text-blue-400">{{ importResult()?.resumen?.actualizados || 0 }}
+                     </div>
+                     <div class="text-xs font-bold text-blue-600/70 dark:text-blue-500 uppercase tracking-wide">Actualizados</div>
+                  </div>
+                  <div class="bg-amber-50 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-100 dark:border-amber-900/50">
+                     <div class="text-2xl font-black text-amber-600 dark:text-amber-400">{{ importResult()?.resumen?.omitidos || 0 }}</div>
+                     <div class="text-xs font-bold text-amber-600/70 dark:text-amber-500 uppercase tracking-wide">Omitidos</div>
+                  </div>
+                  <div class="bg-red-50 dark:bg-red-900/10 rounded-xl p-4 border border-red-100 dark:border-red-900/50">
+                     <div class="text-2xl font-black text-red-600 dark:text-red-400">{{ importResult()?.resumen?.errores || 0 }}</div>
+                     <div class="text-xs font-bold text-red-600/70 dark:text-red-500 uppercase tracking-wide">Errores</div>
+                  </div>
+               </div>
+
+               <!-- Informes Históricos Stats (only if any historical data was processed) -->
+               <div *ngIf="(importResult()?.resumen?.informes_insertados || 0) + (importResult()?.resumen?.informes_actualizados || 0) + (importResult()?.resumen?.informes_errores || 0) > 0"
+                  class="mb-6">
+                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                     </svg>
+                     Informes Históricos
+                  </p>
+                  <div class="grid grid-cols-3 gap-3">
+                     <div class="bg-indigo-50 dark:bg-indigo-900/10 rounded-xl p-3 border border-indigo-100 dark:border-indigo-900/50 text-center">
+                        <div class="text-xl font-black text-indigo-600 dark:text-indigo-400">{{ importResult()?.resumen?.informes_insertados || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-indigo-600/70 dark:text-indigo-500 uppercase tracking-wide">Creados</div>
+                     </div>
+                     <div class="bg-cyan-50 dark:bg-cyan-900/10 rounded-xl p-3 border border-cyan-100 dark:border-cyan-900/50 text-center">
+                        <div class="text-xl font-black text-cyan-600 dark:text-cyan-400">{{ importResult()?.resumen?.informes_actualizados || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-cyan-600/70 dark:text-cyan-500 uppercase tracking-wide">Actualizados</div>
+                     </div>
+                     <div class="bg-rose-50 dark:bg-rose-900/10 rounded-xl p-3 border border-rose-100 dark:border-rose-900/50 text-center">
+                        <div class="text-xl font-black text-rose-600 dark:text-rose-400">{{ importResult()?.resumen?.informes_errores || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-rose-600/70 dark:text-rose-500 uppercase tracking-wide">Errores</div>
+                     </div>
+                  </div>
+               </div>
+
+               <!-- Asistencia Histórica Stats (only if any attendance data was processed) -->
+               <div *ngIf="(importResult()?.resumen?.asistencias_insertadas || 0) + (importResult()?.resumen?.asistencias_actualizadas || 0) + (importResult()?.resumen?.asistencias_errores || 0) > 0"
+                  class="mb-6">
+                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                     </svg>
+                     Asistencia Histórica
+                  </p>
+                  <div class="grid grid-cols-3 gap-3">
+                     <div class="bg-cyan-50 dark:bg-cyan-900/10 rounded-xl p-3 border border-cyan-100 dark:border-cyan-900/50 text-center">
+                        <div class="text-xl font-black text-cyan-600 dark:text-cyan-400">{{ importResult()?.resumen?.asistencias_insertadas || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-cyan-600/70 dark:text-cyan-500 uppercase tracking-wide">Creados</div>
+                     </div>
+                     <div class="bg-teal-50 dark:bg-teal-900/10 rounded-xl p-3 border border-teal-100 dark:border-teal-900/50 text-center">
+                        <div class="text-xl font-black text-teal-600 dark:text-teal-400">{{ importResult()?.resumen?.asistencias_actualizadas || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-teal-600/70 dark:text-teal-500 uppercase tracking-wide">Actualizados</div>
+                     </div>
+                     <div class="bg-rose-50 dark:bg-rose-900/10 rounded-xl p-3 border border-rose-100 dark:border-rose-900/50 text-center">
+                        <div class="text-xl font-black text-rose-600 dark:text-rose-400">{{ importResult()?.resumen?.asistencias_errores || 0 }}</div>
+                        <div class="text-[0.625rem] font-bold text-rose-600/70 dark:text-rose-500 uppercase tracking-wide">Errores</div>
+                     </div>
+                  </div>
+               </div>
+
+               <!-- Total Rows -->
+               <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <span class="text-sm font-bold text-slate-600 dark:text-slate-400">Total de filas procesadas</span>
+                  <span class="text-lg font-black text-slate-900 dark:text-white">{{ importResult()?.resumen?.filas || 0 }}</span>
+               </div>
+
+               <!-- Close Button -->
+               <button (click)="closeImportModal()"
+                  class="w-full mt-6 bg-brand-purple hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all">
+                  Cerrar
+               </button>
+            </div>
+
+            <!-- Initial Drop Zone State -->
+            <div *ngIf="!importing() && !importResult() && !importError()">
+
+               <!-- Banner: modo carga por ID de congregación -->
+               <div class="mb-4 flex items-start gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded-xl px-4 py-3">
+                  <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p class="text-sm text-blue-700 dark:text-blue-300 font-medium leading-snug">
+                     Los datos del Excel se cargarán directamente en
+                     <span class="font-bold">{{ config.nombre_congregacion }}</span>
+                     (ID #{{ config.id_congregacion }}), ignorando los metadatos de congregación del archivo.
+                  </p>
+               </div>
+
+               <div (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onFileDrop($event)"
+                  class="border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer"
+                  [ngClass]="isDragOver() ? 'border-brand-purple bg-purple-50 dark:bg-purple-900/10' : 'border-slate-200 dark:border-slate-700 hover:border-brand-purple hover:bg-slate-50 dark:hover:bg-slate-800/50'">
+                  <div class="w-16 h-16 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                     <svg class="w-8 h-8 text-brand-purple dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                           d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                     </svg>
+                  </div>
+                  <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Arrastra tu archivo Excel aquí</h3>
+                  <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">o haz clic para seleccionar</p>
+                  <input #fileInput type="file" accept=".xls,.xlsx" class="hidden" (change)="onFileSelected($event)">
+                  <button (click)="fileInput.click()"
+                     class="bg-brand-purple hover:bg-purple-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all">
+                     Seleccionar archivo
+                  </button>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-4">Formatos soportados: .xls, .xlsx (máx. 5 MB)</p>
+               </div>
+
+               <div class="mt-4 flex justify-center">
+                  <button (click)="downloadTemplate()"
+                     class="flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-brand-purple dark:hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                           d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                     </svg>
+                     Descargar Plantilla
+                  </button>
+               </div>
+            </div>
+         </div>
       </div>
    </div>
 

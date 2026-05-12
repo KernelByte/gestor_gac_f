@@ -144,16 +144,18 @@
 
       <!-- Tab 2: Historial -->
       <div [ngClass]="activeTab() === 'historial' ? 'flex-1 min-h-0 h-full flex flex-col' : 'hidden'">
-         <app-informes-historial [selectedAno]="selectedAno ? +selectedAno : 0"
-            [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0" [grupos]="grupos()"
-            [canEdit]="canEditHistorial()" [canExport]="canViewHistorial()"
-            [lockedGroupId]="canEditHistorial() ? null : historialGroupId()"
-            class="h-full flex-col flex overflow-hidden">
+         @if (canViewHistorial()) {
+            <app-informes-historial [selectedAno]="selectedAno ? +selectedAno : 0"
+               [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0" [grupos]="grupos()"
+               [canEdit]="canEditHistorial()" [canExport]="canViewHistorial()"
+               [lockedGroupId]="canEditHistorial() ? null : historialGroupId()"
+               class="h-full flex-col flex overflow-hidden">
 
-            <div tabs class="w-full shrink-0">
-               <ng-container *ngTemplateOutlet="tabsNav"></ng-container>
-            </div>
-         </app-informes-historial>
+               <div tabs class="w-full shrink-0">
+                  <ng-container *ngTemplateOutlet="tabsNav"></ng-container>
+               </div>
+            </app-informes-historial>
+         }
       </div>
 
       <!-- Tab 3: Resumen Sucursal -->
