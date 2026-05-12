@@ -18,7 +18,7 @@ export class InformesFiltersComponent {
 
    @Input() selectedMes: string = '';
    @Input() selectedAno: string = '';
-   @Input() selectedGrupo: number | null = null;
+   @Input() selectedGrupo: number | string | null = null;
 
    @Input() meses: { value: string; label: string }[] = [];
    @Input() anos: string[] = [];
@@ -34,7 +34,7 @@ export class InformesFiltersComponent {
 
    @Output() selectMes = new EventEmitter<string>();
    @Output() selectAno = new EventEmitter<string>();
-   @Output() selectGrupo = new EventEmitter<number | null>();
+   @Output() selectGrupo = new EventEmitter<number | string | null>();
    @Output() setVista = new EventEmitter<boolean>();
 
    @Output() searchQueryChange = new EventEmitter<string>();
@@ -53,8 +53,10 @@ export class InformesFiltersComponent {
       return (this.resumen.total_publicadores || 0) - (this.resumen.informes_recibidos || 0);
    }
 
-   getGrupoLabel(grupoId: number | null): string {
+   getGrupoLabel(grupoId: number | string | null): string {
       if (grupoId === null) return 'Todos los grupos';
+      if (grupoId === 'precursores_regulares') return 'Precursores Regulares';
+      if (grupoId === 'precursores_auxiliares') return 'Precursores Auxiliares';
       return this.grupos.find(g => g.id_grupo === grupoId)?.nombre_grupo || 'Grupo Desconocido';
    }
 

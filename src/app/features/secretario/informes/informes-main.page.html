@@ -39,7 +39,7 @@
       </div>
       <!-- Unified Filters & Stats (Solo en Entrada Mensual) -->
       <div *ngIf="activeTab() === 'entrada'" class="flex-1 min-w-0 max-w-full overflow-visible relative z-20">
-         <app-informes-filters [resumen]="resumen()" [activeDropdown]="activeDropdown()"
+         <app-informes-filters [resumen]="filteredResumen()" [activeDropdown]="activeDropdown()"
             [isRestrictedUser]="isRestrictedUser()" [selectedMes]="selectedMes ?? ''" [selectedAno]="selectedAno ?? ''"
             [selectedGrupo]="selectedGrupo" [meses]="meses" [anos]="anos" [grupos]="grupos()"
             [vistaGrupo]="vistaGrupo()" [searchQuery]="searchQuery" [soloSinInforme]="soloSinInforme"
@@ -134,7 +134,7 @@
       <!-- Tab 1: Entrada Mensual -->
       <div [ngClass]="activeTab() === 'entrada' ? 'flex flex-col gap-3 flex-1 min-h-0 overflow-hidden' : 'hidden'">
          <!-- Data List/Table Container -->
-         <app-informes-table [resumen]="resumen()" [saving]="saving()" [canEdit]="canEditInformes()"
+         <app-informes-table [resumen]="filteredResumen()" [saving]="saving()" [canEdit]="canEditInformes()"
             [privilegios]="privilegios()" [publicadorPrivilegiosMap]="publicadorPrivilegiosMap()"
             [localChanges]="localChanges" (informeChange)="handleInformeChange($event)" (save)="guardarTodo()"
             (exportExcel)="exportarExcel()" (importExcel)="importarExcel($event)"

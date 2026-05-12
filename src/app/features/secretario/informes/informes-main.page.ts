@@ -91,13 +91,34 @@ export class InformesMainPage implements OnInit {
 
   selectedMes: string | null = null;
   selectedAno: string | null = null;
-  selectedGrupo: number | null = null;
+  selectedGrupo: number | string | null = null;
   searchQuery = '';
   soloSinInforme = false;
   sucursalDropdownOpen = false;
   urlInformes = signal<string | null>(null);
 
   localChanges: Map<number, Partial<InformeLoteItem>> = new Map();
+
+  filteredResumen = computed(() => {
+    const data = this.resumen();
+    if (!data) return null;
+    if (this.selectedGrupo === 'precursores_regulares') {
+      return {
+        ...data,
+        publicadores_list: data.publicadores_list.filter(p => 
+          p.privilegio_activo && (p.privilegio_activo.toLowerCase().includes('regular') || p.privilegio_activo.toLowerCase().includes('especial'))
+        )
+      };
+    } else if (this.selectedGrupo === 'precursores_auxiliares') {
+      return {
+        ...data,
+        publicadores_list: data.publicadores_list.filter(p => 
+          p.es_paux_mes || (p.privilegio_activo && p.privilegio_activo.toLowerCase().includes('auxiliar'))
+        )
+      };
+    }
+    return data;
+  });
 
   // Privilegios Loading
   privilegios = signal<Privilegio[]>([]);
@@ -361,7 +382,7 @@ export class InformesMainPage implements OnInit {
     this.loadResumen();
   }
 
-  selectGrupo(grupoId: number | null) {
+  selectGrupo(grupoId: number | string | null) {
     this.selectedGrupo = grupoId;
     this.closeDropdown();
     this.loadResumen();
@@ -383,8 +404,10 @@ export class InformesMainPage implements OnInit {
     const periodoId = this.getPeriodoId();
     if (!periodoId) return;
 
+    const grupoParam = (this.selectedGrupo === 'precursores_regulares' || this.selectedGrupo === 'precursores_auxiliares') ? undefined : (this.selectedGrupo as number | undefined);
+
     this.informesService.getResumenMensual(
-      periodoId, congregacionId, this.selectedGrupo || undefined, this.soloSinInforme, this.searchQuery || undefined
+      periodoId, congregacionId, grupoParam, this.soloSinInforme, this.searchQuery || undefined
     ).subscribe({
       next: (data) => this.resumen.set(data),
       error: (err) => console.error('Error loading resumen:', err)
@@ -429,6 +452,23 @@ export class InformesMainPage implements OnInit {
     const pId = this.getPeriodoId();
     if (!pId) return;
 
+    const resumenActual = this.resumen();
+    if (resumenActual) {
+      // Validar que los precursores (regulares o auxiliares) tengan horas si participaron
+      for (const [id, c] of this.localChanges.entries()) {
+        if (c.participo) {
+          const pub = resumenActual.publicadores_list.find(p => p.id_publicador === id);
+          if (pub) {
+            const esPrecursor = pub.requiere_horas || pub.es_paux_mes || c.es_paux_mes;
+            if (esPrecursor && (!c.horas || c.horas <= 0)) {
+              this.showToast('Validación', 'error', `Debe ingresar las horas para el precursor: ${pub.nombre_completo}`);
+              return;
+            }
+          }
+        }
+      }
+    }
+
     this.saving.set(true);
 
     const items: InformeLoteItem[] = Array.from(this.localChanges.values()).map(c => ({
@@ -464,11 +504,11 @@ export class InformesMainPage implements OnInit {
       const pId = this.getPeriodoId();
       if (!pId) throw new Error("Periodo seleccionado inválido");
 
-      if (this.selectedGrupo) {
+      if (this.selectedGrupo && this.selectedGrupo !== 'precursores_regulares' && this.selectedGrupo !== 'precursores_auxiliares') {
         // Descargar por grupo
         const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
         const nombreGrupo = g ? g.nombre_grupo : 'Grupo';
-        this.informesService.exportTemplate(pId, this.selectedGrupo).subscribe({
+        this.informesService.exportTemplate(pId, this.selectedGrupo as number).subscribe({
           next: (blob) => {
             const filename = `Informe_${nombreGrupo}_${periodo}.xlsx`;
             saveAs(blob, filename);

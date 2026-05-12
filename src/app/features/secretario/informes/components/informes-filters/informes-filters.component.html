@@ -50,6 +50,8 @@
       class="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#1e2030] rounded-xl shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150 z-50">
       <div class="max-h-56 overflow-y-auto p-1.5 flex flex-col gap-0.5">
         <button (click)="selectGrupo.emit(null)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold" [ngClass]="selectedGrupo === null ? 'bg-brand-purple text-white' : 'hover:bg-slate-50 dark:hover:bg-white/5'">Todos</button>
+        <button (click)="selectGrupo.emit('precursores_regulares')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold" [ngClass]="selectedGrupo === 'precursores_regulares' ? 'bg-brand-purple text-white' : 'hover:bg-slate-50 dark:hover:bg-white/5'">Precursores Regulares</button>
+        <button (click)="selectGrupo.emit('precursores_auxiliares')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold" [ngClass]="selectedGrupo === 'precursores_auxiliares' ? 'bg-brand-purple text-white' : 'hover:bg-slate-50 dark:hover:bg-white/5'">Precursores Auxiliares</button>
         <button *ngFor="let g of grupos" (click)="selectGrupo.emit(g.id_grupo)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium" [ngClass]="selectedGrupo === g.id_grupo ? 'bg-brand-purple/10 text-brand-purple font-bold' : 'hover:bg-slate-50 dark:hover:bg-white/5'">{{ g.nombre_grupo }}</button>
       </div>
     </div>
