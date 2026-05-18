@@ -8,7 +8,8 @@ import {
   Periodo, AsistenciaRecord, AsistenciaUpsert,
   ResumenMensualAsistencia, FechaSemanaReunion,
 } from '../models/asistencia.models';
-import { lastValueFrom } from 'rxjs';
+import { forkJoin, of, lastValueFrom } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { saveAs } from 'file-saver';
 
 @Component({
@@ -104,7 +105,8 @@ import { saveAs } from 'file-saver';
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
             PDF
           </button>
-          <button (click)="onSave()" *ngIf="hasEditPermission()" [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges()"
+          <button (click)="onSave()" *ngIf="hasEditPermission()" [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges() || !congregacionCtx.effectiveCongregacionId()"
+                  [title]="!congregacionCtx.effectiveCongregacionId() ? 'Selecciona una congregación para guardar' : ''"
                   class="press-btn h-10 px-6 bg-brand-purple hover:bg-purple-800 text-white rounded-xl font-black text-xs shadow-lg shadow-purple-900/20 disabled:opacity-50">
             @if (saving()) { <span>Guardando...</span> } @else { <span>Guardar</span> }
           </button>
@@ -206,20 +208,26 @@ import { saveAs } from 'file-saver';
                 }
               </div>
 
-              <div class="flex flex-col gap-2.5">
-                <div>
-                  <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Presencial</label>
-                  <input type="number" min="0" inputmode="numeric" [ngModel]="midweekWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
-                </div>
-                @if (congregacionConfig()?.usa_zoom !== 0) {
+              @if (canEditMidweekWeek()) {
+                <div class="flex flex-col gap-2.5">
                   <div>
-                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Zoom</label>
-                    <input type="number" min="0" inputmode="numeric" [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
+                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Presencial</label>
+                    <input type="number" min="0" inputmode="numeric" [ngModel]="midweekWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                   </div>
-                }
-              </div>
+                  @if (congregacionConfig()?.usa_zoom !== 0) {
+                    <div>
+                      <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Zoom</label>
+                      <input type="number" min="0" inputmode="numeric" [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="flex items-center justify-center py-6 text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">
+                  Sin reunión entre semana
+                </div>
+              }
 
-              @if (midweekWeeks()[selectedWeek() - 1] !== null) {
+              @if (canEditMidweekWeek() && midweekWeeks()[selectedWeek() - 1] !== null) {
                 <div class="flex items-center justify-between pt-2.5 mt-auto border-t border-brand-purple/10">
                   <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
                   <span class="text-sm font-black text-brand-purple tabular-nums">{{ currentMidweekTotal() }}</span>
@@ -247,20 +255,26 @@ import { saveAs } from 'file-saver';
                 }
               </div>
 
-              <div class="flex flex-col gap-2.5">
-                <div>
-                  <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Presencial</label>
-                  <input type="number" min="0" inputmode="numeric" [ngModel]="weekendWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
-                </div>
-                @if (congregacionConfig()?.usa_zoom !== 0) {
+              @if (canEditWeekendWeek()) {
+                <div class="flex flex-col gap-2.5">
                   <div>
-                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Zoom</label>
-                    <input type="number" min="0" inputmode="numeric" [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
+                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Presencial</label>
+                    <input type="number" min="0" inputmode="numeric" [ngModel]="weekendWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                   </div>
-                }
-              </div>
+                  @if (congregacionConfig()?.usa_zoom !== 0) {
+                    <div>
+                      <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Zoom</label>
+                      <input type="number" min="0" inputmode="numeric" [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="flex items-center justify-center py-6 text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">
+                  Sin reunión fin de semana
+                </div>
+              }
 
-              @if (weekendWeeks()[selectedWeek() - 1] !== null) {
+              @if (canEditWeekendWeek() && weekendWeeks()[selectedWeek() - 1] !== null) {
                 <div class="flex items-center justify-between pt-2.5 mt-auto border-t border-orange-500/10">
                   <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
                   <span class="text-sm font-black text-orange-500 tabular-nums">{{ currentWeekendTotal() }}</span>
@@ -370,7 +384,7 @@ import { saveAs } from 'file-saver';
                 class="press-btn flex-1 h-12 flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm">
           PDF
         </button>
-        <button (click)="onSave()" *ngIf="hasEditPermission() && activeMobileTab() === 'registro'" [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges()"
+        <button (click)="onSave()" *ngIf="hasEditPermission() && activeMobileTab() === 'registro'" [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges() || !congregacionCtx.effectiveCongregacionId()"
                 class="press-btn flex-[2.5] h-12 bg-brand-purple text-white rounded-xl font-black text-sm shadow-xl shadow-purple-950/30">
           {{ saving() ? 'Guardando...' : 'Guardar Registro' }}
         </button>
@@ -548,11 +562,20 @@ import { saveAs } from 'file-saver';
 })
 export class ReunionesAsistenciaComponent implements OnInit {
   private asistenciaService = inject(AsistenciaService);
-  private congregacionCtx = inject(CongregacionContextService);
+  protected congregacionCtx = inject(CongregacionContextService);
   private store = inject(AuthStore);
 
-  hasEditPermission = computed(() => {
-    return this.store.hasPermission('reuniones.asistencia') || !!this.store.user()?.roles?.includes('Secretario');
+  hasEditPermission = computed(() => this.store.hasPermission('reuniones.asistencia'));
+
+  currentMidweekFecha = computed(() => this.fechasReuniones()[this.selectedWeek() - 1]?.fecha_entre_semana ?? null);
+  currentWeekendFecha = computed(() => this.fechasReuniones()[this.selectedWeek() - 1]?.fecha_fin_semana ?? null);
+  canEditMidweekWeek = computed(() => {
+    if (this.fechasReuniones().length === 0) return true;
+    return this.currentMidweekFecha() !== null;
+  });
+  canEditWeekendWeek = computed(() => {
+    if (this.fechasReuniones().length === 0) return true;
+    return this.currentWeekendFecha() !== null;
   });
 
   // ── Selection state ──
@@ -624,7 +647,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
   });
 
   private daysUntilDay(dayName: string): number {
-    const target = this.DAY_MAP[dayName];
+    const target = this.dayIndex(dayName);
     if (target === undefined) return 7;
     return (target - new Date().getDay() + 7) % 7;
   }
@@ -696,10 +719,22 @@ export class ReunionesAsistenciaComponent implements OnInit {
     }).length;
   });
 
+  // Claves normalizadas (NFD + lower) para alinear con el backend
+  // (asistencia_service.py::_normalize_day_name), que ignora tildes y mayúsculas.
   private readonly DAY_MAP: Record<string, number> = {
-    'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miercoles': 3,
-    'Jueves': 4, 'Viernes': 5, 'Sabado': 6,
+    'domingo': 0, 'lunes': 1, 'martes': 2, 'miercoles': 3,
+    'jueves': 4, 'viernes': 5, 'sabado': 6,
   };
+
+  private normalizeDayName(name: string | null | undefined): string {
+    if (!name) return '';
+    return name.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase();
+  }
+
+  private dayIndex(name: string | null | undefined): number | undefined {
+    const key = this.normalizeDayName(name);
+    return key ? this.DAY_MAP[key] : undefined;
+  }
 
   midweekWeekCount = computed(() => {
     const cfg = this.congregacionConfig();
@@ -750,7 +785,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
   });
 
   private calcNextMeetingDate(dayName: string): { label: string; isToday: boolean } | null {
-    const targetDay = this.DAY_MAP[dayName];
+    const targetDay = this.dayIndex(dayName);
     if (targetDay === undefined) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -831,32 +866,35 @@ export class ReunionesAsistenciaComponent implements OnInit {
 
     const periodo = this.periodos().find(p => p.codigo_ano === year && p.codigo_mes === month);
 
-    // Load fechas reuniones
-    this.asistenciaService.getFechasReuniones(congId, year, month).subscribe({
-      next: (res) => this.fechasReuniones.set(res.semanas),
-      error: () => this.fechasReuniones.set([]),
-    });
+    const fechas$ = this.asistenciaService.getFechasReuniones(congId, year, month).pipe(
+      catchError(() => of({ ano: year, mes: month, semanas: [] }))
+    );
+    const asistencias$ = periodo
+      ? this.asistenciaService.getAsistencias(periodo.id_periodo, congId).pipe(
+          catchError(() => of(null as AsistenciaRecord[] | null))
+        )
+      : of(null as AsistenciaRecord[] | null);
 
-    if (periodo) {
-      this.asistenciaService.getAsistencias(periodo.id_periodo, congId).subscribe({
-        next: (items) => {
+    forkJoin({ fechas: fechas$, items: asistencias$ }).subscribe({
+      next: ({ fechas, items }) => {
+        this.fechasReuniones.set(fechas.semanas);
+        if (items === null) {
+          if (periodo) this.showToast('error', 'Error al cargar los datos de asistencia');
+          this.resetWeekArrays();
+        } else {
           const mw = items.find(i => i.asistencia_tipo_reunion === 1) || null;
           const we = items.find(i => i.asistencia_tipo_reunion === 2) || null;
           this.midweekRecord.set(mw);
           this.weekendRecord.set(we);
           this.updateWeekArrays(mw, we);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.resetWeekArrays();
-          this.loading.set(false);
-          this.showToast('error', 'Error al cargar los datos de asistencia');
         }
-      });
-    } else {
-      this.resetWeekArrays();
-      this.loading.set(false);
-    }
+        this.loading.set(false);
+      },
+      error: () => {
+        this.resetWeekArrays();
+        this.loading.set(false);
+      }
+    });
   }
 
   private loadResumenHistorico(anoServicio: number, congId: number): void {
@@ -900,62 +938,88 @@ export class ReunionesAsistenciaComponent implements OnInit {
   }
 
   updateMidweekWeek(val: number): void {
+    if (!this.canEditMidweekWeek()) return;
     const arr = [...this.midweekWeeks()];
     arr[this.selectedWeek() - 1] = val;
     this.midweekWeeks.set(arr);
   }
   updateMidweekZoomWeek(val: number): void {
+    if (!this.canEditMidweekWeek()) return;
     const arr = [...this.midweekZoomWeeks()];
     arr[this.selectedWeek() - 1] = val;
     this.midweekZoomWeeks.set(arr);
   }
   updateWeekendWeek(val: number): void {
+    if (!this.canEditWeekendWeek()) return;
     const arr = [...this.weekendWeeks()];
     arr[this.selectedWeek() - 1] = val;
     this.weekendWeeks.set(arr);
   }
   updateWeekendZoomWeek(val: number): void {
+    if (!this.canEditWeekendWeek()) return;
     const arr = [...this.weekendZoomWeeks()];
     arr[this.selectedWeek() - 1] = val;
     this.weekendZoomWeeks.set(arr);
   }
 
   async onSave(): Promise<void> {
+    if (this.saving()) return;
     const periodo = this.currentPeriodo();
     const congId = this.congregacionCtx.effectiveCongregacionId();
-    if (!periodo || !congId || this.saving()) return;
+    if (!periodo) {
+      this.showToast('error', 'Selecciona un mes con período configurado');
+      return;
+    }
+    if (!congId) {
+      this.showToast('error', 'Selecciona una congregación antes de guardar');
+      return;
+    }
+
+    // Sólo enviamos valores para los slots que físicamente tienen reunión ese mes,
+    // según las fechas devueltas por el backend. Los slots inexistentes van como
+    // null para no escribir datos fantasma en columnas que no corresponden.
+    const fechas = this.fechasReuniones();
+    const hasMidweekSlot = (i: number) => fechas.length === 0 || !!fechas[i]?.fecha_entre_semana;
+    const hasWeekendSlot = (i: number) => fechas.length === 0 || !!fechas[i]?.fecha_fin_semana;
+    const pick = (arr: (number | null)[], has: (i: number) => boolean, i: number) =>
+      has(i) ? arr[i] : null;
 
     this.saving.set(true);
     try {
+      const mw = this.midweekWeeks();
+      const mwZ = this.midweekZoomWeeks();
+      const we = this.weekendWeeks();
+      const weZ = this.weekendZoomWeeks();
+
       const mwData: AsistenciaUpsert = {
         asistencia_tipo_reunion: 1,
         id_periodo_asistencia: periodo.id_periodo,
         id_congregacion_asistencia: congId,
-        asistencia_semana_01: this.midweekWeeks()[0],
-        asistencia_semana_02: this.midweekWeeks()[1],
-        asistencia_semana_03: this.midweekWeeks()[2],
-        asistencia_semana_04: this.midweekWeeks()[3],
-        asistencia_semana_05: this.midweekWeeks()[4],
-        asistencia_zoom_semana_01: this.midweekZoomWeeks()[0],
-        asistencia_zoom_semana_02: this.midweekZoomWeeks()[1],
-        asistencia_zoom_semana_03: this.midweekZoomWeeks()[2],
-        asistencia_zoom_semana_04: this.midweekZoomWeeks()[3],
-        asistencia_zoom_semana_05: this.midweekZoomWeeks()[4],
+        asistencia_semana_01: pick(mw, hasMidweekSlot, 0),
+        asistencia_semana_02: pick(mw, hasMidweekSlot, 1),
+        asistencia_semana_03: pick(mw, hasMidweekSlot, 2),
+        asistencia_semana_04: pick(mw, hasMidweekSlot, 3),
+        asistencia_semana_05: pick(mw, hasMidweekSlot, 4),
+        asistencia_zoom_semana_01: pick(mwZ, hasMidweekSlot, 0),
+        asistencia_zoom_semana_02: pick(mwZ, hasMidweekSlot, 1),
+        asistencia_zoom_semana_03: pick(mwZ, hasMidweekSlot, 2),
+        asistencia_zoom_semana_04: pick(mwZ, hasMidweekSlot, 3),
+        asistencia_zoom_semana_05: pick(mwZ, hasMidweekSlot, 4),
       };
       const weData: AsistenciaUpsert = {
         asistencia_tipo_reunion: 2,
         id_periodo_asistencia: periodo.id_periodo,
         id_congregacion_asistencia: congId,
-        asistencia_semana_01: this.weekendWeeks()[0],
-        asistencia_semana_02: this.weekendWeeks()[1],
-        asistencia_semana_03: this.weekendWeeks()[2],
-        asistencia_semana_04: this.weekendWeeks()[3],
-        asistencia_semana_05: this.weekendWeeks()[4],
-        asistencia_zoom_semana_01: this.weekendZoomWeeks()[0],
-        asistencia_zoom_semana_02: this.weekendZoomWeeks()[1],
-        asistencia_zoom_semana_03: this.weekendZoomWeeks()[2],
-        asistencia_zoom_semana_04: this.weekendZoomWeeks()[3],
-        asistencia_zoom_semana_05: this.weekendZoomWeeks()[4],
+        asistencia_semana_01: pick(we, hasWeekendSlot, 0),
+        asistencia_semana_02: pick(we, hasWeekendSlot, 1),
+        asistencia_semana_03: pick(we, hasWeekendSlot, 2),
+        asistencia_semana_04: pick(we, hasWeekendSlot, 3),
+        asistencia_semana_05: pick(we, hasWeekendSlot, 4),
+        asistencia_zoom_semana_01: pick(weZ, hasWeekendSlot, 0),
+        asistencia_zoom_semana_02: pick(weZ, hasWeekendSlot, 1),
+        asistencia_zoom_semana_03: pick(weZ, hasWeekendSlot, 2),
+        asistencia_zoom_semana_04: pick(weZ, hasWeekendSlot, 3),
+        asistencia_zoom_semana_05: pick(weZ, hasWeekendSlot, 4),
       };
 
       await lastValueFrom(this.asistenciaService.upsertAsistencia(mwData));
@@ -1032,7 +1096,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
   }
 
   private countDayOccurrences(year: number, month: number, dayName: string): number {
-    const target = this.DAY_MAP[dayName];
+    const target = this.dayIndex(dayName);
     if (target === undefined) return 5;
     let count = 0;
     const date = new Date(year, month - 1, 1);

@@ -528,7 +528,8 @@ export class UsuariosPage implements OnInit {
          id_usuario_estado: u.id_usuario_estado,
          telefono: u.telefono,
          tipo_identificacion: u.tipo_identificacion,
-         id_identificacion: u.id_identificacion
+         id_identificacion: u.id_identificacion,
+         debe_cambiar_contrasena: false
       });
 
       if (u.id_congregacion) {
@@ -594,6 +595,7 @@ export class UsuariosPage implements OnInit {
 
             if (formValue.contrasena) {
                updatePayload.contrasena = formValue.contrasena;
+               updatePayload.debe_cambiar_contrasena = formValue.debe_cambiar_contrasena ?? false;
             }
 
             await lastValueFrom(this.service.updateUsuario(id, updatePayload));

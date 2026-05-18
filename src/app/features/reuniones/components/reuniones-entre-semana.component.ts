@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs'; // 'of' used in tryLoadDrafts catchError
 import { ReunionesLogisticaComponent } from './reuniones-logistica.component';
 import { ReunionesDiscursosComponent } from './reuniones-discursos.component';
@@ -37,7 +38,7 @@ import {
 @Component({
   selector: 'app-reuniones-programacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReunionesLogisticaComponent, ReunionesDiscursosComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ReunionesLogisticaComponent, ReunionesDiscursosComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -123,6 +124,35 @@ import {
         <app-reuniones-discursos class="flex-1 min-h-0 block overflow-hidden" />
       }
 
+      <!-- ===== ALERTA: NO HAY GUÍAS DE ACTIVIDADES ===== -->
+      @if (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false) {
+        <div class="shrink-0 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/70 dark:border-amber-800/50 px-4 py-3 mb-3 flex items-start gap-3">
+          <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div class="flex-1 min-w-0">
+            <p class="text-amber-800 dark:text-amber-300 text-xs font-bold">No hay ninguna guía de actividades cargada en el sistema.</p>
+            @if (puedeCargarGuia()) {
+              <p class="text-amber-700/90 dark:text-amber-400/90 text-[0.7rem] mt-0.5">
+                Para poder crear una programación de la reunión entre semana debes cargar primero una guía de actividades (por ejemplo, "Vida y Ministerio Cristiano") desde la sección de Configuración de Reuniones.
+              </p>
+              <a routerLink="/reuniones/configuracion"
+                [queryParams]="{ tab: 'plantillas' }"
+                class="inline-flex items-center gap-1.5 mt-2 px-3 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[0.7rem] font-bold transition-all shadow-sm active:scale-95">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                Ir a cargar guía
+              </a>
+            } @else {
+              <p class="text-amber-700/90 dark:text-amber-400/90 text-[0.7rem] mt-0.5">
+                No puedes crear una programación porque aún no hay una guía de actividades cargada. Contacta al administrador o gestor de la aplicación para que cargue la guía correspondiente.
+              </p>
+            }
+          </div>
+        </div>
+      }
+
       <!-- ===== ÁREA PRINCIPAL: sidebar + contenido ===== -->
       @if (tipoReunionActivo() !== 'logistica' && tipoReunionActivo() !== 'discursos') {
 
@@ -151,8 +181,8 @@ import {
           <button
             *ngIf="hasEditPermission()"
             (click)="openModal()"
-            [disabled]="estado() === 'loading'"
-            title="Generar Mes"
+            [disabled]="estado() === 'loading' || (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false)"
+            [title]="(tipoReunionActivo() === 'entre_semana' && tieneGuias() === false) ? 'Carga una guía de actividades para generar un mes' : 'Generar Mes'"
             class="md:hidden flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-[transform,background-color] duration-150 ease-out shadow-sm shadow-purple-900/20 active:scale-[0.97]">
             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <span class="hidden sm:inline">Generar Mes</span>
@@ -169,7 +199,8 @@ import {
           <button
             *ngIf="hasEditPermission()"
             (click)="openModal()"
-            [disabled]="estado() === 'loading'"
+            [disabled]="estado() === 'loading' || (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false)"
+            [title]="(tipoReunionActivo() === 'entre_semana' && tieneGuias() === false) ? 'Carga una guía de actividades para generar un mes' : ''"
             class="w-full flex items-center justify-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95 shrink-0">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Generar Mes
@@ -885,7 +916,7 @@ import {
             </button>
             <button
               (click)="onModalSubmit()"
-              [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0"
+              [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0 || (tipoReunionActivo() === 'entre_semana' && plantillaSeleccionada?.mes_inicio == null)"
               class="flex-1 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-bold transition-all shadow-sm shadow-purple-900/20 active:scale-95">
               Generar Programa
             </button>
@@ -1299,6 +1330,11 @@ export class ReunionesProgramacionComponent implements OnInit {
     return this.authStore.hasPermission(perm) || !!this.authStore.user()?.roles?.includes('Secretario');
   });
 
+  puedeCargarGuia = computed(() => {
+    const roles = this.authStore.user()?.roles ?? [];
+    return roles.includes('Administrador') || roles.includes('Gestor Aplicación');
+  });
+
   // ── State machine ──────────────────────────────────────────────
   estado = signal<'idle' | 'loading' | 'draft' | 'confirmado' | 'historial' | 'error'>('idle');
   errorMsg = signal<string | null>(null);
@@ -1308,6 +1344,8 @@ export class ReunionesProgramacionComponent implements OnInit {
   selectedWeekIdx = signal(0);
   plantillas = signal<PlantillaOption[]>([]);
   loadingPlantillas = signal(false);
+  tieneGuias = signal<boolean | null>(null);
+  verificandoGuias = signal(false);
 
   // ── Historial signals ──────────────────────────────────────────
   periodos = signal<PeriodoConfirmado[]>([]);
@@ -1720,6 +1758,7 @@ export class ReunionesProgramacionComponent implements OnInit {
         if (tipo === 'logistica' || tipo === 'discursos') return;
         this.tryLoadDrafts(idCong);
         this.loadPeriodos(idCong);
+        this.verificarGuiasDisponibles(idCong);
       });
     });
   }
@@ -1742,6 +1781,22 @@ export class ReunionesProgramacionComponent implements OnInit {
     this.reunionesSvc.getPeriodosConfirmados(this.tipoReunionActivo(), idCong).subscribe({
       next: (p) => { this.periodos.set(p); this.loadingPeriodos.set(false); },
       error: () => this.loadingPeriodos.set(false),
+    });
+  }
+
+  private verificarGuiasDisponibles(idCong: number): void {
+    this.verificandoGuias.set(true);
+    this.tieneGuias.set(null);
+    this.reunionesSvc.getPlantillas(this.tipoReunionActivo(), idCong).subscribe({
+      next: (lista) => {
+        const guiasReales = (lista ?? []).filter((p) => p.mes_inicio != null);
+        this.tieneGuias.set(guiasReales.length > 0);
+        this.verificandoGuias.set(false);
+      },
+      error: () => {
+        this.tieneGuias.set(null);
+        this.verificandoGuias.set(false);
+      },
     });
   }
 
@@ -1794,6 +1849,9 @@ export class ReunionesProgramacionComponent implements OnInit {
   openModal(): void {
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong) return;
+    if (this.tipoReunionActivo() === 'entre_semana' && this.tieneGuias() === false) {
+      return;
+    }
     this.showModal.set(true);
     this.loadingPlantillas.set(true);
     const configReq = this.congregacionCtx.isAdmin() 

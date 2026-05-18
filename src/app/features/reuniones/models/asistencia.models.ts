@@ -22,6 +22,8 @@ export interface AsistenciaRecord {
   asistencia_tipo_reunion: number;
   total: number | null;
   promedio: number | null;
+  /** Fechas ISO (o null) de los slots 01-05 para el tipo de reunión de este registro. */
+  fechas_semanas: (string | null)[];
 }
 
 export interface AsistenciaUpsert {

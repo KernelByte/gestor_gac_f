@@ -1,6 +1,7 @@
 ﻿import { Component, signal, computed, inject, OnInit, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ReunionesService } from '../services/reuniones.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -1376,6 +1377,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   private congregacionCtx = inject(CongregacionContextService);
   private authStore = inject(AuthStore);
   private tokenSvc = inject(TokenService);
+  private route = inject(ActivatedRoute);
 
   hasEditPermission = computed(() => {
     return this.authStore.hasPermission('reuniones.configuracion') || !!this.authStore.user()?.roles?.includes('Secretario');
@@ -1388,7 +1390,16 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     { id: 'plantillas', label: 'Plantillas de Reunión' }
   ];
 
-  visibleTabs = computed(() => this.allTabs);
+  puedeGestionarPlantillas = computed(() => {
+    const roles = this.authStore.user()?.roles ?? [];
+    return roles.includes('Administrador') || roles.includes('Gestor Aplicación');
+  });
+
+  visibleTabs = computed(() => {
+    return this.puedeGestionarPlantillas()
+      ? this.allTabs
+      : this.allTabs.filter(t => t.id !== 'plantillas');
+  });
 
   activeTab = signal('privilegios');
 
@@ -1465,7 +1476,6 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     audio:                         'Mesa de audio',
     video:                         'Mesa de video',
     vigilancia:                    'Vigilancia',
-    sala_principal:                'Sala principal',
     sala_auxiliar:                 'Sala auxiliar (Sala B)',
     capitan_predicacion:           'Capitán de predicación',
     plataforma:                    'Plataforma (presentaciones y multimedia)',
@@ -1562,6 +1572,10 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   // ── Lifecycle ──
   ngOnInit(): void {
     this.loadSavedPlantillas();
+    const tabParam = this.route.snapshot.queryParamMap.get('tab');
+    if (tabParam && this.visibleTabs().some(t => t.id === tabParam)) {
+      this.activeTab.set(tabParam);
+    }
     // Matriz loads lazily via effect when tab is selected (default tab)
   }
 

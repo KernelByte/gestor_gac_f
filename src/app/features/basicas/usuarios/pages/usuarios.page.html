@@ -744,8 +744,8 @@
                      </div>
                   </div>
 
-                  <!-- Force Password Change (solo al crear) -->
-                  <div *ngIf="!editingUser()" class="mt-1 px-1">
+                  <!-- Force Password Change (al crear, o al editar si se ingresa contraseña) -->
+                  <div *ngIf="!editingUser() || (editingUser() && userForm.get('contrasena')?.value)" class="mt-1 px-1">
                      <label class="flex items-center gap-3 p-3 rounded-xl border border-amber-200/60 dark:border-amber-800/20 bg-amber-50/50 dark:bg-amber-900/10 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
                         <div class="relative shrink-0">
                            <input type="checkbox" formControlName="debe_cambiar_contrasena" class="sr-only peer">
@@ -754,7 +754,7 @@
                         </div>
                         <div>
                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Forzar cambio de contraseña</p>
-                           <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5">El usuario deberá establecer su propia contraseña al primer inicio de sesión</p>
+                           <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5">{{ editingUser() ? 'El usuario deberá cambiar su contraseña en su próximo inicio de sesión' : 'El usuario deberá establecer su propia contraseña al primer inicio de sesión' }}</p>
                         </div>
                      </label>
                   </div>

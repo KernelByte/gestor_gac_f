@@ -29,8 +29,12 @@ interface NextMeetingInfo {
 interface ParteRow {
   principal: AsignacionDraft;
   ayudante?: AsignacionDraft;
+  salaB?: AsignacionDraft;
+  ayudanteB?: AsignacionDraft;
   esMia: boolean;
   esMiaAyudante: boolean;
+  esMiaSalaB: boolean;
+  esMiaAyudanteB: boolean;
 }
 
 interface SeccionGroup {
@@ -220,38 +224,15 @@ const SECTION_DEFAULT = {
         <!-- Fecha larga -->
         <p class="header-date">{{ nextMeeting()!.dateFormatted }}</p>
 
-        <!-- Hora -->
-        <div *ngIf="nextMeeting()!.hora" class="header-hora">
-          <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <span>{{ nextMeeting()!.hora }} h</span>
-        </div>
-
-        <!-- Título guía -->
-        <div *ngIf="programa()!.titulo_guia" class="titulo-guia">
-          <svg class="w-3 h-3 shrink-0 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-          </svg>
-          <span>{{ programa()!.titulo_guia }}</span>
-        </div>
-
-        <!-- Meta: partes + duración -->
-        <div class="header-meta" *ngIf="getPartesPrincipales() > 0">
-          <span class="meta-pill">
-            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-              <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
-              <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-            </svg>
-            {{ getPartesPrincipales() }} partes
-          </span>
-          <span class="meta-pill">
-            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Hora + duración -->
+        <div class="header-hora-row">
+          <div *ngIf="nextMeeting()!.hora" class="header-hora">
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
-            {{ getDuracionTotal() }} min
-          </span>
+            <span>{{ formatHora12(nextMeeting()!.hora) }}</span>
+          </div>
+          <span *ngIf="getDuracionTotal() > 0" class="duracion-inline">{{ getDuracionTotal() }} min</span>
         </div>
       </div>
 
@@ -277,110 +258,121 @@ const SECTION_DEFAULT = {
 
       <!-- ── Secciones ── -->
       <ng-container *ngFor="let grupo of partesAgrupadas(); let gi = index">
-        <div class="seccion-block" [style.animation-delay]="(gi * 70 + 60) + 'ms'">
+        <section class="seccion-card" [style.animation-delay]="(gi * 50 + 40) + 'ms'">
 
           <!-- Cabecera de sección -->
-          <div class="seccion-header" [ngStyle]="getSeccionHeaderStyle(grupo.color)">
-            <div class="seccion-icon-wrap" [ngStyle]="{ background: grupo.color }">
-              <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <header class="seccion-header"
+                  [style.border-left-color]="grupo.color">
+            <div class="seccion-header-left">
+              <svg class="seccion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   [style.color]="grupo.color">
                 <path [attr.d]="grupo.iconPath"/>
               </svg>
+              <h3 class="seccion-titulo" [style.color]="grupo.color">{{ grupo.seccion }}</h3>
             </div>
-            <span class="seccion-titulo" [ngStyle]="{ color: grupo.color }">{{ grupo.seccion }}</span>
-            <div class="seccion-count" [ngStyle]="{ color: grupo.color, background: hexToRgba(grupo.color, 0.1) }">
-              {{ grupo.partes.length }}
-            </div>
-          </div>
+          </header>
 
           <!-- Partes -->
           <div class="partes-list">
             <ng-container *ngFor="let parte of grupo.partes; let pi = index">
-              <div class="parte-card"
-                   [class.parte-mia]="parte.esMia || parte.esMiaAyudante"
-                   [attr.data-mi-parte]="(parte.esMia || parte.esMiaAyudante) ? 'true' : null"
-                   [style.animation-delay]="(gi * 70 + pi * 40 + 100) + 'ms'">
+              <article class="parte-card"
+                   [class.parte-mia]="parte.esMia || parte.esMiaAyudante || parte.esMiaSalaB || parte.esMiaAyudanteB"
+                   [attr.data-mi-parte]="(parte.esMia || parte.esMiaAyudante || parte.esMiaSalaB || parte.esMiaAyudanteB) ? 'true' : null"
+                   [style.animation-delay]="(gi * 50 + pi * 30 + 80) + 'ms'">
 
-                <!-- Barra lateral de color de sección -->
-                <div class="parte-bar"
-                     [ngStyle]="{ background: (parte.esMia || parte.esMiaAyudante) ? '#6D28D9' : grupo.color }"></div>
+                <!-- Círculo de número -->
+                <div *ngIf="extraerNumero(parte.principal.nombre_parte)"
+                     class="orden-num"
+                     [ngStyle]="getOrdenStyle(grupo.color, parte.esMia, grupo.seccion)">
+                  {{ extraerNumero(parte.principal.nombre_parte) }}
+                </div>
 
-                <div class="parte-content">
-                  <!-- Fila superior: orden + nombre + badges + duración -->
-                  <div class="parte-top">
-                    <!-- Número de orden -->
-                    <div class="orden-circle"
-                         [ngStyle]="getOrdenStyle(grupo.color, parte.esMia)">
-                      {{ parte.principal.orden_visual ?? (pi + 1) }}
+                <div class="parte-body">
+                  <!-- Título + duración -->
+                  <div class="parte-title-row">
+                    <h4 class="parte-name">{{ quitarPrefijoNumero(formatNombreParte(parte.principal.nombre_parte ?? '')) }}</h4>
+                    <span *ngIf="parte.principal.duracion_minutos" class="duracion-text">
+                      {{ parte.principal.duracion_minutos }}m
+                    </span>
+                  </div>
+
+                  <!-- Badge Reemplazo -->
+                  <div *ngIf="parte.principal.es_reemplazo" class="parte-badges-row">
+                    <span class="badge-reemplazo">Reemplazo</span>
+                  </div>
+
+                  <!-- ── Caso 1: Sin Sala B (layout simple) ── -->
+                  <ng-container *ngIf="!parte.salaB">
+                    <div *ngIf="requiereEtiquetaSala(parte.principal.nombre_parte)" class="sala-tag-row">
+                      <span class="sala-tag">Sala Principal</span>
                     </div>
+                    <div *ngIf="parte.principal.nombre_completo || parte.ayudante" class="asignado-row">
+                      <span class="asignado-dot"
+                            [style.background]="(parte.esMia || parte.esMiaAyudante) ? '#8b5cf6' : grupo.color"></span>
+                      <p class="asignado-text">
+                        <span *ngIf="parte.principal.nombre_completo" [class.asignado-mio]="parte.esMia">{{ parte.principal.nombre_completo }}</span>
+                        <ng-container *ngIf="parte.ayudante">
+                          <span class="ayudante-sep">{{ esEstudioBiblico(parte.principal.nombre_parte) ? 'Lector:' : 'con' }}</span>
+                          <span [class.asignado-mio]="parte.esMiaAyudante">{{ parte.ayudante.nombre_completo }}</span>
+                        </ng-container>
+                      </p>
+                      <span *ngIf="parte.esMia || parte.esMiaAyudante" class="badge-tu">Tú</span>
+                    </div>
+                  </ng-container>
 
-                    <!-- Nombre + badges -->
-                    <div class="parte-name-wrap">
-                      <span class="parte-name">{{ parte.principal.nombre_parte }}</span>
-                      <div class="parte-badges">
-                        <span *ngIf="parte.esMia" class="badge-tu">
-                          <svg class="w-2 h-2" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                          Tú
-                        </span>
-                        <span *ngIf="parte.principal.aplica_sala_b || parte.principal.sala" class="badge-sala">
-                          {{ parte.principal.sala ? 'Sala ' + parte.principal.sala : 'Sala B' }}
-                        </span>
-                        <span *ngIf="parte.principal.es_reemplazo" class="badge-reemplazo">Reemplazo</span>
+                  <!-- ── Caso 2: Con Sala B (layout stacked) ── -->
+                  <ng-container *ngIf="parte.salaB">
+                    <div class="salas-stack">
+                      <!-- Sala Principal -->
+                      <div class="sala-block">
+                        <div class="sala-block-header">
+                          <span class="sala-letter sala-letter-p"
+                                [style.color]="grupo.color"
+                                [style.background]="hexToRgba(grupo.color, 0.12)"
+                                [style.border-color]="hexToRgba(grupo.color, 0.3)">P</span>
+                          <span class="sala-block-label">Sala Principal</span>
+                        </div>
+                        <p class="asignado-text sala-block-text">
+                          <span [class.asignado-mio]="parte.esMia">{{ parte.principal.nombre_completo || 'Sin asignar' }}</span>
+                          <ng-container *ngIf="parte.ayudante">
+                            <span class="ayudante-sep">con</span>
+                            <span [class.asignado-mio]="parte.esMiaAyudante">{{ parte.ayudante.nombre_completo }}</span>
+                          </ng-container>
+                          <span *ngIf="parte.esMia || parte.esMiaAyudante" class="badge-tu inline-badge">Tú</span>
+                        </p>
+                      </div>
+
+                      <!-- Sala B -->
+                      <div class="sala-block">
+                        <div class="sala-block-header">
+                          <span class="sala-letter sala-letter-b">B</span>
+                          <span class="sala-block-label">Sala B</span>
+                        </div>
+                        <p class="asignado-text sala-block-text">
+                          <span [class.asignado-mio]="parte.esMiaSalaB">{{ parte.salaB!.nombre_completo || 'Sin asignar' }}</span>
+                          <ng-container *ngIf="parte.ayudanteB">
+                            <span class="ayudante-sep">con</span>
+                            <span [class.asignado-mio]="parte.esMiaAyudanteB">{{ parte.ayudanteB!.nombre_completo }}</span>
+                          </ng-container>
+                          <span *ngIf="parte.esMiaSalaB || parte.esMiaAyudanteB" class="badge-tu inline-badge">Tú</span>
+                        </p>
                       </div>
                     </div>
-
-                    <!-- Duración -->
-                    <div *ngIf="parte.principal.duracion_minutos"
-                         class="duracion-badge"
-                         [ngStyle]="getDuracionStyle(grupo.color)">
-                      {{ parte.principal.duracion_minutos }}<span class="duracion-unit">m</span>
-                    </div>
-                  </div>
+                  </ng-container>
 
                   <!-- Fuente de información -->
                   <p *ngIf="parte.principal.fuente_informacion" class="fuente-info">
                     {{ parte.principal.fuente_informacion }}
                   </p>
-
-                  <!-- Asignado a -->
-                  <div class="asignado-row">
-                    <div class="asignado-dot" [ngStyle]="{ background: grupo.color }"></div>
-
-                    <!-- Principal -->
-                    <div class="asignado-nombres">
-                      <ng-container *ngIf="parte.principal.nombre_completo; else sinAsignar">
-                        <span class="asignado-nombre" [class.asignado-mio]="parte.esMia">
-                          {{ parte.principal.nombre_completo }}
-                        </span>
-                      </ng-container>
-                      <ng-template #sinAsignar>
-                        <span class="sin-asignar">Sin asignar</span>
-                      </ng-template>
-
-                      <!-- Ayudante -->
-                      <ng-container *ngIf="parte.ayudante">
-                        <span class="asignado-separator">·</span>
-                        <span class="ayudante-label">con</span>
-                        <span class="asignado-nombre" [class.asignado-mio]="parte.esMiaAyudante">
-                          {{ parte.ayudante.nombre_completo }}
-                        </span>
-                        <span *ngIf="parte.esMiaAyudante" class="badge-tu-ayudante">
-                          <svg class="w-2 h-2" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                          Tú
-                        </span>
-                      </ng-container>
-                    </div>
-                  </div>
-
-                </div><!-- /parte-content -->
-              </div><!-- /parte-card -->
+                </div>
+              </article>
             </ng-container>
-          </div><!-- /partes-list -->
+          </div>
 
-        </div><!-- /seccion-block -->
+        </section><!-- /seccion-card -->
       </ng-container>
 
       <!-- Pie -->
-      <p class="footer-note">Programa confirmado · Solo lectura</p>
 
     </ng-container>
   </div><!-- /resumen-container -->
@@ -388,32 +380,72 @@ const SECTION_DEFAULT = {
   `,
   styles: [`
     /* ──────────────────────────────────────────
-       HOST & LAYOUT
+       TOKENS
     ────────────────────────────────────────── */
-    :host { display: block; height: 100%; overflow-y: auto; }
+    :host {
+      display: block;
+      height: 100%;
+      overflow-y: auto;
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+      --bg: #f7f8fb;
+      --surface: #ffffff;
+      --border: rgba(15, 23, 42, 0.08);
+      --border-soft: rgba(15, 23, 42, 0.05);
+      --text: #0f172a;
+      --text-2: #475569;
+      --text-3: #94a3b8;
+      --brand: #6D28D9;
+      --brand-2: #7c3aed;
+      --radius-card: 14px;
+      --radius-soft: 10px;
+      --radius-pill: 999px;
+    }
+    :host-context(.dark) {
+      --bg: #0b0f1a;
+      --surface: #131826;
+      --border: rgba(255, 255, 255, 0.07);
+      --border-soft: rgba(255, 255, 255, 0.04);
+      --text: #f1f5f9;
+      --text-2: #cbd5e1;
+      --text-3: #94a3b8;
+    }
 
+    /* ──────────────────────────────────────────
+       HOST & LAYOUT (mobile-first)
+    ────────────────────────────────────────── */
     .resumen-host {
       min-height: 100%;
-      background: #f8f9fb;
-      padding: 16px 12px 64px;
+      padding: 10px 8px max(16px, env(safe-area-inset-bottom));
     }
-    :host-context(.dark) .resumen-host { background: #0f172a; }
 
     .resumen-container {
       width: 100%;
-      max-width: 720px;
+      max-width: 100%;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
+    /* ≥ sm — tablet */
     @media (min-width: 640px) {
-      .resumen-host { padding: 24px 20px 80px; }
-      .resumen-container { gap: 12px; }
+      .resumen-host { padding: 16px 16px 48px; }
+      .resumen-container { gap: 10px; max-width: 860px; }
     }
+    /* ≥ md */
+    @media (min-width: 768px) {
+      .resumen-host { padding: 20px 24px 56px; }
+      .resumen-container { max-width: 960px; }
+    }
+    /* ≥ lg */
     @media (min-width: 1024px) {
-      .resumen-host { padding: 32px 24px 80px; }
+      .resumen-host { padding: 24px 32px 64px; }
+      .resumen-container { max-width: 1100px; gap: 12px; }
+    }
+    /* ≥ xl */
+    @media (min-width: 1280px) {
+      .resumen-container { max-width: 1200px; }
     }
 
     /* ──────────────────────────────────────────
@@ -438,12 +470,12 @@ const SECTION_DEFAULT = {
     }
 
     .skel-card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 14px;
     }
-    :host-context(.dark) .skel-card { background: #1e293b; border-color: rgba(255,255,255,0.07); }
+    @media (min-width: 640px) { .skel-card { padding: 18px; } }
 
     .skel-row { display: flex; align-items: center; gap: 8px; }
     .space-y-2 > * + * { margin-top: 8px; }
@@ -456,373 +488,490 @@ const SECTION_DEFAULT = {
       flex-direction: column;
       align-items: center;
       text-align: center;
-      padding: 60px 16px;
-      gap: 12px;
+      padding: 48px 20px;
+      gap: 10px;
     }
+    @media (min-width: 640px) { .empty-state { padding: 72px 24px; } }
     .empty-icon-wrap {
-      width: 64px; height: 64px;
-      border-radius: 20px;
+      width: 56px; height: 56px;
+      border-radius: 18px;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
     .empty-title {
-      font-size: 1.125rem; font-weight: 700;
-      color: #0f172a; margin: 0;
+      font-size: 1rem; font-weight: 800;
+      color: var(--text); margin: 0;
+      letter-spacing: -0.01em;
     }
-    :host-context(.dark) .empty-title { color: #f1f5f9; }
     .empty-body {
-      font-size: 0.9375rem; color: #64748b; line-height: 1.6;
-      max-width: 320px; margin: 0;
+      font-size: 0.875rem;
+      color: var(--text-2);
+      line-height: 1.55;
+      max-width: 300px;
+      margin: 0;
     }
-    :host-context(.dark) .empty-body { color: #94a3b8; }
-    .empty-date { color: #334155; }
-    :host-context(.dark) .empty-date { color: #e2e8f0; }
+    .empty-date { color: var(--text); font-weight: 600; }
 
     /* ──────────────────────────────────────────
        HEADER CARD
     ────────────────────────────────────────── */
     .header-card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 14px 14px 12px;
     }
-    :host-context(.dark) .header-card {
-      background: #1e293b;
-      border-color: rgba(255,255,255,0.07);
-      box-shadow: none;
+    @media (min-width: 640px) {
+      .header-card { padding: 20px 20px 16px; border-radius: 16px; }
     }
 
     .header-top-row {
       display: flex; align-items: center;
-      flex-wrap: wrap; gap: 8px;
+      flex-wrap: wrap; gap: 6px;
       margin-bottom: 10px;
     }
 
     .tipo-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 10px; border-radius: 999px;
-      background: rgba(109,40,217,0.08);
-      color: #6D28D9;
-      font-size: 0.75rem; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(109, 40, 217, 0.1);
+      border: 1px solid rgba(109, 40, 217, 0.2);
+      color: var(--brand);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
     }
     :host-context(.dark) .tipo-badge {
-      background: rgba(167,139,250,0.12);
+      background: rgba(167, 139, 250, 0.14);
+      border-color: rgba(167, 139, 250, 0.2);
       color: #a78bfa;
     }
-    .tipo-icon { width: 14px; height: 14px; }
+    .tipo-icon { width: 12px; height: 12px; }
 
     .date-badge {
       display: inline-flex; align-items: center;
-      padding: 4px 10px; border-radius: 999px;
-      font-size: 0.7rem; font-weight: 800;
-      letter-spacing: 0.03em;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
-    .date-hoy {
-      background: rgba(16,185,129,0.1); color: #059669;
-    }
-    .date-manana {
-      background: rgba(245,158,11,0.1); color: #d97706;
-    }
-    .date-pronto {
-      background: rgba(59,130,246,0.1); color: #2563eb;
-    }
-    :host-context(.dark) .date-hoy   { background:rgba(16,185,129,0.15); color:#34d399; }
-    :host-context(.dark) .date-manana{ background:rgba(245,158,11,0.15); color:#fbbf24; }
-    :host-context(.dark) .date-pronto{ background:rgba(59,130,246,0.15); color:#60a5fa; }
+    .date-hoy    { background: rgba(16, 185, 129, 0.12); color: #047857; border: 1px solid rgba(16, 185, 129, 0.25); }
+    .date-manana { background: rgba(245, 158, 11, 0.14); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .date-pronto { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.25); }
+    :host-context(.dark) .date-hoy    { background: rgba(16, 185, 129, 0.16); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
+    :host-context(.dark) .date-manana { background: rgba(245, 158, 11, 0.16); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
+    :host-context(.dark) .date-pronto { background: rgba(59, 130, 246, 0.16); color: #60a5fa; }
 
     .header-date {
-      font-size: 1.375rem; font-weight: 900;
-      color: #0f172a; margin: 0 0 6px;
-      line-height: 1.2; letter-spacing: -0.02em;
+      font-size: 1.375rem;
+      font-weight: 900;
+      color: var(--text);
+      margin: 0 0 8px;
+      line-height: 1.15;
+      letter-spacing: -0.025em;
     }
-    :host-context(.dark) .header-date { color: #f1f5f9; }
-
     @media (min-width: 640px) {
-      .header-card { padding: 20px; }
-      .header-date { font-size: 1.625rem; }
+      .header-date { font-size: 1.75rem; }
     }
 
+    .header-hora-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 8px;
+    }
     .header-hora {
       display: inline-flex; align-items: center; gap: 5px;
-      color: #64748b; font-size: 0.875rem; font-weight: 600;
-      margin-bottom: 10px;
+      color: var(--text-2);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
     }
-    :host-context(.dark) .header-hora { color: #94a3b8; }
+    .duracion-inline {
+      font-size: 0.8125rem;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+    }
 
     .titulo-guia {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 10px; border-radius: 8px;
-      background: #f1f5f9; border: 1px solid #e2e8f0;
-      color: #475569; font-size: 0.8125rem; font-style: italic;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.04);
+      color: var(--text-2);
+      font-size: 0.75rem;
+      font-style: italic;
       margin-bottom: 10px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     :host-context(.dark) .titulo-guia {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(255,255,255,0.08);
-      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-3);
     }
 
     .header-meta {
       display: flex; flex-wrap: wrap; gap: 6px;
-      margin-top: 4px;
+      margin-top: 2px;
     }
     .meta-pill {
       display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 9px; border-radius: 999px;
-      background: #f1f5f9; color: #64748b;
-      font-size: 0.75rem; font-weight: 600;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      background: rgba(15, 23, 42, 0.05);
+      color: var(--text-2);
+      font-size: 0.7rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
     }
     :host-context(.dark) .meta-pill {
-      background: rgba(255,255,255,0.06); color: #94a3b8;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-3);
     }
 
     /* ──────────────────────────────────────────
        BANNER MIS PARTES
     ────────────────────────────────────────── */
     .banner-mis-partes {
-      display: flex; align-items: flex-start; gap: 12px;
-      background: linear-gradient(135deg,#6D28D9 0%,#7c3aed 60%,#8b5cf6 100%);
-      border-radius: 14px; padding: 14px 16px;
-      animation: slideDown 0.38s cubic-bezier(0.23,1,0.32,1) 0.04s both;
+      display: flex; align-items: flex-start; gap: 10px;
+      background: linear-gradient(135deg, #6D28D9 0%, #7c3aed 60%, #8b5cf6 100%);
+      border-radius: var(--radius-card);
+      padding: 12px 14px;
+      animation: slideDown 220ms var(--ease-out) 40ms both;
+    }
+    @media (min-width: 640px) {
+      .banner-mis-partes { padding: 14px 16px; gap: 12px; }
     }
     @keyframes slideDown {
-      from { opacity:0; transform:translateY(-10px); }
-      to   { opacity:1; transform:translateY(0); }
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
     .banner-icon-wrap {
-      width: 38px; height: 38px; min-width: 38px;
-      border-radius: 10px; background: rgba(255,255,255,0.18);
+      width: 34px; height: 34px; min-width: 34px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.18);
       display: flex; align-items: center; justify-content: center;
     }
     .banner-body { flex: 1; min-width: 0; }
     .banner-title {
-      color: #fff; font-size: 0.9375rem; font-weight: 800;
-      margin: 0 0 6px; line-height: 1.3;
+      color: #fff;
+      font-size: 0.875rem;
+      font-weight: 800;
+      margin: 0 0 5px;
+      line-height: 1.3;
+      letter-spacing: -0.005em;
     }
     @media (min-width: 640px) { .banner-title { font-size: 1rem; } }
     .banner-partes-list {
-      display: flex; flex-wrap: wrap; gap: 5px;
+      display: flex; flex-wrap: wrap; gap: 4px;
     }
     .banner-parte-chip {
       display: inline-block;
-      padding: 3px 9px; border-radius: 999px;
-      background: rgba(255,255,255,0.2);
-      color: rgba(255,255,255,0.95);
-      font-size: 0.75rem; font-weight: 600;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.96);
+      font-size: 0.7rem;
+      font-weight: 600;
     }
 
     /* ──────────────────────────────────────────
-       SECCIÓN
+       SECCIÓN (card unificada)
     ────────────────────────────────────────── */
-    .seccion-block {
-      animation: fadeUp 0.36s cubic-bezier(0.23,1,0.32,1) both;
+    .seccion-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      animation: fadeUp 240ms var(--ease-out) both;
+      will-change: transform, opacity;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    :host-context(.dark) .seccion-card {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     @keyframes fadeUp {
-      from { opacity:0; transform:translateY(8px); }
-      to   { opacity:1; transform:translateY(0); }
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .seccion-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-soft);
+      border-left: 2px solid transparent;
+      background: rgba(15, 23, 42, 0.04);
+    }
+    :host-context(.dark) .seccion-header { background: rgba(30, 41, 59, 0.4); }
+
+    .seccion-header-left {
       display: flex; align-items: center; gap: 8px;
-      padding: 8px 12px 8px 10px;
-      border-radius: 10px 10px 0 0;
-      border-bottom: 1px solid rgba(0,0,0,0.06);
-      position: sticky; top: 0; z-index: 5;
+      min-width: 0;
     }
-    :host-context(.dark) .seccion-header {
-      border-bottom-color: rgba(255,255,255,0.06);
-    }
-    .seccion-icon-wrap {
-      width: 24px; height: 24px; min-width: 24px;
-      border-radius: 7px;
-      display: flex; align-items: center; justify-content: center;
+    .seccion-icon {
+      width: 16px; height: 16px;
+      flex-shrink: 0;
     }
     .seccion-titulo {
-      flex: 1; font-size: 0.65rem; font-weight: 900;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      -webkit-font-smoothing: antialiased;
+      filter: brightness(1.3);
     }
     .seccion-count {
-      width: 20px; height: 20px;
-      border-radius: 999px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.65rem; font-weight: 800;
+      min-width: 22px;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      background: rgba(15, 23, 42, 0.06);
+      color: var(--text-2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    :host-context(.dark) .seccion-count {
+      background: rgba(30, 41, 59, 0.6);
+      color: var(--text-3);
     }
 
     /* ──────────────────────────────────────────
        LISTA DE PARTES
     ────────────────────────────────────────── */
     .partes-list {
-      border-radius: 0 0 12px 12px;
-      overflow: hidden;
-      border: 1px solid #e2e8f0;
-      border-top: none;
+      display: flex;
+      flex-direction: column;
+      padding: 0 8px;
     }
-    :host-context(.dark) .partes-list { border-color: rgba(255,255,255,0.07); }
 
     /* ──────────────────────────────────────────
        PARTE CARD
     ────────────────────────────────────────── */
     .parte-card {
-      display: flex; align-items: stretch;
-      background: #fff;
-      border-bottom: 1px solid #f1f5f9;
-      animation: fadeUp 0.3s cubic-bezier(0.23,1,0.32,1) both;
+      display: flex; gap: 12px;
+      padding: 12px 8px;
+      border-bottom: 1px solid var(--border-soft);
+      border-radius: 8px;
+      margin: 2px 0;
+      animation: fadeUp 200ms var(--ease-out) both;
       transition: background 160ms ease;
+      will-change: transform, opacity;
     }
     .parte-card:last-child { border-bottom: none; }
-    :host-context(.dark) .parte-card {
-      background: #1e293b;
-      border-bottom-color: rgba(255,255,255,0.04);
-    }
-    .parte-card.parte-mia {
-      background: rgba(109,40,217,0.04);
-    }
-    :host-context(.dark) .parte-card.parte-mia {
-      background: rgba(109,40,217,0.1);
-    }
+    .parte-card:hover { background: rgba(15, 23, 42, 0.03); }
+    :host-context(.dark) .parte-card:hover { background: rgba(30, 41, 59, 0.3); }
+    .parte-card.parte-mia { background: rgba(139, 92, 246, 0.06); }
+    :host-context(.dark) .parte-card.parte-mia { background: rgba(139, 92, 246, 0.08); }
 
-    .parte-bar {
-      width: 3px; min-width: 3px; align-self: stretch;
-      flex-shrink: 0;
-    }
-
-    .parte-content {
-      flex: 1; min-width: 0;
-      padding: 12px 12px 12px 10px;
-    }
-    @media (min-width: 640px) {
-      .parte-content { padding: 14px 16px 14px 12px; }
-    }
-
-    /* Fila superior */
-    .parte-top {
-      display: flex; align-items: flex-start; gap: 10px;
-      margin-bottom: 6px;
-    }
-
-    .orden-circle {
+    /* Círculo de número */
+    .orden-num {
       width: 28px; height: 28px; min-width: 28px;
       border-radius: 999px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.7rem; font-weight: 800;
-      margin-top: 1px; flex-shrink: 0;
-    }
-    @media (min-width: 640px) {
-      .orden-circle { width: 32px; height: 32px; min-width: 32px; font-size: 0.75rem; }
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+      border-width: 1px;
+      border-style: solid;
+      border-color: transparent;
     }
 
-    .parte-name-wrap {
+    .orden-spacer {
+      width: 28px; min-width: 28px;
+      flex-shrink: 0;
+    }
+
+    /* Cuerpo */
+    .parte-body {
       flex: 1; min-width: 0;
-      display: flex; flex-direction: column; gap: 4px;
+    }
+
+    .parte-title-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
     }
     .parte-name {
-      font-size: 0.9375rem; font-weight: 600;
-      color: #1e293b; line-height: 1.3;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+      margin: 0;
+      letter-spacing: -0.005em;
     }
-    :host-context(.dark) .parte-name { color: #f1f5f9; }
-    @media (min-width: 640px) { .parte-name { font-size: 1rem; } }
+    .duracion-text {
+      font-size: 0.65rem;
+      color: var(--text-3);
+      white-space: nowrap;
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
 
-    .parte-badges {
-      display: flex; flex-wrap: wrap; gap: 4px;
+    /* Badge Reemplazo */
+    .parte-badges-row {
+      display: flex; gap: 4px;
+      margin-bottom: 6px;
     }
-
-    .badge-tu {
-      display: inline-flex; align-items: center; gap: 3px;
-      padding: 2px 8px; border-radius: 999px;
-      background: rgba(109,40,217,0.1);
-      color: #6D28D9; border: 1px solid rgba(109,40,217,0.2);
-      font-size: 0.7rem; font-weight: 800;
-    }
-    :host-context(.dark) .badge-tu {
-      background: rgba(167,139,250,0.15);
-      color: #a78bfa; border-color: rgba(167,139,250,0.25);
-    }
-    .badge-tu-ayudante {
-      display: inline-flex; align-items: center; gap: 3px;
-      padding: 2px 8px; border-radius: 999px;
-      background: rgba(109,40,217,0.08);
-      color: #7c3aed; border: 1px solid rgba(109,40,217,0.15);
-      font-size: 0.65rem; font-weight: 700;
-    }
-    .badge-sala {
-      display: inline-flex; align-items: center;
-      padding: 2px 8px; border-radius: 999px;
-      background: #f1f5f9; color: #64748b;
-      font-size: 0.7rem; font-weight: 600;
-    }
-    :host-context(.dark) .badge-sala { background:rgba(255,255,255,0.08); color:#94a3b8; }
     .badge-reemplazo {
       display: inline-flex; align-items: center;
-      padding: 2px 8px; border-radius: 999px;
-      background: rgba(245,158,11,0.1); color: #b45309;
-      font-size: 0.7rem; font-weight: 600;
+      padding: 1px 6px;
+      border-radius: var(--radius-pill);
+      background: rgba(245, 158, 11, 0.12);
+      color: #b45309;
+      font-size: 0.6rem;
+      font-weight: 700;
     }
-    :host-context(.dark) .badge-reemplazo { background:rgba(245,158,11,0.15); color:#fbbf24; }
+    :host-context(.dark) .badge-reemplazo { background: rgba(245, 158, 11, 0.16); color: #fbbf24; }
 
-    /* Duración */
-    .duracion-badge {
-      flex-shrink: 0;
-      display: flex; align-items: baseline; gap: 1px;
-      padding: 3px 8px; border-radius: 8px;
-      font-size: 0.8rem; font-weight: 800;
-      margin-top: 2px;
+    /* "Sala Principal" tag (caso simple) */
+    .sala-tag-row {
+      display: flex; gap: 6px;
+      margin-bottom: 6px;
     }
-    @media (min-width: 640px) { .duracion-badge { padding: 4px 10px; } }
-    .duracion-unit { font-size: 0.65rem; font-weight: 500; opacity: 0.65; }
-
-    /* Fuente */
-    .fuente-info {
-      font-size: 0.75rem; font-style: italic;
-      color: #94a3b8; margin: 0 0 6px;
-      padding-left: 38px;
-      line-height: 1.4;
+    .sala-tag {
+      font-size: 0.6rem;
+      font-weight: 500;
+      line-height: 1;
+      padding: 3px 6px;
+      border-radius: 4px;
+      background: rgba(15, 23, 42, 0.05);
+      color: var(--text-2);
+      border: 1px solid var(--border);
     }
-    @media (min-width: 640px) { .fuente-info { padding-left: 42px; } }
+    :host-context(.dark) .sala-tag {
+      background: rgba(30, 41, 59, 0.5);
+      color: var(--text-3);
+      border-color: rgba(51, 65, 85, 0.6);
+    }
 
     /* Asignado */
     .asignado-row {
-      display: flex; align-items: center; gap: 7px;
+      display: flex; align-items: center; gap: 6px;
       flex-wrap: wrap;
     }
     .asignado-dot {
-      width: 7px; height: 7px; min-width: 7px;
-      border-radius: 999px; flex-shrink: 0;
+      width: 6px; height: 6px; min-width: 6px;
+      border-radius: 999px;
+      flex-shrink: 0;
+      display: inline-block;
     }
-    .asignado-nombres {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
-      min-width: 0;
+    .asignado-text {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-2);
+      margin: 0;
+      line-height: 1.4;
     }
-    .asignado-nombre {
-      font-size: 0.875rem; font-weight: 600;
-      color: #334155;
-    }
-    :host-context(.dark) .asignado-nombre { color: #cbd5e1; }
-    .asignado-mio { color: #6D28D9 !important; }
-    :host-context(.dark) .asignado-mio { color: #a78bfa !important; }
+    :host-context(.dark) .asignado-text { color: #cbd5e1; }
     .sin-asignar {
-      font-size: 0.8125rem; color: #94a3b8; font-style: italic;
+      font-style: italic;
+      color: var(--text-3);
     }
-    .asignado-separator { color: #cbd5e1; font-size: 0.875rem; }
-    :host-context(.dark) .asignado-separator { color: #475569; }
-    .ayudante-label { font-size: 0.75rem; color: #94a3b8; }
+    .asignado-mio {
+      color: #8b5cf6 !important;
+      font-weight: 600;
+    }
+    :host-context(.dark) .asignado-mio { color: #a78bfa !important; }
+    .ayudante-sep {
+      color: var(--text-3);
+      margin: 0 4px;
+      font-size: 0.7rem;
+    }
+
+    /* Badge Tú */
+    .badge-tu {
+      display: inline-flex; align-items: center;
+      padding: 1px 6px;
+      border-radius: var(--radius-pill);
+      background: rgba(139, 92, 246, 0.14);
+      color: #8b5cf6;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    :host-context(.dark) .badge-tu { background: rgba(167, 139, 250, 0.18); color: #a78bfa; }
+    .inline-badge { margin-left: 4px; }
+
+    /* Salas stack (Sala Principal + Sala B) */
+    .salas-stack {
+      display: flex; flex-direction: column; gap: 10px;
+      margin-top: 4px;
+    }
+    .sala-block {
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .sala-block-header {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sala-letter {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      border: 1px solid;
+      flex-shrink: 0;
+    }
+    .sala-letter-p {
+      /* colores definidos inline desde la sección */
+    }
+    .sala-letter-b {
+      background: rgba(45, 212, 191, 0.12);
+      color: #14b8a6;
+      border-color: rgba(45, 212, 191, 0.3);
+    }
+    :host-context(.dark) .sala-letter-b {
+      background: rgba(45, 212, 191, 0.14);
+      color: #2dd4bf;
+    }
+    .sala-block-label {
+      font-size: 0.625rem;
+      color: var(--text-3);
+      font-weight: 500;
+    }
+    .sala-block-text {
+      padding-left: 24px;
+    }
+
+    /* Fuente */
+    .fuente-info {
+      font-size: 0.7rem;
+      font-style: italic;
+      color: var(--text-3);
+      margin: 6px 0 0;
+      line-height: 1.4;
+    }
 
     /* ──────────────────────────────────────────
        PIE
     ────────────────────────────────────────── */
     .footer-note {
-      text-align: center; font-size: 0.7rem;
-      color: #cbd5e1; margin: 4px 0 0; padding-top: 4px;
+      text-align: center;
+      font-size: 0.6875rem;
+      color: var(--text-3);
+      opacity: 0.65;
+      margin: 6px 0 0;
+      letter-spacing: 0.01em;
     }
-    :host-context(.dark) .footer-note { color: #334155; }
 
     /* ──────────────────────────────────────────
        FADE-IN GENÉRICO
     ────────────────────────────────────────── */
     .fade-in {
-      animation: fadeUp 0.35s cubic-bezier(0.23,1,0.32,1) both;
+      animation: fadeUp 220ms var(--ease-out) both;
     }
 
     /* ──────────────────────────────────────────
@@ -830,11 +979,11 @@ const SECTION_DEFAULT = {
     ────────────────────────────────────────── */
     @media (prefers-reduced-motion: reduce) {
       .banner-mis-partes,
-      .seccion-block,
+      .seccion-card,
       .parte-card,
       .header-card,
       .fade-in {
-        animation: fadeOnly 0.15s ease both;
+        animation: fadeOnly 150ms ease both;
       }
       .skel { animation: none; opacity: 0.5; }
     }
@@ -869,17 +1018,79 @@ export class ReunionesResumenComponent {
     const partes = this.programa()?.partes ?? [];
     const userId = this.authStore.user()?.id_usuario_publicador;
 
+    const normName = (n?: string) =>
+      (n ?? '').replace(/\s*\((sala b[^)]*|ayudante[^)]*)\)/gi, '').trim().toLowerCase();
+
+    const isSalaB = (p: AsignacionDraft) =>
+      p.sala === 'Auxiliar' || p.sala === 'B' ||
+      /(sala b)/i.test(p.nombre_parte ?? '');
+
+    const usedIdx = new Set<number>();
     const rows: ParteRow[] = [];
+
     for (let i = 0; i < partes.length; i++) {
-      if (partes[i].es_ayudante) continue;
+      if (usedIdx.has(i) || partes[i].es_ayudante) continue;
+
       const principal = partes[i];
-      const next = partes[i + 1];
-      const ayudante = next?.es_ayudante ? next : undefined;
+      usedIdx.add(i);
+
+      let ayudante: AsignacionDraft | undefined;
+      let salaB: AsignacionDraft | undefined;
+      let ayudanteB: AsignacionDraft | undefined;
+
+      if (principal.aplica_sala_b) {
+        const baseNombre = normName(principal.nombre_parte);
+        const orden = principal.orden_visual;
+
+        // Recolectar todos los maestros y ayudantes del mismo grupo
+        const grupoMaestros: { idx: number; p: AsignacionDraft }[] = [{ idx: i, p: principal }];
+        const grupoAyudantes: { idx: number; p: AsignacionDraft }[] = [];
+
+        for (let j = i + 1; j < partes.length; j++) {
+          if (usedIdx.has(j)) continue;
+          const p = partes[j];
+          const samePart = normName(p.nombre_parte) === baseNombre || p.orden_visual === orden;
+          if (!samePart) break; // grupos están contiguos en el array
+
+          if (p.es_ayudante) {
+            grupoAyudantes.push({ idx: j, p });
+            usedIdx.add(j);
+          } else if (!p.es_ayudante && samePart) {
+            grupoMaestros.push({ idx: j, p });
+            usedIdx.add(j);
+          }
+        }
+
+        // Separar Sala Principal y Sala B
+        const maestroPrincipal = grupoMaestros.find(m => !isSalaB(m.p)) ?? grupoMaestros[0];
+        const maestroB = grupoMaestros.find(m => m !== maestroPrincipal);
+
+        // Emparejar ayudantes por campo sala o por posición
+        const ayudantePrincipal = grupoAyudantes.find(a =>
+          !isSalaB(a.p) && (a.p.sala === maestroPrincipal.p.sala || !a.p.sala || a.p.sala === 'Principal'));
+        const ayudanteBloque = grupoAyudantes.find(a => a !== ayudantePrincipal);
+
+        ayudante  = ayudantePrincipal?.p;
+        salaB     = maestroB?.p;
+        ayudanteB = ayudanteBloque?.p;
+
+      } else {
+        // Pareja simple: siguiente inmediato si es_ayudante
+        if (partes[i + 1]?.es_ayudante && !usedIdx.has(i + 1)) {
+          ayudante = partes[i + 1];
+          usedIdx.add(i + 1);
+        }
+      }
+
       rows.push({
         principal,
         ayudante,
-        esMia: !!userId && principal.id_publicador === userId,
-        esMiaAyudante: !!userId && !!ayudante && ayudante.id_publicador === userId,
+        salaB,
+        ayudanteB,
+        esMia:          !!userId && principal.id_publicador === userId,
+        esMiaAyudante:  !!userId && !!ayudante && ayudante.id_publicador === userId,
+        esMiaSalaB:     !!userId && !!salaB && salaB.id_publicador === userId,
+        esMiaAyudanteB: !!userId && !!ayudanteB && ayudanteB.id_publicador === userId,
       });
     }
 
@@ -938,16 +1149,81 @@ export class ReunionesResumenComponent {
     return 'date-pronto';
   }
 
+  extraerNumero(nombre?: string): string {
+    const match = (nombre ?? '').match(/^(\d+)\./);
+    return match ? match[1] : '';
+  }
+
+  quitarPrefijoNumero(nombre: string): string {
+    return nombre.replace(/^\d+\.\s*/, '');
+  }
+
+  requiereEtiquetaSala(nombre?: string): boolean {
+    if (!nombre) return false;
+    const n = nombre.toLowerCase();
+    return (
+      (n.includes('lectura') && (n.includes('biblia') || n.includes('bíblica'))) ||
+      n.includes('empiece') ||
+      n.includes('revisita') ||
+      n.includes('discípulo') ||
+      n.includes('discipulo') ||
+      n.includes('haga disc') ||
+      n.includes('explique')
+    );
+  }
+
+  esEstudioBiblico(nombre?: string): boolean {
+    if (!nombre) return false;
+    const n = nombre.toLowerCase();
+    return n.includes('estudio') && (n.includes('bíblico') || n.includes('biblico'));
+  }
+
+  formatHora12(hora: string): string {
+    const [h, m] = hora.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${suffix}`;
+  }
+
+  formatNombreParte(nombre: string): string {
+    const lower = nombre.toLowerCase();
+    if (lower.includes('oración') && lower.includes('introducción')) {
+      return 'Oración y Palabras de introducción (Presidente)';
+    }
+    if (lower.includes('palabras de introducción') && lower.includes('oración')) {
+      return 'Palabras de introducción y Oración (Presidente)';
+    }
+    return nombre;
+  }
+
   getSeccionHeaderStyle(color: string): Record<string, string> {
     return {
-      background: this.hexToRgba(color, 0.07),
-      borderLeft: `3px solid ${color}`,
+      background: this.hexToRgba(color, 0.08),
+      boxShadow: `inset 3px 0 0 ${color}`,
     };
   }
 
-  getOrdenStyle(color: string, esMia: boolean): Record<string, string> {
-    if (esMia) return { background: 'rgba(109,40,217,0.12)', color: '#6D28D9' };
-    return { background: this.hexToRgba(color, 0.12), color };
+  getOrdenStyle(color: string, esMia: boolean, seccion = ''): Record<string, string> {
+    if (esMia) {
+      return {
+        background: 'rgba(139, 92, 246, 0.12)',
+        color: '#8b5cf6',
+        borderColor: 'rgba(139, 92, 246, 0.3)',
+      };
+    }
+    const esNeutral = /apertura|intermedio|clausura/i.test(seccion);
+    if (esNeutral) {
+      return {
+        background: '#1e293b',
+        color: '#cbd5e1',
+        borderColor: '#334155',
+      };
+    }
+    return {
+      background: this.hexToRgba(color, 0.1),
+      color,
+      borderColor: this.hexToRgba(color, 0.3),
+    };
   }
 
   getDuracionStyle(color: string): Record<string, string> {
