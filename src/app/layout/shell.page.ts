@@ -513,12 +513,32 @@ export class TimeAgoPipe implements PipeTransform {
             <span class="font-bold text-slate-800 dark:text-white text-sm tracking-tight truncate">{{ pageTitle().title }}</span>
           </div>
           
-          <!-- Quick action mobile (User profile popup) -->
-          <div class="flex items-center relative" *ngIf="user() as u">
+          <!-- Quick action mobile (Notifications + User profile popup) -->
+          <div class="flex items-center gap-2 relative" *ngIf="user() as u">
+             <!-- Notificaciones móvil -->
+             <div class="relative">
+               <div *ngIf="notificationsOpen()" class="fixed inset-0 z-40" (click)="notificationsOpen.set(false)"></div>
+               <button
+                 class="w-8 h-8 flex items-center justify-center rounded-full relative transition-all active:scale-95"
+                 [ngClass]="notifService.count() > 0 ? 'text-brand-purple dark:text-purple-400' : 'text-slate-500 dark:text-slate-400'"
+                 (click)="toggleNotifications()" title="Notificaciones">
+                 <svg class="w-5 h-5" [ngClass]="{'animate-[bellShake_0.6s_ease-in-out_infinite_3s]': notifService.count() > 0}" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                 </svg>
+                 <div *ngIf="notifService.count() > 0" class="absolute top-0 right-0 z-20">
+                   <span class="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-40"></span>
+                   <span class="relative flex items-center justify-center min-w-[14px] h-[14px] px-0.5 bg-gradient-to-br from-red-500 to-rose-600 text-white text-[0.5rem] font-extrabold rounded-full shadow-sm">
+                     {{ notifService.count() > 99 ? '99+' : notifService.count() }}
+                   </span>
+                 </div>
+               </button>
+             </div>
+
              <div *ngIf="mobileUserMenuOpen()" class="fixed inset-0 z-40" (click)="mobileUserMenuOpen.set(false)"></div>
-             <button 
+             <!-- Avatar button -->
+             <button
                 id="mobile-user-menu-button"
-                class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-xs font-bold shadow-inner [text-shadow:_0_1px_2px_rgb(0_0_0_/_40%)] transition-all hover:opacity-90 active:scale-95" 
+                class="w-10 h-10 rounded-full overflow-hidden border-2 border-[#d0bcff]/30 hover:border-[#d0bcff]/60 focus:outline-none focus:ring-2 focus:ring-[#d0bcff] focus:ring-offset-2 focus:ring-offset-[#0b1326] shadow-lg shadow-black/20 transition-colors active:scale-95 bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold"
                 (click)="toggleMobileUserMenu()"
                 title="Menú de Usuario"
              >
@@ -526,33 +546,40 @@ export class TimeAgoPipe implements PipeTransform {
              </button>
 
              <!-- Mobile User Menu Popup (downwards) -->
-             <div *ngIf="mobileUserMenuOpen()" 
-                  id="mobile-user-menu-panel" 
-                  class="absolute top-[calc(100%+12px)] right-0 w-[240px] bg-white dark:bg-slate-900 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-black/60 ring-1 ring-slate-200 dark:ring-slate-800 z-50 overflow-hidden animate-fadeIn origin-top-right pb-1">
-                
-                <div class="px-4 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-                   <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-purple to-[#4C1D95] dark:from-purple-600 dark:to-indigo-900 flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-inner">
-                     {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
-                   </div>
-                   <div class="flex flex-col min-w-0">
-                     <span class="text-sm font-bold text-slate-800 dark:text-white truncate">{{ u.nombre || u.username }}</span>
-                     <span class="text-[0.65rem] text-slate-500 truncate">{{ u.correo }}</span>
-                   </div>
+             <div *ngIf="mobileUserMenuOpen()"
+                  id="mobile-user-menu-panel"
+                  class="absolute top-[calc(100%+8px)] right-0 w-[300px] bg-[#171f33] dark:bg-[#171f33] border border-[#494454]/40 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.04)] z-50 overflow-hidden animate-fadeIn origin-top-right flex flex-col">
+
+                <!-- Header -->
+                <div class="p-4 flex items-center gap-4 bg-[#222a3d]">
+                  <div class="w-14 h-14 rounded-full shrink-0 border border-[#494454]/50 bg-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-inner">
+                    {{ (u.nombre || u.username || 'U').charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-base font-semibold text-[#dae2fd] truncate tracking-tight">{{ u.nombre || u.username }}</span>
+                    <span class="text-sm text-[#cbc3d7] truncate">{{ u.correo }}</span>
+                  </div>
                 </div>
 
-                <div class="p-1.5 space-y-0.5 mt-1">
-                  <button (click)="editProfile()" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-[0.8125rem] font-medium transition-colors">
-                    <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    Mi perfil
+                <!-- Separador gradiente -->
+                <div class="h-px w-full bg-gradient-to-r from-transparent via-[#494454]/30 to-transparent opacity-50"></div>
+
+                <!-- Acciones primarias -->
+                <div class="flex flex-col p-2 gap-1">
+                  <button (click)="editProfile()" class="flex items-center gap-4 w-full px-4 py-2 rounded-lg hover:bg-[#2d3449]/60 transition-all duration-200 text-left group">
+                    <svg class="w-5 h-5 text-[#cbc3d7] group-hover:text-[#d0bcff] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    <span class="text-sm text-[#dae2fd] group-hover:text-[#d0bcff] transition-colors">Mi perfil</span>
                   </button>
                 </div>
-                <div class="px-3 py-1.5">
-                  <div class="h-px w-full bg-slate-100 dark:bg-slate-800"></div>
-                </div>
-                <div class="px-1.5 pb-1">
-                  <button (click)="logout()" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 text-red-600 dark:text-red-400 text-[0.8125rem] font-medium transition-colors">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                    Cerrar sesión
+
+                <!-- Separador -->
+                <div class="h-px w-full bg-[#494454]/20"></div>
+
+                <!-- Cerrar sesión -->
+                <div class="flex flex-col p-2">
+                  <button (click)="logout()" class="flex items-center gap-4 w-full px-4 py-2 rounded-lg hover:bg-[#93000a]/20 border border-transparent hover:border-[#ffb4ab]/20 transition-all duration-200 text-left group">
+                    <svg class="w-5 h-5 text-[#ffb4ab]/80 group-hover:text-[#ffb4ab] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    <span class="text-sm text-[#ffb4ab]/80 group-hover:text-[#ffb4ab] transition-colors">Cerrar sesión</span>
                   </button>
                 </div>
              </div>
