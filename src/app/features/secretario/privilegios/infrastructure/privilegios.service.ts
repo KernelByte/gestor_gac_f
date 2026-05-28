@@ -64,4 +64,10 @@ export class PrivilegiosService {
    deletePublicadorPrivilegio(id: number) {
       return this.http.delete<void>(`${this.baseUrl}/publicador-privilegios/${id}`);
    }
+
+   isPrivilegioEliminable(id: number) {
+      return this.http.get<{ eliminable: boolean; motivo: string | null }>(
+         `${this.baseUrl}/publicador-privilegios/${id}/eliminable`
+      );
+   }
 }

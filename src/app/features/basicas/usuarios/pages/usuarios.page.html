@@ -4,16 +4,59 @@
    <div class="flex-1 flex flex-col min-w-0 h-full transition-[flex,min-width,max-width] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]">
 
       <div class="flex flex-col gap-5 h-full w-full overflow-hidden">
+         <!-- Page Header -->
+         <div class="shrink-0 hidden sm:flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-1">
+            <div>
+               <h1 class="text-2xl sm:text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight">
+                  Gestión de Usuarios
+               </h1>
+               <p class="hidden sm:block text-slate-500 dark:text-slate-400 mt-1 text-sm">
+                  Administra cuentas, roles y permisos de acceso.
+               </p>
+            </div>
+         </div>
+
+         <!-- KPI Stats -->
+         <div class="shrink-0 hidden sm:grid grid-cols-3 gap-2 sm:gap-3">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-2.5 sm:p-4 flex items-center gap-2 sm:gap-3">
+               <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+               </div>
+               <div class="min-w-0">
+                  <p class="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">Total</p>
+                  <p class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-none">{{ usuarios().length }}</p>
+               </div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-2.5 sm:p-4 flex items-center gap-2 sm:gap-3">
+               <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+               </div>
+               <div class="min-w-0">
+                  <p class="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">Activos</p>
+                  <p class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 leading-none">{{ usuariosActivos() }}</p>
+               </div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-2.5 sm:p-4 flex items-center gap-2 sm:gap-3">
+               <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+               </div>
+               <div class="min-w-0">
+                  <p class="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">Inactivos</p>
+                  <p class="text-xl sm:text-2xl font-bold text-slate-600 dark:text-slate-400 leading-none">{{ usuariosInactivos() }}</p>
+               </div>
+            </div>
+         </div>
+
          <!-- Filters & Search Block -->
          <div
-            class="shrink-0 bg-white dark:bg-slate-900 p-1.5 sm:p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-row items-center gap-2 overflow-hidden">
-            
-            <!-- Dedicated Growing Container for Search -->
-            <div class="flex-1 flex items-center min-w-0">
-               <div class="relative group transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
-                    [ngClass]="searchExpanded() || searchControl.value ? 'w-full max-w-xl bg-slate-50 dark:bg-slate-800' : 'w-11 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800'"
+            class="shrink-0 bg-white dark:bg-slate-900 p-1.5 sm:p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center gap-2">
+
+            <!-- Fila 1 (móvil) / flex-1 (desktop): Buscador siempre visible y con borde -->
+            <div class="flex items-center w-full sm:flex-1 sm:min-w-0">
+               <div class="relative group transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                    [ngClass]="!searchExpanded() && !searchControl.value ? 'md:w-11 md:max-w-none md:hover:border-[#6D28D9]/40' : 'md:max-w-xl'"
                     style="border-radius: 12px; height: 44px; overflow: hidden;">
-                   
+
                    <label for="searchInput" class="absolute left-0 top-0 w-11 h-full flex items-center justify-center cursor-pointer pointer-events-auto z-10"
                           (click)="searchExpanded.set(true)">
                       <svg class="w-5 h-5 text-slate-400 group-focus-within:text-[#6D28D9] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -21,14 +64,14 @@
                           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                       </svg>
                    </label>
-   
+
                    <input id="searchInput" [formControl]="searchControl" type="text" placeholder="Buscar..."
                       (focus)="searchExpanded.set(true)"
                       (blur)="searchExpanded.set(false)"
                       (keydown.escape)="clearSearch(); searchExpanded.set(false)"
-                      class="absolute left-0 top-0 w-full h-full pl-11 pr-10 bg-transparent border-none text-slate-700 dark:text-slate-200 text-sm font-medium placeholder:text-slate-400 outline-none transition-opacity duration-300"
-                      [ngClass]="searchExpanded() || searchControl.value ? 'opacity-100' : 'opacity-0'">
-   
+                      class="absolute left-0 top-0 w-full h-full pl-11 pr-10 bg-transparent border-none text-slate-700 dark:text-slate-200 text-base font-medium placeholder:text-slate-400 outline-none transition-opacity duration-300"
+                      [ngClass]="searchExpanded() || searchControl.value ? 'opacity-100' : 'md:opacity-0'">
+
                    <button *ngIf="searchControl.value" (click)="clearSearch(); $event.stopPropagation()"
                       class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all active:scale-90 z-20"
                       title="Limpiar búsqueda">
@@ -40,7 +83,7 @@
                </div>
             </div>
 
-            <!-- Active Role Filter Badge -->
+            <!-- Badge de filtro activo por rol -->
             <div *ngIf="selectedRolFilter()"
                class="flex items-center gap-2 px-3 h-11 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-xl shrink-0">
                <span class="text-xs font-bold text-purple-700 dark:text-purple-300 whitespace-nowrap">Rol: {{ getSelectedRolFilterName() }}</span>
@@ -53,19 +96,39 @@
                </button>
             </div>
 
-            <!-- Right side Actions (Pinned to the right, won't move) -->
-            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <!-- Fila 2 (móvil) / lado derecho (desktop): Filtros y acciones -->
+            <div class="flex items-center gap-1.5 sm:gap-2 sm:shrink-0">
                <div class="h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block"></div>
 
-               <!-- Congregation Filter Dropdown -->
-               <div class="w-auto sm:w-56 shrink-0 relative" *ngIf="showCongregacionCol()">
-                  <select (change)="setCongFilter($event)" [value]="selectedCongregacionFilter() || ''"
-                      class="w-full pl-3 pr-8 h-11 border-none bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-slate-700 dark:text-slate-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all appearance-none cursor-pointer">
-                      <option value="" class="sm:hidden">Todas</option>
-                      <option value="" class="hidden sm:block">Todas las Congregaciones</option>
-                      <option *ngFor="let c of congregaciones()" [value]="c.id_congregacion">{{ c.nombre_congregacion }}</option>
-                  </select>
-                  <svg class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+               <!-- Congregación: crece para llenar la fila en móvil -->
+               <div class="flex-1 sm:flex-none sm:w-56 relative" *ngIf="showCongregacionCol()">
+                  <button #congFilterBtn type="button" (click)="toggleCongFilterDropdown(congFilterBtn)"
+                     class="w-full pl-3 pr-8 h-11 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-slate-700 dark:text-slate-200 text-sm font-bold outline-none focus:ring-2 focus:ring-[#6D28D9]/20 transition-all text-left flex items-center justify-between cursor-pointer">
+                     <span class="truncate" [class.text-slate-400]="!selectedCongregacionFilter()">
+                        {{ selectedCongregacionFilter() ? getCongFilterName() : 'Congregaciones' }}
+                     </span>
+                     <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ml-1" [class.rotate-180]="congFilterDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  <div *ngIf="congFilterDropdownOpen()" (click)="congFilterDropdownOpen.set(false)"
+                     class="fixed inset-0 z-[9998] cursor-default"></div>
+                  <div *ngIf="congFilterDropdownOpen()" @fadeIn
+                     class="fixed bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl z-[9999] overflow-hidden max-h-72 overflow-y-auto simple-scrollbar origin-top"
+                     [style.top.px]="congFilterDropdownPos().top"
+                     [style.left.px]="congFilterDropdownPos().left"
+                     [style.width.px]="congFilterDropdownPos().width">
+                     <div class="p-1 space-y-0.5">
+                        <button type="button" (click)="selectCongFilter(null)"
+                           class="w-full px-3 py-2 text-left text-sm transition-all flex items-center rounded-lg"
+                           [ngClass]="!selectedCongregacionFilter() ? 'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20' : 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700'">
+                           Todas las congregaciones
+                        </button>
+                        <button type="button" *ngFor="let c of congregaciones()" (click)="selectCongFilter(c.id_congregacion)"
+                           class="w-full px-3 py-2 text-left text-sm transition-all flex items-center rounded-lg"
+                           [ngClass]="selectedCongregacionFilter() === c.id_congregacion ? 'text-[#6D28D9] dark:text-purple-400 font-bold bg-purple-50/30 dark:bg-purple-900/20' : 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700'">
+                           {{ c.nombre_congregacion }}
+                        </button>
+                     </div>
+                  </div>
                </div>
 
                <button (click)="clearAllFilters()" [disabled]="!searchControl.value && !selectedRolFilter() && !selectedCongregacionFilter()"
@@ -96,9 +159,9 @@
             class="flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-all duration-300">
             <div class="flex-1 overflow-x-auto overflow-y-auto simple-scrollbar">
                <!-- Mobile Card View -->
-               <div class="md:hidden divide-y divide-slate-100 dark:divide-slate-800/60 pb-32">
+               <div class="md:hidden divide-y divide-slate-100 dark:divide-slate-800/60 pb-20">
                   <div *ngFor="let u of filteredUsuarios()" (click)="editUsuario(u)"
-                     class="flex items-center gap-2.5 px-3 py-2.5 active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors cursor-pointer"
+                     class="flex items-center gap-3 px-3 py-3 active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors cursor-pointer"
                      style="transition: background-color 120ms ease">
 
                      <!-- Avatar + Status dot -->
@@ -114,20 +177,20 @@
 
                      <!-- Info -->
                      <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-1.5">
-                           <p class="font-bold text-slate-900 dark:text-slate-100 text-sm leading-tight truncate">{{ u.nombre }}</p>
+                        <p class="font-bold text-slate-900 dark:text-slate-100 text-sm leading-tight truncate">{{ u.nombre }}</p>
+                        <div class="flex items-center gap-1.5 mt-0.5">
                            <div [ngClass]="getRolBadgeStyle(u)"
-                              class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold shrink-0 leading-none">
+                              class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold shrink-0 leading-none max-w-[120px] truncate">
                               {{ getRolName(u) }}
                            </div>
                         </div>
-                        <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">{{ u.correo }}</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-500 font-medium truncate mt-0.5">{{ u.correo }}</p>
                      </div>
 
                      <!-- Actions -->
                      <div class="flex items-center gap-1 shrink-0">
                         <button *ngIf="u.telefono" (click)="$event.stopPropagation(); sendWhatsApp(u)"
-                           class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 active:scale-90 transition-all"
+                           class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 active:scale-90 transition-all"
                            title="Enviar por WhatsApp"
                            style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, color 200ms ease">
                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -135,7 +198,7 @@
                            </svg>
                         </button>
                         <button *ngIf="canManagePermisos()" (click)="$event.stopPropagation(); openPermisos(u)"
-                           class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 active:scale-90 transition-all"
+                           class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 active:scale-90 transition-all"
                            title="Permisos"
                            style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, color 200ms ease">
                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -167,17 +230,17 @@
                <table class="w-full text-left border-collapse min-w-[800px] hidden md:table">
                   <thead class="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md z-10 border-b border-slate-200 dark:border-slate-700">
                      <tr>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-left">
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-left">
                            Usuario</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">Rol
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">Rol
                         </th>
-                        <th *ngIf="showCongregacionCol()" class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">
+                        <th *ngIf="showCongregacionCol()" class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">
                            Congregación</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">
                            Teléfono</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-center">
                            Estado</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right">
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider text-right">
                            Acciones</th>
                      </tr>
                   </thead>
@@ -232,7 +295,7 @@
                         <!-- Actions -->
                         <td class="px-6 py-4 text-right">
                            <div
-                              class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                              class="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-all duration-200">
                               <button *ngIf="u.telefono" (click)="sendWhatsApp(u)"
                                  class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-green-500 transition-all shadow-sm hover:shadow-md hover:shadow-green-200 dark:hover:shadow-green-900/30"
                                  title="Enviar por WhatsApp">
@@ -276,7 +339,7 @@
 
                      <!-- Empty State -->
                      <tr *ngIf="filteredUsuarios().length === 0" class="text-center">
-                        <td colspan="5" class="py-20">
+                        <td [attr.colspan]="showCongregacionCol() ? 6 : 5" class="py-20">
                            <div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
                               <div class="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
                                  <svg class="w-8 h-8 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -297,6 +360,11 @@
          </div>
       </div>
    </div>
+
+   <!-- Mobile Backdrop -->
+   <div *ngIf="panelOpen()" @fadeIn
+      class="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+      (click)="closePanel()"></div>
 
    <!-- 2. Slide Over Panel (Fluid, sibling) -->
    <div class="shrink-0 flex flex-col overflow-hidden transition-[width,opacity] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]
@@ -319,11 +387,11 @@
                class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-100/50 to-transparent rounded-full -mr-16 -mt-16 blur-2xl">
             </div>
 
-            <div class="relative px-8 pt-8 pb-6">
+            <div class="relative px-4 sm:px-8 pt-5 sm:pt-8 pb-4 sm:pb-6">
                <div class="flex items-start justify-between">
-                  <div class="flex gap-4">
+                  <div class="flex gap-3 sm:gap-4">
                      <div
-                        class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#6D28D9] to-purple-700 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/30 ring-4 ring-white dark:ring-slate-800">
+                        class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-[#6D28D9] to-purple-700 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/30 ring-4 ring-white dark:ring-slate-800">
                         <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                            stroke-linecap="round" stroke-linejoin="round">
                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -337,10 +405,10 @@
                               {{ editingUser() ? 'Modo Edición' : 'Nuevo Registro' }}
                            </span>
                         </div>
-                        <h2 class="text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight">
+                        <h2 class="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight">
                            {{ editingUser() ? 'Editar Usuario' : 'Nuevo Usuario' }}
                         </h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Información de cuenta y permisos</p>
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Información de cuenta y permisos</p>
                      </div>
                   </div>
                   <button (click)="closePanel()"
@@ -356,12 +424,12 @@
 
          <!-- Form Body -->
          <div class="flex-1 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900">
-            <div class="px-8 py-6 pb-8">
+            <div class="px-4 sm:px-8 py-4 sm:py-6 pb-6 sm:pb-8">
                <form [formGroup]="userForm" class="space-y-6">
 
                   <!-- Personal Info -->
                   <div class="space-y-4">
-                     <h3 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                     <h3 class="text-[0.625rem] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3">
                         Datos Personales
                         <span class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></span>
                      </h3>
@@ -379,7 +447,7 @@
                                     </svg>
                                  </div>
                                  <input formControlName="nombre" type="text"
-                                    class="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
                                     [class.border-red-300]="userForm.get('nombre')?.invalid && userForm.get('nombre')?.touched"
                                     placeholder="Ej. Ana García">
                               </div>
@@ -396,7 +464,7 @@
                                     </svg>
                                  </div>
                                  <input formControlName="correo" type="email"
-                                    class="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
                                     [class.border-red-300]="userForm.get('correo')?.invalid && userForm.get('correo')?.touched"
                                     placeholder="ana@ejemplo.com">
                               </div>
@@ -416,7 +484,7 @@
                                     </svg>
                                  </div>
                                  <input formControlName="telefono" type="text"
-                                    class="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
                                     placeholder="Ej. 300 123 4567">
                               </div>
                            </div>
@@ -457,7 +525,7 @@
                               <div class="space-y-1">
                                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1 truncate" title="Número ID">Número ID</label>
                                  <input formControlName="id_identificacion" type="text"
-                                    class="block w-full h-[38px] px-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full h-[38px] px-3 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
                                     placeholder="Ej. 123456">
                               </div>
                            </div>
@@ -467,7 +535,7 @@
 
                   <!-- Roles & Permissions -->
                   <div class="space-y-4">
-                     <h3 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                     <h3 class="text-[0.625rem] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3">
                         Acceso y Rol
                         <span class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></span>
                      </h3>
@@ -569,7 +637,7 @@
                                     <div class="sticky top-0 bg-white dark:bg-slate-800 p-2 border-b border-slate-50 dark:border-slate-700">
                                        <input type="text" placeholder="Buscar..." [value]="congSearch()"
                                           (input)="congSearch.set($any($event.target).value)"
-                                          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all text-slate-700 dark:text-slate-200">
+                                          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-base focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all text-slate-700 dark:text-slate-200">
                                     </div>
                                     <div class="p-1 space-y-0.5">
                                        <button type="button" *ngFor="let c of filteredCongregaciones()"
@@ -612,7 +680,7 @@
                                     <div class="sticky top-0 bg-white dark:bg-slate-800 p-2 border-b border-slate-50 dark:border-slate-700">
                                        <input type="text" placeholder="Buscar..." [value]="pubSearch()"
                                           (input)="pubSearch.set($any($event.target).value)"
-                                          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all text-slate-700 dark:text-slate-200">
+                                          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-base focus:outline-none focus:border-[#6D28D9] focus:ring-2 focus:ring-[#6D28D9]/10 transition-all text-slate-700 dark:text-slate-200">
                                     </div>
                                     <div class="p-1 space-y-0.5">
                                        <button type="button" *ngFor="let p of filteredPublicadores()"
@@ -675,7 +743,7 @@
 
                   <!-- Security -->
                   <div class="space-y-4">
-                     <h3 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                     <h3 class="text-[0.625rem] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3">
                         Seguridad
                         <span class="flex-1 h-px bg-slate-100 dark:bg-slate-800"></span>
                      </h3>
@@ -692,7 +760,7 @@
                                     </svg>
                                  </div>
                                  <input [type]="showPassword() ? 'text' : 'password'" formControlName="contrasena"
-                                    class="block w-full pl-9 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full pl-9 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
                                     placeholder="Min. 6 caracteres">
                                  <button type="button" (click)="showPassword.set(!showPassword())"
                                     class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
@@ -708,6 +776,21 @@
                                     </svg>
                                  </button>
                               </div>
+                              <!-- Password Strength -->
+                              <div *ngIf="userForm.get('contrasena')?.value" class="mt-1.5 space-y-1">
+                                 <div class="flex gap-1">
+                                    <div class="h-1 flex-1 rounded-full transition-colors duration-300"
+                                       [ngClass]="getPasswordStrength() === 'weak' ? 'bg-red-400' : getPasswordStrength() === 'medium' ? 'bg-amber-400' : getPasswordStrength() === 'strong' ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'"></div>
+                                    <div class="h-1 flex-1 rounded-full transition-colors duration-300"
+                                       [ngClass]="getPasswordStrength() === 'medium' ? 'bg-amber-400' : getPasswordStrength() === 'strong' ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'"></div>
+                                    <div class="h-1 flex-1 rounded-full transition-colors duration-300"
+                                       [ngClass]="getPasswordStrength() === 'strong' ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'"></div>
+                                 </div>
+                                 <p class="text-[10px] font-bold ml-0.5 transition-colors"
+                                    [ngClass]="getPasswordStrength() === 'weak' ? 'text-red-500' : getPasswordStrength() === 'medium' ? 'text-amber-500' : 'text-emerald-500'">
+                                    {{ getPasswordStrength() === 'weak' ? 'Contraseña débil' : getPasswordStrength() === 'medium' ? 'Contraseña moderada' : 'Contraseña fuerte' }}
+                                 </p>
+                              </div>
                            </div>
 
                            <div class="space-y-1">
@@ -720,7 +803,7 @@
                                     </svg>
                                  </div>
                                  <input [type]="showPassword() ? 'text' : 'password'" formControlName="confirmPassword"
-                                    class="block w-full pl-9 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-sm text-slate-800 dark:text-slate-200"
+                                    class="block w-full pl-9 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#6D28D9] focus:ring-4 focus:ring-[#6D28D9]/10 transition-all font-medium text-base text-slate-800 dark:text-slate-200"
                                     [class.border-red-300]="userForm.hasError('mismatch') && userForm.get('confirmPassword')?.touched"
                                     placeholder="Repite tu contraseña">
                                  <button type="button" (click)="showPassword.set(!showPassword())"
@@ -765,6 +848,14 @@
 
          <!-- Footer Actions -->
          <div class="shrink-0 px-4 py-4 sm:px-8 sm:py-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <!-- Save Error -->
+            <div *ngIf="saveError()" @fadeIn class="flex items-start gap-2 px-3 py-2.5 mb-3 bg-red-50 dark:bg-red-900/20 border border-red-200/60 dark:border-red-800/30 rounded-xl">
+               <svg class="w-4 h-4 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+               <p class="text-xs font-bold text-red-600 dark:text-red-400 flex-1">{{ saveError() }}</p>
+               <button type="button" (click)="saveError.set(null)" class="text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors shrink-0">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+               </button>
+            </div>
             <div class="flex items-center justify-between">
                <p class="text-xs text-slate-400 hidden sm:block">
                   <span class="text-red-400">*</span> Campos obligatorios
@@ -813,6 +904,12 @@
             <span class="font-bold text-slate-700 dark:text-slate-300">{{ userToDelete()?.nombre }}</span>?
             Esta acción no se puede deshacer.
          </p>
+      </div>
+
+      <!-- Delete Error -->
+      <div *ngIf="deleteError()" @fadeIn class="flex items-start gap-2 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200/60 dark:border-red-800/30 rounded-xl">
+         <svg class="w-4 h-4 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+         <p class="text-xs font-bold text-red-600 dark:text-red-400">{{ deleteError() }}</p>
       </div>
 
       <!-- Actions -->

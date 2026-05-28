@@ -65,7 +65,7 @@ interface TableColumn {
     <div class="flex-1 flex flex-col gap-3 min-w-0 transition-all duration-500 ease-in-out">
       
       <!-- Compact Toolbar -->
-      <div class="shrink-0 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 p-1.5 flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
+      <div class="shrink-0 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-1.5 flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
         
         <!-- Search Input (Compact) -->
         <div class="relative flex-1 min-w-[200px]">
@@ -77,15 +77,12 @@ interface TableColumn {
                 [ngModel]="searchQuery()"
                 (ngModelChange)="onSearch($event)"
                 placeholder="Buscar..." 
-                class="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-800/50 border border-transparent dark:border-slate-700/50 rounded-lg text-sm text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none"
+                class="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-base text-slate-700 dark:text-slate-100 font-medium placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none"
             >
         </div>
 
-        <!-- Separator -->
-        <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden lg:block shrink-0"></div>
-
         <!-- Quick Filters (Pills) -->
-        <div class="hidden md:flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
+        <div class="flex items-center gap-1 overflow-x-auto no-scrollbar w-full md:w-auto order-last md:order-none">
             <button
                 (click)="selectedEstado.set(null); currentPage.set(1)"
                 class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 ease-out active:scale-[0.97]"
@@ -108,14 +105,12 @@ interface TableColumn {
             </button>
         </div>
 
-        <!-- Separator -->
-        <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden lg:block shrink-0"></div>
-
         <!-- More Filters Dropdown (Advanced) -->
-        <div class="relative shrink-0 hidden md:block">
+        <div class="relative shrink-0">
             <!-- Trigger Button -->
             <button 
                 (click)="showAdvancedFilters.set(!showAdvancedFilters())"
+                aria-label="Filtros avanzados"
                 title="Filtros avanzados"
                 class="flex items-center justify-center w-9 h-9 rounded-lg transition-all border outline-none relative"
                 [ngClass]="activeFiltersCount() > 0 
@@ -128,17 +123,21 @@ interface TableColumn {
                 </span>
             </button>
             
-            <!-- Backdrop (Click Outside) -->
-             <div *ngIf="showAdvancedFilters()" (click)="showAdvancedFilters.set(false)" class="fixed inset-0 bg-transparent" style="z-index: 9998; pointer-events: auto;"></div>
+            <!-- Backdrop (Click Outside) — semi-opaque on mobile for bottom-sheet feel -->
+             <div *ngIf="showAdvancedFilters()" (click)="showAdvancedFilters.set(false)" class="fixed inset-0 z-30 bg-black/20 md:bg-transparent" style="pointer-events: auto;"></div>
 
-            <!-- Dropdown Menu -->
-            <div 
+            <!-- Dropdown Menu (desktop) / Bottom Sheet (mobile) -->
+            <div
                 *ngIf="showAdvancedFilters()"
-                class="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-700 overflow-hidden animate-fadeInUp flex flex-col max-h-[80vh]" style="z-index: 9999;"
+                class="fixed inset-x-0 bottom-0 md:absolute md:inset-auto md:top-full md:right-0 md:bottom-auto md:mt-2 w-full md:w-72 z-40 bg-white dark:bg-slate-800 rounded-t-2xl md:rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border-t md:border border-slate-100 dark:border-slate-700 overflow-hidden animate-fadeInUp flex flex-col max-h-[80vh]"
             >
+                <!-- Bottom sheet handle (mobile only) -->
+                <div class="md:hidden flex justify-center pt-3 pb-1 shrink-0">
+                    <div class="w-10 h-1 rounded-full bg-slate-200 dark:bg-slate-600"></div>
+                </div>
                 <!-- Header -->
                 <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 sticky top-0">
-                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Filtros Avanzados</span>
+                    <span class="text-xs font-bold text-slate-800 dark:text-slate-100">Filtros Avanzados</span>
                     <button 
                         *ngIf="activeFiltersCount() > 0"
                         (click)="clearFilters()"
@@ -155,7 +154,7 @@ interface TableColumn {
                     <div class="mb-1">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                             <span class="w-1 h-3 rounded-full bg-blue-400"></span>
-                            <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sexo</span>
+                            <span class="text-[0.625rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Sexo</span>
                         </div>
                         <div class="grid grid-cols-2 gap-1.5 px-2">
                             <button type="button" (click)="toggleSexoFilter('M')"
@@ -183,7 +182,7 @@ interface TableColumn {
                     <div class="mb-1">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                             <span class="w-1 h-3 rounded-full bg-emerald-400"></span>
-                            <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Consentimiento</span>
+                            <span class="text-[0.625rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Consentimiento</span>
                         </div>
                         <div class="space-y-0.5">
                             <button type="button" (click)="setConsentimientoFilter(true)"
@@ -232,7 +231,7 @@ interface TableColumn {
                     <div class="mb-3">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                              <span class="w-1 h-3 rounded-full bg-brand-orange"></span>
-                             <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Grupos</span>
+                             <span class="text-[0.625rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Grupos</span>
                         </div>
                         <div class="grid grid-cols-2 gap-x-0.5 gap-y-0">
                             <label
@@ -261,7 +260,7 @@ interface TableColumn {
                     <div class="mb-3">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                              <span class="w-1 h-3 rounded-full bg-indigo-500"></span>
-                             <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Privilegios</span>
+                             <span class="text-[0.625rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Privilegios</span>
                         </div>
                         <div class="grid grid-cols-2 gap-x-0.5 gap-y-0">
                             <label
@@ -289,7 +288,7 @@ interface TableColumn {
                         <div class="mb-2">
                             <div class="px-2 py-1.5 flex items-center gap-2">
                                 <span class="w-1 h-3 rounded-full bg-teal-400"></span>
-                                <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Barrio</span>
+                                <span class="text-[0.625rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Barrio</span>
                             </div>
                             <div class="grid grid-cols-2 gap-x-0.5 gap-y-0 max-h-32 overflow-y-auto simple-scrollbar">
                                 <label
@@ -316,56 +315,83 @@ interface TableColumn {
             </div>
         </div>
 
-        <!-- Separator -->
-        <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden lg:block shrink-0"></div>
+        <!-- Reset All Button (aparece solo cuando hay filtros o columnas personalizadas) -->
+        <button
+            *ngIf="hasCustomView()"
+            (click)="resetAll()"
+            aria-label="Restablecer filtros y columnas"
+            title="Restablecer filtros y columnas"
+            class="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg transition-all border border-rose-200 dark:border-rose-800/60 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 animate-fadeIn"
+        >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+            </svg>
+        </button>
 
-        <!-- Column Manager -->
+        <!-- Spacer -->
+        <div class="flex-1 hidden lg:block"></div>
+
+        <!-- Más opciones: Export + Column Manager (solo desktop) -->
         <div class="relative shrink-0 hidden md:block">
+            <!-- Backdrop -->
+            <div *ngIf="showMoreOptions()" (click)="showMoreOptions.set(false)" class="fixed inset-0 z-40 bg-transparent"></div>
+
+            <!-- Trigger -->
             <button
-                (click)="showColumnManager.set(!showColumnManager())"
-                title="Gestionar columnas"
+                (click)="showMoreOptions.set(!showMoreOptions())"
+                aria-label="Más opciones"
+                title="Más opciones"
                 class="flex items-center justify-center w-9 h-9 rounded-lg transition-all border outline-none"
-                [ngClass]="hasOptionalColumnsVisible()
-                  ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 shadow-sm'
-                  : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-slate-200'"
+                [ngClass]="showMoreOptions() || hasOptionalColumnsVisible()
+                  ? 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 shadow-sm'
+                  : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-slate-200'"
             >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
             </button>
 
-            <!-- Backdrop -->
-            <div *ngIf="showColumnManager()" (click)="showColumnManager.set(false)" class="fixed inset-0 z-40 bg-transparent"></div>
+            <!-- Panel combinado -->
+            <div *ngIf="showMoreOptions()" class="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fadeInUp flex flex-col" style="max-height: 80vh;">
 
-            <!-- Dropdown -->
-            <div *ngIf="showColumnManager()" class="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fadeInUp flex flex-col" style="max-height: 80vh;">
-
-                <!-- Header -->
-                <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
-                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Configurar Columnas</span>
-                    <button (click)="resetColumns()" class="text-[0.625rem] font-bold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition-colors uppercase tracking-wider">Restablecer</button>
-                </div>
-
-                <!-- Fixed Columns (Locked Info) -->
-                <div class="px-3 py-2.5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-900/20 shrink-0">
-                    <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Columnas Fijas</p>
-                    <div class="space-y-0.5">
-                        <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg opacity-50 cursor-not-allowed select-none">
-                            <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            <span class="text-[0.6875rem] font-semibold text-slate-600 dark:text-slate-400 flex-1">Nombre</span>
-                            <div class="rounded-full bg-brand-orange relative shrink-0" style="width:32px;height:18px;"><div class="bg-white rounded-full absolute shadow-sm" style="width:14px;height:14px;top:2px;right:2px;"></div></div>
-                        </div>
-                        <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg opacity-50 cursor-not-allowed select-none">
-                            <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            <span class="text-[0.6875rem] font-semibold text-slate-600 dark:text-slate-400 flex-1">Estado</span>
-                            <div class="rounded-full bg-brand-orange relative shrink-0" style="width:32px;height:18px;"><div class="bg-white rounded-full absolute shadow-sm" style="width:14px;height:14px;top:2px;right:2px;"></div></div>
-                        </div>
+                <!-- Sección: Exportar -->
+                <div *ngIf="canExportPublicadores()">
+                    <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Exportar</span>
+                        <span class="text-[0.625rem] text-slate-400 dark:text-slate-500">{{ sortedList().length }} registros</span>
+                    </div>
+                    <div class="p-1.5 flex gap-1.5">
+                        <button
+                            (click)="exportData('excel'); showMoreOptions.set(false)"
+                            [disabled]="exporting()"
+                            class="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors group text-left disabled:opacity-50 disabled:cursor-not-allowed border border-slate-100 dark:border-slate-700"
+                        >
+                            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Excel</span>
+                        </button>
+                        <button
+                            (click)="exportData('pdf'); showMoreOptions.set(false)"
+                            [disabled]="exporting()"
+                            class="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors group text-left disabled:opacity-50 disabled:cursor-not-allowed border border-slate-100 dark:border-slate-700"
+                        >
+                            <svg class="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200">PDF</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Configurable Columns -->
+                <!-- Divider -->
+                <div class="h-px bg-slate-100 dark:bg-slate-700/60 mx-3"></div>
+
+                <!-- Sección: Columnas -->
+                <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between shrink-0">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Columnas</span>
+                    <button (click)="resetColumns()" class="text-[0.625rem] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors uppercase tracking-wider">Restablecer</button>
+                </div>
+
+                <!-- Columnas configurables -->
                 <div class="overflow-y-auto flex-1 simple-scrollbar">
                     <div class="p-2">
-                        <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2 pt-1 mb-0.5">Columnas Configurables</p>
-                        <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 px-2 mb-2.5">Arrastra <span class="font-bold">⠿</span> para reordenar</p>
+                        <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 px-2 py-1.5 mb-0.5">Arrastra <span class="font-bold">⠿</span> para reordenar</p>
                         <div class="space-y-0.5">
                             <div
                                 *ngFor="let col of columnManagerList(); let i = index; trackBy: trackColById"
@@ -376,23 +402,20 @@ interface TableColumn {
                                 (dragend)="onColDragEnd()"
                                 class="flex items-center gap-2.5 px-2 py-2 rounded-xl transition-all select-none group"
                                 [ngClass]="draggedColId() === col.id
-                                  ? 'opacity-40 bg-violet-50 dark:bg-violet-900/20 border border-dashed border-violet-300 dark:border-violet-700 cursor-grabbing'
+                                  ? 'opacity-40 bg-slate-100 dark:bg-slate-700/60 border border-dashed border-slate-300 dark:border-slate-600 cursor-grabbing'
                                   : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-grab active:cursor-grabbing'"
                             >
-                                <!-- Drag Handle -->
-                                <svg class="w-3.5 h-5 shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-400 transition-colors" viewBox="0 0 10 20" fill="currentColor" aria-hidden="true">
+                                <svg class="w-3.5 h-5 shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 transition-colors" viewBox="0 0 10 20" fill="currentColor" aria-hidden="true">
                                     <circle cx="3" cy="4" r="1.5"/><circle cx="7" cy="4" r="1.5"/>
                                     <circle cx="3" cy="10" r="1.5"/><circle cx="7" cy="10" r="1.5"/>
                                     <circle cx="3" cy="16" r="1.5"/><circle cx="7" cy="16" r="1.5"/>
                                 </svg>
-                                <!-- Label -->
-                                <span class="text-[0.6875rem] font-semibold text-slate-700 dark:text-slate-300 flex-1 truncate">{{ col.label }}</span>
-                                <span *ngIf="col.optional" class="shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 uppercase tracking-wide">Extra</span>
-                                <!-- Toggle Switch -->
+                                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 flex-1 truncate">{{ col.label }}</span>
                                 <button
                                     type="button"
                                     (click)="toggleColumnVisibility(col.id)"
                                     draggable="false"
+                                    [attr.aria-label]="(col.visible ? 'Ocultar ' : 'Mostrar ') + col.label"
                                     class="rounded-full shrink-0 relative transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-orange/30"
                                     [ngClass]="col.visible ? 'bg-brand-orange' : 'bg-slate-200 dark:bg-slate-600'"
                                     style="width:32px;height:18px;"
@@ -410,93 +433,78 @@ interface TableColumn {
             </div>
         </div>
 
-        <!-- Reset All Button (aparece solo cuando hay filtros o columnas personalizadas) -->
-        <div class="relative shrink-0 hidden md:block">
-            <button
-                *ngIf="hasCustomView()"
-                (click)="resetAll()"
-                title="Restablecer filtros y columnas"
-                class="flex items-center justify-center w-9 h-9 rounded-lg transition-all border border-rose-200 dark:border-rose-800/60 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 animate-fadeIn"
-            >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                    <path d="M3 3v5h5"/>
-                </svg>
-            </button>
-        </div>
-
-        <!-- Spacer -->
-        <div class="flex-1 hidden lg:block"></div>
-
-        <!-- Export Dropdown -->
-        <div *ngIf="canExportPublicadores()" class="relative shrink-0 hidden md:block">
-            <!-- Backdrop -->
-            <div *ngIf="showExportMenu()" (click)="showExportMenu.set(false)" class="fixed inset-0 z-40 bg-transparent"></div>
-
-            <!-- Trigger -->
-            <button
-                (click)="showExportMenu.set(!showExportMenu())"
-                [disabled]="exporting()"
-                [title]="exporting() ? 'Exportando...' : 'Exportar vista'"
-                class="flex items-center justify-center w-9 h-9 rounded-lg transition-all border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 hover:text-slate-900 dark:hover:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-                <!-- Spinner cuando exporta -->
-                <svg *ngIf="exporting()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
-                <!-- Icono normal -->
-                <svg *ngIf="!exporting()" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </button>
-
-            <!-- Menú dropdown -->
-            <div
-                *ngIf="showExportMenu()"
-                class="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg shadow-slate-200/60 dark:shadow-black/40 border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fadeInUp"
-            >
-                <!-- Cabecera del menú -->
-                <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Exportar vista actual</p>
-                    <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5">{{ sortedList().length }} registros · {{ visibleMoveableColumns().length + 2 }} columnas</p>
-                </div>
-
-                <!-- Opción Excel -->
-                <button
-                    (click)="exportData('excel')"
-                    class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors group text-left"
-                >
-                    <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50 transition-colors">
-                        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Excel (.xlsx)</p>
-                        <p class="text-[0.625rem] text-slate-400 dark:text-slate-500">Con filtros y columnas visibles</p>
-                    </div>
-                </button>
-
-                <!-- Opción PDF -->
-                <button
-                    (click)="exportData('pdf')"
-                    class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors group text-left"
-                >
-                    <div class="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0 group-hover:bg-rose-200 dark:group-hover:bg-rose-900/50 transition-colors">
-                        <svg class="w-4 h-4 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold text-slate-700 dark:text-slate-200">PDF</p>
-                        <p class="text-[0.625rem] text-slate-400 dark:text-slate-500">Orientación automática por columnas</p>
-                    </div>
-                </button>
-            </div>
-        </div>
-
         <!-- Separador antes del botón Nuevo -->
         <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 shrink-0"></div>
 
-        <!-- Action Button (Compact, inside toolbar) -->
+        <!-- Action Button (Compact, inside toolbar — hidden on mobile, FAB handles it) -->
         <button *ngIf="canEditPublicadores()"
             (click)="openCreateForm()"
-            class="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 h-9 bg-brand-orange hover:bg-orange-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-orange-900/10 transition-[background-color,transform,box-shadow] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
+            aria-label="Nuevo publicador"
+            class="shrink-0 hidden md:inline-flex items-center justify-center gap-1.5 px-4 h-9 bg-brand-orange hover:bg-orange-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-orange-900/10 transition-[background-color,transform,box-shadow] duration-150 ease-out active:scale-[0.97] whitespace-nowrap focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2"
         >
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-            <span class="hidden sm:inline">Nuevo</span>
+            Nuevo
+        </button>
+      </div>
+
+      <!-- Active Filter Chips Strip (visible cuando hay filtros activos, mobile + desktop) -->
+      <div *ngIf="activeFiltersCount() > 0"
+           class="shrink-0 flex items-center gap-1.5 overflow-x-auto no-scrollbar px-0.5 py-0.5 animate-fadeIn">
+        <span class="text-[0.625rem] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider shrink-0">Filtros:</span>
+
+        <!-- Chips de sexo -->
+        <ng-container *ngFor="let s of selectedSexoFilter()">
+          <span class="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-[0.6875rem] font-bold whitespace-nowrap bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/50 shrink-0">
+            {{ s === 'M' ? '♂ Masculino' : '♀ Femenino' }}
+            <button (click)="toggleSexoFilter(s)" class="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" aria-label="Quitar filtro">
+              <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </span>
+        </ng-container>
+
+        <!-- Chip consentimiento -->
+        <span *ngIf="selectedConsentimientoFilter() !== null"
+              class="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-[0.6875rem] font-bold whitespace-nowrap bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/50 shrink-0">
+          {{ selectedConsentimientoFilter() ? 'Con consentimiento' : 'Sin consentimiento' }}
+          <button (click)="setConsentimientoFilter(selectedConsentimientoFilter()!)" class="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors" aria-label="Quitar filtro">
+            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </span>
+
+        <!-- Chips de grupos -->
+        <ng-container *ngFor="let gId of selectedGruposFilter()">
+          <span class="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-[0.6875rem] font-bold whitespace-nowrap bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-100 dark:border-orange-800/50 shrink-0">
+            {{ getGrupoNombre(gId) }}
+            <button (click)="toggleGrupoFilter(gId)" class="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors" aria-label="Quitar filtro">
+              <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </span>
+        </ng-container>
+
+        <!-- Chips de privilegios -->
+        <ng-container *ngFor="let pId of selectedPrivilegiosFilter()">
+          <span class="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-[0.6875rem] font-bold whitespace-nowrap bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/50 shrink-0">
+            {{ getPrivilegioNombre(pId) }}
+            <button (click)="togglePrivilegioFilter(pId)" class="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors" aria-label="Quitar filtro">
+              <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </span>
+        </ng-container>
+
+        <!-- Chips de barrios -->
+        <ng-container *ngFor="let b of selectedBarriosFilter()">
+          <span class="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-[0.6875rem] font-bold whitespace-nowrap bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-100 dark:border-teal-800/50 shrink-0">
+            {{ b }}
+            <button (click)="toggleBarrioFilter(b)" class="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-teal-200 dark:hover:bg-teal-800 transition-colors" aria-label="Quitar filtro">
+              <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </span>
+        </ng-container>
+
+        <!-- Clear all -->
+        <button (click)="clearFilters()"
+                class="ml-auto shrink-0 text-[0.625rem] font-bold text-rose-400 dark:text-rose-400 hover:text-rose-600 transition-colors uppercase tracking-wider whitespace-nowrap">
+          Limpiar todo
         </button>
       </div>
 
@@ -513,28 +521,52 @@ interface TableColumn {
              
              <!-- 1. Mobile Card View (Visible < md) -->
              <div class="md:hidden p-3 space-y-3 pb-20">
-                 <div *ngFor="let p of pagedList(); trackBy: trackById" 
+
+                 <!-- Skeleton Loading — Mobile -->
+                 <ng-container *ngIf="vm().loading">
+                   <div *ngFor="let _ of [1,2,3,4,5,6]"
+                        class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 animate-pulse flex flex-col gap-3">
+                     <div class="flex items-start gap-3">
+                       <div class="w-10 h-10 rounded-xl bg-gray-200 dark:bg-slate-700 shrink-0"></div>
+                       <div class="flex-1 space-y-2 pt-0.5">
+                         <div class="h-4 bg-gray-200 dark:bg-slate-700 rounded-lg w-3/4"></div>
+                         <div class="h-3 bg-gray-200 dark:bg-slate-700 rounded w-1/2"></div>
+                         <div class="h-3 bg-gray-200 dark:bg-slate-700 rounded w-2/3"></div>
+                       </div>
+                       <div class="flex gap-1 shrink-0">
+                         <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-slate-700"></div>
+                         <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-slate-700"></div>
+                       </div>
+                     </div>
+                     <div class="flex gap-1.5">
+                       <div class="h-6 w-20 bg-gray-200 dark:bg-slate-700 rounded-lg"></div>
+                       <div class="h-6 w-14 bg-gray-200 dark:bg-slate-700 rounded-lg"></div>
+                     </div>
+                   </div>
+                 </ng-container>
+
+                 <div *ngFor="let p of pagedList(); trackBy: trackById"
                       (click)="openQuickView(p)"
                       class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 relative flex flex-col gap-3 transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98] cursor-pointer">
                      
                      <div class="flex items-start justify-between gap-3">
                          <div class="flex items-center gap-3 min-w-0">
-                             <div 
-                                class="w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-[0.6875rem] shadow-sm ring-1 ring-white border border-white/50"
+                             <div
+                                class="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center font-semibold text-xs shadow-sm"
                                 [ngClass]="getAvatarStyle(getFullName(p))"
                             >
                                {{ getInitials(p) }}
                             </div>
                             <div class="min-w-0 flex flex-col">
-                                <h3 class="font-bold text-slate-900 dark:text-white leading-tight truncate">{{ p.primer_nombre }} {{ p.primer_apellido }}</h3>
-                                
+                                <h3 class="font-bold text-slate-900 dark:text-slate-100 leading-tight truncate">{{ getFullName(p) }}</h3>
+
                                 <div class="flex flex-wrap gap-1 items-center mt-1">
                                      <ng-container *ngFor="let role of getRoles(p)">
-                                          <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-1.5 py-0.5 rounded text-[0.625rem] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
-                                              {{ role.label }}
+                                          <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-1.5 py-0.5 rounded text-[0.6875rem] font-semibold" [ngClass]="role.class">
+                                              {{ role.short }}
                                           </span>
-                                          <span *ngIf="role.type === 'text'" class="text-[0.625rem] uppercase tracking-wider" [ngClass]="role.class">
-                                              {{ role.label }}
+                                          <span *ngIf="role.type === 'text'" class="text-[0.6875rem]" [ngClass]="role.class">
+                                              {{ role.short }}
                                           </span>
                                      </ng-container>
                                 </div>
@@ -551,12 +583,14 @@ interface TableColumn {
                          </div>
 
                          <!-- Actions -->
-                         <div class="flex items-center gap-0.5 flex-shrink-0" *ngIf="canEditPublicadores()">
-                             <button (click)="openEditForm(p); $event.stopPropagation()" class="p-2 rounded-full text-slate-400 hover:text-brand-orange hover:bg-orange-50 dark:hover:bg-orange-900/20 active:scale-95 transition-[transform,background-color,color] ease-[cubic-bezier(0.32,0.72,0,1)] duration-200 outline-none">
-                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                         <div class="flex items-center gap-1 flex-shrink-0" *ngIf="canEditPublicadores()">
+                             <button (click)="openEditForm(p); $event.stopPropagation()" aria-label="Editar publicador"
+                                 class="w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-[transform,background-color,color] duration-150 ease-out active:scale-90 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
+                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                              </button>
-                             <button (click)="confirmDelete(p); $event.stopPropagation()" class="p-2 -mr-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95 transition-[transform,background-color,color] ease-[cubic-bezier(0.32,0.72,0,1)] duration-200 outline-none">
-                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                             <button (click)="confirmDelete(p); $event.stopPropagation()" aria-label="Eliminar publicador"
+                                 class="w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-[transform,background-color,color] duration-150 ease-out active:scale-90 outline-none focus-visible:ring-2 focus-visible:ring-red-400/50">
+                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                              </button>
                          </div>
                      </div>
@@ -577,7 +611,7 @@ interface TableColumn {
                          
                          <span *ngIf="isMobileColVisible('fecha_bautismo') && p.fecha_bautismo"
                              class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[0.6875rem] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
-                             <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                             <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                              Bautismo: {{ formatDate(p.fecha_bautismo) }}
                          </span>
 
@@ -593,23 +627,31 @@ interface TableColumn {
                      </div>
                  </div>
                   <!-- Empty State Mobile -->
-                  <div *ngIf="pagedList().length === 0 && !vm().loading" class="text-center py-16 px-4">
-                      <div class="w-16 h-16 mx-auto bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-orange-900/20 dark:via-slate-800 dark:to-amber-900/10 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-orange-100/50 dark:border-orange-800/30">
+                  <div *ngIf="pagedList().length === 0 && !vm().loading" class="text-center py-14 px-6">
+                      <div class="w-16 h-16 mx-auto bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-orange-900/20 dark:via-gray-800 dark:to-amber-900/10 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-orange-100/50 dark:border-orange-800/30">
                          <svg class="w-8 h-8 text-orange-300 dark:text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                       </div>
-                      <h3 class="text-slate-800 dark:text-white font-bold mb-1">No se encontraron publicadores</h3>
-                      <p class="text-slate-400 dark:text-slate-500 text-sm mb-4">Ajusta los filtros o búsqueda</p>
-                      <button *ngIf="canEditPublicadores()" (click)="openCreateForm()" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-orange text-white rounded-lg text-sm font-bold shadow-md shadow-orange-500/20">
-                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                         Agregar
-                      </button>
+                      <h3 class="text-slate-800 dark:text-slate-100 font-bold mb-1">No se encontraron publicadores</h3>
+                      <p class="text-slate-400 dark:text-gray-500 text-sm mb-5">Ajusta los filtros o la búsqueda</p>
+                      <div class="flex flex-col items-center gap-2">
+                        <button *ngIf="activeFiltersCount() > 0 || searchQuery()"
+                            (click)="clearFilters(); onSearch('')"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                            Limpiar filtros
+                        </button>
+                        <button *ngIf="canEditPublicadores()" (click)="openCreateForm()" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-orange text-white rounded-lg text-sm font-bold shadow-md shadow-orange-500/20">
+                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                           Agregar
+                        </button>
+                      </div>
                   </div>
              </div>
 
              <!-- 2. Desktop Table View (Visible md+) -->
              <div class="hidden md:block">
                 <table class="w-full min-w-max text-left border-collapse">
-                   <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
+                   <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-700">
                       <!-- Sort chips strip (visible solo cuando hay ordenamientos activos) -->
                       <tr *ngIf="sortOrder().length > 0" class="border-b border-brand-orange/10 bg-orange-50/60 dark:bg-orange-900/10">
                         <td [attr.colspan]="totalVisibleColCount()" class="px-4 py-2">
@@ -692,14 +734,43 @@ interface TableColumn {
                          <th class="px-3 py-3 text-center text-xs font-bold text-slate-400 tracking-wider whitespace-nowrap">Acciones</th>
                       </tr>
                    </thead>
-                   <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-                      <tr *ngFor="let p of pagedList(); trackBy: trackById" class="group hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-transparent dark:border-slate-800/50 transition-colors duration-150">
+                   <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+
+                      <!-- Skeleton Rows — Desktop Loading -->
+                      <ng-container *ngIf="vm().loading">
+                        <tr *ngFor="let _ of [1,2,3,4,5,6,7,8,9,10]"
+                            class="animate-pulse border-b border-slate-100 dark:border-slate-700">
+                          <td class="px-5 py-3">
+                            <div class="flex items-center gap-3">
+                              <div class="w-9 h-9 rounded-xl bg-gray-200 dark:bg-slate-700 shrink-0"></div>
+                              <div class="space-y-1.5 flex-1">
+                                <div class="h-3.5 bg-gray-200 dark:bg-slate-700 rounded-lg w-36"></div>
+                                <div class="h-2.5 bg-gray-200 dark:bg-slate-700 rounded w-20"></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td *ngFor="let c of visibleMoveableColumns()" class="px-4 py-3">
+                            <div class="h-3 bg-gray-200 dark:bg-slate-700 rounded w-20"></div>
+                          </td>
+                          <td class="px-4 py-3">
+                            <div class="h-6 bg-gray-200 dark:bg-slate-700 rounded-full w-16"></div>
+                          </td>
+                          <td class="px-3 py-3">
+                            <div class="flex justify-center gap-1">
+                              <div class="w-7 h-7 rounded-full bg-gray-200 dark:bg-slate-700"></div>
+                              <div class="w-7 h-7 rounded-full bg-gray-200 dark:bg-slate-700"></div>
+                            </div>
+                          </td>
+                        </tr>
+                      </ng-container>
+
+                      <tr *ngFor="let p of pagedList(); trackBy: trackById" class="group hover:bg-slate-50 dark:hover:bg-gray-800/60 border-b border-transparent dark:border-slate-700/50 transition-colors duration-150">
                          
                          <!-- Nombre -->
                          <td class="px-5 py-2.5 relative">
                             <div class="flex items-center gap-3">
                                <div 
-                                   class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
+                                   class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-semibold text-xs shadow-sm"
                                    [ngClass]="getAvatarStyle(getFullName(p))"
                                >
                                   {{ getInitials(p) }}
@@ -800,26 +871,33 @@ interface TableColumn {
                               <span 
                                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.6875rem] font-bold border"
                                  [ngClass]="{
-                                     'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50': getEstadoNombre(p.id_estado_publicador).includes('Activo'),
-                                     'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50': getEstadoNombre(p.id_estado_publicador).includes('Inactivo'),
-                                     'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600': !getEstadoNombre(p.id_estado_publicador).includes('Activo') && !getEstadoNombre(p.id_estado_publicador).includes('Inactivo')
+                                     'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-700/50': getEstadoNombre(p.id_estado_publicador).includes('Activo'),
+                                     'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-100 dark:border-red-700/50': getEstadoNombre(p.id_estado_publicador).includes('Inactivo'),
+                                     'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600': !getEstadoNombre(p.id_estado_publicador).includes('Activo') && !getEstadoNombre(p.id_estado_publicador).includes('Inactivo')
                                  }"
                              >
-                                 <span class="w-1.5 h-1.5 rounded-full" [ngClass]="[getEstadoDotClass(p.id_estado_publicador), getEstadoNombre(p.id_estado_publicador).includes('Activo') ? 'animate-pulse' : '']"></span>
+                                 <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getEstadoDotClass(p.id_estado_publicador)"></span>
                                  {{ getEstadoNombre(p.id_estado_publicador) }}
                              </span>
                          </td>
 
                          <!-- Actions -->
-                         <td class="px-3 py-2.5 text-center">
-                            <div class="flex items-center justify-center gap-1 opacity-30 group-hover:opacity-100 transition-[opacity,transform] duration-200 ease-out translate-x-3 group-hover:translate-x-0">
-                               <button (click)="openQuickView(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-sky-500 hover:scale-110 transition-[background-color,color,transform,box-shadow] duration-150 ease-out active:scale-[0.9] hover:shadow-md shadow-sm" title="Ver detalles">
+                         <td class="px-4 py-2.5 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                               <button (click)="openQuickView(p)"
+                                  class="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-700 dark:hover:bg-slate-600 hover:text-white transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.9] shadow-sm"
+                                  aria-label="Ver detalles"
+                                  title="Ver detalles">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                </button>
-                               <button *ngIf="canEditPublicadores()" (click)="openEditForm(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-brand-orange hover:scale-110 transition-[background-color,color,transform,box-shadow] duration-150 ease-out active:scale-[0.9] hover:shadow-md shadow-sm" title="Editar">
+                               <button *ngIf="canEditPublicadores()" (click)="openEditForm(p)"
+                                  class="w-9 h-9 flex items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-900/20 text-brand-orange hover:bg-brand-orange hover:text-white transition-[background-color,color,transform] duration-200 ease-out active:scale-[0.9] shadow-sm"
+                                  title="Editar">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                </button>
-                               <button *ngIf="canEditPublicadores()" (click)="confirmDelete(p)" class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-red-500 hover:scale-110 transition-[background-color,color,transform,box-shadow] duration-150 ease-out active:scale-[0.9] hover:shadow-md shadow-sm" title="Eliminar">
+                               <button *ngIf="canEditPublicadores()" (click)="confirmDelete(p)"
+                                  class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:bg-red-500 hover:text-white transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.9]"
+                                  title="Eliminar">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                                </button>
                             </div>
@@ -840,10 +918,18 @@ interface TableColumn {
                                  </div>
                                  <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">No se encontraron publicadores</h3>
                                  <p class="text-slate-500 dark:text-slate-400 text-sm max-w-xs">Intenta ajustando los filtros o términos de búsqueda.</p>
-                                 <button *ngIf="canEditPublicadores()" (click)="openCreateForm()" class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-xl text-sm font-bold shadow-md shadow-orange-500/20 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30 transition-all active:scale-95">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-                                    Agregar Publicador
-                                 </button>
+                                 <div class="flex items-center gap-3 mt-6">
+                                   <button *ngIf="activeFiltersCount() > 0 || searchQuery()"
+                                       (click)="clearFilters(); onSearch('')"
+                                       class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                                       Limpiar filtros
+                                   </button>
+                                   <button *ngIf="canEditPublicadores()" (click)="openCreateForm()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-xl text-sm font-bold shadow-md shadow-orange-500/20 hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30 transition-all active:scale-95">
+                                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+                                      Agregar Publicador
+                                   </button>
+                                 </div>
                              </div>
                          </td>
                       </tr>
@@ -852,42 +938,98 @@ interface TableColumn {
              </div>
         </div>
 
-        <!-- Pagination Footer (Matches Grupos Module) -->
-        <div class="shrink-0 z-20 px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between md:rounded-b-2xl transition-all duration-300 shadow-[0_-1px_2px_rgba(0,0,0,0.02)] dark:shadow-none">
-             <p class="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Mostrando <span class="font-bold text-slate-800 dark:text-slate-200">{{ (currentPage() - 1) * pageSize + 1 }} - {{ Math.min(currentPage() * pageSize, filteredList().length) }}</span> 
-                de <span class="font-bold text-slate-800 dark:text-white">{{ filteredList().length }}</span> publicadores
-             </p>
-             <div class="flex gap-2">
-                  <button
-                   (click)="prevPage()"
-                   [disabled]="currentPage() === 1"
-                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.93] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                  >
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                  </button>
-                  <button
-                   (click)="nextPage()"
-                   [disabled]="currentPage() * pageSize >= filteredList().length"
-                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-brand-orange dark:hover:text-brand-orange transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.93] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                  >
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                  </button>
-             </div>
+        <!-- Pagination Footer -->
+        <div class="shrink-0 z-20 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 md:rounded-b-2xl transition-all duration-300 shadow-[0_-1px_2px_rgba(0,0,0,0.02)] dark:shadow-none">
+
+          <!-- Mobile Pagination: icon buttons + counter — compact for small screens -->
+          <div class="flex sm:hidden items-center gap-2 px-3 py-2" style="padding-right: calc(0.75rem + 56px + 24px)">
+            <!-- Prev -->
+            <button
+              (click)="prevPage()"
+              [disabled]="currentPage() === 1"
+              aria-label="Página anterior"
+              class="w-11 h-11 flex items-center justify-center shrink-0 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:text-brand-orange hover:border-brand-orange/40 active:scale-[0.92] transition-[background-color,color,border-color,transform] duration-150 disabled:opacity-35 disabled:cursor-not-allowed shadow-sm"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+
+            <!-- Counter — grows to fill remaining space -->
+            <div class="flex-1 flex flex-col items-center justify-center leading-tight">
+              <span class="text-sm font-black text-slate-800 dark:text-slate-100 tabular-nums">
+                {{ currentPage() }} / {{ Math.ceil(filteredList().length / pageSize) || 1 }}
+              </span>
+              <span class="text-[0.625rem] font-medium text-slate-400 dark:text-gray-500 tabular-nums">
+                {{ filteredList().length }} resultados
+              </span>
+            </div>
+
+            <!-- Next -->
+            <button
+              (click)="nextPage()"
+              [disabled]="currentPage() * pageSize >= filteredList().length"
+              aria-label="Página siguiente"
+              class="w-11 h-11 flex items-center justify-center shrink-0 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:text-brand-orange hover:border-brand-orange/40 active:scale-[0.92] transition-[background-color,color,border-color,transform] duration-150 disabled:opacity-35 disabled:cursor-not-allowed shadow-sm"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <!-- Desktop Pagination: count label + prev/page/next -->
+          <div class="hidden sm:flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-medium text-slate-500 dark:text-gray-400">
+               Mostrando <span class="font-bold text-slate-800 dark:text-slate-100">{{ (currentPage() - 1) * pageSize + 1 }} – {{ Math.min(currentPage() * pageSize, filteredList().length) }}</span>
+               de <span class="font-bold text-slate-800 dark:text-slate-100">{{ filteredList().length }}</span> publicadores
+            </p>
+            <div class="flex items-center gap-2">
+              <button
+               (click)="prevPage()"
+               [disabled]="currentPage() === 1"
+               aria-label="Página anterior"
+               class="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 hover:text-brand-orange dark:hover:text-brand-orange transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.93] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <span class="text-xs font-bold text-slate-500 dark:text-gray-400 min-w-[3rem] text-center tabular-nums">
+                {{ currentPage() }} / {{ Math.ceil(filteredList().length / pageSize) || 1 }}
+              </span>
+              <button
+               (click)="nextPage()"
+               [disabled]="currentPage() * pageSize >= filteredList().length"
+               aria-label="Página siguiente"
+               class="w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 hover:text-brand-orange dark:hover:text-brand-orange transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.93] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div> <!-- End Left Side -->
 
-    <!-- RIGHT SIDE: Editor Panel (Side Sheet) -->
-    <!-- RIGHT SIDE: Editor Panel (Side Sheet with Smooth Transition) -->
-    <div 
-      class="shrink-0 flex flex-col overflow-hidden transition-[width,opacity,margin] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:h-auto"
-      [ngClass]="panelOpen()
-        ? 'w-full opacity-100 md:w-[420px] md:ml-4'
-        : 'w-0 opacity-0 md:ml-0'"
+    <!-- Mobile FAB: Nuevo Publicador -->
+    <button
+      *ngIf="canEditPublicadores() && !panelOpen()"
+      (click)="openCreateForm()"
+      aria-label="Nuevo publicador"
+      class="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-brand-orange text-white rounded-full shadow-lg shadow-orange-500/40 active:scale-90 transition-[transform,box-shadow] duration-150 ease-out flex items-center justify-center hover:bg-orange-600 hover:shadow-xl hover:shadow-orange-500/40"
     >
-      <!-- Inner Container with premium styling -->
-      <div class="h-full flex flex-col bg-white dark:bg-slate-900 rounded-none md:rounded-l-3xl shadow-2xl shadow-slate-900/10 dark:shadow-black/50 border-l border-slate-100 dark:border-slate-800 overflow-hidden">
+      <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+
+    <!-- RIGHT SIDE: Editor Panel (Side Sheet / Bottom Sheet on mobile) -->
+    <div
+      class="shrink-0 flex flex-col overflow-hidden transition-[width,opacity,margin,transform] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] fixed inset-0 z-50 md:relative md:inset-auto md:z-auto md:h-auto"
+      [ngClass]="panelOpen()
+        ? 'translate-y-0 w-full opacity-100 pointer-events-auto md:w-[420px] lg:w-[460px] md:ml-4'
+        : 'translate-y-full w-full opacity-0 pointer-events-none md:translate-y-0 md:w-0 md:opacity-0 md:ml-0 md:pointer-events-auto'"
+    >
+      <!-- Inner Container -->
+      <div class="h-full flex flex-col bg-white dark:bg-slate-900 rounded-t-2xl md:rounded-none md:rounded-l-3xl shadow-2xl shadow-slate-900/10 dark:shadow-black/50 md:border-l border-slate-100 dark:border-slate-800 overflow-hidden">
+        <!-- Drawer grabber (mobile only) -->
+        <div class="md:hidden flex justify-center pt-3 pb-1.5 shrink-0 bg-white dark:bg-slate-900">
+          <div class="w-10 h-1 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+        </div>
         
         <!-- Premium Gradient Header (Always Light as per design) -->
         <!-- Premium Gradient Header -->
@@ -900,19 +1042,11 @@ interface TableColumn {
                 <div class="flex items-start justify-between">
                      <div class="flex gap-3">
                          <!-- Icon with gradient background -->
-                         <div class="hidden md:flex w-11 h-11 rounded-xl bg-gradient-to-br from-brand-orange to-orange-500 text-white items-center justify-center shrink-0 shadow-lg shadow-orange-500/20 ring-3 ring-white dark:ring-slate-800 relative z-10 transition-shadow duration-300">
+                         <div class="hidden md:flex w-11 h-11 rounded-xl bg-brand-orange text-white items-center justify-center shrink-0 shadow-md shadow-orange-500/20 ring-[3px] ring-white dark:ring-slate-800 relative z-10 transition-shadow duration-300">
                               <svg *ngIf="!editingPublicador()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                               <svg *ngIf="editingPublicador()" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                          </div>
                          <div>
-                             <div class="flex items-center gap-2 mb-1.5">
-                                <span class="px-2.5 py-1 rounded-lg text-[0.625rem] font-black uppercase tracking-widest shadow-sm border border-transparent"
-                                      [ngClass]="editingPublicador() 
-                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/30' 
-                                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/30'">
-                                  {{ editingPublicador() ? 'Modo Edición' : 'Nuevo Registro' }}
-                                </span>
-                             </div>
                              <h2 class="text-xl font-display font-black text-slate-900 dark:text-white tracking-tight drop-shadow-sm">
                                  {{ editingPublicador() ? 'Editar Publicador' : 'Nuevo Publicador' }}
                              </h2>
@@ -933,30 +1067,32 @@ interface TableColumn {
              <!-- Tabs Navigation (Dark Bar Style) -->
              <div class="px-4 pb-3 sm:px-5 sm:pb-4 md:px-5 md:pb-4 relative z-10">
                 <div class="flex p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 backdrop-blur-md">
-                  <button 
-                    (click)="activeTab.set('personal')" 
-                    class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
-                    [ngClass]="activeTab() === 'personal' 
-                      ? 'bg-white dark:bg-slate-700 text-brand-orange shadow-sm' 
+                  <button
+                    (click)="activeTab.set('personal')"
+                    class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 relative"
+                    [ngClass]="activeTab() === 'personal'
+                      ? 'bg-brand-orange text-white shadow-sm'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5'"
                   >
                     Personal
+                    <span *ngIf="tabHasErrors('personal') && activeTab() !== 'personal'" class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-400"></span>
                   </button>
-                  <button 
-                    (click)="activeTab.set('teocratico')" 
-                    class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
-                    [ngClass]="activeTab() === 'teocratico' 
-                      ? 'bg-white dark:bg-slate-700 text-brand-orange shadow-sm' 
+                  <button
+                    (click)="activeTab.set('teocratico')"
+                    class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 relative"
+                    [ngClass]="activeTab() === 'teocratico'
+                      ? 'bg-brand-orange text-white shadow-sm'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5'"
                   >
                     Teocrático
+                    <span *ngIf="tabHasErrors('teocratico') && activeTab() !== 'teocratico'" class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-400"></span>
                   </button>
                   <button 
                     *ngIf="editingPublicador()" 
                     (click)="activeTab.set('emergencia')" 
                     class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200"
-                    [ngClass]="activeTab() === 'emergencia' 
-                      ? 'bg-white dark:bg-slate-700 text-brand-orange shadow-sm' 
+                    [ngClass]="activeTab() === 'emergencia'
+                      ? 'bg-brand-orange text-white shadow-sm'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5'"
                   >
                     Emergencia
@@ -989,14 +1125,19 @@ interface TableColumn {
                                   <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                                   Primer Nombre <span class="text-red-400">*</span>
                                </label>
-                               <input formControlName="primer_nombre" (input)="capitalizeInput('primer_nombre')" placeholder="Ej: Juan" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                               <input formControlName="primer_nombre" (input)="capitalizeInput('primer_nombre')" placeholder="Ej: Juan" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal"
+                                 [ngClass]="publicadorForm.get('primer_nombre')?.invalid && publicadorForm.get('primer_nombre')?.touched ? 'border-red-400 dark:border-red-500 focus:ring-red-400/30 focus:border-red-400' : ''">
+                               <p *ngIf="publicadorForm.get('primer_nombre')?.invalid && publicadorForm.get('primer_nombre')?.touched" class="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
+                                 <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                 Campo requerido
+                               </p>
                              </div>
                              <div class="col-span-1 space-y-2">
                                <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
                                   Segundo Nombre
                                </label>
-                               <input formControlName="segundo_nombre" (input)="capitalizeInput('segundo_nombre')" placeholder="Ej: Carlos" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                               <input formControlName="segundo_nombre" (input)="capitalizeInput('segundo_nombre')" placeholder="Ej: Carlos" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                              </div>
                              
                              <!-- Fila 2: Apellidos -->
@@ -1005,14 +1146,19 @@ interface TableColumn {
                                   <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                                   Primer Apellido <span class="text-red-400">*</span>
                                </label>
-                               <input formControlName="primer_apellido" (input)="capitalizeInput('primer_apellido')" placeholder="Ej: Pérez" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                               <input formControlName="primer_apellido" (input)="capitalizeInput('primer_apellido')" placeholder="Ej: Pérez" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal"
+                                 [ngClass]="publicadorForm.get('primer_apellido')?.invalid && publicadorForm.get('primer_apellido')?.touched ? 'border-red-400 dark:border-red-500 focus:ring-red-400/30 focus:border-red-400' : ''">
+                               <p *ngIf="publicadorForm.get('primer_apellido')?.invalid && publicadorForm.get('primer_apellido')?.touched" class="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
+                                 <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                 Campo requerido
+                               </p>
                              </div>
                              <div class="col-span-1 space-y-2">
                                <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                   <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
                                   Segundo Apellido
                                </label>
-                               <input formControlName="segundo_apellido" (input)="capitalizeInput('segundo_apellido')" placeholder="Ej: García" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                               <input formControlName="segundo_apellido" (input)="capitalizeInput('segundo_apellido')" placeholder="Ej: García" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                              </div>
 
                              <!-- Fila 3: Sexo y Nacimiento -->
@@ -1088,10 +1234,10 @@ interface TableColumn {
                         <div class="grid grid-cols-2 gap-3">
                             <div class="col-span-2 sm:col-span-1 space-y-2">
                                 <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wide mb-2">
-                                  <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></span>
+                                  <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                                   Teléfono
                                </label>
-                               <input formControlName="telefono" placeholder="+57 300..." class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                               <input formControlName="telefono" placeholder="+57 300..." class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                             </div>
 
                             <div class="col-span-2 sm:col-span-1 space-y-2">
@@ -1099,7 +1245,7 @@ interface TableColumn {
                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                    Barrio
                                 </label>
-                                <input formControlName="barrio" placeholder="Ej: El Poblado" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                                <input formControlName="barrio" placeholder="Ej: El Poblado" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                             </div>
 
                             <div class="col-span-2 space-y-2">
@@ -1107,73 +1253,7 @@ interface TableColumn {
                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                    Dirección Completa
                                 </label>
-                                <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
-                            </div>
-                        </div>
-                     </div>
-
-                     <!-- Section: Acceso App Móvil (Sutil) -->
-                     <div class="space-y-4 pt-4">
-                        <div class="flex items-center gap-3 py-2">
-                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                           <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Acceso App Móvil</span>
-                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
-                        </div>
-
-                        <div class="rounded-2xl border border-sky-100 dark:border-sky-900/30 bg-sky-50/30 dark:bg-sky-900/10 p-5 space-y-4">
-                            <!-- Toggle login simple -->
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Acceso habilitado</p>
-                                    <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 mt-0.5">Permite al publicador ingresar con su PIN o correo</p>
-                                </div>
-                                <button type="button"
-                                        (click)="publicadorForm.get('permite_login_simple')?.setValue(!publicadorForm.get('permite_login_simple')?.value)"
-                                        class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none"
-                                        [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-600'">
-                                    <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform"
-                                          [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'translate-x-6' : 'translate-x-1'"></span>
-                                </button>
-                            </div>
-
-                            <!-- PIN Display (Only in Edit Mode or if access enabled) -->
-                            <div *ngIf="editingPublicador()" class="pt-4 border-t border-sky-100 dark:border-sky-900/20 flex items-center justify-between gap-3">
-                                <div>
-                                    <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">Código PIN</p>
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-mono text-xl font-black tracking-widest"
-                                              [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 line-through'">
-                                            {{ editingPublicador()?.codigo_pin || '—' }}
-                                        </span>
-                                        <button *ngIf="editingPublicador()?.codigo_pin"
-                                                type="button"
-                                                (click)="copyPin(editingPublicador()?.codigo_pin)"
-                                                title="Copiar PIN"
-                                                class="p-1.5 rounded-md text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
-                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Acciones PIN -->
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <button type="button"
-                                            (click)="enviarCredencialesWhatsapp()"
-                                            [disabled]="!editingPublicador()?.codigo_pin || !publicadorForm.get('permite_login_simple')?.value || sendingWhatsapp()"
-                                            class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 text-xs font-bold text-[#1da851] dark:text-[#25D366] hover:bg-[#25D366]/20 transition-all disabled:opacity-50 shadow-sm"
-                                            title="Enviar por WhatsApp">
-                                        <svg *ngIf="sendingWhatsapp()" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                                        <svg *ngIf="!sendingWhatsapp()" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                                        Enviar
-                                    </button>
-                                    <button type="button"
-                                            (click)="regenerarPin(editingPublicador()!.id_publicador)"
-                                            [disabled]="savingPin() || !publicadorForm.get('permite_login_simple')?.value"
-                                            class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-sky-100 dark:border-sky-900/30 text-xs font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all disabled:opacity-50 shadow-sm">
-                                        <svg class="w-3.5 h-3.5" [ngClass]="savingPin() ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                                        Nuevo PIN
-                                    </button>
-                                </div>
+                                <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
                             </div>
                         </div>
                      </div>
@@ -1191,7 +1271,7 @@ interface TableColumn {
                              [ngClass]="editingPublicador()?.consentimiento_datos
                                ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/40'
                                : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 border-dashed'">
-                             
+
                              <div class="flex items-center justify-between mb-3">
                                  <div class="flex items-center gap-2">
                                      <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -1245,6 +1325,77 @@ interface TableColumn {
                              <!-- Error message -->
                              <p *ngIf="pdfError()" class="text-[0.6875rem] text-red-500 font-bold mt-2 animate-fadeIn">{{ pdfError() }}</p>
                          </div>
+                     </div>
+
+                     <!-- Section: Acceso App Móvil (Sutil) -->
+                     <div class="space-y-4 pt-4">
+                        <div class="flex items-center gap-3 py-2">
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                           <span class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Acceso App Móvil</span>
+                           <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
+                        </div>
+
+                        <div class="rounded-2xl border border-sky-100 dark:border-sky-900/30 bg-sky-50/30 dark:bg-sky-900/10 p-5 space-y-4">
+                            <!-- Toggle login simple -->
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Acceso habilitado</p>
+                                    <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 mt-0.5">Permite al publicador ingresar con su PIN o correo</p>
+                                </div>
+                                <button type="button"
+                                        (click)="publicadorForm.get('permite_login_simple')?.setValue(!publicadorForm.get('permite_login_simple')?.value)"
+                                        class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none"
+                                        [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-600'">
+                                    <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform"
+                                          [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'translate-x-6' : 'translate-x-1'"></span>
+                                </button>
+                            </div>
+
+                            <!-- PIN Display (Only in Edit Mode or if access enabled) -->
+                            <div *ngIf="editingPublicador()" class="pt-4 border-t border-sky-100 dark:border-sky-900/20 flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                                      Código PIN
+                                      <span title="Código numérico de 4-6 dígitos generado automáticamente. El publicador lo usa para acceder a la app móvil de la congregación." class="cursor-help text-slate-300 dark:text-slate-600 hover:text-slate-400 transition-colors">
+                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8"/><path d="M12 12v4"/></svg>
+                                      </span>
+                                    </p>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-mono text-xl font-black tracking-widest"
+                                              [ngClass]="publicadorForm.get('permite_login_simple')?.value ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 line-through'">
+                                            {{ editingPublicador()?.codigo_pin || '—' }}
+                                        </span>
+                                        <button *ngIf="editingPublicador()?.codigo_pin"
+                                                type="button"
+                                                (click)="copyPin(editingPublicador()?.codigo_pin)"
+                                                title="Copiar PIN"
+                                                class="p-1.5 rounded-md text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
+                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Acciones PIN -->
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button"
+                                            (click)="enviarCredencialesWhatsapp()"
+                                            [disabled]="!editingPublicador()?.codigo_pin || !publicadorForm.get('permite_login_simple')?.value || sendingWhatsapp()"
+                                            class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 text-xs font-bold text-[#1da851] dark:text-[#25D366] hover:bg-[#25D366]/20 transition-all disabled:opacity-50 shadow-sm"
+                                            title="Enviar por WhatsApp">
+                                        <svg *ngIf="sendingWhatsapp()" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                        <svg *ngIf="!sendingWhatsapp()" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                        Enviar
+                                    </button>
+                                    <button type="button"
+                                            (click)="regenerarPin(editingPublicador()!.id_publicador)"
+                                            [disabled]="savingPin() || !publicadorForm.get('permite_login_simple')?.value"
+                                            class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-sky-100 dark:border-sky-900/30 text-xs font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all disabled:opacity-50 shadow-sm">
+                                        <svg class="w-3.5 h-3.5" [ngClass]="savingPin() ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                        Nuevo PIN
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                      </div>
                 </div>
 
@@ -1302,11 +1453,11 @@ interface TableColumn {
                                <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
                            </div>
 
-                           <div class="grid grid-cols-2 gap-4">
+                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="col-span-1 space-y-2">
                                      <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                       <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                       Estado
+                                       <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
+                                       Estado <span class="text-red-400">*</span>
                                      </label>
                                      <div class="relative">
                                          <!-- Backdrop for click outside -->
@@ -1347,6 +1498,10 @@ interface TableColumn {
                                              </div>
                                          </div>
                                      </div>
+                                     <p *ngIf="publicadorForm.get('id_estado_publicador')?.invalid && publicadorForm.get('id_estado_publicador')?.touched" class="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
+                                       <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                       Selecciona un estado
+                                     </p>
                                  </div>
                                  <div class="col-span-1 space-y-2">
                                      <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
@@ -1355,10 +1510,13 @@ interface TableColumn {
                                      </label>
                                      <app-date-picker formControlName="fecha_bautismo" placeholder="Seleccionar fecha"></app-date-picker>
                                  </div>
-                                 <div class="col-span-2 space-y-2">
+                                 <div class="col-span-1 sm:col-span-2 space-y-2">
                                      <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                                          Fecha Inicio Informe
+                                         <span title="Fecha desde la que el publicador presenta informes de predicación al circuito. Normalmente coincide con la fecha de bautismo o de incorporación como publicador." class="cursor-help text-slate-300 dark:text-slate-600 hover:text-slate-400 transition-colors">
+                                           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8"/><path d="M12 12v4"/></svg>
+                                         </span>
                                      </label>
                                      <app-date-picker formControlName="fecha_inicio_informe" placeholder="Seleccionar fecha"></app-date-picker>
                                  </div>
@@ -1386,12 +1544,19 @@ interface TableColumn {
                                       </div>
                                       <div class="text-left">
                                           <span class="block text-sm font-bold" [ngClass]="publicadorForm.get('ungido')?.value ? 'text-brand-orange' : 'text-slate-700'">Participante de los emblemas</span>
-                                          <span class="text-xs text-slate-500 font-medium">Ungido</span>
+                                          <span class="text-xs text-slate-500 font-medium flex items-center gap-1">
+                                            Ungido
+                                            <span title="Los ungidos son los 144.000 que reinarán con Cristo. Marcar solo si el publicador participa activamente en los emblemas de la Cena del Señor." class="cursor-help text-slate-300 dark:text-slate-600 hover:text-slate-400 transition-colors">
+                                              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8"/><path d="M12 12v4"/></svg>
+                                            </span>
+                                          </span>
                                       </div>
                                   </div>
-                                  <div class="w-5 h-5 rounded-full border flex items-center justify-center transition-colors"
-                                       [ngClass]="publicadorForm.get('ungido')?.value ? 'border-brand-orange bg-brand-orange' : 'border-slate-300'">
-                                      <svg *ngIf="publicadorForm.get('ungido')?.value" class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                  <!-- Toggle switch -->
+                                  <div class="relative shrink-0 w-10 h-6 rounded-full transition-colors duration-200"
+                                       [ngClass]="publicadorForm.get('ungido')?.value ? 'bg-brand-orange' : 'bg-slate-200 dark:bg-slate-600'">
+                                    <div class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
+                                         [ngClass]="publicadorForm.get('ungido')?.value ? 'translate-x-4' : 'translate-x-0'"></div>
                                   </div>
                               </button>
                                  </div>
@@ -1414,15 +1579,21 @@ interface TableColumn {
                                            </div>
                                        </div>
                                        <div class="flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-all">
-                                           <!-- Botón cerrar privilegio (solo si está activo) -->
+                                           <!-- Acción primaria: Finalizar (sólo si está activo) -->
                                            <button *ngIf="!pp.fecha_fin && closingPrivilegioId() !== pp.id_publicador_privilegio"
                                                type="button"
                                                (click)="startClosingPrivilegio(pp.id_publicador_privilegio)"
-                                               title="Establecer fecha fin"
-                                               class="p-1.5 text-slate-400 hover:text-amber-500 transition-all">
-                                               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="17" y1="16" x2="12" y2="16"/><line x1="12" y1="16" x2="12" y2="21"/></svg>
+                                               title="Finalizar privilegio (conserva el historial)"
+                                               class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-500 dark:hover:text-white text-[10px] font-bold transition-all">
+                                               <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="17" y1="16" x2="12" y2="16"/><line x1="12" y1="16" x2="12" y2="21"/></svg>
+                                               Finalizar
                                            </button>
-                                           <button type="button" (click)="confirmDeletePrivilegio(pp.id_publicador_privilegio)" class="p-1.5 text-slate-400 hover:text-red-500 transition-all">
+                                           <!-- Acción secundaria: Eliminar definitivamente (sólo si no toca informes) -->
+                                           <button type="button"
+                                               (click)="confirmDeletePrivilegio(pp.id_publicador_privilegio)"
+                                               [disabled]="!isPrivilegioEliminable(pp.id_publicador_privilegio)"
+                                               [title]="isPrivilegioEliminable(pp.id_publicador_privilegio) ? 'Eliminar definitivamente' : motivoNoEliminable(pp.id_publicador_privilegio)"
+                                               class="p-1.5 text-slate-400 hover:text-red-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-400">
                                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                            </button>
                                        </div>
@@ -1481,8 +1652,8 @@ interface TableColumn {
                                        <!-- Dropdown Menu -->
                                        <div *ngIf="privilegeDropdownOpen()" class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-20 overflow-hidden animate-fadeIn">
                                            <div class="max-h-48 overflow-y-auto py-1">
-                                               <button 
-                                                 *ngFor="let p of privilegios()" 
+                                               <button
+                                                 *ngFor="let p of privilegiosAsignables()"
                                                  type="button"
                                                  (click)="selectNewPrivilege(p)"
                                                  class="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center justify-between group"
@@ -1490,7 +1661,7 @@ interface TableColumn {
                                                    {{ p.nombre_privilegio }}
                                                    <svg *ngIf="newPrivilegio().id_privilegio === p.id_privilegio" class="w-3.5 h-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                </button>
-                                               <div *ngIf="privilegios().length === 0" class="px-4 py-2 text-xs text-slate-400 text-center">No hay opciones</div>
+                                               <div *ngIf="privilegiosAsignables().length === 0" class="px-4 py-2 text-xs text-slate-400 text-center">No hay opciones</div>
                                            </div>
                                        </div>
                                    </div>
@@ -1518,9 +1689,17 @@ interface TableColumn {
                                        </div>
                                    </div>
 
+                                   <!-- Conflict warning -->
+                                   <div *ngIf="privilegioConflictoMsg()" class="flex items-start gap-1.5 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
+                                     <svg class="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                     </svg>
+                                     <p class="text-[10px] font-medium text-amber-700 dark:text-amber-400 leading-tight">{{ privilegioConflictoMsg() }}</p>
+                                   </div>
+
                                    <!-- Add Button -->
-                                   <button 
-                                     type="button" 
+                                   <button
+                                     type="button"
                                      (click)="addPrivilegio()"
                                      [disabled]="!canAddPrivilegio()"
                                      class="w-full h-8 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-indigo-500/20 transition-all flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1531,8 +1710,8 @@ interface TableColumn {
                                </div>
                            </div>
                        </div>
-                       <div *ngIf="!editingPublicador()" class="mt-6 p-4 bg-slate-50 rounded-xl text-center border border-dashed border-slate-200 dark:border-slate-700">
-                           <p class="text-xs text-slate-400">Guarda el publicador para gestionar sus privilegios.</p>
+                       <div *ngIf="!editingPublicador()" class="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-center border border-dashed border-slate-200 dark:border-slate-700">
+                           <p class="text-xs text-slate-400 dark:text-slate-500">Guarda el publicador para gestionar sus privilegios.</p>
                        </div>
                 </div>
 
@@ -1556,32 +1735,32 @@ interface TableColumn {
                     </div>
 
                     <!-- Lista de Contactos -->
-                    <div *ngIf="!showContactoForm()" class="space-y-3">
-                        <div *ngFor="let c of contactos()" class="p-4 rounded-xl border border-orange-200/50 dark:border-orange-800/30 bg-orange-50/30 dark:bg-orange-900/10 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-brand-orange dark:hover:border-brand-orange/50 transition-all group relative">
-                             <div class="flex justify-between items-start">
-                                 <div>
-                                     <div class="flex items-center gap-2 mb-1">
-                                         <h4 class="text-sm font-bold text-slate-800">{{ c.nombre }}</h4>
-                                         <span *ngIf="c.parentesco" class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[0.625rem] font-bold text-slate-500 uppercase tracking-wide">{{ c.parentesco }}</span>
-                                         <span *ngIf="c.es_principal" class="px-2 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[0.625rem] font-bold border border-orange-200">Principal</span>
+                    <div *ngIf="!showContactoForm()" class="space-y-2">
+                        <div *ngFor="let c of contactos()" class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand-orange/50 dark:hover:border-brand-orange/40 hover:shadow-sm transition-all group relative">
+                             <div class="flex justify-between items-start gap-3">
+                                 <div class="min-w-0 flex-1">
+                                     <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                                         <h4 class="text-sm font-bold text-slate-900 dark:text-white">{{ c.nombre }}</h4>
+                                         <span *ngIf="c.parentesco" class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[0.625rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{{ c.parentesco }}</span>
+                                         <span *ngIf="c.es_principal" class="px-2 py-0.5 rounded-md bg-orange-50 dark:bg-orange-900/30 text-brand-orange dark:text-orange-400 text-[0.625rem] font-bold border border-orange-200 dark:border-orange-800/50">Principal</span>
                                      </div>
                                      <div class="flex flex-col gap-1">
-                                        <div class="flex items-center gap-2 text-xs text-slate-600 font-medium">
-                                            <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                        <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                                            <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                                             {{ c.telefono || 'Sin teléfono' }}
                                         </div>
-                                         <div *ngIf="c.direccion" class="flex items-center gap-2 text-xs text-slate-500">
-                                            <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                            {{ c.direccion }}
+                                         <div *ngIf="c.direccion" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                            <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            <span class="truncate">{{ c.direccion }}</span>
                                         </div>
                                      </div>
                                  </div>
-                                 
-                                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                     <button type="button" (click)="editContacto(c)" class="p-2 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-lg transition-colors">
+
+                                 <div class="flex gap-1 shrink-0 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                     <button type="button" (click)="editContacto(c)" aria-label="Editar contacto" class="p-2 text-slate-400 hover:text-brand-orange hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors">
                                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                      </button>
-                                     <button type="button" (click)="deleteContacto(c)" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                     <button type="button" (click)="confirmDeleteContacto(c)" aria-label="Eliminar contacto" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                      </button>
                                  </div>
@@ -1598,9 +1777,7 @@ interface TableColumn {
                         </div>
                     </div>
 
-                    <!-- Formulario Contacto (Inline) -->
-                     <!-- Formulario Contacto (Inline Refined) -->
-                     <!-- Formulario Contacto (Inline Refined) -->
+                    <!-- Formulario Contacto -->
                      <div *ngIf="showContactoForm()" [formGroup]="contactoForm" class="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm animate-fadeInUp">
                           <h4 class="text-lg font-display font-bold text-slate-900 dark:text-white mb-6">{{ editingContacto() ? 'Editar Contacto' : 'Nuevo Contacto' }}</h4>
                           
@@ -1610,7 +1787,12 @@ interface TableColumn {
                                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                      Nombre Completo
                                   </label>
-                                  <input formControlName="nombre" class="w-full h-12 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal">
+                                  <input formControlName="nombre" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                                    [ngClass]="contactoForm.get('nombre')?.invalid && contactoForm.get('nombre')?.touched ? 'border-red-400 dark:border-red-500' : ''">
+                                  <p *ngIf="contactoForm.get('nombre')?.invalid && contactoForm.get('nombre')?.touched" class="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
+                                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    El nombre es requerido
+                                  </p>
                               </div>
                               
                               <div class="grid grid-cols-2 gap-4">
@@ -1619,14 +1801,62 @@ interface TableColumn {
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                         Parentesco
                                      </label>
-                                     <input formControlName="parentesco" placeholder="Ej. Madre" class="w-full h-12 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal">
+                                     <select formControlName="parentesco" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none appearance-none cursor-pointer">
+                                       <option value="" disabled selected>— Seleccionar parentesco —</option>
+                                       <optgroup label="Pareja">
+                                         <option value="Esposo">Esposo</option>
+                                         <option value="Esposa">Esposa</option>
+                                         <option value="Compañero/a de vida">Compañero/a de vida</option>
+                                       </optgroup>
+                                       <optgroup label="Padres e hijos">
+                                         <option value="Madre">Madre</option>
+                                         <option value="Padre">Padre</option>
+                                         <option value="Hijo">Hijo</option>
+                                         <option value="Hija">Hija</option>
+                                       </optgroup>
+                                       <optgroup label="Hermanos">
+                                         <option value="Hermano">Hermano</option>
+                                         <option value="Hermana">Hermana</option>
+                                       </optgroup>
+                                       <optgroup label="Abuelos y nietos">
+                                         <option value="Abuelo">Abuelo</option>
+                                         <option value="Abuela">Abuela</option>
+                                         <option value="Nieto">Nieto</option>
+                                         <option value="Nieta">Nieta</option>
+                                       </optgroup>
+                                       <optgroup label="Tíos y sobrinos">
+                                         <option value="Tío">Tío</option>
+                                         <option value="Tía">Tía</option>
+                                         <option value="Sobrino">Sobrino</option>
+                                         <option value="Sobrina">Sobrina</option>
+                                       </optgroup>
+                                       <optgroup label="Políticos">
+                                         <option value="Suegro">Suegro</option>
+                                         <option value="Suegra">Suegra</option>
+                                         <option value="Yerno">Yerno</option>
+                                         <option value="Nuera">Nuera</option>
+                                         <option value="Cuñado">Cuñado</option>
+                                         <option value="Cuñada">Cuñada</option>
+                                       </optgroup>
+                                       <optgroup label="Primos">
+                                         <option value="Primo">Primo</option>
+                                         <option value="Prima">Prima</option>
+                                       </optgroup>
+                                       <optgroup label="Otros">
+                                         <option value="Amigo">Amigo</option>
+                                         <option value="Amiga">Amiga</option>
+                                         <option value="Vecino">Vecino</option>
+                                         <option value="Vecina">Vecina</option>
+                                         <option value="Otro">Otro</option>
+                                       </optgroup>
+                                     </select>
                                   </div>
                                   <div class="col-span-1 space-y-2">
                                      <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                         Teléfono
                                      </label>
-                                     <input formControlName="telefono" class="w-full h-12 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none">
+                                     <input formControlName="telefono" placeholder="+57 300..." class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500">
                                   </div>
                               </div>
                               
@@ -1635,7 +1865,7 @@ interface TableColumn {
                                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                      Dirección (Opcional)
                                   </label>
-                                  <input formControlName="direccion" class="w-full h-12 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-4 focus:ring-brand-orange/10 focus:border-brand-orange transition-all outline-none">
+                                  <input formControlName="direccion" placeholder="Calle 123 # 45-67" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500">
                               </div>
 
                               <div class="flex gap-4 pt-4">
@@ -1664,7 +1894,7 @@ interface TableColumn {
                                 type="button" 
                                 (click)="saveContacto()"
                                 [disabled]="contactoForm.invalid"
-                                class="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs shadow-lg shadow-slate-900/20 hover:bg-black hover:shadow-slate-900/30 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none"
+                                class="px-6 py-2.5 rounded-xl bg-brand-orange text-white font-bold text-xs shadow-sm shadow-orange-500/20 hover:bg-orange-600 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none"
                               >
                                 {{ editingContacto() ? 'Actualizar' : 'Guardar' }}
                               </button>
@@ -1675,30 +1905,28 @@ interface TableColumn {
            </div>
 
            <!-- Panel Footer -->
-           <div class="px-4 py-3 sm:px-5 sm:py-4 md:px-5 md:py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 z-20">
-               <div class="hidden sm:block">
-                  <p class="text-[0.625rem] text-slate-400 font-bold uppercase tracking-wider">
-                     <span class="text-red-400">*</span> Campo obligatorio
-                  </p>
-               </div>
-               <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto min-w-0">
-                   <button 
+           <div class="px-4 pt-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 z-20" style="padding-bottom: max(12px, env(safe-area-inset-bottom));">
+               <div class="flex items-center gap-2.5">
+                   <button
                       type="button"
-                      (click)="tryClosePanel()" 
-                      class="flex-1 sm:flex-none min-w-0 px-5 h-10 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-200 transition-all focus:ring-4 focus:ring-slate-100 outline-none"
+                      (click)="tryClosePanel()"
+                      class="flex-1 h-10 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold text-sm hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                    >
                       Cancelar
                    </button>
-                   <button 
+                   <button
                       type="button"
-                      (click)="onSubmit()" 
-                      [disabled]="publicadorForm.invalid || saving()" 
-                      class="flex-1 sm:flex-none min-w-0 px-6 h-10 rounded-xl bg-gradient-to-r from-brand-orange to-orange-500 text-white font-bold text-sm hover:shadow-lg hover:shadow-brand-orange/20 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+                      (click)="onSubmit()"
+                      [disabled]="saving()"
+                      class="flex-1 h-10 rounded-lg bg-brand-orange hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2"
                    >
                       <svg *ngIf="saving()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                       {{ saving() ? 'Guardando...' : (editingPublicador() ? 'Guardar Cambios' : 'Crear Registro') }}
                    </button>
                </div>
+               <p class="text-[0.625rem] text-slate-400 dark:text-slate-600 font-medium mt-2 mb-1">
+                 <span class="text-red-400">*</span> Campo obligatorio
+               </p>
            </div>
       </div> <!-- End Inner Container -->
     </div> <!-- End Detail Panel Outer -->
@@ -1723,7 +1951,7 @@ interface TableColumn {
             </button>
             <div class="flex items-center gap-4">
               <!-- Avatar -->
-              <div class="w-14 h-14 rounded-full flex items-center justify-center shrink-0 font-semibold text-base shadow-sm ring-1 ring-white border border-white/50"
+              <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 font-bold text-base shadow-sm"
                 [ngClass]="getAvatarStyle(getFullName(viewingPublicador()!))">
                 {{ getInitials(viewingPublicador()) }}
               </div>
@@ -1922,6 +2150,34 @@ interface TableColumn {
           </div>
       </div>
 
+      <!-- Delete Contacto Modal -->
+      <div *ngIf="deleteContactoModalOpen()" class="fixed inset-0 z-[62] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/50 transition-opacity" (click)="closeDeleteContactoModal()"></div>
+          <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-[360px] w-full animate-fadeInUp border border-slate-100 dark:border-slate-700">
+             <div class="flex items-center gap-4 mb-4">
+                <div class="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">¿Eliminar contacto?</h3>
+                    <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 font-medium">Esta acción es irreversible</p>
+                </div>
+             </div>
+             <p class="text-sm text-slate-600 dark:text-slate-300 mb-5 leading-relaxed">
+                 Se eliminará el contacto <strong class="text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 px-1 rounded">{{ contactoToDelete()?.nombre }}</strong> de este publicador.
+             </p>
+             <div class="flex items-center gap-2">
+                <button (click)="closeDeleteContactoModal()" [disabled]="isDeletingContacto()" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Cancelar</button>
+                <button (click)="executeDeleteContacto()" [disabled]="isDeletingContacto()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm shadow-md shadow-red-600/20 hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none">
+                    <svg *ngIf="isDeletingContacto()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    {{ isDeletingContacto() ? 'Eliminando...' : 'Eliminar' }}
+                </button>
+             </div>
+          </div>
+      </div>
+
       <!-- Start Date Selection Modal (New Registration) -->
       <div *ngIf="showStartDateModal()" class="fixed inset-0 z-[65] flex items-center justify-center p-4">
           <!-- Backdrop -->
@@ -1951,7 +2207,7 @@ interface TableColumn {
 
                  <div class="space-y-2">
                     <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wide mb-2">
-                       <span class="w-1.5 h-1.5 rounded-full bg-brand-orange shadow-[0_0_8px_rgba(249,115,22,0.4)]"></span>
+                       <span class="w-1.5 h-1.5 rounded-full bg-brand-orange"></span>
                        Fecha de inicio de informe
                     </label>
                     <app-date-picker 
@@ -1998,14 +2254,14 @@ interface TableColumn {
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-slate-900 dark:text-white">¿Eliminar privilegio?</h3>
-                    <p class="text-[0.6875rem] text-slate-500 font-medium">Se borrará del historial del publicador</p>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">¿Eliminar definitivamente?</h3>
+                    <p class="text-[0.6875rem] text-slate-500 font-medium">Sólo usar para corregir registros creados por error</p>
                 </div>
              </div>
 
              <!-- Content -->
              <p class="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
-                 Esta acción eliminará permanentemente este registro del historial. ¿Estás seguro de continuar?
+                 Se eliminará el registro de la base de datos. Si el publicador llegó a precursar en algún mes, usá <span class="font-bold text-amber-600 dark:text-amber-400">Finalizar</span> en su lugar para conservar el historial.
              </p>
 
              <!-- Actions -->
@@ -2134,10 +2390,14 @@ export class PublicadoresListComponent implements OnInit {
   saving = signal(false);
   exporting = signal(false);
   showExportMenu = signal(false);
+  showMoreOptions = signal(false);
   showStartDateModal = signal(false);
   viewingPublicador = signal<Publicador | null>(null);
   editingPublicador = signal<Publicador | null>(null);
   publicadorToDelete = signal<Publicador | null>(null);
+  contactoToDelete = signal<ContactoEmergencia | null>(null);
+  deleteContactoModalOpen = signal(false);
+  isDeletingContacto = signal(false);
   activeTab = signal<TabType>('personal');
 
   // Consentimiento PDF State
@@ -2202,7 +2462,7 @@ export class PublicadoresListComponent implements OnInit {
     { id: 'sexo', label: 'Sexo', visible: false, optional: true },
     { id: 'direccion', label: 'Dirección', visible: false, optional: true },
     { id: 'barrio', label: 'Barrio', visible: false, optional: true },
-    { id: 'consentimiento_datos', label: 'Consentimiento', visible: true },
+    { id: 'consentimiento_datos', label: 'Consentimiento', visible: true },
     { id: 'fecha_inicio_informe', label: 'Inicio Inf.', visible: false, optional: true },
     { id: 'fecha_inactividad', label: 'Inactividad', visible: false, optional: true },
   ];
@@ -2261,7 +2521,7 @@ export class PublicadoresListComponent implements OnInit {
 
   startClosingPrivilegio(id: number) {
     this.closingPrivilegioId.set(id);
-    this.closingPrivilegioFechaFin.set(new Date().toISOString().split('T')[0]);
+    this.closingPrivilegioFechaFin.set('');
   }
 
   cancelClosingPrivilegio() {
@@ -2395,11 +2655,58 @@ export class PublicadoresListComponent implements OnInit {
 
   // Privilegios Signals
   privilegios = signal<Privilegio[]>([]);
+
+  private readonly PRIVILEGIOS_EXCLUIDOS_ASIGNACION = [
+    'audio', 'vigilancia', 'acomodador', 'video', 'micrófono', 'microfono', 'plataforma'
+  ];
+
+  privilegiosAsignables = computed(() =>
+    this.privilegios().filter(p =>
+      !this.PRIVILEGIOS_EXCLUIDOS_ASIGNACION.includes(p.nombre_privilegio.toLowerCase())
+    )
+  );
+
   publicadorPrivilegios = signal<PublicadorPrivilegio[]>([]);
+  // Cache de eliminabilidad por id_publicador_privilegio (lo consulta el backend)
+  eliminableMap = signal<Map<number, { eliminable: boolean; motivo: string | null }>>(new Map());
+
+  isPrivilegioEliminable(id: number): boolean {
+    const entry = this.eliminableMap().get(id);
+    // Default conservador: hasta saber, asumimos NO eliminable (el botón queda deshabilitado).
+    return entry?.eliminable ?? false;
+  }
+
+  motivoNoEliminable(id: number): string {
+    return this.eliminableMap().get(id)?.motivo ?? 'Verificando…';
+  }
   newPrivilegio = signal<{ id_privilegio: number | null, fecha_inicio: string, fecha_fin: string | null }>({
     id_privilegio: null,
     fecha_inicio: new Date().toISOString().split('T')[0],
     fecha_fin: null
+  });
+
+  privilegioConflictoMsg = computed<string | null>(() => {
+    const id = this.newPrivilegio().id_privilegio;
+    if (!id) return null;
+
+    const nombre = this.getPrivilegioNombre(Number(id)).toLowerCase();
+    const activos = this.publicadorPrivilegios().filter(p => !p.fecha_fin);
+
+    if (activos.some(p => p.id_privilegio === Number(id))) {
+      return 'Este privilegio ya está activo para este publicador.';
+    }
+
+    if (nombre.includes('precursor')) {
+      const tieneOtroPrecursor = activos.some(p =>
+        this.getPrivilegioNombre(p.id_privilegio).toLowerCase().includes('precursor') &&
+        p.id_privilegio !== Number(id)
+      );
+      if (tieneOtroPrecursor) {
+        return 'El publicador ya tiene un tipo de Precursor activo. Solo puede tener uno a la vez.';
+      }
+    }
+
+    return null;
   });
 
   constructor() {
@@ -2971,6 +3278,22 @@ export class PublicadoresListComponent implements OnInit {
           map.set(id, activePrivs);
           return new Map(map); // Force signal update
         });
+
+        // Cargar estado de eliminabilidad para cada registro visible
+        this.eliminableMap.set(new Map());
+        filteredData.forEach(pp => {
+          this.privilegiosService.isPrivilegioEliminable(pp.id_publicador_privilegio).subscribe({
+            next: (res) => {
+              this.eliminableMap.update(map => {
+                map.set(pp.id_publicador_privilegio, res);
+                return new Map(map);
+              });
+            },
+            error: () => {
+              // Si falla, dejamos el default conservador (no eliminable).
+            }
+          });
+        });
       },
       error: (err) => console.error('Error cargando privilegios de publicador', err)
     });
@@ -3090,7 +3413,20 @@ export class PublicadoresListComponent implements OnInit {
     }
   }
 
+  tabHasErrors(tab: 'personal' | 'teocratico'): boolean {
+    if (!this.publicadorForm) return false;
+    const tabFields: Record<string, string[]> = {
+      personal: ['primer_nombre', 'primer_apellido'],
+      teocratico: ['id_estado_publicador']
+    };
+    return (tabFields[tab] || []).some(field => {
+      const c = this.publicadorForm.get(field);
+      return c?.invalid && c?.touched;
+    });
+  }
+
   async onSubmit() {
+    this.publicadorForm.markAllAsTouched();
     if (this.publicadorForm.invalid) return;
 
     this.saving.set(true);
@@ -3248,27 +3584,26 @@ export class PublicadoresListComponent implements OnInit {
     return getInitialAvatarStyle(name || '');
   }
 
-  getRoles(p: Publicador): { label: string, type: 'pill' | 'text', class: string }[] {
+  getRoles(p: Publicador): { label: string, short: string, type: 'pill' | 'text', class: string }[] {
     const privilegiosIds = this.publicadorPrivilegiosMap().get(p.id_publicador) || [];
     const catalogo = this.privilegios();
 
     const roleNames = privilegiosIds.map(id => catalogo.find(pr => pr.id_privilegio === id)?.nombre_privilegio?.toLowerCase() || '').filter(Boolean);
 
-    // Sort logic or simple mapping? Let's just collect them all.
     // Order: Precursor R > Precursor A > Anciano > Ministerial > Publicador
-    const roles: { label: string, type: 'pill' | 'text', class: string }[] = [];
+    const roles: { label: string, short: string, type: 'pill' | 'text', class: string }[] = [];
 
     if (roleNames.some(r => r.includes('precursor regular'))) {
-      roles.push({ label: 'PRECURSOR REGULAR', type: 'pill', class: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' });
+      roles.push({ label: 'PRECURSOR REGULAR', short: 'Prec. Regular', type: 'pill', class: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' });
     }
     if (roleNames.some(r => r.includes('precursor auxiliar'))) {
-      roles.push({ label: 'PRECURSOR AUXILIAR', type: 'pill', class: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' });
+      roles.push({ label: 'PRECURSOR AUXILIAR', short: 'Prec. Auxiliar', type: 'pill', class: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' });
     }
     if (roleNames.some(r => r.includes('anciano'))) {
-      roles.push({ label: 'ANCIANO', type: 'pill', class: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' });
+      roles.push({ label: 'ANCIANO', short: 'Anciano', type: 'pill', class: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' });
     }
     if (roleNames.some(r => r.includes('siervo'))) {
-      roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' });
+      roles.push({ label: 'SIERVO MINISTERIAL', short: 'S. Ministerial', type: 'pill', class: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' });
     }
 
     // Default if no specific roles
@@ -3438,13 +3773,28 @@ export class PublicadoresListComponent implements OnInit {
     }
   }
 
-  async deleteContacto(c: ContactoEmergencia) {
-    if (!confirm('¿Eliminar este contacto?')) return;
+  confirmDeleteContacto(c: ContactoEmergencia) {
+    this.contactoToDelete.set(c);
+    this.deleteContactoModalOpen.set(true);
+  }
+
+  closeDeleteContactoModal() {
+    this.contactoToDelete.set(null);
+    this.deleteContactoModalOpen.set(false);
+  }
+
+  async executeDeleteContacto() {
+    const c = this.contactoToDelete();
+    if (!c) return;
+    this.isDeletingContacto.set(true);
     try {
       await lastValueFrom(this.http.delete('/api/contactos-emergencia/' + c.id_contacto_emergencia));
       this.loadContactos();
+      this.closeDeleteContactoModal();
     } catch (e) {
-      alert('Error eliminando contacto');
+      this.showToast('Error al eliminar el contacto', 'error');
+    } finally {
+      this.isDeletingContacto.set(false);
     }
   }
   // --- Privilegios Helpers ---
@@ -3469,7 +3819,7 @@ export class PublicadoresListComponent implements OnInit {
 
   canAddPrivilegio(): boolean {
     const p = this.newPrivilegio();
-    return !!p.id_privilegio && !!p.fecha_inicio;
+    return !!p.id_privilegio && !!p.fecha_inicio && !this.privilegioConflictoMsg();
   }
 
   addPrivilegio() {
@@ -3517,7 +3867,20 @@ export class PublicadoresListComponent implements OnInit {
         this.loadPublicadorPrivilegios(pub.id_publicador);
         this.showToast('Privilegio eliminado', 'success');
       },
-      error: (err) => this.showToast('Error al eliminar: ' + err.message, 'error')
+      error: (err) => {
+        if (err?.status === 409) {
+          // El backend rechazó el delete porque hay informes en el rango.
+          // Refrescamos el estado de eliminable y dirigimos al usuario a Finalizar.
+          this.eliminableMap.update(map => {
+            map.set(id, { eliminable: false, motivo: err.error?.detail ?? null });
+            return new Map(map);
+          });
+          this.showToast(err.error?.detail || 'No se puede eliminar: usá Finalizar para conservar el historial.', 'error');
+          this.startClosingPrivilegio(id);
+        } else {
+          this.showToast('Error al eliminar: ' + (err.error?.detail || err.message), 'error');
+        }
+      }
     });
   }
 

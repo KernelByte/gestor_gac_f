@@ -1,14 +1,16 @@
-import { Component, inject, OnInit, signal, computed, effect, HostListener, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, effect, HostListener, ViewChild, ElementRef } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, startWith } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
 import { GruposService } from '../services/grupos.service';
 import { Grupo } from '../models/grupo.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
+import { ModalBackdropService } from '../../../../core/services/modal-backdrop.service';
 
 @Component({
    standalone: true,
@@ -50,24 +52,86 @@ import { CongregacionContextService } from '../../../../core/congregacion-contex
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+    @keyframes kpiIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .kpi-card { animation: kpiIn 0.25s cubic-bezier(0.23, 1, 0.32, 1) both; }
+    .kpi-card-0 { animation-delay: 0ms; }
+    .kpi-card-1 { animation-delay: 75ms; }
+    .kpi-card-2 { animation-delay: 150ms; }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    /* ── Panel: bottom sheet en mobile, slide-over en desktop ── */
+
+    /* Mobile (< 768px): sube desde el fondo */
+    .panel-slide {
+      transition: transform 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  opacity   380ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    /* Desktop: transición de ancho */
+    @media (min-width: 768px) {
+      .panel-slide {
+        transform: none !important;
+        transition: width   350ms cubic-bezier(0.32, 0.72, 0, 1),
+                    opacity 350ms cubic-bezier(0.32, 0.72, 0, 1),
+                    margin  350ms cubic-bezier(0.32, 0.72, 0, 1);
+      }
+    }
+    /* Mobile: inner container → bottom sheet con esquinas redondeadas arriba */
+    @media (max-width: 767px) {
+      .panel-inner {
+        border-radius: 20px 20px 0 0 !important;
+        border-left: none !important;
+      }
+      .panel-mobile-safe-bottom {
+        padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+      }
+    }
+    /* ── Stagger animations for panel content ── */
+    @keyframes sheetItemIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes dragHandleIn {
+      from { opacity: 0; transform: scaleX(0.25); }
+      to   { opacity: 1; transform: scaleX(1); }
+    }
+    .sheet-drag   { animation: dragHandleIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 80ms; }
+    .sheet-item-0 { animation: sheetItemIn  320ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 100ms; }
+    .sheet-item-1 { animation: sheetItemIn  320ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 160ms; }
+    .sheet-item-2 { animation: sheetItemIn  320ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 210ms; }
     @media (prefers-reduced-motion: reduce) {
       tbody tr { animation: none !important; opacity: 1; }
+      .kpi-card  { animation: none !important; opacity: 1; }
+      .panel-slide { transition: opacity 200ms ease !important; transform: none !important; }
+      .sheet-drag, .sheet-item-0, .sheet-item-1, .sheet-item-2 { animation: none !important; opacity: 1; }
     }
   `]
 })
-export class GruposListComponent implements OnInit {
+export class GruposListComponent implements OnInit, OnDestroy {
    private gruposService = inject(GruposService);
    private authStore = inject(AuthStore);
    private congregacionContext = inject(CongregacionContextService);
    private fb = inject(FormBuilder);
    private router = inject(Router);
    private http = inject(HttpClient);
+   private modalBackdrop = inject(ModalBackdropService);
 
 
    grupos = signal<Grupo[]>([]);
    totalSinAsignar = signal(0);
    searchControl = this.fb.control('');
-   Math = Math;
+   private searchQuery = toSignal(
+      this.searchControl.valueChanges.pipe(startWith('')),
+      { initialValue: '' }
+   );
 
    // Pagination
    currentPage = signal(1);
@@ -76,9 +140,12 @@ export class GruposListComponent implements OnInit {
    // Computed & Filtering with Pagination
    filteredGrupos = computed(() => {
       let data = this.grupos();
-      const query = this.searchControl.value?.toLowerCase() || '';
+      const query = (this.searchQuery() ?? '').toLowerCase();
       if (query) {
-         data = data.filter(g => g.nombre_grupo.toLowerCase().includes(query) || g.capitan_grupo?.toLowerCase().includes(query));
+         data = data.filter(g =>
+            g.nombre_grupo.toLowerCase().includes(query) ||
+            g.capitan_grupo?.toLowerCase().includes(query)
+         );
       }
       return data;
    });
@@ -86,9 +153,12 @@ export class GruposListComponent implements OnInit {
    // Paginated list
    pagedList = computed(() => {
       const start = (this.currentPage() - 1) * this.pageSize;
-      const end = start + this.pageSize;
-      return this.filteredGrupos().slice(start, end);
+      return this.filteredGrupos().slice(start, start + this.pageSize);
    });
+
+   // Pagination display helpers
+   pageStart = computed(() => (this.currentPage() - 1) * this.pageSize + 1);
+   pageEnd = computed(() => Math.min(this.currentPage() * this.pageSize, this.filteredGrupos().length));
 
    totalAsignados = computed(() => this.grupos().reduce((acc, g) => acc + (g.cantidad_publicadores || 0), 0));
 
@@ -128,9 +198,12 @@ export class GruposListComponent implements OnInit {
 
    loading = signal(false);
    saving = signal(false);
+
    exporting = signal(false);
    panelOpen = signal(false);
    editingGrupo = signal<Grupo | null>(null);
+
+   private grupoToDeleteId = signal<number | null>(null);
 
    showExportMenu = signal(false);
    exportFormat = signal<'pdf' | 'excel'>('pdf');
@@ -454,19 +527,19 @@ export class GruposListComponent implements OnInit {
    }
 
    confirmDelete(grupo: Grupo) {
-      if (confirm(`?Est?s seguro de eliminar el grupo "${grupo.nombre_grupo}"?`)) {
-         this.deleteGrupo(grupo.id_grupo);
-      }
+      this.grupoToDeleteId.set(grupo.id_grupo);
+      this.modalBackdrop.openDeleteGroup(grupo.nombre_grupo, async () => {
+         const id = this.grupoToDeleteId();
+         if (!id) return;
+         await lastValueFrom(this.gruposService.deleteGrupo(id));
+         this.grupoToDeleteId.set(null);
+         this.loadGrupos();
+         this.loadSinAsignar();
+      });
    }
 
-   async deleteGrupo(id: number) {
-      try {
-         await lastValueFrom(this.gruposService.deleteGrupo(id));
-         this.loadGrupos();
-      } catch (err) {
-         console.error("Error al eliminar", err);
-         alert("No se pudo eliminar el grupo. Puede tener publicadores asignados.");
-      }
+   ngOnDestroy() {
+      this.modalBackdrop.close();
    }
 
    goToDynamicAssignment() {

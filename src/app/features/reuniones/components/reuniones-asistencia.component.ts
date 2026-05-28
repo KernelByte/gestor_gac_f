@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, effect, OnInit, HostListener } from '@angular/core';
+﻿import { Component, signal, computed, inject, effect, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AsistenciaService, CongregacionConfig } from '../services/asistencia.service';
@@ -58,7 +58,7 @@ import { saveAs } from 'file-saver';
                             class="dropdown-item w-full text-left px-3 py-2 text-sm font-bold"
                             [class.text-brand-purple]="a === +selectedYear()"
                             [class.text-slate-600]="a !== +selectedYear()"
-                            [class.dark:text-slate-300]="a !== +selectedYear()"
+                            [class.dark:text-slate-500]="a !== +selectedYear()"
                             [class.hover:bg-slate-50]="true"
                             [class.dark:hover:bg-slate-800]="true"
                             [style.transition-delay]="i * 15 + 'ms'">
@@ -81,7 +81,7 @@ import { saveAs } from 'file-saver';
                             class="dropdown-item w-full text-left px-3 py-2 text-sm font-bold"
                             [class.text-brand-purple]="m.value === +selectedMonth()"
                             [class.text-slate-600]="m.value !== +selectedMonth()"
-                            [class.dark:text-slate-300]="m.value !== +selectedMonth()"
+                            [class.dark:text-slate-500]="m.value !== +selectedMonth()"
                             [class.hover:bg-slate-50]="true"
                             [class.dark:hover:bg-slate-800]="true"
                             [style.transition-delay]="i * 15 + 'ms'">
@@ -174,7 +174,7 @@ import { saveAs } from 'file-saver';
               @for (week of weeksArray(); track week) {
                 <button (click)="selectWeek(week)"
                         class="press-btn flex-1 sm:flex-none sm:min-w-[3rem] h-11 px-1 rounded-xl relative flex flex-col items-center justify-center gap-0.5"
-                        [ngClass]="selectedWeek() === week ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
+                        [ngClass]="selectedWeek() === week ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-500'">
                   <span class="text-xs font-black leading-none">S{{ week }}</span>
                   @if (fechasReuniones()[week - 1]?.fecha_entre_semana) {
                     <span class="text-[0.48rem] font-bold tabular-nums leading-none opacity-50">{{ formatWeekDate(fechasReuniones()[week - 1].fecha_entre_semana) }}</span>
@@ -196,7 +196,7 @@ import { saveAs } from 'file-saver';
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <div class="w-2 h-2 rounded-full bg-brand-purple shrink-0"></div>
-                  <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-300 uppercase tracking-[0.15em]">Entre Semana</span>
+                  <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em]">Entre Semana</span>
                 </div>
                 @if (nextMidweekDate()) {
                   <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border"
@@ -243,7 +243,7 @@ import { saveAs } from 'file-saver';
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div>
-                  <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-300 uppercase tracking-[0.15em]">Fin de Semana</span>
+                  <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em]">Fin de Semana</span>
                 </div>
                 @if (nextWeekendDate()) {
                   <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border"
@@ -381,7 +381,7 @@ import { saveAs } from 'file-saver';
       <!-- Mobile Sticky Action Bar (< md) -->
       <div class="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-800/80 p-2.5 flex gap-2.5 animate-fadeIn">
         <button (click)="onExportPdf()" [disabled]="!currentPeriodo() || loading()"
-                class="press-btn flex-1 h-12 flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm">
+                class="press-btn flex-1 h-12 flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-500 rounded-xl font-black text-sm">
           PDF
         </button>
         <button (click)="onSave()" *ngIf="hasEditPermission() && activeMobileTab() === 'registro'" [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges() || !congregacionCtx.effectiveCongregacionId()"
@@ -772,16 +772,16 @@ export class ReunionesAsistenciaComponent implements OnInit {
 
   nextMidweekDate = computed(() => {
     if (!this.isViewingCurrentMonth()) return null;
-    const cfg = this.congregacionConfig();
-    if (!cfg?.dia_reunion_entre_semana) return null;
-    return this.calcNextMeetingDate(cfg.dia_reunion_entre_semana);
+    const fecha = this.currentMidweekFecha();
+    if (!fecha) return null;
+    return this.checkMeetingDateToday(fecha);
   });
 
   nextWeekendDate = computed(() => {
     if (!this.isViewingCurrentMonth()) return null;
-    const cfg = this.congregacionConfig();
-    if (!cfg?.dia_reunion_fin_semana) return null;
-    return this.calcNextMeetingDate(cfg.dia_reunion_fin_semana);
+    const fecha = this.currentWeekendFecha();
+    if (!fecha) return null;
+    return this.checkMeetingDateToday(fecha);
   });
 
   private calcNextMeetingDate(dayName: string): { label: string; isToday: boolean } | null {
@@ -799,6 +799,14 @@ export class ReunionesAsistenciaComponent implements OnInit {
       ? 'Hoy'
       : `${dNames[next.getDay()]} ${next.getDate()} ${meses[next.getMonth()]}`;
     return { label, isToday };
+  }
+
+  private checkMeetingDateToday(isoDate: string): { label: string; isToday: boolean } | null {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const meeting = new Date(isoDate + 'T00:00:00');
+    if (meeting.getTime() !== today.getTime()) return null;
+    return { label: 'Hoy', isToday: true };
   }
 
   constructor() {
@@ -889,12 +897,45 @@ export class ReunionesAsistenciaComponent implements OnInit {
           this.updateWeekArrays(mw, we);
         }
         this.loading.set(false);
+        this.autoSelectCurrentWeek();
       },
       error: () => {
         this.resetWeekArrays();
         this.loading.set(false);
       }
     });
+  }
+
+  private autoSelectCurrentWeek(): void {
+    if (!this.isViewingCurrentMonth()) return;
+
+    const fechas = this.fechasReuniones();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (fechas.length > 0) {
+      const idx = fechas.findIndex(f => {
+        const mw = f.fecha_entre_semana ? new Date(f.fecha_entre_semana + 'T00:00:00') : null;
+        const we = f.fecha_fin_semana   ? new Date(f.fecha_fin_semana   + 'T00:00:00') : null;
+        return (mw && mw >= today) || (we && we >= today);
+      });
+      this.selectedWeek.set(idx === -1 ? fechas.length : idx + 1);
+    } else {
+      const cfg = this.congregacionConfig();
+      const dayName = cfg?.dia_reunion_entre_semana ?? cfg?.dia_reunion_fin_semana;
+      if (!dayName) return;
+      const target = this.dayIndex(dayName);
+      if (target === undefined) return;
+      const year = +this.selectedYear();
+      const month = +this.selectedMonth();
+      let count = 0;
+      const d = new Date(year, month - 1, 1);
+      while (d <= today && d.getMonth() === month - 1) {
+        if (d.getDay() === target) count++;
+        d.setDate(d.getDate() + 1);
+      }
+      if (count > 0) this.selectedWeek.set(count);
+    }
   }
 
   private loadResumenHistorico(anoServicio: number, congId: number): void {
@@ -1115,3 +1156,4 @@ export class ReunionesAsistenciaComponent implements OnInit {
      };
   }
 }
+

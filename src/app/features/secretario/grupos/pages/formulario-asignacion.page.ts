@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -66,6 +66,10 @@ export class FormularioAsignacionPage implements OnInit {
    searchGroup = '';
 
    saving = signal(false);
+   activeTab = signal<'available' | 'members'>('available');
+   hasAvailableSelected = computed(() => this.availablePublishers().some(p => p.selected));
+   hasMembersSelected = computed(() => this.groupMembers().some(p => p.selected));
+   liveAnnouncement = signal('');
 
    // Initial State Tracking for Diff
    initialMap = new Map<number, number | null>();
@@ -143,17 +147,39 @@ export class FormularioAsignacionPage implements OnInit {
    }
 
    toggleSelection(p: Publicador) {
-      p.selected = !p.selected;
+      const avail = this.availablePublishers();
+      const ai = avail.findIndex(x => x.id_publicador === p.id_publicador);
+      if (ai !== -1) {
+         const updated = [...avail];
+         updated[ai] = { ...updated[ai], selected: !updated[ai].selected };
+         this.availablePublishers.set(updated);
+         return;
+      }
+      const members = this.groupMembers();
+      const mi = members.findIndex(x => x.id_publicador === p.id_publicador);
+      if (mi !== -1) {
+         const updated = [...members];
+         updated[mi] = { ...updated[mi], selected: !updated[mi].selected };
+         this.groupMembers.set(updated);
+      }
    }
 
    toggleSelectAll(type: 'available' | 'members') {
-      const list = type === 'available' ? this.filteredAvailable() : this.filteredGroupMembers();
-      if (list.length === 0) return;
-
-      const allSelected = list.every(p => p.selected);
-      const newState = !allSelected;
-
-      list.forEach(p => p.selected = newState);
+      if (type === 'available') {
+         const list = this.availablePublishers();
+         if (list.length === 0) return;
+         const allSelected = this.filteredAvailable().every(p => p.selected);
+         const newState = !allSelected;
+         const selectedIds = new Set(this.filteredAvailable().map(p => p.id_publicador));
+         this.availablePublishers.set(list.map(p => selectedIds.has(p.id_publicador) ? { ...p, selected: newState } : p));
+      } else {
+         const list = this.groupMembers();
+         if (list.length === 0) return;
+         const allSelected = this.filteredGroupMembers().every(p => p.selected);
+         const newState = !allSelected;
+         const selectedIds = new Set(this.filteredGroupMembers().map(p => p.id_publicador));
+         this.groupMembers.set(list.map(p => selectedIds.has(p.id_publicador) ? { ...p, selected: newState } : p));
+      }
    }
 
    moveToGroup() {
@@ -164,6 +190,9 @@ export class FormularioAsignacionPage implements OnInit {
 
       this.availablePublishers.set(remaining);
       this.groupMembers.update(curr => [...curr, ...selected]);
+
+      const n = selected.length;
+      this.liveAnnouncement.set(`${n} publicador${n !== 1 ? 'es' : ''} agregado${n !== 1 ? 's' : ''} al grupo.`);
    }
 
    moveToAvailable() {
@@ -174,6 +203,9 @@ export class FormularioAsignacionPage implements OnInit {
 
       this.groupMembers.set(remaining);
       this.availablePublishers.update(curr => [...curr, ...selected]);
+
+      const n = selected.length;
+      this.liveAnnouncement.set(`${n} publicador${n !== 1 ? 'es' : ''} quitado${n !== 1 ? 's' : ''} del grupo.`);
    }
 
    showSuccess = signal(false);
@@ -231,6 +263,18 @@ export class FormularioAsignacionPage implements OnInit {
       return getInitialAvatarStyle(this.getFullName(p));
    }
 
+   setTab(tab: 'available' | 'members') {
+      this.activeTab.set(tab);
+      // Restart panel entry animation via double-rAF (forces browser to replay @keyframes)
+      requestAnimationFrame(() => {
+         const panel = document.querySelector(`.panel-${tab}`);
+         if (panel) {
+            panel.classList.remove('panel-animate');
+            requestAnimationFrame(() => panel.classList.add('panel-animate'));
+         }
+      });
+   }
+
    goBack() {
       this.router.navigate(['/secretario/publicadores'], { queryParams: { tab: 'grupos' } });
    }
@@ -260,28 +304,32 @@ export class FormularioAsignacionPage implements OnInit {
       }
    }
 
-   getPrivilegioTags(p: Publicador): { label: string; class: string }[] {
-      const tags: { label: string; class: string }[] = [];
+   getPrivilegioTags(p: Publicador): { label: string; shortLabel: string; class: string }[] {
+      const tags: { label: string; shortLabel: string; class: string }[] = [];
       const privilegiosMap = this.publicadorPrivilegiosMap();
       const privilegiosIds = privilegiosMap.get(p.id_publicador) || [];
       const catalogo = this.privilegiosCatalogo();
 
-      const privilegioConfig: { [key: string]: { label: string; class: string } } = {
+      const privilegioConfig: { [key: string]: { label: string; shortLabel: string; class: string } } = {
          'anciano': {
             label: 'Anciano',
-            class: 'text-indigo-700 bg-indigo-100 shadow-sm'
+            shortLabel: 'A',
+            class: 'text-indigo-700 bg-indigo-100 dark:text-indigo-300 dark:bg-indigo-900/40 shadow-sm'
          },
          'siervo ministerial': {
             label: 'Siervo Ministerial',
-            class: 'text-yellow-800 bg-yellow-100 shadow-sm'
+            shortLabel: 'SM',
+            class: 'text-yellow-800 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/30 shadow-sm'
          },
          'precursor regular': {
             label: 'Precursor Regular',
-            class: 'text-purple-700 bg-purple-100 shadow-sm'
+            shortLabel: 'PR',
+            class: 'text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900/40 shadow-sm'
          },
          'precursor auxiliar': {
             label: 'Precursor Auxiliar',
-            class: 'text-amber-700 bg-amber-100 shadow-sm'
+            shortLabel: 'PA',
+            class: 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/30 shadow-sm'
          },
       };
 

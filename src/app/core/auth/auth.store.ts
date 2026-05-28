@@ -27,7 +27,8 @@ export class AuthStore {
   hasPermission(cod: string): boolean {
     const u = this._user();
     if (!u) return false;
-    if (u.rol === 'Administrador' || u.roles?.includes('Administrador')) return true;
+    if (u.rol === 'Administrador' || u.roles?.includes('Administrador') ||
+        u.rol === 'Gestor Aplicación' || u.roles?.includes('Gestor Aplicación')) return true;
     return u.permisos?.includes(cod) ?? false;
   }
 }

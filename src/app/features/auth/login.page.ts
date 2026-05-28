@@ -54,7 +54,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   private mainGroup: THREE.Group | null = null;
   private plasmaMat: THREE.ShaderMaterial | null = null;
   private pMat: THREE.ShaderMaterial | null = null;
-  private threeClock = new THREE.Clock();
+  private threeTimer = new THREE.Timer();
 
   ngOnInit(): void {
     const raw = localStorage.getItem(this.EMAIL_KEY);
@@ -379,7 +379,8 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
 
   private animateSphere = (): void => {
     this.threeAnimId = requestAnimationFrame(this.animateSphere);
-    const t = this.threeClock.getElapsedTime() * 0.78;
+    this.threeTimer.update();
+    const t = this.threeTimer.getElapsed() * 0.78;
     if (this.plasmaMat) this.plasmaMat.uniforms['uTime'].value = t;
     if (this.pMat) this.pMat.uniforms['uTime'].value = t;
     if (this.mainGroup) {

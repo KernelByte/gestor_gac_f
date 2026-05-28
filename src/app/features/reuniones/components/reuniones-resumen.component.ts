@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   computed,
   effect,
@@ -112,6 +112,7 @@ const SECTION_DEFAULT = {
   imports: [CommonModule, NgStyle],
   template: `
 <div class="resumen-host">
+  <div class="resumen-layout">
   <div class="resumen-container">
 
     <!-- ══════════ SKELETON ══════════ -->
@@ -165,31 +166,31 @@ const SECTION_DEFAULT = {
     </ng-container>
 
     <!-- ══════════ ERROR ══════════ -->
-    <div *ngIf="!loading() && error()" class="empty-state fade-in">
-      <div class="empty-icon-wrap" style="background:rgba(239,68,68,0.1)">
-        <svg class="w-7 h-7" style="color:#ef4444" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    <div *ngIf="!loading() && error()" class="flex flex-col items-center justify-center py-16 gap-3 text-center fade-in">
+      <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-1">
+        <svg class="w-6 h-6 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
         </svg>
       </div>
-      <p class="empty-title">Algo salió mal</p>
-      <p class="empty-body">{{ error() }}</p>
+      <p class="text-base font-semibold text-gray-700">Algo salió mal</p>
+      <p class="text-sm text-gray-600 max-w-xs">{{ error() }}</p>
     </div>
 
     <!-- ══════════ NO PUBLICADO ══════════ -->
-    <div *ngIf="!loading() && !error() && noPublicado()" class="empty-state fade-in">
-      <div class="empty-icon-wrap" style="background:rgba(109,40,217,0.1)">
-        <svg class="w-8 h-8" style="color:#7c3aed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
+    <div *ngIf="!loading() && !error() && noPublicado()" class="flex flex-col items-center justify-center py-16 gap-3 text-center fade-in">
+      <div class="w-14 h-14 rounded-full bg-violet-50 flex items-center justify-center mb-1">
+        <svg class="w-6 h-6 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
         </svg>
       </div>
-      <p class="empty-title">Programa no publicado</p>
-      <p class="empty-body">
+      <p class="text-base font-semibold text-gray-700">Programa no publicado</p>
+      <p class="text-sm text-gray-600 max-w-xs">
         El programa de la próxima reunión aún no ha sido publicado por tu congregación.
         <ng-container *ngIf="nextMeeting()">
           Vuelve a consultar más cerca del
-          <strong class="empty-date">{{ nextMeeting()!.dateFormatted }}</strong>.
+          <strong class="font-semibold text-gray-600">{{ nextMeeting()!.dateFormatted }}</strong>.
         </ng-container>
       </p>
     </div>
@@ -227,19 +228,34 @@ const SECTION_DEFAULT = {
         <!-- Hora + duración -->
         <div class="header-hora-row">
           <div *ngIf="nextMeeting()!.hora" class="header-hora">
-            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg class="header-hora-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
             <span>{{ formatHora12(nextMeeting()!.hora) }}</span>
           </div>
-          <span *ngIf="getDuracionTotal() > 0" class="duracion-inline">{{ getDuracionTotal() }} min</span>
+          <span *ngIf="getDuracionTotal() > 0" class="duracion-inline">
+            <svg class="duracion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"/>
+            </svg>
+            ~{{ getDuracionTotal() }} min
+          </span>
         </div>
       </div>
 
-      <!-- ── Banner: mis partes ── -->
+      <!-- ── Banner: mis partes / sin partes ── -->
+      <div *ngIf="misPartes().length === 0" class="banner-sin-partes fade-in">
+        <svg class="banner-sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+        </svg>
+        <div class="banner-sp-body">
+          <p class="banner-sp-title">Sin partes esta semana</p>
+          <p class="banner-sp-sub">Puedes asistir como oyente. Nos vemos el <strong>{{ nextMeeting()!.dateFormatted }}</strong>.</p>
+        </div>
+      </div>
+
       <div *ngIf="misPartes().length > 0" class="banner-mis-partes">
         <div class="banner-icon-wrap">
-          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="banner-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
           </svg>
@@ -262,7 +278,8 @@ const SECTION_DEFAULT = {
 
           <!-- Cabecera de sección -->
           <header class="seccion-header"
-                  [style.border-left-color]="grupo.color">
+                  [style.background]="getSectionHeaderBg(grupo.color)"
+                  [style.border-bottom-color]="hexToRgba(grupo.color, 0.22)">
             <div class="seccion-header-left">
               <svg class="seccion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                    [style.color]="grupo.color">
@@ -376,6 +393,37 @@ const SECTION_DEFAULT = {
 
     </ng-container>
   </div><!-- /resumen-container -->
+
+  <!-- ══════════ ASIDE: panel contextual (solo ≥1024px) ══════════ -->
+  <aside class="resumen-aside" *ngIf="!loading() && !error() && !noPublicado() && programa()">
+    <div class="aside-card">
+      <p class="aside-heading">Secciones</p>
+      <div class="aside-sections-list">
+        <div *ngFor="let grupo of partesAgrupadas()" class="aside-section-row">
+          <span class="aside-section-dot" [style.background]="grupo.color"></span>
+          <span class="aside-section-name">{{ grupo.seccion }}</span>
+          <span class="aside-section-count">{{ grupo.partes.length }}</span>
+        </div>
+      </div>
+      <div class="aside-divider"></div>
+      <div class="aside-meta-list">
+        <div class="aside-meta-row">
+          <span class="aside-meta-label">Partes</span>
+          <span class="aside-meta-value">{{ getPartesPrincipales() }}</span>
+        </div>
+        <div *ngIf="getDuracionTotal() > 0" class="aside-meta-row">
+          <span class="aside-meta-label">Duración est.</span>
+          <span class="aside-meta-value">{{ getDuracionTotal() }} min</span>
+        </div>
+        <div *ngIf="misPartes().length > 0" class="aside-meta-row aside-meta-mine">
+          <span class="aside-meta-label">Mis partes</span>
+          <span class="aside-meta-value aside-meta-value-mine">{{ misPartes().length }}</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  </div><!-- /resumen-layout -->
 </div><!-- /resumen-host -->
   `,
   styles: [`
@@ -419,10 +467,17 @@ const SECTION_DEFAULT = {
       padding: 10px 8px max(16px, env(safe-area-inset-bottom));
     }
 
+    .resumen-layout {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
     .resumen-container {
       width: 100%;
-      max-width: 100%;
-      margin: 0 auto;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -430,23 +485,125 @@ const SECTION_DEFAULT = {
 
     /* ≥ sm — tablet */
     @media (min-width: 640px) {
-      .resumen-host { padding: 16px 16px 48px; }
-      .resumen-container { gap: 10px; max-width: 860px; }
+      .resumen-host { padding: 16px 20px 48px; }
+      .resumen-container { gap: 10px; }
     }
     /* ≥ md */
     @media (min-width: 768px) {
-      .resumen-host { padding: 20px 24px 56px; }
-      .resumen-container { max-width: 960px; }
+      .resumen-host { padding: 20px 28px 56px; }
     }
-    /* ≥ lg */
+    /* ≥ lg — desktop: grid de dos columnas */
     @media (min-width: 1024px) {
-      .resumen-host { padding: 24px 32px 64px; }
-      .resumen-container { max-width: 1100px; gap: 12px; }
+      .resumen-host { padding: 28px 40px 64px; }
+      .resumen-layout {
+        max-width: 1060px;
+        display: grid;
+        grid-template-columns: minmax(0, 720px) 1fr;
+        align-items: start;
+        gap: 20px;
+      }
+      .resumen-container { gap: 12px; }
     }
     /* ≥ xl */
     @media (min-width: 1280px) {
-      .resumen-container { max-width: 1200px; }
+      .resumen-layout { max-width: 1140px; }
     }
+
+    /* ── Aside panel ── */
+    .resumen-aside { display: none; }
+    @media (min-width: 1024px) {
+      .resumen-aside {
+        display: block;
+        position: sticky;
+        top: 28px;
+      }
+    }
+
+    .aside-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    :host-context(.dark) .aside-card { box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+
+    .aside-heading {
+      font-size: 0.6875rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-3);
+      margin: 0 0 12px;
+    }
+
+    .aside-sections-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .aside-section-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .aside-section-dot {
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .aside-section-name {
+      flex: 1;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-2);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .aside-section-count {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+      background: rgba(15,23,42,0.05);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    :host-context(.dark) .aside-section-count { background: rgba(255,255,255,0.06); }
+
+    .aside-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 14px 0;
+    }
+
+    .aside-meta-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .aside-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .aside-meta-label {
+      font-size: 0.75rem;
+      color: var(--text-3);
+      font-weight: 400;
+    }
+    .aside-meta-value {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-2);
+      font-variant-numeric: tabular-nums;
+    }
+    .aside-meta-value-mine {
+      color: var(--brand);
+    }
+    :host-context(.dark) .aside-meta-value-mine { color: #a78bfa; }
 
     /* ──────────────────────────────────────────
        SHIMMER SKELETON
@@ -520,6 +677,10 @@ const SECTION_DEFAULT = {
       border: 1px solid var(--border);
       border-radius: var(--radius-card);
       padding: 14px 14px 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    }
+    :host-context(.dark) .header-card {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     @media (min-width: 640px) {
       .header-card { padding: 20px 20px 16px; border-radius: 16px; }
@@ -578,21 +739,26 @@ const SECTION_DEFAULT = {
     }
 
     .header-hora-row {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
     }
     .header-hora {
-      display: inline-flex; align-items: center; gap: 5px;
-      color: var(--text-2);
-      font-size: 0.8125rem;
-      font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 700;
       font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em;
     }
+    .header-hora-icon { width: 14px; height: 14px; color: var(--brand); flex-shrink: 0; }
     .duracion-inline {
+      display: inline-flex; align-items: center; gap: 5px;
       font-size: 0.8125rem;
       color: var(--text-3);
       font-variant-numeric: tabular-nums;
     }
+    .duracion-icon { width: 12px; height: 12px; flex-shrink: 0; }
 
     .titulo-guia {
       display: inline-flex; align-items: center; gap: 6px;
@@ -633,14 +799,53 @@ const SECTION_DEFAULT = {
     }
 
     /* ──────────────────────────────────────────
+       BANNER SIN PARTES
+    ────────────────────────────────────────── */
+    .banner-sin-partes {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: rgba(15,23,42,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 12px 14px;
+    }
+    :host-context(.dark) .banner-sin-partes {
+      background: rgba(255,255,255,0.03);
+    }
+    .banner-sp-icon {
+      width: 18px; height: 18px;
+      color: var(--text-3);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .banner-sp-body { flex: 1; min-width: 0; }
+    .banner-sp-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-2);
+      margin: 0 0 2px;
+    }
+    .banner-sp-sub {
+      font-size: 0.75rem;
+      color: var(--text-3);
+      margin: 0;
+      line-height: 1.45;
+    }
+    .banner-sp-sub strong { color: var(--text-2); font-weight: 600; }
+
+    /* ──────────────────────────────────────────
        BANNER MIS PARTES
     ────────────────────────────────────────── */
     .banner-mis-partes {
       display: flex; align-items: flex-start; gap: 10px;
-      background: linear-gradient(135deg, #6D28D9 0%, #7c3aed 60%, #8b5cf6 100%);
+      background: rgba(109, 40, 217, 0.08);
+      border: 1px solid rgba(109, 40, 217, 0.2);
       border-radius: var(--radius-card);
       padding: 12px 14px;
       animation: slideDown 220ms var(--ease-out) 40ms both;
+    }
+    :host-context(.dark) .banner-mis-partes {
+      background: rgba(167, 139, 250, 0.1);
+      border-color: rgba(167, 139, 250, 0.2);
     }
     @media (min-width: 640px) {
       .banner-mis-partes { padding: 14px 16px; gap: 12px; }
@@ -652,18 +857,24 @@ const SECTION_DEFAULT = {
     .banner-icon-wrap {
       width: 34px; height: 34px; min-width: 34px;
       border-radius: 9px;
-      background: rgba(255, 255, 255, 0.18);
+      background: rgba(109, 40, 217, 0.14);
       display: flex; align-items: center; justify-content: center;
+      color: var(--brand);
+    }
+    :host-context(.dark) .banner-icon-wrap {
+      background: rgba(167, 139, 250, 0.18);
+      color: #a78bfa;
     }
     .banner-body { flex: 1; min-width: 0; }
     .banner-title {
-      color: #fff;
+      color: var(--brand);
       font-size: 0.875rem;
       font-weight: 800;
       margin: 0 0 5px;
       line-height: 1.3;
       letter-spacing: -0.005em;
     }
+    :host-context(.dark) .banner-title { color: #a78bfa; }
     @media (min-width: 640px) { .banner-title { font-size: 1rem; } }
     .banner-partes-list {
       display: flex; flex-wrap: wrap; gap: 4px;
@@ -672,10 +883,16 @@ const SECTION_DEFAULT = {
       display: inline-block;
       padding: 2px 8px;
       border-radius: var(--radius-pill);
-      background: rgba(255, 255, 255, 0.18);
-      color: rgba(255, 255, 255, 0.96);
+      background: rgba(109, 40, 217, 0.1);
+      color: var(--brand);
+      border: 1px solid rgba(109, 40, 217, 0.15);
       font-size: 0.7rem;
       font-weight: 600;
+    }
+    :host-context(.dark) .banner-parte-chip {
+      background: rgba(167, 139, 250, 0.12);
+      color: #a78bfa;
+      border-color: rgba(167, 139, 250, 0.2);
     }
 
     /* ──────────────────────────────────────────
@@ -684,11 +901,11 @@ const SECTION_DEFAULT = {
     .seccion-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius-card);
       overflow: hidden;
       animation: fadeUp 240ms var(--ease-out) both;
       will-change: transform, opacity;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
     }
     :host-context(.dark) .seccion-card {
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -698,14 +915,15 @@ const SECTION_DEFAULT = {
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    .banner-icon-svg { width: 18px; height: 18px; }
+
     .seccion-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 10px 14px;
-      border-bottom: 1px solid var(--border-soft);
-      border-left: 2px solid transparent;
-      background: rgba(15, 23, 42, 0.04);
+      border-bottom: 1px solid;
+      border-bottom-color: var(--border-soft);
+      /* background and border-bottom-color are set inline per section color via hexToRgba */
     }
-    :host-context(.dark) .seccion-header { background: rgba(30, 41, 59, 0.4); }
 
     .seccion-header-left {
       display: flex; align-items: center; gap: 8px;
@@ -716,17 +934,20 @@ const SECTION_DEFAULT = {
       flex-shrink: 0;
     }
     .seccion-titulo {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.055em;
       line-height: 1;
       margin: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       -webkit-font-smoothing: antialiased;
-      filter: brightness(1.3);
+    }
+    :host-context(.dark) .seccion-titulo {
+      /* color set inline — dark mode needs brightness boost via opacity */
+      opacity: 0.9;
     }
     .seccion-count {
       min-width: 22px;
@@ -870,12 +1091,12 @@ const SECTION_DEFAULT = {
     }
     .asignado-text {
       font-size: 0.75rem;
-      font-weight: 400;
+      font-weight: 500;
       color: var(--text-2);
       margin: 0;
       line-height: 1.4;
     }
-    :host-context(.dark) .asignado-text { color: #cbd5e1; }
+    :host-context(.dark) .asignado-text { color: #cbd5e1; font-weight: 400; }
     .sin-asignar {
       font-style: italic;
       color: var(--text-3);
@@ -1008,14 +1229,21 @@ export class ReunionesResumenComponent {
   private scrollDone = false;
 
   // ─── Computed ───
+  private esConductorAtalaya(nombre?: string): boolean {
+    const n = (nombre ?? '').toLowerCase();
+    return n.includes('conductor') && n.includes('atalaya');
+  }
+
   misPartes = computed(() => {
     const userId = this.authStore.user()?.id_usuario_publicador;
     if (!userId) return [];
-    return (this.programa()?.partes ?? []).filter(p => p.id_publicador === userId);
+    return (this.programa()?.partes ?? [])
+      .filter(p => p.id_publicador === userId && !this.esConductorAtalaya(p.nombre_parte));
   });
 
   partesAgrupadas = computed((): SeccionGroup[] => {
-    const partes = this.programa()?.partes ?? [];
+    const partes = (this.programa()?.partes ?? [])
+      .filter(p => !this.esConductorAtalaya(p.nombre_parte));
     const userId = this.authStore.user()?.id_usuario_publicador;
 
     const normName = (n?: string) =>
@@ -1196,11 +1424,8 @@ export class ReunionesResumenComponent {
     return nombre;
   }
 
-  getSeccionHeaderStyle(color: string): Record<string, string> {
-    return {
-      background: this.hexToRgba(color, 0.08),
-      boxShadow: `inset 3px 0 0 ${color}`,
-    };
+  private get isDarkMode(): boolean {
+    return document.documentElement.classList.contains('dark');
   }
 
   getOrdenStyle(color: string, esMia: boolean, seccion = ''): Record<string, string> {
@@ -1213,11 +1438,9 @@ export class ReunionesResumenComponent {
     }
     const esNeutral = /apertura|intermedio|clausura/i.test(seccion);
     if (esNeutral) {
-      return {
-        background: '#1e293b',
-        color: '#cbd5e1',
-        borderColor: '#334155',
-      };
+      return this.isDarkMode
+        ? { background: '#1e293b', color: '#94a3b8', borderColor: '#334155' }
+        : { background: '#f1f5f9', color: '#64748b', borderColor: '#cbd5e1' };
     }
     return {
       background: this.hexToRgba(color, 0.1),
@@ -1228,6 +1451,10 @@ export class ReunionesResumenComponent {
 
   getDuracionStyle(color: string): Record<string, string> {
     return { background: this.hexToRgba(color, 0.1), color };
+  }
+
+  getSectionHeaderBg(color: string): string {
+    return this.hexToRgba(color, this.isDarkMode ? 0.13 : 0.07);
   }
 
   hexToRgba(hex: string, alpha: number): string {
@@ -1386,3 +1613,4 @@ export class ReunionesResumenComponent {
     return 5;
   }
 }
+

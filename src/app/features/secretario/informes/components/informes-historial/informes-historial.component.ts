@@ -37,10 +37,21 @@ export class InformesHistorialComponent implements OnChanges {
    @Input() canExport: boolean = false;
    @Input() lockedGroupId: number | null = null;
 
-   get sortedGrupos(): Grupo[] {
-      return [...this.grupos].sort((a, b) => 
-         a.nombre_grupo.localeCompare(b.nombre_grupo, undefined, { numeric: true, sensitivity: 'base' })
-      );
+   // Cache de grupos ordenados — se recalcula sólo cuando cambia el input `grupos`.
+   // (Antes era un getter que creaba un array nuevo en cada ciclo de change detection,
+   // forzando re-render de los *ngFor de grupos en cada interacción.)
+   sortedGrupos: Grupo[] = [];
+
+   trackByGrupoId(_: number, g: Grupo): number {
+      return g.id_grupo;
+   }
+
+   trackByYear(_: number, g: { ano: number }): number {
+      return g.ano;
+   }
+
+   trackByMesNumero(_: number, m: InformeHistorialItem): number {
+      return (m.ano ?? 0) * 100 + (m.mes_numero ?? 0);
    }
 
    // State
@@ -81,6 +92,8 @@ export class InformesHistorialComponent implements OnChanges {
       return pubs;
    });
 
+   totalPublicadores = computed(() => this.historial()?.publicadores.length ?? 0);
+
    selectedPublicador = computed(() => {
       const pid = this.selectedPublicadorId();
       if (!pid) return null;
@@ -113,6 +126,8 @@ export class InformesHistorialComponent implements OnChanges {
          currentGroup.meses.push(informe);
       }
 
+      // Orden cronológico natural: año más antiguo arriba, meses en orden Sep → Ago dentro de cada año.
+      // El ojo lee de arriba hacia abajo siguiendo la línea de tiempo.
       return groups;
    });
 
@@ -141,6 +156,11 @@ export class InformesHistorialComponent implements OnChanges {
    }
 
    ngOnChanges(changes: SimpleChanges): void {
+      if (changes['grupos']) {
+         this.sortedGrupos = [...this.grupos].sort((a, b) =>
+            a.nombre_grupo.localeCompare(b.nombre_grupo, undefined, { numeric: true, sensitivity: 'base' })
+         );
+      }
       if (changes['selectedAno'] || changes['congregacionId']) {
          this.loadData();
       }

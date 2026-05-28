@@ -160,6 +160,14 @@ export class UsuariosPage implements OnInit {
    searchQuery = signal(''); // Signal for reactive search
    searchExpanded = signal(false); // UI state for search expansion
 
+   // Congregation filter dropdown (custom, replaces native select)
+   congFilterDropdownOpen = signal(false);
+   congFilterDropdownPos = signal({ top: 0, left: 0, width: 224 });
+
+   // Inline error states (replace alert())
+   saveError = signal<string | null>(null);
+   deleteError = signal<string | null>(null);
+
    searchControl = this.fb.control('');
 
    userForm: FormGroup;
@@ -374,6 +382,27 @@ export class UsuariosPage implements OnInit {
       this.searchControl.setValue('');
       this.selectedRolFilter.set(null);
       this.selectedCongregacionFilter.set(null);
+      this.congFilterDropdownOpen.set(false);
+   }
+
+   toggleCongFilterDropdown(btn: HTMLElement) {
+      if (!this.congFilterDropdownOpen()) {
+         const rect = btn.getBoundingClientRect();
+         this.congFilterDropdownPos.set({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      }
+      this.congFilterDropdownOpen.set(!this.congFilterDropdownOpen());
+   }
+
+   selectCongFilter(id: number | null) {
+      this.selectedCongregacionFilter.set(id);
+      this.congFilterDropdownOpen.set(false);
+   }
+
+   getCongFilterName(): string {
+      const id = this.selectedCongregacionFilter();
+      if (!id) return '';
+      const c = this.congregaciones().find(x => x.id_congregacion === id);
+      return c ? c.nombre_congregacion : '';
    }
 
    filteredUsuarios = computed(() => {
@@ -391,6 +420,10 @@ export class UsuariosPage implements OnInit {
          return matchesSearch && matchesRol && matchesPageFilter;
       });
    });
+
+   totalUsuarios = computed(() => this.filteredUsuarios().length);
+   usuariosActivos = computed(() => this.filteredUsuarios().filter(u => u.id_usuario_estado === 1).length);
+   usuariosInactivos = computed(() => this.filteredUsuarios().filter(u => u.id_usuario_estado !== 1).length);
 
    async loadData() {
       try {
@@ -556,12 +589,28 @@ export class UsuariosPage implements OnInit {
       this.panelOpen.set(false);
       this.editingUser.set(null);
       this.userForm.reset();
+      this.saveError.set(null);
+   }
+
+   getPasswordStrength(): 'weak' | 'medium' | 'strong' | null {
+      const pwd = this.userForm.get('contrasena')?.value || '';
+      if (!pwd) return null;
+      let score = 0;
+      if (pwd.length >= 6) score++;
+      if (pwd.length >= 10) score++;
+      if (/[A-Z]/.test(pwd)) score++;
+      if (/[0-9]/.test(pwd)) score++;
+      if (/[^a-zA-Z0-9]/.test(pwd)) score++;
+      if (score <= 1) return 'weak';
+      if (score <= 3) return 'medium';
+      return 'strong';
    }
 
    async save() {
       this.userForm.markAllAsTouched();
       if (this.userForm.invalid) return;
 
+      this.saveError.set(null);
       this.saving.set(true);
 
       try {
@@ -654,11 +703,11 @@ export class UsuariosPage implements OnInit {
       } catch (err: any) {
          console.error('Save error', err);
          const detail = err.error?.detail || 'Error desconocido';
-         
+
          if (err.status === 403) {
-            alert(`No tienes permisos suficientes para realizar esta acción. Si crees que esto es un error, por favor contacta al administrador del sistema o al equipo de soporte técnico.`);
+            this.saveError.set('Sin permisos suficientes para esta acción. Contacta al administrador.');
          } else {
-            alert('Error al guardar: ' + detail);
+            this.saveError.set('Error al guardar: ' + detail);
          }
       } finally {
          this.saving.set(false);
@@ -691,32 +740,32 @@ export class UsuariosPage implements OnInit {
 
       // Specific color mapping based on role name keywords
       if (rolName.includes('admin')) {
-         return 'bg-emerald-50 text-emerald-700 border border-emerald-100/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30';
+         return 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50';
       }
       if (rolName.includes('secret')) {
-         return 'bg-indigo-50 text-indigo-700 border border-indigo-100/50 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800/30';
+         return 'bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800/50';
       }
       if (rolName.includes('super')) {
-         return 'bg-blue-50 text-blue-700 border border-blue-100/50 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/30';
+         return 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50';
       }
       if (rolName.includes('coord')) {
-         return 'bg-amber-50 text-amber-700 border border-amber-100/50 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/30';
+         return 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50';
       }
       if (rolName.includes('gestor')) {
-         return 'bg-purple-50 text-purple-700 border border-purple-100/50 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800/30';
+         return 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800/50';
       }
       if (rolName.includes('public')) {
-         return 'bg-cyan-50 text-cyan-700 border border-cyan-100/50 dark:bg-cyan-900/20 dark:text-cyan-400 dark:border-cyan-800/30';
+         return 'bg-cyan-50 text-cyan-700 border border-cyan-200 dark:bg-cyan-900/20 dark:text-cyan-400 dark:border-cyan-800/50';
       }
 
       // Fallback: Use ID-based color if available
       const id = u.id_rol_usuario || 0;
       const colors = [
-         'bg-rose-50 text-rose-700 border border-rose-100/50 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800/30',
-         'bg-teal-50 text-teal-700 border border-teal-100/50 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-800/30',
-         'bg-orange-50 text-orange-700 border border-orange-100/50 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800/30',
-         'bg-pink-50 text-pink-700 border border-pink-100/50 dark:bg-pink-900/20 dark:text-pink-400 dark:border-pink-800/30',
-         'bg-sky-50 text-sky-700 border border-sky-100/50 dark:bg-sky-900/20 dark:text-sky-400 dark:border-sky-800/30'
+         'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800/50',
+         'bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-800/50',
+         'bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800/50',
+         'bg-pink-50 text-pink-700 border border-pink-200 dark:bg-pink-900/20 dark:text-pink-400 dark:border-pink-800/50',
+         'bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-900/20 dark:text-sky-400 dark:border-sky-800/50'
       ];
       return colors[id % colors.length];
    }
@@ -733,7 +782,7 @@ export class UsuariosPage implements OnInit {
    getEstadoBadgeStyle(u: Usuario): string {
       const id = u.id_usuario_estado;
       if (id === 1) return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-800/30';
-      if (id === 2) return 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-100/50 dark:border-red-800/30';
+      if (id === 2) return 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800/50';
       return 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-100 dark:border-slate-700';
    }
 
@@ -746,6 +795,7 @@ export class UsuariosPage implements OnInit {
    cancelDelete() {
       this.showDeleteDialog.set(false);
       this.userToDelete.set(null);
+      this.deleteError.set(null);
    }
 
    async confirmDelete() {
@@ -755,13 +805,13 @@ export class UsuariosPage implements OnInit {
       try {
          await lastValueFrom(this.service.deleteUsuario(u.id_usuario));
          this.usuarios.update(list => list.filter(item => item.id_usuario !== u.id_usuario));
+         this.showDeleteDialog.set(false);
+         this.userToDelete.set(null);
+         this.deleteError.set(null);
       } catch (err: any) {
          console.error('Delete error', err);
          const detail = err.error?.detail || 'Error desconocido';
-         alert('Error al eliminar: ' + detail);
-      } finally {
-         this.showDeleteDialog.set(false);
-         this.userToDelete.set(null);
+         this.deleteError.set('Error al eliminar: ' + detail);
       }
    }
 

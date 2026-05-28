@@ -1,9 +1,8 @@
 <div
-  class="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-4 relative overflow-y-auto font-sans selection:bg-brand-purple selection:text-white"
-  style="padding-top: max(1rem, env(safe-area-inset-top)); padding-bottom: max(1.5rem, env(safe-area-inset-bottom));">
+  class="dark min-h-[100dvh] bg-slate-950 flex flex-col relative overflow-y-auto overflow-x-hidden font-sans selection:bg-brand-purple selection:text-white">
 
-  <!-- Improved Animated Gradient Background -->
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+  <!-- Animated Gradient Background (fixed so blobs don't scroll) -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
     <div
       class="absolute bottom-[-10%] left-[-10%] w-[90vw] h-[90vw] sm:w-[32rem] sm:h-[32rem] bg-brand-purple/20 rounded-full blur-[80px] sm:blur-[120px] animate-blob mix-blend-screen">
     </div>
@@ -14,12 +13,15 @@
       class="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] sm:w-[50rem] sm:h-[50rem] bg-brand-purple/5 rounded-full blur-[80px] sm:blur-[100px]">
     </div>
     <div
-      class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light">
+      class="absolute inset-0 bg-[url('/assets/noise.svg')] opacity-20 mix-blend-soft-light">
     </div>
   </div>
 
-  <!-- Content Wrapper -->
-  <div class="relative z-10 w-full max-w-3xl flex flex-col items-center py-4 sm:py-8">
+  <!-- Content Wrapper — flex-1 centra cuando cabe, scroll cuando no -->
+  <div class="flex-1 flex flex-col items-center justify-center px-4 relative z-10"
+    style="padding-top: max(1.5rem, env(safe-area-inset-top)); padding-bottom: max(1.5rem, env(safe-area-inset-bottom));">
+
+  <div class="w-full max-w-3xl flex flex-col items-center py-2 sm:py-6">
 
     <!-- Out-of-form Message Area (Top) -->
     <div *ngIf="error()" class="w-full mb-4 sm:mb-6 animate-fadeIn">
@@ -34,16 +36,16 @@
     </div>
 
     <!-- Branding / Header Section -->
-    <div *ngIf="!success()" class="mb-5 sm:mb-10 text-center animate-fadeIn">
-      <h1 class="text-2xl sm:text-4xl font-black text-white mb-1 sm:mb-2 tracking-tight">Registro de Acceso</h1>
-      <p class="text-slate-400 text-sm sm:text-base font-medium opacity-80">
+    <div *ngIf="!success()" class="mb-3 sm:mb-10 text-center animate-fadeIn">
+      <h1 class="text-2xl sm:text-4xl font-black text-white mb-1 tracking-tight">Registro de Acceso</h1>
+      <p class="text-slate-400 text-xs sm:text-base font-medium opacity-80">
         Completa tus datos para enviarlos a revisión
       </p>
     </div>
 
     <!-- Main Card -->
     <div
-      class="w-full bg-slate-900/40 backdrop-blur-2xl rounded-2xl sm:rounded-[2.5rem] border border-white/[0.08] shadow-[0_8px_50px_rgb(0,0,0,0.5)] p-5 sm:p-12 transition-all duration-500 relative overflow-hidden ring-1 ring-white/[0.04]">
+      class="w-full bg-slate-900/60 sm:bg-slate-900/40 backdrop-blur-2xl rounded-2xl sm:rounded-[2.5rem] border border-white/[0.08] shadow-[0_8px_40px_rgb(0,0,0,0.5)] p-4 sm:p-12 transition-all duration-500 relative overflow-hidden ring-1 ring-white/[0.04]">
 
       <!-- Success State -->
       <div *ngIf="success()" class="text-center space-y-4 sm:space-y-6 animate-fadeIn py-4">
@@ -65,9 +67,9 @@
 
       <!-- Form State -->
       <div *ngIf="!success()">
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 sm:space-y-6">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-3 sm:space-y-6">
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
             <!-- Nombre -->
             <div class="space-y-1.5">
               <label class="block text-sm font-semibold text-slate-300 ml-1">Nombre completo</label>
@@ -99,7 +101,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
             <!-- Congregación -->
             <div class="space-y-1.5">
               <label class="block text-sm font-semibold text-slate-300 ml-1">Congregación</label>
@@ -135,15 +137,15 @@
           <div class="space-y-1.5">
             <label class="block text-sm font-semibold text-slate-300 ml-1">Observaciones opcionales</label>
             <textarea formControlName="observaciones" rows="2"
-              class="w-full bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block p-4 placeholder-slate-600 transition-all duration-200 resize-none shadow-inner"
-              style="min-height: 5rem;"
+              class="w-full bg-slate-950/50 border border-slate-700/60 text-white text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block p-3 sm:p-4 placeholder-slate-600 transition-all duration-200 resize-none shadow-inner"
+              style="min-height: 3.5rem;"
               placeholder="¿Alguna aclaración adicional?"></textarea>
           </div>
 
           <!-- Submit Button -->
-          <div class="pt-1 sm:pt-2">
+          <div class="pt-0.5 sm:pt-2">
             <button type="submit" [disabled]="form.invalid || loading()"
-              class="group relative w-full flex justify-center py-3.5 sm:py-4 px-6 rounded-xl text-base font-bold text-white bg-gradient-to-r from-brand-purple to-violet-600 hover:to-brand-purple hover:shadow-[0_0_30px_rgba(109,40,217,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-brand-purple disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98] overflow-hidden shadow-xl shadow-purple-900/20">
+              class="group relative w-full flex justify-center py-3.5 px-6 rounded-xl text-base font-bold text-white bg-gradient-to-r from-brand-purple to-violet-600 hover:to-brand-purple hover:shadow-[0_0_30px_rgba(109,40,217,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-brand-purple disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98] overflow-hidden shadow-xl shadow-purple-900/20">
 
               <div
                 class="absolute inset-0 -translate-x-full group-hover:animate-[shine_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent">
@@ -164,7 +166,7 @@
         </form>
 
         <!-- Footer link -->
-        <div class="mt-6 sm:mt-10 pt-4 sm:pt-6 border-t border-white/5 text-center">
+        <div class="mt-4 sm:mt-10 pt-3 sm:pt-6 border-t border-white/5 text-center">
           <p class="text-sm text-slate-500">
             ¿Ya tienes acceso? <a routerLink="/login"
               class="font-bold text-white hover:text-brand-purple transition-colors p-2 inline-block">Vuelve al Login</a>
@@ -176,9 +178,11 @@
 
     <!-- Footer -->
     <footer
-      class="mt-6 sm:mt-8 flex items-center justify-center gap-6 text-[0.6875rem] sm:text-xs text-slate-500 font-medium tracking-wider z-10 w-full opacity-60 hover:opacity-100 transition-opacity pb-2 sm:pb-6 shrink-0 uppercase">
-      <span class="text-slate-600">v1.2 • GAC System</span>
+      class="mt-4 sm:mt-8 flex items-center justify-center gap-6 text-[0.6875rem] sm:text-xs text-slate-500 font-medium tracking-wider z-10 w-full opacity-60 hover:opacity-100 transition-opacity pb-1 sm:pb-4 shrink-0 uppercase">
+      <span class="text-slate-600">v1.7 • GAC System</span>
     </footer>
+
+  </div>
 
   </div>
 </div>

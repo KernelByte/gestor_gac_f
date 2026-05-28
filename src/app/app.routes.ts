@@ -9,6 +9,7 @@ export const routes: Routes = [
   { path: 'auth/reset-password', title: 'Restablecer Contraseña', loadComponent: () => import('./features/auth/reset-password/reset-password.page').then(m => m.ResetPasswordPage) },
 
   { path: 'public/informe/:token', title: 'Enviar Informe', loadComponent: () => import('./features/public/informe/public-informe.page').then(m => m.PublicInformePage) },
+  { path: 'public/visita/:token', title: 'Visita del Superintendente', loadComponent: () => import('./features/public/visita/public-visita.page').then(m => m.PublicVisitaPage) },
 
   // Shell protegido
   {
@@ -78,6 +79,16 @@ export const routes: Routes = [
         loadChildren: () => import('./features/secretario/routes').then(m => m.SECRETARIO_ROUTES)
       },
       {
+        path: 'secretario-tools',
+        canActivate: [roleGuard],
+        data: { roles: ['Administrador', 'Coordinador', 'Secretario'] },
+        loadChildren: () => import('./features/secretario-tools/routes').then(m => m.SECRETARIO_TOOLS_ROUTES)
+      },
+      {
+        path: 'herramientas',
+        loadChildren: () => import('./features/herramientas/routes').then(m => m.HERRAMIENTAS_ROUTES)
+      },
+      {
         path: 'admin/configuracion',
         title: 'Configuración del Sistema',
         canActivate: [roleGuard],
@@ -95,6 +106,11 @@ export const routes: Routes = [
         path: 'perfil',
         title: 'Mi Perfil',
         loadChildren: () => import('./features/perfil/perfil.routes').then(m => m.perfilRoutes),
+      },
+      {
+        path: 'design-system',
+        title: 'Design System',
+        loadComponent: () => import('./features/design-system/design-system.page').then(m => m.DesignSystemPage),
       },
     ]
   },

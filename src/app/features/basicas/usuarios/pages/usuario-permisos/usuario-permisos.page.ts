@@ -48,14 +48,7 @@ interface CategoriaPermisos {
       ])
    ],
    templateUrl: './usuario-permisos.page.html',
-   styles: [`
-      .bg-size-200 { background-size: 200% 100%; }
-      @keyframes gradient-x {
-         0%, 100% { background-position: 0% 50%; }
-         50% { background-position: 100% 50%; }
-      }
-      .animate-gradient-x { animation: gradient-x 3s ease infinite; }
-   `]
+   styles: []
 })
 export class UsuarioPermisosPage implements OnInit {
    private route = inject(ActivatedRoute);
@@ -80,6 +73,7 @@ export class UsuarioPermisosPage implements OnInit {
    loading = signal(true);
    saving = signal(false);
    showSuccess = signal(false);
+   showError = signal(false);
    searchQuery = '';
 
    usuario = signal<Usuario | null>(null);
@@ -393,7 +387,8 @@ export class UsuarioPermisosPage implements OnInit {
 
       } catch (err) {
          console.error('Error saving permissions', err);
-         alert('Error al guardar permisos');
+         this.showError.set(true);
+         setTimeout(() => this.showError.set(false), 4000);
       } finally {
          this.saving.set(false);
       }
@@ -451,39 +446,6 @@ export class UsuarioPermisosPage implements OnInit {
          'Reportes': 'blue'
       };
       return (themes[categoria] || 'slate') as any;
-   }
-
-   getCategoryBgClass(categoria: string): string {
-      const theme = this.getCategoryTheme(categoria);
-      return `bg-${theme}-100 text-${theme}-600`;
-   }
-
-   getCategoryHoverClass(categoria: string): string {
-      const theme = this.getCategoryTheme(categoria);
-      return `hover:bg-${theme}-50`;
-   }
-
-   // Helper para clases dinámicas de los toggles y barras
-   getThemeColorClasses(categoria: string) {
-      const theme = this.getCategoryTheme(categoria);
-      return {
-         toggleActive: `bg-${theme}-500`,
-         toggleShadow: `shadow-${theme}-500/30`,
-         textActive: `text-${theme}-700`,
-         bar: `bg-${theme}-500`,
-         lightBg: `bg-${theme}-50`,
-         border: `border-${theme}-200`,
-         ring: `focus:ring-${theme}-500`
-      };
-   }
-
-   getPermisoIcon(codigo: string): string {
-      if (codigo.includes('ver')) return '👁️';
-      if (codigo.includes('editar')) return '✏️';
-      if (codigo.includes('crear')) return '➕';
-      if (codigo.includes('enviar')) return '📤';
-      if (codigo.includes('historial')) return '⏳';
-      return '🔐';
    }
 
    getPermisoIconSvg(codigo: string): SafeHtml {

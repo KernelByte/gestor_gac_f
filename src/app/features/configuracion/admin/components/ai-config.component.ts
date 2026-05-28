@@ -538,9 +538,11 @@ export class AIConfigComponent implements OnInit, OnDestroy {
 
   readonly providerModels: Record<string, { id: string; label: string }[]> = {
     google: [
-      { id: 'gemini-2.5-pro-exp-03-25', label: 'Gemini 2.5 Pro (exp)' },
-      { id: 'gemini-2.5-flash',          label: 'Gemini 2.5 Flash' },
-      { id: 'gemini-2.0-flash-lite',     label: 'Gemini 2.0 Flash Lite' },
+      { id: 'gemini-3.5-flash',      label: 'Gemini 3.5 Flash' },
+      { id: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite' },
+      { id: 'gemini-2.5-pro',        label: 'Gemini 2.5 Pro' },
+      { id: 'gemini-2.5-flash',      label: 'Gemini 2.5 Flash' },
+      { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite' },
     ],
     openai: [
       { id: 'gpt-5.4-mini',    label: 'GPT-5.4 Mini' },

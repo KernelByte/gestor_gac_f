@@ -1,247 +1,435 @@
-<div class="h-full bg-[#f3f4f6] dark:bg-slate-950 flex flex-col font-sans overflow-hidden transition-colors duration-300">
-  
-  <!-- App-like Header -->
+<div class="h-full bg-[#f3f4f6] dark:bg-slate-950 flex flex-col font-sans transition-colors duration-300">
+
+  <!-- Screen reader live region — announces transfer actions -->
+  <div aria-live="polite" aria-atomic="true" class="sr-only">{{ liveAnnouncement() }}</div>
+
+  <!-- Header -->
   <header class="shrink-0 z-30 pt-2 md:pt-3 px-3 sm:px-4 md:px-6 pb-2">
     <div class="flex items-center justify-between gap-2 sm:gap-6 max-w-[1400px] mx-auto w-full">
-      
+
       <!-- Left: Back & Title -->
       <div class="flex items-center gap-2 sm:gap-4 min-w-0">
         <button (click)="goBack()"
-          class="flex items-center justify-center w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-orange-600 dark:text-orange-400 transition-colors shrink-0 shadow-sm active:scale-95 group"
+          aria-label="Volver a grupos"
+          class="flex items-center gap-1.5 px-3 h-10 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-orange-600 dark:text-orange-400 transition-colors shrink-0 shadow-sm active:scale-95 group"
           style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease">
-          <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <svg class="w-4 h-4 shrink-0 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
+          <span class="text-sm font-bold">Volver</span>
         </button>
 
         <div class="flex items-center gap-2 sm:gap-4 min-w-0">
           <h1 class="text-base sm:text-xl md:text-2xl font-bold text-slate-800 dark:text-white truncate">
-              Asignación
-              <span class="hidden sm:inline">de Grupo</span>
+            Asignación de Grupo
           </h1>
-          <span class="px-2 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-100 dark:bg-orange-500/20 dark:text-orange-400 rounded-md shrink-0 border border-orange-200/50 dark:border-orange-500/30">
-              {{ grupo()?.nombre_grupo || '...' }}
+          <span class="px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-100 dark:bg-orange-500/25 dark:text-orange-300 rounded-md shrink-0 border border-orange-200/50 dark:border-orange-500/40 truncate max-w-[90px] sm:max-w-none">
+            {{ grupo()?.nombre_grupo || '...' }}
           </span>
         </div>
       </div>
 
-      <!-- Right: Actions -->
-      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-         <button (click)="goBack()"
-            class="hidden sm:flex items-center px-4 h-9 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-sm bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 transition-colors shadow-sm active:scale-95"
-            style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease">
-            Cancelar
-         </button>
-         <button (click)="save()" [disabled]="saving()"
-            class="px-3 sm:px-5 h-8 sm:h-9 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 shadow-md shadow-orange-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border border-transparent"
-            style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, box-shadow 200ms ease">
-            <svg *ngIf="saving()" class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
-               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-            </svg>
-            <svg *ngIf="!saving()" class="w-3.5 h-3.5 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="hidden sm:inline" *ngIf="!saving()">Guardar cambios</span>
-            <span class="sm:hidden" *ngIf="!saving()">Guardar</span>
-            <span *ngIf="saving()">Guardando...</span>
-         </button>
+      <!-- Right: Actions (desktop only) -->
+      <div class="hidden sm:flex items-center gap-2 shrink-0">
+        <button (click)="save()" [disabled]="saving()"
+          class="flex px-5 h-10 rounded-xl items-center justify-center gap-2 text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 shadow-md shadow-orange-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, box-shadow 200ms ease">
+          <svg *ngIf="saving()" class="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <span>{{ saving() ? 'Guardando...' : 'Guardar' }}</span>
+        </button>
       </div>
     </div>
   </header>
 
+  <!-- Mobile Tab Switcher -->
+  <div class="md:hidden shrink-0 px-3 pb-2">
+    <div role="tablist" aria-label="Paneles de asignación" class="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
+      <button (click)="setTab('available')"
+        role="tab" [attr.aria-selected]="activeTab() === 'available'" aria-controls="panel-available"
+        [ngClass]="activeTab() === 'available'
+          ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+          : 'text-slate-500 dark:text-slate-400'"
+        class="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-lg text-sm font-bold transition-all active:scale-[0.98]">
+        <svg aria-hidden="true" class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        </svg>
+        Disponibles
+        <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md tabular-nums"
+          [ngClass]="activeTab() === 'available'
+            ? 'bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-300'
+            : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">
+          {{ filteredAvailable().length }}
+        </span>
+      </button>
+      <button (click)="setTab('members')"
+        role="tab" [attr.aria-selected]="activeTab() === 'members'" aria-controls="panel-members"
+        [ngClass]="activeTab() === 'members'
+          ? 'bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm'
+          : 'text-slate-500 dark:text-slate-400'"
+        class="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-lg text-sm font-bold transition-all active:scale-[0.98]">
+        <svg aria-hidden="true" class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Miembros
+        <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md tabular-nums"
+          [ngClass]="activeTab() === 'members'
+            ? 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400'
+            : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">
+          {{ filteredGroupMembers().length }}
+        </span>
+      </button>
+    </div>
+  </div>
+
   <!-- Body -->
-  <main class="flex-1 min-h-0 overflow-hidden px-3 sm:px-4 md:px-6 pb-4 sm:pb-6 flex flex-col md:flex-row gap-2 sm:gap-3 md:gap-4 max-w-[1400px] mx-auto w-full pt-2 sm:pt-4 md:pt-6">
-    
+  <main class="flex-1 min-h-0 overflow-hidden px-3 sm:px-4 md:px-6 pb-[4.5rem] md:pb-6 flex flex-col md:flex-row gap-2 sm:gap-3 md:gap-4 max-w-[1400px] mx-auto w-full pt-1 md:pt-6">
+
     <!-- Left panel (Disponibles) -->
-    <div class="flex-1 min-h-0 flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
-      <!-- Panel Header inner -->
-      <div class="shrink-0 p-2.5 sm:p-3.5 md:p-4 border-b border-slate-100 dark:border-slate-800">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
+    <div id="panel-available" role="tabpanel" aria-label="Publicadores disponibles para asignar"
+         class="panel-available panel-animate flex-1 min-h-0 flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-300 dark:border-slate-700 overflow-hidden"
+         [ngClass]="activeTab() === 'available' ? 'flex' : 'hidden md:flex'"
+         style="animation: panelIn 0.35s cubic-bezier(0.23,1,0.32,1) 0ms both">
+
+      <!-- Panel Header -->
+      <div class="shrink-0 p-3 sm:p-3.5 md:p-4 border-b-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+        <div class="flex items-center justify-between mb-2.5 sm:mb-3">
           <div class="flex items-center gap-2 sm:gap-2.5">
-             <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-500 dark:text-slate-400">
-               <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-             </div>
-             <div>
-               <h2 class="text-xs sm:text-sm md:text-base font-bold text-slate-800 dark:text-slate-200 leading-tight">Disponibles</h2>
-               <p class="hidden sm:block text-[10px] md:text-xs font-semibold text-slate-400 dark:text-slate-500 mt-0.5">Selecciona publicadores</p>
-             </div>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-sm md:text-base font-bold text-slate-800 dark:text-slate-200 leading-tight">Disponibles</h2>
+              <p class="text-[10px] md:text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">Selecciona publicadores a asignar</p>
+            </div>
           </div>
           <div class="flex items-center gap-1.5 sm:gap-2">
             <button (click)="toggleSelectAll('available')"
-              class="text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95 transition-all"
+              aria-label="Seleccionar todos los publicadores disponibles"
+              class="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95 transition-all min-h-[36px]"
               style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease">
               <span class="hidden sm:inline">Seleccionar todos</span>
-              <span class="sm:hidden">Todos</span>
+              <span class="sm:hidden" aria-hidden="true">Todos</span>
             </button>
-            <span class="flex h-5 items-center justify-center px-1.5 sm:px-2 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 tabular-nums">{{ filteredAvailable().length }}</span>
+            <span class="flex h-5 items-center justify-center px-2 rounded-md bg-slate-100 dark:bg-slate-700 text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 tabular-nums">{{ filteredAvailable().length }}</span>
           </div>
         </div>
         <div class="relative">
-           <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-           <input type="text" placeholder="Buscar..." [(ngModel)]="searchAvailable"
-             class="w-full h-8 sm:h-9 pl-8 sm:pl-9 pr-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-colors" />
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" placeholder="Buscar..." [(ngModel)]="searchAvailable"
+            aria-label="Buscar publicadores disponibles"
+            inputmode="search" autocomplete="off"
+            class="w-full h-11 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[16px] sm:text-sm font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-colors" />
         </div>
       </div>
 
       <!-- List -->
-      <div class="flex-1 overflow-y-auto simple-scrollbar p-1.5 sm:p-2">
-        <div class="space-y-0.5 sm:space-y-1">
+      <div role="listbox" aria-multiselectable="true" aria-label="Publicadores disponibles"
+           class="flex-1 overflow-y-auto simple-scrollbar p-2">
+        <div class="space-y-1">
           <div *ngFor="let p of filteredAvailable()" (click)="toggleSelection(p)"
-               class="group flex items-center p-1.5 sm:p-2 rounded-xl cursor-pointer transition-all active:scale-[0.98]"
+               (keydown.enter)="toggleSelection(p)"
+               (keydown.space)="$event.preventDefault(); toggleSelection(p)"
+               role="option" [attr.aria-selected]="p.selected" tabindex="0"
+               class="group flex items-center p-3 rounded-xl cursor-pointer transition-all active:scale-[0.98] min-h-[52px] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-1"
                style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease"
-               [ngClass]="p.selected ? 'bg-orange-50/80 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20' : 'bg-transparent border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50'">
+               [ngClass]="p.selected
+                 ? 'bg-orange-50/80 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 scale-[1.005]'
+                 : 'bg-transparent border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50'">
             <div class="relative shrink-0">
-               <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-[11px] sm:text-[13px] ring-1 ring-white dark:ring-slate-800 border border-white/50 dark:border-transparent shadow-sm" [ngClass]="getAvatarStyle(p)">
-                  {{ getInitials(p) }}
-               </div>
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-[13px] shadow-sm" [ngClass]="getAvatarStyle(p)">
+                {{ getInitials(p) }}
+              </div>
             </div>
-            <div class="ml-2 sm:ml-3 flex-1 min-w-0">
-               <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{{ getFullName(p) }}</p>
-               <div class="flex items-center gap-1 sm:gap-1.5 mt-0.5">
-                  <ng-container *ngIf="getPrivilegioTags(p).length > 0">
-                    <span *ngFor="let tag of getPrivilegioTags(p)" class="inline-flex px-1 sm:px-1.5 py-0.5 rounded-md text-[8px] sm:text-[9px] font-medium uppercase tracking-wide bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                       <span class="sm:hidden">{{ tag.label.substring(0, 3) }}</span>
-                       <span class="hidden sm:inline">{{ tag.label }}</span>
-                    </span>
-                  </ng-container>
-               </div>
+            <div class="ml-3 flex-1 min-w-0">
+              <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{{ getFullName(p) }}</p>
+              <div class="flex items-center gap-1 mt-0.5 flex-wrap">
+                <ng-container *ngIf="getPrivilegioTags(p).length > 0">
+                  <span *ngFor="let tag of getPrivilegioTags(p)"
+                    class="inline-flex px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wide"
+                    [ngClass]="tag.class">
+                    {{ tag.label }}
+                  </span>
+                </ng-container>
+              </div>
             </div>
-            <div class="w-4 h-4 rounded-[4px] border flex items-center justify-center ml-1.5 sm:ml-2 shrink-0 transition-colors"
-                 [ngClass]="p.selected ? 'border-orange-500 bg-orange-500' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'">
-                 <svg *ngIf="p.selected" class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5" /></svg>
+            <div aria-hidden="true"
+                 class="w-5 h-5 rounded-[5px] border-2 flex items-center justify-center ml-3 shrink-0 transition-colors"
+                 [ngClass]="p.selected ? ['border-orange-500', 'bg-orange-500', 'animate-check-pop'] : ['border-slate-300', 'dark:border-slate-600', 'bg-white', 'dark:bg-slate-800']">
+              <svg *ngIf="p.selected" class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5" />
+              </svg>
             </div>
           </div>
-          
-          <div *ngIf="filteredAvailable().length === 0" class="py-8 sm:py-12 px-4 text-center flex flex-col items-center justify-center">
-             <p class="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">No hay publicadores</p>
-             <p class="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">Todos han sido asignados</p>
+
+          <!-- Empty state: all assigned -->
+          <div *ngIf="filteredAvailable().length === 0" class="py-8 px-4 text-center flex flex-col items-center justify-center gap-3 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl m-1 animate-empty-in">
+            <div class="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center text-emerald-500 dark:text-emerald-400 shadow-sm">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-emerald-700 dark:text-emerald-400">¡Todos asignados!</p>
+              <p class="text-[11px] text-emerald-600/70 dark:text-emerald-500/70 mt-0.5">Todos los publicadores están en grupos</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Center controls -->
-    <div class="shrink-0 flex flex-row md:flex-col items-center justify-center gap-2 sm:gap-3 py-0.5 sm:py-1 md:py-0 md:px-2 z-10">
-       <button (click)="moveToGroup()" title="Agregar al grupo"
-          class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500 hover:text-white dark:hover:bg-orange-500 dark:hover:text-white border border-orange-200/70 dark:border-orange-500/30 hover:border-orange-500 transition-all flex items-center justify-center active:scale-95 shadow-sm group"
+    <!-- Center controls (desktop only) -->
+    <div class="hidden md:flex shrink-0 flex-col items-center justify-center gap-3 py-0 px-2 z-10"
+         style="animation: panelIn 0.35s cubic-bezier(0.23,1,0.32,1) 100ms both">
+      <div class="flex flex-col items-center gap-0.5">
+        <button (click)="moveToGroup()"
+          [disabled]="!hasAvailableSelected()"
+          aria-label="Agregar seleccionados al grupo"
+          class="w-11 h-11 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500 hover:text-white dark:hover:bg-orange-500 dark:hover:text-white border border-orange-200/70 dark:border-orange-500/30 hover:border-orange-500 transition-all flex items-center justify-center active:scale-95 shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-orange-50 disabled:hover:text-orange-600 dark:disabled:hover:bg-orange-500/10 dark:disabled:hover:text-orange-400 disabled:hover:border-orange-200/70"
           style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease, border-color 200ms ease">
-          <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden md:block group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-          <svg class="w-4 h-4 sm:w-5 sm:h-5 block md:hidden group-hover:translate-y-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m0 0l-6-6m6 6l6-6" /></svg>
-       </button>
-       <button (click)="moveToAvailable()" title="Quitar del grupo"
-          class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all flex items-center justify-center active:scale-95 shadow-sm group"
+          <svg class="w-5 h-5 group-hover:translate-x-0.5 group-active:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </button>
+        <span class="text-[9px] uppercase tracking-wider font-bold text-orange-400 dark:text-orange-500">Agregar</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5">
+        <button (click)="moveToAvailable()"
+          [disabled]="!hasMembersSelected()"
+          aria-label="Quitar seleccionados del grupo"
+          class="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center active:scale-95 shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed"
           style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease">
-          <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden md:block group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
-          <svg class="w-4 h-4 sm:w-5 sm:h-5 block md:hidden group-hover:-translate-y-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20V4m0 0l-6 6m6-6l6 6" /></svg>
-       </button>
+          <svg class="w-5 h-5 group-hover:-translate-x-0.5 group-active:-translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+          </svg>
+        </button>
+        <span class="text-[9px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">Quitar</span>
+      </div>
     </div>
 
     <!-- Right panel (Miembros) -->
-    <div class="flex-1 min-h-0 flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-[0_2px_15px_-3px_rgba(249,115,22,0.08)] border border-orange-200/60 dark:border-orange-500/30 overflow-hidden ring-1 ring-orange-100 dark:ring-orange-500/10">
-      <!-- Panel Header inner -->
-      <div class="shrink-0 p-2.5 sm:p-3.5 md:p-4 border-b border-orange-100 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/5">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
+    <div id="panel-members" role="tabpanel" aria-label="Miembros asignados al grupo"
+         class="panel-members flex-1 min-h-0 flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-[0_2px_15px_-3px_rgba(249,115,22,0.08)] border border-orange-200/60 dark:border-orange-500/40 overflow-hidden ring-1 ring-orange-100 dark:ring-orange-500/20 dark:border-l-2 dark:border-l-orange-500/50"
+         [ngClass]="activeTab() === 'members' ? 'flex' : 'hidden md:flex'"
+         style="animation: panelIn 0.35s cubic-bezier(0.23,1,0.32,1) 200ms both">
+
+      <!-- Panel Header -->
+      <div class="shrink-0 p-3 sm:p-3.5 md:p-4 border-b border-orange-100 dark:border-orange-500/25 bg-orange-50/50 dark:bg-orange-500/[0.12]">
+        <div class="flex items-center justify-between mb-2.5 sm:mb-3">
           <div class="flex items-center gap-2 sm:gap-2.5">
-             <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
-               <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-             </div>
-             <div>
-               <h2 class="text-xs sm:text-sm md:text-base font-bold text-orange-700 dark:text-orange-400 leading-tight">
-                 <span class="sm:hidden">Miembros</span>
-                 <span class="hidden sm:inline">Miembros del Grupo</span>
-               </h2>
-               <p class="hidden sm:block text-[10px] md:text-xs font-semibold text-orange-500/80 mt-0.5">Asignados</p>
-             </div>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400 shrink-0">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-sm md:text-base font-bold text-orange-700 dark:text-orange-400 leading-tight">
+                Miembros del Grupo
+              </h2>
+              <p class="text-[10px] md:text-xs font-medium text-orange-500/80 mt-0.5">Asignados a este grupo</p>
+            </div>
           </div>
           <div class="flex items-center gap-1.5 sm:gap-2">
             <button (click)="toggleSelectAll('members')"
-              class="text-[10px] font-bold text-orange-500 hover:text-orange-700 dark:hover:text-orange-300 px-2 py-1 rounded-md hover:bg-orange-100 dark:hover:bg-orange-900/30 active:scale-95 transition-all"
+              aria-label="Seleccionar todos los miembros del grupo"
+              class="text-[11px] font-bold text-orange-500 hover:text-orange-700 dark:hover:text-orange-300 px-2.5 py-1.5 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 active:scale-95 transition-all min-h-[36px]"
               style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease">
               <span class="hidden sm:inline">Seleccionar todos</span>
-              <span class="sm:hidden">Todos</span>
+              <span class="sm:hidden" aria-hidden="true">Todos</span>
             </button>
-            <span class="flex h-5 items-center justify-center px-1.5 sm:px-2 rounded-md bg-orange-100 dark:bg-orange-500/20 text-[10px] sm:text-xs font-bold text-orange-700 dark:text-orange-400 border border-orange-200/50 dark:border-orange-500/30 tabular-nums">{{ filteredGroupMembers().length }}</span>
+            <span class="flex h-5 items-center justify-center px-2 rounded-md bg-orange-100 dark:bg-orange-500/20 text-[10px] sm:text-xs font-bold text-orange-700 dark:text-orange-400 border border-orange-200/50 dark:border-orange-500/30 tabular-nums">{{ filteredGroupMembers().length }}</span>
           </div>
         </div>
         <div class="relative">
-           <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-           <input type="text" placeholder="Filtrar..." [(ngModel)]="searchGroup"
-             class="w-full h-8 sm:h-9 pl-8 sm:pl-9 pr-3 rounded-lg bg-orange-50/50 dark:bg-slate-900 border border-orange-200/60 dark:border-orange-500/30 text-xs font-medium text-slate-700 dark:text-slate-300 placeholder:text-orange-400/70 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-colors" />
+          <svg class="w-4 h-4 text-orange-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" placeholder="Buscar..." [(ngModel)]="searchGroup"
+            aria-label="Buscar miembros del grupo"
+            inputmode="search" autocomplete="off"
+            class="w-full h-11 pl-9 pr-3 rounded-xl bg-orange-50/50 dark:bg-slate-900 border border-orange-200/60 dark:border-orange-500/30 text-[16px] sm:text-sm font-medium text-slate-700 dark:text-slate-300 placeholder:text-orange-400/70 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-colors" />
         </div>
       </div>
 
       <!-- List -->
-      <div class="flex-1 overflow-y-auto simple-scrollbar p-1.5 sm:p-2 bg-orange-50/10 dark:bg-orange-500/5">
-        <div class="space-y-0.5 sm:space-y-1">
+      <div role="listbox" aria-multiselectable="true" aria-label="Miembros del grupo"
+           class="flex-1 overflow-y-auto simple-scrollbar p-2 bg-orange-50/10 dark:bg-orange-900/[0.08]">
+        <div class="space-y-1">
           <div *ngFor="let p of filteredGroupMembers()" (click)="toggleSelection(p)"
-               class="group flex items-center p-1.5 sm:p-2 rounded-xl cursor-pointer transition-all active:scale-[0.98]"
+               (keydown.enter)="toggleSelection(p)"
+               (keydown.space)="$event.preventDefault(); toggleSelection(p)"
+               role="option" [attr.aria-selected]="p.selected" tabindex="0"
+               class="group flex items-center p-3 rounded-xl cursor-pointer transition-all active:scale-[0.98] min-h-[52px] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-1"
                style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease"
-               [ngClass]="p.selected ? 'bg-orange-100 dark:bg-orange-500/30 border border-orange-300 dark:border-orange-500/50' : 'bg-transparent border border-transparent hover:bg-orange-50 dark:hover:bg-orange-500/10'">
+               [ngClass]="p.selected
+                 ? 'bg-orange-100 dark:bg-orange-500/30 border border-orange-300 dark:border-orange-500/50 scale-[1.005]'
+                 : 'bg-transparent border border-transparent hover:bg-orange-50 dark:hover:bg-orange-500/10'">
             <div class="relative shrink-0">
-               <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-[11px] sm:text-[13px] ring-1 ring-white dark:ring-slate-800 border border-white/50 dark:border-transparent shadow-sm" [ngClass]="getAvatarStyle(p)">
-                  {{ getInitials(p) }}
-               </div>
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-[13px] shadow-sm" [ngClass]="getAvatarStyle(p)">
+                {{ getInitials(p) }}
+              </div>
             </div>
-            <div class="ml-2 sm:ml-3 flex-1 min-w-0">
-               <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{{ getFullName(p) }}</p>
-               <div class="flex items-center gap-1 sm:gap-1.5 mt-0.5">
-                  <ng-container *ngIf="getPrivilegioTags(p).length > 0">
-                    <span *ngFor="let tag of getPrivilegioTags(p)" class="inline-flex px-1 sm:px-1.5 py-0.5 rounded-md text-[8px] sm:text-[9px] font-medium uppercase tracking-wide bg-orange-100/70 dark:bg-orange-800/30 text-orange-700 dark:text-orange-400">
-                       <span class="sm:hidden">{{ tag.label.substring(0, 3) }}</span>
-                       <span class="hidden sm:inline">{{ tag.label }}</span>
-                    </span>
-                  </ng-container>
-               </div>
+            <div class="ml-3 flex-1 min-w-0">
+              <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{{ getFullName(p) }}</p>
+              <div class="flex items-center gap-1 mt-0.5 flex-wrap">
+                <ng-container *ngIf="getPrivilegioTags(p).length > 0">
+                  <span *ngFor="let tag of getPrivilegioTags(p)"
+                    class="inline-flex px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wide"
+                    [ngClass]="tag.class">
+                    {{ tag.label }}
+                  </span>
+                </ng-container>
+              </div>
             </div>
-            <div class="w-4 h-4 rounded-[4px] border flex items-center justify-center ml-1.5 sm:ml-2 shrink-0 transition-colors"
-                 [ngClass]="p.selected ? 'border-orange-500 bg-orange-500' : 'border-orange-300 dark:border-orange-600 bg-white dark:bg-slate-800'">
-                 <svg *ngIf="p.selected" class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5" /></svg>
+            <div aria-hidden="true"
+                 class="w-5 h-5 rounded-[5px] border-2 flex items-center justify-center ml-3 shrink-0 transition-colors"
+                 [ngClass]="p.selected ? ['border-orange-500', 'bg-orange-500', 'animate-check-pop'] : ['border-orange-300', 'dark:border-orange-600', 'bg-white', 'dark:bg-slate-800']">
+              <svg *ngIf="p.selected" class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5" />
+              </svg>
             </div>
           </div>
-          
-          <div *ngIf="filteredGroupMembers().length === 0" class="py-8 sm:py-12 px-4 text-center flex flex-col items-center justify-center">
-             <p class="text-xs sm:text-sm font-medium text-orange-500/80">Ningún miembro asignado</p>
-             <p class="text-[10px] sm:text-[11px] text-orange-400/70 mt-0.5">
-               <span class="sm:hidden">Agrega desde arriba</span>
-               <span class="hidden sm:inline">Agrega publicadores del panel izquierdo</span>
-             </p>
+
+          <!-- Empty state: no members yet -->
+          <div *ngIf="filteredGroupMembers().length === 0" class="py-8 px-4 text-center flex flex-col items-center justify-center gap-3 bg-orange-50/30 dark:bg-orange-900/10 rounded-xl m-1 animate-empty-in">
+            <div class="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center text-orange-400 dark:text-orange-500 shadow-sm">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-orange-600/80 dark:text-orange-400">Grupo sin miembros</p>
+              <p class="text-[11px] text-orange-500/60 dark:text-orange-500/50 mt-0.5 sm:hidden">Usa el tab Disponibles para agregar</p>
+              <p class="text-[11px] text-orange-500/60 dark:text-orange-500/50 mt-0.5 hidden sm:block">Selecciona publicadores del panel izquierdo y presiona →</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </main>
 
-  <!-- Success Toast Overlay -->
-   <div *ngIf="showSuccess()"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/10 backdrop-blur-[2px] animate-fadeIn">
-      <div
-         class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 flex flex-col items-center gap-3 sm:gap-4 transform scale-100 animate-bounceIn w-[260px] sm:min-w-[300px]">
-         <div
-            class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border-4 border-emerald-100 dark:border-emerald-500/20 flex items-center justify-center mb-1">
-            <svg class="w-7 h-7 sm:w-8 sm:h-8 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="3.5">
-               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-         </div>
-         <div class="text-center">
-            <h3 class="text-lg sm:text-xl font-black text-slate-800 dark:text-white tracking-tight">¡Guardado Exitoso!</h3>
-            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Los cambios han sido aplicados.</p>
-         </div>
-      </div>
-   </div>
+  <!-- Mobile Sticky Action Bar -->
+  <div class="md:hidden shrink-0 fixed bottom-0 left-0 right-0 z-20 bg-[#f3f4f6]/95 dark:bg-slate-950/95 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 px-3 py-3 flex gap-2 safe-area-bottom">
+    <button *ngIf="activeTab() === 'available'" (click)="moveToGroup(); activeTab.set('members')"
+      [disabled]="!hasAvailableSelected()"
+      aria-label="Agregar publicadores seleccionados al grupo"
+      class="flex-1 h-12 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shadow-orange-500/20"
+      style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease">
+      Agregar al grupo
+      <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+      </svg>
+    </button>
+    <button *ngIf="activeTab() === 'members'" (click)="moveToAvailable(); activeTab.set('available')"
+      [disabled]="!hasMembersSelected()"
+      aria-label="Quitar miembros seleccionados del grupo"
+      class="flex-1 h-12 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+      style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease">
+      <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+      </svg>
+      Quitar del grupo
+    </button>
+    <button (click)="save()" [disabled]="saving()"
+      class="h-12 px-4 rounded-xl flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm shadow-orange-500/20 shrink-0"
+      style="transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 200ms ease">
+      <svg *ngIf="saving()" class="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      <svg *ngIf="!saving()" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      {{ saving() ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>
 
-   <style>
-      @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.95); } 50% { transform: scale(1.02); } 100% { opacity: 1; transform: scale(1); } }
-      .animate-bounceIn { animation: bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-      .animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      .simple-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
-      .simple-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .simple-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-      .simple-scrollbar::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
-      .dark .simple-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
-      .dark .simple-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
-   </style>
+  <!-- Success Snackbar (non-blocking, slide-up with auto-dismiss) -->
+  <div *ngIf="showSuccess()"
+    class="fixed bottom-20 md:bottom-6 left-1/2 z-[100] pointer-events-none"
+    style="animation: toastIn 0.25s cubic-bezier(0.25,1,0.5,1) both, fadeOut 0.3s ease-in 2.2s forwards; transform: translateX(-50%)">
+    <div class="flex items-center gap-3 px-4 py-3 bg-slate-900 dark:bg-slate-700 text-white rounded-2xl shadow-xl shadow-black/20 border border-white/10 whitespace-nowrap">
+      <div class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+        <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <span class="text-sm font-semibold">Cambios guardados correctamente</span>
+    </div>
+  </div>
+
+  <style>
+    /* ── Panel entrance on page load (staggered) ── */
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    /* ── Panel tab switch (fade + slight rise) ── */
+    @keyframes panelReveal {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+    .panel-animate { animation: panelReveal 0.18s cubic-bezier(0.25, 1, 0.5, 1) both; }
+
+    /* ── Empty state entrance ── */
+    @keyframes emptyIn {
+      from { opacity: 0; transform: scale(0.97) translateY(4px); }
+      to   { opacity: 1; transform: scale(1) translateY(0);      }
+    }
+    .animate-empty-in { animation: emptyIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) both; }
+
+    /* ── Panel ring flash on receiving items ── */
+    @keyframes ringFlash {
+      0%,100% { box-shadow: none; }
+      50%      { box-shadow: 0 0 0 3px #fdba74; }
+    }
+    .ring-flash { animation: ringFlash 0.6s ease-out; }
+
+    /* ── Checkbox pop on select ── */
+    @keyframes checkPop {
+      0%   { transform: scale(1);    }
+      45%  { transform: scale(1.25); }
+      100% { transform: scale(1);    }
+    }
+    .animate-check-pop { animation: checkPop 0.2s cubic-bezier(0.25, 1, 0.5, 1); }
+
+    /* ── Success snackbar slide-up + auto-dismiss ── */
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0);    }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(-50%) scale(0.95); }
+    }
+    .animate-toast-in { animation: toastIn 0.25s cubic-bezier(0.25, 1, 0.5, 1) both; }
+
+    /* ── Respect reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* ── Screen-reader only (Tailwind fallback) ── */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
+
+    /* ── Scrollbar ── */
+    .simple-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .simple-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .simple-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .simple-scrollbar::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    .dark .simple-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+    .dark .simple-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .safe-area-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  </style>
 
 </div>

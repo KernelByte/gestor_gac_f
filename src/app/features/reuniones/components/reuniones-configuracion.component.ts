@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+﻿import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReunionesService } from '../services/reuniones.service';
@@ -106,7 +106,7 @@ import {
            @if (hasActiveFilters()) {
              <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 shrink-0"></div>
              <button (click)="clearAllFilters()"
-                     class="flex items-center gap-1 px-2.5 h-9 rounded-lg text-xs font-bold text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition-all whitespace-nowrap shrink-0">
+                     class="flex items-center gap-1 px-2.5 h-9 rounded-lg text-xs font-bold text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-500 transition-all whitespace-nowrap shrink-0">
                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                Limpiar
              </button>
@@ -126,7 +126,7 @@ import {
                class="flex items-center gap-1 px-2.5 h-7 rounded-lg text-[0.6875rem] font-bold whitespace-nowrap transition-all border"
                [class]="filtroPrivilegio() === item.key
                  ? privilegioActiveClass(item.color)
-                 : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-slate-300 bg-white dark:bg-slate-800/50'">
+                 : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-slate-500 bg-white dark:bg-slate-800/50'">
                {{ item.label }}
                @if (filtroPrivilegio() === item.key) {
                  <svg class="w-3 h-3 ml-0.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -204,7 +204,7 @@ import {
                  <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">S. Ministeriales</p>
                </div>
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
-                 <p class="text-xl font-black text-slate-600 dark:text-slate-300 tabular-nums">{{ countPrecursores() }}</p>
+                 <p class="text-xl font-black text-slate-600 dark:text-slate-500 tabular-nums">{{ countPrecursores() }}</p>
                  <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Precursores</p>
                </div>
              </div>
@@ -739,3 +739,4 @@ export class ReunionesConfiguracionComponent implements OnInit {
     setTimeout(() => this.toast.set(null), 4000);
   }
 }
+

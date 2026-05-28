@@ -58,13 +58,13 @@ import {
       <!-- 2. KPIs -->
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 shrink-0">
         <!-- Total -->
-        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
           <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div class="flex items-center gap-3 z-10">
             <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             </div>
-            <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Territorios Totales</span>
+            <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">Territorios Totales</span>
           </div>
           <div class="flex items-baseline gap-3 z-10">
             <span class="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{{ territorios().length }}</span>
@@ -72,28 +72,28 @@ import {
         </div>
 
         <!-- Asignados -->
-        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
           <div class="absolute right-0 top-0 w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div class="flex items-center gap-3 z-10">
             <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             </div>
-            <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Territorios Asignados</span>
+            <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">Territorios Asignados</span>
           </div>
           <div class="flex items-baseline gap-3 z-10">
             <span class="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{{ asignadosCount() }}</span>
-            <span class="text-slate-400 font-medium text-sm">de {{ territorios().length }}</span>
+            <span class="text-slate-600 font-medium text-sm dark:text-slate-400">de {{ territorios().length }}</span>
           </div>
         </div>
 
         <!-- Disponibles -->
-        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
           <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div class="flex items-center gap-3 z-10">
             <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
             </div>
-            <span class="font-bold text-slate-500 dark:text-slate-400 text-sm">Disponibles</span>
+            <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">Disponibles</span>
           </div>
           <div class="flex items-baseline gap-3 z-10">
             <span class="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{{ disponiblesCount() }}</span>
@@ -143,8 +143,8 @@ import {
               <table class="w-full text-left border-collapse">
                  <thead class="sticky top-0 bg-white dark:bg-slate-800 z-10 border-b border-slate-100 dark:border-slate-700/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                     <tr>
-                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wider">Código / Nombre</th>
-                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Código / Nombre</th>
+                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Estado</th>
                        <th class="px-4 py-4 w-10"></th>
                     </tr>
                  </thead>
@@ -173,7 +173,7 @@ import {
                        </td>
                        <!-- Actions -->
                        <td class="px-4 py-4 text-right">
-                          <button class="p-1.5 text-slate-300 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">
+                          <button class="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">
                              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                           </button>
                        </td>
@@ -186,7 +186,7 @@ import {
            
            <!-- Pagination -->
            <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
-              <span class="text-xs text-slate-400 font-medium">
+              <span class="text-xs text-slate-600 dark:text-slate-400 font-medium">
                 Mostrando {{ paginationStart() }}-{{ paginationEnd() }} de {{ filteredTerritorios().length }}
               </span>
               <div class="flex gap-1">
@@ -246,20 +246,20 @@ import {
               </div>
               @if (selectedStats()) {
                 <div class="flex gap-3 mt-3">
-                  <div class="flex items-center gap-1.5 bg-white/70 dark:bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-slate-100 dark:border-slate-600/50">
+                  <div class="flex items-center gap-1.5 bg-white/70 dark:bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-slate-200 dark:border-slate-600/50">
                     <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     <span class="text-xs font-black text-slate-700 dark:text-slate-200">{{ selectedStats()!.manzanas_count }}</span>
-                    <span class="text-[10px] text-slate-400">manz.</span>
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400">manz.</span>
                   </div>
-                  <div class="flex items-center gap-1.5 bg-white/70 dark:bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-slate-100 dark:border-slate-600/50">
+                  <div class="flex items-center gap-1.5 bg-white/70 dark:bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-slate-200 dark:border-slate-600/50">
                     <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
                     <span class="text-xs font-black text-slate-700 dark:text-slate-200">{{ selectedStats()!.viviendas_count }}</span>
-                    <span class="text-[10px] text-slate-400">viv.</span>
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400">viv.</span>
                   </div>
-                  <div class="flex items-center gap-1.5 bg-white/70 dark:bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-slate-100 dark:border-slate-600/50">
+                  <div class="flex items-center gap-1.5 bg-white/70 dark:bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-slate-200 dark:border-slate-600/50">
                     <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                     <span class="text-xs font-black text-slate-700 dark:text-slate-200">{{ selectedStats()!.cobertura_promedio }}%</span>
-                    <span class="text-[10px] text-slate-400">cob.</span>
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400">cob.</span>
                   </div>
                 </div>
               }
@@ -1446,10 +1446,10 @@ export class TerritoriosPage implements OnInit {
 
    getStatusColor(estado: string): string {
       switch (estado) {
-         case 'Disponible': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-         case 'Asignado': return 'bg-purple-50 text-purple-700 border-purple-100';
-         case 'En Pausa': return 'bg-slate-100 text-slate-600 border-slate-200';
-         default: return 'bg-slate-50';
+         case 'Disponible': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+         case 'Asignado': return 'bg-purple-50 text-purple-700 border-purple-200';
+         case 'En Pausa': return 'bg-slate-100 text-slate-700 border-slate-300';
+         default: return 'bg-slate-50 text-slate-700 border-slate-200';
       }
    }
 

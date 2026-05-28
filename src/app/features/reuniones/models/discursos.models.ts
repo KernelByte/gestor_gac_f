@@ -88,3 +88,24 @@ export const MESES_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
+
+export interface TemaPublicador {
+  id_tema: number;
+  id_publicador: number;
+  nombre_publicador: string;
+  numero_tema: number | null;
+  titulo: string;
+  activo: boolean;
+}
+
+export interface CrearTemaRequest {
+  id_publicador: number;
+  numero_tema?: number | null;
+  titulo: string;
+}
+
+export interface EditarTemaRequest {
+  numero_tema?: number | null;
+  titulo?: string;
+  activo?: boolean;
+}

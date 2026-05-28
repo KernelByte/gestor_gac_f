@@ -348,7 +348,7 @@ export class InformesMainPage implements OnInit {
 
   loadGrupos() {
     const congregacionId = this.congregacionContext.effectiveCongregacionId();
-    const params = congregacionId != null ? { congregacion_id: congregacionId } : {};
+    const params = congregacionId != null ? { id_congregacion: congregacionId } : {};
     this.gruposService.getGrupos(params).subscribe({
       next: (data) => this.grupos.set(data),
       error: (err) => console.error('Error loading groups:', err)

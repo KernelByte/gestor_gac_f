@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component, signal, inject, OnInit, HostListener, DestroyRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -63,19 +63,9 @@ function normalizarTexto(s: string): string {
           <h1 class="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
             Logística de Reuniones
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Acomodadores · Vigilancia · Micrófono · Plataforma · Audio/Video · Aseo</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 min-h-[1rem] truncate">Acomodadores · Vigilancia · Micrófono · Audio/Video</p>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
-          <!-- PDF móvil -->
-          @if (mesDatos()?.confirmado) {
-            <button
-              (click)="descargarPdf()"
-              [disabled]="descargandoPdf()"
-              title="Descargar PDF"
-              class="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-[transform,background-color] duration-150 ease-out shadow-sm active:scale-[0.97] md:hidden">
-              <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-            </button>
-          }
           <!-- Menú móvil (meses + generar) -->
           <button
             (click)="mobileMesesAbierto.set(true)"
@@ -107,41 +97,51 @@ function normalizarTexto(s: string): string {
       <div class="flex-1 min-h-0 flex flex-col md:flex-row gap-3 md:gap-4 overflow-hidden">
 
         <!-- ── SIDEBAR ── -->
-        <aside class="hidden md:flex md:w-60 lg:w-64 xl:w-72 2xl:w-80 shrink-0 flex-col gap-3 overflow-y-auto simple-scrollbar py-0.5 pr-0.5">
-
-          <!-- Generar Mes -->
-          @if (hasEditPermission()) {
-            <button
-              (click)="abrirModalGenerar()"
-              [disabled]="estado() === 'loading'"
-              class="w-full flex items-center justify-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95 shrink-0">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Generar Mes
-            </button>
-          }
+        <aside class="hidden md:flex md:w-60 lg:w-64 xl:w-72 2xl:w-80 shrink-0 flex-col gap-3 overflow-y-auto simple-scrollbar p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
 
           <!-- Historial de meses -->
           @if (mesesDisponibles().length > 0) {
             <div class="flex flex-col gap-1.5">
-              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 pb-0.5">Meses programados</p>
-              @for (m of mesesDisponibles(); track m.ano + '-' + m.mes) {
-                <div class="flex items-center gap-1">
-                  <button
-                    (click)="cargarMes(m.ano, m.mes)"
-                    [disabled]="estado() === 'loading'"
-                    class="flex-1 flex items-center justify-between px-2.5 h-10 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-40 group">
-                    <span>{{ mesLabel(m) }}</span>
-                    <svg class="w-3 h-3 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                  </button>
-                  <button
-                    (click)="descargarPdfMes(m)"
-                    [disabled]="descargandoPdf()"
-                    title="Descargar PDF"
-                    class="shrink-0 w-9 h-10 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 hover:text-emerald-700 transition-all active:scale-95 flex items-center justify-center disabled:opacity-40">
-                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                  </button>
+              <div class="flex items-center justify-between px-1 pb-0.5">
+                <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Meses programados</p>
+                <span class="min-w-[1.25rem] h-4 px-1 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-[0.6rem] font-black flex items-center justify-center">{{ mesesDisponibles().length }}</span>
+              </div>
+              <div class="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900">
+                <div class="flex flex-col gap-0.5 p-1.5">
+                  @for (m of mesesDisponibles(); track m.ano + '-' + m.mes) {
+                    <div class="flex items-center gap-1">
+                      <button
+                        (click)="cargarMes(m.ano, m.mes)"
+                        [disabled]="estado() === 'loading'"
+                        class="flex-1 flex items-center justify-between px-2.5 h-10 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-40 group">
+                        <span>{{ mesLabel(m) }}</span>
+                        <svg class="w-3 h-3 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                      </button>
+                      <button
+                        (click)="descargarPdfMes(m)"
+                        [disabled]="descargandoPdf()"
+                        title="Descargar PDF"
+                        aria-label="Descargar PDF"
+                        class="shrink-0 w-9 h-9 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-500 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-all active:scale-95 flex items-center justify-center disabled:opacity-40">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                      </button>
+                    </div>
+                  }
                 </div>
-              }
+              </div>
+            </div>
+          }
+
+          <!-- Generar nuevo mes -->
+          @if (hasEditPermission()) {
+            <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 shrink-0">
+            <button
+              (click)="abrirModalGenerar()"
+              [disabled]="estado() === 'loading'"
+              class="w-full flex items-center justify-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95 shrink-0 mt-auto">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Generar Mes
+            </button>
             </div>
           }
         </aside>
@@ -151,8 +151,11 @@ function normalizarTexto(s: string): string {
 
           @if (estado() === 'loading') {
             <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm z-10 rounded-2xl">
-              <div class="w-6 h-6 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-violet-500 animate-spin"></div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Cargando...</p>
+              <div class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#6D28D9] animate-spin"></div>
+              <div class="text-center">
+                <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Cargando logística...</p>
+                <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mt-0.5">Cargando asignaciones del mes</p>
+              </div>
             </div>
           }
 
@@ -160,13 +163,14 @@ function normalizarTexto(s: string): string {
             <!-- Estado vacío -->
             <div class="flex-1 flex flex-col gap-4 p-4 md:items-center md:justify-center md:p-8 overflow-y-auto simple-scrollbar">
 
-              <!-- Encabezado vacío (siempre visible) -->
-              <div class="flex flex-col items-center gap-3 text-center pt-4 md:pt-0">
+              <!-- Encabezado vacío — oculto en móvil cuando hay meses (la lista los muestra) -->
+              <div class="flex flex-col items-center gap-3 text-center pt-4 md:pt-0"
+                [class]="mesesDisponibles().length > 0 ? 'hidden md:flex' : 'flex'">
                 <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                   <svg class="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
                 <div>
-                  <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Sin programación activa</h3>
+                  <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Ninguna programación seleccionada</h3>
                   <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
                     @if (mesesDisponibles().length > 0) {
                       Selecciona un mes del historial para verlo.
@@ -177,7 +181,7 @@ function normalizarTexto(s: string): string {
                     }
                   </p>
                 </div>
-                @if (hasEditPermission()) {
+                @if (mesesDisponibles().length === 0 && hasEditPermission()) {
                   <button
                     (click)="abrirModalGenerar()"
                     class="flex items-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-xs font-bold text-white transition-[transform,background-color] duration-150 ease-out shadow-sm active:scale-[0.97]">
@@ -219,15 +223,24 @@ function normalizarTexto(s: string): string {
             <!-- Toolbar del mes cargado -->
             <div class="shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
               <div class="flex items-center gap-2 min-w-0">
+                <!-- Volver — solo móvil -->
+                <button
+                  (click)="mesDatos.set(null); estado.set('idle')"
+                  class="md:hidden shrink-0 w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors active:scale-[0.95]"
+                  title="Volver"
+                  aria-label="Volver">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
                 <span class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
                   {{ mesLabel({ ano: mesDatos()!.ano, mes: mesDatos()!.mes }) }}
                 </span>
+                <!-- Badge estado — solo desktop -->
                 @if (mesDatos()!.confirmado) {
-                  <span class="shrink-0 px-2 py-0.5 rounded-full text-[0.6rem] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                  <span class="hidden md:inline shrink-0 px-2 py-0.5 rounded-full text-[0.6rem] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
                     Confirmado
                   </span>
                 } @else {
-                  <span class="shrink-0 px-2 py-0.5 rounded-full text-[0.6rem] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                  <span class="hidden md:inline shrink-0 px-2 py-0.5 rounded-full text-[0.6rem] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
                     Borrador
                   </span>
                 }
@@ -238,7 +251,7 @@ function normalizarTexto(s: string): string {
                   <button
                     (click)="confirmarMes()"
                     [disabled]="estado() === 'loading'"
-                    class="flex items-center gap-1 px-2.5 h-8 rounded-full border border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-[0.65rem] font-bold transition-all active:scale-95 disabled:opacity-40">
+                    class="flex items-center gap-1 px-3 h-9 rounded-full border border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-[0.65rem] font-bold transition-all active:scale-95 disabled:opacity-40">
                     <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                     Confirmar
                   </button>
@@ -249,7 +262,7 @@ function normalizarTexto(s: string): string {
                     (click)="eliminarMes()"
                     [disabled]="estado() === 'loading'"
                     title="Eliminar programación del mes"
-                    class="flex items-center gap-1 px-2.5 h-8 rounded-full border border-red-300 dark:border-red-700 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-[0.65rem] font-bold transition-all active:scale-95 disabled:opacity-40">
+                    class="flex items-center gap-1 px-3 h-9 rounded-full border border-red-300 dark:border-red-700 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-[0.65rem] font-bold transition-all active:scale-95 disabled:opacity-40">
                     <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     Borrar
                   </button>
@@ -259,7 +272,7 @@ function normalizarTexto(s: string): string {
                   (click)="descargarPdf()"
                   [disabled]="!mesDatos()!.confirmado || descargandoPdf()"
                   [title]="mesDatos()!.confirmado ? 'Descargar PDF del mes' : 'Confirma el mes antes de descargar el PDF'"
-                  class="flex items-center gap-1 px-2.5 h-8 rounded-full border text-[0.65rem] font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                  class="flex items-center gap-1 px-3 h-9 rounded-full border text-[0.65rem] font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                   [class]="mesDatos()!.confirmado
                     ? 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
                     : 'border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'">
@@ -279,7 +292,6 @@ function normalizarTexto(s: string): string {
                     <!-- Card header -->
                     <div class="flex items-baseline gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                       <span class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ formatFecha(fecha.fecha) }}</span>
-                      <span class="text-[0.65rem] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">{{ fecha.dia_semana }}</span>
                     </div>
                     <!-- Secciones de puestos -->
                     @for (seccion of seccionesKeys; track seccion) {
@@ -321,7 +333,7 @@ function normalizarTexto(s: string): string {
                               (click)="onToggleGrupo(fecha, g.id_grupo, !isGrupoAsignado(fecha.fecha, g.id_grupo))"
                               [class]="isGrupoAsignado(fecha.fecha, g.id_grupo)
                                 ? 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.7rem] font-bold bg-[#059669] text-white shadow-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]'
-                                : 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.7rem] font-medium border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 transition-[transform,border-color,color] duration-150 ease-out active:scale-[0.97]'">
+                                : 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.7rem] font-medium border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-500 transition-[transform,border-color,color] duration-150 ease-out active:scale-[0.97]'">
                               @if (isGrupoAsignado(fecha.fecha, g.id_grupo)) {
                                 <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                               }
@@ -421,7 +433,7 @@ function normalizarTexto(s: string): string {
                                             <span class="flex-1 text-xs text-slate-400 italic truncate">Sin asignar</span>
                                           }
                                           <!-- Ícono lápiz al hover -->
-                                          <svg class="w-3 h-3 shrink-0 text-slate-300 hover:text-violet-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                                          <svg class="w-3 h-3 shrink-0 text-slate-500 hover:text-violet-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                                         </button>
                                         <!-- Botón quitar (solo si hay asignado) -->
                                         @if (getAsignacion(fecha.fecha, puesto)?.publicador) {
@@ -429,7 +441,7 @@ function normalizarTexto(s: string): string {
                                             type="button"
                                             (click)="onCambiarPublicador(fecha.fecha, puesto, null)"
                                             title="Quitar asignación"
-                                            class="shrink-0 px-1.5 py-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-base leading-none">
+                                            class="shrink-0 px-1.5 py-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-base leading-none">
                                             ×
                                           </button>
                                         }
@@ -573,7 +585,7 @@ function normalizarTexto(s: string): string {
           </div>
           <div class="flex gap-2 justify-end">
             <button (click)="cancelarConfirm()"
-              class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+              class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
               Cancelar
             </button>
             <button (click)="aceptarConfirm()"
@@ -611,7 +623,7 @@ function normalizarTexto(s: string): string {
             </div>
           </div>
           <div class="flex gap-2 justify-end pt-1">
-            <button (click)="cerrarModal()" class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
+            <button (click)="cerrarModal()" class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
               Cancelar
             </button>
             <button
@@ -832,10 +844,7 @@ export class ReunionesLogisticaComponent implements OnInit {
   readonly mesesOpciones = MESES_ES.map((label, i) => ({ value: i + 1, label }));
 
   hasEditPermission(): boolean {
-    return (
-      this.authStore.hasPermission('reuniones.logistica') ||
-      this.authStore.user()?.roles?.includes('Secretario') === true
-    );
+    return this.authStore.hasPermission('reuniones.logistica');
   }
 
   ngOnInit(): void {
@@ -1135,7 +1144,7 @@ export class ReunionesLogisticaComponent implements OnInit {
 
   formatFecha(fechaStr: string): string {
     const d = new Date(fechaStr + 'T00:00:00');
-    return `${String(d.getDate()).padStart(2, '0')} ${MESES_ES[d.getMonth()].slice(0, 3)}`;
+    return `${String(d.getDate()).padStart(2, '0')} ${MESES_ES[d.getMonth()]}`;
   }
 
   mesLabel(m: MesDisponible): string {
@@ -1254,3 +1263,4 @@ export class ReunionesLogisticaComponent implements OnInit {
     });
   }
 }
+

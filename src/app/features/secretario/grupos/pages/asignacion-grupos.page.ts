@@ -149,6 +149,34 @@ interface Publicador {
       .animate-fade-in-up,
       .kanban-col { animation: none; opacity: 1; transform: none; }
       ::ng-deep .immersive-in { animation: none !important; }
+      .drop-zone-overlay, .drop-arrow-bounce { animation: none !important; }
+    }
+
+    /* ═══════════════════════════════════════
+       DROP ZONE — Indicador de zona de soltar
+    ═══════════════════════════════════════ */
+    @keyframes dropZoneEnter {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes dropZonePulse {
+      0%, 100% { opacity: 0.82; }
+      50%       { opacity: 1;    }
+    }
+    @keyframes dropArrowBounce {
+      0%, 100% { transform: translateY(0);   }
+      55%       { transform: translateY(7px); }
+    }
+    .drop-zone-overlay {
+      animation:
+        dropZoneEnter 0.15s ease-out forwards,
+        dropZonePulse 0.85s 0.15s cubic-bezier(0.4, 0, 0.6, 1) 3;
+      will-change: opacity;
+      transform: translateZ(0);
+    }
+    .drop-arrow-bounce {
+      animation: dropArrowBounce 0.75s 0.15s ease-in-out infinite;
+      will-change: transform;
     }
   `]
 })
@@ -192,7 +220,9 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
   groupSearchTerms = signal<Record<number, string>>({});
   canScrollLeft = signal(false);
   canScrollRight = signal(false);
+  activeColumnIndex = signal(0);
   private resizeObserver: ResizeObserver | null = null;
+  private dragOverTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Selection State
   selectedPublishersIds = signal<Set<number>>(new Set());
@@ -260,6 +290,7 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
       cancelAnimationFrame(this.autoScrollFrameId);
       this.autoScrollFrameId = null;
     }
+    if (this.dragOverTimer) { clearTimeout(this.dragOverTimer); this.dragOverTimer = null; }
     this.draggedPublishers = [];
     this.draggedLeader = null;
     this.draggingLeaderCard = null;
@@ -302,6 +333,15 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /** Scroll directo a una columna por índice (0 = Sin Asignar, 1+ = grupos). */
+  scrollToColumn(index: number) {
+    const el = this.scrollContainer?.nativeElement;
+    if (!el) return;
+    const totalCols = 1 + this.grupos().length;
+    const avgColWidth = el.scrollWidth / totalCols;
+    el.scrollTo({ left: avgColWidth * index, behavior: 'smooth' });
+  }
+
   /** Navegación horizontal: desplaza una "página" a izquierda o derecha. */
   scrollHorizontal(direction: 'left' | 'right') {
     const el = this.scrollContainer?.nativeElement;
@@ -309,6 +349,12 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
     const step = Math.max(200, el.clientWidth * 0.6);
     el.scrollBy({ left: direction === 'left' ? -step : step, behavior: 'smooth' });
   }
+
+  activeColumnName = computed(() => {
+    const idx = this.activeColumnIndex();
+    if (idx === 0) return 'Sin Asignar';
+    return this.grupos()[idx - 1]?.nombre_grupo ?? '';
+  });
 
   /** Actualiza si se puede scroll a izquierda/derecha (para mostrar/ocultar botones). */
   updateScrollNavState() {
@@ -318,6 +364,16 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
     const maxScroll = Math.max(0, scrollWidth - clientWidth);
     this.canScrollLeft.set(scrollLeft > 2);
     this.canScrollRight.set(scrollLeft < maxScroll - 2);
+
+    // Active column tracking for mobile dot indicator
+    const totalCols = 1 + this.grupos().length;
+    if (totalCols > 0 && scrollWidth > clientWidth) {
+      const avgColWidth = scrollWidth / totalCols;
+      const idx = Math.min(Math.round(scrollLeft / avgColWidth), totalCols - 1);
+      this.activeColumnIndex.set(Math.max(0, idx));
+    } else {
+      this.activeColumnIndex.set(0);
+    }
   }
 
   isDraggingOverLeader = signal<{ groupId: number, role: 'capitan' | 'auxiliar' } | null>(null);
@@ -1068,6 +1124,10 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
     this.selectedPublishersIds.set(newSelected);
   }
 
+  clearSelection() {
+    this.selectedPublishersIds.set(new Set());
+  }
+
   isSelected(id: number): boolean {
     return this.selectedPublishersIds().has(id);
   }
@@ -1179,9 +1239,10 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
 
   onDragOver(e: DragEvent, targetId: number | 'unassigned') {
     e.preventDefault();
+    // Cancelar cualquier timer de dragleave pendiente para evitar parpadeo al pasar sobre hijos
+    if (this.dragOverTimer) { clearTimeout(this.dragOverTimer); this.dragOverTimer = null; }
     // Si se está reordenando una columna, gestionar ese estado
     if (this.draggingColumnId()) {
-      // Cancelar cualquier timer de dragleave pendiente
       if (this.columnDragLeaveTimer) {
         clearTimeout(this.columnDragLeaveTimer);
         this.columnDragLeaveTimer = null;
@@ -1198,9 +1259,13 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onDragLeave() {
-    this.isDraggingOver.set(null);
-    // Para el reordenamiento de columnas usamos debounce para evitar parpadeos
-    // causados por entrar/salir de elementos hijos
+    // Debounce para evitar parpadeo cuando el cursor entra en un elemento hijo de la columna
+    if (this.dragOverTimer) clearTimeout(this.dragOverTimer);
+    this.dragOverTimer = setTimeout(() => {
+      this.isDraggingOver.set(null);
+      this.dragOverTimer = null;
+    }, 60);
+
     if (this.draggingColumnId()) {
       if (this.columnDragLeaveTimer) clearTimeout(this.columnDragLeaveTimer);
       this.columnDragLeaveTimer = setTimeout(() => {

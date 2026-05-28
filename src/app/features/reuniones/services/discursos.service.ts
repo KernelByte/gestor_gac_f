@@ -5,15 +5,18 @@ import { environment } from '../../../../environments/environment';
 import {
   ConfirmarDiscursosRequest,
   CrearSalienteRequest,
+  CrearTemaRequest,
   DiscursosMesOut,
   DiscursoSalienteOut,
   DiscursoEntranteOut,
   EditarEntranteRequest,
   EditarSalienteRequest,
+  EditarTemaRequest,
   GenerarDiscursosRequest,
   GrupoSimple,
   MesDiscursosDisponible,
   PublicadorSimple,
+  TemaPublicador,
 } from '../models/discursos.models';
 
 @Injectable({ providedIn: 'root' })
@@ -87,5 +90,25 @@ export class DiscursosService {
   descargarPdfSalientes(ano: number, mes: number, idCong: number | null): Observable<Blob> {
     const params = this.congParams(idCong).set('ano', ano).set('mes', mes);
     return this.http.get(`${this.base}/pdf/salientes`, { params, responseType: 'blob' });
+  }
+
+  getTemas(idCong: number | null): Observable<TemaPublicador[]> {
+    return this.http.get<TemaPublicador[]>(`${this.base}/temas`, { params: this.congParams(idCong) });
+  }
+
+  getTemasPublicador(idPublicador: number, idCong: number | null): Observable<TemaPublicador[]> {
+    return this.http.get<TemaPublicador[]>(`${this.base}/temas/publicador/${idPublicador}`, { params: this.congParams(idCong) });
+  }
+
+  crearTema(payload: CrearTemaRequest, idCong: number | null): Observable<TemaPublicador> {
+    return this.http.post<TemaPublicador>(`${this.base}/temas`, payload, { params: this.congParams(idCong) });
+  }
+
+  editarTema(id: number, payload: EditarTemaRequest, idCong: number | null): Observable<TemaPublicador> {
+    return this.http.put<TemaPublicador>(`${this.base}/temas/${id}`, payload, { params: this.congParams(idCong) });
+  }
+
+  eliminarTema(id: number, idCong: number | null): Observable<void> {
+    return this.http.delete<void>(`${this.base}/temas/${id}`, { params: this.congParams(idCong) });
   }
 }

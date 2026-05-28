@@ -1,4 +1,5 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, LOCALE_ID, importProvidersFrom } from '@angular/core';
+import { LucideAngularModule, APP_ICONS } from './shared/icons';
 import { provideRouter, TitleStrategy } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
     { provide: PUBLICADOR_REPO, useClass: HttpPublicadorRepo },
     { provide: TitleStrategy, useClass: CustomTitleStrategy },
     { provide: LOCALE_ID, useValue: 'es' },
-    provideEchartsCore({ echarts: () => import('echarts') })
+    provideEchartsCore({ echarts: () => import('echarts') }),
+    importProvidersFrom(LucideAngularModule.pick(APP_ICONS))
   ]
 };

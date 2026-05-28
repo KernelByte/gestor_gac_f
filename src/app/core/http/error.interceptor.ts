@@ -8,7 +8,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const logger = inject(LoggerService);
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
-      logger.error('HTTP Error', err);
+      if (err.status !== 404) {
+        logger.error('HTTP Error', err);
+      }
       return throwError(() => err);
     })
   );

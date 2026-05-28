@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   signal,
   computed,
@@ -43,55 +43,56 @@ import {
     <div class="flex flex-col h-full gap-0">
 
       <!-- ===== MEETING TYPE SELECTOR ===== -->
-      <div class="shrink-0 pb-3 overflow-x-auto no-scrollbar"
-        style="mask-image: linear-gradient(to right, black calc(100% - 16px), transparent 100%); -webkit-mask-image: linear-gradient(to right, black calc(100% - 16px), transparent 100%);">
-        <div class="inline-flex items-center gap-1 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800">
+      @if (showTipoTabs()) {
+      <div class="shrink-0 pb-4">
+        <div class="flex items-center gap-1.5 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 w-full md:w-60 lg:w-64 xl:w-72 2xl:w-80">
           @if (canViewEntreSemana()) {
             <button
               (click)="onTipoChange('entre_semana')"
-              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
-              [class]="tipoReunionActivo() === 'entre_semana'
-                ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+              aria-label="Entre semana"
+                            class="flex-1 min-w-0 px-2 h-9 rounded-lg text-[10px] md:text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] active:transition-transform"
+              [ngClass]="tipoReunionActivo() === 'entre_semana'
+                ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20'
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-              Entre semana
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
             </button>
           }
           @if (canViewFinSemana()) {
             <button
               (click)="onTipoChange('fin_semana')"
-              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
-              [class]="tipoReunionActivo() === 'fin_semana'
-                ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+              aria-label="Fin de semana"
+                            class="flex-1 min-w-0 px-2 h-9 rounded-lg text-[10px] md:text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] active:transition-transform"
+              [ngClass]="tipoReunionActivo() === 'fin_semana'
+                ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20'
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-              Fin de semana
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
             </button>
           }
           @if (canViewLogistica()) {
             <button
               (click)="onTipoChange('logistica')"
-              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
-              [class]="tipoReunionActivo() === 'logistica'
-                ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+              aria-label="Logística"
+                            class="flex-1 min-w-0 px-2 h-9 rounded-lg text-[10px] md:text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] active:transition-transform"
+              [ngClass]="tipoReunionActivo() === 'logistica'
+                ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20'
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-              Logística
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             </button>
           }
           @if (canViewDiscursos()) {
             <button
               (click)="onTipoChange('discursos')"
-              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap"
-              [class]="tipoReunionActivo() === 'discursos'
-                ? 'bg-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+              aria-label="Discursos públicos"
+                            class="flex-1 min-w-0 px-2 h-9 rounded-lg text-[10px] md:text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] active:transition-transform"
+              [ngClass]="tipoReunionActivo() === 'discursos'
+                ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20'
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/><path d="M5 3l14 0"/></svg>
-              Discursos
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
             </button>
           }
         </div>
       </div>
+      } <!-- end showTipoTabs -->
 
       <!-- ===== ERROR ===== -->
       @if (estado() === 'error') {
@@ -140,7 +141,7 @@ import {
               </p>
               <a routerLink="/reuniones/configuracion"
                 [queryParams]="{ tab: 'plantillas' }"
-                class="inline-flex items-center gap-1.5 mt-2 px-3 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[0.7rem] font-bold transition-all shadow-sm active:scale-95">
+                class="inline-flex items-center gap-1.5 mt-2 px-3 h-10 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[0.7rem] font-bold transition-all shadow-sm active:scale-95">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                 Ir a cargar guía
               </a>
@@ -156,55 +157,36 @@ import {
       <!-- ===== ÁREA PRINCIPAL: sidebar + contenido ===== -->
       @if (tipoReunionActivo() !== 'logistica' && tipoReunionActivo() !== 'discursos') {
 
-      <!-- Header interno igual que logística -->
+      <!-- Header interno -->
       <div class="shrink-0 flex items-center justify-between gap-3 pb-3">
         <div class="min-w-0">
           <h1 class="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
             {{ tituloReunion() }}
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            @if (tipoReunionActivo() === 'entre_semana') { Tesoros · Seamos Mejores Maestros · Nuestra Vida Cristiana }
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 min-h-[1rem] truncate">
+            @if (tipoReunionActivo() === 'entre_semana') { Tesoros · Seamos Mejores Maestros }
             @if (tipoReunionActivo() === 'fin_semana') { Discurso Público · Estudio de La Atalaya }
           </p>
         </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          @if (gruposPlantilla().length > 0 || loadingPeriodos()) {
+        @if (estado() === 'idle' || estado() === 'error') {
+          <div class="flex items-center gap-1.5 shrink-0 md:hidden">
             <button
-              (click)="showMesesMobile.set(true)"
-              title="Cambiar mes"
-              aria-label="Cambiar mes"
-              class="md:hidden flex items-center gap-1.5 px-3 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold transition-[transform,background-color,border-color] duration-150 ease-out active:scale-[0.97] hover:border-violet-300 dark:hover:border-violet-600">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span class="hidden sm:inline">Meses</span>
+              *ngIf="hasEditPermission()"
+              (click)="openModal()"
+              [disabled]="estado() === 'loading' || (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false)"
+              [title]="(tipoReunionActivo() === 'entre_semana' && tieneGuias() === false) ? 'Carga una guía de actividades' : 'Generar nuevo mes'"
+              class="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-white disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95 shadow-sm shadow-purple-900/20">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Generar Mes
             </button>
-          }
-          <button
-            *ngIf="hasEditPermission()"
-            (click)="openModal()"
-            [disabled]="estado() === 'loading' || (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false)"
-            [title]="(tipoReunionActivo() === 'entre_semana' && tieneGuias() === false) ? 'Carga una guía de actividades para generar un mes' : 'Generar Mes'"
-            class="md:hidden flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-[transform,background-color] duration-150 ease-out shadow-sm shadow-purple-900/20 active:scale-[0.97]">
-            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span class="hidden sm:inline">Generar Mes</span>
-          </button>
-        </div>
+          </div>
+        }
       </div>
 
       <div class="flex-1 min-h-0 flex flex-col md:flex-row gap-3 md:gap-4 overflow-hidden">
 
         <!-- ── SIDEBAR DESKTOP (oculto en móvil) ── -->
-        <aside class="hidden md:flex md:w-60 lg:w-64 xl:w-72 shrink-0 flex-col gap-3 overflow-y-auto simple-scrollbar py-0.5 pr-0.5">
-
-          <!-- Botón Generar Mes -->
-          <button
-            *ngIf="hasEditPermission()"
-            (click)="openModal()"
-            [disabled]="estado() === 'loading' || (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false)"
-            [title]="(tipoReunionActivo() === 'entre_semana' && tieneGuias() === false) ? 'Carga una guía de actividades para generar un mes' : ''"
-            class="w-full flex items-center justify-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95 shrink-0">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Generar Mes
-          </button>
+        <aside class="hidden md:flex md:w-60 lg:w-64 xl:w-72 2xl:w-80 shrink-0 flex-col gap-3 overflow-y-auto simple-scrollbar p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm">
 
           <!-- Historial de programaciones -->
           @if (loadingPeriodos()) {
@@ -213,67 +195,50 @@ import {
             </div>
           } @else if (gruposPlantilla().length > 0) {
             <div class="flex flex-col gap-1.5">
-              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 pb-0.5">Programación confirmada</p>
+              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 pb-0.5">Meses programados</p>
               @for (grupo of gruposPlantilla(); track grupoKey(grupo)) {
-                <div class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900">
-                  <!-- Cabecera del grupo -->
-                  <div class="flex items-center gap-1 px-2.5 h-9 bg-slate-50 dark:bg-slate-800/80">
+                @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
+                  <div class="flex items-center gap-1">
                     <button
-                      (click)="toggleGrupo(grupoKey(grupo), $event)"
-                      class="flex-1 flex items-center gap-2 text-left min-w-0 py-2">
-                      <svg
-                        [class.rotate-90]="gruposExpandidos().has(grupoKey(grupo))"
-                        class="w-3 h-3 text-slate-400 shrink-0 transition-transform duration-150"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                      </svg>
-                      <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{{ abreviarNombreGuia(grupo.nombre_plantilla) }}</span>
-                      <span class="text-[0.65rem] text-slate-400 shrink-0">({{ grupo.periodos.length }})</span>
+                      (click)="loadHistorial(p.mes, p.ano)"
+                      [disabled]="loadingHistorial()"
+                      class="flex-1 flex items-center justify-between px-2.5 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:border-violet-300 dark:hover:border-violet-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-40 group">
+                      <span>{{ p.label }}</span>
+                      <svg class="w-3 h-3 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                     </button>
-                    @if (hasEditPermission()) {
+                    <button
+                      (click)="descargarPdfMes(p, $event)"
+                      [disabled]="descargandoPdf()"
+                      title="Descargar PDF de {{ p.label }}"
+                      class="shrink-0 w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 dark:hover:border-emerald-700 text-emerald-500 hover:text-emerald-700 dark:text-emerald-400 transition-all active:scale-95 flex items-center justify-center disabled:opacity-40">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                    </button>
+                    @if (periodoEliminable(p) && hasEditPermission()) {
                       <button
-                        (click)="eliminarGuiaCompleta(grupo, $event)"
-                        title="Eliminar guía completa"
-                        class="shrink-0 w-7 h-7 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
+                        (click)="eliminarHistorial(p, $event)"
+                        title="Eliminar {{ p.label }}"
+                        class="shrink-0 w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-700 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
                     }
                   </div>
-                  <!-- Meses del grupo -->
-                  @if (gruposExpandidos().has(grupoKey(grupo))) {
-                    <div class="flex flex-col gap-0.5 p-1.5">
-                      @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
-                        <div class="flex items-center gap-1">
-                          <button
-                            (click)="loadHistorial(p.mes, p.ano)"
-                            [disabled]="loadingHistorial()"
-                            class="flex-1 flex items-center justify-between px-2.5 h-8 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-40 group">
-                            <span>{{ p.label }}</span>
-                            <svg class="w-3 h-3 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                          </button>
-                          <button
-                            (click)="descargarPdfMes(p, $event)"
-                            [disabled]="descargandoPdf()"
-                            title="Descargar PDF de {{ p.label }}"
-                            class="shrink-0 w-7 h-7 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-500 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-all active:scale-95 flex items-center justify-center disabled:opacity-40">
-                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                          </button>
-                          @if (periodoEliminable(p) && hasEditPermission()) {
-                            <button
-                              (click)="eliminarHistorial(p, $event)"
-                              title="Eliminar {{ p.label }}"
-                              class="shrink-0 w-7 h-7 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
-                              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            </button>
-                          }
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
+                }
               }
             </div>
           }
+
+          <!-- Botón Generar nuevo mes (al fondo del sidebar, acción secundaria) -->
+          <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 shrink-0">
+            <button
+              *ngIf="hasEditPermission()"
+              (click)="openModal()"
+              [disabled]="estado() === 'loading' || (tipoReunionActivo() === 'entre_semana' && tieneGuias() === false)"
+              [title]="(tipoReunionActivo() === 'entre_semana' && tieneGuias() === false) ? 'Carga una guía de actividades para generar un mes' : 'Generar nuevo mes'"
+              class="w-full flex items-center justify-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-white disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition-all active:scale-95 shadow-sm shadow-purple-900/20">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Generar Mes
+            </button>
+          </div>
         </aside>
 
         <!-- ── PANEL PRINCIPAL ── -->
@@ -281,11 +246,51 @@ import {
 
           <!-- Week toolbar (draft / confirmado / historial) -->
           @if (estado() === 'draft' || estado() === 'confirmado' || estado() === 'historial') {
-            <div class="shrink-0 flex flex-col md:flex-row md:items-center md:justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-              <!-- Week pills (scroll horizontal con snap + fade lateral) -->
+            <div class="shrink-0 flex items-center gap-2 px-2 py-2 border-b border-slate-100 dark:border-slate-800">
+
+              <!-- Volver (historial) / acciones (draft) — izquierda en móvil -->
+              @if (estado() === 'historial') {
+                <button
+                  (click)="semanas.set([]); estado.set('idle'); periodoActivo.set(null)"
+                  title="Volver a la lista"
+                  aria-label="Volver a la lista"
+                  class="shrink-0 flex items-center justify-center w-11 h-11 md:hidden rounded-full border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 transition-all active:scale-[0.97]">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <button
+                  (click)="semanas.set([]); estado.set('idle'); periodoActivo.set(null)"
+                  class="hidden md:flex shrink-0 items-center gap-1 px-3 h-9 rounded-full text-[0.65rem] font-bold border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400 transition-all active:scale-[0.97]">
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                  Volver
+                </button>
+              }
+              @if (estado() === 'draft' && hasEditPermission()) {
+                <div class="flex items-center gap-1 shrink-0">
+                  <button
+                    (click)="confirmar()"
+                    [disabled]="!canConfirmar()"
+                    title="Confirmar borrador"
+                    aria-label="Confirmar borrador"
+                    class="btn-confirmar flex items-center gap-1.5 px-3 h-10 min-w-[88px] rounded-full border disabled:opacity-40 disabled:cursor-not-allowed text-[0.65rem] font-bold transition-all active:scale-95">
+                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Confirmar</span>
+                  </button>
+                  <button
+                    (click)="borrarBorrador()"
+                    [disabled]="!canBorrarBorrador()"
+                    title="Borrar borrador"
+                    aria-label="Borrar borrador"
+                    class="btn-borrar flex items-center gap-1.5 px-3 h-10 min-w-[72px] rounded-full border disabled:opacity-40 disabled:cursor-not-allowed text-[0.65rem] font-bold transition-all active:scale-95">
+                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    <span>Borrar</span>
+                  </button>
+                </div>
+              }
+
+              <!-- Week pills (scroll horizontal) -->
               <div
-                class="flex items-center gap-1.5 overflow-x-auto no-scrollbar min-w-0 snap-x snap-mandatory order-1 md:order-none"
-                style="mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%); -webkit-mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);"
+                class="flex-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar min-w-0 snap-x snap-mandatory"
+                style="mask-image: linear-gradient(to right, transparent 0, black 10px, black calc(100% - 10px), transparent 100%); -webkit-mask-image: linear-gradient(to right, transparent 0, black 10px, black calc(100% - 10px), transparent 100%);"
                 role="tablist"
                 aria-label="Semanas del mes">
                 @for (sem of semanas(); track sem.semana_iso; let i = $index) {
@@ -293,72 +298,97 @@ import {
                     (click)="selectedWeekIdx.set(i)"
                     role="tab"
                     [attr.aria-selected]="selectedWeekIdx() === i"
-                    class="snap-start shrink-0 flex items-center gap-1 px-3 h-9 md:h-7 rounded-full text-xs md:text-[0.7rem] font-bold whitespace-nowrap transition-[transform,background-color,border-color,color] duration-150 ease-out border active:scale-[0.97]"
+                    class="snap-start shrink-0 flex items-center gap-1 px-3 h-9 rounded-full text-[0.7rem] font-bold whitespace-nowrap transition-[transform,background-color,border-color,color] duration-150 ease-out border active:scale-[0.97]"
                     [class]="weekTabClass(i)">
-                    {{ sem.fecha | date:'d MMMM' }}
+                    {{ sem.fecha | date:'d MMM' }}
                   </button>
                 }
               </div>
-              @if (estado() === 'historial') {
-                <button
-                  (click)="semanas.set([]); estado.set('idle')"
-                  class="self-end md:self-auto shrink-0 flex items-center gap-1 px-3 h-9 md:h-7 rounded-full text-[0.65rem] font-bold border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400 transition-[transform,border-color,color] duration-150 ease-out active:scale-[0.97]">
-                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                  Volver
-                </button>
-              }
-              @if (estado() === 'draft' && hasEditPermission()) {
-                <div class="self-end md:self-auto flex items-center gap-1 shrink-0">
-                  <!-- Confirmar -->
-                  <button
-                    (click)="confirmar()"
-                    [disabled]="!canConfirmar()"
-                    title="Confirmar borrador"
-                    class="btn-confirmar flex items-center gap-1 px-2.5 h-9 md:h-7 rounded-full border disabled:opacity-40 disabled:cursor-not-allowed text-[0.65rem] font-bold transition-all active:scale-95">
-                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    <span class="hidden sm:inline">Confirmar</span>
-                  </button>
-                  <!-- Borrar borrador -->
-                  <button
-                    (click)="borrarBorrador()"
-                    [disabled]="!canBorrarBorrador()"
-                    title="Borrar borrador"
-                    class="btn-borrar flex items-center gap-1 px-2.5 h-9 md:h-7 rounded-full border disabled:opacity-40 disabled:cursor-not-allowed text-[0.65rem] font-bold transition-all active:scale-95">
-                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                    <span class="hidden sm:inline">Borrar</span>
-                  </button>
-                </div>
-              }
+
             </div>
           }
 
           <!-- Loading overlay -->
           @if (estado() === 'loading') {
-            <div class="absolute inset-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-[2px] flex items-center justify-center rounded-2xl">
-              <div class="flex flex-col items-center gap-3">
+            <div class="absolute inset-0 z-20 bg-white/85 dark:bg-slate-900/85 backdrop-blur-[2px] flex items-center justify-center rounded-2xl">
+              <div class="flex flex-col items-center gap-3 px-6 text-center">
                 <div class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#6D28D9] animate-spin"></div>
-                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Generando programa...</p>
+                <div>
+                  <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Generando programa...</p>
+                  <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mt-0.5">Asignando partes y calculando disponibilidad</p>
+                </div>
               </div>
             </div>
           }
 
-          <!-- IDLE state (simplificado) -->
+          <!-- IDLE state -->
           @if (estado() === 'idle' || (estado() !== 'loading' && estado() !== 'error' && semanas().length === 0)) {
-            <div class="flex-1 flex flex-col items-center justify-center py-12 text-center px-6">
-              <div class="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-                <svg class="w-7 h-7 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              </div>
-              <h3 class="text-slate-700 dark:text-slate-300 font-bold text-sm mb-1">Ninguna programación seleccionada</h3>
-              <p class="hidden md:block text-slate-400 dark:text-slate-500 text-xs max-w-xs">Elige un mes del panel lateral para verlo, o genera uno nuevo con el botón Generar Mes.</p>
-              <p class="md:hidden text-slate-400 dark:text-slate-500 text-xs max-w-xs">Selecciona una programación o genera una nueva.</p>
-              <!-- Botón solo en móvil (en desktop está el sidebar) -->
-              <button
-                *ngIf="hasEditPermission()"
-                (click)="openModal()"
-                class="md:hidden mt-5 inline-flex items-center gap-2 px-4 h-10 bg-[#6D28D9] hover:bg-[#5b21b6] text-white rounded-xl text-xs font-bold shadow-sm shadow-purple-900/20 transition-all active:scale-95">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Generar Mes
-              </button>
+            <div class="flex-1 flex flex-col overflow-y-auto simple-scrollbar">
+
+              <!-- Sin meses: centrado con CTA -->
+              @if (!loadingPeriodos() && gruposPlantilla().length === 0) {
+                <div class="flex-1 flex flex-col items-center justify-center text-center px-6 py-12">
+                  <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                    <svg class="w-7 h-7 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300">Sin programación activa</h3>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5 max-w-[220px] leading-relaxed">
+                    @if (hasEditPermission()) {
+                      Usa el panel lateral o el botón de abajo para generar el primer mes.
+                    } @else {
+                      Aún no hay programaciones disponibles para esta reunión.
+                    }
+                  </p>
+                  @if (hasEditPermission()) {
+                    <button
+                      (click)="openModal()"
+                      class="md:hidden mt-5 flex items-center gap-2 px-5 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95">
+                      <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      Generar primer mes
+                    </button>
+                  }
+                </div>
+              }
+
+              <!-- Con meses: lista seleccionable en móvil, mensaje en desktop -->
+              @if (gruposPlantilla().length > 0) {
+                <!-- Desktop: instrucción -->
+                <div class="hidden md:flex flex-1 items-center justify-center text-center px-6">
+                  <div>
+                    <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto">
+                      <svg class="w-7 h-7 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mt-4">Selecciona un mes</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5 max-w-[200px] leading-relaxed">Elige un mes del panel lateral para ver las asignaciones.</p>
+                  </div>
+                </div>
+
+                <!-- Móvil: lista de meses -->
+                <div class="md:hidden flex flex-col gap-1.5 p-3">
+                  <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 pb-0.5">Meses programados</p>
+                  @for (grupo of gruposPlantilla(); track grupoKey(grupo)) {
+                    @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
+                      <div class="flex items-center gap-2">
+                        <button
+                          (click)="loadHistorial(p.mes, p.ano)"
+                          [disabled]="loadingHistorial()"
+                          class="flex-1 flex items-center justify-between px-3 h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:border-violet-300 dark:hover:border-violet-700 text-slate-700 dark:text-slate-200 text-sm font-medium transition-all active:scale-[0.98] disabled:opacity-40 group">
+                          <span>{{ p.label }}</span>
+                          <svg class="w-4 h-4 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                        <button
+                          (click)="descargarPdfMes(p, $event)"
+                          [disabled]="descargandoPdf()"
+                          title="Descargar PDF"
+                          class="shrink-0 w-12 h-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-300 text-emerald-500 hover:text-emerald-700 transition-all active:scale-95 flex items-center justify-center disabled:opacity-40">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                        </button>
+                      </div>
+                    }
+                  }
+                </div>
+              }
+
             </div>
           }
 
@@ -366,12 +396,14 @@ import {
           @if ((estado() === 'draft' || estado() === 'confirmado' || estado() === 'historial') && currentSemana(); as semana) {
 
             <!-- Sticky info bar: título semana + estado -->
-            <div class="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 py-2 flex items-center justify-between gap-4">
+            <div class="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-3 py-1.5 flex items-center justify-between gap-3">
               <div class="min-w-0">
-                @if (semana.titulo_guia) {
-                  <p class="text-[0.78rem] font-bold text-slate-700 dark:text-slate-200 truncate">{{ semana.titulo_guia }}</p>
+                @if (tipoReunionActivo() === 'entre_semana') {
+                  @if (semana.titulo_guia) {
+                    <p class="text-[0.78rem] font-bold text-slate-700 dark:text-slate-200 truncate">{{ semana.titulo_guia }}</p>
+                  }
+                  <p class="text-[0.6rem] text-slate-400 dark:text-slate-500 font-medium leading-none mt-0.5">{{ semana.partes.length }} partes</p>
                 }
-                <p class="text-[0.6rem] text-slate-400 dark:text-slate-500 font-medium leading-none mt-0.5">{{ semana.partes.length }} partes</p>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <span class="w-1.5 h-1.5 rounded-full shrink-0"
@@ -386,8 +418,8 @@ import {
 
                 <!-- Encabezado de sección -->
                 <div class="sticky top-0 z-10" [style]="'background:' + seccion.headerBg">
-                  <div class="px-4 py-2 flex items-center gap-2.5" [style]="'border-left:3px solid ' + seccion.color">
-                    <div class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" [style.background-color]="seccion.color">
+                  <div class="px-3 py-1.5 min-h-[40px] flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0" [style.background-color]="seccion.color">
                       <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path [attr.d]="seccion.iconPath"/>
                       </svg>
@@ -400,7 +432,7 @@ import {
                         [style]="'border:1px solid ' + seccionColor(seccion.color, 0.3) + '; background:' + seccionColor(seccion.color, 0.06)">
                         <button
                           (click)="selectedSala.set('Principal'); $event.stopPropagation()"
-                          class="flex items-center justify-center gap-1 px-2.5 h-8 md:h-6 min-w-[56px] rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-[transform,background-color,color,opacity] duration-150 ease-out active:scale-[0.97]"
+                          class="flex items-center justify-center gap-1 px-2 h-7 md:h-6 min-w-[48px] rounded-md text-[0.62rem] font-bold whitespace-nowrap transition-[transform,background-color,color,opacity] duration-150 ease-out active:scale-[0.97]"
                           [style]="selectedSala() === 'Principal'
                             ? 'background:' + seccion.color + '; color:white; box-shadow:0 1px 4px rgba(0,0,0,0.18)'
                             : 'color:' + seccion.color + '; opacity:0.55'">
@@ -408,7 +440,7 @@ import {
                         </button>
                         <button
                           (click)="selectedSala.set('Auxiliar'); $event.stopPropagation()"
-                          class="flex items-center justify-center gap-1 px-2.5 h-8 md:h-6 min-w-[56px] rounded-md text-[0.65rem] font-bold whitespace-nowrap transition-[transform,background-color,color,opacity] duration-150 ease-out active:scale-[0.97]"
+                          class="flex items-center justify-center gap-1 px-2 h-7 md:h-6 min-w-[48px] rounded-md text-[0.62rem] font-bold whitespace-nowrap transition-[transform,background-color,color,opacity] duration-150 ease-out active:scale-[0.97]"
                           [style]="selectedSala() === 'Auxiliar'
                             ? 'background:' + seccion.color + '; color:white; box-shadow:0 1px 4px rgba(0,0,0,0.18)'
                             : 'color:' + seccion.color + '; opacity:0.55'">
@@ -421,24 +453,24 @@ import {
                 </div>
 
                 <!-- Grupos de partes -->
-                <div class="px-3 py-2 flex flex-col gap-1.5">
+                <div class="px-2 py-1.5 flex flex-col gap-1 lg:px-3 lg:py-2 lg:gap-1.5">
                   @for (grupo of seccion.grupos; track grupo.key) {
                     <div class="parte-card"
                       [class.has-conflict]="grupoHasConflict(grupo.partes)"
                       [class.has-swapped]="grupoHasSwapped(grupo.partes)"
                       [class.is-open]="isGroupOpen(grupo)"
                       [class.dropdown-active]="grupoDropdownActivo(grupo.partes)">
-                      <div class="px-3.5 pt-2.5 pb-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3 sm:py-2.5">
+                      <div class="px-3 pt-2 pb-2 flex flex-col gap-1.5 lg:flex-row lg:items-center lg:gap-3 lg:px-3.5 lg:py-2.5">
                         <!-- Fila 1: dot + título + duración + badges de estado -->
                         <div class="flex items-center gap-3 flex-1 min-w-0">
                           <div class="w-2 h-2 rounded-full shrink-0 mt-px" [style.background-color]="grupoDotColor(grupo.partes, seccion.color)"></div>
                           <div class="flex-1 min-w-0">
                             <div class="flex items-baseline gap-1.5 min-w-0">
-                              <p class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate leading-snug flex-1 min-w-0">
+                              <p class="text-sm font-medium text-slate-700 dark:text-slate-200 line-clamp-2 lg:truncate leading-snug flex-1 min-w-0">
                                 {{ displayNombreParte(grupo.partes[0]) }}
                               </p>
                               @if (grupo.partes[0].duracion_minutos) {
-                                <span class="text-[0.55rem] font-black shrink-0 px-1.5 py-[2px] rounded leading-none"
+                                <span class="text-[0.65rem] font-black shrink-0 px-1.5 py-[2px] rounded leading-none"
                                   [style.color]="seccion.color" [style.background-color]="seccion.badgeBg">
                                   {{ grupo.partes[0].duracion_minutos }}&nbsp;min
                                 </span>
@@ -457,11 +489,11 @@ import {
                           </div>
                         </div>
                         <!-- Fila 2 (móvil) / columna derecha (sm+): pills de asignados -->
-                        <div class="flex flex-wrap items-center justify-end gap-1.5 pl-5 sm:pl-0 sm:shrink-0">
-                          @for (asig of grupo.partes; track asig.id_programa_parte; let pi = $index) {
+                        <div class="flex flex-wrap items-center gap-1.5 pl-5 lg:pl-0 lg:justify-end lg:shrink-0">
+                          @for (asig of grupo.partes; track $index; let pi = $index) {
                             <div class="relative">
                               <button
-                                (click)="estado() === 'historial' ? openHistorialEdit(asig) : toggleDropdown(asig)"
+                                (click)="onPillClick(asig, seccion)"
                                 [disabled]="estado() === 'confirmado' || !hasEditPermission()"
                                 [class]="assigneeButtonClass(asig)">
                                 @if (grupo.partes.length > 1) {
@@ -490,7 +522,7 @@ import {
                               </button>
                               <!-- Dropdown draft -->
                               @if (estado() === 'draft' && openDropdownId() === pillKey(asig)) {
-                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-[min(16rem,calc(100vw-2rem))] max-w-[16rem] overflow-hidden" style="border-radius:14px">
+                                <div class="dropdown-panel hidden md:block absolute right-0 top-full mt-2 z-50 w-64 max-w-[16rem] overflow-hidden" style="border-radius:14px">
                                   <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
                                     <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
                                     <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Candidatos</span>
@@ -560,7 +592,7 @@ import {
                               }
                               <!-- Dropdown historial -->
                               @if (estado() === 'historial' && editingHistorialId() === (asig.id_asignacion ?? -asig.id_programa_parte)) {
-                                <div class="dropdown-panel absolute right-0 top-full mt-2 z-50 w-[min(16rem,calc(100vw-2rem))] max-w-[16rem] overflow-hidden" style="border-radius:14px">
+                                <div class="dropdown-panel hidden md:block absolute right-0 top-full mt-2 z-50 w-64 max-w-[16rem] overflow-hidden" style="border-radius:14px">
                                   <div class="dropdown-header px-3.5 py-2.5 flex items-center gap-2">
                                     <span class="w-[3px] h-3.5 rounded-full shrink-0" [style.background-color]="seccion.color"></span>
                                     <span class="dropdown-label text-[0.6rem] font-bold uppercase tracking-widest flex-1">Cambiar asignado</span>
@@ -659,12 +691,12 @@ import {
             class="md:hidden fixed left-0 right-0 bottom-0 z-[61] bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-700 flex flex-col max-h-[80vh] animate-slideUp"
             role="dialog"
             aria-modal="true"
-            aria-label="Programación confirmada">
+            aria-label="Meses programados">
             <div class="shrink-0 flex items-center justify-center pt-2.5 pb-1">
               <span class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
             </div>
             <div class="shrink-0 flex items-center justify-between px-4 pb-2.5 border-b border-slate-100 dark:border-slate-800">
-              <span class="text-sm font-bold text-slate-800 dark:text-slate-100">Programación confirmada</span>
+              <span class="text-sm font-bold text-slate-800 dark:text-slate-100">Meses programados</span>
               <button
                 (click)="showMesesMobile.set(false)"
                 aria-label="Cerrar"
@@ -679,61 +711,33 @@ import {
                 </div>
               } @else {
                 @for (grupo of gruposPlantilla(); track grupoKey(grupo)) {
-                  <div class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div class="flex items-center gap-1 px-3 h-10 bg-slate-50 dark:bg-slate-800/80">
+                  @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
+                    <div class="flex items-center gap-1">
                       <button
-                        (click)="toggleGrupo(grupoKey(grupo), $event)"
-                        class="flex-1 flex items-center gap-2 text-left min-w-0 py-2">
-                        <svg
-                          [class.rotate-90]="gruposExpandidos().has(grupoKey(grupo))"
-                          class="w-3 h-3 text-slate-400 shrink-0 transition-transform duration-150"
-                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                        </svg>
-                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{{ abreviarNombreGuia(grupo.nombre_plantilla) }}</span>
-                        <span class="text-[0.65rem] text-slate-400 shrink-0">({{ grupo.periodos.length }})</span>
+                        (click)="loadHistorial(p.mes, p.ano); showMesesMobile.set(false)"
+                        [disabled]="loadingHistorial()"
+                        class="flex-1 flex items-center justify-between px-3 h-11 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-[transform,background-color] duration-150 ease-out active:scale-[0.98] disabled:opacity-40 group">
+                        <span>{{ p.label }}</span>
+                        <svg class="w-3 h-3 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                       </button>
-                      @if (hasEditPermission()) {
+                      <button
+                        (click)="descargarPdfMes(p, $event)"
+                        [disabled]="descargandoPdf()"
+                        title="Descargar PDF de {{ p.label }}"
+                        class="shrink-0 w-11 h-11 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-500 hover:text-violet-700 dark:text-violet-400 transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.97] flex items-center justify-center disabled:opacity-40">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                      </button>
+                      @if (periodoEliminable(p) && hasEditPermission()) {
                         <button
-                          (click)="eliminarGuiaCompleta(grupo, $event)"
-                          title="Eliminar guía completa"
-                          class="shrink-0 w-9 h-9 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
+                          (click)="eliminarHistorial(p, $event)"
+                          title="Eliminar {{ p.label }}"
+                          aria-label="Eliminar {{ p.label }}"
+                          class="shrink-0 w-11 h-11 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.97] flex items-center justify-center">
                           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         </button>
                       }
                     </div>
-                    @if (gruposExpandidos().has(grupoKey(grupo))) {
-                      <div class="flex flex-col gap-0.5 p-1.5">
-                        @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
-                          <div class="flex items-center gap-1">
-                            <button
-                              (click)="loadHistorial(p.mes, p.ano); showMesesMobile.set(false)"
-                              [disabled]="loadingHistorial()"
-                              class="flex-1 flex items-center justify-between px-3 h-11 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-[transform,background-color] duration-150 ease-out active:scale-[0.98] disabled:opacity-40 group">
-                              <span>{{ p.label }}</span>
-                              <svg class="w-3 h-3 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                            </button>
-                            <button
-                              (click)="descargarPdfMes(p, $event)"
-                              [disabled]="descargandoPdf()"
-                              title="Descargar PDF de {{ p.label }}"
-                              class="shrink-0 w-11 h-11 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-500 hover:text-violet-700 dark:text-violet-400 transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.97] flex items-center justify-center disabled:opacity-40">
-                              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                            </button>
-                            @if (periodoEliminable(p) && hasEditPermission()) {
-                              <button
-                                (click)="eliminarHistorial(p, $event)"
-                                title="Eliminar {{ p.label }}"
-                                aria-label="Eliminar {{ p.label }}"
-                                class="shrink-0 w-11 h-11 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-[transform,background-color,color] duration-150 ease-out active:scale-[0.97] flex items-center justify-center">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                              </button>
-                            }
-                          </div>
-                        }
-                      </div>
-                    }
-                  </div>
+                  }
                 }
               }
             </div>
@@ -743,6 +747,133 @@ import {
       </div>
       } <!-- end @if tipoReunionActivo !== logistica -->
     </div>
+
+    <!-- ── SHEET DE CANDIDATOS (móvil) ── -->
+    @if (mobileSheetAsig() !== null) {
+      <div
+        class="md:hidden fixed inset-0 z-[62] bg-black/40 backdrop-blur-sm"
+        (click)="closeMobileSheet()"
+        aria-hidden="true">
+      </div>
+      <div
+        class="md:hidden fixed left-0 right-0 bottom-0 z-[63] bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-700 flex flex-col max-h-[80vh] animate-slideUp"
+        role="dialog" aria-modal="true">
+        <!-- Handle -->
+        <div class="shrink-0 flex items-center justify-center pt-2.5 pb-1">
+          <span class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+        </div>
+        <!-- Header -->
+        <div class="shrink-0 flex items-center gap-2 px-4 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+          <span class="w-[3px] h-4 rounded-full shrink-0" [style.background-color]="mobileSheetSeccion()?.color"></span>
+          <span class="flex-1 text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+            {{ estado() === 'historial' ? 'Cambiar asignado' : 'Candidatos disponibles' }}
+          </span>
+          @if (mobileSheetAsig()?.es_ayudante && estado() === 'draft') {
+            <div class="flex items-center gap-0.5">
+              @for (opt of sexoOpts; track opt.v) {
+                <button
+                  (click)="setSexoFilter(mobileSheetAsig()!, opt.v); $event.stopPropagation()"
+                  class="px-1.5 h-5 rounded text-[0.55rem] font-black transition-all active:scale-95"
+                  [style]="getSexoFilter(mobileSheetAsig()!) === opt.v
+                    ? 'background:' + mobileSheetSeccion()?.color + '; color:white'
+                    : 'opacity:0.4'">{{ opt.l }}</button>
+              }
+            </div>
+          }
+          <button (click)="closeMobileSheet()"
+            class="w-9 h-9 -mr-2 rounded-lg flex items-center justify-center text-slate-400 active:scale-95 transition-transform">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <!-- Search -->
+        <div class="shrink-0 px-3 pt-3 pb-2">
+          <div class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar persona..."
+              [value]="busquedaCandidato()"
+              (input)="onBusquedaCandidatoChange($any($event.target).value)"
+              class="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none min-w-0" />
+            @if (loadingBusqueda()) {
+              <div class="w-3.5 h-3.5 rounded-full border-2 border-slate-300 border-t-[#6D28D9] animate-spin shrink-0"></div>
+            }
+          </div>
+        </div>
+        <!-- Candidate list -->
+        <div class="flex-1 min-h-0 px-2 pb-4 flex flex-col gap-0.5 overflow-y-auto simple-scrollbar">
+          @if (estado() === 'draft') {
+            @if (busquedaCandidato().trim()) {
+              @if (busquedaResultados().length === 0 && !loadingBusqueda()) {
+                <p class="text-xs text-slate-400 text-center py-5">Sin resultados</p>
+              }
+              @for (pub of busquedaResultados(); track pub.id_publicador) {
+                <button
+                  (click)="swapAsignacion(selectedWeekIdx(), mobileSheetAsig()!, { id_publicador: pub.id_publicador, nombre_completo: pub.nombre_completo, score: 0, notas_score: [], sexo: pub.sexo }); closeMobileSheet()"
+                  class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-3 text-left rounded-xl">
+                  <span class="dropdown-alt-name text-sm font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
+                </button>
+              }
+            } @else {
+              @for (alt of filteredAlternativos(mobileSheetAsig()!); track alt.id_publicador) {
+                <button
+                  (click)="swapAsignacion(selectedWeekIdx(), mobileSheetAsig()!, alt); closeMobileSheet()"
+                  class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-3 text-left rounded-xl">
+                  <span class="dropdown-alt-name text-sm font-semibold truncate flex-1">{{ alt.nombre_completo }}</span>
+                  <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
+                    [style.color]="mobileSheetSeccion()?.color"
+                    [style.background-color]="mobileSheetSeccion()?.badgeBg">
+                    {{ alt.score | number:'1.2-2' }}
+                  </span>
+                </button>
+              }
+              @if (filteredAlternativos(mobileSheetAsig()!).length === 0) {
+                <p class="text-xs text-slate-400 text-center py-5">Sin sugerencias</p>
+              }
+            }
+          } @else if (estado() === 'historial') {
+            @if (busquedaCandidato().trim()) {
+              @if (busquedaResultados().length === 0 && !loadingBusqueda()) {
+                <p class="text-xs text-slate-400 text-center py-5">Sin resultados</p>
+              }
+              @for (pub of busquedaResultados(); track pub.id_publicador) {
+                <button
+                  (click)="selectHistorialCandidato(selectedWeekIdx(), mobileSheetAsig()!, { id_publicador: pub.id_publicador, nombre_completo: pub.nombre_completo, score: 0, notas_score: [], sexo: pub.sexo }); closeMobileSheet()"
+                  class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-3 text-left rounded-xl">
+                  <span class="dropdown-alt-name text-sm font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
+                </button>
+              }
+            } @else {
+              @if (loadingCandidatos()) {
+                <div class="flex items-center justify-center py-5">
+                  <div class="w-5 h-5 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
+                </div>
+              } @else if (historialCandidatos().length === 0) {
+                <p class="text-xs text-slate-400 text-center py-5">Sin candidatos disponibles</p>
+              } @else {
+                <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-1">Sugeridos</p>
+                @for (alt of historialCandidatos(); track alt.id_publicador) {
+                  <button
+                    (click)="selectHistorialCandidato(selectedWeekIdx(), mobileSheetAsig()!, alt); closeMobileSheet()"
+                    class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-3 text-left rounded-xl">
+                    <span class="dropdown-alt-name text-sm font-semibold truncate flex-1">{{ alt.nombre_completo }}</span>
+                    <span class="text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
+                      [style.color]="mobileSheetSeccion()?.color"
+                      [style.background-color]="mobileSheetSeccion()?.badgeBg">
+                      {{ alt.score | number:'1.2-2' }}
+                    </span>
+                  </button>
+                }
+              }
+            }
+          }
+        </div>
+      </div>
+    }
 
     <!-- ===== MODAL GENERAR MES ===== -->
     @if (showModal()) {
@@ -808,7 +939,7 @@ import {
                     : 'border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600'">
                   <span class="flex-1 min-w-0">
                     @if (plantillaSeleccionada; as sel) {
-                      <span class="block text-[0.78rem] font-semibold text-slate-800 dark:text-slate-100 truncate">{{ sel.nombre }}</span>
+                      <span class="block text-[0.78rem] font-semibold text-slate-800 dark:text-slate-100 leading-snug">{{ sel.nombre }}</span>
                     } @else {
                       <span class="block text-[0.78rem] text-slate-400">Seleccionar plantilla...</span>
                     }
@@ -838,7 +969,7 @@ import {
                           }
                         </span>
                         <span class="flex-1 min-w-0">
-                          <span class="block text-[0.78rem] font-semibold text-slate-800 dark:text-slate-100 truncate">{{ p.nombre }}</span>
+                          <span class="block text-[0.78rem] font-semibold text-slate-800 dark:text-slate-100 leading-snug">{{ p.nombre }}</span>
                         </span>
                       </button>
                     }
@@ -901,7 +1032,7 @@ import {
             <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">{{ fechasPreview().length }} semanas a crear</p>
             <div class="flex flex-wrap justify-center gap-1.5">
               @for (fecha of fechasPreview(); track fecha) {
-                <span class="flex items-center justify-center py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[0.65rem] font-mono font-medium text-slate-600 dark:text-slate-300 shadow-sm w-[calc(33.3%-0.25rem)]">
+                <span class="flex items-center justify-center py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[0.65rem] font-mono font-medium text-slate-600 dark:text-slate-500 shadow-sm w-[calc(33.3%-0.25rem)]">
                   {{ fecha }}
                 </span>
               }
@@ -911,7 +1042,7 @@ import {
           <div class="flex gap-2">
             <button
               (click)="showModal.set(false)"
-              class="flex-1 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
+              class="flex-1 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-500 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
               Cancelar
             </button>
             <button
@@ -961,7 +1092,7 @@ import {
             <div class="flex gap-2">
               <button
                 (click)="cancelarConflictoModal()"
-                class="flex-1 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
+                class="flex-1 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-500 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
                 Cancelar
               </button>
               <button
@@ -976,7 +1107,7 @@ import {
             </p>
             <button
               (click)="cancelarConflictoModal()"
-              class="w-full h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
+              class="w-full h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-500 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
               Entendido
             </button>
           }
@@ -1160,7 +1291,7 @@ import {
     .dropdown-alt-name { color: #334155; }
     :host-context(.dark) .dropdown-alt-name { color: #e2e8f0; }
     .dropdown-alt-row {
-      transition: background-color 100ms ease;
+      transition: background-color 80ms ease-out;
       background: transparent;
     }
     .dropdown-alt-row:hover { background: rgba(0,0,0,0.04); }
@@ -1181,16 +1312,17 @@ import {
 
     /* ── Bottom-sheet slide up (mobile meses) ── */
     @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to   { transform: translateY(0); }
+      from { opacity: 0; transform: translateY(100%); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .animate-slideUp { animation: slideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+    .animate-slideUp { animation: slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1); }
 
     /* ── Action buttons (Confirmar / Borrar) ── */
     .btn-confirmar {
       background: rgba(5,150,105,0.08);
       border-color: rgba(5,150,105,0.25);
       color: #047857;
+      transition: background-color 120ms ease-out, border-color 120ms ease-out;
     }
     .btn-confirmar:not(:disabled):hover {
       background: rgba(5,150,105,0.14);
@@ -1207,6 +1339,7 @@ import {
       background: rgba(220,38,38,0.07);
       border-color: rgba(220,38,38,0.22);
       color: #b91c1c;
+      transition: background-color 120ms ease-out, border-color 120ms ease-out;
     }
     .btn-borrar:not(:disabled):hover {
       background: rgba(220,38,38,0.13);
@@ -1226,7 +1359,7 @@ import {
       to   { opacity: 1; }
     }
     @keyframes dialogIn {
-      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      from { opacity: 0; transform: scale(0.95) translateY(4px); }
       to   { opacity: 1; transform: scale(1)    translateY(0); }
     }
     .confirm-overlay {
@@ -1239,7 +1372,7 @@ import {
       padding: 1rem;
       background: rgba(0,0,0,0.45);
       backdrop-filter: blur(4px);
-      animation: overlayIn 160ms ease;
+      animation: overlayIn 140ms ease-out;
     }
     .confirm-dialog {
       width: 100%;
@@ -1327,7 +1460,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   hasEditPermission = computed(() => {
     const tipo = this.tipoReunionActivo();
     const perm = tipo === 'fin_semana' ? 'reuniones.fin_semana_editar' : 'reuniones.entre_semana_editar';
-    return this.authStore.hasPermission(perm) || !!this.authStore.user()?.roles?.includes('Secretario');
+    return this.authStore.hasPermission(perm);
   });
 
   puedeCargarGuia = computed(() => {
@@ -1368,6 +1501,8 @@ export class ReunionesProgramacionComponent implements OnInit {
     }
     return Array.from(mapa.values());
   });
+
+  totalPeriodos = computed(() => this.gruposPlantilla().reduce((acc, g) => acc + g.periodos.length, 0));
 
   gruposExpandidos = signal<Set<string>>(new Set());
 
@@ -1428,24 +1563,17 @@ export class ReunionesProgramacionComponent implements OnInit {
   openDropdownId = signal<string | null>(null);
   selectedSala = signal<'Principal' | 'Auxiliar'>('Principal');
   showMesesMobile = signal(false);
+  periodoActivo = signal<{ mes: number; ano: number } | null>(null);
+  mobileSheetAsig = signal<AsignacionDraft | null>(null);
+  mobileSheetSeccion = signal<any>(null);
 
   // ── Meeting type toggle ────────────────────────────────────────
   tipoReunionActivo = signal<'entre_semana' | 'fin_semana' | 'logistica' | 'discursos'>('entre_semana');
 
-  private isSecretario = computed(() => !!this.authStore.user()?.roles?.includes('Secretario'));
-
-  canViewEntreSemana = computed(() =>
-    this.authStore.hasPermission('reuniones.entre_semana') || this.isSecretario()
-  );
-  canViewFinSemana = computed(() =>
-    this.authStore.hasPermission('reuniones.fin_semana') || this.isSecretario()
-  );
-  canViewLogistica = computed(() =>
-    this.authStore.hasPermission('reuniones.logistica') || this.isSecretario()
-  );
-  canViewDiscursos = computed(() =>
-    this.authStore.hasPermission('reuniones.discursos') || this.isSecretario()
-  );
+  canViewEntreSemana = computed(() => this.authStore.hasPermission('reuniones.entre_semana'));
+  canViewFinSemana   = computed(() => this.authStore.hasPermission('reuniones.fin_semana'));
+  canViewLogistica   = computed(() => this.authStore.hasPermission('reuniones.logistica'));
+  canViewDiscursos   = computed(() => this.authStore.hasPermission('reuniones.discursos'));
   showTipoTabs = computed(() =>
     [this.canViewEntreSemana(), this.canViewFinSemana(), this.canViewLogistica(), this.canViewDiscursos()]
       .filter(Boolean).length > 1
@@ -1634,7 +1762,15 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   private _buildSecciones(partes: AsignacionDraft[], isDark: boolean) {
     const map = new Map<string, AsignacionDraft[]>();
-    for (const p of partes) {
+    for (const p of partes.filter(p => {
+      const n = (p.nombre_parte || '').toLowerCase();
+      if (n.startsWith('canción') || n.startsWith('cancion') || n.startsWith('canto')) return false;
+      if (n.includes('palabras de conclusión') || n.includes('palabras de conclusion')) return false;
+      if (this.tipoReunionActivo() === 'fin_semana' &&
+          (n.includes('conductor') || n.includes('estudio de la atalaya')) &&
+          !n.includes('lector')) return false;
+      return true;
+    })) {
       const key = this._inferSeccion(p);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(p);
@@ -2070,6 +2206,7 @@ export class ReunionesProgramacionComponent implements OnInit {
         })
       );
       this.openDropdownId.set(null);
+      this.mobileSheetAsig.set(null);
 
       // Persist the swap to Redis so confirmation uses the updated assignment
       if (this.estado() === 'draft') {
@@ -2092,6 +2229,24 @@ export class ReunionesProgramacionComponent implements OnInit {
   toggleDropdown(asig: AsignacionDraft): void {
     const key = this.pillKey(asig);
     this.openDropdownId.update((id) => (id === key ? null : key));
+  }
+
+  onPillClick(asig: AsignacionDraft, seccion: any): void {
+    this.mobileSheetAsig.set(asig);
+    this.mobileSheetSeccion.set(seccion);
+    if (this.estado() === 'historial') {
+      this.openHistorialEdit(asig);
+    } else {
+      this.toggleDropdown(asig);
+    }
+  }
+
+  closeMobileSheet(): void {
+    this.mobileSheetAsig.set(null);
+    this.openDropdownId.set(null);
+    this.editingHistorialId.set(null);
+    this.busquedaCandidato.set('');
+    this.busquedaResultados.set([]);
   }
 
   isGroupOpen(grupo: any): boolean {
@@ -2439,6 +2594,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   loadHistorial(mes: number, ano: number): void {
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong) return;
+    this.periodoActivo.set({ mes, ano });
     this.loadingHistorial.set(true);
     this.reunionesSvc.getHistorialConfirmado(this.tipoReunionActivo(), ano, mes, idCong).subscribe({
       next: (semanas) => {
@@ -2530,6 +2686,7 @@ export class ReunionesProgramacionComponent implements OnInit {
         })
       );
       this.editingHistorialId.set(null);
+      this.mobileSheetAsig.set(null);
     };
 
     const doEdit = () => {
@@ -2626,3 +2783,4 @@ export class ReunionesProgramacionComponent implements OnInit {
     }
   }
 }
+

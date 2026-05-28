@@ -16,14 +16,14 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
     <div class="flex flex-col gap-3 h-full">
 
       <!-- Tab Navigation (mismo estilo que informes, colores naranja) -->
-      <div class="shrink-0 flex items-center gap-1.5 bg-white dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors w-full sm:w-[380px]">
+      <div class="shrink-0 flex items-center gap-1.5 bg-slate-100 dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200 dark:border-slate-800 transition-colors w-full sm:w-[380px]">
         @for (tab of visibleTabs(); track tab.id) {
           <button
             (click)="setTab(tab.id)"
             class="flex-1 sm:flex-none sm:min-w-[110px] px-4 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] flex items-center justify-center gap-1.5"
             [ngClass]="currentTab() === tab.id
               ? 'bg-brand-orange text-white shadow-md shadow-orange-500/20'
-              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'"
+              : 'text-slate-500 dark:text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800/80'"
           >
             <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
               @if (tab.id === 'listado') {
@@ -62,10 +62,10 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
   `,
   styles: [`
     :host { display: block; }
-    .animate-fadeIn { animation: fadeIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+    .animate-fadeIn { animation: fadeIn 0.2s ease forwards; }
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(4px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
     @media (prefers-reduced-motion: reduce) {
         .animate-fadeIn { animation: none; opacity: 1; }

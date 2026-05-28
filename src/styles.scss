@@ -1,6 +1,6 @@
 @use 'tailwindcss';
 @variant dark (&:where(.dark, .dark *));
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Urbanist:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Urbanist:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @theme {
   /* App background — content area to the right of the sidebar */
@@ -18,10 +18,99 @@
 
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Module gradients — para hero, accents y momentos de alto impacto */
+  --gradient-brand: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 50%, #c084fc 100%);
+  --gradient-orange: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  --gradient-green:  linear-gradient(135deg, #059669 0%, #10b981 100%);
+  --gradient-blue:   linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+
+  /* Sombras direccionales con tinte de marca */
+  --shadow-soft:        0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.06);
+  --shadow-card:        0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
+  --shadow-card-hover:  0 10px 24px -6px rgba(15, 23, 42, 0.10), 0 4px 10px -2px rgba(15, 23, 42, 0.06);
+  --shadow-violet:      0 8px 24px -8px rgba(109, 40, 217, 0.35), 0 2px 6px -2px rgba(109, 40, 217, 0.15);
+  --shadow-orange:      0 8px 24px -8px rgba(249, 115, 22, 0.35), 0 2px 6px -2px rgba(249, 115, 22, 0.15);
+  --shadow-green:       0 8px 24px -8px rgba(5, 150, 105, 0.35),  0 2px 6px -2px rgba(5, 150, 105, 0.15);
+  --shadow-blue:        0 8px 24px -8px rgba(37, 99, 235, 0.35),  0 2px 6px -2px rgba(37, 99, 235, 0.15);
 
   --animate-blob: blob 8s ease-in-out infinite;
   --animate-fadeIn: fadeIn 0.2s ease-out forwards;
   --animate-shine: shine 1.5s infinite;
+  --animate-shimmer: shimmer 1.8s linear infinite;
+  --animate-stagger-in: staggerIn 0.4s var(--ease-out-strong) forwards;
+
+  /* ─── Design System v2 · Tokens semánticos ───────────── */
+
+  /* Spacing scale (4pt base, semantic naming) */
+  --space-2xs: 0.25rem;   /* 4px  */
+  --space-xs:  0.5rem;    /* 8px  */
+  --space-sm:  0.75rem;   /* 12px */
+  --space-md:  1rem;      /* 16px */
+  --space-lg:  1.5rem;    /* 24px */
+  --space-xl:  2rem;      /* 32px */
+  --space-2xl: 3rem;      /* 48px */
+  --space-3xl: 4.5rem;    /* 72px */
+  --space-4xl: 7rem;      /* 112px */
+
+  /* Iconos: tamaños canónicos */
+  --icon-xs: 0.875rem;   /* 14px - inline en texto */
+  --icon-sm: 1rem;       /* 16px - en botones, badges */
+  --icon-md: 1.25rem;    /* 20px - en navegación */
+  --icon-lg: 1.5rem;     /* 24px - en headers */
+  --icon-xl: 2rem;       /* 32px - en empty states */
+
+  /* Z-index escala */
+  --z-base:            1;
+  --z-dropdown:        30;
+  --z-sticky:          40;
+  --z-modal-backdrop:  50;
+  --z-modal:           60;
+  --z-popover:         70;
+  --z-command-palette: 90;
+  --z-toast:           100;
+
+  /* Motion: duración y easing */
+  --duration-instant: 80ms;
+  --duration-fast:    120ms;
+  --duration-base:    200ms;
+  --duration-slow:    320ms;
+  --duration-page:    480ms;
+
+  --ease-out-strong:  cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out-expo:    cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-out-quart:   cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Focus ring */
+  --focus-ring-width:  2px;
+  --focus-ring-offset: 2px;
+
+  /* ─── OKLCH parallel palette (paralela a Tailwind, para uso fino) ── */
+  /* Superficies neutrales tintadas hacia violet (cohesión sutil de marca) */
+  --surface-0:  oklch(99.5% 0.003 295);   /* casi blanco */
+  --surface-1:  oklch(98% 0.004 295);
+  --surface-2:  oklch(96.5% 0.005 295);
+  --surface-3:  oklch(93% 0.006 295);
+  --border-1:   oklch(91% 0.007 295);
+  --border-2:   oklch(85% 0.008 295);
+
+  /* Texto */
+  --text-1:     oklch(20% 0.012 295);    /* títulos */
+  --text-2:     oklch(35% 0.010 295);    /* body */
+  --text-3:     oklch(55% 0.008 295);    /* secundario */
+  --text-4:     oklch(72% 0.006 295);    /* deshabilitado */
+
+  /* Brand OKLCH (equivalentes perceptuales a los hex actuales) */
+  --brand-violet:      oklch(44% 0.22 290);
+  --brand-violet-soft: oklch(96% 0.03 290);
+  --brand-orange:      oklch(70% 0.18 50);
+  --brand-orange-soft: oklch(96% 0.04 60);
+  --brand-green:       oklch(58% 0.14 160);
+  --brand-green-soft:  oklch(95% 0.04 160);
+  --brand-blue:        oklch(55% 0.20 255);
+  --brand-blue-soft:   oklch(96% 0.03 255);
 }
 
 @layer base {
@@ -50,7 +139,14 @@
   }
 
   body {
-    @apply tracking-wide font-sans text-slate-600 antialiased;
+    @apply tracking-wide font-sans text-slate-700 antialiased;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'cv11' 1, 'ss01' 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Display headings: tracking más cerrado para impacto */
+  h1, h2, h3, .display-hero, .display-title, .display-section {
+    font-feature-settings: 'kern' 1, 'liga' 1, 'ss01' 1, 'ss03' 1;
   }
 
   .dark {
@@ -58,14 +154,34 @@
     --foreground: 255 255 255;
   }
 
-  /* Override Chrome Autofill Blue Background */
+  /* Override Chrome Autofill Background */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #f8fafc inset !important;
+    -webkit-text-fill-color: #0f172a !important;
+    caret-color: #0f172a !important;
+  }
+
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover,
+  .dark input:-webkit-autofill:focus,
+  .dark input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 30px #020617 inset !important;
     -webkit-text-fill-color: white !important;
     caret-color: white !important;
+  }
+
+  /* Auth pages (login, forgot-password, reset-password) usan dark
+     directamente sin clase .dark — necesitan su propio override */
+  .login-shell input:-webkit-autofill,
+  .login-shell input:-webkit-autofill:hover,
+  .login-shell input:-webkit-autofill:focus,
+  .login-shell input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 40px #08091a inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
   }
 
   /* === Hide scrollbar (for overflow-x scroll containers like tab bars) === */
@@ -152,6 +268,194 @@
 
   .priv-select option {
     @apply bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-medium py-1;
+  }
+
+  /* ═══════════════════════════════════════════════════════ */
+  /* === GAC Design System — Clases globales reutilizables  */
+  /* ═══════════════════════════════════════════════════════ */
+
+  /* --- Botones --- */
+
+  /* Acción primaria de creación (color según módulo, ver cada módulo) */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-semibold transition shadow-sm active:scale-95;
+  }
+
+  /* Acción secundaria / ghost */
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-400 dark:hover:border-slate-500 hover:shadow-sm transition active:scale-95;
+  }
+
+  /* Guardar formulario — usa el color primario de marca */
+  .btn-save {
+    @apply inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 transition active:scale-95;
+  }
+
+  /* Botón de ícono solo (acciones en tabla: editar, eliminar) */
+  .btn-icon-edit  { @apply p-1.5 rounded-lg text-gray-500 dark:text-slate-400 border border-transparent hover:text-orange-600 hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/40 dark:hover:border-orange-900/50 transition; }
+  .btn-icon-delete { @apply p-1.5 rounded-lg text-gray-500 dark:text-slate-400 border border-transparent hover:text-red-600 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-950/40 dark:hover:border-red-900/50 transition; }
+
+  /* --- Colores de CTA por módulo (aplicar via clase de color Tailwind en btn-primary) ---
+     Publicadores/Secretario : bg-orange-500 hover:bg-orange-600
+     Territorios             : bg-green-600  hover:bg-green-700
+     Exhibidores             : bg-blue-600   hover:bg-blue-700
+  */
+
+  /* --- Cards / Paneles --- */
+  .card         { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700; box-shadow: var(--shadow-soft); }
+  .card-padded  { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6; box-shadow: var(--shadow-soft); }
+  .card-section { @apply bg-gray-50 dark:bg-slate-900/60 rounded-xl border border-gray-200 dark:border-slate-700 p-4; }
+
+  /* --- Badges de estado --- */
+  .badge-role     { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50; }
+  .badge-active   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/50; }
+  .badge-inactive { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50; }
+  .badge-neutral  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-600; }
+  .badge-warning  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50; }
+
+  /* --- Buscador estándar (wrapper + input) --- */
+  .search-input {
+    @apply w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-slate-200
+           placeholder:text-gray-500 dark:placeholder:text-slate-500 outline-none
+           focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition;
+  }
+
+  /* --- Tabla de datos --- */
+  .table-wrapper { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden; box-shadow: var(--shadow-soft); }
+  .table-header-cell {
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-700;
+  }
+  .table-row {
+    @apply border-b border-gray-200 dark:border-slate-700 hover:bg-violet-50/40 dark:hover:bg-slate-700/40 transition last:border-0;
+  }
+  .table-row-alt { @apply bg-gray-50 dark:bg-slate-800/50; }
+  .table-cell   { @apply px-4 py-3 text-sm text-gray-700 dark:text-slate-300; }
+
+  /* --- Avatares de iniciales --- */
+  .avatar-initials {
+    @apply w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0;
+  }
+
+  /* --- Page Header --- */
+  .page-title    { @apply font-display font-bold text-3xl text-gray-900 dark:text-slate-100; }
+  .page-subtitle { @apply text-sm text-gray-600 dark:text-slate-400 mt-1; }
+
+  /* --- Tabs pill container --- */
+  .tab-nav        { @apply flex gap-1 bg-gray-100 dark:bg-slate-900/70 rounded-xl p-1 w-fit; }
+  .tab-item       { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-slate-200 transition; }
+  .tab-item-active { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm; }
+
+  /* ─── DESIGN SYSTEM v2 — Mejoras profesionales ────────── */
+
+  /* --- Tipografía expresiva --- */
+  .display-hero       { @apply font-display font-extrabold text-5xl tracking-tighter text-gray-900 dark:text-slate-50 leading-[1.05]; }
+  .display-title      { @apply font-display font-bold text-4xl tracking-tight text-gray-900 dark:text-slate-50 leading-tight; }
+  .display-section    { @apply font-display font-bold text-2xl tracking-tight text-gray-900 dark:text-slate-100; }
+  .section-title      { @apply font-semibold text-lg text-gray-900 dark:text-slate-100; }
+  .section-subtitle   { @apply text-sm text-gray-600 dark:text-slate-400; }
+  .eyebrow            { @apply text-xs font-semibold uppercase tracking-[0.18em] text-gray-600 dark:text-slate-500; }
+  .data-num           { font-family: var(--font-mono); font-feature-settings: 'tnum' 1, 'zero' 1; @apply text-gray-700 dark:text-slate-300; }
+
+  /* --- Cards con profundidad real --- */
+  .card-elevated   { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700; box-shadow: var(--shadow-card); }
+  .card-interactive { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 cursor-pointer transition-all duration-200 hover:border-gray-300 dark:hover:border-slate-600; box-shadow: var(--shadow-card); }
+  .card-interactive:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+  .card-selected   { @apply bg-white dark:bg-slate-800 rounded-xl border-2 border-violet-500; box-shadow: var(--shadow-violet); }
+
+  /* --- Botones potenciados (microinteracción + sombra tintada) --- */
+  .btn-primary-orange { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-orange); }
+  .btn-primary-green  { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-green); }
+  .btn-primary-blue   { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-blue); }
+  .btn-primary-violet { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-violet); }
+
+  .btn-ghost-danger { @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition; }
+
+  /* --- Gradientes utilitarios --- */
+  .gradient-brand   { background: var(--gradient-brand); }
+  .gradient-orange  { background: var(--gradient-orange); }
+  .gradient-green   { background: var(--gradient-green); }
+  .gradient-blue    { background: var(--gradient-blue); }
+
+  /* --- Hero card del dashboard (gradient + grain) --- */
+  .hero-card {
+    @apply relative overflow-hidden rounded-2xl px-8 py-7 text-white;
+    background: var(--gradient-brand);
+    box-shadow: var(--shadow-violet);
+  }
+  .hero-card::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.6; pointer-events: none;
+  }
+
+  /* --- Focus rings consistentes --- */
+  .focus-ring { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
+  .focus-ring-orange { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
+  .focus-ring-green  { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
+  .focus-ring-blue   { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
+
+  /* --- Skeleton con shimmer real --- */
+  .skeleton {
+    @apply relative overflow-hidden bg-gray-100 dark:bg-slate-700 rounded;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+    animation: shimmer 1.8s linear infinite;
+  }
+  .dark .skeleton::after {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  }
+
+  /* --- Floating Sidebar --- */
+  @media (min-width: 1024px) {
+    .sidebar-float {
+      box-shadow:
+        0 0 0 1px rgba(15, 23, 42, 0.05),
+        0 2px 6px -2px rgba(15, 23, 42, 0.06),
+        0 10px 36px -6px rgba(15, 23, 42, 0.10);
+    }
+    .dark .sidebar-float {
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 2px 8px -2px rgba(0, 0, 0, 0.30),
+        0 12px 40px -8px rgba(0, 0, 0, 0.50);
+    }
+  }
+
+  /* --- Sidebar item activo con barra lateral --- */
+  .nav-item-active {
+    @apply relative bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 font-semibold rounded-lg;
+  }
+  .nav-item-active::before {
+    content: '';
+    position: absolute; left: -8px; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 2px;
+    background: var(--gradient-brand);
+  }
+
+  /* --- Tooltip --- */
+  .tooltip {
+    @apply absolute z-50 px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-md shadow-lg whitespace-nowrap pointer-events-none;
+    animation: fadeIn 0.15s ease-out;
+  }
+  .tooltip::after {
+    content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+    border: 4px solid transparent;
+  }
+  .tooltip-top::after    { bottom: -7px; border-top-color: rgb(17 24 39); }
+  .tooltip-bottom::after { top: -7px;    border-bottom-color: rgb(17 24 39); }
+
+  /* --- Badge con dot pulsante (en línea, activo en vivo) --- */
+  .badge-live {
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200;
+  }
+  .badge-live::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%; background: #10b981;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+    animation: livePulse 1.6s ease-in-out infinite;
   }
 }
 
@@ -346,6 +650,66 @@
   }
 }
 
+/* ─── Login Form — Stagger Entrance ──────────────────────── */
+/* Campos del formulario: se revelan escalonados tras la card.
+   Usa --i (0–5) para calcular el delay. Base 0.35s da tiempo
+   a que la card (0.2s delay + 0.7s duración) esté asentándose. */
+@keyframes loginFieldEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.login-form-item {
+  opacity: 0;
+  animation: loginFieldEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(0.35s + var(--i, 0) * 0.07s);
+}
+
+/* ─── Password Eye Icon Swap ─────────────────────────────── */
+@keyframes eyeIconEnter {
+  from { opacity: 0; transform: scale(0.65) rotate(-15deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.login-eye-icon {
+  animation: eyeIconEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── Forgot Password — Animated Underline ───────────────── */
+.login-forgot-link {
+  position: relative;
+  text-decoration: none;
+}
+
+.login-forgot-link::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: currentColor;
+  transition: width 220ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.login-forgot-link:hover::after {
+  width: 100%;
+}
+
+/* ─── Reduced Motion overrides ───────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .login-form-item {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .login-eye-icon {
+    animation: none !important;
+  }
+  .login-forgot-link::after {
+    transition: none !important;
+  }
+}
+
 /* --- Login Shell Entrance --- */
 .login-shell {
   animation: shellFadeIn 0.8s ease-out;
@@ -376,6 +740,23 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* --- Login Form Shake (credenciales incorrectas) --- */
+@keyframes loginShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-7px); }
+  40%       { transform: translateX(7px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+.login-shake {
+  animation: loginShake 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-shake { animation: none; }
 }
 
 /* ═══════════════════════════════════════════════════════ */
@@ -537,6 +918,15 @@
   }
 }
 
+@keyframes cardIn {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+.modal-card-enter {
+  animation: cardIn 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
 /* KPI cards stagger (resumen-sucursal, first 4 children) */
 .kpi-grid > *:nth-child(1) { animation: cardEnter 0.3s var(--ease-out-strong) 0ms both; }
 .kpi-grid > *:nth-child(2) { animation: cardEnter 0.3s var(--ease-out-strong) 50ms both; }
@@ -570,4 +960,130 @@
   .toggle-thumb {
     transition: none;
   }
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* === Design System v2 — Keyframes y utilidades nuevas  */
+/* ═══════════════════════════════════════════════════════ */
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes livePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+  70%  { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes scaleFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUpFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes checkmarkDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+.animate-scale-in     { animation: scaleFadeIn 0.22s var(--ease-out-strong, ease-out) forwards; }
+.animate-slide-up     { animation: slideUpFadeIn 0.28s var(--ease-out-strong, ease-out) forwards; }
+.animate-shimmer      { animation: shimmer 1.8s linear infinite; }
+
+/* Stagger genérico para listas (usa --i como custom property) */
+.stagger-item {
+  opacity: 0;
+  animation: staggerIn 0.4s var(--ease-out-strong) forwards;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+
+/* Number ticker (cuenta animada en stat cards) */
+.tabular-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scale-in,
+  .animate-slide-up,
+  .animate-shimmer,
+  .stagger-item {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* === Loading patterns — Spinner, Button-Loading       === */
+/* ═══════════════════════════════════════════════════════ */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+.spinner-sm { width: var(--icon-sm); height: var(--icon-sm); border-width: 2px; }
+.spinner-xs { width: var(--icon-xs); height: var(--icon-xs); border-width: 1.5px; }
+
+/* Botón en estado loading: texto invisible, spinner centrado */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: var(--icon-sm); height: var(--icon-sm);
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  color: white;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Helper / Error text para forms */
+.form-helper {
+  @apply text-xs text-gray-500 mt-1.5 ml-1;
+}
+.form-error {
+  @apply text-xs text-red-600 mt-1.5 ml-1 inline-flex items-center gap-1;
+}
+
+/* Form control en estado error */
+.form-control.is-invalid,
+.form-select.is-invalid {
+  @apply border-red-300 focus:border-red-500 focus:ring-red-500/15;
+}
+
+/* Field group: label + control + helper */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner, .btn-loading::after { animation: none; }
 }

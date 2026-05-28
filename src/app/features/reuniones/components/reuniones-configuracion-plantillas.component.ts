@@ -79,7 +79,7 @@ import {
              }
            </div>
 
-           <!-- Acciones contextuales (botones Guardar + filtros) -->
+           <!-- Acciones contextuales (filtros + botones Guardar) -->
            <div class="flex items-center gap-2 ml-auto flex-wrap justify-end">
 
             <!-- Perfil del algoritmo (solo indicador de guardado) -->
@@ -90,42 +90,19 @@ import {
               </div>
             }
 
-           <!-- Guardar privilegios -->
+           <!-- Filtros (solo para tab privilegios) — van ANTES del botón Guardar -->
            @if (activeTab() === 'privilegios') {
-             @if (matrizHasPending()) {
-               <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200/60 dark:border-amber-700/40 text-[0.625rem] font-black text-amber-600 dark:text-amber-400 tabular-nums">
-                 <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
-                 {{ matrizPendingCount() }} cambio{{ matrizPendingCount() > 1 ? 's' : '' }}
-               </span>
-             }
-             <button
-               *ngIf="hasEditPermission()"
-               (click)="guardarMatriz()"
-               [disabled]="!matrizHasPending() || matrizSaving()"
-               class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97]">
-               @if (matrizSaving()) {
-                 <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-               } @else {
-                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-               }
-               Guardar
-             </button>
-           }
-
-           <!-- Guardar plantilla (cuando se edita) -->
-           @if (activeTab() === 'plantillas' && plantillaEditing()) {
-             <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97]">
-               @if (plantillasLoading()) {
-                 <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-               } @else {
-                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-               }
-               Guardar
-             </button>
-           }
-
-           <!-- Filtros buscador (solo para tab privilegios) -->
-           @if (activeTab() === 'privilegios') {
+               <!-- Search -->
+               <div class="relative w-full sm:w-[180px]">
+                   <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                       <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                   </div>
+                   <input type="text"
+                     [ngModel]="searchQuery()"
+                     (ngModelChange)="searchQuery.set($event); currentPage.set(1)"
+                     placeholder="Buscar publicador..."
+                     class="priv-search w-full h-9 pl-9 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm">
+               </div>
                <!-- Filter Icons sexo -->
                <div class="flex items-center gap-1">
                    <button
@@ -164,14 +141,14 @@ import {
                  </button>
                  <!-- Panel -->
                  @if (permisoDropdownOpen()) {
-                   <div class="absolute top-full left-0 mt-1.5 z-50 w-52 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#1a1b26] shadow-xl shadow-black/20 overflow-hidden py-1">
+                   <div class="absolute top-full right-0 mt-1.5 z-50 w-52 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#1a1b26] shadow-xl shadow-black/20 overflow-hidden py-1">
                      <!-- Clear option -->
                      <button
                        (click)="setFiltroPermiso(null)"
                        class="w-full px-3 py-2 flex items-center gap-2.5 text-[11px] font-bold transition-colors text-left"
                        [class]="!filtroPermiso()
                          ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-300'
-                         : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-600 dark:hover:text-slate-300'">
+                         : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-600 dark:hover:text-slate-500'">
                        <span class="w-4 h-4 rounded flex items-center justify-center shrink-0"
                              [class]="!filtroPermiso() ? 'bg-[#6D28D9]/20' : ''">
                          @if (!filtroPermiso()) {
@@ -189,7 +166,7 @@ import {
                          class="w-full px-3 py-1.5 flex items-center gap-2.5 text-[11px] font-semibold transition-colors text-left"
                          [class]="filtroPermiso() === col.key
                            ? 'bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-300'
-                           : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'">
+                           : 'text-slate-600 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60'">
                          <span class="w-4 h-4 rounded flex items-center justify-center shrink-0"
                                [class]="filtroPermiso() === col.key ? 'bg-[#6D28D9]/20' : ''">
                            @if (filtroPermiso() === col.key) {
@@ -210,17 +187,39 @@ import {
                    Limpiar
                  </button>
                }
-               <!-- Search -->
-               <div class="relative w-full sm:w-[200px]">
-                   <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                       <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                   </div>
-                   <input type="text"
-                     [ngModel]="searchQuery()"
-                     (ngModelChange)="searchQuery.set($event); currentPage.set(1)"
-                     placeholder="Buscar publicador..."
-                     class="priv-search w-full h-9 pl-9 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm">
-               </div>
+               <!-- Divisor visual antes del botón de acción -->
+               <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 hidden sm:block"></div>
+           }
+
+           <!-- Guardar privilegios — al final, como acción principal -->
+           @if (activeTab() === 'privilegios') {
+             <button
+               *ngIf="hasEditPermission()"
+               (click)="guardarMatriz()"
+               [disabled]="!matrizHasPending() || matrizSaving()"
+               class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97]">
+               @if (matrizSaving()) {
+                 <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+               } @else {
+                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+               }
+               Guardar
+               @if (matrizHasPending() && !matrizSaving()) {
+                 <span class="ml-0.5 px-1.5 py-0.5 rounded-md bg-white/20 text-[0.5625rem] font-black tabular-nums leading-none">{{ matrizPendingCount() }}</span>
+               }
+             </button>
+           }
+
+           <!-- Guardar plantilla (cuando se edita) -->
+           @if (activeTab() === 'plantillas' && plantillaEditing()) {
+             <button (click)="savePlantillaEdit()" [disabled]="plantillasLoading()" class="flex items-center gap-1.5 px-3 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97]">
+               @if (plantillasLoading()) {
+                 <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+               } @else {
+                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+               }
+               Guardar
+             </button>
            }
 
            </div>
@@ -262,7 +261,7 @@ import {
                  <span>Subir PDF</span>
                </button>
                <button *ngIf="hasEditPermission()" (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())"
-                       class="plt-btn-secondary h-9 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg flex items-center gap-2 shrink-0">
+                       class="plt-btn-secondary h-9 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-500 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg flex items-center gap-2 shrink-0">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                  <span>JSON</span>
                </button>
@@ -274,7 +273,7 @@ import {
          <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shrink-0 animate-fadeIn">
            <h4 class="text-xs font-bold text-slate-800 dark:text-white mb-2">Pega aquí el JSON generado</h4>
            <textarea [ngModel]="mwbJsonText()" (ngModelChange)="mwbJsonText.set($event)" rows="6"
-                     class="w-full text-xs font-mono p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-[#6D28D9]/50 outline-none resize-y mb-3 h-40"
+                     class="w-full text-xs font-mono p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-500 focus:ring-2 focus:ring-[#6D28D9]/50 outline-none resize-y mb-3 h-40"
                      placeholder='{"mensaje": "OK", "semanas": [{ "titulo_semana": "...", "partes": [] }]}'></textarea>
            <div class="flex items-center gap-2 justify-end">
               <button (click)="mwbJsonInputOpen.set(false)" class="plt-btn-secondary h-8 px-4 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 text-[0.6875rem] font-bold rounded-lg">Cancelar</button>
@@ -538,7 +537,7 @@ import {
               </div>
               <div>
                 <h3 class="text-sm font-black text-slate-900 dark:text-white">Eliminar plantilla</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Esta acción es permanente. Los programas ya creados <span class="font-bold text-slate-700 dark:text-slate-300">no se verán afectados</span>.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Esta acción es permanente. Los programas ya creados <span class="font-bold text-slate-700 dark:text-slate-500">no se verán afectados</span>.</p>
               </div>
             </div>
             <!-- Actions -->
@@ -674,49 +673,6 @@ import {
            }
 
            @if (!matrizLoading() && !matrizErrorMsg()) {
-              <!-- Stats bar -->
-              <div class="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <!-- Total publicadores -->
-                <div class="priv-stat flex items-center gap-3 px-3.5 py-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/50">
-                  <div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="text-lg font-black text-slate-800 dark:text-white tabular-nums leading-none">{{ filteredPublicadores().length }}</div>
-                    <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide mt-0.5 leading-none">Publicadores</div>
-                  </div>
-                </div>
-                <!-- Ancianos -->
-                <div class="priv-stat flex items-center gap-3 px-3.5 py-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/50">
-                  <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M12 12v9"/><path d="M9.5 17.5 12 15l2.5 2.5"/></svg>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="text-lg font-black text-blue-700 dark:text-blue-400 tabular-nums leading-none">{{ countPrivilegio('Anciano') }}</div>
-                    <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide mt-0.5 leading-none">Ancianos</div>
-                  </div>
-                </div>
-                <!-- Siervos Ministeriales -->
-                <div class="priv-stat flex items-center gap-3 px-3.5 py-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/50">
-                  <div class="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-teal-600 dark:text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="text-lg font-black text-teal-700 dark:text-teal-400 tabular-nums leading-none">{{ countPrivilegio('Siervo Ministerial') }}</div>
-                    <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide mt-0.5 leading-none">S. Ministeriales</div>
-                  </div>
-                </div>
-                <!-- Precursores -->
-                <div class="priv-stat flex items-center gap-3 px-3.5 py-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-700/50">
-                  <div class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="text-lg font-black text-amber-700 dark:text-amber-400 tabular-nums leading-none">{{ countPrecursores() }}</div>
-                    <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wide mt-0.5 leading-none">Precursores</div>
-                  </div>
-                </div>
-              </div>
 
              <!-- Data Table / Cards -->
              <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
@@ -773,7 +729,7 @@ import {
                                         (change)="togglePermiso(pub, col.key)"
                                         [disabled]="!hasEditPermission()"
                                         class="priv-check shrink-0">
-                                 <span class="text-[11px] font-semibold leading-snug text-slate-600 dark:text-slate-300">
+                                 <span class="text-[11px] font-semibold leading-snug text-slate-600 dark:text-slate-500">
                                    {{ col.label }}
                                  </span>
                                </label>
@@ -1380,7 +1336,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   hasEditPermission = computed(() => {
-    return this.authStore.hasPermission('reuniones.configuracion') || !!this.authStore.user()?.roles?.includes('Secretario');
+    return this.authStore.hasPermission('reuniones.configuracion');
   });
 
   // ── Tabs — visibles para cualquiera con reuniones.configuracion ──
@@ -1398,7 +1354,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   visibleTabs = computed(() => {
     return this.puedeGestionarPlantillas()
       ? this.allTabs
-      : this.allTabs.filter(t => t.id !== 'plantillas');
+      : this.allTabs.filter(t => t.id !== 'plantillas' && t.id !== 'parametros');
   });
 
   activeTab = signal('privilegios');
@@ -1476,7 +1432,6 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     audio:                         'Mesa de audio',
     video:                         'Mesa de video',
     vigilancia:                    'Vigilancia',
-    sala_auxiliar:                 'Sala auxiliar (Sala B)',
     capitan_predicacion:           'Capitán de predicación',
     plataforma:                    'Plataforma (presentaciones y multimedia)',
     no_discursa_mejores_maestros:  'No participa en partes de Seamos Mejores Maestros',
@@ -2290,3 +2245,4 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     setTimeout(() => this.toast.set(null), 4000);
   }
 }
+
