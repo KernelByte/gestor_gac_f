@@ -167,6 +167,12 @@ export class TerritoriosService {
     return this.http.get<number[]>(`${this.baseUrl}/${idTerritorio}/salidas/${idSalida}/manzanas`);
   }
 
+  getEstadoManzanas(idTerritorio: number): Observable<Record<string, { nombre_capitan: string; fecha_salida: string }>> {
+    return this.http.get<Record<string, { nombre_capitan: string; fecha_salida: string }>>(
+      `${this.baseUrl}/${idTerritorio}/salidas/estado-manzanas`
+    );
+  }
+
   markManzanaPredicada(idTerritorio: number, idSalida: number, idManzana: number): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/${idTerritorio}/salidas/${idSalida}/manzanas/${idManzana}`, {});
   }

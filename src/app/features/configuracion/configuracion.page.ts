@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from '../../core/auth/auth.store';
+import { ImportPublicadoresModalComponent } from '../../shared/components/import-publicadores/import-publicadores-modal.component';
 
 interface Configuracion {
    id_congregacion: number;
@@ -15,7 +16,7 @@ interface Configuracion {
    tiene_sala_b: boolean | number;
    usa_zoom: boolean | number;
    id_periodo_informes_activo?: number | null;
-   periodo_informes_automatico: number; // 1=automático, 0=manual
+   periodo_informes_automatico: number;
    dia_reunion_entre_semana:  string;
    hora_reunion_entre_semana: string;
    dia_reunion_fin_semana:    string;
@@ -25,7 +26,7 @@ interface Configuracion {
 @Component({
    selector: 'app-configuracion',
    standalone: true,
-   imports: [CommonModule, FormsModule],
+   imports: [CommonModule, FormsModule, ImportPublicadoresModalComponent],
    templateUrl: './configuracion.page.html',
    styles: [`
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; }
@@ -51,6 +52,7 @@ export class ConfiguracionPage implements OnInit {
    private auth = inject(AuthStore);
    private API_URL = `${environment.apiUrl}/configuracion/`;
    private PERIODOS_URL = `${environment.apiUrl}/periodos/?limit=24`;
+
    config: Configuracion = {
       id_congregacion: 0,
       nombre_congregacion: '',
@@ -67,7 +69,6 @@ export class ConfiguracionPage implements OnInit {
       hora_reunion_fin_semana:   '',
    };
 
-   // Lista de periodos
    periodosDisponibles: any[] = [];
 
    private readonly mesesNombre: Record<number, string> = {
@@ -76,27 +77,24 @@ export class ConfiguracionPage implements OnInit {
       9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
    };
 
-   // Clone to check for changes
    originalConfig: Configuracion | null = null;
 
-   loading = signal(true);
-   saving = signal(false);
+   loading          = signal(true);
+   saving           = signal(false);
    showSecurityCode = signal(false);
-   generatingCode = signal(false);
-   notification = signal<{ message: string, type: 'success' | 'error' } | null>(null);
+   generatingCode   = signal(false);
+   notification     = signal<{ message: string, type: 'success' | 'error' } | null>(null);
    dropdownEntreOpen   = signal(false);
    dropdownFinOpen     = signal(false);
    dropdownPeriodoOpen = signal(false);
    timePickerEntreOpen = signal(false);
    timePickerFinOpen   = signal(false);
 
-   // Import Modal Signals
+   /** Controla visibilidad del modal de importación. */
    showImportModal = signal(false);
-   importing = signal(false);
-   importResult = signal<any | null>(null);
-   importError = signal<string | null>(null);
-   selectedFileName = signal<string | null>(null);
-   isDragOver = signal(false);
+
+   /** True cuando el rol es global (Admin/Gestor) y NO debe importar desde esta pantalla. */
+   isGlobalRole = signal(false);
 
    readonly diasEntreSemana = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
    readonly diasFinSemana   = ['Sabado', 'Domingo'];
@@ -108,15 +106,8 @@ export class ConfiguracionPage implements OnInit {
    readonly minutos  = ['00','05','10','15','20','25','30','35','40','45','50','55'];
    readonly periodos = ['AM','PM'];
 
-   selectDiaEntre(dia: string) {
-      this.config.dia_reunion_entre_semana = dia;
-      this.dropdownEntreOpen.set(false);
-   }
-
-   selectDiaFin(dia: string) {
-      this.config.dia_reunion_fin_semana = dia;
-      this.dropdownFinOpen.set(false);
-   }
+   selectDiaEntre(dia: string) { this.config.dia_reunion_entre_semana = dia; this.dropdownEntreOpen.set(false); }
+   selectDiaFin(dia: string)   { this.config.dia_reunion_fin_semana   = dia; this.dropdownFinOpen.set(false);   }
 
    selectPeriodoInformes(periodo: any | null) {
       if (periodo === null) {
@@ -142,7 +133,7 @@ export class ConfiguracionPage implements OnInit {
       return String(h).padStart(2, '0');
    }
 
-   getMinuto(time: string) { return time ? time.split(':')[1] : ''; }
+   getMinuto(time: string)    { return time ? time.split(':')[1] : ''; }
 
    get12Hour(time: string): string {
       if (!time) return '12';
@@ -190,133 +181,115 @@ export class ConfiguracionPage implements OnInit {
 
    formatDisplay(time: string): string {
       if (!time) return '--:--';
-      const h12 = this.get12Hour(time);
-      const m   = this.getMinuto(time);
-      const p   = this.getPeriodo(time);
-      return `${h12}:${m} ${p}`;
+      return `${this.get12Hour(time)}:${this.getMinuto(time)} ${this.getPeriodo(time)}`;
    }
 
    ngOnInit() {
       this.loadConfig();
       this.loadPeriodos();
+      this.detectGlobalRole();
+   }
+
+   private detectGlobalRole() {
+      const user = this.auth.user();
+      if (!user) return;
+      const rol = (user.rol || '').trim().toLowerCase();
+      this.isGlobalRole.set(rol === 'administrador' || rol === 'gestor aplicación');
    }
 
    loadPeriodos() {
-       this.http.get<any[]>(this.PERIODOS_URL).subscribe({
-          next: (data) => {
-             this.periodosDisponibles = data
-                .map(p => ({
-                   ...p,
-                   nombre_periodo: `${this.mesesNombre[p.codigo_mes] || p.codigo_mes} ${p.codigo_ano}`
-                }))
-                .sort((a, b) => {
-                   if (b.codigo_ano !== a.codigo_ano) return b.codigo_ano - a.codigo_ano;
-                   return b.codigo_mes - a.codigo_mes;
-                });
-          },
-          error: (err) => console.error('Error cargando periodos', err)
-       });
-    }
+      this.http.get<any[]>(this.PERIODOS_URL).subscribe({
+         next: (data) => {
+            this.periodosDisponibles = data
+               .map(p => ({
+                  ...p,
+                  nombre_periodo: `${this.mesesNombre[p.codigo_mes] || p.codigo_mes} ${p.codigo_ano}`
+               }))
+               .sort((a, b) => {
+                  if (b.codigo_ano !== a.codigo_ano) return b.codigo_ano - a.codigo_ano;
+                  return b.codigo_mes - a.codigo_mes;
+               });
+         },
+         error: (err) => console.error('Error cargando periodos', err)
+      });
+   }
 
    loadConfig() {
       this.loading.set(true);
-      this.http.get<Configuracion>(this.API_URL)
-         .subscribe({
-            next: (data) => {
-               this.config = data;
-               this.originalConfig = { ...data }; // Clone initial state
-               this.loading.set(false);
-            },
-            error: (err) => {
-               console.error('Error cargando configuración', err);
-               this.loading.set(false);
-            }
-         });
+      this.http.get<Configuracion>(this.API_URL).subscribe({
+         next: (data) => {
+            this.config = data;
+            this.originalConfig = { ...data };
+            this.loading.set(false);
+         },
+         error: (err) => {
+            console.error('Error cargando configuración', err);
+            this.loading.set(false);
+         }
+      });
    }
 
    save() {
       if (!this.canEdit()) return;
-
       this.saving.set(true);
-      // Send only updateable fields
       const payload = {
-         nombre_congregacion:       this.config.nombre_congregacion,
-         circuito:                  this.config.circuito,
-         direccion:                 this.config.direccion,
-         codigo_seguridad:          this.config.codigo_seguridad,
-         tiene_sala_b:              this.config.tiene_sala_b ? 1 : 0,
-         usa_zoom:                  this.config.usa_zoom ? 1 : 0,
-         id_periodo_informes_activo: this.config.periodo_informes_automatico === 1 ? this.config.id_periodo_informes_activo : this.config.id_periodo_informes_activo,
+         nombre_congregacion:        this.config.nombre_congregacion,
+         circuito:                   this.config.circuito,
+         direccion:                  this.config.direccion,
+         codigo_seguridad:           this.config.codigo_seguridad,
+         tiene_sala_b:               this.config.tiene_sala_b ? 1 : 0,
+         usa_zoom:                   this.config.usa_zoom ? 1 : 0,
+         id_periodo_informes_activo: this.config.id_periodo_informes_activo,
          periodo_informes_automatico: this.config.periodo_informes_automatico,
-         dia_reunion_entre_semana:  this.config.dia_reunion_entre_semana  || null,
-         hora_reunion_entre_semana: this.config.hora_reunion_entre_semana || null,
-         dia_reunion_fin_semana:    this.config.dia_reunion_fin_semana    || null,
-         hora_reunion_fin_semana:   this.config.hora_reunion_fin_semana   || null,
+         dia_reunion_entre_semana:   this.config.dia_reunion_entre_semana  || null,
+         hora_reunion_entre_semana:  this.config.hora_reunion_entre_semana || null,
+         dia_reunion_fin_semana:     this.config.dia_reunion_fin_semana    || null,
+         hora_reunion_fin_semana:    this.config.hora_reunion_fin_semana   || null,
       };
 
-      this.http.put<Configuracion>(this.API_URL, payload)
-         .subscribe({
-            next: (data) => {
-               this.config = data;
-               this.originalConfig = { ...data }; // Update original state
-               this.saving.set(false);
-               this.showNotification('Configuración guardada exitosamente', 'success');
-            },
-            error: (err) => {
-               console.error('Error guardando configuración', err);
-               this.saving.set(false);
-               this.showNotification(
-                  err.error?.detail || 'Error al guardar la configuración',
-                  'error'
-               );
-            }
-         });
+      this.http.put<Configuracion>(this.API_URL, payload).subscribe({
+         next: (data) => {
+            this.config = data;
+            this.originalConfig = { ...data };
+            this.saving.set(false);
+            this.showNotification('Configuración guardada exitosamente', 'success');
+         },
+         error: (err) => {
+            console.error('Error guardando configuración', err);
+            this.saving.set(false);
+            this.showNotification(err.error?.detail || 'Error al guardar la configuración', 'error');
+         }
+      });
    }
 
    showNotification(message: string, type: 'success' | 'error' = 'success') {
       this.notification.set({ message, type });
-      setTimeout(() => {
-         this.notification.set(null);
-      }, 4000);
+      setTimeout(() => this.notification.set(null), 4000);
    }
 
    regenerateSecurityCode() {
       if (!this.canEdit()) return;
-
       this.generatingCode.set(true);
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let result = '';
-      for (let i = 0; i < 7; i++) {
-         result += characters.charAt(Math.floor(Math.random() * characters.length));
-      }
-
-      // Optimistic update
+      const chars  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      const result = Array.from({ length: 7 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
       const oldCode = this.config.codigo_seguridad;
       this.config.codigo_seguridad = result;
-      this.showSecurityCode.set(true); // Show the new code
+      this.showSecurityCode.set(true);
 
-      // Generate payload with just the code
-      this.http.put<Configuracion>(this.API_URL, { codigo_seguridad: result })
-         .subscribe({
-            next: (data) => {
-               this.config = data;
-
-               // IMPORTANT: Update originalConfig's security code so "Save Changes" 
-               // remains disabled (user doesn't need to save manually)
-               if (this.originalConfig) {
-                  this.originalConfig.codigo_seguridad = data.codigo_seguridad;
-               }
-
-               this.generatingCode.set(false);
-               this.showNotification('Código de seguridad actualizado', 'success');
-            },
-            error: (err) => {
-               console.error('Error actualizando código', err);
-               this.config.codigo_seguridad = oldCode; // Revert on error
-               this.generatingCode.set(false);
-               this.showNotification('Error al regenerar el código', 'error');
-            }
-         });
+      this.http.put<Configuracion>(this.API_URL, { codigo_seguridad: result }).subscribe({
+         next: (data) => {
+            this.config = data;
+            if (this.originalConfig) this.originalConfig.codigo_seguridad = data.codigo_seguridad;
+            this.generatingCode.set(false);
+            this.showNotification('Código de seguridad actualizado', 'success');
+         },
+         error: (err) => {
+            console.error('Error actualizando código', err);
+            this.config.codigo_seguridad = oldCode;
+            this.generatingCode.set(false);
+            this.showNotification('Error al regenerar el código', 'error');
+         }
+      });
    }
 
    hasChanges(): boolean {
@@ -335,132 +308,20 @@ export class ConfiguracionPage implements OnInit {
          (this.config.hora_reunion_fin_semana   || '') !== (this.originalConfig.hora_reunion_fin_semana   || '');
    }
 
-   canEdit() {
+   canEdit(): boolean {
       const user = this.auth.user();
       if (!user) return false;
-
-      // Roles with implicit access (matching backend logic)
       const allowedRoles = ['Administrador', 'Gestor Aplicación', 'Coordinador', 'Secretario'];
-      if (user.rol && allowedRoles.includes(user.rol)) {
-         return true;
-      }
-
+      if (user.rol && allowedRoles.includes(user.rol)) return true;
       return this.auth.hasPermission('configuracion.editar');
    }
 
-   // ===== Import Modal Methods =====
-   openImportModal() {
-      this.showImportModal.set(true);
-      this.importResult.set(null);
-      this.importError.set(null);
-      this.selectedFileName.set(null);
-   }
+   // ── Modal importación ─────────────────────────────────────────────────────
+   openImportModal()  { this.showImportModal.set(true);  }
+   closeImportModal() { this.showImportModal.set(false); }
 
-   closeImportModal() {
-      const wasSuccess = this.importResult()?.success;
+   onImportDone() {
       this.showImportModal.set(false);
-      this.importResult.set(null);
-      this.importError.set(null);
-      this.selectedFileName.set(null);
-      this.isDragOver.set(false);
-      if (wasSuccess) {
-         this.loadConfig();
-      }
-   }
-
-   onDragOver(event: DragEvent) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.isDragOver.set(true);
-   }
-
-   onDragLeave(event: DragEvent) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.isDragOver.set(false);
-   }
-
-   onFileDrop(event: DragEvent) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.isDragOver.set(false);
-
-      const files = event.dataTransfer?.files;
-      if (files && files.length > 0) {
-         this.processFile(files[0]);
-      }
-   }
-
-   onFileSelected(event: Event) {
-      const input = event.target as HTMLInputElement;
-      if (input.files && input.files.length > 0) {
-         this.processFile(input.files[0]);
-      }
-   }
-
-   private processFile(file: File) {
-      // Validate extension
-      const name = file.name.toLowerCase();
-      if (!name.endsWith('.xls') && !name.endsWith('.xlsx')) {
-         this.importError.set('Formato no soportado. Solo se aceptan archivos .xls o .xlsx');
-         return;
-      }
-
-      // Validate size (5MB max)
-      const sizeMB = file.size / (1024 * 1024);
-      if (sizeMB > 5) {
-         this.importError.set(`El archivo excede el tamaño máximo permitido (5 MB). Tamaño: ${sizeMB.toFixed(2)} MB`);
-         return;
-      }
-
-      this.selectedFileName.set(file.name);
-      this.uploadFile(file);
-   }
-
-   private uploadFile(file: File) {
-      this.importing.set(true);
-      this.importError.set(null);
-      this.importResult.set(null);
-
-      const formData = new FormData();
-      formData.append('archivo', file);
-
-      const idCong = this.config.id_congregacion;
-      const url = `${environment.apiUrl}/import/congregaciones?id_congregacion=${idCong}`;
-
-      this.http.post<any>(url, formData)
-         .subscribe({
-            next: (result) => {
-               this.importResult.set(result);
-               this.importing.set(false);
-            },
-            error: (err: any) => {
-               console.error('Import error:', err);
-               const message = err.error?.detail || err.message || 'Error inesperado al procesar el archivo';
-               this.importError.set(message);
-               this.importing.set(false);
-            }
-         });
-   }
-
-   downloadTemplate() {
-      this.http.get(`${environment.apiUrl}/export/plantilla`, {
-         responseType: 'blob'
-      }).subscribe({
-         next: (blob: Blob) => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Plantilla_Importacion_GAC.xlsx';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-         },
-         error: (err: any) => {
-            console.error('Template download error:', err);
-            alert('Error al descargar la plantilla');
-         }
-      });
+      this.loadConfig();
    }
 }

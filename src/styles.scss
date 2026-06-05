@@ -266,8 +266,26 @@
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236d28d9' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
   }
 
-  .priv-select option {
-    @apply bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-medium py-1;
+  /* Options: color-coded by level (works in Chrome/Firefox on Windows/Linux) */
+  .priv-select option:nth-child(1) { background-color: #f8fafc; color: #475569; font-weight: 600; }
+  .priv-select option:nth-child(2) { background-color: #f0f9ff; color: #0369a1; font-weight: 600; }
+  .priv-select option:nth-child(3) { background-color: #eff6ff; color: #1d4ed8; font-weight: 600; }
+  .priv-select option:nth-child(4) { background-color: #eef2ff; color: #4338ca; font-weight: 600; }
+  .priv-select option:nth-child(5) { background-color: #faf5ff; color: #7c3aed; font-weight: 600; }
+
+  /* Select box color changes to reflect the selected level */
+  .priv-select[data-level="1"] { background-color: #f8fafc; color: #475569; border-color: #e2e8f0 !important; }
+  .priv-select[data-level="2"] { background-color: #f0f9ff; color: #0369a1; border-color: #bae6fd !important; }
+  .priv-select[data-level="3"] { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe !important; }
+  .priv-select[data-level="4"] { background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe !important; }
+  .priv-select[data-level="5"] { background-color: #faf5ff; color: #7c3aed; border-color: #ddd6fe !important; }
+
+  :host-context(.dark), .dark {
+    .priv-select[data-level="1"] { background-color: #1e293b; color: #94a3b8; border-color: #334155 !important; }
+    .priv-select[data-level="2"] { background-color: rgba(2,132,199,0.15); color: #7dd3fc; border-color: rgba(2,132,199,0.35) !important; }
+    .priv-select[data-level="3"] { background-color: rgba(37,99,235,0.15); color: #93c5fd; border-color: rgba(37,99,235,0.35) !important; }
+    .priv-select[data-level="4"] { background-color: rgba(79,70,229,0.15); color: #a5b4fc; border-color: rgba(79,70,229,0.35) !important; }
+    .priv-select[data-level="5"] { background-color: rgba(124,58,237,0.15); color: #c4b5fd; border-color: rgba(124,58,237,0.35) !important; }
   }
 
   /* ═══════════════════════════════════════════════════════ */
@@ -368,6 +386,28 @@
   .btn-primary-blue   { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-blue); }
   .btn-primary-violet { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-violet); }
 
+  /* Botón glassmorphism — para usar SOBRE hero-card (fondo gradiente violeta) */
+  .btn-hero-glass {
+    @apply inline-flex items-center gap-2 font-semibold text-white rounded-xl
+           transition-all duration-200 active:scale-95 cursor-pointer;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .btn-hero-glass:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+    transform: translateY(-1px);
+  }
+  .btn-hero-glass:active {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(0.95);
+  }
+
   .btn-ghost-danger { @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition; }
 
   /* --- Gradientes utilitarios --- */
@@ -425,15 +465,9 @@
     }
   }
 
-  /* --- Sidebar item activo con barra lateral --- */
+  /* --- Sidebar item activo con barra lateral — REMOVIDO (no deseado) --- */
   .nav-item-active {
     @apply relative bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 font-semibold rounded-lg;
-  }
-  .nav-item-active::before {
-    content: '';
-    position: absolute; left: -8px; top: 8px; bottom: 8px;
-    width: 3px; border-radius: 2px;
-    background: var(--gradient-brand);
   }
 
   /* --- Tooltip --- */
@@ -1025,6 +1059,70 @@
 }
 
 /* ═══════════════════════════════════════════════════════ */
+/* === Informes — Entrada tab animations               === */
+/* ═══════════════════════════════════════════════════════ */
+
+/* Fila de tabla: entrada desde la izquierda (sutil) */
+@keyframes rowEnter {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.row-enter {
+  animation: rowEnter 0.22s var(--ease-out-strong, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+/* Confirmación de toggle — pulse corto al marcar "Sí" */
+@keyframes toggleConfirm {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.14); }
+  65%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.toggle-confirm {
+  animation: toggleConfirm 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Float suave para íconos de empty state */
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+.icon-float {
+  animation: iconFloat 3.2s ease-in-out infinite;
+}
+
+/* Flash de entrada para filas resaltadas por validación */
+@keyframes highlightFlash {
+  0%   { background-color: rgba(251, 191, 36, 0); }
+  25%  { background-color: rgba(251, 191, 36, 0.22); }
+  100% { background-color: rgba(251, 191, 36, 0.08); }
+}
+.highlight-flash {
+  animation: highlightFlash 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Entrada del footer sticky al aparecer */
+@keyframes footerSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.footer-enter {
+  animation: footerSlideUp 0.22s var(--ease-out-strong, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-enter,
+  .toggle-confirm,
+  .icon-float,
+  .highlight-flash,
+  .footer-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════ */
 /* === Loading patterns — Spinner, Button-Loading       === */
 /* ═══════════════════════════════════════════════════════ */
 
@@ -1086,4 +1184,62 @@
 
 @media (prefers-reduced-motion: reduce) {
   .spinner, .btn-loading::after { animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* === Public Informe — Entrance choreography           === */
+/* ═══════════════════════════════════════════════════════ */
+
+/* Stagger de entrada del header y la card principal */
+.informe-enter-0 { animation: slideUpFadeIn 0.45s var(--ease-out-strong) 0ms   both; }
+.informe-enter-1 { animation: slideUpFadeIn 0.45s var(--ease-out-strong) 70ms  both; }
+.informe-enter-2 { animation: slideUpFadeIn 0.45s var(--ease-out-strong) 130ms both; }
+.informe-enter-3 { animation: slideUpFadeIn 0.45s var(--ease-out-strong) 200ms both; }
+
+/* Ícono del success state — scale suave */
+.informe-success-icon {
+  animation: scaleFadeIn 0.35s var(--ease-out-strong) 0ms both;
+}
+
+/* Trazado animado del checkmark SVG */
+.informe-checkmark {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: checkmarkDraw 0.5s cubic-bezier(0.25, 1, 0.5, 1) 220ms both;
+}
+
+/* Contenido del success state — stagger */
+.informe-success-title { animation: slideUpFadeIn 0.35s var(--ease-out-strong) 160ms both; }
+.informe-success-body  { animation: slideUpFadeIn 0.35s var(--ease-out-strong) 230ms both; }
+.informe-success-rows  { animation: slideUpFadeIn 0.35s var(--ease-out-strong) 300ms both; }
+.informe-success-close { animation: slideUpFadeIn 0.35s var(--ease-out-strong) 370ms both; }
+
+/* Ícono del error state */
+.informe-error-icon  { animation: scaleFadeIn 0.3s var(--ease-out-strong) 0ms   both; }
+.informe-error-title { animation: slideUpFadeIn 0.35s var(--ease-out-strong) 80ms  both; }
+.informe-error-body  { animation: slideUpFadeIn 0.35s var(--ease-out-strong) 150ms both; }
+.informe-error-cta   { animation: slideUpFadeIn 0.35s var(--ease-out-strong) 210ms both; }
+
+/* Sección de métricas al activar el toggle */
+.informe-metrics-enter {
+  animation: slideUpFadeIn 0.25s var(--ease-out-strong) 0ms both;
+}
+
+/* Hint del toggle al aparecer */
+.informe-hint-enter {
+  animation: slideUpFadeIn 0.2s var(--ease-out-strong) 0ms both;
+}
+
+/* Reduced motion: todo instantáneo, sin movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .informe-enter-0, .informe-enter-1, .informe-enter-2, .informe-enter-3,
+  .informe-success-icon, .informe-checkmark,
+  .informe-success-title, .informe-success-body, .informe-success-rows, .informe-success-close,
+  .informe-error-icon, .informe-error-title, .informe-error-body, .informe-error-cta,
+  .informe-metrics-enter, .informe-hint-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
 }

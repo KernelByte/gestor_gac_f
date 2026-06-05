@@ -1,4 +1,4 @@
-import { Publicador } from '../models/publicador';
+import { DeleteOpcion, Publicador, UsuarioVinculado } from '../models/publicador';
 
 export type PublicadorListParams = {
   limit?: number;
@@ -15,6 +15,8 @@ export interface PublicadorRepo {
   create(data: Partial<Publicador>): Promise<Publicador>;
   update(id: number, data: Partial<Publicador>): Promise<Publicador>;
   delete(id: number): Promise<void>;
+  checkUsuarioVinculado(id: number): Promise<UsuarioVinculado>;
+  deleteWithOpcion(id: number, opcion: DeleteOpcion, id_nuevo_publicador?: number): Promise<void>;
   exportExcel?(params?: PublicadorListParams): Promise<Blob | string>;
   exportPdf?(params?: PublicadorListParams): Promise<Blob | string>;
   // Consentimiento PDF

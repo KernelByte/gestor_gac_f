@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal, computed, effect, untracked } from '
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PublicadoresFacade } from '../../application/publicadores.facade';
-import { Publicador } from '../../domain/models/publicador';
+import { DeleteOpcion, Publicador, UsuarioVinculado } from '../../domain/models/publicador';
 import { AuthStore } from '../../../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../../../core/congregacion-context/congregacion-context.service';
 import { HttpClient } from '@angular/common/http';
@@ -72,13 +72,22 @@ interface TableColumn {
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
-            <input 
-                type="text" 
+            <input
+                type="text"
                 [ngModel]="searchQuery()"
                 (ngModelChange)="onSearch($event)"
-                placeholder="Buscar..." 
-                class="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-base text-slate-700 dark:text-slate-100 font-medium placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none"
+                placeholder="Buscar..."
+                class="w-full h-9 pl-9 pr-8 bg-slate-50 dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-base text-slate-700 dark:text-slate-100 font-medium placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none"
             >
+            @if (searchQuery()) {
+              <button
+                (click)="onSearch('')"
+                class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            }
         </div>
 
         <!-- Quick Filters (Pills) -->
@@ -257,14 +266,14 @@ interface TableColumn {
                     </ng-container>
 
                     <!-- Section: Privilegios (grid 2 columnas) -->
-                    <div class="mb-3">
+                    <div class="mb-3" *ngIf="privilegiosEnCongregacion().length > 0">
                         <div class="px-2 py-1.5 flex items-center gap-2">
                              <span class="w-1 h-3 rounded-full bg-indigo-500"></span>
                              <span class="text-[0.625rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Privilegios</span>
                         </div>
                         <div class="grid grid-cols-2 gap-x-0.5 gap-y-0">
                             <label
-                                *ngFor="let p of privilegios()"
+                                *ngFor="let p of privilegiosEnCongregacion()"
                                 class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors group"
                             >
                                 <div class="relative flex items-center justify-center shrink-0">
@@ -1286,7 +1295,7 @@ interface TableColumn {
                                              {{ editingPublicador()?.consentimiento_datos ? 'Consentimiento registrado' : 'Sin consentimiento' }}
                                          </p>
                                          <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-0.5">
-                                             {{ editingPublicador()?.archivo_consentimiento ? 'Archivo PDF adjunto' : 'Sube el formulario firmado en PDF' }}
+                                             {{ editingPublicador()?.archivo_consentimiento ? 'Archivo adjunto' : 'Sube el formulario firmado en PDF o imagen' }}
                                          </p>
                                      </div>
                                  </div>
@@ -1301,16 +1310,16 @@ interface TableColumn {
                                        : 'bg-brand-orange/10 text-brand-orange hover:bg-brand-orange hover:text-white'">
                                      <svg *ngIf="!uploadingPdf()" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                      <svg *ngIf="uploadingPdf()" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
-                                     {{ editingPublicador()?.archivo_consentimiento ? 'Cambiar PDF' : 'Subir PDF' }}
-                                     <input type="file" accept=".pdf" class="hidden" (change)="onConsentimientoPdfSelected($event)" [disabled]="uploadingPdf()">
+                                     {{ editingPublicador()?.archivo_consentimiento ? 'Cambiar archivo' : 'Subir archivo' }}
+                                     <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" class="hidden" (change)="onConsentimientoPdfSelected($event)" [disabled]="uploadingPdf()">
                                  </label>
 
-                                 <!-- Botón Ver PDF (solo si hay archivo) -->
+                                 <!-- Botón Ver archivo (solo si hay archivo) -->
                                  <button *ngIf="editingPublicador()?.archivo_consentimiento" type="button"
                                      (click)="downloadConsentimientoPdf()"
                                      class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all">
                                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                     Ver PDF
+                                     Ver archivo
                                  </button>
 
                                  <!-- Botón Eliminar PDF (solo si hay archivo) -->
@@ -1934,42 +1943,60 @@ interface TableColumn {
       <!-- ═══════════════════════════════════════════════════════════════ -->
       <!-- QUICK VIEW MODAL                                              -->
       <!-- ═══════════════════════════════════════════════════════════════ -->
-      <div *ngIf="viewingPublicador()" class="fixed inset-0 z-[55] flex items-end md:items-center justify-center p-0 md:p-6">
+      <div *ngIf="viewingPublicador()" class="fixed inset-0 z-[55] flex items-end sm:items-end md:items-center justify-center p-0 sm:p-0 md:p-6">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closeQuickView()"></div>
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity" (click)="closeQuickView()"></div>
 
         <!-- Card -->
-        <div class="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-t-[2rem] md:rounded-3xl shadow-2xl shadow-slate-900/40 dark:shadow-black/60 border border-transparent md:border-slate-100 md:dark:border-slate-800 overflow-hidden animate-fadeInUp mt-auto md:mt-0">
-          
-          <!-- Drawer Grabber for Mobile (Visual only) -->
-          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mt-3 md:hidden z-10 pointer-events-none"></div>
+        <div class="relative w-full md:max-w-[540px] max-h-[88dvh] sm:max-h-[90dvh] md:max-h-[90vh] flex flex-col bg-white dark:bg-[#0f1629] rounded-t-[1.75rem] md:rounded-[1.75rem] shadow-2xl shadow-slate-900/50 dark:shadow-black/70 border border-slate-200/80 dark:border-white/[0.06] overflow-hidden animate-fadeInUp mt-auto md:mt-0">
+
+          <!-- Drawer Grabber for Mobile -->
+          <div class="flex-none flex justify-center pt-2.5 pb-1 md:hidden">
+            <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+          </div>
 
           <!-- ── Header ─────────────────────────────────────────────── -->
-          <div class="relative shrink-0 px-6 pt-8 md:pt-6 pb-5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800">
-            <button (click)="closeQuickView()" class="absolute top-4 right-4 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[transform,background-color] ease-out duration-200 active:scale-90">
-              <svg class="w-5 h-5 md:w-4 md:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <div class="relative shrink-0 px-4 sm:px-6 pt-4 md:pt-7 pb-5 overflow-hidden border-b border-slate-100 dark:border-white/[0.06]">
+            <!-- Decorative background blobs -->
+            <div class="absolute -top-10 -right-10 w-48 h-48 rounded-full opacity-[0.07] dark:opacity-[0.12] blur-2xl pointer-events-none"
+              [ngClass]="getAvatarStyle(getFullName(viewingPublicador()!))"></div>
+            <div class="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-brand-orange opacity-[0.05] dark:opacity-[0.08] blur-2xl pointer-events-none"></div>
+
+            <!-- Close button — 44×44 touch target -->
+            <button (click)="closeQuickView()"
+              class="absolute top-3 right-3 md:top-4 md:right-4 w-11 h-11 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/[0.07] text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.12] hover:text-slate-700 dark:hover:text-white transition-all duration-200 active:scale-90">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
-            <div class="flex items-center gap-4">
-              <!-- Avatar -->
-              <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 font-bold text-base shadow-sm"
-                [ngClass]="getAvatarStyle(getFullName(viewingPublicador()!))">
-                {{ getInitials(viewingPublicador()) }}
+
+            <div class="flex items-center gap-3 sm:gap-4 pr-8">
+              <!-- Avatar with glow -->
+              <div class="relative shrink-0">
+                <div class="absolute inset-0 rounded-2xl blur-md opacity-40 scale-110"
+                  [ngClass]="getAvatarStyle(getFullName(viewingPublicador()!))"></div>
+                <div class="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center font-black text-base sm:text-lg shadow-lg"
+                  [ngClass]="getAvatarStyle(getFullName(viewingPublicador()!))">
+                  {{ getInitials(viewingPublicador()) }}
+                </div>
               </div>
-              <div class="min-w-0">
-                <h2 class="text-lg font-black text-slate-900 dark:text-white leading-tight truncate">{{ getFullName(viewingPublicador()!) }}</h2>
-                <!-- Estado badge -->
-                <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.6875rem] font-bold border"
+
+              <div class="min-w-0 flex-1">
+                <h2 class="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-tight truncate tracking-tight">{{ getFullName(viewingPublicador()!) }}</h2>
+                <div class="flex items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-2 flex-wrap">
+                  <!-- Estado -->
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.6875rem] font-bold border"
                     [ngClass]="{
-                      'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Activo'),
-                      'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Inactivo'),
-                      'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700': !getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Activo') && !getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Inactivo')
+                      'bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-400/20': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Activo'),
+                      'bg-red-500/10 dark:bg-red-400/10 text-red-700 dark:text-red-400 border-red-500/20 dark:border-red-400/20': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Inactivo'),
+                      'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/[0.08]': !getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Activo') && !getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Inactivo')
                     }">
                     <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getEstadoDotClass(viewingPublicador()!.id_estado_publicador)"></span>
                     {{ getEstadoNombre(viewingPublicador()!.id_estado_publicador) }}
                   </span>
-                  <span *ngIf="viewingPublicador()!.sexo" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6875rem] font-bold bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-800/50">
-                    {{ viewingPublicador()!.sexo === 'M' ? '♂ Masculino' : '♀ Femenino' }}
+                  <!-- Sexo con SVG -->
+                  <span *ngIf="viewingPublicador()!.sexo" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.6875rem] font-bold bg-sky-500/10 dark:bg-sky-400/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 dark:border-sky-400/20">
+                    <svg *ngIf="viewingPublicador()!.sexo === 'M'" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><line x1="19" y1="5" x2="14.14" y2="9.86"/><polyline points="15 5 19 5 19 9"/></svg>
+                    <svg *ngIf="viewingPublicador()!.sexo !== 'M'" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><line x1="12" y1="13" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+                    {{ viewingPublicador()!.sexo === 'M' ? 'Masculino' : 'Femenino' }}
                   </span>
                 </div>
               </div>
@@ -1977,104 +2004,120 @@ interface TableColumn {
           </div>
 
           <!-- ── Scrollable Body ─────────────────────────────────────── -->
-          <div class="flex-1 overflow-y-auto simple-scrollbar px-6 py-5 space-y-5">
+          <div class="flex-1 overflow-y-auto simple-scrollbar px-4 sm:px-5 py-4 sm:py-5 space-y-5">
 
             <!-- Sección: Contacto -->
             <div>
-              <p class="text-[0.625rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Contacto</p>
-              <div class="grid grid-cols-2 gap-3">
-                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
-                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-1 h-4 rounded-full bg-sky-500 dark:bg-sky-400 shrink-0"></span>
+                <p class="text-[0.6875rem] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Contacto</p>
+              </div>
+              <div class="grid grid-cols-2 gap-2 sm:gap-2.5">
+                <!-- Teléfono — min 44px height via min-h -->
+                <div class="flex items-center gap-3 min-h-[56px] p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] hover:border-sky-200 dark:hover:border-sky-500/30 transition-all duration-200">
+                  <div class="w-9 h-9 rounded-xl bg-sky-500/10 dark:bg-sky-400/10 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-sky-600 dark:text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Teléfono</p>
-                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.telefono || '—' }}</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Teléfono</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate mt-0.5">{{ viewingPublicador()!.telefono || '—' }}</p>
                   </div>
                 </div>
-                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
-                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <!-- Nacimiento -->
+                <div class="flex items-center gap-3 min-h-[56px] p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] hover:border-violet-200 dark:hover:border-violet-500/30 transition-all duration-200">
+                  <div class="w-9 h-9 rounded-xl bg-violet-500/10 dark:bg-violet-400/10 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Nacimiento</p>
-                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.fecha_nacimiento ? formatDateExport(viewingPublicador()!.fecha_nacimiento!) : '—' }}</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nacimiento</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate mt-0.5">{{ viewingPublicador()!.fecha_nacimiento ? formatDateExport(viewingPublicador()!.fecha_nacimiento!) : '—' }}</p>
                   </div>
                 </div>
-                <div class="col-span-2 flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
-                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <!-- Dirección (full width) -->
+                <div class="col-span-2 flex items-start gap-3 min-h-[56px] p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] hover:border-amber-200 dark:hover:border-amber-500/30 transition-all duration-200">
+                  <div class="w-9 h-9 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   </div>
                   <div class="min-w-0 flex-1">
-                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Dirección</p>
-                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{{ viewingPublicador()!.direccion || '—' }}
-                      <span *ngIf="viewingPublicador()!.barrio" class="ml-1 text-[0.6875rem] font-bold text-slate-400">· {{ viewingPublicador()!.barrio }}</span>
+                    <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dirección</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 mt-0.5 leading-snug">{{ viewingPublicador()!.direccion || '—' }}
+                      <span *ngIf="viewingPublicador()!.barrio" class="ml-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500">· {{ viewingPublicador()!.barrio }}</span>
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Sección: Teocrático -->
+            <!-- Sección: Servicio -->
             <div>
-              <p class="text-[0.625rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Servicio</p>
-              <div class="grid grid-cols-2 gap-3">
-                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
-                    <svg class="w-3.5 h-3.5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-1 h-4 rounded-full bg-brand-orange shrink-0"></span>
+                <p class="text-[0.6875rem] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Servicio</p>
+              </div>
+              <div class="grid grid-cols-2 gap-2 sm:gap-2.5">
+                <!-- Grupo -->
+                <div class="flex items-center gap-3 min-h-[56px] p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] hover:border-orange-200 dark:hover:border-orange-500/30 transition-all duration-200">
+                  <div class="w-9 h-9 rounded-xl bg-orange-500/10 dark:bg-orange-400/10 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Grupo</p>
-                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ getGrupoNombre(viewingPublicador()!.id_grupo_publicador) }}</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Grupo</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate mt-0.5">{{ getGrupoNombre(viewingPublicador()!.id_grupo_publicador) }}</p>
                   </div>
                 </div>
-                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                  <div class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
-                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <!-- Bautismo -->
+                <div class="flex items-center gap-3 min-h-[56px] p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] hover:border-teal-200 dark:hover:border-teal-500/30 transition-all duration-200">
+                  <div class="w-9 h-9 rounded-xl bg-teal-500/10 dark:bg-teal-400/10 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-teal-600 dark:text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Bautismo</p>
-                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">{{ viewingPublicador()!.fecha_bautismo ? formatDateExport(viewingPublicador()!.fecha_bautismo!) : '—' }}</p>
+                    <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bautismo</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate mt-0.5">{{ viewingPublicador()!.fecha_bautismo ? formatDateExport(viewingPublicador()!.fecha_bautismo!) : '—' }}</p>
                   </div>
                 </div>
-                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50" *ngIf="viewingPublicador()!.fecha_inicio_informe">
-                  <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0 shadow-sm border border-emerald-100 dark:border-emerald-800/50">
-                    <svg class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <!-- Inicio Informe -->
+                <div class="flex items-center gap-3 min-h-[56px] p-3 sm:p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-400/[0.07] border border-emerald-100 dark:border-emerald-400/20 hover:border-emerald-300 dark:hover:border-emerald-400/40 transition-all duration-200" *ngIf="viewingPublicador()!.fecha_inicio_informe">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-500/15 dark:bg-emerald-400/15 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider">Inicio Inf.</p>
+                    <p class="text-[0.625rem] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">Inicio Inf.</p>
                     <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-400 truncate mt-0.5">{{ formatDateExport(viewingPublicador()!.fecha_inicio_informe!) }}</p>
                   </div>
                 </div>
-                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50" *ngIf="viewingPublicador()!.fecha_inactividad">
-                  <div class="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center shrink-0 shadow-sm border border-rose-100 dark:border-rose-800/50">
-                    <svg class="w-3.5 h-3.5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <!-- Inactividad -->
+                <div class="flex items-center gap-3 min-h-[56px] p-3 sm:p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-400/[0.07] border border-rose-100 dark:border-rose-400/20 hover:border-rose-300 dark:hover:border-rose-400/40 transition-all duration-200" *ngIf="viewingPublicador()!.fecha_inactividad">
+                  <div class="w-9 h-9 rounded-xl bg-rose-500/15 dark:bg-rose-400/15 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[0.625rem] font-bold text-rose-400 uppercase tracking-wider">Inactividad</p>
-                    <p class="text-sm font-semibold text-rose-600 dark:text-rose-400 truncate mt-0.5">{{ formatDateExport(viewingPublicador()!.fecha_inactividad!) }}</p>
+                    <p class="text-[0.625rem] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wider">Inactividad</p>
+                    <p class="text-sm font-semibold text-rose-700 dark:text-rose-400 truncate mt-0.5">{{ formatDateExport(viewingPublicador()!.fecha_inactividad!) }}</p>
                   </div>
                 </div>
-                <!-- Consentimiento -->
-                <div class="col-span-2 flex items-center gap-2.5 p-3 rounded-xl"
-                  [ngClass]="viewingPublicador()!.consentimiento_datos ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-800/50'">
-                  <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                    [ngClass]="viewingPublicador()!.consentimiento_datos ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'">
-                    <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Consentimiento (full width) -->
+                <div class="col-span-2 flex items-center gap-3 min-h-[56px] p-3 sm:p-3.5 rounded-2xl border transition-all duration-200"
+                  [ngClass]="viewingPublicador()!.consentimiento_datos
+                    ? 'bg-emerald-50 dark:bg-emerald-400/[0.07] border-emerald-200 dark:border-emerald-400/25'
+                    : 'bg-slate-50 dark:bg-white/[0.04] border-slate-100 dark:border-white/[0.06]'">
+                  <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    [ngClass]="viewingPublicador()!.consentimiento_datos ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30' : 'bg-slate-200 dark:bg-white/[0.08]'">
+                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                       <ng-container *ngIf="viewingPublicador()!.consentimiento_datos"><polyline points="20 6 9 17 4 12"/></ng-container>
                       <ng-container *ngIf="!viewingPublicador()!.consentimiento_datos"><path d="M18 6L6 18M6 6l12 12"/></ng-container>
                     </svg>
                   </div>
-                  <div class="flex-1">
+                  <div class="flex-1 min-w-0">
                     <p class="text-[0.625rem] font-bold uppercase tracking-wider" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'">Consentimiento de datos</p>
-                    <p class="text-sm font-bold mt-0.5" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">
+                    <p class="text-sm font-semibold mt-0.5" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">
                       {{ viewingPublicador()!.consentimiento_datos ? 'Ha dado consentimiento' : 'Sin consentimiento' }}
                     </p>
                   </div>
+                  <!-- PDF button — 44px min touch target -->
                   <button *ngIf="viewingPublicador()!.archivo_consentimiento" type="button"
                     (click)="viewConsentimientoPdfFromQuickView()"
-                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[0.6875rem] font-bold bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all shadow-sm">
-                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    class="inline-flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-white/[0.07] border border-emerald-200 dark:border-emerald-400/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-400/10 transition-all shadow-sm active:scale-95 min-h-[44px] sm:min-h-0">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     PDF
                   </button>
                 </div>
@@ -2083,11 +2126,14 @@ interface TableColumn {
 
             <!-- Sección: Privilegios -->
             <div *ngIf="publicadorPrivilegios().length > 0">
-              <p class="text-[0.625rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Privilegios</p>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-1 h-4 rounded-full bg-violet-500 dark:bg-violet-400 shrink-0"></span>
+                <p class="text-[0.6875rem] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Privilegios</p>
+              </div>
               <div class="flex flex-wrap gap-2">
                 <span *ngFor="let pp of publicadorPrivilegios()"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800">
-                  <svg class="w-3 h-3 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold bg-violet-500/10 dark:bg-violet-400/10 text-violet-700 dark:text-violet-300 border border-violet-500/20 dark:border-violet-400/20 hover:bg-violet-500/15 dark:hover:bg-violet-400/15 transition-colors duration-150 min-h-[36px]">
+                  <svg class="w-3 h-3 text-violet-500 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                   {{ getPrivilegioNombre(pp.id_privilegio) }}
                 </span>
               </div>
@@ -2095,58 +2141,242 @@ interface TableColumn {
 
           </div>
 
-          <!-- ── Footer ─────────────────────────────────────────────── -->
-          <div class="shrink-0 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-3">
-            <button (click)="closeQuickView()" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-              Cerrar
-            </button>
-            <button *ngIf="canEditPublicadores()" (click)="editFromQuickView()"
-              class="px-5 py-2 rounded-xl text-sm font-bold bg-brand-orange hover:bg-orange-600 text-white shadow-sm shadow-orange-500/20 hover:shadow-md hover:shadow-orange-500/30 transition-all active:scale-95 flex items-center gap-2">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Editar
-            </button>
+          <!-- ── Footer — safe-area aware, full-width CTA on mobile ── -->
+          <div class="shrink-0 px-4 sm:px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/80 dark:bg-white/[0.02]">
+            <!-- Mobile: stacked full-width CTA, then ghost close -->
+            <div class="flex flex-col gap-2 sm:hidden">
+              <button *ngIf="canEditPublicadores()" (click)="editFromQuickView()"
+                class="w-full h-12 rounded-2xl text-sm font-bold bg-brand-orange hover:bg-orange-500 text-white shadow-md shadow-orange-500/25 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Editar publicador
+              </button>
+              <button (click)="closeQuickView()"
+                class="w-full h-11 rounded-2xl text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-200 active:scale-[0.98]">
+                Cerrar
+              </button>
+            </div>
+            <!-- Tablet/Desktop: side by side -->
+            <div class="hidden sm:flex items-center justify-between gap-3">
+              <button (click)="closeQuickView()"
+                class="px-4 py-2.5 rounded-xl text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-200 active:scale-95">
+                Cerrar
+              </button>
+              <button *ngIf="canEditPublicadores()" (click)="editFromQuickView()"
+                class="px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-orange hover:bg-orange-500 text-white shadow-md shadow-orange-500/25 hover:shadow-lg hover:shadow-orange-500/35 transition-all duration-200 active:scale-95 flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Editar publicador
+              </button>
+            </div>
           </div>
 
         </div>
       </div>
 
-       <!-- Delete Modal (Clean) -->
-      <!-- Delete Modal (Refined & Clean) -->
+      <!-- Delete Modal -->
       <div *ngIf="deleteModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <!-- Backdrop: Clean dark overlay without blur -->
           <div class="absolute inset-0 bg-slate-900/50 transition-opacity" (click)="closeDeleteModal()"></div>
-          
-          <!-- Modal Card -->
-          <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-[380px] w-full animate-fadeInUp border border-slate-100 dark:border-slate-700">
-             
-             <!-- Icon Header -->
-             <div class="flex items-center gap-4 mb-5">
-                <div class="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center shrink-0">
-                    <svg class="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">¿Eliminar miembro?</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Esta acción es irreversible</p>
-                </div>
-             </div>
 
-             <!-- Content -->
-             <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
-                 Estás a punto de eliminar a <strong class="text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 px-1 rounded">{{ publicadorToDelete()?.primer_nombre }} {{ publicadorToDelete()?.primer_apellido }}</strong>. ¿Deseas continuar?
-             </p>
+          <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-5 sm:p-7 max-w-[480px] w-full max-h-[90dvh] overflow-y-auto overscroll-contain animate-fadeInUp border border-slate-100 dark:border-slate-700">
 
-             <!-- Actions -->
-             <div class="flex items-center gap-3">
-                <button (click)="closeDeleteModal()" [disabled]="isDeleting()" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    Cancelar
-                </button>
-                <button (click)="executeDelete()" [disabled]="isDeleting()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm shadow-md shadow-red-600/20 hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none">
-                    <svg *ngIf="isDeleting()" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <span>{{ isDeleting() ? 'Eliminando...' : 'Eliminar' }}</span>
+            <!-- Header dinámico según step -->
+            <div class="flex items-center gap-4 mb-5">
+              <!-- Ícono: papelera para eliminación, flechas para reasignación -->
+              <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                   [class.bg-red-50]="deleteStep() !== 'reassign-picker'"
+                   [class.dark:bg-red-900/20]="deleteStep() !== 'reassign-picker'"
+                   [class.bg-orange-50]="deleteStep() === 'reassign-picker'"
+                   [class.dark:bg-orange-900/20]="deleteStep() === 'reassign-picker'">
+                <!-- Papelera (checking, simple, linked-choice, confirm-delete-both) -->
+                <svg *ngIf="deleteStep() !== 'reassign-picker'" class="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+                <!-- Flechas (reassign-picker) -->
+                <svg *ngIf="deleteStep() === 'reassign-picker'" class="w-6 h-6 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                  {{ deleteStep() === 'reassign-picker' ? 'Reasignar usuario del sistema' : deleteStep() === 'confirm-delete-both' ? 'Confirmar eliminación doble' : '¿Eliminar miembro?' }}
+                </h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  {{ publicadorToDelete()?.primer_nombre }} {{ publicadorToDelete()?.primer_apellido }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Step: checking -->
+            <div *ngIf="deleteStep() === 'checking'" class="flex flex-col items-center py-6 gap-3">
+              <div class="relative w-10 h-10">
+                <svg class="w-10 h-10 animate-spin text-slate-200 dark:text-slate-700" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                </svg>
+                <svg class="w-10 h-10 animate-spin text-slate-500 dark:text-slate-400 absolute inset-0" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                </svg>
+              </div>
+              <div class="text-center">
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Comprobando accesos vinculados</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Verificando si este miembro tiene usuario del sistema…</p>
+              </div>
+            </div>
+
+            <!-- Step: simple (sin usuario vinculado) -->
+            <div *ngIf="deleteStep() === 'simple'">
+              <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
+                Estás a punto de eliminar permanentemente a <strong class="text-slate-900 dark:text-white">{{ publicadorToDelete()?.primer_nombre }} {{ publicadorToDelete()?.primer_apellido }}</strong>. Esta acción no se puede deshacer.
+              </p>
+              <div class="flex items-center gap-3">
+                <button (click)="closeDeleteModal()" [disabled]="isDeleting()" class="flex-1 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Cancelar</button>
+                <button (click)="executeDelete()" [disabled]="isDeleting()" class="flex-1 min-h-[44px] rounded-xl bg-red-600 text-white font-semibold text-sm hover:bg-red-700 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100">
+                  <svg *ngIf="isDeleting()" class="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <span>{{ isDeleting() ? 'Eliminando…' : 'Sí, eliminar' }}</span>
                 </button>
               </div>
+            </div>
+
+            <!-- Step: linked-choice (tiene usuario vinculado) -->
+            <div *ngIf="deleteStep() === 'linked-choice'">
+              <!-- Información del usuario vinculado -->
+              <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 mb-5">
+                <p class="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-2">Usuario del sistema vinculado</p>
+                <div class="flex items-start gap-3">
+                  <div class="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{{ usuarioVinculado()?.nombre_usuario }}</p>
+                      <span class="shrink-0 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-800/50 text-amber-700 dark:text-amber-300">{{ usuarioVinculado()?.rol_usuario }}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ usuarioVinculado()?.correo_usuario }}</p>
+                  </div>
+                </div>
+                <p class="text-xs text-amber-700 dark:text-amber-400 mt-3 leading-relaxed">Este usuario necesita estar vinculado a un publicador para acceder a la congregación. ¿Qué deseas hacer con su cuenta?</p>
+              </div>
+
+              <!-- Opciones -->
+              <div class="flex flex-col gap-2.5 mb-5">
+                <!-- Opción A -->
+                <button (click)="selectDeleteOpcion('eliminar_con_usuario')"
+                        [disabled]="isDeleting()"
+                        aria-label="Eliminar publicador y también el usuario del sistema"
+                        class="w-full text-left p-4 rounded-xl border border-red-200 dark:border-red-800/60 hover:border-red-400 dark:hover:border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                      <svg class="w-4 h-4 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Eliminar publicador y usuario</p>
+                      <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Se eliminarán ambos registros permanentemente</p>
+                    </div>
+                    <svg class="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-red-400 transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                  </div>
+                </button>
+
+                <!-- Opción B -->
+                <button (click)="selectDeleteOpcion('reasignar_usuario')"
+                        [disabled]="isDeleting()"
+                        aria-label="Eliminar publicador pero reasignar el usuario del sistema a otro publicador"
+                        class="w-full text-left p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-all group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+                      <svg class="w-4 h-4 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Eliminar publicador y reasignar usuario</p>
+                      <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">El usuario seguirá activo vinculado a otro miembro</p>
+                    </div>
+                    <svg class="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-orange-400 transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                  </div>
+                </button>
+              </div>
+
+              <button (click)="closeDeleteModal()" [disabled]="isDeleting()" class="w-full min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Cancelar</button>
+            </div>
+
+            <!-- Step: confirm-delete-both (confirmación secundaria para Opción A) -->
+            <div *ngIf="deleteStep() === 'confirm-delete-both'">
+              <div class="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 mb-5">
+                <p class="text-sm font-semibold text-red-800 dark:text-red-300 mb-1">Se eliminarán permanentemente:</p>
+                <ul class="text-sm text-red-700 dark:text-red-400 space-y-2 mt-2">
+                  <li class="flex items-start gap-2">
+                    <svg class="w-3.5 h-3.5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <span>Publicador: <strong>{{ publicadorToDelete()?.primer_nombre }} {{ publicadorToDelete()?.primer_apellido }}</strong></span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <svg class="w-3.5 h-3.5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <span>Usuario del sistema: <strong>{{ usuarioVinculado()?.nombre_usuario }}</strong></span>
+                  </li>
+                </ul>
+                <p class="text-xs text-red-600 dark:text-red-400 mt-3">Esta acción no se puede deshacer. El usuario perderá acceso al sistema.</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <button (click)="deleteStep.set('linked-choice')" [disabled]="isDeleting()" class="flex-1 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Atrás</button>
+                <button (click)="executeDelete()" [disabled]="isDeleting()" class="flex-1 min-h-[44px] rounded-xl bg-red-600 text-white font-semibold text-sm hover:bg-red-700 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100">
+                  <svg *ngIf="isDeleting()" class="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <span>{{ isDeleting() ? 'Eliminando…' : 'Sí, eliminar ambos' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Step: reassign-picker -->
+            <div *ngIf="deleteStep() === 'reassign-picker'">
+              <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                ¿A qué miembro se reasignará la cuenta de <strong class="text-slate-900 dark:text-white">{{ usuarioVinculado()?.nombre_usuario }}</strong>?
+              </p>
+
+              <!-- Buscador -->
+              <div class="relative mb-2">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+                <input type="text"
+                       placeholder="Buscar publicador…"
+                       [value]="busquedaReasignar()"
+                       (input)="busquedaReasignar.set($any($event.target).value)"
+                       class="w-full pl-9 pr-3 py-3 sm:py-2.5 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700/50 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-orange-400 dark:focus:border-orange-500 focus:ring-2 focus:ring-orange-400/20 transition-colors">
+              </div>
+
+              <div class="max-h-40 sm:max-h-52 overflow-y-auto overscroll-contain rounded-xl border border-slate-200 dark:border-slate-700 mb-4 divide-y divide-slate-100 dark:divide-slate-700/60">
+                <button *ngFor="let pub of publicadoresFiltradosReasignar()"
+                        type="button"
+                        role="radio"
+                        [attr.aria-checked]="publicadorReasignadoId() === pub.id_publicador"
+                        (click)="publicadorReasignadoId.set(pub.id_publicador)"
+                        class="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors min-h-[44px]"
+                        [class.bg-orange-50]="publicadorReasignadoId() === pub.id_publicador"
+                        [class.dark:bg-orange-900/20]="publicadorReasignadoId() === pub.id_publicador"
+                        [class.hover:bg-slate-50]="publicadorReasignadoId() !== pub.id_publicador"
+                        [class.dark:hover:bg-slate-700/40]="publicadorReasignadoId() !== pub.id_publicador">
+                  <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                       [class.border-orange-500]="publicadorReasignadoId() === pub.id_publicador"
+                       [class.border-slate-300]="publicadorReasignadoId() !== pub.id_publicador"
+                       [class.dark:border-orange-400]="publicadorReasignadoId() === pub.id_publicador"
+                       [class.dark:border-slate-600]="publicadorReasignadoId() !== pub.id_publicador">
+                    <div *ngIf="publicadorReasignadoId() === pub.id_publicador" class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400"></div>
+                  </div>
+                  <span class="text-sm text-slate-800 dark:text-slate-200 font-medium">{{ pub.primer_nombre }} {{ pub.primer_apellido }}</span>
+                </button>
+                <!-- Sin publicadores en la congregación -->
+                <div *ngIf="publicadoresParaReasignar().length === 0" class="px-4 py-8 text-center">
+                  <p class="text-sm text-slate-500 dark:text-slate-400">No hay otros publicadores disponibles en esta congregación</p>
+                </div>
+                <!-- Sin resultados de búsqueda -->
+                <div *ngIf="publicadoresParaReasignar().length > 0 && publicadoresFiltradosReasignar().length === 0" class="px-4 py-6 text-center">
+                  <p class="text-xs text-slate-400 dark:text-slate-500">Sin resultados para "<span class="font-medium">{{ busquedaReasignar() }}</span>"</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <button (click)="deleteStep.set('linked-choice')" [disabled]="isDeleting()" class="flex-1 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Atrás</button>
+                <button (click)="deleteOpcionElegida.set('reasignar_usuario'); executeDelete()"
+                        [disabled]="isDeleting() || !publicadorReasignadoId()"
+                        class="flex-1 min-h-[44px] rounded-xl bg-orange-500 text-white font-semibold text-sm hover:bg-orange-600 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
+                  <svg *ngIf="isDeleting()" class="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <span>{{ isDeleting() ? 'Procesando…' : 'Confirmar reasignación' }}</span>
+                </button>
+              </div>
+            </div>
+
           </div>
       </div>
 
@@ -2444,6 +2674,16 @@ export class PublicadoresListComponent implements OnInit {
       .map(p => p.barrio)
       .filter((b): b is string => !!b && b.trim().length > 0);
     return [...new Set(barrios)].sort((a, b) => a.localeCompare(b, 'es'));
+  });
+
+  privilegiosEnCongregacion = computed(() => {
+    const map = this.publicadorPrivilegiosMap();
+    const pubIds = new Set(this.rawList().map(p => p.id_publicador));
+    const usedIds = new Set<number>();
+    for (const [pubId, privIds] of map.entries()) {
+      if (pubIds.has(pubId)) privIds.forEach(id => usedIds.add(id));
+    }
+    return this.privilegios().filter(p => usedIds.has(p.id_privilegio));
   });
 
   // ─── Column Manager ──────────────────────────────────────────────────────
@@ -3193,7 +3433,7 @@ export class PublicadoresListComponent implements OnInit {
       const requests: any[] = [
         lastValueFrom(this.http.get<Estado[]>('/api/estados/')),
         lastValueFrom(this.http.get<Grupo[]>('/api/grupos/', { params })),
-        lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/', { params: { limit: 500 } }))
+        lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/', { params: { limit: 500, ...(effectiveId != null ? { id_congregacion: effectiveId } : {}) } }))
       ];
 
       if (this.isAdminOrGestor()) {
@@ -3524,29 +3764,102 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   // Delete
-  confirmDelete(p: Publicador) {
+  isDeleting = signal(false);
+  checkingUsuarioVinculado = signal(false);
+  deleteStep = signal<'checking' | 'simple' | 'linked-choice' | 'confirm-delete-both' | 'reassign-picker'>('checking');
+  usuarioVinculado = signal<UsuarioVinculado | null>(null);
+  deleteOpcionElegida = signal<DeleteOpcion | null>(null);
+  publicadoresParaReasignar = signal<Publicador[]>([]);
+  publicadorReasignadoId = signal<number | null>(null);
+  busquedaReasignar = signal('');
+  publicadoresFiltradosReasignar = computed(() => {
+    const q = this.busquedaReasignar().toLowerCase().trim();
+    if (!q) return this.publicadoresParaReasignar();
+    return this.publicadoresParaReasignar().filter(p => {
+      const nombre = `${p.primer_nombre} ${p.segundo_nombre ?? ''} ${p.primer_apellido} ${p.segundo_apellido ?? ''}`.toLowerCase();
+      return nombre.includes(q);
+    });
+  });
+
+  async confirmDelete(p: Publicador) {
     this.publicadorToDelete.set(p);
     this.deleteModalOpen.set(true);
+    this.deleteStep.set('checking');
+    this.checkingUsuarioVinculado.set(true);
+    try {
+      const info = await this.facade.checkUsuarioVinculado(p.id_publicador);
+      this.usuarioVinculado.set(info);
+      this.deleteStep.set(info.tiene_usuario_vinculado ? 'linked-choice' : 'simple');
+    } catch {
+      this.showToast('Error al verificar usuario vinculado', 'error');
+      this.closeDeleteModal();
+    } finally {
+      this.checkingUsuarioVinculado.set(false);
+    }
   }
 
   closeDeleteModal() {
-    if (this.isDeleting()) return; // Prevent closing while deleting
+    if (this.isDeleting()) return;
     this.deleteModalOpen.set(false);
     this.publicadorToDelete.set(null);
+    this.usuarioVinculado.set(null);
+    this.deleteStep.set('checking');
+    this.deleteOpcionElegida.set(null);
+    this.publicadoresParaReasignar.set([]);
+    this.publicadorReasignadoId.set(null);
+    this.busquedaReasignar.set('');
   }
 
-  isDeleting = signal(false);
+  selectDeleteOpcion(opcion: DeleteOpcion) {
+    if (opcion === 'eliminar_con_usuario') {
+      this.deleteStep.set('confirm-delete-both');
+    } else if (opcion === 'reasignar_usuario') {
+      const pub = this.publicadorToDelete();
+      const todos = this.facade.vm().list.filter(
+        p => p.id_publicador !== pub?.id_publicador
+      );
+      this.publicadoresParaReasignar.set(todos);
+      this.deleteStep.set('reassign-picker');
+    } else {
+      this.deleteOpcionElegida.set(opcion);
+    }
+  }
 
   async executeDelete() {
     const p = this.publicadorToDelete();
     if (!p) return;
 
+    const step = this.deleteStep();
+    const opcion: DeleteOpcion = step === 'simple' || !this.usuarioVinculado()?.tiene_usuario_vinculado
+      ? 'sin_usuario'
+      : step === 'confirm-delete-both'
+        ? 'eliminar_con_usuario'
+        : (this.deleteOpcionElegida() ?? 'eliminar_con_usuario');
+
+    if (opcion === 'reasignar_usuario') {
+      const nuevoId = this.publicadorReasignadoId();
+      if (!nuevoId) {
+        this.showToast('Debes seleccionar un publicador para reasignar el usuario', 'error');
+        return;
+      }
+      this.isDeleting.set(true);
+      try {
+        await this.facade.removeWithOpcion(p.id_publicador, opcion, nuevoId);
+        this.showToast('Publicador eliminado y usuario reasignado correctamente', 'success');
+        this.closeDeleteModal();
+      } catch (err: any) {
+        this.showToast(err?.error?.detail || 'No se pudo eliminar el publicador', 'error');
+      } finally {
+        this.isDeleting.set(false);
+      }
+      return;
+    }
+
     this.isDeleting.set(true);
     try {
-      await this.facade.remove(p.id_publicador);
+      await this.facade.removeWithOpcion(p.id_publicador, opcion);
       this.showToast('Publicador eliminado correctamente', 'success');
-      this.deleteModalOpen.set(false);
-      this.publicadorToDelete.set(null);
+      this.closeDeleteModal();
     } catch (err: any) {
       console.error('Error deleting publicador:', err);
       const msg = err?.error?.detail || 'No se pudo eliminar el publicador';
@@ -3900,8 +4213,9 @@ export class PublicadoresListComponent implements OnInit {
     if (!file) return;
 
     // Validar tipo
-    if (file.type !== 'application/pdf') {
-      this.pdfError.set('Solo se permiten archivos PDF.');
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      this.pdfError.set('Solo se permiten archivos PDF o imágenes (JPG, PNG, WEBP).');
       input.value = '';
       return;
     }

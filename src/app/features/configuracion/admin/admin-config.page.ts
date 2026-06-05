@@ -9,6 +9,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { AIConfigComponent } from './components/ai-config.component';
 import { DbBackupComponent } from './components/db-backup.component';
 import { SystemConfigComponent } from './components/system-config.component';
+import { ImportPublicadoresModalComponent } from '../../../shared/components/import-publicadores/import-publicadores-modal.component';
 
 interface CongregacionUrl {
    id_url: number;
@@ -70,7 +71,7 @@ interface SolicitudAcceso {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ImportPublicadoresModalComponent],
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -110,12 +111,7 @@ export class AdminConfigPage implements OnInit {
 
    // Import Modal Signals
    showImportModal = signal(false);
-   importing = signal(false);
-   importResult = signal<ImportResult | null>(null);
-   importError = signal<string | null>(null);
-   selectedFileName = signal<string | null>(null);
-   isDragOver = signal(false);
-   // ID de congregación seleccionada para importar directamente (modo Admin por ID)
+   /** ID de la congregación sobre la que se importa (null = sin selección). */
    selectedImportCongregacionId = signal<number | null>(null);
    selectedImportCongregacionName = signal<string | null>(null);
 
@@ -271,112 +267,25 @@ export class AdminConfigPage implements OnInit {
       this.selectedImportCongregacionId.set(null);
       this.selectedImportCongregacionName.set(null);
       this.showImportModal.set(true);
-      this.importResult.set(null);
-      this.importError.set(null);
-      this.selectedFileName.set(null);
    }
 
    openImportModalForCongregacion(id: number, nombre: string) {
       this.selectedImportCongregacionId.set(id);
       this.selectedImportCongregacionName.set(nombre);
       this.showImportModal.set(true);
-      this.importResult.set(null);
-      this.importError.set(null);
-      this.selectedFileName.set(null);
    }
 
    closeImportModal() {
-      const wasSuccess = this.importResult()?.success;
       this.showImportModal.set(false);
-      this.importResult.set(null);
-      this.importError.set(null);
-      this.selectedFileName.set(null);
-      this.isDragOver.set(false);
       this.selectedImportCongregacionId.set(null);
       this.selectedImportCongregacionName.set(null);
-      if (wasSuccess) {
-         this.loadCongregaciones();
-      }
    }
 
-   onDragOver(event: DragEvent) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.isDragOver.set(true);
-   }
-
-   onDragLeave(event: DragEvent) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.isDragOver.set(false);
-   }
-
-   onFileDrop(event: DragEvent) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.isDragOver.set(false);
-
-      const files = event.dataTransfer?.files;
-      if (files && files.length > 0) {
-         this.processFile(files[0]);
-      }
-   }
-
-   onFileSelected(event: Event) {
-      const input = event.target as HTMLInputElement;
-      if (input.files && input.files.length > 0) {
-         this.processFile(input.files[0]);
-      }
-   }
-
-   private processFile(file: File) {
-      // Validate extension
-      const name = file.name.toLowerCase();
-      if (!name.endsWith('.xls') && !name.endsWith('.xlsx')) {
-         this.importError.set('Formato no soportado. Solo se aceptan archivos .xls o .xlsx');
-         return;
-      }
-
-      // Validate size (5MB max)
-      const sizeMB = file.size / (1024 * 1024);
-      if (sizeMB > 5) {
-         this.importError.set(`El archivo excede el tamaño máximo permitido (5 MB). Tamaño: ${sizeMB.toFixed(2)} MB`);
-         return;
-      }
-
-      this.selectedFileName.set(file.name);
-      this.uploadFile(file);
-   }
-
-   private uploadFile(file: File) {
-      this.importing.set(true);
-      this.importError.set(null);
-      this.importResult.set(null);
-
-      const formData = new FormData();
-      formData.append('archivo', file);
-
-      const idCong = this.selectedImportCongregacionId();
-      const url = idCong
-         ? `${environment.apiUrl}/import/congregaciones?id_congregacion=${idCong}`
-         : `${environment.apiUrl}/import/congregaciones`;
-
-      this.http.post<ImportResult>(url, formData)
-         .subscribe({
-            next: (result) => {
-               this.importResult.set(result);
-               this.importing.set(false);
-               if (result.success) {
-                  this.loadCongregaciones();
-               }
-            },
-            error: (err: any) => {
-               console.error('Import error:', err);
-               const message = err.error?.detail || err.message || 'Error inesperado al procesar el archivo';
-               this.importError.set(message);
-               this.importing.set(false);
-            }
-         });
+   onImportDone() {
+      this.showImportModal.set(false);
+      this.selectedImportCongregacionId.set(null);
+      this.selectedImportCongregacionName.set(null);
+      this.loadCongregaciones();
    }
 
 

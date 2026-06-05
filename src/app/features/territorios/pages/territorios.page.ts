@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
+import { timeout } from 'rxjs';
 import { TerritoriosService } from '../services/territorios.service';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
 import { TerritorioCardComponent } from '../components/territorio-card.component';
@@ -41,11 +42,11 @@ import {
       <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
           <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight font-display">Territorios</h1>
-          <p class="text-slate-500 dark:text-slate-400 mt-1">Administra, asigna y monitorea el estado de los territorios de la congregación.</p>
+          <p class="text-slate-500 dark:text-slate-400 mt-1 max-w-md">Administra, asigna y monitorea el estado de los territorios de la congregación.</p>
         </div>
         <div class="flex items-center gap-3">
-          <button (click)="navigateToMap()" class="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-sm hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all focus:ring-4 focus:ring-slate-100 dark:focus:ring-slate-800 flex items-center gap-2">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+          <button (click)="navigateToMap()" class="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-sm hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 flex items-center gap-2 whitespace-nowrap">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
             Ver Mapa General
           </button>
           <button (click)="openCreateModal()" class="px-5 py-2.5 bg-[#059669] text-white font-bold rounded-xl text-sm hover:bg-[#047857] shadow-lg shadow-emerald-900/20 dark:shadow-emerald-900/40 transition-all active:scale-95 flex items-center gap-2">
@@ -73,9 +74,9 @@ import {
 
         <!-- Asignados -->
         <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
-          <div class="absolute right-0 top-0 w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+          <div class="absolute right-0 top-0 w-24 h-24 bg-purple-50 dark:bg-purple-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div class="flex items-center gap-3 z-10">
-            <div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <div class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             </div>
             <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">Territorios Asignados</span>
@@ -136,16 +137,51 @@ import {
            <!-- Table -->
            <div class="flex-1 overflow-y-auto simple-scrollbar relative">
               @if (loading()) {
-                <div class="flex items-center justify-center py-20">
-                  <div class="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                <div class="flex flex-col items-center justify-center py-20 gap-3" role="status" aria-label="Cargando territorios">
+                  <div class="w-8 h-8 border-[3px] border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Cargando territorios…</span>
+                </div>
+              } @else if (loadError()) {
+                <div class="flex flex-col items-center justify-center py-20 gap-4" role="alert">
+                  <div class="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-sm font-bold text-slate-700 dark:text-slate-200">No se pudo cargar los territorios</p>
+                    <p class="text-xs text-slate-400 mt-1">Verifica tu conexión e intenta de nuevo.</p>
+                  </div>
+                  <button (click)="loadTerritorios()" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm">
+                    Reintentar
+                  </button>
+                </div>
+              } @else if (filteredTerritorios().length === 0) {
+                <div class="flex flex-col items-center justify-center py-20 gap-4">
+                  <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center">
+                    <svg class="w-7 h-7 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  </div>
+                  <div class="text-center">
+                    @if (searchQuery || estadoFilter) {
+                      <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Sin resultados</p>
+                      <p class="text-xs text-slate-400 mt-1">Ningún territorio coincide con los filtros aplicados.</p>
+                    } @else {
+                      <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Sin territorios registrados</p>
+                      <p class="text-xs text-slate-400 mt-1">Crea el primer territorio para comenzar.</p>
+                    }
+                  </div>
+                  @if (!searchQuery && !estadoFilter) {
+                    <button (click)="openCreateModal()" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm flex items-center gap-1.5">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Nuevo Territorio
+                    </button>
+                  }
                 </div>
               } @else {
               <table class="w-full text-left border-collapse">
                  <thead class="sticky top-0 bg-white dark:bg-slate-800 z-10 border-b border-slate-100 dark:border-slate-700/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                     <tr>
-                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Código / Nombre</th>
-                       <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Estado</th>
-                       <th class="px-4 py-4 w-10"></th>
+                       <th scope="col" class="px-6 py-4 text-[0.6875rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Código / Nombre</th>
+                       <th scope="col" class="px-6 py-4 text-[0.6875rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Estado</th>
+                       <th scope="col" aria-label="Acciones" class="px-4 py-4 w-10"></th>
                     </tr>
                  </thead>
                   <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
@@ -163,7 +199,7 @@ import {
                        </td>
                        <!-- Status -->
                        <td class="px-6 py-4">
-                          <span 
+                          <span
                             class="inline-flex items-center px-2.5 py-1 rounded-full text-[0.625rem] font-bold border"
                             [ngClass]="getStatusColor(t.estado_territorio)"
                           >
@@ -173,7 +209,7 @@ import {
                        </td>
                        <!-- Actions -->
                        <td class="px-4 py-4 text-right">
-                          <button class="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">
+                          <button aria-label="Opciones" class="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">
                              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                           </button>
                        </td>
@@ -185,6 +221,7 @@ import {
            </div>
            
            <!-- Pagination -->
+           @if (!loading() && !loadError() && filteredTerritorios().length > 0) {
            <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
               <span class="text-xs text-slate-600 dark:text-slate-400 font-medium">
                 Mostrando {{ paginationStart() }}-{{ paginationEnd() }} de {{ filteredTerritorios().length }}
@@ -204,6 +241,7 @@ import {
                 }
               </div>
            </div>
+           }
         </div>
 
         <!-- Right: Detail Panel -->
@@ -827,6 +865,7 @@ export class TerritoriosPage implements OnInit {
    searchQuery = '';
    estadoFilter = '';
    loading = signal(true);
+   loadError = signal(false);
    saving = signal(false);
    showPrintCard = signal(false);
    showCreateModal = signal(false);
@@ -945,13 +984,15 @@ export class TerritoriosPage implements OnInit {
 
    loadTerritorios(): void {
       this.loading.set(true);
-      this.territoriosService.getTerritorios(0, 500).subscribe({
+      this.loadError.set(false);
+      this.territoriosService.getTerritorios(0, 500).pipe(timeout(15000)).subscribe({
          next: (data) => {
             this.territorios.set(data);
             this.loading.set(false);
          },
          error: () => {
             this.loading.set(false);
+            this.loadError.set(true);
          },
       });
    }

@@ -38,7 +38,7 @@ import { saveAs } from 'file-saver';
       }
 
       <!-- Toolbar: month selector + desktop actions -->
-      <div class="shrink-0 relative z-20 flex items-center justify-between gap-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm px-3 sm:px-4 py-2.5">
+      <div class="shrink-0 relative z-20 flex items-center justify-between gap-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm px-3 sm:px-4 py-2">
         <div class="flex items-center gap-1 bg-slate-50 dark:bg-slate-950/50 rounded-xl p-0.5">
           <button (click)="prevMonth()" class="press-btn p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg text-slate-500">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
@@ -138,14 +138,14 @@ import { saveAs } from 'file-saver';
 
       <!-- Main Grid -->
       <div class="flex-1 min-h-0 overflow-hidden
-                  grid gap-3 md:gap-4 2xl:gap-6
+                  grid gap-2 md:gap-3 2xl:gap-5
                   grid-cols-1
                   md:grid-cols-2 md:grid-rows-[auto_1fr]
-                  xl:grid-cols-[280px_1fr_320px] xl:grid-rows-1
+                  xl:grid-cols-[260px_1fr_300px] xl:grid-rows-1
                   pb-24 md:pb-0">
 
         <!-- REGISTRO CARD — md: row1 col2 · xl: col2 (wider) -->
-        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-4 lg:p-5 relative overflow-hidden min-h-0 md:order-2 xl:order-2"
+        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-3 lg:p-4 relative overflow-hidden min-h-0 md:order-2 xl:order-2"
              [class.flex]="activeMobileTab() === 'registro'"
              [class.hidden]="activeMobileTab() !== 'registro'">
 
@@ -159,9 +159,9 @@ import { saveAs } from 'file-saver';
           }
 
           <!-- Weekly Navigator -->
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 shrink-0">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3 shrink-0">
             <div class="flex items-center gap-3">
-              <div class="hidden lg:flex w-10 h-10 rounded-2xl bg-brand-purple/10 items-center justify-center text-brand-purple shrink-0">
+              <div class="hidden lg:flex w-8 h-8 rounded-xl bg-brand-purple/10 items-center justify-center text-brand-purple shrink-0">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </div>
               <div>
@@ -173,7 +173,7 @@ import { saveAs } from 'file-saver';
             <div class="flex gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl w-full sm:w-auto">
               @for (week of weeksArray(); track week) {
                 <button (click)="selectWeek(week)"
-                        class="press-btn flex-1 sm:flex-none sm:min-w-[3rem] h-11 px-1 rounded-xl relative flex flex-col items-center justify-center gap-0.5"
+                        class="press-btn flex-1 sm:flex-none sm:min-w-[2.75rem] h-9 px-1 rounded-xl relative flex flex-col items-center justify-center gap-0.5"
                         [ngClass]="selectedWeek() === week ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-500'">
                   <span class="text-xs font-black leading-none">S{{ week }}</span>
                   @if (fechasReuniones()[week - 1]?.fecha_entre_semana) {
@@ -186,10 +186,10 @@ import { saveAs } from 'file-saver';
           </div>
 
           <!-- Entry Fields: side-by-side on md+, one at a time on mobile -->
-          <div class="flex-1 min-h-0 grid md:grid-cols-2 gap-3">
+          <div class="flex-1 min-h-0 grid md:grid-cols-2 gap-2 lg:gap-3">
 
             <!-- MIDWEEK -->
-            <div class="md:flex flex-col gap-3 p-4 rounded-2xl border border-brand-purple/10 dark:border-brand-purple/15 bg-brand-purple/[0.025] dark:bg-brand-purple/[0.07]"
+            <div class="md:flex flex-col gap-2 p-3 rounded-2xl border border-brand-purple/10 dark:border-brand-purple/15 bg-brand-purple/[0.025] dark:bg-brand-purple/[0.07]"
                  [class.flex]="activeMeetingSection() === 'midweek'"
                  [class.hidden]="activeMeetingSection() !== 'midweek'">
 
@@ -209,14 +209,14 @@ import { saveAs } from 'file-saver';
               </div>
 
               @if (canEditMidweekWeek()) {
-                <div class="flex flex-col gap-2.5">
+                <div class="flex flex-col gap-2">
                   <div>
-                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Presencial</label>
+                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
                     <input type="number" min="0" inputmode="numeric" [ngModel]="midweekWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                   </div>
                   @if (congregacionConfig()?.usa_zoom !== 0) {
                     <div>
-                      <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Zoom</label>
+                      <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
                       <input type="number" min="0" inputmode="numeric" [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                     </div>
                   }
@@ -228,7 +228,7 @@ import { saveAs } from 'file-saver';
               }
 
               @if (canEditMidweekWeek() && midweekWeeks()[selectedWeek() - 1] !== null) {
-                <div class="flex items-center justify-between pt-2.5 mt-auto border-t border-brand-purple/10">
+                <div class="flex items-center justify-between pt-2 mt-auto border-t border-brand-purple/10">
                   <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
                   <span class="text-sm font-black text-brand-purple tabular-nums">{{ currentMidweekTotal() }}</span>
                 </div>
@@ -236,7 +236,7 @@ import { saveAs } from 'file-saver';
             </div>
 
             <!-- WEEKEND -->
-            <div class="md:flex flex-col gap-3 p-4 rounded-2xl border border-orange-500/10 dark:border-orange-500/15 bg-orange-500/[0.025] dark:bg-orange-500/[0.07]"
+            <div class="md:flex flex-col gap-2 p-3 rounded-2xl border border-orange-500/10 dark:border-orange-500/15 bg-orange-500/[0.025] dark:bg-orange-500/[0.07]"
                  [class.flex]="activeMeetingSection() === 'weekend'"
                  [class.hidden]="activeMeetingSection() !== 'weekend'">
 
@@ -256,14 +256,14 @@ import { saveAs } from 'file-saver';
               </div>
 
               @if (canEditWeekendWeek()) {
-                <div class="flex flex-col gap-2.5">
+                <div class="flex flex-col gap-2">
                   <div>
-                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Presencial</label>
+                    <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
                     <input type="number" min="0" inputmode="numeric" [ngModel]="weekendWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                   </div>
                   @if (congregacionConfig()?.usa_zoom !== 0) {
                     <div>
-                      <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5 pl-0.5">Zoom</label>
+                      <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
                       <input type="number" min="0" inputmode="numeric" [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                     </div>
                   }
@@ -275,7 +275,7 @@ import { saveAs } from 'file-saver';
               }
 
               @if (canEditWeekendWeek() && weekendWeeks()[selectedWeek() - 1] !== null) {
-                <div class="flex items-center justify-between pt-2.5 mt-auto border-t border-orange-500/10">
+                <div class="flex items-center justify-between pt-2 mt-auto border-t border-orange-500/10">
                   <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
                   <span class="text-sm font-black text-orange-500 tabular-nums">{{ currentWeekendTotal() }}</span>
                 </div>
@@ -285,11 +285,11 @@ import { saveAs } from 'file-saver';
         </div>
 
         <!-- RESUMEN MENSUAL CARD — md: row1 col1 · xl: col1 -->
-        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-4 lg:p-5 min-h-0 overflow-hidden md:order-1 xl:order-1"
+        <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm p-3 lg:p-4 min-h-0 overflow-hidden md:order-1 xl:order-1"
              [class.flex]="activeMobileTab() === 'resumen'"
              [class.hidden]="activeMobileTab() !== 'resumen'">
-          <div class="flex items-center gap-3 mb-4 shrink-0">
-            <div class="w-9 h-9 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+          <div class="flex items-center gap-2 mb-3 shrink-0">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <div>
@@ -298,9 +298,9 @@ import { saveAs } from 'file-saver';
             </div>
           </div>
 
-          <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-2 pr-1">
+          <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
             @for (week of weeksArray(); track week; let i = $index) {
-              <div class="flex items-center justify-between px-4 py-2.5 rounded-2xl stagger-row"
+              <div class="flex items-center justify-between px-3 py-2 rounded-xl stagger-row"
                    [style.--row-index]="i"
                    [ngClass]="weekHasData(week) ? 'bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800/40 text-slate-400'">
                 <span class="text-[0.65rem] font-black uppercase tracking-widest">Semana {{ week }}</span>
@@ -326,14 +326,14 @@ import { saveAs } from 'file-saver';
             }
           </div>
 
-          <div class="grid grid-cols-2 gap-3 mt-4 shrink-0">
-            <div class="bg-brand-purple/5 dark:bg-brand-purple/10 rounded-2xl p-3 border border-brand-purple/10 text-center">
+          <div class="grid grid-cols-2 gap-2 mt-3 shrink-0">
+            <div class="bg-brand-purple/5 dark:bg-brand-purple/10 rounded-xl p-2.5 border border-brand-purple/10 text-center">
               <p class="text-[0.55rem] font-black text-brand-purple uppercase tracking-widest mb-1">M. Semana</p>
-              <p class="text-xl font-black text-slate-900 dark:text-white tabular-nums leading-none">{{ midweekMonthTotal() }}</p>
+              <p class="text-lg font-black text-slate-900 dark:text-white tabular-nums leading-none">{{ midweekMonthTotal() }}</p>
             </div>
-            <div class="bg-orange-500/5 dark:bg-orange-500/10 rounded-2xl p-3 border border-orange-500/10 text-center">
+            <div class="bg-orange-500/5 dark:bg-orange-500/10 rounded-xl p-2.5 border border-orange-500/10 text-center">
               <p class="text-[0.55rem] font-black text-orange-500 uppercase tracking-widest mb-1">F. Semana</p>
-              <p class="text-xl font-black text-slate-900 dark:text-white tabular-nums leading-none">{{ weekendMonthTotal() }}</p>
+              <p class="text-lg font-black text-slate-900 dark:text-white tabular-nums leading-none">{{ weekendMonthTotal() }}</p>
             </div>
           </div>
         </div>
@@ -342,7 +342,7 @@ import { saveAs } from 'file-saver';
         <div class="md:flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/70 dark:border-slate-800 shadow-sm overflow-hidden md:col-span-2 md:order-3 xl:col-span-1 xl:order-3 min-h-0"
              [class.flex]="activeMobileTab() === 'historial'"
              [class.hidden]="activeMobileTab() !== 'historial'">
-          <div class="px-4 lg:px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/20 shrink-0">
+          <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/20 shrink-0">
             <div>
               <h4 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Desglose Anual</h4>
               <p class="text-[0.6rem] font-black text-slate-400 mt-0.5 uppercase tracking-widest">Año {{ resumenServiceYear() }}</p>
@@ -354,9 +354,9 @@ import { saveAs } from 'file-saver';
             <table class="w-full text-[0.7rem] font-black">
               <thead class="bg-slate-50 dark:bg-slate-950 sticky top-0 z-10 text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                 <tr>
-                  <th class="px-4 lg:px-5 py-3 text-left">Mes</th>
-                  <th class="px-4 py-3 text-center text-brand-purple">M. Sem.</th>
-                  <th class="px-4 py-3 text-center text-orange-500">F. Sem.</th>
+                  <th class="px-4 py-2.5 text-left">Mes</th>
+                  <th class="px-3 py-2.5 text-center text-brand-purple">M. Sem.</th>
+                  <th class="px-3 py-2.5 text-center text-orange-500">F. Sem.</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -364,9 +364,9 @@ import { saveAs } from 'file-saver';
                   <tr class="stagger-row hover:bg-slate-50 dark:hover:bg-slate-800/40"
                       [style.--row-index]="i"
                       [class.bg-brand-purple/5]="+row.mes === +selectedMonth()">
-                    <td class="px-4 lg:px-5 py-3 text-slate-700 dark:text-slate-200">{{ row.nombre_mes }}</td>
-                    <td class="px-4 py-3 text-center text-sm tabular-nums text-brand-purple">{{ row.midweek_promedio ?? '–' }}</td>
-                    <td class="px-4 py-3 text-center text-sm tabular-nums text-orange-500">{{ row.weekend_promedio ?? '–' }}</td>
+                    <td class="px-4 py-2 text-slate-700 dark:text-slate-200">{{ row.nombre_mes }}</td>
+                    <td class="px-3 py-2 text-center text-sm tabular-nums text-brand-purple">{{ row.midweek_promedio ?? '–' }}</td>
+                    <td class="px-3 py-2 text-center text-sm tabular-nums text-orange-500">{{ row.weekend_promedio ?? '–' }}</td>
                   </tr>
                 }
                 @empty {
@@ -474,7 +474,7 @@ import { saveAs } from 'file-saver';
     /* Normalized attendance input */
     .attendance-input {
       width: 100%;
-      height: 2.75rem; /* h-11 */
+      height: 2.5rem; /* h-10 */
       padding: 0 0.75rem;
       background-color: #f8fafc; /* slate-50 */
       border: 2px solid #e2e8f0; /* slate-200 — visible en light mode */
@@ -538,6 +538,11 @@ import { saveAs } from 'file-saver';
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
     :host-context(.dark) .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+    /* Compact vertical rhythm at 720p and similar constrained heights */
+    @media (max-height: 760px) and (min-width: 1024px) {
+      .attendance-input { height: 2.25rem; font-size: 1rem; }
+    }
 
     /* Respect user's motion preference — keep opacity/color, remove transforms */
     @media (prefers-reduced-motion: reduce) {

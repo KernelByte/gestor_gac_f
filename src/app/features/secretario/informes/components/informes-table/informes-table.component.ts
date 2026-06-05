@@ -53,11 +53,29 @@ import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.ut
          tbody tr { animation: none !important; opacity: 1; }
          .mobile-cards > * { animation: none !important; opacity: 1; }
       }
+
+      /* Auto-save status pill: fade text in on state change */
+      @keyframes statusIn {
+         from { opacity: 0; transform: translateY(3px); }
+         to   { opacity: 1; transform: translateY(0); }
+      }
+      .autosave-status span {
+         animation: statusIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      .autosave-status svg {
+         animation: statusIn 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      @media (prefers-reduced-motion: reduce) {
+         .autosave-status span,
+         .autosave-status svg { animation: none !important; }
+      }
    `]
 })
 export class InformesTableComponent {
    @Input() resumen: ResumenMensual | null = null;
    @Input() saving: boolean = false;
+   @Input() autoSaveStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
+   @Input() hasPendingChanges: boolean = false;
    @Input() canEdit: boolean = true;
 
    @Input() privilegios: Privilegio[] = [];
@@ -65,7 +83,6 @@ export class InformesTableComponent {
    @Input() localChanges: Map<number, Partial<InformeLoteItem>> = new Map();
 
    @Output() informeChange = new EventEmitter<{ pub: InformeConPublicador, field: string, value: any }>();
-   @Output() save = new EventEmitter<void>();
    @Output() exportExcel = new EventEmitter<void>();
    @Output() importExcel = new EventEmitter<Event>();
    @Output() notifyWhatsApp = new EventEmitter<InformeConPublicador>();
@@ -168,14 +185,12 @@ export class InformesTableComponent {
          value = el.type === 'radio' ? el.value === 'true' : el.checked;
          // Auto-focus logic: If participating AND (Precursor or Paux)
          if (value) {
-            // Auto-expand mobile card when they mark as participated
-            this.expandedCards.add(pub.id_publicador);
-
             const roles = this.getRoles(pub);
             const isPioneer = roles.some(r => r.label.includes('PRECURSOR'));
             const isPaux = this.getInformeValue(pub, 'es_paux');
 
             if (isPioneer || isPaux) {
+               this.expandedCards.add(pub.id_publicador);
                setTimeout(() => this.focusHours(pub.id_publicador), 50);
             }
          }
@@ -229,31 +244,27 @@ export class InformesTableComponent {
    // Modal State
    showValidationModal = false;
    validationModalPublicadores: string[] = [];
+   highlightedPubs = new Set<number>();
+
+   // Animation state
+   confirmingPubs = new Set<number>();
+
+   triggerConfirm(pubId: number) {
+     this.confirmingPubs.add(pubId);
+     setTimeout(() => this.confirmingPubs.delete(pubId), 300);
+   }
 
    closeValidationModal() {
       this.showValidationModal = false;
+      // Resaltar las filas problemáticas para guiar al usuario
+      const problematicos = (this.resumen?.publicadores_list || [])
+        .filter(p => this.validationModalPublicadores.includes(p.nombre_completo));
+      problematicos.forEach(p => this.highlightedPubs.add(p.id_publicador));
       this.validationModalPublicadores = [];
+      // Quitar el resaltado a los 4 segundos
+      setTimeout(() => this.highlightedPubs.clear(), 4000);
    }
 
-   onSave() {
-      if (!this.canEdit) return;
-      // Validation: Check for Auxiliary Pioneers with 0 hours
-      const publishers0Hours = (this.resumen?.publicadores_list || []).filter(pub => {
-         const isPaux = this.getInformeValue(pub, 'es_paux');
-         const participated = this.getInformeValue(pub, 'participo');
-         const hours = this.getInformeValue(pub, 'horas') || 0;
-
-         return participated && isPaux && hours <= 0;
-      });
-
-      if (publishers0Hours.length > 0) {
-         this.validationModalPublicadores = publishers0Hours.map(p => p.nombre_completo);
-         this.showValidationModal = true;
-         return;
-      }
-
-      this.save.emit();
-   }
 
    isRegular(pub: InformeConPublicador): boolean {
       const roles = this.getRoles(pub);

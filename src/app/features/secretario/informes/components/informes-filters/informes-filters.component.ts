@@ -65,6 +65,16 @@ export class InformesFiltersComponent {
       this.searchQueryChange.emit(value);
    }
 
+   onVistaToggle() {
+      const next = !this.vistaGrupo;
+      this.setVista.emit(next);
+      if (next) {
+         this.toggleDropdown.emit('grupo');
+      } else {
+         this.closeDropdown.emit();
+      }
+   }
+
    onSoloSinInformeChange(value: boolean) {
       this.soloSinInforme = value;
       this.soloSinInformeChange.emit(value);

@@ -1459,7 +1459,7 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   hasEditPermission = computed(() => {
     const tipo = this.tipoReunionActivo();
-    const perm = tipo === 'fin_semana' ? 'reuniones.fin_semana_editar' : 'reuniones.entre_semana_editar';
+    const perm = tipo === 'fin_semana' ? 'reuniones.fin_semana' : 'reuniones.entre_semana';
     return this.authStore.hasPermission(perm);
   });
 

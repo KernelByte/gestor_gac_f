@@ -86,13 +86,16 @@ import {
       </div>
 
       <!-- Horas Precursores (solo si hay datos) -->
-      @if (canViewInformes() && (horasPrecursoresRegulares() > 0 || horasPrecursoresAuxiliares() > 0)) {
+      @if (canViewInformes()) {
         <div class="relative bg-white dark:bg-slate-800/95 rounded-2xl border border-gray-100 dark:border-slate-700/50 p-4 sm:p-5 md:p-6 shadow-sm shadow-black/[0.04] dark:shadow-black/30 hover:shadow-md hover:shadow-black/[0.08] dark:hover:shadow-black/40 hover:-translate-y-px transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
 
           <div class="mb-3">
             <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Hrs. Precursores</p>
           </div>
           <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            @if (horasPrecursoresRegulares() === 0 && horasPrecursoresAuxiliares() === 0) {
+              <span class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">0</span>
+            }
             @if (horasPrecursoresRegulares() > 0) {
               <span class="text-xl sm:text-3xl font-bold text-violet-600 dark:text-violet-400 tabular-nums tracking-tight">{{ horasPrecursoresRegulares() }}</span>
               <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">Reg.</span>
@@ -197,7 +200,7 @@ import {
         </div>
       </button>
 
-      <button routerLink="/reuniones/resumen"
+      <button *ngIf="canViewReuniones()" routerLink="/reuniones/resumen"
         class="flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-purple-50 dark:bg-purple-500/[0.07] hover:bg-purple-600 dark:hover:bg-purple-600 border border-purple-100 dark:border-purple-500/20 hover:border-purple-600 shadow-sm hover:shadow-lg hover:shadow-purple-500/20 dark:hover:shadow-purple-500/15 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group text-left active:scale-[0.98]">
         <div class="w-11 h-11 rounded-xl bg-purple-100 dark:bg-purple-500/15 border border-purple-200/70 dark:border-purple-500/20 group-hover:bg-white/20 group-hover:border-white/20 flex items-center justify-center shrink-0 transition-all duration-300">
           <svg class="w-5 h-5 text-purple-600 dark:text-purple-400 group-hover:text-white transition-colors duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -287,6 +290,7 @@ export class HomePage implements OnInit {
   canManagePublicadores = signal(false);
   canViewInformes = signal(false);
   canManageInformes = signal(false);
+  canViewReuniones = signal(false);
 
   ngOnInit() {
    const user = this.store.user();
@@ -304,6 +308,7 @@ export class HomePage implements OnInit {
      this.canManagePublicadores.set(rolesManagePublicadores.includes(currentRole));
      this.canViewInformes.set(rolesInformes.includes(currentRole));
      this.canManageInformes.set(rolesManageInformes.includes(currentRole));
+     this.canViewReuniones.set(this.store.hasPermission('reuniones.ver'));
 
      const congregacionId = this.congregacionContext.effectiveCongregacionId();
 

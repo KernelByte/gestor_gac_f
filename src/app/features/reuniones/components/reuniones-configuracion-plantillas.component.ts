@@ -691,7 +691,7 @@ import {
                             {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
                           </div>
                          <div class="flex-1 min-w-0">
-                           <p class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate leading-tight">
+                           <p class="text-[0.8125rem] font-bold text-slate-800 dark:text-white leading-tight break-words">
                              {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
                            </p>
                            <div class="flex flex-wrap gap-1 mt-0.5">
@@ -784,7 +784,7 @@ import {
                      <table class="w-full min-w-max text-left border-collapse">
                           <thead class="priv-thead sticky top-0 z-30">
                            <tr>
-                              <th class="priv-th-publisher is-sticky px-2 py-1.5 sticky left-0 z-40 min-w-[130px] text-left">
+                              <th class="priv-th-publisher is-sticky px-2 py-1.5 sticky left-0 z-40 min-w-[170px] text-left">
                                 <span class="text-[9px] font-black text-white uppercase tracking-[0.14em]">Publicador</span>
                               </th>
                               @for (col of regularColumnas(); track col.key) {
@@ -841,7 +841,7 @@ import {
                                                {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
                                              </div>
                                             <div class="min-w-0">
-                                                <div class="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[100px] leading-tight tracking-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
+                                                <div class="text-xs font-bold text-slate-800 dark:text-white leading-tight tracking-tight break-words max-w-[150px]" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
                                           {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
                                       </div>
                                       <div class="flex flex-wrap gap-0.5 mt-0.5">

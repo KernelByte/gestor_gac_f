@@ -18,112 +18,171 @@ type FiltroPrioridad = 'todas' | 'alta' | 'media' | 'baja';
     <div class="h-full rounded-2xl overflow-x-hidden overflow-y-auto bg-gray-50/50 dark:bg-slate-900">
 
       <!-- Page Header -->
-      <div class="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 px-5 sm:px-6 py-4 flex items-center justify-between gap-4">
+      <div class="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="header-icon w-9 h-9 rounded-xl bg-rose-500 flex items-center justify-center shadow-sm shadow-rose-500/20 shrink-0">
-            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <div class="header-icon w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500 flex items-center justify-center shadow-sm shadow-rose-500/20 shrink-0">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
             </svg>
           </div>
           <div class="header-text min-w-0">
-            <h1 class="font-display font-bold text-base leading-tight text-gray-900 dark:text-white">Mis Tareas</h1>
+            <h1 class="font-display font-bold text-sm sm:text-base leading-tight text-gray-900 dark:text-white">Mis Tareas</h1>
             <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5 hidden sm:block">Asignaciones y recordatorios personales</p>
           </div>
         </div>
+        <!-- Mobile: icon-only, Desktop: icon + text -->
         <button
           (click)="recargar()"
           [disabled]="loading()"
-          class="header-action inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-600 disabled:opacity-50 transition-all duration-200 shrink-0">
+          title="Actualizar"
+          class="header-action inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-600 disabled:opacity-50 transition-all duration-200 shrink-0 w-8 h-8 justify-center sm:w-auto sm:h-auto sm:px-3 sm:py-1.5">
           <svg class="w-3.5 h-3.5 shrink-0" [class.animate-spin]="loading()" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
-          {{ loading() ? 'Cargando...' : 'Actualizar' }}
+          <span class="hidden sm:inline text-xs font-medium">{{ loading() ? 'Cargando...' : 'Actualizar' }}</span>
         </button>
       </div>
 
       <!-- Content -->
       <div class="p-4 sm:p-5 lg:p-6 space-y-4">
 
-        <!-- Stats grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <!-- Stats: iconos compactos en móvil -->
+        <div class="flex gap-2 sm:hidden">
 
-          <button
-            (click)="setFiltroEstado('pendiente')"
-            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
+          <button (click)="setFiltroEstado('pendiente')" title="Pendientes"
+            class="stat-chip relative shrink-0 w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border flex items-center justify-center transition-all duration-200 active:scale-95"
+            [ngClass]="filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy()
+              ? 'border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/20'
+              : 'border-gray-100 dark:border-slate-700'">
+            <svg class="w-4 h-4 text-rose-500 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <span *ngIf="statsPendientes() > 0"
+              class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold tabular-nums flex items-center justify-center leading-none">
+              {{ statsPendientes() }}
+            </span>
+          </button>
+
+          <button (click)="setFiltroEstado('en_progreso')" title="En progreso"
+            class="stat-chip relative shrink-0 w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border flex items-center justify-center transition-all duration-200 active:scale-95"
+            [ngClass]="filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy()
+              ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
+              : 'border-gray-100 dark:border-slate-700'">
+            <svg class="w-4 h-4 text-amber-500 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span *ngIf="statsEnProgreso() > 0"
+              class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[9px] font-bold tabular-nums flex items-center justify-center leading-none">
+              {{ statsEnProgreso() }}
+            </span>
+          </button>
+
+          <button (click)="setFiltroVencidas()" title="Vencidas"
+            class="stat-chip relative shrink-0 w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border flex items-center justify-center transition-all duration-200 active:scale-95"
+            [ngClass]="mostrandoVencidas()
+              ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'
+              : 'border-gray-100 dark:border-slate-700'">
+            <svg class="w-4 h-4 text-red-500 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span *ngIf="statsVencidas() > 0"
+              class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold tabular-nums flex items-center justify-center leading-none">
+              {{ statsVencidas() }}
+            </span>
+          </button>
+
+          <button (click)="setFiltroHoy()" title="Para hoy"
+            class="stat-chip relative shrink-0 w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border flex items-center justify-center transition-all duration-200 active:scale-95"
+            [ngClass]="mostrandoHoy()
+              ? 'border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20'
+              : 'border-gray-100 dark:border-slate-700'">
+            <svg class="w-4 h-4 text-orange-500 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <span *ngIf="statsParaHoy() > 0"
+              class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-orange-500 text-white text-[9px] font-bold tabular-nums flex items-center justify-center leading-none">
+              {{ statsParaHoy() }}
+            </span>
+          </button>
+
+        </div>
+
+        <!-- Stats: grilla 2×2 / 4 columnas en sm+ -->
+        <div class="hidden sm:grid sm:grid-cols-4 gap-3">
+
+          <button (click)="setFiltroEstado('pendiente')"
+            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-4 flex items-center gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
             [class.border-rose-200]="filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy()"
             [class.dark:border-rose-800]="filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy()"
             [class.shadow-sm]="filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy()"
             [class.border-gray-100]="!(filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy())"
             [class.dark:border-slate-700]="!(filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy())"
             style="animation-delay:0s">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-rose-50 dark:bg-rose-900/20 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
-              <svg class="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
+              <svg class="w-5 h-5 text-rose-500 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
               </svg>
             </div>
             <div class="min-w-0">
-              <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsPendientes() }}</p>
-              <p class="text-[9px] sm:text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">Pendientes</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsPendientes() }}</p>
+              <p class="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">Pendientes</p>
             </div>
           </button>
 
-          <button
-            (click)="setFiltroEstado('en_progreso')"
-            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
+          <button (click)="setFiltroEstado('en_progreso')"
+            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-4 flex items-center gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
             [class.border-amber-200]="filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy()"
             [class.dark:border-amber-800]="filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy()"
             [class.shadow-sm]="filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy()"
             [class.border-gray-100]="!(filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy())"
             [class.dark:border-slate-700]="!(filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy())"
             style="animation-delay:0.07s">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-amber-50 dark:bg-amber-900/20 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
-              <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
+              <svg class="w-5 h-5 text-amber-500 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
             </div>
             <div class="min-w-0">
-              <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsEnProgreso() }}</p>
-              <p class="text-[9px] sm:text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">En progreso</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsEnProgreso() }}</p>
+              <p class="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">En progreso</p>
             </div>
           </button>
 
-          <button
-            (click)="setFiltroVencidas()"
-            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
+          <button (click)="setFiltroVencidas()"
+            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-4 flex items-center gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
             [class.border-red-200]="mostrandoVencidas()"
             [class.dark:border-red-800]="mostrandoVencidas()"
             [class.shadow-sm]="mostrandoVencidas()"
             [class.border-gray-100]="!mostrandoVencidas()"
             [class.dark:border-slate-700]="!mostrandoVencidas()"
             style="animation-delay:0.14s">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-red-50 dark:bg-red-900/20 group-hover:bg-red-100 dark:group-hover:bg-red-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
-              <svg class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 group-hover:bg-red-100 dark:group-hover:bg-red-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
+              <svg class="w-5 h-5 text-red-500 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg>
             </div>
             <div class="min-w-0">
-              <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsVencidas() }}</p>
-              <p class="text-[9px] sm:text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">Vencidas</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsVencidas() }}</p>
+              <p class="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">Vencidas</p>
             </div>
           </button>
 
-          <button
-            (click)="setFiltroHoy()"
-            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
+          <button (click)="setFiltroHoy()"
+            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-4 flex items-center gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
             [class.border-orange-200]="mostrandoHoy()"
             [class.dark:border-orange-800]="mostrandoHoy()"
             [class.shadow-sm]="mostrandoHoy()"
             [class.border-gray-100]="!mostrandoHoy()"
             [class.dark:border-slate-700]="!mostrandoHoy()"
             style="animation-delay:0.21s">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-orange-50 dark:bg-orange-900/20 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
-              <svg class="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
+              <svg class="w-5 h-5 text-orange-500 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
             </div>
             <div class="min-w-0">
-              <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsParaHoy() }}</p>
-              <p class="text-[9px] sm:text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">Para hoy</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsParaHoy() }}</p>
+              <p class="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">Para hoy</p>
             </div>
           </button>
 
@@ -146,7 +205,7 @@ type FiltroPrioridad = 'todas' | 'alta' | 'media' | 'baja';
 
           <!-- Row 2: Filters + Priority (same row on mobile) -->
           <div class="flex items-center gap-1.5">
-            <div class="flex gap-0.5 overflow-x-auto flex-1 min-w-0">
+            <div class="hidden sm:flex gap-0.5 overflow-x-auto flex-1 min-w-0">
               <button
                 *ngFor="let tab of estadoTabs"
                 (click)="setFiltroEstado(tab.value)"
@@ -158,7 +217,7 @@ type FiltroPrioridad = 'todas' | 'alta' | 'media' | 'baja';
               </button>
             </div>
 
-            <div class="h-5 w-px bg-gray-100 dark:bg-slate-700 shrink-0"></div>
+            <div class="hidden sm:block h-5 w-px bg-gray-100 dark:bg-slate-700 shrink-0"></div>
 
             <!-- Custom priority dropdown -->
             <div class="relative shrink-0" (click)="$event.stopPropagation()">
@@ -419,6 +478,8 @@ type FiltroPrioridad = 'todas' | 'alta' | 'media' | 'baja';
     .header-text { animation: headerIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
     .header-action { animation: headerIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
     .stat-card { animation: statIn 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+    .stat-chip { animation: statIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+    .stat-chips-scroll::-webkit-scrollbar { display: none; }
     .toolbar { animation: toolbarIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
     .task-card { opacity: 0; animation: taskIn 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
     @keyframes dropIn {
@@ -450,7 +511,7 @@ export class MisTareasPage implements OnInit {
   tareas = signal<Tarea[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
-  filtroEstado = signal<FiltroEstado>('todas');
+  filtroEstado = signal<FiltroEstado>('pendiente');
   filtroPrioridad = signal<FiltroPrioridad>('todas');
   searchQuery = signal('');
   updatingIds = signal<Set<number>>(new Set());
@@ -621,7 +682,7 @@ export class MisTareasPage implements OnInit {
     } else {
       const qp: Record<string, any> = { desde: 'mis-tareas' };
       if (tarea.origen_tipo === 'acta_reunion' && tarea.origen_id) qp['origen_acta'] = tarea.origen_id;
-      this.router.navigate(['/secretario-tools/tareas', tarea.id_tarea], { queryParams: qp });
+      this.router.navigate(['/herramientas/tareas', tarea.id_tarea], { queryParams: qp });
     }
   }
 

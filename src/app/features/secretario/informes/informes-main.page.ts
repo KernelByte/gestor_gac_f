@@ -86,8 +86,14 @@ export class InformesMainPage implements OnInit {
   resumen = signal<ResumenMensual | null>(null);
   grupos = signal<any[]>([]);
   saving = signal(false);
+  autoSaveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
   vistaGrupo = signal(false);
   toastMessage = signal<{ title: string, text?: string, type: 'success' | 'error' | 'info' } | null>(null);
+
+  private autoSaveTimers = new Map<number, any>();
+  private autoSavedClearTimer: any = null;
+  private pendingSaveCount = 0;
+  hasPendingChanges = signal(false);
 
   selectedMes: string | null = null;
   selectedAno: string | null = null;
@@ -392,6 +398,18 @@ export class InformesMainPage implements OnInit {
     return this.meses.find(m => m.value === mesValue)?.label || 'Mes';
   }
 
+  navegarPeriodo(delta: number) {
+    const mes = parseInt(this.selectedMes ?? '1');
+    const ano = parseInt(this.selectedAno ?? new Date().getFullYear().toString());
+    let newMes = mes + delta;
+    let newAno = ano;
+    if (newMes > 12) { newMes = 1; newAno++; }
+    if (newMes < 1)  { newMes = 12; newAno--; }
+    this.selectedMes = newMes.toString();
+    this.selectedAno = newAno.toString();
+    this.loadResumen();
+  }
+
   getGrupoLabel(grupoId: number | null): string {
     if (!grupoId) return 'Todos los grupos';
     return this.grupos().find(g => g.id_grupo === grupoId)?.nombre_grupo || 'Seleccionar Grupo';
@@ -409,7 +427,11 @@ export class InformesMainPage implements OnInit {
     this.informesService.getResumenMensual(
       periodoId, congregacionId, grupoParam, this.soloSinInforme, this.searchQuery || undefined
     ).subscribe({
-      next: (data) => this.resumen.set(data),
+      next: (data) => {
+        // Datos frescos del servidor — ya no necesitamos el override layer
+        this.localChanges = new Map();
+        this.resumen.set(data);
+      },
       error: (err) => console.error('Error loading resumen:', err)
     });
   }
@@ -444,6 +466,89 @@ export class InformesMainPage implements OnInit {
     const newChanges = new Map(this.localChanges);
     newChanges.set(pub.id_publicador, existing);
     this.localChanges = newChanges;
+
+    this.scheduleAutoSave(pub.id_publicador);
+  }
+
+  private scheduleAutoSave(pubId: number, delay = 700) {
+    if (this.autoSaveTimers.has(pubId)) {
+      clearTimeout(this.autoSaveTimers.get(pubId));
+    }
+    this.hasPendingChanges.set(true);
+    this.autoSaveStatus.set('saving');
+    const timer = setTimeout(() => {
+      this.autoSaveTimers.delete(pubId);
+      this.autoGuardar(pubId);
+    }, delay);
+    this.autoSaveTimers.set(pubId, timer);
+  }
+
+  private autoGuardar(pubId: number) {
+    if (!this.canEditInformes()) return;
+    const change = this.localChanges.get(pubId);
+    if (!change) return;
+    const pId = this.getPeriodoId();
+    if (!pId) return;
+
+    this.pendingSaveCount++;
+
+    const item: InformeLoteItem = {
+      id_publicador: change.id_publicador!,
+      participo: change.participo ?? false,
+      cursos_biblicos: change.cursos_biblicos ?? 0,
+      horas: change.horas ?? 0,
+      observaciones: change.observaciones ?? null,
+      es_paux_mes: change.es_paux_mes
+    };
+
+    const savedChange = { ...change };
+
+    this.informesService.guardarInformesLote({ periodo_id: pId, informes: [item] }).subscribe({
+      next: () => {
+        this.pendingSaveCount--;
+        // Parchear el resumen con los valores guardados (actualiza pub.* en el signal)
+        this.patchResumen(pubId, savedChange);
+
+        // NO borramos de localChanges aquí — evita el frame intermedio donde el
+        // toggle no tiene fuente de verdad. localChanges actúa como override layer
+        // permanente hasta que loadResumen() traiga datos frescos del servidor.
+
+        const allDone = this.pendingSaveCount === 0 && this.autoSaveTimers.size === 0;
+        if (allDone) {
+          this.hasPendingChanges.set(false);
+          this.autoSaveStatus.set('saved');
+          if (this.autoSavedClearTimer) clearTimeout(this.autoSavedClearTimer);
+          this.autoSavedClearTimer = setTimeout(() => this.autoSaveStatus.set('idle'), 2500);
+        }
+      },
+      error: () => {
+        this.pendingSaveCount--;
+        this.hasPendingChanges.set(false);
+        this.autoSaveStatus.set('error');
+        if (this.autoSavedClearTimer) clearTimeout(this.autoSavedClearTimer);
+        this.autoSavedClearTimer = setTimeout(() => this.autoSaveStatus.set('idle'), 5000);
+      }
+    });
+  }
+
+  private patchResumen(pubId: number, change: Partial<InformeLoteItem>) {
+    const current = this.resumen();
+    if (!current) return;
+    this.resumen.set({
+      ...current,
+      publicadores_list: current.publicadores_list.map(pub =>
+        pub.id_publicador === pubId
+          ? {
+              ...pub,
+              participo:       change.participo      ?? pub.participo,
+              horas:           change.horas          ?? pub.horas,
+              cursos_biblicos: change.cursos_biblicos ?? pub.cursos_biblicos,
+              observaciones:   change.observaciones  !== undefined ? change.observaciones : pub.observaciones,
+              es_paux_mes:     change.es_paux_mes    ?? pub.es_paux_mes,
+            }
+          : pub
+      )
+    });
   }
 
   guardarTodo() {
@@ -620,6 +725,20 @@ export class InformesMainPage implements OnInit {
         this.showToast('Error', 'error', detail);
       }
     });
+  }
+
+  tryChangeTab(tabId: string) {
+    if (this.activeTab() === tabId) return;
+    if (this.localChanges.size > 0) {
+      const n = this.localChanges.size;
+      const ok = confirm(
+        `Tienes ${n} cambio${n !== 1 ? 's' : ''} sin guardar en la pestaña Entrada.\n\n` +
+        `¿Descartarlos y cambiar de pestaña?`
+      );
+      if (!ok) return;
+      this.localChanges.clear();
+    }
+    this.activeTab.set(tabId);
   }
 
   showToast(title: string, type: 'success' | 'error' | 'info' = 'success', text?: string) {

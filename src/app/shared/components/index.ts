@@ -16,3 +16,4 @@ export * from './progress/progress.component';
 export * from './confirm-dialog/confirm-dialog.component';
 export * from './dropdown/dropdown.component';
 export * from './command-palette/command-palette.component';
+export * from './import-publicadores/import-publicadores-modal.component';

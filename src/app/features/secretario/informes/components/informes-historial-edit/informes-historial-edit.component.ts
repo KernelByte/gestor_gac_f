@@ -3,12 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InformesService } from '../../services/informes.service';
 import { InformeHistorialDetalle, InformeHistorialEdit } from '../../models/informe.model';
+import { PrivilegiosService } from '../../../privilegios/infrastructure/privilegios.service';
+import { PublicadorPrivilegio } from '../../../privilegios/domain/models/publicador-privilegio';
+import { Privilegio } from '../../../privilegios/domain/models/privilegio';
+import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
 import { forkJoin, of } from 'rxjs';
 
 @Component({
    selector: 'app-informes-historial-edit',
    standalone: true,
-   imports: [CommonModule, FormsModule],
+   imports: [CommonModule, FormsModule, DatePickerComponent],
    templateUrl: './informes-historial-edit.component.html',
 })
 export class InformesHistorialEditComponent implements OnInit {
@@ -20,6 +24,7 @@ export class InformesHistorialEditComponent implements OnInit {
    @Output() close = new EventEmitter<boolean>();
    
    informesService = inject(InformesService);
+   privilegiosService = inject(PrivilegiosService);
    
    // All available periods from DB
    allPeriodos = signal<{ ano: number; mes: number }[]>([]);
@@ -89,6 +94,68 @@ export class InformesHistorialEditComponent implements OnInit {
 
    showValidationError = signal<boolean>(false);
 
+   // Tab navigation
+   activeTab = signal<'informe' | 'privilegios'>('informe');
+
+   // Privileges history panel
+   private catalogoPrivilegios = signal<Privilegio[]>([]);
+   privilegiosPrecursor = signal<(PublicadorPrivilegio & { nombre: string })[]>([]);
+   loadingPrivilegios = signal<boolean>(false);
+   showPrivilegiosPanel = signal<boolean>(true);
+   editingPrivilegioId = signal<number | null>(null);
+   editFechaInicio = signal<string>('');
+   editFechaFin = signal<string>('');
+   savingPrivilegio = signal<boolean>(false);
+   deletingPrivilegioId = signal<number | null>(null);
+   privNoEliminableMotivo = signal<string | null>(null);
+
+   // New privilege form
+   showNewPrivilegioForm = signal<boolean>(false);
+   newPrivTipo = signal<string>('');
+   newPrivFechaInicio = signal<string>('');
+   newPrivFechaFin = signal<string>('');
+   savingNewPrivilegio = signal<boolean>(false);
+
+   private readonly PRECURSOR_NOMBRES = ['Precursor Auxiliar', 'Precursor Regular', 'Precursor Especial'];
+
+   // True once privileges have loaded and publisher has at least one precursor record,
+   // OR the current month's data already has a precursor type set
+   esPrecursor = computed(() => {
+      return this.privilegiosPrecursor().length > 0 ||
+             this.esAuxiliar() || this.esRegular() || this.esEspecial();
+   });
+
+   // Conflict detection for edit form
+   editPrivConflicts = computed(() => {
+      const id = this.editingPrivilegioId();
+      const inicio = this.editFechaInicio();
+      if (!id || !inicio) return [];
+      return this.privilegiosPrecursor().filter(p =>
+         p.id_publicador_privilegio !== id &&
+         this.datesOverlap(inicio, this.editFechaFin() || null, p.fecha_inicio, p.fecha_fin ?? null)
+      );
+   });
+
+   editPrivMultipleActivo = computed(() => {
+      const id = this.editingPrivilegioId();
+      if (this.editFechaFin()) return false;
+      return this.privilegiosPrecursor().some(p => p.id_publicador_privilegio !== id && !p.fecha_fin);
+   });
+
+   // Conflict detection for new privilege form
+   newPrivConflicts = computed(() => {
+      const inicio = this.newPrivFechaInicio();
+      if (!inicio) return [];
+      return this.privilegiosPrecursor().filter(p =>
+         this.datesOverlap(inicio, this.newPrivFechaFin() || null, p.fecha_inicio, p.fecha_fin ?? null)
+      );
+   });
+
+   newPrivMultipleActivo = computed(() => {
+      if (this.newPrivFechaFin()) return false;
+      return this.privilegiosPrecursor().some(p => !p.fecha_fin);
+   });
+
    // Local cache for unsaved changes: key is "YYYY-MM"
    pendingChanges = new Map<string, InformeHistorialEdit>();
    originalValues = new Map<string, InformeHistorialDetalle>();
@@ -98,6 +165,7 @@ export class InformesHistorialEditComponent implements OnInit {
       if (this.initialMes) this.selectedMes.set(this.initialMes);
       
       this.loadPeriodosDisponibles();
+      this.cargarPrivilegiosPrecursor();
    }
 
    private loadPeriodosDisponibles() {
@@ -127,12 +195,8 @@ export class InformesHistorialEditComponent implements OnInit {
    
    onAnoSelect(ano: number) {
       if (this.selectedAno() === ano || this.loading() || this.saving()) return;
-      if (this.horasRequierePrecursor()) {
-         this.showValidationError.set(true);
-         return;
-      }
-      this.showValidationError.set(false);
       this.saveCurrentToPending();
+      this.showValidationError.set(false);
       this.selectedAno.set(ano);
 
       // Auto-select first available month in new year
@@ -143,17 +207,22 @@ export class InformesHistorialEditComponent implements OnInit {
 
       this.loadDetails();
    }
-   
+
    onMesSelect(mes: number) {
       if (this.selectedMes() === mes || this.loading() || this.saving()) return;
-      if (this.horasRequierePrecursor()) {
-         this.showValidationError.set(true);
-         return;
-      }
-      this.showValidationError.set(false);
       this.saveCurrentToPending();
+      this.showValidationError.set(false);
+      this.cancelarAuxiliarRapido();
+      this.cancelarQuickPriv();
       this.selectedMes.set(mes);
       this.loadDetails();
+   }
+
+   hasValidationError(ano: number, mes: number): boolean {
+      const key = `${ano}-${mes}`;
+      const val = this.pendingChanges.get(key);
+      if (!val) return false;
+      return (val.horas || 0) > 0 && !val.privilegio;
    }
 
    private saveCurrentToPending() {
@@ -251,22 +320,39 @@ export class InformesHistorialEditComponent implements OnInit {
              this.esRegular.set(false);
              this.esEspecial.set(false);
              this.showValidationError.set(false);
+             this.cancelarQuickPriv();
          }
       } else if (tipo === 'Regular') {
-         this.esRegular.set(!this.esRegular());
-         if (this.esRegular()) {
+         const turningOn = !this.esRegular();
+         this.esRegular.set(turningOn);
+         if (turningOn) {
              this.esAuxiliar.set(false);
              this.esEspecial.set(false);
              this.showValidationError.set(false);
+             this.abrirQuickPrivForm('Regular');
+         } else {
+             this.cancelarQuickPriv();
          }
       } else if (tipo === 'Especial') {
-         this.esEspecial.set(!this.esEspecial());
-         if (this.esEspecial()) {
+         const turningOn = !this.esEspecial();
+         this.esEspecial.set(turningOn);
+         if (turningOn) {
              this.esAuxiliar.set(false);
              this.esRegular.set(false);
              this.showValidationError.set(false);
+             this.abrirQuickPrivForm('Especial');
+         } else {
+             this.cancelarQuickPriv();
          }
       }
+   }
+
+   private abrirQuickPrivForm(tipo: 'Regular' | 'Especial') {
+      const ano = this.selectedAno();
+      const mes = this.selectedMes();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      this.quickPrivFechaInicio.set(`${ano}-${pad(mes)}-01`);
+      this.showQuickPrivForm.set(tipo);
    }
    
    get activoPrivilegio(): string | null {
@@ -303,14 +389,34 @@ export class InformesHistorialEditComponent implements OnInit {
    
    guardar() {
       if (this.saving() || this.loading()) return;
+
+      // Save current month to pending first
+      this.saveCurrentToPending();
+
+      // Validate all pending changes: any month with horas > 0 must have a precursor type
+      const errorEntry = Array.from(this.pendingChanges.entries()).find(
+         ([, val]) => (val.horas || 0) > 0 && !val.privilegio
+      );
+      if (errorEntry) {
+         const [key] = errorEntry;
+         const [ano, mes] = key.split('-').map(Number);
+         // Navigate to the offending month
+         this.selectedAno.set(ano);
+         this.selectedMes.set(mes);
+         this.loadDetails();
+         this.showValidationError.set(true);
+         return;
+      }
+
+      this.showValidationError.set(false);
+
+      // Also validate current month (may not be in pending yet)
       if (this.horasRequierePrecursor()) {
          this.showValidationError.set(true);
          return;
       }
-      this.showValidationError.set(false);
+
       this.saving.set(true);
-      
-      this.saveCurrentToPending();
 
       const updates: InformeHistorialEdit[] = [];
       this.pendingChanges.forEach((val, key) => {
@@ -343,7 +449,8 @@ export class InformesHistorialEditComponent implements OnInit {
       forkJoin(requests).subscribe({
          next: () => {
             this.saving.set(false);
-            this.close.emit(true);
+            this.showToast('Informe guardado correctamente');
+            setTimeout(() => this.close.emit(true), 800);
          },
          error: (err) => {
             console.error('Error saving all historial updates', err);
@@ -352,6 +459,259 @@ export class InformesHistorialEditComponent implements OnInit {
       });
    }
    
+   cargarPrivilegiosPrecursor() {
+      if (!this.publicadorId) return;
+      this.loadingPrivilegios.set(true);
+
+      forkJoin({
+         catalogo: this.privilegiosService.getPrivilegios(),
+         asignados: this.privilegiosService.getPublicadorPrivilegios(this.publicadorId)
+      }).subscribe({
+         next: ({ catalogo, asignados }) => {
+            this.catalogoPrivilegios.set(catalogo);
+            const precursorIds = new Set(
+               catalogo
+                  .filter(p => this.PRECURSOR_NOMBRES.includes(p.nombre_privilegio))
+                  .map(p => p.id_privilegio)
+            );
+            const enriquecidos = asignados
+               .filter(a => precursorIds.has(a.id_privilegio))
+               .map(a => ({
+                  ...a,
+                  nombre: catalogo.find(c => c.id_privilegio === a.id_privilegio)?.nombre_privilegio ?? ''
+               }))
+               .sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio));
+            this.privilegiosPrecursor.set(enriquecidos);
+            this.loadingPrivilegios.set(false);
+         },
+         error: () => this.loadingPrivilegios.set(false)
+      });
+   }
+
+   iniciarEdicionPrivilegio(priv: PublicadorPrivilegio & { nombre: string }) {
+      this.editingPrivilegioId.set(priv.id_publicador_privilegio);
+      this.editFechaInicio.set(priv.fecha_inicio);
+      this.editFechaFin.set(priv.fecha_fin ?? '');
+      this.deletingPrivilegioId.set(null);
+      this.privNoEliminableMotivo.set(null);
+   }
+
+   cancelarEdicionPrivilegio() {
+      this.editingPrivilegioId.set(null);
+      this.editFechaInicio.set('');
+      this.editFechaFin.set('');
+   }
+
+   guardarEdicionPrivilegio() {
+      const id = this.editingPrivilegioId();
+      if (!id || this.savingPrivilegio()) return;
+      this.savingPrivilegio.set(true);
+      this.privilegiosService.updatePublicadorPrivilegio(id, {
+         fecha_inicio: this.editFechaInicio(),
+         fecha_fin: this.editFechaFin() || null
+      }).subscribe({
+         next: () => {
+            this.savingPrivilegio.set(false);
+            this.cancelarEdicionPrivilegio();
+            this.cargarPrivilegiosPrecursor();
+            this.showToast('Fechas actualizadas correctamente');
+         },
+         error: () => this.savingPrivilegio.set(false)
+      });
+   }
+
+   iniciarEliminacionPrivilegio(id: number) {
+      this.deletingPrivilegioId.set(id);
+      this.privNoEliminableMotivo.set(null);
+      this.editingPrivilegioId.set(null);
+      this.privilegiosService.isPrivilegioEliminable(id).subscribe({
+         next: ({ eliminable, motivo }) => {
+            if (!eliminable) {
+               this.privNoEliminableMotivo.set(motivo ?? 'No se puede eliminar este registro.');
+            }
+         }
+      });
+   }
+
+   cancelarEliminacionPrivilegio() {
+      this.deletingPrivilegioId.set(null);
+      this.privNoEliminableMotivo.set(null);
+   }
+
+   confirmarEliminarPrivilegio() {
+      const id = this.deletingPrivilegioId();
+      if (!id || this.privNoEliminableMotivo()) return;
+      this.privilegiosService.deletePublicadorPrivilegio(id).subscribe({
+         next: () => {
+            this.deletingPrivilegioId.set(null);
+            this.cargarPrivilegiosPrecursor();
+            this.showToast('Privilegio eliminado');
+         }
+      });
+   }
+
+   // Toast notification
+   toastMessage = signal<string | null>(null);
+   private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+   showToast(msg: string) {
+      if (this.toastTimer) clearTimeout(this.toastTimer);
+      this.toastMessage.set(msg);
+      this.toastTimer = setTimeout(() => this.toastMessage.set(null), 3000);
+   }
+
+   switchTab(tab: 'informe' | 'privilegios') {
+      if (this.horasRequierePrecursor() && tab === 'privilegios') {
+         this.showValidationError.set(true);
+         return;
+      }
+      this.activeTab.set(tab);
+      // Reset privilege inline forms when switching back
+      if (tab === 'informe') {
+         this.cancelarEdicionPrivilegio();
+         this.cancelarEliminacionPrivilegio();
+         this.cancelarNuevoPrivilegio();
+      }
+      if (tab === 'privilegios') {
+         this.cancelarAuxiliarRapido();
+      }
+   }
+
+   private datesOverlap(aStart: string, aEnd: string | null, bStart: string, bEnd: string | null): boolean {
+      const aEndEff = aEnd || '9999-12-31';
+      const bEndEff = bEnd || '9999-12-31';
+      return aStart <= bEndEff && bStart <= aEndEff;
+   }
+
+   mostrarFormNuevo() {
+      this.showNewPrivilegioForm.set(true);
+      this.newPrivTipo.set('');
+      this.newPrivFechaInicio.set('');
+      this.newPrivFechaFin.set('');
+      this.editingPrivilegioId.set(null);
+      this.deletingPrivilegioId.set(null);
+   }
+
+   cancelarNuevoPrivilegio() {
+      this.showNewPrivilegioForm.set(false);
+      this.newPrivTipo.set('');
+      this.newPrivFechaInicio.set('');
+      this.newPrivFechaFin.set('');
+   }
+
+   crearPrivilegio() {
+      const tipo = this.newPrivTipo();
+      const inicio = this.newPrivFechaInicio();
+      if (!tipo || !inicio || this.savingNewPrivilegio()) return;
+
+      const idPrivilegio = this.catalogoPrivilegios().find(p => p.nombre_privilegio === tipo)?.id_privilegio;
+      if (!idPrivilegio) return;
+
+      this.savingNewPrivilegio.set(true);
+      this.privilegiosService.createPublicadorPrivilegio({
+         id_publicador: this.publicadorId,
+         id_privilegio: idPrivilegio,
+         fecha_inicio: inicio,
+         fecha_fin: this.newPrivFechaFin() || null
+      }).subscribe({
+         next: () => {
+            this.savingNewPrivilegio.set(false);
+            this.cancelarNuevoPrivilegio();
+            this.cargarPrivilegiosPrecursor();
+            this.showToast('Privilegio registrado correctamente');
+         },
+         error: () => this.savingNewPrivilegio.set(false)
+      });
+   }
+
+   formatFecha(fecha: string | null | undefined): string {
+      if (!fecha) return 'Activo';
+      const [y, m, d] = fecha.split('-');
+      return `${d}/${m}/${y}`;
+   }
+
+   getNombreCorto(nombre: string): string {
+      return nombre.replace('Precursor ', '');
+   }
+
+   // Quick Auxiliar creation (single click from Informe tab)
+   savingQuickAuxiliar = signal<boolean>(false);
+
+   cancelarAuxiliarRapido() {}
+
+   crearAuxiliarRapido() {
+      if (this.savingQuickAuxiliar()) return;
+
+      const ano = this.selectedAno();
+      const mes = this.selectedMes();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const lastDay = new Date(ano, mes, 0).getDate();
+      const fechaInicio = `${ano}-${pad(mes)}-01`;
+      const fechaFin = `${ano}-${pad(mes)}-${pad(lastDay)}`;
+
+      const idPrivilegio = this.catalogoPrivilegios().find(p => p.nombre_privilegio === 'Precursor Auxiliar')?.id_privilegio;
+      if (!idPrivilegio) return;
+
+      this.savingQuickAuxiliar.set(true);
+      this.privilegiosService.createPublicadorPrivilegio({
+         id_publicador: this.publicadorId,
+         id_privilegio: idPrivilegio,
+         fecha_inicio: fechaInicio,
+         fecha_fin: fechaFin
+      }).subscribe({
+         next: () => {
+            this.savingQuickAuxiliar.set(false);
+            this.esAuxiliar.set(true);
+            this.esRegular.set(false);
+            this.esEspecial.set(false);
+            this.cargarPrivilegiosPrecursor();
+            this.showToast('Privilegio de Auxiliar registrado');
+         },
+         error: () => this.savingQuickAuxiliar.set(false)
+      });
+   }
+
+   // Quick Regular / Especial creation inline below the toggle grid
+   showQuickPrivForm = signal<'Regular' | 'Especial' | null>(null);
+   quickPrivFechaInicio = signal<string>('');
+   savingQuickPriv = signal<boolean>(false);
+
+   /** True if the publisher already has any precursor privilege with no fecha_fin (open-ended/active) */
+   tienePrivActivoSinFin = computed(() =>
+      this.privilegiosPrecursor().some(p => !p.fecha_fin)
+   );
+
+   cancelarQuickPriv() {
+      this.showQuickPrivForm.set(null);
+      this.quickPrivFechaInicio.set('');
+   }
+
+   crearPrivRapido() {
+      const tipo = this.showQuickPrivForm();
+      const inicio = this.quickPrivFechaInicio();
+      if (!tipo || !inicio || this.savingQuickPriv()) return;
+
+      const nombrePrivilegio = `Precursor ${tipo}`;
+      const idPrivilegio = this.catalogoPrivilegios().find(p => p.nombre_privilegio === nombrePrivilegio)?.id_privilegio;
+      if (!idPrivilegio) return;
+
+      this.savingQuickPriv.set(true);
+      this.privilegiosService.createPublicadorPrivilegio({
+         id_publicador: this.publicadorId,
+         id_privilegio: idPrivilegio,
+         fecha_inicio: inicio,
+         fecha_fin: null
+      }).subscribe({
+         next: () => {
+            this.savingQuickPriv.set(false);
+            this.cancelarQuickPriv();
+            this.cargarPrivilegiosPrecursor();
+            this.showToast(`Privilegio de ${tipo} registrado`);
+         },
+         error: () => this.savingQuickPriv.set(false)
+      });
+   }
+
    cancelar() {
       this.close.emit(false);
    }

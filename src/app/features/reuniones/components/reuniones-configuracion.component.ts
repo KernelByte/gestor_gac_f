@@ -195,14 +195,26 @@ import {
                  <p class="text-xl font-black text-slate-800 dark:text-white tabular-nums">{{ filteredPublicadores().length }}</p>
                  <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Publicadores</p>
                </div>
-               <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
-                 <p class="text-xl font-black text-amber-600 dark:text-amber-400 tabular-nums">{{ countPrivilegio('Anciano') }}</p>
+               <button
+                 (click)="setFiltroPrivilegio('Anciano')"
+                 class="bg-white dark:bg-slate-900 rounded-xl border p-3 text-center shadow-sm transition-all active:scale-[0.97] group"
+                 [class]="filtroPrivilegio() === 'Anciano'
+                   ? 'border-amber-400 ring-2 ring-amber-200 dark:ring-amber-700/50'
+                   : 'border-slate-200/60 dark:border-slate-700/60 hover:border-amber-300 dark:hover:border-amber-700'">
+                 <p class="text-xl font-black tabular-nums transition-colors"
+                    [class]="filtroPrivilegio() === 'Anciano' ? 'text-amber-600 dark:text-amber-400' : 'text-amber-600 dark:text-amber-400'">{{ countPrivilegio('Anciano') }}</p>
                  <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Ancianos</p>
-               </div>
-               <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
-                 <p class="text-xl font-black text-blue-600 dark:text-blue-400 tabular-nums">{{ countPrivilegio('Siervo Ministerial') }}</p>
+               </button>
+               <button
+                 (click)="setFiltroPrivilegio('Siervo Ministerial')"
+                 class="bg-white dark:bg-slate-900 rounded-xl border p-3 text-center shadow-sm transition-all active:scale-[0.97] group"
+                 [class]="filtroPrivilegio() === 'Siervo Ministerial'
+                   ? 'border-blue-400 ring-2 ring-blue-200 dark:ring-blue-700/50'
+                   : 'border-slate-200/60 dark:border-slate-700/60 hover:border-blue-300 dark:hover:border-blue-700'">
+                 <p class="text-xl font-black tabular-nums"
+                    [class]="filtroPrivilegio() === 'Siervo Ministerial' ? 'text-blue-700 dark:text-blue-300' : 'text-blue-600 dark:text-blue-400'">{{ countPrivilegio('Siervo Ministerial') }}</p>
                  <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">S. Ministeriales</p>
-               </div>
+               </button>
                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-3 text-center shadow-sm">
                  <p class="text-xl font-black text-slate-600 dark:text-slate-500 tabular-nums">{{ countPrecursores() }}</p>
                  <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Precursores</p>
@@ -215,13 +227,39 @@ import {
                      <table class="w-full min-w-max text-left border-collapse">
                          <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
                              <tr class="border-b border-slate-200 dark:border-slate-700">
-                                 <th class="px-4 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md z-10 min-w-[150px]">Publicador</th>
-                                 <th class="px-2 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[80px]">Privilegio</th>
+                                 <th class="px-4 py-2.5 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md z-10 min-w-[180px]">Publicador</th>
                                  <th *ngFor="let col of columnas()"
-                                     class="px-2 py-2 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[70px] leading-tight whitespace-normal">
-                                   {{ col.label }}
+                                     class="px-1 py-1.5 text-center min-w-[72px] align-bottom">
+                                   <div class="flex flex-col items-center gap-1">
+                                     <span class="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-tight whitespace-normal block max-w-[60px]">{{ col.label }}</span>
+                                     <div class="flex items-center gap-1">
+                                       <span class="text-[0.6rem] font-bold tabular-nums"
+                                             [class]="columnCheckedCount(col.key) > 0 ? 'text-[#6D28D9] dark:text-purple-400' : 'text-slate-300 dark:text-slate-600'">
+                                         {{ columnCheckedCount(col.key) }}
+                                       </span>
+                                       <button
+                                         (click)="toggleAllInColumn(col.key)"
+                                         [title]="isColumnFullyChecked(col.key) ? 'Desmarcar todos' : 'Marcar todos los visibles'"
+                                         class="w-5 h-5 rounded flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                                         [class]="isColumnFullyChecked(col.key)
+                                           ? 'bg-[#6D28D9] text-white'
+                                           : isColumnPartiallyChecked(col.key)
+                                             ? 'bg-[#6D28D9]/20 text-[#6D28D9] dark:text-purple-400'
+                                             : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'">
+                                         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                                           @if (isColumnFullyChecked(col.key)) {
+                                             <polyline points="20 6 9 17 4 12"/>
+                                           } @else if (isColumnPartiallyChecked(col.key)) {
+                                             <line x1="5" y1="12" x2="19" y2="12"/>
+                                           } @else {
+                                             <polyline points="20 6 9 17 4 12" opacity="0.3"/>
+                                           }
+                                         </svg>
+                                       </button>
+                                     </div>
+                                   </div>
                                  </th>
-                                 <th class="px-2 py-2 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[90px] leading-tight whitespace-normal">
+                                 <th class="px-2 py-2.5 text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center min-w-[110px] leading-tight whitespace-normal">
                                    Nivel Oratoria
                                  </th>
                              </tr>
@@ -232,41 +270,34 @@ import {
                                     [class.bg-amber-50/30]="isDirty(pub.id_publicador)"
                                     [class.dark:bg-amber-900/10]="isDirty(pub.id_publicador)">
 
-                                   <!-- Publicador -->
+                                   <!-- Publicador + Privilegio combinado -->
                                    <td class="px-4 py-2 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/40 transition-colors border-r border-slate-100 dark:border-slate-800/50">
-                                       <div class="flex items-center gap-3">
+                                       <div class="flex items-center gap-2.5">
                                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[0.6875rem] shrink-0 ring-1 ring-white dark:ring-slate-800"
                                                 [class]="avatarClass(pub)">
                                              {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
                                            </div>
-                                           <div>
-                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[140px] leading-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
-                                         {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
-                                     </div>
-                                     <div class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium">
-                                         {{ isHermano(pub) ? 'Hermano' : 'Hermana' }}
-                                     </div>
+                                           <div class="min-w-0">
+                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[150px] leading-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
+                                                 {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
+                                               </div>
+                                               <div class="flex items-center gap-1 mt-0.5 flex-wrap">
+                                                 @for (priv of pub.privilegios; track priv) {
+                                                   <span class="text-[8px] font-bold px-1 py-px rounded leading-none"
+                                                         [title]="priv"
+                                                         [class]="privilegioBadgeClass(priv)">
+                                                     {{ privilegioLabel(priv) }}
+                                                   </span>
+                                                 }
+                                               </div>
                                            </div>
-                                       </div>
-                                   </td>
-
-                                   <!-- Privilegio -->
-                                   <td class="px-2 py-2 text-center">
-                                       <div class="flex flex-wrap gap-1 justify-center">
-                                         @for (priv of pub.privilegios; track priv) {
-                                           <div class="text-[9px] font-bold px-1.5 py-0.5 inline-block rounded-md"
-                                                [title]="priv"
-                                                [class]="privilegioBadgeClass(priv)">
-                                             {{ privilegioLabel(priv) }}
-                                           </div>
-                                         }
                                        </div>
                                    </td>
 
                                    <!-- Permisos checkboxes -->
                                    <td *ngFor="let col of columnas()"
-                                       class="px-1 py-2 text-center">
-                                         <label class="inline-flex items-center justify-center cursor-pointer p-1">
+                                       class="px-0 py-0 text-center">
+                                         <label class="flex items-center justify-center cursor-pointer w-full h-full min-h-[44px] hover:bg-[#6D28D9]/5 dark:hover:bg-purple-900/20 transition-colors">
                                            <input type="checkbox"
                                              [checked]="getPermiso(pub, col.key)"
                                              (change)="togglePermiso(pub, col.key)"
@@ -279,7 +310,8 @@ import {
                                      <select
                                        [ngModel]="getOratoria(pub)"
                                        (ngModelChange)="setOratoria(pub, $event)"
-                                       class="priv-select w-[92px]"
+                                       [attr.data-level]="getOratoria(pub)"
+                                       class="priv-select w-[108px]"
                                        [class.border-amber-400]="isOratoriaDirty(pub.id_publicador)"
                                        [class.ring-2]="isOratoriaDirty(pub.id_publicador)"
                                        [class.ring-amber-300]="isOratoriaDirty(pub.id_publicador)">
@@ -513,6 +545,50 @@ export class ReunionesConfiguracionComponent implements OnInit {
 
   isDirty(id: number): boolean {
     return this.dirtyMap.has(id) || this.dirtyOratoriaMap.has(id);
+  }
+
+  columnCheckedCount(key: string): number {
+    return this.filteredPublicadores().filter(pub => this.getPermiso(pub, key)).length;
+  }
+
+  isColumnFullyChecked(key: string): boolean {
+    const visible = this.filteredPublicadores();
+    return visible.length > 0 && visible.every(pub => this.getPermiso(pub, key));
+  }
+
+  isColumnPartiallyChecked(key: string): boolean {
+    const visible = this.filteredPublicadores();
+    const count = visible.filter(pub => this.getPermiso(pub, key)).length;
+    return count > 0 && count < visible.length;
+  }
+
+  toggleAllInColumn(key: string): void {
+    const visible = this.filteredPublicadores();
+    const allChecked = this.isColumnFullyChecked(key);
+    const newVal = !allChecked;
+
+    visible.forEach(pub => {
+      const original = pub.permisos[key] ?? false;
+      let dirty = this.dirtyMap.get(pub.id_publicador);
+
+      if (newVal === original) {
+        if (dirty) {
+          delete dirty[key];
+          if (Object.keys(dirty).length === 0) {
+            this.dirtyMap.delete(pub.id_publicador);
+          }
+        }
+      } else {
+        if (!dirty) {
+          dirty = {};
+          this.dirtyMap.set(pub.id_publicador, dirty);
+        }
+        dirty[key] = newVal;
+      }
+    });
+
+    this.pendingCount.set(this.dirtyMap.size + this.dirtyOratoriaMap.size);
+    this.publicadores.update(list => [...list]);
   }
 
   isOratoriaDirty(id: number): boolean {

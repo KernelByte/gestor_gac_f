@@ -25,3 +25,13 @@ export interface Publicador {
   codigo_pin?: string | null;
   permite_login_simple?: boolean;
 }
+
+export interface UsuarioVinculado {
+  tiene_usuario_vinculado: boolean;
+  id_usuario?: number;
+  nombre_usuario?: string;
+  correo_usuario?: string;
+  rol_usuario?: string;
+}
+
+export type DeleteOpcion = 'sin_usuario' | 'eliminar_con_usuario' | 'reasignar_usuario';

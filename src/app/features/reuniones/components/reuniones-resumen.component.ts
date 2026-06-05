@@ -6,12 +6,14 @@
   signal,
 } from '@angular/core';
 import { CommonModule, NgStyle } from '@angular/common';
-import { catchError, map, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ReunionesService } from '../services/reuniones.service';
 import { AsistenciaService, CongregacionConfig } from '../services/asistencia.service';
+import { LogisticaService } from '../services/logistica.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AsignacionDraft, ProgramaSemana } from '../models/reuniones.models';
+import { LogisticaItemOut, LogisticaAseoOut } from '../models/logistica.models';
 
 // ─────────────────────────────────────────────
 // Interfaces
@@ -42,6 +44,22 @@ interface SeccionGroup {
   color: string;
   iconPath: string;
   partes: ParteRow[];
+}
+
+interface LogisticaRow {
+  label: string;
+  valor: string | null;
+  esMia: boolean;
+}
+
+interface LogisticaGrupo {
+  titulo: string;
+  items: LogisticaRow[];
+}
+
+interface LogisticaData {
+  asignaciones: LogisticaItemOut[];
+  aseo: LogisticaAseoOut[];
 }
 
 // ─────────────────────────────────────────────
@@ -389,39 +407,55 @@ const SECTION_DEFAULT = {
         </section><!-- /seccion-card -->
       </ng-container>
 
+      <!-- ── Logística de la reunión ── -->
+      <section class="logistica-card"
+               [style.animation-delay]="(partesAgrupadas().length * 50 + 120) + 'ms'">
+        <header class="logistica-header">
+          <div class="logistica-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+          </div>
+          <div class="logistica-header-text">
+            <h3 class="logistica-titulo">Logística de la reunión</h3>
+            <p class="logistica-sub">Asignaciones de apoyo durante la reunión</p>
+          </div>
+        </header>
+
+        <!-- No publicado -->
+        <div *ngIf="logisticaNoPublicada()" class="logistica-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 8v4M12 16h.01"/>
+          </svg>
+          <p>La logística aún no está publicada para este mes.</p>
+        </div>
+
+        <!-- Contenido -->
+        <div *ngIf="!logisticaNoPublicada() && logisticaGrupos().length"
+             class="logistica-groups">
+          <div *ngFor="let grupo of logisticaGrupos(); let gi = index"
+               class="logistica-group">
+            <p *ngIf="grupo.titulo" class="logistica-group-title">{{ grupo.titulo }}</p>
+            <div class="logistica-rows">
+              <div *ngFor="let row of grupo.items"
+                   class="logistica-row"
+                   [class.logistica-row-mia]="row.esMia">
+                <span class="logistica-row-label">{{ row.label }}</span>
+                <span class="logistica-row-value">
+                  <span [class.asignado-mio]="row.esMia">{{ row.valor || 'Sin asignar' }}</span>
+                  <span *ngIf="row.esMia" class="badge-tu inline-badge">Tú</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section><!-- /logistica-card -->
+
       <!-- Pie -->
 
     </ng-container>
   </div><!-- /resumen-container -->
-
-  <!-- ══════════ ASIDE: panel contextual (solo ≥1024px) ══════════ -->
-  <aside class="resumen-aside" *ngIf="!loading() && !error() && !noPublicado() && programa()">
-    <div class="aside-card">
-      <p class="aside-heading">Secciones</p>
-      <div class="aside-sections-list">
-        <div *ngFor="let grupo of partesAgrupadas()" class="aside-section-row">
-          <span class="aside-section-dot" [style.background]="grupo.color"></span>
-          <span class="aside-section-name">{{ grupo.seccion }}</span>
-          <span class="aside-section-count">{{ grupo.partes.length }}</span>
-        </div>
-      </div>
-      <div class="aside-divider"></div>
-      <div class="aside-meta-list">
-        <div class="aside-meta-row">
-          <span class="aside-meta-label">Partes</span>
-          <span class="aside-meta-value">{{ getPartesPrincipales() }}</span>
-        </div>
-        <div *ngIf="getDuracionTotal() > 0" class="aside-meta-row">
-          <span class="aside-meta-label">Duración est.</span>
-          <span class="aside-meta-value">{{ getDuracionTotal() }} min</span>
-        </div>
-        <div *ngIf="misPartes().length > 0" class="aside-meta-row aside-meta-mine">
-          <span class="aside-meta-label">Mis partes</span>
-          <span class="aside-meta-value aside-meta-value-mine">{{ misPartes().length }}</span>
-        </div>
-      </div>
-    </div>
-  </aside>
 
   </div><!-- /resumen-layout -->
 </div><!-- /resumen-host -->
@@ -435,17 +469,19 @@ const SECTION_DEFAULT = {
       height: 100%;
       overflow-y: auto;
       --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-      --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
-      --bg: #f7f8fb;
+      --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+      --bg: #f3f4fb;
       --surface: #ffffff;
-      --border: rgba(15, 23, 42, 0.08);
+      --border: rgba(109, 40, 217, 0.09);
+      --border-std: rgba(15, 23, 42, 0.09);
       --border-soft: rgba(15, 23, 42, 0.05);
-      --text: #0f172a;
-      --text-2: #475569;
-      --text-3: #94a3b8;
+      --text: #0d1322;
+      --text-2: #3d4966;
+      --text-3: #8490a8;
       --brand: #6D28D9;
       --brand-2: #7c3aed;
-      --radius-card: 14px;
+      --radius-card: 16px;
       --radius-soft: 10px;
       --radius-pill: 999px;
     }
@@ -453,10 +489,11 @@ const SECTION_DEFAULT = {
       --bg: #0b0f1a;
       --surface: #131826;
       --border: rgba(255, 255, 255, 0.07);
+      --border-std: rgba(255, 255, 255, 0.07);
       --border-soft: rgba(255, 255, 255, 0.04);
-      --text: #f1f5f9;
-      --text-2: #cbd5e1;
-      --text-3: #94a3b8;
+      --text: #f0f4ff;
+      --text-2: #c4cde0;
+      --text-3: #8490a8;
     }
 
     /* ──────────────────────────────────────────
@@ -464,7 +501,11 @@ const SECTION_DEFAULT = {
     ────────────────────────────────────────── */
     .resumen-host {
       min-height: 100%;
-      padding: 10px 8px max(16px, env(safe-area-inset-bottom));
+      /* 12px lateral da más aire en 375px; safe-area cubre notch de iPhone en landscape */
+      padding: 10px
+               max(12px, env(safe-area-inset-right))
+               max(16px, env(safe-area-inset-bottom))
+               max(12px, env(safe-area-inset-left));
     }
 
     .resumen-layout {
@@ -480,130 +521,38 @@ const SECTION_DEFAULT = {
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
+    }
+
+    /* 320px — pantallas muy pequeñas */
+    @media (max-width: 359px) {
+      .header-date { font-size: 1.25rem; }
+      .logistica-row {
+        grid-template-columns: minmax(80px, 0.7fr) minmax(0, 1.6fr);
+      }
     }
 
     /* ≥ sm — tablet */
     @media (min-width: 640px) {
       .resumen-host { padding: 16px 20px 48px; }
-      .resumen-container { gap: 10px; }
+      .resumen-container { gap: 12px; }
     }
     /* ≥ md */
     @media (min-width: 768px) {
       .resumen-host { padding: 20px 28px 56px; }
     }
-    /* ≥ lg — desktop: grid de dos columnas */
+    /* ≥ lg — desktop */
     @media (min-width: 1024px) {
       .resumen-host { padding: 28px 40px 64px; }
-      .resumen-layout {
-        max-width: 1060px;
-        display: grid;
-        grid-template-columns: minmax(0, 720px) 1fr;
-        align-items: start;
-        gap: 20px;
-      }
-      .resumen-container { gap: 12px; }
-    }
-    /* ≥ xl */
-    @media (min-width: 1280px) {
-      .resumen-layout { max-width: 1140px; }
+      .resumen-container { gap: 14px; }
     }
 
-    /* ── Aside panel ── */
-    .resumen-aside { display: none; }
-    @media (min-width: 1024px) {
-      .resumen-aside {
-        display: block;
-        position: sticky;
-        top: 28px;
-      }
+    /* Landscape phone — reducir padding vertical para ganar altura */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .resumen-host { padding-top: 6px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+      .header-card { padding: 12px 16px 10px; }
+      .banner-mis-partes, .banner-sin-partes { padding: 10px 14px; }
     }
-
-    .aside-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-card);
-      padding: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    :host-context(.dark) .aside-card { box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
-
-    .aside-heading {
-      font-size: 0.6875rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--text-3);
-      margin: 0 0 12px;
-    }
-
-    .aside-sections-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .aside-section-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .aside-section-dot {
-      width: 8px; height: 8px;
-      border-radius: 999px;
-      flex-shrink: 0;
-    }
-    .aside-section-name {
-      flex: 1;
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--text-2);
-      line-height: 1.3;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .aside-section-count {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: var(--text-3);
-      font-variant-numeric: tabular-nums;
-      background: rgba(15,23,42,0.05);
-      padding: 1px 6px;
-      border-radius: 4px;
-    }
-    :host-context(.dark) .aside-section-count { background: rgba(255,255,255,0.06); }
-
-    .aside-divider {
-      height: 1px;
-      background: var(--border);
-      margin: 14px 0;
-    }
-
-    .aside-meta-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .aside-meta-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .aside-meta-label {
-      font-size: 0.75rem;
-      color: var(--text-3);
-      font-weight: 400;
-    }
-    .aside-meta-value {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text-2);
-      font-variant-numeric: tabular-nums;
-    }
-    .aside-meta-value-mine {
-      color: var(--brand);
-    }
-    :host-context(.dark) .aside-meta-value-mine { color: #a78bfa; }
 
     /* ──────────────────────────────────────────
        SHIMMER SKELETON
@@ -673,92 +622,97 @@ const SECTION_DEFAULT = {
        HEADER CARD
     ────────────────────────────────────────── */
     .header-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: rgba(109, 40, 217, 0.026);
+      border: 1px solid rgba(109, 40, 217, 0.16);
       border-radius: var(--radius-card);
-      padding: 14px 14px 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      padding: 16px 16px 14px;
+      box-shadow: 0 1px 4px rgba(109, 40, 217, 0.07), 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .header-card.fade-in {
+      animation: fadeUpHero 420ms var(--ease-expo) both;
     }
     :host-context(.dark) .header-card {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      background: rgba(109, 40, 217, 0.08);
+      border-color: rgba(167, 139, 250, 0.18);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.28);
     }
     @media (min-width: 640px) {
-      .header-card { padding: 20px 20px 16px; border-radius: 16px; }
+      .header-card { padding: 22px 22px 18px; }
     }
 
     .header-top-row {
       display: flex; align-items: center;
       flex-wrap: wrap; gap: 6px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .tipo-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      background: rgba(109, 40, 217, 0.1);
-      border: 1px solid rgba(109, 40, 217, 0.2);
-      color: var(--brand);
-      font-size: 0.7rem;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      background: rgba(109, 40, 217, 0.12);
+      border: 1px solid rgba(109, 40, 217, 0.22);
+      color: #5b21b6;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.01em;
     }
     :host-context(.dark) .tipo-badge {
-      background: rgba(167, 139, 250, 0.14);
-      border-color: rgba(167, 139, 250, 0.2);
-      color: #a78bfa;
+      background: rgba(167, 139, 250, 0.16);
+      border-color: rgba(167, 139, 250, 0.28);
+      color: #c4b5fd;
     }
-    .tipo-icon { width: 12px; height: 12px; }
+    .tipo-icon { width: 13px; height: 13px; }
 
     .date-badge {
       display: inline-flex; align-items: center;
-      padding: 4px 9px;
-      border-radius: 6px;
-      font-size: 0.65rem;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.6875rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
-    .date-hoy    { background: rgba(16, 185, 129, 0.12); color: #047857; border: 1px solid rgba(16, 185, 129, 0.25); }
-    .date-manana { background: rgba(245, 158, 11, 0.14); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .date-pronto { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.25); }
+    .date-hoy    { background: rgba(5, 150, 105, 0.12); color: #065f46; border: 1px solid rgba(5, 150, 105, 0.28); }
+    .date-manana { background: rgba(217, 119, 6, 0.12); color: #92400e; border: 1px solid rgba(217, 119, 6, 0.28); }
+    .date-pronto { background: rgba(37, 99, 235, 0.10); color: #1e40af; border: 1px solid rgba(37, 99, 235, 0.22); }
     :host-context(.dark) .date-hoy    { background: rgba(16, 185, 129, 0.16); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
     :host-context(.dark) .date-manana { background: rgba(245, 158, 11, 0.16); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
-    :host-context(.dark) .date-pronto { background: rgba(59, 130, 246, 0.16); color: #60a5fa; }
+    :host-context(.dark) .date-pronto { background: rgba(59, 130, 246, 0.16); color: #60a5fa; border-color: rgba(59, 130, 246, 0.25); }
 
     .header-date {
-      font-size: 1.375rem;
+      font-size: 1.5625rem;
       font-weight: 900;
       color: var(--text);
-      margin: 0 0 8px;
-      line-height: 1.15;
-      letter-spacing: -0.025em;
+      margin: 0 0 10px;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      font-family: 'Urbanist', sans-serif;
     }
     @media (min-width: 640px) {
-      .header-date { font-size: 1.75rem; }
+      .header-date { font-size: 2rem; }
     }
 
     .header-hora-row {
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 4px;
+      display: flex; align-items: center; gap: 14px;
       flex-wrap: wrap;
     }
     .header-hora {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 7px;
       color: var(--text);
-      font-size: 1rem;
+      font-size: 1.0625rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       letter-spacing: -0.01em;
     }
-    .header-hora-icon { width: 14px; height: 14px; color: var(--brand); flex-shrink: 0; }
+    .header-hora-icon { width: 15px; height: 15px; color: var(--brand); flex-shrink: 0; }
     .duracion-inline {
       display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.8125rem;
-      color: var(--text-3);
+      font-size: 0.875rem;
+      color: var(--text-2);
       font-variant-numeric: tabular-nums;
     }
-    .duracion-icon { width: 12px; height: 12px; flex-shrink: 0; }
+    .duracion-icon { width: 13px; height: 13px; flex-shrink: 0; }
 
     .titulo-guia {
       display: inline-flex; align-items: center; gap: 6px;
@@ -836,63 +790,70 @@ const SECTION_DEFAULT = {
        BANNER MIS PARTES
     ────────────────────────────────────────── */
     .banner-mis-partes {
-      display: flex; align-items: flex-start; gap: 10px;
-      background: rgba(109, 40, 217, 0.08);
-      border: 1px solid rgba(109, 40, 217, 0.2);
+      display: flex; align-items: flex-start; gap: 12px;
+      background: rgba(109, 40, 217, 0.07);
+      border: 1px solid rgba(109, 40, 217, 0.22);
       border-radius: var(--radius-card);
-      padding: 12px 14px;
+      padding: 14px 16px;
       animation: slideDown 220ms var(--ease-out) 40ms both;
+      box-shadow: 0 1px 6px rgba(109, 40, 217, 0.08);
     }
     :host-context(.dark) .banner-mis-partes {
-      background: rgba(167, 139, 250, 0.1);
-      border-color: rgba(167, 139, 250, 0.2);
+      background: rgba(167, 139, 250, 0.10);
+      border-color: rgba(167, 139, 250, 0.22);
+      box-shadow: 0 2px 12px rgba(109, 40, 217, 0.2);
     }
     @media (min-width: 640px) {
-      .banner-mis-partes { padding: 14px 16px; gap: 12px; }
+      .banner-mis-partes { padding: 16px 18px; gap: 14px; }
     }
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     .banner-icon-wrap {
-      width: 34px; height: 34px; min-width: 34px;
-      border-radius: 9px;
-      background: rgba(109, 40, 217, 0.14);
+      width: 36px; height: 36px; min-width: 36px;
+      border-radius: 10px;
+      background: rgba(109, 40, 217, 0.16);
+      border: 1px solid rgba(109, 40, 217, 0.22);
       display: flex; align-items: center; justify-content: center;
-      color: var(--brand);
+      color: #5b21b6;
+      animation: iconBreath 3.2s var(--ease-smooth) 1.2s infinite;
+      transform-origin: center;
     }
     :host-context(.dark) .banner-icon-wrap {
-      background: rgba(167, 139, 250, 0.18);
-      color: #a78bfa;
+      background: rgba(167, 139, 250, 0.20);
+      border-color: rgba(167, 139, 250, 0.28);
+      color: #c4b5fd;
     }
     .banner-body { flex: 1; min-width: 0; }
     .banner-title {
-      color: var(--brand);
-      font-size: 0.875rem;
+      color: #5b21b6;
+      font-size: 0.9375rem;
       font-weight: 800;
-      margin: 0 0 5px;
+      margin: 0 0 6px;
       line-height: 1.3;
       letter-spacing: -0.005em;
+      font-family: 'Urbanist', sans-serif;
     }
-    :host-context(.dark) .banner-title { color: #a78bfa; }
-    @media (min-width: 640px) { .banner-title { font-size: 1rem; } }
+    :host-context(.dark) .banner-title { color: #c4b5fd; }
+    @media (min-width: 640px) { .banner-title { font-size: 1.0625rem; } }
     .banner-partes-list {
-      display: flex; flex-wrap: wrap; gap: 4px;
+      display: flex; flex-wrap: wrap; gap: 5px;
     }
     .banner-parte-chip {
       display: inline-block;
-      padding: 2px 8px;
+      padding: 3px 10px;
       border-radius: var(--radius-pill);
       background: rgba(109, 40, 217, 0.1);
-      color: var(--brand);
-      border: 1px solid rgba(109, 40, 217, 0.15);
-      font-size: 0.7rem;
+      color: #5b21b6;
+      border: 1px solid rgba(109, 40, 217, 0.18);
+      font-size: 0.75rem;
       font-weight: 600;
     }
     :host-context(.dark) .banner-parte-chip {
-      background: rgba(167, 139, 250, 0.12);
-      color: #a78bfa;
-      border-color: rgba(167, 139, 250, 0.2);
+      background: rgba(167, 139, 250, 0.14);
+      color: #c4b5fd;
+      border-color: rgba(167, 139, 250, 0.25);
     }
 
     /* ──────────────────────────────────────────
@@ -900,41 +861,52 @@ const SECTION_DEFAULT = {
     ────────────────────────────────────────── */
     .seccion-card {
       background: var(--surface);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-std);
       border-radius: var(--radius-card);
       overflow: hidden;
       animation: fadeUp 240ms var(--ease-out) both;
       will-change: transform, opacity;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.03);
     }
     :host-context(.dark) .seccion-card {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.24);
     }
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUpHero {
+      from { opacity: 0; transform: translateY(14px) scale(0.982); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.6); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes iconBreath {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.08); }
     }
 
     .banner-icon-svg { width: 18px; height: 18px; }
 
     .seccion-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 14px;
+      padding: 11px 16px;
       border-bottom: 1px solid;
       border-bottom-color: var(--border-soft);
-      /* background and border-bottom-color are set inline per section color via hexToRgba */
     }
 
     .seccion-header-left {
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; gap: 9px;
       min-width: 0;
     }
     .seccion-icon {
-      width: 16px; height: 16px;
+      width: 17px; height: 17px;
       flex-shrink: 0;
     }
     .seccion-titulo {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.055em;
@@ -944,9 +916,9 @@ const SECTION_DEFAULT = {
       text-overflow: ellipsis;
       white-space: nowrap;
       -webkit-font-smoothing: antialiased;
+      font-family: 'Urbanist', sans-serif;
     }
     :host-context(.dark) .seccion-titulo {
-      /* color set inline — dark mode needs brightness boost via opacity */
       opacity: 0.9;
     }
     .seccion-count {
@@ -973,7 +945,7 @@ const SECTION_DEFAULT = {
     .partes-list {
       display: flex;
       flex-direction: column;
-      padding: 0 8px;
+      padding: 0 10px;
     }
 
     /* ──────────────────────────────────────────
@@ -981,19 +953,20 @@ const SECTION_DEFAULT = {
     ────────────────────────────────────────── */
     .parte-card {
       display: flex; gap: 12px;
-      padding: 12px 8px;
+      padding: 14px 8px;
       border-bottom: 1px solid var(--border-soft);
       border-radius: 8px;
       margin: 2px 0;
       animation: fadeUp 200ms var(--ease-out) both;
-      transition: background 160ms ease;
+      transition: background 180ms var(--ease-out);
       will-change: transform, opacity;
     }
     .parte-card:last-child { border-bottom: none; }
-    .parte-card:hover { background: rgba(15, 23, 42, 0.03); }
-    :host-context(.dark) .parte-card:hover { background: rgba(30, 41, 59, 0.3); }
-    .parte-card.parte-mia { background: rgba(139, 92, 246, 0.06); }
-    :host-context(.dark) .parte-card.parte-mia { background: rgba(139, 92, 246, 0.08); }
+    .parte-card:hover { background: rgba(109, 40, 217, 0.025); }
+    .parte-card:hover .orden-num { transform: scale(1.1); }
+    :host-context(.dark) .parte-card:hover { background: rgba(109, 40, 217, 0.06); }
+    .parte-card.parte-mia { background: rgba(139, 92, 246, 0.07); }
+    :host-context(.dark) .parte-card.parte-mia { background: rgba(139, 92, 246, 0.09); }
 
     /* Círculo de número */
     .orden-num {
@@ -1007,6 +980,8 @@ const SECTION_DEFAULT = {
       border-width: 1px;
       border-style: solid;
       border-color: transparent;
+      transform-origin: center;
+      transition: transform 180ms var(--ease-expo);
     }
 
     .orden-spacer {
@@ -1025,15 +1000,15 @@ const SECTION_DEFAULT = {
       margin-bottom: 4px;
     }
     .parte-name {
-      font-size: 0.875rem;
+      font-size: 0.9375rem;
       font-weight: 600;
       color: var(--text);
       line-height: 1.35;
       margin: 0;
-      letter-spacing: -0.005em;
+      letter-spacing: -0.008em;
     }
     .duracion-text {
-      font-size: 0.65rem;
+      font-size: 0.6875rem;
       color: var(--text-3);
       white-space: nowrap;
       margin-top: 2px;
@@ -1090,22 +1065,24 @@ const SECTION_DEFAULT = {
       display: inline-block;
     }
     .asignado-text {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 500;
       color: var(--text-2);
       margin: 0;
       line-height: 1.4;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
-    :host-context(.dark) .asignado-text { color: #cbd5e1; font-weight: 400; }
+    :host-context(.dark) .asignado-text { color: #c4cde0; font-weight: 400; }
     .sin-asignar {
       font-style: italic;
       color: var(--text-3);
     }
     .asignado-mio {
-      color: #8b5cf6 !important;
-      font-weight: 600;
+      color: #6d28d9 !important;
+      font-weight: 700;
     }
-    :host-context(.dark) .asignado-mio { color: #a78bfa !important; }
+    :host-context(.dark) .asignado-mio { color: #c4b5fd !important; }
     .ayudante-sep {
       color: var(--text-3);
       margin: 0 4px;
@@ -1117,13 +1094,15 @@ const SECTION_DEFAULT = {
       display: inline-flex; align-items: center;
       padding: 1px 6px;
       border-radius: var(--radius-pill);
-      background: rgba(139, 92, 246, 0.14);
-      color: #8b5cf6;
+      background: rgba(109, 40, 217, 0.14);
+      color: #6d28d9;
       font-size: 0.6rem;
       font-weight: 700;
       letter-spacing: 0.02em;
+      animation: popIn 280ms var(--ease-expo) both;
+      transform-origin: center;
     }
-    :host-context(.dark) .badge-tu { background: rgba(167, 139, 250, 0.18); color: #a78bfa; }
+    :host-context(.dark) .badge-tu { background: rgba(167, 139, 250, 0.18); color: #c4b5fd; }
     .inline-badge { margin-left: 4px; }
 
     /* Salas stack (Sala Principal + Sala B) */
@@ -1159,12 +1138,14 @@ const SECTION_DEFAULT = {
       color: #2dd4bf;
     }
     .sala-block-label {
-      font-size: 0.625rem;
+      font-size: 0.6875rem;
       color: var(--text-3);
       font-weight: 500;
     }
     .sala-block-text {
       padding-left: 24px;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
 
     /* Fuente */
@@ -1189,6 +1170,160 @@ const SECTION_DEFAULT = {
     }
 
     /* ──────────────────────────────────────────
+       LOGÍSTICA
+    ────────────────────────────────────────── */
+    .logistica-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      margin-top: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      animation: fadeUp 240ms var(--ease-out) both;
+    }
+    :host-context(.dark) .logistica-card {
+      box-shadow: 0 4px 14px rgba(0,0,0,0.20);
+    }
+    @media (min-width: 640px) {
+      .logistica-card { padding: 20px; margin-top: 14px; }
+    }
+
+    .logistica-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .logistica-icon-wrap {
+      width: 36px; height: 36px;
+      flex-shrink: 0;
+      border-radius: 10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(28, 92, 102, 0.14);
+      color: #1c5c66;
+      border: 1px solid rgba(28, 92, 102, 0.22);
+    }
+    :host-context(.dark) .logistica-icon-wrap {
+      background: rgba(94, 181, 194, 0.16);
+      color: #7dd3df;
+      border-color: rgba(94, 181, 194, 0.30);
+    }
+    .logistica-icon-wrap svg { width: 18px; height: 18px; }
+    .logistica-header-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .logistica-titulo {
+      margin: 0;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.005em;
+    }
+    .logistica-sub {
+      margin: 0;
+      font-size: 0.6875rem;
+      color: var(--text-3);
+      line-height: 1.3;
+    }
+
+    .logistica-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .logistica-group + .logistica-group {
+      padding-top: 14px;
+      border-top: 1px dashed #cbd5e1;
+    }
+    :host-context(.dark) .logistica-group + .logistica-group {
+      border-top-color: var(--border);
+    }
+    .logistica-group-title {
+      margin: 0 0 10px;
+      font-size: 0.6875rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #475569;
+    }
+    :host-context(.dark) .logistica-group-title { color: #94a3b8; }
+
+    .logistica-rows {
+      display: flex;
+      flex-direction: column;
+    }
+    .logistica-row {
+      display: grid;
+      grid-template-columns: minmax(96px, 0.85fr) minmax(0, 1.4fr);
+      align-items: baseline;
+      gap: 12px;
+      padding: 10px 6px;
+      border-radius: 8px;
+      transition: background 160ms var(--ease-out);
+    }
+    .logistica-row + .logistica-row {
+      border-top: 1px solid #e2e8f0;
+    }
+    :host-context(.dark) .logistica-row + .logistica-row {
+      border-top-color: var(--border);
+    }
+    .logistica-row-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #475569;
+      line-height: 1.4;
+    }
+    :host-context(.dark) .logistica-row-label { color: #94a3b8; }
+    .logistica-row-value {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      text-align: right;
+      line-height: 1.45;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 6px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .logistica-row-mia {
+      background: rgba(139, 92, 246, 0.07);
+      border-radius: 8px;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+    .logistica-row-mia + .logistica-row,
+    .logistica-row + .logistica-row-mia {
+      border-top-color: transparent;
+    }
+    :host-context(.dark) .logistica-row-mia {
+      background: rgba(167, 139, 250, 0.10);
+    }
+
+    .logistica-empty {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 10px;
+      background: var(--surface-2, rgba(15,23,42,0.03));
+      color: var(--text-3);
+      font-size: 0.8125rem;
+    }
+    :host-context(.dark) .logistica-empty {
+      background: rgba(255,255,255,0.04);
+    }
+    .logistica-empty svg {
+      width: 18px; height: 18px;
+      flex-shrink: 0;
+      opacity: 0.75;
+    }
+    .logistica-empty p { margin: 0; line-height: 1.4; }
+
+    /* ──────────────────────────────────────────
        FADE-IN GENÉRICO
     ────────────────────────────────────────── */
     .fade-in {
@@ -1203,9 +1338,14 @@ const SECTION_DEFAULT = {
       .seccion-card,
       .parte-card,
       .header-card,
-      .fade-in {
+      .header-card.fade-in,
+      .logistica-card,
+      .fade-in,
+      .badge-tu {
         animation: fadeOnly 150ms ease both;
       }
+      .banner-icon-wrap { animation: none; }
+      .orden-num { transition: none; }
       .skel { animation: none; opacity: 0.5; }
     }
     @keyframes fadeOnly {
@@ -1217,6 +1357,7 @@ const SECTION_DEFAULT = {
 export class ReunionesResumenComponent {
   private reunionesService = inject(ReunionesService);
   private asistenciaService = inject(AsistenciaService);
+  private logisticaService = inject(LogisticaService);
   private authStore = inject(AuthStore);
   private congregacionCtx = inject(CongregacionContextService);
 
@@ -1226,6 +1367,8 @@ export class ReunionesResumenComponent {
   noPublicado = signal(false);
   nextMeeting = signal<NextMeetingInfo | null>(null);
   programa = signal<ProgramaSemana | null>(null);
+  logistica = signal<LogisticaData | null>(null);
+  logisticaNoPublicada = signal(false);
   private scrollDone = false;
 
   // ─── Computed ───
@@ -1335,6 +1478,63 @@ export class ReunionesResumenComponent {
         const info = this.getSectionInfo(seccion);
         return { seccion, color: info.color, iconPath: info.iconPath, partes: secPartes };
       });
+  });
+
+  logisticaGrupos = computed((): LogisticaGrupo[] => {
+    const data = this.logistica();
+    if (!data) return [];
+    const userId = this.authStore.user()?.id_usuario_publicador ?? null;
+
+    const get = (puesto: string) => data.asignaciones.find(a => a.puesto === puesto) ?? null;
+    const esMia = (it: LogisticaItemOut | null) =>
+      !!userId && !!it?.publicador && it.publicador.id_publicador === userId;
+
+    const pair = (label: string, p1: string, p2: string): LogisticaRow | null => {
+      const a = get(p1);
+      const b = get(p2);
+      if (!a && !b) return null;
+      const partes = [a?.publicador?.nombre_completo, b?.publicador?.nombre_completo]
+        .filter(Boolean) as string[];
+      return {
+        label,
+        valor: partes.length ? partes.join(' - ') : null,
+        esMia: esMia(a) || esMia(b),
+      };
+    };
+
+    const single = (label: string, puesto: string): LogisticaRow | null => {
+      const it = get(puesto);
+      if (!it) return null;
+      return {
+        label,
+        valor: it.publicador?.nombre_completo ?? null,
+        esMia: esMia(it),
+      };
+    };
+
+    const apoyo: LogisticaRow[] = [
+      pair('Micrófonos', 'microfono_1', 'microfono_2'),
+      pair('Acomodadores', 'acomodador_1', 'acomodador_2'),
+      pair('Vigilancia', 'vigilancia_1', 'vigilancia_2'),
+      single('Plataforma', 'plataforma'),
+    ].filter((x): x is LogisticaRow => x !== null);
+
+    const tecnica: LogisticaRow[] = [
+      single('Encargado de Audio', 'audio'),
+      single('Encargado de Video', 'video'),
+    ].filter((x): x is LogisticaRow => x !== null);
+
+    const aseoNombres = data.aseo.map(s => s.grupo.nombre_grupo).filter(Boolean);
+    const grupos: LogisticaGrupo[] = [];
+    if (apoyo.length)   grupos.push({ titulo: 'Apoyo en auditorio', items: apoyo });
+    if (tecnica.length) grupos.push({ titulo: '', items: tecnica });
+    if (aseoNombres.length) {
+      grupos.push({
+        titulo: '',
+        items: [{ label: 'Aseo del salón', valor: aseoNombres.join(' · '), esMia: false }],
+      });
+    }
+    return grupos;
   });
 
   constructor() {
@@ -1472,6 +1672,8 @@ export class ReunionesResumenComponent {
     this.noPublicado.set(false);
     this.programa.set(null);
     this.nextMeeting.set(null);
+    this.logistica.set(null);
+    this.logisticaNoPublicada.set(false);
 
     if (!idCong) {
       this.error.set('Selecciona una congregación para ver el resumen de la reunión.');
@@ -1486,15 +1688,16 @@ export class ReunionesResumenComponent {
           const next = this.computeNextMeeting(config);
           if (!next) {
             this.noPublicado.set(true);
-            return of(null);
+            return of({ prog: null as ProgramaSemana | null, log: null as LogisticaData | null });
           }
           this.nextMeeting.set(next);
           const ano = next.fecha.getFullYear();
           const mes = next.fecha.getMonth() + 1;
           const tipo = next.tipo;
           const targetWeek = this.getISOWeek(next.fecha);
+          const fechaIso = this.toIsoDate(next.fecha);
 
-          return this.reunionesService
+          const prog$ = this.reunionesService
             .getHistorialConfirmado(tipo, ano, mes, idCong)
             .pipe(
               switchMap(semanas => {
@@ -1506,22 +1709,50 @@ export class ReunionesResumenComponent {
                   .getHistorialConfirmado(tipo, prevAno, prevMes, idCong)
                   .pipe(map(s2 => s2.find(s => s.semana_iso === targetWeek) ?? null));
               }),
-              catchError(() => of(null))
+              catchError(() => of(null as ProgramaSemana | null))
             );
+
+          const log$ = this.logisticaService.getMes(ano, mes, idCong).pipe(
+            map(mesData => ({
+              asignaciones: mesData.asignaciones.filter(
+                a => a.fecha === fechaIso && a.tipo_reunion === tipo,
+              ),
+              aseo: mesData.aseo.filter(
+                a => a.fecha === fechaIso && a.tipo_reunion === tipo,
+              ),
+            }) as LogisticaData),
+            catchError(() => of(null as LogisticaData | null)),
+          );
+
+          return forkJoin({ prog: prog$, log: log$ });
         }),
         catchError(() => {
           this.error.set('No se pudo cargar la información. Verifica tu conexión e intenta de nuevo.');
-          return of(null);
+          return of({ prog: null as ProgramaSemana | null, log: null as LogisticaData | null });
         })
       )
-      .subscribe(prog => {
+      .subscribe(({ prog, log }) => {
         if (prog) {
           this.programa.set(prog);
         } else if (!this.noPublicado()) {
           this.noPublicado.set(true);
         }
+        if (log && (log.asignaciones.length > 0 || log.aseo.length > 0)) {
+          this.logistica.set(log);
+          this.logisticaNoPublicada.set(false);
+        } else {
+          this.logistica.set(null);
+          this.logisticaNoPublicada.set(true);
+        }
         this.loading.set(false);
       });
+  }
+
+  private toIsoDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   // ─── Próxima reunión ─────────────────────

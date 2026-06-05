@@ -59,6 +59,10 @@ export class VisitaService {
     return this.http.get(`${this.url}/${id}/zip`, { responseType: 'blob' });
   }
 
+  getEnlaceActivo(id: number): Observable<TokenVisita | null> {
+    return this.http.get<TokenVisita | null>(`${this.url}/${id}/enlace-temporal`);
+  }
+
   crearEnlaceTemporal(id: number): Observable<TokenVisita> {
     return this.http.post<TokenVisita>(`${this.url}/${id}/enlace-temporal`, {});
   }

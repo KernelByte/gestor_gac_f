@@ -23,7 +23,7 @@ export class PublicInformePage implements OnInit {
   saving = signal<boolean>(false);
 
   form: FormGroup = this.fb.group({
-    participo: [false],
+    participo: [true],
     horas: [0, [Validators.min(0)]],
     cursos_biblicos: [0, [Validators.min(0)]],
     observaciones: ['']
@@ -92,9 +92,5 @@ export class PublicInformePage implements OnInit {
 
   cerrarVentana() {
     window.close();
-    // Fallback si el navegador bloquea window.close()
-    if (!window.closed) {
-      alert('Ya puedes cerrar esta pestaña del navegador.');
-    }
   }
 }

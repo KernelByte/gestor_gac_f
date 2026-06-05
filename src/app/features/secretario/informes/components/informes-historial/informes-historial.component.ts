@@ -57,6 +57,7 @@ export class InformesHistorialComponent implements OnChanges {
    // State
    historial = signal<HistorialAnualOut | null>(null);
    loading = signal<boolean>(false);
+   loadError = signal<boolean>(false);
    selectedPublicadorId = signal<number | null>(null);
    showMobileList = signal<boolean>(true);
 
@@ -193,6 +194,7 @@ export class InformesHistorialComponent implements OnChanges {
       if (!this.congregacionId || !this.selectedAno) return;
 
       this.loading.set(true);
+      this.loadError.set(false);
 
       // Guardar la posición actual del scroll
       const scrollPosition = this.scrollContainer?.nativeElement.scrollTop || 0;
@@ -232,6 +234,7 @@ export class InformesHistorialComponent implements OnChanges {
          error: (err) => {
             console.error('Error loading history', err);
             this.loading.set(false);
+            this.loadError.set(true);
          }
       });
    }
@@ -391,5 +394,21 @@ export class InformesHistorialComponent implements OnChanges {
       if (!obs) return null;
       const match = obs.match(/(\d+)\s*Hrs/i);
       return match ? parseInt(match[1], 10) : null;
+   }
+
+   // Expandir/colapsar observaciones por tarjeta (key = "ano-mes")
+   expandedObs = new Set<string>();
+
+   toggleObs(ano: number, mes: number): void {
+      const key = `${ano}-${mes}`;
+      if (this.expandedObs.has(key)) {
+         this.expandedObs.delete(key);
+      } else {
+         this.expandedObs.add(key);
+      }
+   }
+
+   isObsExpanded(ano: number, mes: number): boolean {
+      return this.expandedObs.has(`${ano}-${mes}`);
    }
 }

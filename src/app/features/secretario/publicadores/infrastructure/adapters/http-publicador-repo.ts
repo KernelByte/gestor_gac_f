@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
-import { Publicador } from '../../domain/models/publicador';
+import { DeleteOpcion, Publicador, UsuarioVinculado } from '../../domain/models/publicador';
 import { PublicadorRepo, PublicadorListParams } from '../../domain/ports/publicador-repo';
 import { dtoToModel } from '../mappers/publicador.mapper';
 
@@ -34,6 +34,16 @@ export class HttpPublicadorRepo implements PublicadorRepo {
 
   async delete(id: number): Promise<void> {
     await lastValueFrom(this.http.delete(`${API_BASE}${id}`));
+  }
+
+  async checkUsuarioVinculado(id: number): Promise<UsuarioVinculado> {
+    return lastValueFrom(this.http.get<UsuarioVinculado>(`${API_BASE}${id}/usuario-vinculado`));
+  }
+
+  async deleteWithOpcion(id: number, opcion: DeleteOpcion, id_nuevo_publicador?: number): Promise<void> {
+    const body: Record<string, unknown> = { opcion };
+    if (id_nuevo_publicador !== undefined) body['id_nuevo_publicador'] = id_nuevo_publicador;
+    await lastValueFrom(this.http.delete(`${API_BASE}${id}`, { body }));
   }
 
   async exportExcel(params?: PublicadorListParams): Promise<Blob> {

@@ -1,5 +1,5 @@
 import { inject, signal, effect, Injectable } from '@angular/core';
-import { Publicador } from '../domain/models/publicador';
+import { DeleteOpcion, Publicador, UsuarioVinculado } from '../domain/models/publicador';
 import { PUBLICADOR_REPO } from './tokens';
 import type { PublicadorListParams } from '../domain/ports/publicador-repo';
 import { loadPublicadores } from '../domain/use-cases/load-publicadores';
@@ -57,6 +57,20 @@ export class PublicadoresFacade {
     this.vm.update((s: VM) => ({ ...s, loading: true }));
     try {
       await this.repo.delete(id);
+      await this.load();
+    } finally {
+      this.vm.update((s: VM) => ({ ...s, loading: false }));
+    }
+  }
+
+  async checkUsuarioVinculado(id: number): Promise<UsuarioVinculado> {
+    return this.repo.checkUsuarioVinculado(id);
+  }
+
+  async removeWithOpcion(id: number, opcion: DeleteOpcion, id_nuevo_publicador?: number): Promise<void> {
+    this.vm.update((s: VM) => ({ ...s, loading: true }));
+    try {
+      await this.repo.deleteWithOpcion(id, opcion, id_nuevo_publicador);
       await this.load();
     } finally {
       this.vm.update((s: VM) => ({ ...s, loading: false }));
