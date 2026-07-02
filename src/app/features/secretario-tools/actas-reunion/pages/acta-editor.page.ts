@@ -325,8 +325,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
               <span class="spinner"></span>
               Generando…
             } @else {
-              <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M12 2l1.09 3.26L16.5 6l-3.41.74L12 10l-1.09-3.26L7.5 6l3.41-.74L12 2zm6 10l.73 2.18L21 15l-2.27.82L18 18l-.73-2.18L15 15l2.27-.82L18 12zm-12 0l.73 2.18L9 15l-2.27.82L6 18l-.73-2.18L3 15l2.27-.82L6 12z"/></svg>
-              Generar acta
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2l1.09 3.26L16.5 6l-3.41.74L12 10l-1.09-3.26L7.5 6l3.41-.74L12 2zm6 10l.73 2.18L21 15l-2.27.82L18 18l-.73-2.18L15 15l2.27-.82L18 12zm-12 0l.73 2.18L9 15l-2.27.82L6 18l-.73-2.18L3 15l2.27-.82L6 12z"/></svg>
             }
           </button>
         </div>

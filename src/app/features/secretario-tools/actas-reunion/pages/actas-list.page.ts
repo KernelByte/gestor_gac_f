@@ -70,26 +70,8 @@ type ToastType = 'error' | 'success' | 'info';
           </button>
         </div>
 
-        <!-- Row 2: stats + search -->
+        <!-- Row 2: search -->
         <div class="hero-bottom-row">
-          <div class="flex gap-2">
-            <div class="stat-card">
-              <span class="stat-dot stat-dot-total"></span>
-              <span class="stat-num">{{ actas().length }}</span>
-              <span class="stat-label">Total</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-dot stat-dot-borrador"></span>
-              <span class="stat-num">{{ borradoresCount() }}</span>
-              <span class="stat-label">Borradores</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-dot stat-dot-final"></span>
-              <span class="stat-num">{{ finalizadasCount() }}</span>
-              <span class="stat-label">Finalizadas</span>
-            </div>
-          </div>
-
           <div class="hero-search-wrap">
             <svg class="hero-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"/></svg>
             <input class="hero-search-input" placeholder="Buscar acta…"

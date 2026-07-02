@@ -347,39 +347,56 @@ export class HomePage implements OnInit {
   private loadInformesStats(congregacionId: number | null | undefined) {
     if (!congregacionId) return;
 
-    this.http.get<any>(`/api/informes/periodos-disponibles?congregacion_id=${congregacionId}`).subscribe({
-      next: (res) => {
-        if (res.periodos && res.periodos.length > 0) {
-          const latest = res.periodos[0];
-          this.http.get<any[]>('/api/periodos/').subscribe(periodos => {
-            const p = periodos.find(x => x.codigo_ano === latest.ano && x.codigo_mes === latest.mes);
-            if (p && p.id_periodo) {
-               this.http.get<any>(`/api/informes/resumen-mensual?periodo_id=${p.id_periodo}&congregacion_id=${congregacionId}`).subscribe({
-                  next: (stats) => {
-                     this.informesRecibidos.set(stats.informes_recibidos);
+    const now = new Date();
+    const mesActual = now.getMonth() + 1;
+    const anoActual = now.getFullYear();
 
-                     const pending = stats.total_publicadores - stats.informes_recibidos;
-                     this.informesPendientes.set(pending > 0 ? pending : 0);
-
-                     const pct = stats.total_publicadores > 0 ? Math.round((stats.informes_recibidos / stats.total_publicadores) * 100) : 0;
-                     this.porcentajeInformes.set(pct);
-
-                     this.totalCursos.set(stats.total_cursos);
-                     this.totalHorasPrecursores.set(stats.total_horas_precursores);
-                     this.horasPrecursoresRegulares.set(stats.horas_precursores_regulares ?? 0);
-                     this.horasPrecursoresAuxiliares.set(stats.horas_precursores_auxiliares ?? 0);
-
-                     if (stats.total_publicadores > 0) {
-                        this.totalPublicadores.set(stats.total_publicadores);
-                     }
-                  },
-                  error: err => console.error('Error loading resumen', err)
-               });
-            }
+    this.http.get<any[]>('/api/periodos/').subscribe({
+      next: (periodos) => {
+        const pasados = periodos
+          .filter(p => {
+            const ano = parseInt(p.codigo_ano, 10);
+            const mes = parseInt(p.codigo_mes, 10);
+            return ano < anoActual || (ano === anoActual && mes <= mesActual);
+          })
+          .sort((a, b) => {
+            const da = parseInt(a.codigo_ano, 10) * 100 + parseInt(a.codigo_mes, 10);
+            const db = parseInt(b.codigo_ano, 10) * 100 + parseInt(b.codigo_mes, 10);
+            return db - da;
           });
+
+        if (pasados.length === 0) return;
+        // Check up to 3 recent periods to find one with submitted informes
+        this.tryLoadInformesStatsFromPeriods(pasados.slice(0, 3), 0, congregacionId);
+      },
+      error: err => console.error('Error cargando periodos para stats', err)
+    });
+  }
+
+  private tryLoadInformesStatsFromPeriods(periods: any[], index: number, congregacionId: number) {
+    if (index >= periods.length) return;
+    const p = periods[index];
+
+    this.http.get<any>(`/api/informes/resumen-mensual?periodo_id=${p.id_periodo}&congregacion_id=${congregacionId}`).subscribe({
+      next: (stats) => {
+        if (stats.informes_recibidos === 0 && index < periods.length - 1) {
+          this.tryLoadInformesStatsFromPeriods(periods, index + 1, congregacionId);
+          return;
+        }
+        this.informesRecibidos.set(stats.informes_recibidos);
+        const pending = stats.total_publicadores - stats.informes_recibidos;
+        this.informesPendientes.set(pending > 0 ? pending : 0);
+        const pct = stats.total_publicadores > 0 ? Math.round((stats.informes_recibidos / stats.total_publicadores) * 100) : 0;
+        this.porcentajeInformes.set(pct);
+        this.totalCursos.set(stats.total_cursos);
+        this.totalHorasPrecursores.set(stats.total_horas_precursores);
+        this.horasPrecursoresRegulares.set(stats.horas_precursores_regulares ?? 0);
+        this.horasPrecursoresAuxiliares.set(stats.horas_precursores_auxiliares ?? 0);
+        if (stats.total_publicadores > 0) {
+          this.totalPublicadores.set(stats.total_publicadores);
         }
       },
-      error: err => console.error('Error periodos', err)
+      error: err => console.error('Error loading resumen', err)
     });
   }
 

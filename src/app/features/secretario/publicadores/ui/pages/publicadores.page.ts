@@ -3673,7 +3673,22 @@ export class PublicadoresListComponent implements OnInit {
     const rawData = this.publicadorForm.value;
 
     // Transform data for API compatibility
-    const data = {
+    const editingPub = this.editingPublicador();
+    const nuevoEstadoNombre = this.getEstadoNombre(rawData.id_estado_publicador).toLowerCase();
+    const estadoAnteriorNombre = editingPub
+      ? this.getEstadoNombre(editingPub.id_estado_publicador).toLowerCase()
+      : '';
+
+    let fechaInactividad: string | null | undefined = undefined;
+    if (editingPub) {
+      if (nuevoEstadoNombre.includes('inactivo') && !estadoAnteriorNombre.includes('inactivo')) {
+        fechaInactividad = new Date().toISOString().split('T')[0];
+      } else if (!nuevoEstadoNombre.includes('inactivo') && estadoAnteriorNombre.includes('inactivo')) {
+        fechaInactividad = null;
+      }
+    }
+
+    const data: any = {
       ...rawData,
       // Convert ungido boolean to string for backend
       ungido: rawData.ungido ? 'Sí' : null,
@@ -3688,6 +3703,10 @@ export class PublicadoresListComponent implements OnInit {
       sexo: rawData.sexo || null,
       id_grupo_publicador: rawData.id_grupo_publicador || null
     };
+
+    if (fechaInactividad !== undefined) {
+      data.fecha_inactividad = fechaInactividad;
+    }
 
     const user = this.authStore.user();
     const isAdminOrGestor = user?.rol?.toLowerCase().includes('admin') || user?.rol?.toLowerCase().includes('gestor');

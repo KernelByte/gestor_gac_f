@@ -13,6 +13,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
 interface PublicadorLite {
   id_publicador: number;
   primer_nombre: string;
+  segundo_nombre?: string | null;
   primer_apellido: string;
   segundo_apellido?: string | null;
   archivo_consentimiento?: string | null;
@@ -143,7 +144,7 @@ interface PublicadorLite {
             <div *ngIf="wizardPaso() === 1" class="wizard-step-content flex flex-col gap-5">
               <div class="wizard-help">
                 <svg class="w-4 h-4 text-violet-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <p class="text-xs text-slate-600 dark:text-slate-400">Selecciona si es un publicador individual o una familia entera (hasta 3 miembros). Para una familia, agrega a cada miembro por separado.</p>
+                <p class="text-xs text-slate-600 dark:text-slate-400">Selecciona si es un publicador individual o una familia entera (hasta 5 miembros). Para una familia, agrega a cada miembro por separado.</p>
               </div>
               <div class="field-group" style="--field-i:0">
                 <label class="form-label">Tipo de transferencia</label>
@@ -158,7 +159,7 @@ interface PublicadorLite {
                           [class]="form.es_familiar ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 font-semibold'"
                           class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs rounded-lg transition-all cursor-pointer">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 0 0-3-3.87"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    Familiar (hasta 3)
+                    Familiar (hasta 5)
                   </button>
                 </div>
               </div>
@@ -176,7 +177,7 @@ interface PublicadorLite {
                     </button>
                   </div>
                 </div>
-                <div *ngIf="!form.es_familiar || form.id_publicadores.length < 3"
+                <div *ngIf="!form.es_familiar || form.id_publicadores.length < 5"
                      class="pub-dropdown" [class.pub-dropdown--open]="pubDropOpen()">
                   <button type="button" class="pub-dropdown-trigger" #pubTrigger (click)="openPubDrop(pubTrigger)">
                     @if (!form.es_familiar && form.id_publicadores[0]) {
@@ -191,7 +192,7 @@ interface PublicadorLite {
                     <svg class="pub-drop-chevron ml-auto shrink-0" [class.rotate-180]="pubDropOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                   </button>
                 </div>
-                <p *ngIf="form.es_familiar && form.id_publicadores.length >= 3" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Máximo 3 miembros. Quita uno para agregar otro.</p>
+                <p *ngIf="form.es_familiar && form.id_publicadores.length >= 5" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Máximo 5 miembros. Quita uno para agregar otro.</p>
               </div>
               <div *ngIf="form.es_familiar && form.id_publicadores.length > 0" class="field-group animate-scale-in" style="--field-i:2">
                 <label class="form-label">Nombre de la familia <span class="text-slate-400 font-normal">(opcional)</span></label>
@@ -1532,7 +1533,7 @@ export class TransferenciasPage implements OnInit {
     const base = this.publicadoresDisponibles();
     if (!q) return base;
     return base.filter(p =>
-      `${p.primer_nombre} ${p.primer_apellido} ${p.segundo_apellido ?? ''}`.toLowerCase().includes(q)
+      `${p.primer_nombre} ${p.segundo_nombre ?? ''} ${p.primer_apellido} ${p.segundo_apellido ?? ''}`.toLowerCase().includes(q)
     );
   }
 
@@ -1582,6 +1583,7 @@ export class TransferenciasPage implements OnInit {
     const idCong  = this.ctx.effectiveCongregacionId();
     const params: any = {};
     if (idCong) params.id_congregacion = idCong;
+    params.limit = 1000;
     this.http.get<PublicadorLite[]>(`${environment.apiUrl}/publicadores/`, { params }).subscribe({
       next:  p => this.publicadores.set(p),
       error: () => this.toast('error', 'No se pudieron cargar los publicadores'),
@@ -1636,7 +1638,7 @@ export class TransferenciasPage implements OnInit {
       return;
     }
     if (this.form.es_familiar) {
-      if (!this.form.id_publicadores.includes(id) && this.form.id_publicadores.length < 3) {
+      if (!this.form.id_publicadores.includes(id) && this.form.id_publicadores.length < 5) {
         this.form.id_publicadores = [...this.form.id_publicadores, id];
         // Autocompletar etiqueta si está vacía
         if (!this.form.etiqueta_familia) {

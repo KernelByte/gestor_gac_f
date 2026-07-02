@@ -56,19 +56,37 @@
                   </div>
 
                   <!-- 2. Circuito -->
-                  <div class="sm:col-span-4 space-y-1.5">
+                  <div class="sm:col-span-2 space-y-1.5">
                      <label class="block text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Circuito</label>
                      <input [(ngModel)]="config.circuito" [readonly]="!canEdit()" type="text"
                         class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-2 focus:ring-purple-400/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
                         placeholder="Ej. CO-01">
                   </div>
 
+                  <!-- 3. Número de Congregación -->
+                  <div class="sm:col-span-2 space-y-1.5">
+                     <label class="block text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">N.º Congregación</label>
+                     <input [(ngModel)]="config.numero_congregacion" [readonly]="!canEdit()" type="text"
+                        autocomplete="off"
+                        class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-2 focus:ring-purple-400/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                        placeholder="Ej. 12345">
+                  </div>
+
                   <!-- 3. Dirección -->
-                  <div class="sm:col-span-12 space-y-1.5">
+                  <div class="sm:col-span-8 space-y-1.5">
                      <label class="block text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Dirección del Salón del Reino</label>
                      <input [(ngModel)]="config.direccion" [readonly]="!canEdit()" type="text"
                         class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-2 focus:ring-purple-400/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
                         placeholder="Calle Principal #123, Ciudad...">
+                  </div>
+
+                  <!-- 4. Correo -->
+                  <div class="sm:col-span-4 space-y-1.5">
+                     <label class="block text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Correo de la Congregación</label>
+                     <input [(ngModel)]="config.correo_congregacion" [readonly]="!canEdit()" type="email"
+                        autocomplete="off"
+                        class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm text-slate-900 dark:text-white font-bold focus:bg-white dark:focus:bg-slate-800 focus:border-brand-purple focus:ring-2 focus:ring-purple-400/20 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                        placeholder="correo@ejemplo.com">
                   </div>
                </div>
 

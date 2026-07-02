@@ -21,6 +21,8 @@ interface Configuracion {
    hora_reunion_entre_semana: string;
    dia_reunion_fin_semana:    string;
    hora_reunion_fin_semana:   string;
+   correo_congregacion?: string | null;
+   numero_congregacion?: string | null;
 }
 
 @Component({
@@ -67,6 +69,8 @@ export class ConfiguracionPage implements OnInit {
       hora_reunion_entre_semana: '',
       dia_reunion_fin_semana:    '',
       hora_reunion_fin_semana:   '',
+      correo_congregacion:       null,
+      numero_congregacion:       null,
    };
 
    periodosDisponibles: any[] = [];
@@ -245,6 +249,8 @@ export class ConfiguracionPage implements OnInit {
          hora_reunion_entre_semana:  this.config.hora_reunion_entre_semana || null,
          dia_reunion_fin_semana:     this.config.dia_reunion_fin_semana    || null,
          hora_reunion_fin_semana:    this.config.hora_reunion_fin_semana   || null,
+         correo_congregacion:        this.config.correo_congregacion       || null,
+         numero_congregacion:        this.config.numero_congregacion       || null,
       };
 
       this.http.put<Configuracion>(this.API_URL, payload).subscribe({
@@ -305,7 +311,9 @@ export class ConfiguracionPage implements OnInit {
          (this.config.dia_reunion_entre_semana  || '') !== (this.originalConfig.dia_reunion_entre_semana  || '') ||
          (this.config.hora_reunion_entre_semana || '') !== (this.originalConfig.hora_reunion_entre_semana || '') ||
          (this.config.dia_reunion_fin_semana    || '') !== (this.originalConfig.dia_reunion_fin_semana    || '') ||
-         (this.config.hora_reunion_fin_semana   || '') !== (this.originalConfig.hora_reunion_fin_semana   || '');
+         (this.config.hora_reunion_fin_semana   || '') !== (this.originalConfig.hora_reunion_fin_semana   || '') ||
+         (this.config.correo_congregacion       || '') !== (this.originalConfig.correo_congregacion       || '') ||
+         (this.config.numero_congregacion       || '') !== (this.originalConfig.numero_congregacion       || '');
    }
 
    canEdit(): boolean {
