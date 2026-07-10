@@ -81,7 +81,8 @@ export const routes: Routes = [
       {
         path: 'secretario-tools',
         canActivate: [roleGuard],
-        data: { roles: ['Administrador', 'Coordinador', 'Secretario'] },
+        // Exclusivo de Secretario/Administrador — Coordinador no es dueño de este menú.
+        data: { roles: ['Administrador', 'Secretario'] },
         loadChildren: () => import('./features/secretario-tools/routes').then(m => m.SECRETARIO_TOOLS_ROUTES)
       },
       {

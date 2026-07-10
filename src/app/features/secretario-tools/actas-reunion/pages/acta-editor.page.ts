@@ -8,16 +8,18 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ActaService } from '../../services/acta.service';
 import { Acta, Tarea } from '../../models/acta.model';
 import { TareaDetailPanelComponent } from '../../tareas/components/tarea-detail-panel.component';
+import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
 
 type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
 
 @Component({
   standalone: true,
   selector: 'app-acta-editor',
-  imports: [CommonModule, FormsModule, TareaDetailPanelComponent],
+  imports: [CommonModule, FormsModule, TareaDetailPanelComponent, DatePickerComponent],
   template: `
   <div *ngIf="acta() as a"
        class="editor-root"
+       [class.mobile-writing]="isMobileMode() && (notasFocused() || actaFocused())"
        [class.dark-root]="false">
 
     <!-- ══════════════ HEADER ══════════════ -->
@@ -78,7 +80,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
                       <span class="edo-option-sub">Seguir editando el acta</span>
                     </span>
                     @if (a.estado !== 'finalizada') {
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14" style="margin-left:auto;flex-shrink:0;color:#6d28d9"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14" style="margin-left:auto;flex-shrink:0;color:var(--brand-purple)"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                     }
                   </button>
                   <button type="button" class="estado-option"
@@ -90,7 +92,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
                       <span class="edo-option-sub">El acta queda en solo lectura</span>
                     </span>
                     @if (a.estado === 'finalizada') {
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14" style="margin-left:auto;flex-shrink:0;color:#6d28d9"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14" style="margin-left:auto;flex-shrink:0;color:var(--brand-purple)"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                     }
                   </button>
                 </div>
@@ -103,11 +105,11 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
               Guardado {{ savedAgo() }}
             </span>
           }
-          <button (click)="exportar('pdf')" class="btn-export btn-export-pdf" type="button" title="Exportar como PDF">
+          <button (click)="exportar('pdf')" class="btn-export btn-export-pdf" type="button" title="Exportar como PDF" aria-label="Exportar como PDF">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 12.5c0-.828.672-1.5 1.5-1.5h1a1.5 1.5 0 010 3h-1v2"/></svg>
             <span class="btn-export-label">PDF</span>
           </button>
-          <button (click)="exportar('docx')" class="btn-export btn-export-word" type="button" title="Exportar como Word">
+          <button (click)="exportar('docx')" class="btn-export btn-export-word" type="button" title="Exportar como Word" aria-label="Exportar como Word">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 13l1.5 4 1.5-4 1.5 4 1.5-4"/></svg>
             <span class="btn-export-label">Word</span>
           </button>
@@ -119,6 +121,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
               @if (hasUnsaved()) { <span class="unsaved-dot"></span> }
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
               Guardar
+              <span class="kbd">Ctrl+S</span>
             }
           </button>
         </div>
@@ -141,7 +144,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
             <span class="edo-option-sub">Seguir editando el acta</span>
           </span>
           @if (acta()!.estado !== 'finalizada') {
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="16" height="16" style="margin-left:auto;flex-shrink:0;color:#6d28d9"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="16" height="16" style="margin-left:auto;flex-shrink:0;color:var(--brand-purple)"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
           }
         </button>
         <button type="button" class="estado-bs-option"
@@ -153,7 +156,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
             <span class="edo-option-sub">El acta queda en solo lectura</span>
           </span>
           @if (acta()!.estado === 'finalizada') {
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="16" height="16" style="margin-left:auto;flex-shrink:0;color:#6d28d9"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="16" height="16" style="margin-left:auto;flex-shrink:0;color:var(--brand-purple)"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
           }
         </button>
       </div>
@@ -194,116 +197,121 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     <!-- ══════════════ ÁREA DE TRABAJO ══════════════ -->
     <div class="workspace">
 
-      <!-- Barra de metadata del acta -->
-      <div class="meta-bar" [class.tab-hidden]="isMobileMode() && activeTab() !== 'info'">
-        <label class="meta-field">
-          <span class="meta-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-            Presidente
-          </span>
-          <div class="meta-input-wrap">
-            <input class="meta-input" [(ngModel)]="meta.presidente" (ngModelChange)="markDirty()" placeholder="Sin asignar" [disabled]="isReadonly()" />
-            <svg class="meta-edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-          </div>
-        </label>
+      <!-- Barra de metadata del acta — colapsable -->
+      <div class="meta-bar" [class.meta-bar-open]="metaOpen" [class.tab-hidden]="isMobileMode() && activeTab() !== 'info'">
 
-        <div class="meta-divider"></div>
-
-        <label class="meta-field">
-          <span class="meta-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            Lugar
-          </span>
-          <div class="meta-input-wrap">
-            <input class="meta-input" [(ngModel)]="meta.lugar" (ngModelChange)="markDirty()" placeholder="Sin especificar" [disabled]="isReadonly()" />
-            <svg class="meta-edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-          </div>
-        </label>
-
-        <div class="meta-divider"></div>
-
-        @if (false) {
-          <div class="meta-field meta-field-sm" style="position:relative">
-            <span class="meta-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.071 4.929a10 10 0 010 14.142M4.929 4.929a10 10 0 000 14.142"/></svg>
-              Estado
+        <!-- Fila resumen (siempre visible) -->
+        <button class="meta-summary" type="button" (click)="metaOpen = !metaOpen"
+                [attr.aria-expanded]="metaOpen" aria-controls="meta-detail-panel"
+                [title]="metaOpen ? 'Ocultar detalles' : 'Editar presidente, lugar y asistentes'">
+          <span class="meta-summary-items">
+            <!-- Presidente -->
+            <span class="meta-summary-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              <span [class.meta-summary-empty]="!meta.presidente">{{ meta.presidente || 'Sin presidente' }}</span>
             </span>
-            <div class="meta-input-wrap" style="cursor:pointer" (click)="estadoOpen = !estadoOpen">
-              <button type="button" class="estado-trigger" (blur)="onEstadoBlur()">
-                <span class="estado-trigger-dot" [class.dot-final]="a.estado === 'finalizada'" [class.dot-draft]="a.estado !== 'finalizada'"></span>
-                <span class="estado-trigger-text">{{ a.estado === 'finalizada' ? 'Finalizada' : 'Borrador' }}</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"
-                     [style.transform]="estadoOpen ? 'rotate(180deg)' : ''" style="transition:transform 150ms; margin-left:auto; color:var(--text-muted)">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-            </div>
-            @if (estadoOpen) {
-              <div class="estado-dropdown">
-                <button type="button" class="estado-option"
-                        [class.is-selected]="a.estado !== 'finalizada'"
-                        (click)="setEstado(a, 'borrador')">
-                  <span class="edo-dot dot-draft"></span>
-                  Borrador
-                  @if (a.estado !== 'finalizada') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12" style="margin-left:auto;color:#6d28d9"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <span class="meta-summary-sep">·</span>
+            <!-- Lugar -->
+            <span class="meta-summary-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span [class.meta-summary-empty]="!meta.lugar">{{ meta.lugar || 'Sin lugar' }}</span>
+            </span>
+            <span class="meta-summary-sep">·</span>
+            <!-- Asistentes -->
+            <span class="meta-summary-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4a4 4 0 11-8 0 4 4 0 018 0zm6 4a2 2 0 11-4 0 2 2 0 014 0zM7 16a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              @if (asistentesArr().length > 0) {
+                <span>{{ asistentesArr().length }} asistente{{ asistentesArr().length !== 1 ? 's' : '' }}</span>
+              } @else {
+                <span class="meta-summary-empty">Sin asistentes</span>
+              }
+            </span>
+          </span>
+          <svg class="meta-summary-chevron" [class.meta-summary-chevron-open]="metaOpen"
+               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+
+        <!-- Panel expandible con los campos -->
+        @if (metaOpen) {
+          <div class="meta-detail-panel" id="meta-detail-panel">
+            <div class="meta-detail-row">
+
+              <label class="meta-field">
+                <span class="meta-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                  Presidente
+                </span>
+                <div class="meta-input-wrap">
+                  <input class="meta-input" [(ngModel)]="meta.presidente" (ngModelChange)="markDirty()" placeholder="Sin asignar" [disabled]="isReadonly()" />
+                </div>
+              </label>
+
+              <div class="meta-divider"></div>
+
+              <label class="meta-field">
+                <span class="meta-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  Lugar
+                </span>
+                <div class="meta-input-wrap">
+                  <input class="meta-input" [(ngModel)]="meta.lugar" (ngModelChange)="markDirty()" placeholder="Sin especificar" [disabled]="isReadonly()" />
+                </div>
+              </label>
+
+              <div class="meta-divider"></div>
+
+              <div class="meta-field meta-field-asistentes">
+                <span class="meta-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4a4 4 0 11-8 0 4 4 0 018 0zm6 4a2 2 0 11-4 0 2 2 0 014 0zM7 16a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                  Asistentes
+                </span>
+                <div class="meta-input-wrap asistentes-row">
+                  @for (asis of asistentesArr().slice(0, 3); track asis) {
+                    @if (isReadonly()) {
+                      <span class="avatar-chip" [title]="asis">{{ initials(asis) }}</span>
+                    } @else {
+                      <button type="button" class="avatar-chip avatar-chip-btn"
+                              [title]="'Quitar a ' + asis" [attr.aria-label]="'Quitar a ' + asis"
+                              (click)="quitarAsistente(asis)">
+                        <span class="avatar-initials">{{ initials(asis) }}</span>
+                        <svg class="avatar-remove-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                      </button>
+                    }
                   }
-                </button>
-                <button type="button" class="estado-option"
-                        [class.is-selected]="a.estado === 'finalizada'"
-                        (click)="setEstado(a, 'finalizada')">
-                  <span class="edo-dot dot-final"></span>
-                  Finalizada
-                  @if (a.estado === 'finalizada') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12" style="margin-left:auto;color:#6d28d9"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  @if (asistentesArr().length > 3) {
+                    <span class="avatar-more">+{{ asistentesArr().length - 3 }} más</span>
                   }
-                </button>
+                  @if (asistentesArr().length === 0) {
+                    <span class="asistentes-empty">Sin asistentes</span>
+                  }
+                  <div class="asistentes-add-wrap" [style.display]="isReadonly() ? 'none' : ''">
+                    @if (addingAsistente) {
+                      <input class="asistentes-add-input"
+                             [(ngModel)]="nuevoAsistente"
+                             (keydown.enter)="agregarAsistente(); $event.preventDefault()"
+                             (keydown.escape)="addingAsistente = false; nuevoAsistente = ''"
+                             (blur)="onAddAsistenteBlur()"
+                             placeholder="Nombre…"
+                             #addInput />
+                    }
+                    <button class="btn-add-person" type="button" (click)="toggleAddAsistente()"
+                            [title]="addingAsistente ? 'Cancelar' : 'Agregar asistente'"
+                            [attr.aria-label]="addingAsistente ? 'Cancelar' : 'Agregar asistente'">
+                      @if (!addingAsistente) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5 19.5a7 7 0 0114 0"/><line x1="19" y1="8" x2="19" y2="14" stroke-linecap="round"/><line x1="16" y1="11" x2="22" y2="11" stroke-linecap="round"/></svg>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                      }
+                    </button>
+                  </div>
+                </div>
               </div>
-            }
+
+            </div>
           </div>
         }
-
-        <div class="meta-field meta-field-asistentes">
-          <span class="meta-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4a4 4 0 11-8 0 4 4 0 018 0zm6 4a2 2 0 11-4 0 2 2 0 014 0zM7 16a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-            Asistentes
-          </span>
-          <div class="meta-input-wrap asistentes-row">
-            @for (asis of asistentesArr().slice(0, 3); track asis; let i = $index) {
-              <span class="avatar-chip" [style.--i]="i" [title]="asis">
-                {{ initials(asis) }}
-              </span>
-            }
-            @if (asistentesArr().length > 3) {
-              <span class="avatar-more">+{{ asistentesArr().length - 3 }} más</span>
-            }
-            @if (asistentesArr().length === 0) {
-              <span class="asistentes-empty">Sin asistentes</span>
-            }
-            <div class="asistentes-add-wrap" [style.display]="isReadonly() ? 'none' : ''">
-              @if (addingAsistente) {
-                <input class="asistentes-add-input"
-                       [(ngModel)]="nuevoAsistente"
-                       (keydown.enter)="agregarAsistente(); $event.preventDefault()"
-                       (keydown.escape)="addingAsistente = false; nuevoAsistente = ''"
-                       (blur)="onAddAsistenteBlur()"
-                       placeholder="Nombre…"
-                       #addInput />
-              }
-              <button class="btn-add-person" type="button" (click)="toggleAddAsistente()"
-                      [title]="addingAsistente ? 'Cancelar' : 'Agregar asistente'">
-                @if (!addingAsistente) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5 19.5a7 7 0 0114 0"/><line x1="19" y1="8" x2="19" y2="14" stroke-linecap="round"/><line x1="16" y1="11" x2="22" y2="11" stroke-linecap="round"/></svg>
-                } @else {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                }
-              </button>
-            </div>
-            @for (asis of asistentesArr(); track asis) {
-              <button class="chip-remove-hidden" (click)="quitarAsistente(asis)" type="button" style="display:none"></button>
-            }
-          </div>
-        </div>
       </div>
 
     <!-- ══════════════ EDITOR COLUMNS ══════════════ -->
@@ -318,21 +326,29 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
           <div class="col-header-text">
             <h3 class="col-title">Notas rápidas</h3>
           </div>
-          <button (click)="redactarIA()" [disabled]="redactando() || !a.notas_originales || isReadonly()"
-                  class="btn-ia" type="button"
-                  [title]="isReadonly() ? 'El acta está finalizada' : (!a.notas_originales ? 'Escribe notas primero para generar el acta' : 'Generar acta con IA (Ctrl+Enter)')">
+          <button (click)="redactarIA()" [disabled]="redactando() || !a.notas_originales || isReadonly() || rateLimitSecondsLeft() > 0"
+                  class="btn-ia" [class.btn-ia-limited]="rateLimitSecondsLeft() > 0" type="button"
+                  [title]="isReadonly() ? 'El acta está finalizada' : (rateLimitSecondsLeft() > 0 ? 'Límite alcanzado. Disponible en ' + rateLimitSecondsLeft() + 's' : (!a.notas_originales ? 'Escribe notas primero para generar el acta' : 'Generar acta con IA (Ctrl+Enter)'))">
             @if (redactando()) {
               <span class="spinner"></span>
               Generando…
+            } @else if (rateLimitSecondsLeft() > 0) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Disponible en {{ rateLimitSecondsLeft() }}s
             } @else {
-              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2l1.09 3.26L16.5 6l-3.41.74L12 10l-1.09-3.26L7.5 6l3.41-.74L12 2zm6 10l.73 2.18L21 15l-2.27.82L18 18l-.73-2.18L15 15l2.27-.82L18 12zm-12 0l.73 2.18L9 15l-2.27.82L6 18l-.73-2.18L3 15l2.27-.82L6 12z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M12 2l1.09 3.26L16.5 6l-3.41.74L12 10l-1.09-3.26L7.5 6l3.41-.74L12 2zm6 10l.73 2.18L21 15l-2.27.82L18 18l-.73-2.18L15 15l2.27-.82L18 12zm-12 0l.73 2.18L9 15l-2.27.82L6 18l-.73-2.18L3 15l2.27-.82L6 12z"/></svg>
+              Generar acta
+              <span class="kbd-ia">Ctrl+↵</span>
             }
           </button>
         </div>
         <div class="col-body">
-          <textarea class="col-textarea font-mono"
+          <textarea #notasTextarea
+                    class="col-textarea font-mono"
                     [(ngModel)]="a.notas_originales"
                     (ngModelChange)="markDirty()"
+                    (focus)="notasFocused.set(true)"
+                    (blur)="notasFocused.set(false)"
                     [disabled]="isReadonly()"
                     placeholder="Escribe notas durante la reunión aquí…&#10;&#10;• Punto 1:&#10;• Punto 2:&#10;• Acuerdo:"></textarea>
         </div>
@@ -351,7 +367,18 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
           <span class="col-hint">Clic para editar</span>
         </div>
         <div class="col-body acta-body">
-          @if (!a.contenido_redactado && !actaFocused()) {
+          @if (redactando()) {
+            <div class="acta-generating" role="status" aria-live="polite">
+              <span class="spinner acta-generating-spinner"></span>
+              <p class="acta-generating-title">Redactando el acta…</p>
+              <p class="acta-generating-sub">Esto puede tardar unos segundos. Tus notas no se modifican.</p>
+              <div class="acta-skel-lines" aria-hidden="true">
+                <div class="acta-skel"></div>
+                <div class="acta-skel" style="width: 85%"></div>
+                <div class="acta-skel" style="width: 70%"></div>
+              </div>
+            </div>
+          } @else if (!a.contenido_redactado && !actaFocused()) {
             <div class="acta-empty-overlay" (click)="!isReadonly() && focusActa()">
               <div class="acta-empty-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" width="28" height="28"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -366,7 +393,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
               }
             </div>
           }
-          @if (!actaFocused()) {
+          @if (!redactando() && !actaFocused()) {
             <div class="acta-preview"
                  (click)="!isReadonly() && focusActa()"
                  [innerHTML]="actaHtml()"
@@ -395,25 +422,36 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
             <p class="col-subtitle">Seguimiento</p>
           </div>
           <span class="task-count">{{ tareas().length }}</span>
-          <button (click)="agregandoTarea.set(!agregandoTarea())" class="btn-add-task" type="button" [disabled]="isReadonly()">
+          <button (click)="agregandoTarea.set(!agregandoTarea())" class="btn-add-task" type="button" [disabled]="isReadonly()"
+                  [attr.aria-label]="agregandoTarea() ? 'Cerrar formulario de tarea' : 'Nueva tarea'"
+                  [title]="agregandoTarea() ? 'Cerrar' : 'Nueva tarea'">
             <svg [class.rotate-45]="agregandoTarea()" style="transition: transform 200ms ease-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
           </button>
         </div>
 
-        @if (agregandoTarea()) {
+        <!-- Desktop: formulario inline (el bottom sheet móvil está en la raíz del template, ver más abajo) -->
+        @if (agregandoTarea() && !isMobileMode()) {
           <div class="task-form">
             <input class="field" placeholder="Título de la tarea *" [(ngModel)]="tareaForm.titulo" />
-            <div class="task-form-row">
-              <input type="date" class="field" [(ngModel)]="tareaForm.fecha_limite" />
-              <select class="field" [(ngModel)]="tareaForm.prioridad">
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-              </select>
+            <app-date-picker class="field-datepicker"
+                              [(ngModel)]="tareaForm.fecha_limite"
+                              placeholder="Fecha límite"
+                              colorScheme="violet"
+                              [fieldLike]="true"></app-date-picker>
+            <div class="tarea-bs-segment task-form-segment">
+              <button type="button" class="tarea-bs-seg-btn" [class.active]="tareaForm.prioridad === 'baja'"  (click)="tareaForm.prioridad = 'baja'">
+                <span class="tarea-seg-dot dot-baja"></span>Baja
+              </button>
+              <button type="button" class="tarea-bs-seg-btn" [class.active]="tareaForm.prioridad === 'media'" (click)="tareaForm.prioridad = 'media'">
+                <span class="tarea-seg-dot dot-media"></span>Media
+              </button>
+              <button type="button" class="tarea-bs-seg-btn" [class.active]="tareaForm.prioridad === 'alta'"  (click)="tareaForm.prioridad = 'alta'">
+                <span class="tarea-seg-dot dot-alta"></span>Alta
+              </button>
             </div>
             <textarea class="field" rows="2" placeholder="Descripción (opcional)" [(ngModel)]="tareaForm.descripcion"></textarea>
             <div class="task-form-actions">
-              <button (click)="agregandoTarea.set(false)" class="btn-ghost-xs" type="button">Cancelar</button>
+              <button (click)="cerrarFormularioTarea()" class="btn-ghost-xs" type="button">Cancelar</button>
               <button (click)="crearTarea()" [disabled]="!tareaForm.titulo" class="btn-primary-xs" type="button">Crear</button>
             </div>
           </div>
@@ -427,7 +465,9 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
                     [attr.data-prio]="t.prioridad" [style.--stagger]="i * 25 + 'ms'">
 
                   <button class="task-status-btn" [attr.data-estado]="t.estado" type="button"
-                          [title]="'Cambiar estado'" (click)="cambiarEstado(t, nextEstado(t.estado))">
+                          [title]="'Estado: ' + estadoShort(t.estado) + ' — clic para cambiar'"
+                          [attr.aria-label]="'Estado: ' + estadoShort(t.estado) + ' — cambiar'"
+                          (click)="cambiarEstado(t, nextEstado(t.estado))">
                     @if (t.estado === 'completada') {
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                     } @else if (t.estado === 'en_progreso') {
@@ -471,6 +511,34 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     </div>
     </div><!-- /workspace -->
 
+    <!-- ══════════════ MOBILE WRITING TOOLBAR ══════════════ -->
+    @if (isMobileMode() && (notasFocused() || actaFocused())) {
+      <div class="mobile-writing-bar">
+        <span class="mobile-writing-status">
+          @if (guardando()) {
+            <span class="spinner" style="width:0.75rem;height:0.75rem"></span> Guardando…
+          } @else if (hasUnsaved()) {
+            <span class="save-pending-dot"></span> Sin guardar
+          } @else if (savedAgo() !== null) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Guardado
+          }
+        </span>
+        @if (notasFocused() && !isReadonly()) {
+          <button class="mobile-writing-action" type="button"
+                  (click)="redactarIA()"
+                  [disabled]="redactando() || !(acta()?.notas_originales) || rateLimitSecondsLeft() > 0">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M12 2l1.09 3.26L16.5 6l-3.41.74L12 10l-1.09-3.26L7.5 6l3.41-.74L12 2zm6 10l.73 2.18L21 15l-2.27.82L18 18l-.73-2.18L15 15l2.27-.82L18 12zm-12 0l.73 2.18L9 15l-2.27.82L6 18l-.73-2.18L3 15l2.27-.82L6 12z"/></svg>
+            Generar acta
+          </button>
+        }
+        <button class="mobile-writing-done" type="button"
+                (click)="blurActiveTextarea()">
+          Listo
+        </button>
+      </div>
+    }
+
     <!-- ══════════════ MOBILE SAVE INDICATOR ══════════════ -->
     <div class="mobile-save-strip" aria-live="polite">
       @if (guardando()) {
@@ -488,6 +556,71 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
         </span>
       }
     </div>
+
+    <!-- ══════════════ NUEVA TAREA — bottom sheet móvil ══════════════
+         Se renderiza como hijo directo de .editor-root (NO dentro de .editor-col)
+         a propósito: .editor-col.is-active anima transform, y cualquier ancestro
+         con transform se convierte en containing block para position:fixed,
+         atrapando el sheet dentro de ese panel en vez de anclarlo a la pantalla. -->
+    @if (agregandoTarea() && isMobileMode()) {
+      <div class="tarea-bs-overlay" (click)="cerrarFormularioTarea()" role="dialog" aria-modal="true" aria-label="Nueva tarea"></div>
+      <div class="tarea-bs-sheet">
+        <span class="tarea-bs-handle"></span>
+        <div class="tarea-bs-header">
+          <span class="tarea-bs-title">Nueva tarea</span>
+          <button class="tarea-bs-close" type="button" (click)="cerrarFormularioTarea()" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="tarea-bs-body">
+          <div class="tarea-bs-field-group">
+            <label class="tarea-bs-label">Título *</label>
+            <input class="tarea-bs-input" placeholder="¿Qué hay que hacer?" [(ngModel)]="tareaForm.titulo" />
+          </div>
+
+          <div class="tarea-bs-field-group">
+            <label class="tarea-bs-label">Prioridad</label>
+            <div class="tarea-bs-segment">
+              <button type="button" class="tarea-bs-seg-btn" [class.active]="tareaForm.prioridad === 'baja'"   (click)="tareaForm.prioridad = 'baja'">
+                <span class="tarea-seg-dot dot-baja"></span>Baja
+              </button>
+              <button type="button" class="tarea-bs-seg-btn" [class.active]="tareaForm.prioridad === 'media'"  (click)="tareaForm.prioridad = 'media'">
+                <span class="tarea-seg-dot dot-media"></span>Media
+              </button>
+              <button type="button" class="tarea-bs-seg-btn" [class.active]="tareaForm.prioridad === 'alta'"   (click)="tareaForm.prioridad = 'alta'">
+                <span class="tarea-seg-dot dot-alta"></span>Alta
+              </button>
+            </div>
+          </div>
+
+          <div class="tarea-bs-field-group">
+            <label class="tarea-bs-label">Descripción <span class="tarea-bs-optional">(opcional)</span></label>
+            <textarea class="tarea-bs-input tarea-bs-textarea" rows="3" placeholder="Detalles adicionales…" [(ngModel)]="tareaForm.descripcion"></textarea>
+          </div>
+
+          <!-- Fecha al final: cuando se abre el calendario tiene todo el espacio inferior
+               del sheet para expandirse en el flujo, sin recortarse. -->
+          <div class="tarea-bs-field-group">
+            <label class="tarea-bs-label">Fecha límite</label>
+            <app-date-picker class="field-datepicker field-datepicker-bs"
+                              [(ngModel)]="tareaForm.fecha_limite"
+                              placeholder="Sin fecha límite"
+                              colorScheme="violet"
+                              [fieldLike]="true"
+                              [inlineOnMobile]="true"></app-date-picker>
+          </div>
+        </div>
+
+        <div class="tarea-bs-footer">
+          <button class="tarea-bs-btn-cancel" type="button" (click)="cerrarFormularioTarea()">Cancelar</button>
+          <button class="tarea-bs-btn-crear" type="button" (click)="crearTarea()" [disabled]="!tareaForm.titulo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Crear tarea
+          </button>
+        </div>
+      </div>
+    }
 
     <!-- ══════════════ MODAL: Eliminar tarea ══════════════ -->
     @if (tareaAEliminar(); as tDel) {
@@ -510,6 +643,36 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
             </button>
           </div>
         </div>
+      </div>
+    }
+
+    <!-- ══════════════ MODAL: Regenerar acta con IA ══════════════ -->
+    @if (confirmRegenerar()) {
+      <div class="confirm-overlay" (click)="confirmRegenerar.set(false)">
+        <div class="confirm-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <div class="confirm-icon-wrap confirm-icon-purple">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2l1.09 3.26L16.5 6l-3.41.74L12 10l-1.09-3.26L7.5 6l3.41-.74L12 2zm6 10l.73 2.18L21 15l-2.27.82L18 18l-.73-2.18L15 15l2.27-.82L18 12zm-12 0l.73 2.18L9 15l-2.27.82L6 18l-.73-2.18L3 15l2.27-.82L6 12z"/></svg>
+          </div>
+          <h3 class="confirm-title">Generar de nuevo</h3>
+          <p class="confirm-message">El acta actual será reemplazada por una nueva versión. Podrás deshacer el cambio después.</p>
+          <div class="confirm-actions">
+            <button class="confirm-btn confirm-btn-ghost" type="button" (click)="confirmRegenerar.set(false)">Cancelar</button>
+            <button class="confirm-btn confirm-btn-primary" type="button" (click)="confirmarRegenerar()">Generar de nuevo</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════ TOAST ══════════════ -->
+    @if (toast(); as t) {
+      <div class="toast-wrap" [class.toast-error]="t.type === 'error'" [class.toast-success]="t.type === 'success'" [class.toast-info]="t.type === 'info'" role="status" aria-live="polite">
+        <span class="toast-msg">{{ t.msg }}</span>
+        @if (t.action) {
+          <button class="toast-action" type="button" (click)="ejecutarToastAction()">{{ t.action.label }}</button>
+        }
+        <button class="toast-close" (click)="toast.set(null)" type="button" aria-label="Cerrar notificación">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
+        </button>
       </div>
     }
 
@@ -672,7 +835,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
 
     .estado-pill {
       display: inline-flex; align-items: center; gap: 0.3rem;
-      padding: 0.125rem 0.5rem; font-size: 0.6rem; font-weight: 700;
+      padding: 0.125rem 0.5rem; font-size: 0.6875rem; font-weight: 700;
       border-radius: 999px; letter-spacing: 0.05em; text-transform: uppercase;
       border: 1px solid transparent;
     }
@@ -692,7 +855,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
 
     .saved-label {
       display: inline-flex; align-items: center; gap: 0.25rem;
-      font-size: 0.675rem; color: var(--text-muted); white-space: nowrap;
+      font-size: 0.6875rem; color: var(--text-muted); white-space: nowrap;
     }
 
     /* ── Botones exportar ── */
@@ -735,7 +898,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     }
     .kbd {
       display: inline-block; padding: 0.0625rem 0.3rem;
-      font-size: 0.6rem; font-family: ui-monospace, monospace;
+      font-size: 0.65rem; font-family: ui-monospace, monospace;
       background: rgba(0,0,0,0.15); border-radius: 0.25rem;
       border: 1px solid rgba(255,255,255,0.2);
     }
@@ -765,34 +928,67 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     .readonly-banner strong { font-weight: 700; color: inherit; }
 
     /* ═══════════════════════════════════════════
-       META BAR
+       META BAR — colapsable
     ═══════════════════════════════════════════ */
     .meta-bar {
-      display: flex;
-      align-items: stretch;
-      gap: 0;
-      flex-wrap: nowrap;
       margin: 0.5rem 1.25rem;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 0.875rem;
       box-shadow: 0 1px 4px rgba(0,0,0,0.05);
       flex-shrink: 0;
-      overflow-x: auto;
-      scrollbar-width: none;
+      overflow: hidden;
+      transition: border-color 150ms;
     }
-    .meta-bar::-webkit-scrollbar { display: none; }
-    :host-context(.dark) .meta-bar {
-      background: var(--surface);
-      border-color: var(--border);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    .meta-bar-open { border-color: rgba(124,58,237,0.3); }
+    :host-context(.dark) .meta-bar { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    :host-context(.dark) .meta-bar-open { border-color: rgba(124,58,237,0.35); }
+
+    /* Fila resumen (trigger) */
+    .meta-summary {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; padding: 0.4rem 0.875rem;
+      background: transparent; border: none; cursor: pointer;
+      font-family: inherit; text-align: left;
+      transition: background 120ms;
     }
+    .meta-summary:hover { background: rgba(0,0,0,0.025); }
+    :host-context(.dark) .meta-summary:hover { background: rgba(255,255,255,0.04); }
+
+    .meta-summary-items {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      font-size: 0.8rem; color: var(--text-secondary);
+    }
+    .meta-summary-item { display: flex; align-items: center; gap: 0.3rem; }
+    .meta-summary-item svg { color: var(--text-muted); flex-shrink: 0; }
+    .meta-summary-empty { color: var(--text-muted); font-style: italic; }
+    .meta-summary-sep { color: var(--text-muted); font-size: 0.75rem; }
+
+    .meta-summary-chevron {
+      flex-shrink: 0; color: var(--text-muted);
+      transition: transform 200ms ease;
+      margin-left: 0.5rem;
+    }
+    .meta-summary-chevron-open { transform: rotate(180deg); }
+
+    /* Panel expandido */
+    .meta-detail-panel {
+      border-top: 1px solid var(--border);
+      animation: metaSlideDown 180ms ease;
+    }
+    @keyframes metaSlideDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .meta-detail-row {
+      display: flex; align-items: stretch; gap: 0; flex-wrap: nowrap;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .meta-detail-row::-webkit-scrollbar { display: none; }
 
     .meta-divider {
-      width: 1px;
-      background: var(--border);
-      flex-shrink: 0;
-      align-self: stretch;
+      width: 1px; background: var(--border);
+      flex-shrink: 0; align-self: stretch;
     }
 
     .meta-field {
@@ -800,12 +996,11 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
       padding: 0.5rem 0.75rem;
       flex-shrink: 0; cursor: text;
     }
-    .meta-field-sm { min-width: 130px; }
     .meta-field-asistentes { flex: 1; min-width: 0; }
 
     .meta-label {
       display: flex; align-items: center; gap: 0.25rem;
-      font-size: 0.6rem; font-weight: 600;
+      font-size: 0.6875rem; font-weight: 600;
       color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase;
     }
 
@@ -826,7 +1021,6 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     :host-context(.dark) .meta-field:focus-within .meta-input-wrap {
       border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.15);
     }
-    .meta-edit-icon { display: none; }
 
     .meta-input {
       background: transparent;
@@ -837,17 +1031,9 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     }
     .meta-input::placeholder { color: var(--text-muted); font-weight: 400; }
 
-    /* Trigger del dropdown de estado */
-    .estado-trigger {
-      display: flex; align-items: center; gap: 0.4rem;
-      font-size: 0.8125rem; font-weight: 400; font-family: inherit;
-      color: var(--text-primary); cursor: pointer; width: 100%;
-      background: transparent; border: none; outline: none; padding: 0; text-align: left;
-    }
-    .estado-trigger-dot, .edo-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex-shrink: 0; }
+    .edo-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex-shrink: 0; }
     .dot-draft { background: #f59e0b; }
     .dot-final { background: #10b981; }
-    .estado-trigger-text { flex: 1; text-align: left; }
 
     /* ── Estado mobile action button ── */
     .btn-estado-mobile {
@@ -920,7 +1106,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     .avatar-chip {
       display: inline-flex; align-items: center; justify-content: center;
       width: 1.875rem; height: 1.875rem; border-radius: 50%;
-      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.02em;
+      font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.02em;
       border: 2px solid var(--surface); margin-left: -0.4rem; flex-shrink: 0;
       cursor: default; user-select: none;
     }
@@ -1034,34 +1220,6 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
     }
 
-    /* Chips input */
-    .chips-input {
-      display: flex; flex-wrap: wrap; gap: 0.375rem; align-items: center;
-      min-height: 34px; background: var(--surface); border: 1px solid var(--border);
-      border-radius: 0.5rem; padding: 0.25rem 0.625rem;
-      transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
-    }
-    :host-context(.dark) .chips-input { background: rgba(255,255,255,0.04); border-color: rgba(148,163,184,0.1); }
-    .chips-input:focus-within { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
-
-    .chip {
-      display: inline-flex; align-items: center; gap: 0.25rem;
-      padding: 0.125rem 0.5rem; font-size: 0.7rem; font-weight: 500;
-      background: rgba(124,58,237,0.1); color: var(--purple-text);
-      border: 1px solid rgba(124,58,237,0.2); border-radius: 999px;
-      animation: chipIn 180ms var(--ease-out) both;
-    }
-    @keyframes chipIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
-    .chip-remove {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 0.875rem; height: 0.875rem; font-size: 0.75rem; line-height: 1;
-      color: currentColor; opacity: 0.6; border-radius: 999px;
-      transition: opacity 120ms, background 120ms;
-    }
-    .chip-remove:hover { opacity: 1; background: rgba(124,58,237,0.25); }
-    .chip-input { border: none; outline: none; background: transparent; font-size: 0.8rem; color: var(--text-primary); padding: 0; }
-    .chip-input::placeholder { color: var(--text-muted); }
-
     /* ═══════════════════════════════════════════
        EDITOR COLUMNS — CORE ZERO-SCROLL LAYOUT
     ═══════════════════════════════════════════ */
@@ -1109,10 +1267,10 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
 
     .col-header-text { flex: 1; min-width: 0; }
     .col-title { font-size: 0.8125rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
-    .col-subtitle { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-top: 0.05rem; }
+    .col-subtitle { font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-top: 0.05rem; }
 
     .col-hint {
-      font-size: 0.625rem; color: var(--text-muted);
+      font-size: 0.6875rem; color: var(--text-muted);
       background: var(--surface-2); border: 1px solid var(--border);
       padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-weight: 500;
       letter-spacing: 0.02em;
@@ -1133,7 +1291,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     .task-count {
       display: inline-flex; align-items: center; justify-content: center;
       min-width: 1.125rem; height: 1.125rem; padding: 0 0.3rem;
-      font-size: 0.6rem; font-weight: 700;
+      font-size: 0.6875rem; font-weight: 700;
       background: rgba(16,185,129,0.12); color: #10b981;
       border: 1px solid rgba(16,185,129,0.2); border-radius: 999px;
     }
@@ -1167,7 +1325,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
       display: inline-flex; align-items: center; gap: 0.375rem;
       margin-left: auto;
       padding: 0.375rem 0.875rem; font-size: 0.8125rem; font-weight: 600;
-      background: linear-gradient(135deg, #6d28d9, #7c3aed);
+      background: var(--brand-purple);
       color: #fff;
       border: 1px solid transparent; border-radius: 0.625rem; cursor: pointer;
       box-shadow: 0 1px 6px rgba(109,40,217,0.25);
@@ -1175,15 +1333,16 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     }
     @media (hover: hover) {
       .btn-ia:hover:not(:disabled) {
-        background: linear-gradient(135deg, #5b21b6, #6d28d9);
+        background: var(--brand-purple-hover);
         box-shadow: 0 4px 14px rgba(109,40,217,0.4);
       }
     }
     .btn-ia:active { transform: scale(0.97); }
     .btn-ia:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-ia-limited { background: #64748b !important; opacity: 0.75; }
     .kbd-ia {
       display: inline-block; padding: 0.0625rem 0.25rem;
-      font-size: 0.6rem; font-family: ui-monospace, monospace;
+      font-size: 0.65rem; font-family: ui-monospace, monospace;
       background: rgba(0,0,0,0.25); border-radius: 0.25rem;
       border: 1px solid rgba(255,255,255,0.15);
     }
@@ -1211,6 +1370,10 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
       background: var(--meta-bg);
       animation: slideDown 200ms var(--ease-out) both;
       flex-shrink: 0;
+      /* La animación de opacity crea un stacking context en este contenedor;
+         sin z-index propio, la lista de tareas (posterior en el DOM) se pinta
+         por encima del popover del calendario. */
+      position: relative; z-index: 500;
     }
     :host-context(.dark) .task-form { background: rgba(0,0,0,0.2); }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
@@ -1226,12 +1389,12 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     }
     .btn-ghost-xs { color: var(--text-muted); }
     .btn-primary-xs {
-      background: linear-gradient(135deg, #5b21b6, #7c3aed);
+      background: var(--brand-purple);
       color: #fff; box-shadow: 0 1px 6px rgba(124,58,237,0.3);
     }
     @media (hover: hover) {
       .btn-ghost-xs:hover { background: rgba(100,116,139,0.1); color: var(--text-secondary); }
-      .btn-primary-xs:hover:not(:disabled) { background: linear-gradient(135deg, #4c1d95, #6d28d9); box-shadow: 0 2px 10px rgba(109,40,217,0.4); }
+      .btn-primary-xs:hover:not(:disabled) { background: var(--brand-purple-hover); box-shadow: 0 2px 10px rgba(109,40,217,0.4); }
     }
     .btn-ghost-xs:active, .btn-primary-xs:active { transform: scale(0.97); }
     .btn-primary-xs:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -1379,20 +1542,28 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
       width: 1px !important; height: 1px !important; overflow: hidden !important;
     }
 
-    .btn-ia-empty {
-      display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 1rem;
-      padding: 0.5rem 1.125rem; font-size: 0.8rem; font-weight: 600;
-      background: linear-gradient(135deg, #5b21b6, #7c3aed);
-      color: #fff; border-radius: 0.5rem; cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.1);
-      box-shadow: 0 2px 10px -2px rgba(109,40,217,0.5);
-      transition: transform 160ms var(--ease-out), box-shadow 160ms, opacity 160ms;
+    /* ── Estado "generando" dentro de la columna del acta ── */
+    .acta-generating {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; padding: 2rem; text-align: center; gap: 0.375rem;
     }
-    @media (hover: hover) {
-      .btn-ia-empty:hover:not(:disabled) { box-shadow: 0 4px 20px -4px rgba(109,40,217,0.65); transform: translateY(-1px); }
+    .acta-generating-spinner {
+      width: 1.5rem; height: 1.5rem; border-width: 2.5px;
+      color: var(--brand-purple); margin-bottom: 0.625rem;
     }
-    .btn-ia-empty:active { transform: scale(0.97); }
-    .btn-ia-empty:disabled { opacity: 0.4; cursor: not-allowed; }
+    .acta-generating-title { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
+    .acta-generating-sub { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; max-width: 20rem; }
+    .acta-skel-lines {
+      display: flex; flex-direction: column; gap: 0.5rem;
+      width: min(18rem, 80%); margin-top: 1.25rem;
+    }
+    .acta-skel {
+      height: 0.625rem; border-radius: 999px;
+      background: linear-gradient(90deg, rgba(124,58,237,0.08) 25%, rgba(124,58,237,0.18) 50%, rgba(124,58,237,0.08) 75%);
+      background-size: 200% 100%;
+      animation: skelShimmer 1.4s infinite;
+    }
+    @keyframes skelShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
     /* ═══════════════════════════════════════════
        MOBILE SAVE INDICATOR — floating chip
@@ -1467,9 +1638,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
       }
       .col-tareas .task-form { flex-direction: row; flex-wrap: wrap; padding: 0.5rem; }
       .header-inner { padding: 0 1rem; }
-      /* Meta bar: scroll horizontal sin wrap para no ocupar 2 filas */
-      .meta-bar { overflow-x: auto; flex-wrap: nowrap; }
-      .meta-field { min-width: 130px; flex-shrink: 0; }
+      .meta-field { min-width: 120px; flex-shrink: 0; }
       /* Botones exportar: solo ícono en tablet para ahorrar espacio en header */
       .btn-export-label { display: none; }
       .btn-export { padding: 0.375rem 0.625rem; min-width: 2.25rem; justify-content: center; }
@@ -1534,14 +1703,15 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
       .edo-option-label { font-size: 1rem; font-weight: 600; }
       .edo-option-sub { font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.125rem; }
 
-      .readonly-banner { display: none; }
+      /* Banner readonly compacto en móvil — explica por qué nada es editable */
+      .readonly-banner { padding: 0.4rem 0.875rem; font-size: 0.75rem; gap: 0.5rem; }
+      .readonly-icon { width: 1.25rem; height: 1.25rem; }
 
       /* ── Anti-zoom iOS: all inputs ≥ 16px ── */
       .meta-input,
       .field,
       .col-textarea,
-      .asistentes-add-input,
-      .chip-input {
+      .asistentes-add-input {
         font-size: 1rem !important;
       }
       .field { min-height: 2.75rem; }
@@ -1673,20 +1843,22 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
 
       /* ── Touch targets: mínimo 44px (2.75rem) ── */
       .task-status-btn {
-        min-width: 2.5rem; min-height: 2.5rem;
+        min-width: 2.75rem; min-height: 2.75rem;
         margin-top: 0.0625rem; /* alinea con primera línea de texto */
         flex-shrink: 0;
       }
       .btn-remove-task {
-        min-width: 2.5rem; min-height: 2.5rem;
+        min-width: 2.75rem; min-height: 2.75rem;
         border-radius: 0.5rem;
         flex-shrink: 0;
         margin-top: -0.125rem;
       }
       .btn-add-task {
-        min-width: 2.5rem; min-height: 2.5rem;
+        min-width: 2.75rem; min-height: 2.75rem;
         border-radius: 0.625rem;
       }
+      .btn-add-person, .avatar-chip-btn { min-width: 2.75rem; min-height: 2.75rem; }
+      .mobile-tab { min-height: 2.75rem; }
 
       /* ── Task form: una columna en mobile ── */
       .task-form-row { grid-template-columns: 1fr; }
@@ -1696,6 +1868,71 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
         padding: 0.625rem 1rem;
         font-size: 0.8125rem; min-height: 2.75rem;
       }
+
+      /* ── Col headers compactos: el tab activo ya dice dónde estás ── */
+      .col-notas .col-header .col-icon,
+      .col-notas .col-header .col-header-text { display: none; }
+      .col-notas .col-header { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+      .col-acta .col-header .col-icon { display: none; }
+      .col-acta .col-subtitle { display: none; }
+      .col-acta .col-header { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+      /* ── Barra flotante modo escritura ── */
+      .mobile-writing-bar {
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+        display: flex; align-items: center; gap: 0.5rem;
+        padding: 0.5rem 0.875rem;
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      :host-context(.dark) .mobile-writing-bar {
+        background: rgba(10,17,32,0.97);
+      }
+      .mobile-writing-status {
+        flex: 1; display: flex; align-items: center; gap: 0.375rem;
+        font-size: 0.75rem; color: var(--text-muted);
+      }
+      .mobile-writing-action {
+        display: inline-flex; align-items: center; gap: 0.375rem;
+        padding: 0.4rem 0.875rem; border-radius: 0.625rem;
+        font-size: 0.8125rem; font-weight: 600; font-family: inherit;
+        background: rgba(109,40,217,0.1); color: #6d28d9;
+        border: 1.5px solid rgba(109,40,217,0.25);
+        cursor: pointer; touch-action: manipulation;
+        transition: background 120ms;
+      }
+      .mobile-writing-action:disabled { opacity: 0.4; cursor: not-allowed; }
+      .mobile-writing-action:active:not(:disabled) { background: rgba(109,40,217,0.18); }
+      :host-context(.dark) .mobile-writing-action { color: #a78bfa; background: rgba(109,40,217,0.15); border-color: rgba(167,139,250,0.2); }
+      .mobile-writing-done {
+        padding: 0.4rem 1rem; border-radius: 0.625rem;
+        font-size: 0.875rem; font-weight: 700; font-family: inherit;
+        background: var(--brand-purple, #6d28d9); color: #fff;
+        border: none; cursor: pointer; touch-action: manipulation;
+        min-height: 2.75rem;
+        transition: opacity 120ms;
+      }
+      .mobile-writing-done:active { opacity: 0.85; }
+
+      /* ── Modo escritura: teclado abierto → máximo espacio para escribir ──
+         Cuando el textarea de notas o acta tiene el foco, se oculta el
+         chrome (header + tabs + encabezado de columna). Al salir del foco
+         todo reaparece. */
+      .editor-root.mobile-writing .editor-header,
+      .editor-root.mobile-writing .mobile-tabs-bar,
+      .editor-root.mobile-writing .mobile-save-strip,
+      .editor-root.mobile-writing .editor-col.is-active .col-header { display: none; }
+      /* padding-bottom = altura barra flotante (~3.5rem) para que no tape el contenido */
+      .editor-root.mobile-writing .editor-col.is-active .col-body { padding-bottom: 3.5rem; }
+      .editor-root.mobile-writing .readonly-banner { display: none; }
+
+      /* Quitar el border-bottom del h1 en preview — en móvil corta visualmente el texto */
+      .acta-preview h1 { border-bottom: none; padding-bottom: 0; }
+      .acta-preview hr { display: none; }
     }
 
     /* ═══════════════════════════════════════════
@@ -1777,6 +2014,131 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     .confirm-btn-danger:active:not(:disabled) { transform: translateY(0); }
 
     /* ═══════════════════════════════════════════
+       NUEVA TAREA — BOTTOM SHEET (móvil)
+    ═══════════════════════════════════════════ */
+    .tarea-bs-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(8,10,14,0.55);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      animation: overlayIn 160ms ease-out;
+    }
+    .tarea-bs-sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 301;
+      background: var(--surface, #fff);
+      border-radius: 1.25rem 1.25rem 0 0;
+      padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+      animation: bsSlideUp 260ms cubic-bezier(0.23,1,0.32,1);
+      display: flex; flex-direction: column;
+      max-height: 90dvh;
+    }
+    :host-context(.dark) .tarea-bs-sheet { background: #0d1525; }
+    .tarea-bs-handle {
+      display: block; width: 2.5rem; height: 0.25rem;
+      background: var(--border); border-radius: 99px;
+      margin: 0.75rem auto 0;
+    }
+    .tarea-bs-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.875rem 1.25rem 0.5rem;
+    }
+    .tarea-bs-title {
+      font-size: 1rem; font-weight: 700; color: var(--text-primary);
+    }
+    .tarea-bs-close {
+      display: flex; align-items: center; justify-content: center;
+      width: 2rem; height: 2rem; border-radius: 50%;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text-muted); cursor: pointer;
+    }
+    .tarea-bs-body {
+      flex: 1; overflow-y: auto; padding: 0.5rem 1.25rem 0.75rem;
+      display: flex; flex-direction: column; gap: 1.125rem;
+    }
+    .tarea-bs-field-group { display: flex; flex-direction: column; gap: 0.375rem; }
+    .tarea-bs-label {
+      font-size: 0.75rem; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .tarea-bs-optional { font-weight: 400; text-transform: none; letter-spacing: 0; }
+    .tarea-bs-input {
+      width: 100%; padding: 0.75rem 1rem;
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 0.75rem; font-family: inherit;
+      font-size: 1rem; color: var(--text-primary);
+      outline: none; transition: border-color 150ms, box-shadow 150ms;
+      box-sizing: border-box;
+    }
+    .tarea-bs-input:focus {
+      border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+    }
+    .tarea-bs-textarea { resize: none; min-height: 5rem; }
+
+    /* app-date-picker: reusa el componente compartido, se integra en el layout del form.
+       position:relative + z-index alto crean un stacking context propio para que el
+       popup del calendario se pinte SIEMPRE encima de la lista de tareas (cuyos items
+       animan transform/opacity y generan stacking contexts propios). */
+    .field-datepicker { display: block; width: 100%; position: relative; z-index: 500; }
+    .field-datepicker-bs { font-size: 1rem; }
+
+    /* Segmentado de prioridad compacto para el formulario inline de escritorio */
+    .task-form-segment { gap: 0.375rem; }
+    .task-form-segment .tarea-bs-seg-btn {
+      min-height: 2.125rem; padding: 0.375rem 0.375rem;
+      font-size: 0.75rem; border-radius: 0.5rem; gap: 0.3rem;
+    }
+
+    /* Segmentado de prioridad */
+    .tarea-bs-segment {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;
+    }
+    .tarea-bs-seg-btn {
+      display: flex; align-items: center; justify-content: center; gap: 0.375rem;
+      padding: 0.625rem 0.5rem; border-radius: 0.75rem;
+      font-size: 0.875rem; font-weight: 600; font-family: inherit;
+      background: var(--bg); border: 1.5px solid var(--border);
+      color: var(--text-secondary); cursor: pointer;
+      transition: all 140ms;
+      min-height: 2.75rem; touch-action: manipulation;
+    }
+    .tarea-bs-seg-btn.active {
+      border-color: #7c3aed; background: rgba(109,40,217,0.08);
+      color: #6d28d9;
+    }
+    :host-context(.dark) .tarea-bs-seg-btn.active { color: #a78bfa; background: rgba(109,40,217,0.15); }
+    .tarea-seg-dot {
+      width: 0.5rem; height: 0.5rem; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-baja  { background: #64748b; }
+    .dot-media { background: #f59e0b; }
+    .dot-alta  { background: #ef4444; }
+
+    /* Footer con acciones */
+    .tarea-bs-footer {
+      display: flex; gap: 0.75rem;
+      padding: 0.75rem 1.25rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .tarea-bs-btn-cancel {
+      flex: 0 0 auto; padding: 0.75rem 1.25rem;
+      background: transparent; border: 1.5px solid var(--border);
+      border-radius: 0.875rem; font-size: 0.9375rem; font-weight: 600;
+      font-family: inherit; color: var(--text-secondary); cursor: pointer;
+      min-height: 3rem; touch-action: manipulation;
+    }
+    .tarea-bs-btn-crear {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.375rem;
+      padding: 0.75rem 1.25rem;
+      background: var(--brand-purple, #6d28d9); color: #fff;
+      border: none; border-radius: 0.875rem;
+      font-size: 0.9375rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; min-height: 3rem; touch-action: manipulation;
+      transition: opacity 120ms;
+    }
+    .tarea-bs-btn-crear:disabled { opacity: 0.4; cursor: not-allowed; }
+    .tarea-bs-btn-crear:active:not(:disabled) { opacity: 0.85; }
+
+    /* ═══════════════════════════════════════════
        TAREA DRAWER (desktop)
     ═══════════════════════════════════════════ */
     .tarea-drawer-overlay {
@@ -1801,6 +2163,81 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
       from { transform: translateX(100%); opacity: 0.4; }
       to   { transform: translateX(0);    opacity: 1; }
     }
+
+    /* ═══════════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════════ */
+    .toast-wrap {
+      position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999;
+      display: flex; align-items: center; gap: 0.625rem;
+      padding: 0.75rem 1rem; border-radius: 1rem; max-width: 24rem;
+      font-size: 0.8125rem; font-weight: 500;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
+      animation: toastSlideIn 260ms var(--ease-out) both;
+    }
+    @keyframes toastSlideIn {
+      from { opacity: 0; transform: translateX(20px) scale(0.97); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    .toast-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .toast-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .toast-info    { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    :host-context(.dark) .toast-error   { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
+    :host-context(.dark) .toast-success { background: #052e16; color: #86efac; border-color: #14532d; }
+    :host-context(.dark) .toast-info    { background: #0c1a3a; color: #93c5fd; border-color: #1e3a5f; }
+
+    .toast-msg { flex: 1; }
+    .toast-action {
+      flex-shrink: 0; padding: 0.25rem 0.625rem;
+      font-size: 0.75rem; font-weight: 700; font-family: inherit;
+      color: inherit; background: rgba(0,0,0,0.06);
+      border: 1px solid currentColor; border-radius: 0.5rem;
+      cursor: pointer; white-space: nowrap;
+      transition: background 120ms;
+    }
+    .toast-action:hover { background: rgba(0,0,0,0.12); }
+    :host-context(.dark) .toast-action { background: rgba(255,255,255,0.06); }
+    :host-context(.dark) .toast-action:hover { background: rgba(255,255,255,0.12); }
+    .toast-close {
+      flex-shrink: 0; width: 1.375rem; height: 1.375rem;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0.5; cursor: pointer; border-radius: 0.375rem;
+      transition: opacity 150ms, background 150ms;
+    }
+    .toast-close:hover { opacity: 1; background: rgba(0,0,0,0.06); }
+    :host-context(.dark) .toast-close:hover { background: rgba(255,255,255,0.1); }
+
+    @media (max-width: 767px) {
+      .toast-wrap { left: 0.75rem; right: 0.75rem; max-width: none; }
+    }
+
+    /* ═══════════════════════════════════════════
+       ASISTENTES — chip removible
+    ═══════════════════════════════════════════ */
+    .avatar-chip-btn { cursor: pointer; position: relative; padding: 0; }
+    .avatar-remove-x { display: none; }
+    @media (hover: hover) {
+      .avatar-chip-btn:hover .avatar-initials { display: none; }
+      .avatar-chip-btn:hover .avatar-remove-x { display: block; }
+      .avatar-chip-btn:hover { filter: brightness(0.9); }
+    }
+
+    /* ═══════════════════════════════════════════
+       CONFIRM — variante púrpura (regenerar IA)
+    ═══════════════════════════════════════════ */
+    .confirm-icon-purple { background: rgba(109,40,217,0.1); color: var(--brand-purple); }
+    :host-context(.dark) .confirm-icon-purple { background: rgba(167,139,250,0.12); color: #a78bfa; }
+    .confirm-btn-primary { background: var(--brand-purple); color: #fff; box-shadow: 0 1px 2px rgba(109,40,217,0.3); }
+    .confirm-btn-primary:hover:not(:disabled) { background: var(--brand-purple-hover); transform: translateY(-1px); box-shadow: 0 4px 10px -2px rgba(109,40,217,0.45); }
+    .confirm-btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+    /* ═══════════════════════════════════════════
+       FOCUS VISIBLE — navegación por teclado
+    ═══════════════════════════════════════════ */
+    :where(button, input, select, textarea, [role="tab"]):focus-visible {
+      outline: 2px solid var(--brand-purple);
+      outline-offset: 2px;
+    }
   `]
 })
 export class ActaEditorPage implements OnInit, OnDestroy {
@@ -1809,7 +2246,8 @@ export class ActaEditorPage implements OnInit, OnDestroy {
   private router = inject(Router);
   private sanitizer = inject(DomSanitizer);
 
-  @ViewChild('actaTextarea') actaTextareaRef!: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('actaTextarea')  actaTextareaRef!:  ElementRef<HTMLTextAreaElement>;
+  @ViewChild('notasTextarea') notasTextareaRef!: ElementRef<HTMLTextAreaElement>;
 
   acta = signal<Acta | null>(null);
   isReadonly = computed(() => this.acta()?.estado === 'finalizada');
@@ -1824,14 +2262,22 @@ export class ActaEditorPage implements OnInit, OnDestroy {
   tareaAEliminar = signal<Tarea | null>(null);
   eliminandoTarea = signal(false);
   tareaDrawerId = signal<number | null>(null);
+  confirmRegenerar = signal(false);
+  toast = signal<{ msg: string; type: 'error' | 'success' | 'info'; action?: { label: string; fn: () => void } } | null>(null);
+  rateLimitSecondsLeft = signal(0);
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+  private rateLimitTimer: ReturnType<typeof setInterval> | null = null;
+  private prevContenido: string | null = null;
 
   hasUnsaved = signal(false);
   savedAgo = signal<string | null>(null);
   activeTab = signal<MobileTab>('notas');
   isMobileMode = signal(false);
   addingAsistente = false;
+  metaOpen = false;
   estadoOpen = false;
   actaFocused = signal(false);
+  notasFocused = signal(false);
   actaHtml = computed<SafeHtml>(() => this.markdownToHtml(this.acta()?.contenido_redactado ?? ''));
 
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1850,6 +2296,17 @@ export class ActaEditorPage implements OnInit, OnDestroy {
   onKeydown(e: KeyboardEvent) {
     if (e.ctrlKey && e.key === 's') { e.preventDefault(); if (!this.isReadonly()) this.guardar(); }
     if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); this.redactarIA(); }
+    if (e.key === 'Escape') {
+      if (this.confirmRegenerar()) this.confirmRegenerar.set(false);
+      else if (this.tareaAEliminar()) this.cancelarEliminarTarea();
+      else if (this.tareaDrawerId()) this.tareaDrawerId.set(null);
+      else if (this.estadoOpen) this.estadoOpen = false;
+    }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(e: BeforeUnloadEvent) {
+    if (this.hasUnsaved()) e.preventDefault();
   }
 
   ngOnInit() {
@@ -1874,6 +2331,8 @@ export class ActaEditorPage implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     if (this.savedAgoTimer) clearInterval(this.savedAgoTimer);
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    if (this.rateLimitTimer) clearInterval(this.rateLimitTimer);
     this.resizeObserver?.disconnect();
   }
 
@@ -1892,17 +2351,21 @@ export class ActaEditorPage implements OnInit, OnDestroy {
     else this.savedAgo.set(`hace ${Math.round(secs / 60)}min`);
   }
 
-  tipoLabel(t: string): string {
-    return ({ ancianos: 'Ancianos', trimestral: 'Trimestral', comite_servicio: 'Comité', otra: 'Otra' } as Record<string, string>)[t] || t;
-  }
-
   formatFecha(iso: string): string {
     if (!iso) return '';
     const d = new Date(iso + 'T00:00:00');
     return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  volver() { this.router.navigate(['/secretario-tools/actas-reunion']); }
+
+  volver() {
+    // Flush del autoguardado pendiente antes de salir — cumple la promesa del autosave
+    if (this.hasUnsaved() && !this.isReadonly()) {
+      if (this.saveTimer) clearTimeout(this.saveTimer);
+      this.guardar(true);
+    }
+    this.router.navigate(['/secretario-tools/actas-reunion']);
+  }
 
   guardar(auto = false) {
     const a = this.acta();
@@ -1923,21 +2386,48 @@ export class ActaEditorPage implements OnInit, OnDestroy {
         this.guardando.set(false);
         this.hasUnsaved.set(false);
         this.savedAt = new Date();
-        this.savedAgo.set('hace 0s');
+        this.savedAgo.set('justo ahora');
       },
       error: (e) => {
-        if (!auto) alert(e?.error?.detail || 'Error al guardar');
         this.guardando.set(false);
+        this.showToast(e?.error?.detail || 'No se pudieron guardar los cambios. Intenta de nuevo.', 'error');
       },
     });
   }
 
+  private showToast(msg: string, type: 'error' | 'success' | 'info' = 'info', action?: { label: string; fn: () => void }) {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.toast.set({ msg, type, action });
+    this.toastTimer = setTimeout(() => this.toast.set(null), action ? 7000 : 4000);
+  }
+
+  ejecutarToastAction() {
+    const t = this.toast();
+    this.toast.set(null);
+    t?.action?.fn();
+  }
+
   redactarIA() {
     const a = this.acta();
-    if (!a || !a.notas_originales) return;
+    if (!a || !a.notas_originales || this.redactando() || this.isReadonly() || this.rateLimitSecondsLeft() > 0) return;
+    if (a.contenido_redactado?.trim()) {
+      this.confirmRegenerar.set(true);
+      return;
+    }
+    this.ejecutarRedactarIA();
+  }
+
+  confirmarRegenerar() {
+    this.confirmRegenerar.set(false);
+    this.ejecutarRedactarIA();
+  }
+
+  private ejecutarRedactarIA() {
+    const a = this.acta();
+    if (!a) return;
+    this.prevContenido = a.contenido_redactado?.trim() ? a.contenido_redactado : null;
     this.guardar(true);
     this.redactando.set(true);
-    this.acta.update(x => x ? { ...x, contenido_redactado: '' } : x);
     this.svc.redactarIA({ id_acta: a.id_acta }).subscribe({
       next: (res) => {
         this.acta.update(x => x ? { ...x, contenido_redactado: res.contenido_redactado } : x);
@@ -1946,27 +2436,73 @@ export class ActaEditorPage implements OnInit, OnDestroy {
         this.hasUnsaved.set(true);
         this.actaFocused.set(false);
         if (this.isMobileMode()) this.activeTab.set('acta');
+        if (this.prevContenido) {
+          this.showToast('Acta generada.', 'success', { label: 'Deshacer', fn: () => this.restaurarContenidoAnterior() });
+        }
       },
-      error: (e) => { alert(e?.error?.detail || 'Error al redactar con IA'); this.redactando.set(false); },
+      error: (e) => {
+        this.redactando.set(false);
+        const detail = e?.error?.detail;
+        if (e?.status === 429 && detail && typeof detail === 'object') {
+          this.startRateLimitCountdown(detail.reset_in_seconds ?? 3600);
+          this.showToast(detail.message ?? 'Límite de generaciones alcanzado. Intenta más tarde.', 'error');
+        } else {
+          this.showToast(detail || 'No se pudo generar el acta. Intenta de nuevo.', 'error');
+        }
+      },
     });
+  }
+
+  private startRateLimitCountdown(seconds: number) {
+    if (this.rateLimitTimer) clearInterval(this.rateLimitTimer);
+    this.rateLimitSecondsLeft.set(seconds);
+    this.rateLimitTimer = setInterval(() => {
+      const left = this.rateLimitSecondsLeft() - 1;
+      if (left <= 0) {
+        this.rateLimitSecondsLeft.set(0);
+        clearInterval(this.rateLimitTimer!);
+        this.rateLimitTimer = null;
+      } else {
+        this.rateLimitSecondsLeft.set(left);
+      }
+    }, 1000);
+  }
+
+  restaurarContenidoAnterior() {
+    if (this.prevContenido === null) return;
+    const anterior = this.prevContenido;
+    this.prevContenido = null;
+    this.acta.update(x => x ? { ...x, contenido_redactado: anterior } : x);
+    this.markDirty();
+    this.showToast('Se restauró la versión anterior del acta.', 'info');
   }
 
   exportar(formato: 'pdf' | 'docx') {
     const a = this.acta();
     if (!a) return;
-    this.svc.exportar(a.id_acta, formato).subscribe(blob => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${a.titulo.replace(/\s+/g, '_')}.${formato}`;
-      link.click();
-      URL.revokeObjectURL(url);
+    this.svc.exportar(a.id_acta, formato).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${a.titulo.replace(/\s+/g, '_')}.${formato}`;
+        link.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => this.showToast(`No se pudo exportar el documento ${formato.toUpperCase()}. Intenta de nuevo.`, 'error'),
     });
   }
 
   focusActa() {
     this.actaFocused.set(true);
     setTimeout(() => this.actaTextareaRef?.nativeElement?.focus(), 0);
+  }
+
+  blurActiveTextarea() {
+    this.actaTextareaRef?.nativeElement?.blur();
+    this.notasTextareaRef?.nativeElement?.blur();
+    this.actaFocused.set(false);
+    this.notasFocused.set(false);
   }
 
   onActaBlur() {
@@ -2038,8 +2574,20 @@ export class ActaEditorPage implements OnInit, OnDestroy {
   }
 
   quitarAsistente(name: string) {
+    if (this.isReadonly()) return;
     this.asistentesArr.update(arr => arr.filter(a => a !== name));
     this.markDirty();
+    this.showToast(`Se quitó a ${name}.`, 'info', {
+      label: 'Deshacer',
+      fn: () => {
+        this.asistentesArr.update(arr => arr.includes(name) ? arr : [...arr, name]);
+        this.markDirty();
+      },
+    });
+  }
+
+  cerrarFormularioTarea() {
+    this.agregandoTarea.set(false);
   }
 
   crearTarea() {
@@ -2050,13 +2598,14 @@ export class ActaEditorPage implements OnInit, OnDestroy {
         this.tareaForm = { titulo: '', descripcion: '', prioridad: 'media', fecha_limite: null };
         this.agregandoTarea.set(false);
       },
-      error: (e) => alert(e?.error?.detail || 'Error'),
+      error: (e) => this.showToast(e?.error?.detail || 'No se pudo crear la tarea. Intenta de nuevo.', 'error'),
     });
   }
 
   cambiarEstado(t: Tarea, estado: Tarea['estado']) {
-    this.svc.actualizarEstadoTarea(t.id_tarea, estado).subscribe(updated => {
-      this.tareas.update(arr => arr.map(x => x.id_tarea === t.id_tarea ? updated : x));
+    this.svc.actualizarEstadoTarea(t.id_tarea, estado).subscribe({
+      next: (updated) => this.tareas.update(arr => arr.map(x => x.id_tarea === t.id_tarea ? updated : x)),
+      error: () => this.showToast('No se pudo actualizar el estado de la tarea.', 'error'),
     });
   }
 
@@ -2074,7 +2623,10 @@ export class ActaEditorPage implements OnInit, OnDestroy {
         this.tareaAEliminar.set(null);
         this.eliminandoTarea.set(false);
       },
-      error: () => { this.eliminandoTarea.set(false); },
+      error: () => {
+        this.eliminandoTarea.set(false);
+        this.showToast('No se pudo eliminar la tarea. Intenta de nuevo.', 'error');
+      },
     });
   }
 

@@ -6,6 +6,8 @@ import { CongregacionContextService } from '../../core/congregacion-context/cong
 import { RouterModule } from '@angular/router';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import type { EChartsOption } from 'echarts';
+import { VisitaService } from '../secretario-tools/services/visita.service';
+import { Visita } from '../secretario-tools/models/visita.model';
 import {
   trigger,
   transition,
@@ -56,7 +58,7 @@ import {
       <!-- Publicadores -->
       <div *ngIf="canViewPublicadores()" class="relative bg-white dark:bg-slate-800/95 rounded-2xl border border-gray-100 dark:border-slate-700/50 p-4 sm:p-5 md:p-6 shadow-sm shadow-black/[0.04] dark:shadow-black/30 hover:shadow-md hover:shadow-black/[0.08] dark:hover:shadow-black/40 hover:-translate-y-px transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
         <div class="mb-3">
-          <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Publicadores</p>
+          <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Publicadores Activos</p>
         </div>
         <p class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">{{ totalPublicadores() }}</p>
       </div>
@@ -67,7 +69,7 @@ import {
         <div class="flex items-center gap-1.5 flex-wrap mb-3">
           <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Informes</p>
           @if (informesPendientes() > 0) {
-            <span class="px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-[9px] font-bold text-red-600 dark:text-red-400">{{ informesPendientes() }}p</span>
+            <span title="{{ informesPendientes() }} publicadores aún no han enviado su informe" class="px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-[9px] font-bold text-red-600 dark:text-red-400">{{ informesPendientes() }} pend.</span>
           }
         </div>
         <p class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">{{ porcentajeInformes() }}<span class="text-sm font-semibold text-gray-400 dark:text-slate-500 ml-0.5">%</span></p>
@@ -90,7 +92,7 @@ import {
         <div class="relative bg-white dark:bg-slate-800/95 rounded-2xl border border-gray-100 dark:border-slate-700/50 p-4 sm:p-5 md:p-6 shadow-sm shadow-black/[0.04] dark:shadow-black/30 hover:shadow-md hover:shadow-black/[0.08] dark:hover:shadow-black/40 hover:-translate-y-px transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
 
           <div class="mb-3">
-            <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Hrs. Precursores</p>
+            <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Horas Precursores</p>
           </div>
           <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             @if (horasPrecursoresRegulares() === 0 && horasPrecursoresAuxiliares() === 0) {
@@ -98,20 +100,48 @@ import {
             }
             @if (horasPrecursoresRegulares() > 0) {
               <span class="text-xl sm:text-3xl font-bold text-violet-600 dark:text-violet-400 tabular-nums tracking-tight">{{ horasPrecursoresRegulares() }}</span>
-              <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">Reg.</span>
+              <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">Hrs Reg.</span>
             }
             @if (horasPrecursoresRegulares() > 0 && horasPrecursoresAuxiliares() > 0) {
               <span class="text-gray-200 dark:text-slate-600 hidden sm:inline">·</span>
             }
             @if (horasPrecursoresAuxiliares() > 0) {
               <span class="text-lg sm:text-2xl font-bold text-violet-500 dark:text-violet-400 tabular-nums tracking-tight">{{ horasPrecursoresAuxiliares() }}</span>
-              <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">Aux.</span>
+              <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">Hrs Aux.</span>
             }
           </div>
         </div>
       }
 
     </div>
+
+    <!-- 2.5 Próxima visita del superintendente -->
+    @if (proximaVisita() !== null) {
+      <div class="relative bg-white dark:bg-slate-800/95 rounded-2xl border border-gray-100 dark:border-slate-700/50 p-4 sm:p-5 md:p-6 shadow-sm shadow-black/[0.04] dark:shadow-black/30 hover:shadow-md hover:shadow-black/[0.08] dark:hover:shadow-black/40 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-xl bg-violet-100 dark:bg-violet-500/15 border border-violet-200/70 dark:border-violet-500/20 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Próxima visita del superintendente</p>
+              <p class="text-sm sm:text-base font-bold text-gray-900 dark:text-white mt-0.5 truncate">
+                {{ proximaVisita()!.fechaTexto }}<span *ngIf="proximaVisita()!.nombreSC"> · {{ proximaVisita()!.nombreSC }}</span>
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 self-start sm:self-auto shrink-0">
+            <div class="text-right">
+              <p class="text-xl sm:text-2xl font-bold text-violet-600 dark:text-violet-400 tabular-nums leading-none">{{ proximaVisita()!.diasRestantes }}</p>
+              <p class="text-[9px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider mt-0.5">{{ proximaVisita()!.diasRestantes === 1 ? 'día' : 'días' }}</p>
+            </div>
+            <a [routerLink]="proximaVisita()!.link" class="hidden sm:flex items-center justify-center w-9 h-9 rounded-lg bg-violet-50 dark:bg-violet-500/10 hover:bg-violet-600 dark:hover:bg-violet-600 border border-violet-100 dark:border-violet-500/20 hover:border-violet-600 transition-all duration-300 group">
+              <svg class="w-4 h-4 text-violet-600 dark:text-violet-400 group-hover:text-white transition-colors duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    }
 
     <!-- 3. Gráficos — stack mobile · side-by-side md+ -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -176,7 +206,7 @@ import {
         <div class="bg-white dark:bg-slate-800/95 rounded-2xl border border-gray-100 dark:border-slate-700/50 p-5 shadow-sm shadow-black/[0.04] dark:shadow-black/30">
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
             <div>
-              <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">% Informes recibidos</p>
+              <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Informes Recibidos</p>
               <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 font-medium">Año de servicio actual</p>
             </div>
           </div>
@@ -264,6 +294,7 @@ export class HomePage implements OnInit {
   private store = inject(AuthStore);
   private http = inject(HttpClient);
   private congregacionContext = inject(CongregacionContextService);
+  private visitaService = inject(VisitaService);
 
   userName = signal('Usuario');
   currentDate = signal('');
@@ -286,11 +317,14 @@ export class HomePage implements OnInit {
 
   informesChartOption = signal<EChartsOption | null>(null);
 
+  proximaVisita = signal<{ fechaTexto: string; diasRestantes: number; nombreSC: string | null; link: string | null } | null>(null);
+
   canViewPublicadores = signal(false);
   canManagePublicadores = signal(false);
   canViewInformes = signal(false);
   canManageInformes = signal(false);
   canViewReuniones = signal(false);
+  canManageVisitaSC = signal(false);
 
   ngOnInit() {
    const user = this.store.user();
@@ -301,6 +335,7 @@ export class HomePage implements OnInit {
      const rolesManagePublicadores = ['Administrador', 'Gestor Aplicación', 'Secretario', 'Coordinador'];
      const rolesInformes = ['Administrador', 'Gestor Aplicación', 'Secretario', 'Coordinador', 'Publicador', 'Superintendente de servicio'];
      const rolesManageInformes = ['Administrador', 'Gestor Aplicación', 'Secretario', 'Coordinador'];
+     const rolesGestionVisitaSC = ['Administrador', 'Secretario'];
 
      const currentRole = user.rol || '';
 
@@ -309,6 +344,7 @@ export class HomePage implements OnInit {
      this.canViewInformes.set(rolesInformes.includes(currentRole));
      this.canManageInformes.set(rolesManageInformes.includes(currentRole));
      this.canViewReuniones.set(this.store.hasPermission('reuniones.ver'));
+     this.canManageVisitaSC.set(rolesGestionVisitaSC.includes(currentRole));
 
      const congregacionId = this.congregacionContext.effectiveCongregacionId();
 
@@ -319,6 +355,11 @@ export class HomePage implements OnInit {
         this.loadInformesStats(congregacionId);
         this.loadAsistenciaStats(congregacionId);
         this.loadInformesChart(congregacionId);
+     }
+     if (this.canManageVisitaSC()) {
+        this.loadProximaVisita(congregacionId);
+     } else {
+        this.loadProximaVisitaColaborador();
      }
    }
 
@@ -591,8 +632,6 @@ export class HomePage implements OnInit {
       },
       yAxis: {
         type: 'value',
-        min: 0,
-        max: 100,
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: { show: false },
@@ -610,8 +649,7 @@ export class HomePage implements OnInit {
         formatter: (params: any) => {
           const d = params[0];
           const m = meses[d.dataIndex];
-          const color = m.pct >= 80 ? '#10b981' : m.pct >= 60 ? '#f97316' : '#ef4444';
-          return `<div style="font-size:10px;letter-spacing:.05em;opacity:.6;margin-bottom:4px">${m.label}</div><span style="color:${color};font-size:15px;font-weight:700">${m.pct}%</span><br/><span style="opacity:.6;font-size:10px">${m.recibidos} / ${m.total} informes</span>`;
+          return `<div style="font-size:10px;letter-spacing:.05em;opacity:.6;margin-bottom:4px">${m.label}</div><span style="color:#10b981;font-size:15px;font-weight:700">${m.recibidos}</span><span style="opacity:.6;font-size:10px"> informes recibidos</span>`;
         },
         axisPointer: { type: 'none' },
       },
@@ -619,20 +657,17 @@ export class HomePage implements OnInit {
         {
           name: 'Informes recibidos',
           type: 'bar',
-          data: meses.map(m => {
-            const color = m.pct >= 80 ? '#10b981' : m.pct >= 60 ? '#f97316' : '#ef4444';
-            return {
-              value: m.pct,
-              itemStyle: { color, borderRadius: [3, 3, 0, 0] },
-              label: { show: true, color },
-            };
-          }),
+          data: meses.map(m => ({
+            value: m.recibidos,
+            itemStyle: { color: '#10b981', borderRadius: [3, 3, 0, 0] },
+            label: { show: true, color: '#10b981' },
+          })),
           barMaxWidth: 28,
           barCategoryGap: '45%',
           label: {
             show: true,
             position: 'top',
-            formatter: (params: any) => `${meses[params.dataIndex].pct}%`,
+            formatter: (params: any) => `${meses[params.dataIndex].recibidos}`,
             fontSize: 9,
             fontWeight: 700,
             fontFamily: "'JetBrains Mono', monospace",
@@ -640,6 +675,47 @@ export class HomePage implements OnInit {
         }
       ]
     };
+  }
+
+  private loadProximaVisita(congregacionId: number | null | undefined) {
+    if (!congregacionId) return;
+    this.visitaService.list(congregacionId).subscribe({
+      next: (visitas) => this.aplicarProximaVisita(visitas, '/secretario-tools/visita-superintendente'),
+      error: err => console.error('Error cargando visita del superintendente', err)
+    });
+  }
+
+  private loadProximaVisitaColaborador() {
+    this.visitaService.misColaboraciones().subscribe({
+      next: (visitas) => this.aplicarProximaVisita(visitas, '/herramientas/visita-colaborador'),
+      error: () => {} // no es colaborador de ninguna visita; sin card, sin ruido en consola
+    });
+  }
+
+  private aplicarProximaVisita(visitas: Visita[], link: string) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const futuras = visitas
+      .filter(v => new Date(v.fecha_inicio) >= hoy)
+      .sort((a, b) => new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime());
+    if (futuras.length === 0) return;
+
+    const proxima = futuras[0];
+    const fechaInicio = new Date(proxima.fecha_inicio);
+
+    // Solo se muestra desde el primer día del mes anterior al de la visita
+    // (o antes, si la visita cae en el mes en curso) hasta la fecha de la visita.
+    const inicioVentana = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() - 1, 1);
+    if (hoy < inicioVentana) return;
+
+    const diasRestantes = Math.round((fechaInicio.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+
+    this.proximaVisita.set({
+      fechaTexto: fechaInicio.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
+      diasRestantes,
+      nombreSC: proxima.nombre_superintendente ?? null,
+      link
+    });
   }
 
   delta(actual: number, anterior: number): number {

@@ -91,16 +91,18 @@ export class UsuariosService {
       return this.http.get<any[]>('/api/publicadores/', { params });
    }
 
-   // ---- Endpoints seguros para Coordinador/Secretario ----
+   // ---- Endpoints seguros para Coordinador/Secretario/Admin ----
 
    /**
-    * Obtiene usuarios de la congregación del usuario logueado.
-    * Solo devuelve usuarios con rol "Usuario Publicador".
-    * Requiere rol Coordinador o Secretario.
+    * Obtiene usuarios de una congregación.
+    * Coordinador/Secretario quedan limitados a la suya (el backend ignora
+    * idCongregacion para ellos); Administrador/Gestor Aplicación deben
+    * indicar idCongregacion explícitamente (no tienen congregación propia).
     */
-   getUsuariosMiCongregacion(q?: string): Observable<Usuario[]> {
+   getUsuariosMiCongregacion(q?: string, idCongregacion?: number): Observable<Usuario[]> {
       let params: any = {};
       if (q) params.q = q;
+      if (idCongregacion) params.id_congregacion = idCongregacion;
       return this.http.get<Usuario[]>(`${this.API_URL}mi-congregacion`, { params });
    }
 

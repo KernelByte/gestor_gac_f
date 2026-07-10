@@ -10,10 +10,12 @@ import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ReunionesService } from '../services/reuniones.service';
 import { AsistenciaService, CongregacionConfig } from '../services/asistencia.service';
 import { LogisticaService } from '../services/logistica.service';
+import { DiscursosService } from '../services/discursos.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AsignacionDraft, ProgramaSemana } from '../models/reuniones.models';
 import { LogisticaItemOut, LogisticaAseoOut } from '../models/logistica.models';
+import { DiscursoEntranteOut } from '../models/discursos.models';
 
 // ─────────────────────────────────────────────
 // Interfaces
@@ -120,6 +122,14 @@ const SECTION_DEFAULT = {
   iconPath: 'M4 6h16M4 12h16M4 18h7',
 };
 
+// Nombres legibles para códigos de sección de la BD
+const SECCION_LABELS: Record<string, string> = {
+  tesoros: 'Tesoros de la Biblia',
+  seamos_mejores: 'Seamos Mejores Maestros',
+  nuestra_vida: 'Nuestra Vida Cristiana',
+  fds_principal: 'Programa de la Reunión',
+};
+
 // ─────────────────────────────────────────────
 // Componente
 // ─────────────────────────────────────────────
@@ -218,9 +228,9 @@ const SECTION_DEFAULT = {
 
       <!-- ── Header: info de la reunión ── -->
       <div class="header-card fade-in">
-        <!-- Row 1: tipo + badge fecha -->
+        <!-- Row 1: tipo (eyebrow) + badge fecha -->
         <div class="header-top-row">
-          <div class="tipo-badge">
+          <p class="tipo-eyebrow">
             <svg class="tipo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <ng-container *ngIf="nextMeeting()!.tipo === 'entre_semana'">
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -234,7 +244,7 @@ const SECTION_DEFAULT = {
               </ng-container>
             </svg>
             <span>{{ nextMeeting()!.tipoLabel }}</span>
-          </div>
+          </p>
           <span class="date-badge" [ngClass]="getDateBadgeClass(nextMeeting()!.dateLabel)">
             {{ nextMeeting()!.dateLabel }}
           </span>
@@ -260,14 +270,32 @@ const SECTION_DEFAULT = {
         </div>
       </div>
 
+      <!-- ── Discurso público (solo fin de semana) ── -->
+      <section *ngIf="discursoInvitado() as disc" class="discurso-card fade-in">
+        <p class="discurso-eyebrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+          </svg>
+          <span>Discurso Público</span>
+        </p>
+        <h3 class="discurso-tema">{{ disc.titulo_discurso || 'Tema por confirmar' }}</h3>
+        <p class="discurso-meta">
+          <span class="discurso-orador">{{ disc.nombre_orador || 'Orador por confirmar' }}</span>
+          <ng-container *ngIf="disc.congregacion_origen">
+            <span class="discurso-meta-sep" aria-hidden="true">·</span>
+            <span class="discurso-cong">{{ disc.congregacion_origen }}</span>
+          </ng-container>
+        </p>
+      </section>
+
       <!-- ── Banner: mis partes / sin partes ── -->
       <div *ngIf="misPartes().length === 0" class="banner-sin-partes fade-in">
         <svg class="banner-sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
         </svg>
         <div class="banner-sp-body">
-          <p class="banner-sp-title">Sin partes esta semana</p>
-          <p class="banner-sp-sub">Puedes asistir como oyente. Nos vemos el <strong>{{ nextMeeting()!.dateFormatted }}</strong>.</p>
+          <p class="banner-sp-title">No tienes partes asignadas</p>
+          <p class="banner-sp-sub">Puedes asistir como oyente.</p>
         </div>
       </div>
 
@@ -303,7 +331,7 @@ const SECTION_DEFAULT = {
                    [style.color]="grupo.color">
                 <path [attr.d]="grupo.iconPath"/>
               </svg>
-              <h3 class="seccion-titulo" [style.color]="grupo.color">{{ grupo.seccion }}</h3>
+              <h3 class="seccion-titulo" [style.color]="grupo.color">{{ humanizeSeccion(grupo.seccion) }}</h3>
             </div>
           </header>
 
@@ -408,17 +436,14 @@ const SECTION_DEFAULT = {
       </ng-container>
 
       <!-- ── Logística de la reunión ── -->
-      <section class="logistica-card"
+      <section class="seccion-card logistica-card"
                [style.animation-delay]="(partesAgrupadas().length * 50 + 120) + 'ms'">
-        <header class="logistica-header">
-          <div class="logistica-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <header class="seccion-header logistica-header">
+          <div class="seccion-header-left">
+            <svg class="seccion-icon logistica-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
             </svg>
-          </div>
-          <div class="logistica-header-text">
-            <h3 class="logistica-titulo">Logística de la reunión</h3>
-            <p class="logistica-sub">Asignaciones de apoyo durante la reunión</p>
+            <h3 class="seccion-titulo logistica-titulo">Logística de la reunión</h3>
           </div>
         </header>
 
@@ -642,27 +667,23 @@ const SECTION_DEFAULT = {
 
     .header-top-row {
       display: flex; align-items: center;
-      flex-wrap: wrap; gap: 6px;
+      justify-content: space-between;
+      flex-wrap: wrap; gap: 6px 12px;
       margin-bottom: 12px;
     }
 
-    .tipo-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 12px;
-      border-radius: 8px;
-      background: rgba(109, 40, 217, 0.12);
-      border: 1px solid rgba(109, 40, 217, 0.22);
-      color: #5b21b6;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
+    .tipo-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      margin: 0;
+      font-size: 0.6875rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #6d28d9;
+      font-family: 'Urbanist', sans-serif;
     }
-    :host-context(.dark) .tipo-badge {
-      background: rgba(167, 139, 250, 0.16);
-      border-color: rgba(167, 139, 250, 0.28);
-      color: #c4b5fd;
-    }
-    .tipo-icon { width: 13px; height: 13px; }
+    :host-context(.dark) .tipo-eyebrow { color: #c4b5fd; }
+    .tipo-icon { width: 14px; height: 14px; flex-shrink: 0; }
 
     .date-badge {
       display: inline-flex; align-items: center;
@@ -750,6 +771,63 @@ const SECTION_DEFAULT = {
     :host-context(.dark) .meta-pill {
       background: rgba(255, 255, 255, 0.05);
       color: var(--text-3);
+    }
+
+    /* ──────────────────────────────────────────
+       DISCURSO PÚBLICO (bloque destacado)
+    ────────────────────────────────────────── */
+    .discurso-card {
+      background: rgba(37, 99, 235, 0.035);
+      border: 1px solid rgba(37, 99, 235, 0.16);
+      border-radius: var(--radius-card);
+      padding: 14px 16px 15px;
+    }
+    :host-context(.dark) .discurso-card {
+      background: rgba(96, 165, 250, 0.06);
+      border-color: rgba(96, 165, 250, 0.18);
+    }
+    @media (min-width: 640px) { .discurso-card { padding: 18px 22px 19px; } }
+
+    .discurso-eyebrow {
+      display: flex; align-items: center; gap: 7px;
+      margin: 0 0 8px;
+      font-size: 0.6875rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #2563eb;
+      font-family: 'Urbanist', sans-serif;
+    }
+    :host-context(.dark) .discurso-eyebrow { color: #60a5fa; }
+    .discurso-eyebrow svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    .discurso-tema {
+      margin: 0 0 6px;
+      font-size: 1.1875rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.25;
+      letter-spacing: -0.018em;
+      font-family: 'Urbanist', sans-serif;
+      overflow-wrap: break-word;
+    }
+    @media (min-width: 640px) { .discurso-tema { font-size: 1.375rem; } }
+
+    .discurso-meta {
+      display: flex; align-items: baseline; gap: 7px;
+      flex-wrap: wrap;
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.45;
+    }
+    .discurso-orador {
+      font-weight: 700;
+      color: var(--text-2);
+    }
+    .discurso-meta-sep { color: var(--text-3); }
+    .discurso-cong {
+      color: var(--text-3);
+      font-weight: 500;
     }
 
     /* ──────────────────────────────────────────
@@ -1173,61 +1251,33 @@ const SECTION_DEFAULT = {
        LOGÍSTICA
     ────────────────────────────────────────── */
     .logistica-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-card);
-      padding: 16px;
-      margin-top: 10px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-      animation: fadeUp 240ms var(--ease-out) both;
-    }
-    :host-context(.dark) .logistica-card {
-      box-shadow: 0 4px 14px rgba(0,0,0,0.20);
+      margin-top: 6px;
     }
     @media (min-width: 640px) {
-      .logistica-card { padding: 20px; margin-top: 14px; }
+      .logistica-card { margin-top: 10px; }
     }
 
     .logistica-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
+      background: rgba(28, 92, 102, 0.07);
+      border-bottom-color: rgba(28, 92, 102, 0.22);
     }
-    .logistica-icon-wrap {
-      width: 36px; height: 36px;
-      flex-shrink: 0;
-      border-radius: 10px;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: rgba(28, 92, 102, 0.14);
-      color: #1c5c66;
-      border: 1px solid rgba(28, 92, 102, 0.22);
+    :host-context(.dark) .logistica-header {
+      background: rgba(94, 181, 194, 0.13);
+      border-bottom-color: rgba(94, 181, 194, 0.22);
     }
-    :host-context(.dark) .logistica-icon-wrap {
-      background: rgba(94, 181, 194, 0.16);
-      color: #7dd3df;
-      border-color: rgba(94, 181, 194, 0.30);
-    }
-    .logistica-icon-wrap svg { width: 18px; height: 18px; }
-    .logistica-header-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .logistica-titulo {
-      margin: 0;
-      font-size: 0.9375rem;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: -0.005em;
-    }
-    .logistica-sub {
-      margin: 0;
-      font-size: 0.6875rem;
-      color: var(--text-3);
-      line-height: 1.3;
-    }
+    .logistica-icon { color: #1c5c66; }
+    .logistica-titulo { color: #1c5c66; }
+    :host-context(.dark) .logistica-icon,
+    :host-context(.dark) .logistica-titulo { color: #7dd3df; }
 
     .logistica-groups {
       display: flex;
       flex-direction: column;
       gap: 14px;
+      padding: 12px 16px 14px;
+    }
+    @media (min-width: 640px) {
+      .logistica-groups { padding: 14px 20px 16px; }
     }
     .logistica-group + .logistica-group {
       padding-top: 14px;
@@ -1307,15 +1357,11 @@ const SECTION_DEFAULT = {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 14px;
-      border-radius: 10px;
-      background: var(--surface-2, rgba(15,23,42,0.03));
+      padding: 16px;
       color: var(--text-3);
       font-size: 0.8125rem;
     }
-    :host-context(.dark) .logistica-empty {
-      background: rgba(255,255,255,0.04);
-    }
+    @media (min-width: 640px) { .logistica-empty { padding: 18px 20px; } }
     .logistica-empty svg {
       width: 18px; height: 18px;
       flex-shrink: 0;
@@ -1358,6 +1404,7 @@ export class ReunionesResumenComponent {
   private reunionesService = inject(ReunionesService);
   private asistenciaService = inject(AsistenciaService);
   private logisticaService = inject(LogisticaService);
+  private discursosService = inject(DiscursosService);
   private authStore = inject(AuthStore);
   private congregacionCtx = inject(CongregacionContextService);
 
@@ -1369,6 +1416,7 @@ export class ReunionesResumenComponent {
   programa = signal<ProgramaSemana | null>(null);
   logistica = signal<LogisticaData | null>(null);
   logisticaNoPublicada = signal(false);
+  discursoInvitado = signal<DiscursoEntranteOut | null>(null);
   private scrollDone = false;
 
   // ─── Computed ───
@@ -1577,6 +1625,11 @@ export class ReunionesResumenComponent {
     return 'date-pronto';
   }
 
+  humanizeSeccion(seccion: string): string {
+    const key = seccion.trim().toLowerCase();
+    return SECCION_LABELS[key] ?? seccion.replace(/_/g, ' ');
+  }
+
   extraerNumero(nombre?: string): string {
     const match = (nombre ?? '').match(/^(\d+)\./);
     return match ? match[1] : '';
@@ -1674,6 +1727,7 @@ export class ReunionesResumenComponent {
     this.nextMeeting.set(null);
     this.logistica.set(null);
     this.logisticaNoPublicada.set(false);
+    this.discursoInvitado.set(null);
 
     if (!idCong) {
       this.error.set('Selecciona una congregación para ver el resumen de la reunión.');
@@ -1688,7 +1742,7 @@ export class ReunionesResumenComponent {
           const next = this.computeNextMeeting(config);
           if (!next) {
             this.noPublicado.set(true);
-            return of({ prog: null as ProgramaSemana | null, log: null as LogisticaData | null });
+            return of({ prog: null as ProgramaSemana | null, log: null as LogisticaData | null, disc: null as DiscursoEntranteOut | null });
           }
           this.nextMeeting.set(next);
           const ano = next.fecha.getFullYear();
@@ -1724,14 +1778,21 @@ export class ReunionesResumenComponent {
             catchError(() => of(null as LogisticaData | null)),
           );
 
-          return forkJoin({ prog: prog$, log: log$ });
+          const disc$ = tipo === 'fin_semana'
+            ? this.discursosService.getMes(ano, mes, idCong).pipe(
+                map(mesData => mesData.entrantes.find(e => e.fecha === fechaIso) ?? null),
+                catchError(() => of(null as DiscursoEntranteOut | null)),
+              )
+            : of(null as DiscursoEntranteOut | null);
+
+          return forkJoin({ prog: prog$, log: log$, disc: disc$ });
         }),
         catchError(() => {
           this.error.set('No se pudo cargar la información. Verifica tu conexión e intenta de nuevo.');
-          return of({ prog: null as ProgramaSemana | null, log: null as LogisticaData | null });
+          return of({ prog: null as ProgramaSemana | null, log: null as LogisticaData | null, disc: null as DiscursoEntranteOut | null });
         })
       )
-      .subscribe(({ prog, log }) => {
+      .subscribe(({ prog, log, disc }) => {
         if (prog) {
           this.programa.set(prog);
         } else if (!this.noPublicado()) {
@@ -1744,6 +1805,7 @@ export class ReunionesResumenComponent {
           this.logistica.set(null);
           this.logisticaNoPublicada.set(true);
         }
+        this.discursoInvitado.set(disc ?? null);
         this.loading.set(false);
       });
   }

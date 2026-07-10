@@ -275,37 +275,49 @@ type ToastType = 'error' | 'success' | 'info';
         @else {
           <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
             @for (a of filtradas(); track a.id_acta; let i = $index) {
-              <button type="button"
-                      (click)="abrir(a)"
-                      class="acta-card group text-left"
-                      [style.--stagger]="i * 35 + 'ms'">
-                <div class="card-glow"></div>
-                <div class="flex items-center justify-between gap-3 mb-3 relative z-10">
-                  <div class="acta-icon">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <div class="acta-card-wrap">
+                <button type="button"
+                        (click)="abrir(a)"
+                        class="acta-card group text-left"
+                        [class.acta-card--draft]="a.estado !== 'finalizada'"
+                        [style.--stagger]="i * 35 + 'ms'">
+                  <div class="card-glow"></div>
+                  <div class="flex items-center justify-between gap-3 mb-3 relative z-10 card-top-row">
+                    <div class="acta-icon">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <span class="badge" [class.badge-emerald]="a.estado === 'finalizada'" [class.badge-amber]="a.estado !== 'finalizada'">
+                      <span class="badge-dot"></span>
+                      {{ a.estado === 'finalizada' ? 'Finalizada' : 'Borrador' }}
+                    </span>
                   </div>
-                  <span class="badge" [class.badge-emerald]="a.estado === 'finalizada'" [class.badge-amber]="a.estado !== 'finalizada'">
-                    <span class="badge-dot"></span>
-                    {{ a.estado === 'finalizada' ? 'Finalizada' : 'Borrador' }}
-                  </span>
-                </div>
 
-                <div class="acta-card-body relative z-10">
-                  <h3 class="card-title line-clamp-2">{{ a.titulo }}</h3>
-                  <p class="card-tipo">{{ tipoLabel[a.tipo_reunion] }}</p>
-                </div>
+                  <div class="acta-card-body relative z-10">
+                    <h3 class="card-title line-clamp-2">{{ a.titulo }}</h3>
+                    <p class="card-tipo">{{ tipoLabel[a.tipo_reunion] }}</p>
+                  </div>
 
-                <div class="acta-card-footer relative z-10">
-                  <span class="card-date">
-                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    {{ formatFecha(a.fecha_reunion) }}
-                  </span>
-                  <span class="card-open-link">
-                    Abrir
-                    <svg class="card-open-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                  </span>
-                </div>
-              </button>
+                  <div class="acta-card-footer relative z-10">
+                    <span class="card-date">
+                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                      {{ formatFecha(a.fecha_reunion) }}
+                    </span>
+                    <span class="card-open-link">
+                      Abrir
+                      <svg class="card-open-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </span>
+                  </div>
+                </button>
+
+                <!-- Solo borradores: eliminar (por si se creó por error) -->
+                @if (a.estado !== 'finalizada') {
+                  <button type="button" class="card-delete-btn"
+                          (click)="pedirEliminar(a, $event)"
+                          aria-label="Eliminar borrador" title="Eliminar borrador">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                }
+              </div>
             }
 
             <!-- Tarjeta "nueva acta" — oculta cuando hay búsqueda activa -->
@@ -338,6 +350,31 @@ type ToastType = 'error' | 'success' | 'info';
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
       </svg>
     </button>
+
+    <!-- ───────── MODAL: Eliminar borrador ───────── -->
+    @if (actaAEliminar(); as aDel) {
+      <div class="confirm-overlay" (click)="actaAEliminar.set(null)">
+        <div class="confirm-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <div class="confirm-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </div>
+          <h3 class="confirm-title">Eliminar borrador</h3>
+          <p class="confirm-message">Se eliminará esta acta de forma permanente. Esta acción no se puede deshacer.</p>
+          <p class="confirm-target">{{ aDel.titulo }}</p>
+          <div class="confirm-actions">
+            <button class="confirm-btn confirm-btn-ghost" type="button" (click)="actaAEliminar.set(null)" [disabled]="eliminando()">Cancelar</button>
+            <button class="confirm-btn confirm-btn-danger" type="button" (click)="eliminarConfirmado()" [disabled]="eliminando()">
+              @if (eliminando()) {
+                <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                Eliminando…
+              } @else {
+                Eliminar
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
 
   </div>
   `,
@@ -972,6 +1009,84 @@ type ToastType = 'error' | 'success' | 'info';
       .mobile-fab-nueva:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(109,40,217,0.55), 0 2px 8px rgba(0,0,0,0.15); }
     }
     .mobile-fab-nueva:active { transform: scale(0.9); box-shadow: 0 2px 8px rgba(109,40,217,0.3); }
+
+    /* ── Card wrapper + botón eliminar (solo borradores) ── */
+    .acta-card-wrap { position: relative; }
+    /* Reserva espacio a la derecha del badge para que no lo tape el botón eliminar */
+    .acta-card--draft .card-top-row { padding-right: 1.875rem; }
+
+    .card-delete-btn {
+      position: absolute; top: 0.625rem; right: 0.625rem; z-index: 6;
+      display: flex; align-items: center; justify-content: center;
+      width: 1.875rem; height: 1.875rem; border-radius: 0.5rem;
+      background: transparent; color: #94a3b8; cursor: pointer;
+      transition: background 150ms var(--ease-out), color 150ms var(--ease-out), opacity 150ms var(--ease-out);
+    }
+    /* Desktop: aparece al hacer hover sobre la tarjeta (menos ruido visual) */
+    @media (hover: hover) and (pointer: fine) {
+      .card-delete-btn { opacity: 0; }
+      .acta-card-wrap:hover .card-delete-btn, .card-delete-btn:focus-visible { opacity: 1; }
+      .card-delete-btn:hover { background: #fef2f2; color: var(--brand-rose); }
+      :host-context(.dark) .card-delete-btn:hover { background: rgba(244,63,94,0.14); color: #fda4af; }
+    }
+    /* Touch: siempre visible (no hay hover) */
+    @media (hover: none) {
+      .card-delete-btn { opacity: 1; background: rgba(148,163,184,0.1); }
+      .card-delete-btn:active { background: rgba(244,63,94,0.14); color: var(--brand-rose); transform: scale(0.92); }
+    }
+
+    /* ── Confirm modal (eliminar) ── */
+    .confirm-overlay {
+      position: fixed; inset: 0; z-index: 9998;
+      display: flex; align-items: center; justify-content: center; padding: 1rem;
+      background: rgba(8,10,14,0.55);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      animation: cfOverlayIn 160ms ease-out;
+    }
+    @keyframes cfOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+    .confirm-dialog {
+      width: 100%; max-width: 360px;
+      background: #fff; border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 1rem; padding: 1.5rem 1.5rem 1.25rem;
+      box-shadow: 0 20px 50px -12px rgba(0,0,0,0.35);
+      text-align: center; animation: cfDialogIn 200ms var(--ease-out);
+    }
+    :host-context(.dark) .confirm-dialog { background: #0f172a; border-color: #1e293b; }
+    @keyframes cfDialogIn { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
+
+    .confirm-icon-wrap {
+      width: 44px; height: 44px; margin: 0 auto 0.875rem;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: rgba(244,63,94,0.1); color: var(--brand-rose);
+    }
+    .confirm-title { font-size: 1.0625rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem; }
+    :host-context(.dark) .confirm-title { color: #f1f5f9; }
+    .confirm-message { font-size: 0.8125rem; color: #64748b; margin: 0 0 0.625rem; line-height: 1.5; }
+    :host-context(.dark) .confirm-message { color: #94a3b8; }
+    .confirm-target {
+      font-size: 0.8125rem; color: #1e293b; margin: 0 0 1.25rem; font-weight: 600;
+      padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.03); border-radius: 0.5rem;
+      word-break: break-word;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    :host-context(.dark) .confirm-target { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+
+    .confirm-actions { display: flex; gap: 0.5rem; }
+    .confirm-btn {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
+      padding: 0.625rem 1rem; border-radius: 0.75rem; min-height: 2.75rem;
+      font-size: 0.8125rem; font-weight: 600; font-family: inherit;
+      border: 1px solid transparent; cursor: pointer;
+      transition: background 140ms var(--ease-out), transform 140ms var(--ease-out);
+    }
+    .confirm-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .confirm-btn:active:not(:disabled) { transform: scale(0.97); }
+    .confirm-btn-ghost { background: transparent; border-color: #e2e8f0; color: #475569; }
+    .confirm-btn-ghost:hover:not(:disabled) { background: rgba(0,0,0,0.04); }
+    :host-context(.dark) .confirm-btn-ghost { border-color: #334155; color: #cbd5e1; }
+    :host-context(.dark) .confirm-btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
+    .confirm-btn-danger { background: var(--brand-rose); color: #fff; box-shadow: 0 1px 2px rgba(244,63,94,0.3); }
+    .confirm-btn-danger:hover:not(:disabled) { background: #e11d48; }
   `]
 })
 export class ActasListPage implements OnInit {
@@ -989,6 +1104,9 @@ export class ActasListPage implements OnInit {
   tipoLabel = TIPO_LABEL;
 
   toast = signal<{ msg: string; type: ToastType } | null>(null);
+
+  actaAEliminar = signal<Acta | null>(null);
+  eliminando    = signal(false);
 
   /** Valor vinculado al input (reactivo inmediato para ngModel) */
   busqueda = signal('');
@@ -1151,6 +1269,30 @@ export class ActasListPage implements OnInit {
 
   abrir(a: Acta) {
     this.router.navigate(['/secretario-tools/actas-reunion', a.id_acta]);
+  }
+
+  pedirEliminar(a: Acta, e: Event) {
+    e.stopPropagation();   // no abrir la tarjeta
+    if (a.estado === 'finalizada') return;   // solo borradores
+    this.actaAEliminar.set(a);
+  }
+
+  eliminarConfirmado() {
+    const a = this.actaAEliminar();
+    if (!a || this.eliminando()) return;
+    this.eliminando.set(true);
+    this.svc.remove(a.id_acta).subscribe({
+      next: () => {
+        this.actas.update(list => list.filter(x => x.id_acta !== a.id_acta));
+        this.eliminando.set(false);
+        this.actaAEliminar.set(null);
+        this.showToast('Borrador eliminado.', 'success');
+      },
+      error: (err) => {
+        this.eliminando.set(false);
+        this.showToast(err?.error?.detail || 'No se pudo eliminar el acta. Intenta de nuevo.', 'error');
+      },
+    });
   }
 
   formatFecha(iso: string): string {

@@ -12,6 +12,22 @@ import { forkJoin, of, lastValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { saveAs } from 'file-saver';
 
+type MeetingStatus = 'today' | 'next' | 'past' | 'future' | 'none';
+interface MeetingCardInfo {
+  longLabel: string;
+  status: MeetingStatus;
+}
+
+// Semana calendario (lunes-domingo). Los slots son los índices 0-based de las
+// columnas semana_01..05 por tipo (ocurrencia dentro del mes), que es como se
+// almacena en BD; la agrupación por semana calendario es solo presentacional.
+interface CalendarWeek {
+  midweekFecha: string | null;
+  weekendFecha: string | null;
+  midweekSlot: number | null;
+  weekendSlot: number | null;
+}
+
 @Component({
   standalone: true,
   selector: 'app-reuniones-asistencia',
@@ -173,11 +189,12 @@ import { saveAs } from 'file-saver';
             <div class="flex gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl w-full sm:w-auto">
               @for (week of weeksArray(); track week) {
                 <button (click)="selectWeek(week)"
-                        class="press-btn flex-1 sm:flex-none sm:min-w-[2.75rem] h-9 px-1 rounded-xl relative flex flex-col items-center justify-center gap-0.5"
+                        class="press-btn flex-1 sm:flex-none sm:min-w-[3.1rem] h-9 px-1 rounded-xl relative flex flex-col items-center justify-center gap-0.5"
+                        [title]="chipTitle(week)"
                         [ngClass]="selectedWeek() === week ? 'bg-white dark:bg-slate-700 text-brand-purple shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-500'">
                   <span class="text-xs font-black leading-none">S{{ week }}</span>
-                  @if (fechasReuniones()[week - 1]?.fecha_entre_semana) {
-                    <span class="text-[0.48rem] font-bold tabular-nums leading-none opacity-50">{{ formatWeekDate(fechasReuniones()[week - 1].fecha_entre_semana) }}</span>
+                  @if (formatChipDates(week)) {
+                    <span class="text-[0.48rem] font-bold tabular-nums leading-none opacity-60 whitespace-nowrap">{{ formatChipDates(week) }}</span>
                   }
                   @if (weekHasData(week)) { <span class="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500"></span> }
                 </button>
@@ -189,21 +206,41 @@ import { saveAs } from 'file-saver';
           <div class="flex-1 min-h-0 grid md:grid-cols-2 gap-2 lg:gap-3">
 
             <!-- MIDWEEK -->
-            <div class="md:flex flex-col gap-2 p-3 rounded-2xl border border-brand-purple/10 dark:border-brand-purple/15 bg-brand-purple/[0.025] dark:bg-brand-purple/[0.07]"
+            <div class="md:flex flex-col gap-2 p-3 rounded-2xl border transition-colors"
+                 [ngClass]="midweekHighlight()
+                   ? 'border-brand-purple/50 ring-1 ring-brand-purple/30 bg-brand-purple/[0.06] dark:bg-brand-purple/[0.12]'
+                   : 'border-brand-purple/10 dark:border-brand-purple/15 bg-brand-purple/[0.025] dark:bg-brand-purple/[0.07]'"
                  [class.flex]="activeMeetingSection() === 'midweek'"
                  [class.hidden]="activeMeetingSection() !== 'midweek'">
 
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <div class="w-2 h-2 rounded-full bg-brand-purple shrink-0"></div>
-                  <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em]">Entre Semana</span>
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-brand-purple shrink-0"></div>
+                    <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em] whitespace-nowrap">Entre Semana</span>
+                  </div>
+                  @if (midweekCardInfo(); as info) {
+                    <p class="text-sm font-black tracking-tight mt-0.5 pl-4"
+                       [class]="info.status === 'past' ? 'text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-white'">
+                      {{ info.longLabel }}
+                    </p>
+                  }
                 </div>
-                @if (nextMidweekDate()) {
-                  <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border"
-                        [class]="nextMidweekDate()!.isToday
+                @if (midweekCardInfo(); as info) {
+                  @switch (info.status) {
+                    @case ('today') {
+                      <span class="text-[0.6rem] font-black px-2 py-0.5 rounded-lg bg-emerald-500 text-white shrink-0">HOY</span>
+                    }
+                    @case ('next') {
+                      <span class="text-[0.6rem] font-black px-2 py-0.5 rounded-lg border border-brand-purple/40 bg-brand-purple/10 text-brand-purple shrink-0">PRÓXIMA</span>
+                    }
+                  }
+                } @else if (midweekFallbackBadge(); as badge) {
+                  <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border shrink-0"
+                        [class]="badge.isToday
                           ? 'bg-emerald-500 border-emerald-500 text-white'
                           : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'">
-                    {{ nextMidweekDate()!.isToday ? 'HOY' : nextMidweekDate()!.label }}
+                    {{ badge.isToday ? 'HOY' : badge.label }}
                   </span>
                 }
               </div>
@@ -212,22 +249,24 @@ import { saveAs } from 'file-saver';
                 <div class="flex flex-col gap-2">
                   <div>
                     <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
-                    <input type="number" min="0" inputmode="numeric" [ngModel]="midweekWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
+                    <input type="number" min="0" inputmode="numeric" [ngModel]="currentMidweekPres()" (ngModelChange)="updateMidweekWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                   </div>
                   @if (congregacionConfig()?.usa_zoom !== 0) {
                     <div>
                       <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
-                      <input type="number" min="0" inputmode="numeric" [ngModel]="midweekZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateMidweekZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
+                      <input type="number" min="0" inputmode="numeric" [ngModel]="currentMidweekZoom()" (ngModelChange)="updateMidweekZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--purple" placeholder="–">
                     </div>
                   }
                 </div>
               } @else {
-                <div class="flex items-center justify-center py-6 text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">
-                  Sin reunión entre semana
+                <div class="flex flex-col items-center justify-center gap-1.5 py-6 text-center">
+                  <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg>
+                  <p class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Sin reunión entre semana</p>
+                  <p class="text-[0.6rem] font-bold text-slate-400/70 dark:text-slate-500">Esta semana no tiene reunión de este tipo</p>
                 </div>
               }
 
-              @if (canEditMidweekWeek() && midweekWeeks()[selectedWeek() - 1] !== null) {
+              @if (canEditMidweekWeek() && currentMidweekPres() !== null) {
                 <div class="flex items-center justify-between pt-2 mt-auto border-t border-brand-purple/10">
                   <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
                   <span class="text-sm font-black text-brand-purple tabular-nums">{{ currentMidweekTotal() }}</span>
@@ -236,21 +275,41 @@ import { saveAs } from 'file-saver';
             </div>
 
             <!-- WEEKEND -->
-            <div class="md:flex flex-col gap-2 p-3 rounded-2xl border border-orange-500/10 dark:border-orange-500/15 bg-orange-500/[0.025] dark:bg-orange-500/[0.07]"
+            <div class="md:flex flex-col gap-2 p-3 rounded-2xl border transition-colors"
+                 [ngClass]="weekendHighlight()
+                   ? 'border-orange-500/50 ring-1 ring-orange-500/30 bg-orange-500/[0.06] dark:bg-orange-500/[0.12]'
+                   : 'border-orange-500/10 dark:border-orange-500/15 bg-orange-500/[0.025] dark:bg-orange-500/[0.07]'"
                  [class.flex]="activeMeetingSection() === 'weekend'"
                  [class.hidden]="activeMeetingSection() !== 'weekend'">
 
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div>
-                  <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em]">Fin de Semana</span>
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div>
+                    <span class="text-[0.65rem] font-black text-slate-600 dark:text-slate-500 uppercase tracking-[0.15em] whitespace-nowrap">Fin de Semana</span>
+                  </div>
+                  @if (weekendCardInfo(); as info) {
+                    <p class="text-sm font-black tracking-tight mt-0.5 pl-4"
+                       [class]="info.status === 'past' ? 'text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-white'">
+                      {{ info.longLabel }}
+                    </p>
+                  }
                 </div>
-                @if (nextWeekendDate()) {
-                  <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border"
-                        [class]="nextWeekendDate()!.isToday
+                @if (weekendCardInfo(); as info) {
+                  @switch (info.status) {
+                    @case ('today') {
+                      <span class="text-[0.6rem] font-black px-2 py-0.5 rounded-lg bg-emerald-500 text-white shrink-0">HOY</span>
+                    }
+                    @case ('next') {
+                      <span class="text-[0.6rem] font-black px-2 py-0.5 rounded-lg border border-orange-500/40 bg-orange-500/10 text-orange-500 shrink-0">PRÓXIMA</span>
+                    }
+                  }
+                } @else if (weekendFallbackBadge(); as badge) {
+                  <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-lg border shrink-0"
+                        [class]="badge.isToday
                           ? 'bg-emerald-500 border-emerald-500 text-white'
                           : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'">
-                    {{ nextWeekendDate()!.isToday ? 'HOY' : nextWeekendDate()!.label }}
+                    {{ badge.isToday ? 'HOY' : badge.label }}
                   </span>
                 }
               </div>
@@ -259,22 +318,24 @@ import { saveAs } from 'file-saver';
                 <div class="flex flex-col gap-2">
                   <div>
                     <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Presencial</label>
-                    <input type="number" min="0" inputmode="numeric" [ngModel]="weekendWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
+                    <input type="number" min="0" inputmode="numeric" [ngModel]="currentWeekendPres()" (ngModelChange)="updateWeekendWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                   </div>
                   @if (congregacionConfig()?.usa_zoom !== 0) {
                     <div>
                       <label class="text-[0.6rem] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1 pl-0.5">Zoom</label>
-                      <input type="number" min="0" inputmode="numeric" [ngModel]="weekendZoomWeeks()[selectedWeek() - 1]" (ngModelChange)="updateWeekendZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
+                      <input type="number" min="0" inputmode="numeric" [ngModel]="currentWeekendZoom()" (ngModelChange)="updateWeekendZoomWeek($event)" [disabled]="!hasEditPermission() || !currentPeriodo()" class="attendance-input attendance-input--orange" placeholder="–">
                     </div>
                   }
                 </div>
               } @else {
-                <div class="flex items-center justify-center py-6 text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">
-                  Sin reunión fin de semana
+                <div class="flex flex-col items-center justify-center gap-1.5 py-6 text-center">
+                  <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg>
+                  <p class="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Sin reunión fin de semana</p>
+                  <p class="text-[0.6rem] font-bold text-slate-400/70 dark:text-slate-500">Esta semana no tiene reunión de este tipo</p>
                 </div>
               }
 
-              @if (canEditWeekendWeek() && weekendWeeks()[selectedWeek() - 1] !== null) {
+              @if (canEditWeekendWeek() && currentWeekendPres() !== null) {
                 <div class="flex items-center justify-between pt-2 mt-auto border-t border-orange-500/10">
                   <span class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">Total</span>
                   <span class="text-sm font-black text-orange-500 tabular-nums">{{ currentWeekendTotal() }}</span>
@@ -572,16 +633,77 @@ export class ReunionesAsistenciaComponent implements OnInit {
 
   hasEditPermission = computed(() => this.store.hasPermission('reuniones.asistencia'));
 
-  currentMidweekFecha = computed(() => this.fechasReuniones()[this.selectedWeek() - 1]?.fecha_entre_semana ?? null);
-  currentWeekendFecha = computed(() => this.fechasReuniones()[this.selectedWeek() - 1]?.fecha_fin_semana ?? null);
-  canEditMidweekWeek = computed(() => {
-    if (this.fechasReuniones().length === 0) return true;
-    return this.currentMidweekFecha() !== null;
+  // Lunes de la semana calendario a la que pertenece una fecha ISO, como YYYY-MM-DD.
+  private mondayKey(iso: string): string {
+    const d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  // Agrupa las reuniones del mes por semana calendario (lunes-domingo), que es el
+  // formato al que están acostumbrados los usuarios: S2 = martes 7 + sábado 11.
+  // Sin fechas del backend, cae al mapeo directo slot=semana (comportamiento previo).
+  calendarWeeks = computed<CalendarWeek[]>(() => {
+    const fechas = this.fechasReuniones();
+    if (fechas.length === 0) {
+      const n = Math.max(this.midweekWeekCount(), this.weekendWeekCount());
+      return Array.from({ length: n }, (_, i) => ({
+        midweekFecha: null, weekendFecha: null, midweekSlot: i, weekendSlot: i,
+      }));
+    }
+    const map = new Map<string, CalendarWeek>();
+    const weekOf = (iso: string): CalendarWeek => {
+      const k = this.mondayKey(iso);
+      let w = map.get(k);
+      if (!w) {
+        w = { midweekFecha: null, weekendFecha: null, midweekSlot: null, weekendSlot: null };
+        map.set(k, w);
+      }
+      return w;
+    };
+    fechas.forEach((f, slot) => {
+      if (f.fecha_entre_semana) {
+        const w = weekOf(f.fecha_entre_semana);
+        w.midweekFecha = f.fecha_entre_semana;
+        w.midweekSlot = slot;
+      }
+      if (f.fecha_fin_semana) {
+        const w = weekOf(f.fecha_fin_semana);
+        w.weekendFecha = f.fecha_fin_semana;
+        w.weekendSlot = slot;
+      }
+    });
+    return [...map.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, w]) => w);
   });
-  canEditWeekendWeek = computed(() => {
-    if (this.fechasReuniones().length === 0) return true;
-    return this.currentWeekendFecha() !== null;
+
+  private selectedCalendarWeek = computed(() => this.calendarWeeks()[this.selectedWeek() - 1] ?? null);
+
+  currentMidweekFecha = computed(() => this.selectedCalendarWeek()?.midweekFecha ?? null);
+  currentWeekendFecha = computed(() => this.selectedCalendarWeek()?.weekendFecha ?? null);
+  selectedMidweekSlot = computed(() => this.selectedCalendarWeek()?.midweekSlot ?? null);
+  selectedWeekendSlot = computed(() => this.selectedCalendarWeek()?.weekendSlot ?? null);
+
+  currentMidweekPres = computed(() => {
+    const s = this.selectedMidweekSlot();
+    return s === null ? null : this.midweekWeeks()[s];
   });
+  currentMidweekZoom = computed(() => {
+    const s = this.selectedMidweekSlot();
+    return s === null ? null : this.midweekZoomWeeks()[s];
+  });
+  currentWeekendPres = computed(() => {
+    const s = this.selectedWeekendSlot();
+    return s === null ? null : this.weekendWeeks()[s];
+  });
+  currentWeekendZoom = computed(() => {
+    const s = this.selectedWeekendSlot();
+    return s === null ? null : this.weekendZoomWeeks()[s];
+  });
+
+  canEditMidweekWeek = computed(() => this.selectedMidweekSlot() !== null);
+  canEditWeekendWeek = computed(() => this.selectedWeekendSlot() !== null);
 
   // ── Selection state ──
   selectedYear = signal<number>(this.defaultYear());
@@ -696,17 +818,9 @@ export class ReunionesAsistenciaComponent implements OnInit {
     return presencial + zoom;
   });
 
-  currentMidweekTotal = computed(() => {
-    const p = this.midweekWeeks()[this.selectedWeek() - 1] ?? 0;
-    const z = this.midweekZoomWeeks()[this.selectedWeek() - 1] ?? 0;
-    return p + z;
-  });
+  currentMidweekTotal = computed(() => (this.currentMidweekPres() ?? 0) + (this.currentMidweekZoom() ?? 0));
 
-  currentWeekendTotal = computed(() => {
-    const p = this.weekendWeeks()[this.selectedWeek() - 1] ?? 0;
-    const z = this.weekendZoomWeeks()[this.selectedWeek() - 1] ?? 0;
-    return p + z;
-  });
+  currentWeekendTotal = computed(() => (this.currentWeekendPres() ?? 0) + (this.currentWeekendZoom() ?? 0));
 
   midweekFilledCount = computed(() => {
     return this.midweekWeeks().filter((v, i) => {
@@ -753,11 +867,7 @@ export class ReunionesAsistenciaComponent implements OnInit {
     return this.countDayOccurrences(+this.selectedYear(), +this.selectedMonth(), cfg.dia_reunion_fin_semana);
   });
 
-  totalWeeksInMonth = computed(() => {
-    const fromFechas = this.fechasReuniones().length;
-    if (fromFechas > 0) return fromFechas;
-    return Math.max(this.midweekWeekCount(), this.weekendWeekCount());
-  });
+  totalWeeksInMonth = computed(() => this.calendarWeeks().length);
   weeksArray = computed(() => Array.from({ length: this.totalWeeksInMonth() }, (_, i) => i + 1));
 
   hasChanges = computed(() => {
@@ -775,18 +885,66 @@ export class ReunionesAsistenciaComponent implements OnInit {
     return +this.selectedYear() === now.getFullYear() && +this.selectedMonth() === now.getMonth() + 1;
   });
 
-  nextMidweekDate = computed(() => {
+  private readonly DIAS_LARGO = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  private readonly MESES_LARGO = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+  // Fecha local de hoy como YYYY-MM-DD; las comparaciones de fechas se hacen
+  // siempre entre strings ISO (orden lexicográfico) para evitar desfases de zona horaria.
+  private todayIso(): string {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+  }
+
+  // La reunión (de cualquier tipo) más cercana de hoy en adelante dentro del mes visible.
+  private nextMeetingIso = computed<string | null>(() => {
     if (!this.isViewingCurrentMonth()) return null;
-    const fecha = this.currentMidweekFecha();
-    if (!fecha) return null;
-    return this.checkMeetingDateToday(fecha);
+    const today = this.todayIso();
+    const upcoming = this.fechasReuniones()
+      .flatMap(f => [f.fecha_entre_semana, f.fecha_fin_semana])
+      .filter((d): d is string => !!d && d >= today)
+      .sort();
+    return upcoming[0] ?? null;
   });
 
-  nextWeekendDate = computed(() => {
-    if (!this.isViewingCurrentMonth()) return null;
-    const fecha = this.currentWeekendFecha();
+  private buildCardInfo(fecha: string | null): MeetingCardInfo | null {
     if (!fecha) return null;
-    return this.checkMeetingDateToday(fecha);
+    const [, mes, dia] = fecha.split('-').map(n => parseInt(n, 10));
+    const dow = new Date(fecha + 'T00:00:00').getDay();
+    const longLabel = `${this.DIAS_LARGO[dow]} ${dia} de ${this.MESES_LARGO[mes - 1]}`;
+    let status: MeetingStatus = 'none';
+    if (this.isViewingCurrentMonth()) {
+      const today = this.todayIso();
+      if (fecha === today) status = 'today';
+      else if (fecha === this.nextMeetingIso()) status = 'next';
+      else if (fecha < today) status = 'past';
+      else status = 'future';
+    }
+    return { longLabel, status };
+  }
+
+  midweekCardInfo = computed(() => this.buildCardInfo(this.currentMidweekFecha()));
+  weekendCardInfo = computed(() => this.buildCardInfo(this.currentWeekendFecha()));
+
+  midweekHighlight = computed(() => {
+    const s = this.midweekCardInfo()?.status;
+    return s === 'today' || s === 'next';
+  });
+  weekendHighlight = computed(() => {
+    const s = this.weekendCardInfo()?.status;
+    return s === 'today' || s === 'next';
+  });
+
+  // Fallback cuando el backend no entrega fechas por semana (fechasReuniones vacío):
+  // se muestra la próxima ocurrencia del día configurado, en estilo neutro.
+  midweekFallbackBadge = computed(() => {
+    if (this.fechasReuniones().length > 0 || !this.isViewingCurrentMonth()) return null;
+    const day = this.congregacionConfig()?.dia_reunion_entre_semana;
+    return day ? this.calcNextMeetingDate(day) : null;
+  });
+  weekendFallbackBadge = computed(() => {
+    if (this.fechasReuniones().length > 0 || !this.isViewingCurrentMonth()) return null;
+    const day = this.congregacionConfig()?.dia_reunion_fin_semana;
+    return day ? this.calcNextMeetingDate(day) : null;
   });
 
   private calcNextMeetingDate(dayName: string): { label: string; isToday: boolean } | null {
@@ -804,14 +962,6 @@ export class ReunionesAsistenciaComponent implements OnInit {
       ? 'Hoy'
       : `${dNames[next.getDay()]} ${next.getDate()} ${meses[next.getMonth()]}`;
     return { label, isToday };
-  }
-
-  private checkMeetingDateToday(isoDate: string): { label: string; isToday: boolean } | null {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const meeting = new Date(isoDate + 'T00:00:00');
-    if (meeting.getTime() !== today.getTime()) return null;
-    return { label: 'Hoy', isToday: true };
   }
 
   constructor() {
@@ -919,12 +1069,13 @@ export class ReunionesAsistenciaComponent implements OnInit {
     today.setHours(0, 0, 0, 0);
 
     if (fechas.length > 0) {
-      const idx = fechas.findIndex(f => {
-        const mw = f.fecha_entre_semana ? new Date(f.fecha_entre_semana + 'T00:00:00') : null;
-        const we = f.fecha_fin_semana   ? new Date(f.fecha_fin_semana   + 'T00:00:00') : null;
+      const weeks = this.calendarWeeks();
+      const idx = weeks.findIndex(w => {
+        const mw = w.midweekFecha ? new Date(w.midweekFecha + 'T00:00:00') : null;
+        const we = w.weekendFecha ? new Date(w.weekendFecha + 'T00:00:00') : null;
         return (mw && mw >= today) || (we && we >= today);
       });
-      this.selectedWeek.set(idx === -1 ? fechas.length : idx + 1);
+      this.selectedWeek.set(idx === -1 ? weeks.length : idx + 1);
     } else {
       const cfg = this.congregacionConfig();
       const dayName = cfg?.dia_reunion_entre_semana ?? cfg?.dia_reunion_fin_semana;
@@ -984,27 +1135,31 @@ export class ReunionesAsistenciaComponent implements OnInit {
   }
 
   updateMidweekWeek(val: number): void {
-    if (!this.canEditMidweekWeek()) return;
+    const slot = this.selectedMidweekSlot();
+    if (slot === null) return;
     const arr = [...this.midweekWeeks()];
-    arr[this.selectedWeek() - 1] = val;
+    arr[slot] = val;
     this.midweekWeeks.set(arr);
   }
   updateMidweekZoomWeek(val: number): void {
-    if (!this.canEditMidweekWeek()) return;
+    const slot = this.selectedMidweekSlot();
+    if (slot === null) return;
     const arr = [...this.midweekZoomWeeks()];
-    arr[this.selectedWeek() - 1] = val;
+    arr[slot] = val;
     this.midweekZoomWeeks.set(arr);
   }
   updateWeekendWeek(val: number): void {
-    if (!this.canEditWeekendWeek()) return;
+    const slot = this.selectedWeekendSlot();
+    if (slot === null) return;
     const arr = [...this.weekendWeeks()];
-    arr[this.selectedWeek() - 1] = val;
+    arr[slot] = val;
     this.weekendWeeks.set(arr);
   }
   updateWeekendZoomWeek(val: number): void {
-    if (!this.canEditWeekendWeek()) return;
+    const slot = this.selectedWeekendSlot();
+    if (slot === null) return;
     const arr = [...this.weekendZoomWeeks()];
-    arr[this.selectedWeek() - 1] = val;
+    arr[slot] = val;
     this.weekendZoomWeeks.set(arr);
   }
 
@@ -1130,15 +1285,36 @@ export class ReunionesAsistenciaComponent implements OnInit {
 
   selectWeek(w: number): void { this.selectedWeek.set(w); }
 
-  formatWeekDate(dateStr: string | null | undefined): string {
-    if (!dateStr) return '';
-    const parts = dateStr.split('-');
-    return `${parseInt(parts[2])}/${parseInt(parts[1])}`;
+  private chipFechas(week: number): string[] {
+    const cw = this.calendarWeeks()[week - 1];
+    if (!cw) return [];
+    return [cw.midweekFecha, cw.weekendFecha]
+      .filter((d): d is string => !!d)
+      .sort();
+  }
+
+  // Días del mes de ambas reuniones de la semana, en orden cronológico: "11·14" o "31".
+  formatChipDates(week: number): string {
+    return this.chipFechas(week)
+      .map(d => String(parseInt(d.split('-')[2], 10)))
+      .join('·');
+  }
+
+  chipTitle(week: number): string {
+    return this.chipFechas(week)
+      .map(d => this.buildCardInfo(d)?.longLabel ?? '')
+      .join(' · ');
   }
 
   weekHasData(w: number): boolean {
-    const i = w - 1;
-    return !!(this.midweekWeeks()[i] || this.midweekZoomWeeks()[i] || this.weekendWeeks()[i] || this.weekendZoomWeeks()[i]);
+    const cw = this.calendarWeeks()[w - 1];
+    if (!cw) return false;
+    const mw = cw.midweekSlot;
+    const we = cw.weekendSlot;
+    return !!(
+      (mw !== null && (this.midweekWeeks()[mw] || this.midweekZoomWeeks()[mw])) ||
+      (we !== null && (this.weekendWeeks()[we] || this.weekendZoomWeeks()[we]))
+    );
   }
 
   private countDayOccurrences(year: number, month: number, dayName: string): number {
@@ -1154,10 +1330,12 @@ export class ReunionesAsistenciaComponent implements OnInit {
   }
 
   weekData(w: number): { midweek: number; weekend: number } {
-     const i = w - 1;
+     const cw = this.calendarWeeks()[w - 1];
+     const mw = cw?.midweekSlot ?? null;
+     const we = cw?.weekendSlot ?? null;
      return {
-       midweek: (this.midweekWeeks()[i] ?? 0) + (this.midweekZoomWeeks()[i] ?? 0),
-       weekend: (this.weekendWeeks()[i] ?? 0) + (this.weekendZoomWeeks()[i] ?? 0)
+       midweek: mw === null ? 0 : (this.midweekWeeks()[mw] ?? 0) + (this.midweekZoomWeeks()[mw] ?? 0),
+       weekend: we === null ? 0 : (this.weekendWeeks()[we] ?? 0) + (this.weekendZoomWeeks()[we] ?? 0)
      };
   }
 }

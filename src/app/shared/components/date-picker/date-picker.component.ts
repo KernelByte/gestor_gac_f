@@ -1,4 +1,4 @@
-import { Component, Input, signal, computed, forwardRef, ElementRef, inject } from '@angular/core';
+import { Component, Input, signal, computed, forwardRef, ElementRef, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -18,11 +18,9 @@ type ColorScheme = 'orange' | 'violet';
     <div class="dp-root"
          [class.dp-violet]="colorScheme === 'violet'"
          [class.dp-field-like]="fieldLike"
+         [class.dp-inline]="isInline()"
          [class.dp-open-above]="openAbove()"
          [class.dp-align-right]="alignRight()">
-
-      <!-- Backdrop -->
-      <div *ngIf="isOpen()" (click)="close()" class="dp-backdrop"></div>
 
       <!-- Trigger -->
       <button
@@ -33,7 +31,8 @@ type ColorScheme = 'orange' | 'violet';
         [class.dp-trigger-field]="fieldLike"
         [attr.aria-haspopup]="'listbox'"
         [attr.aria-expanded]="isOpen()"
-        [attr.aria-label]="selectedDate() ? displayValue() : (placeholder || 'Seleccionar fecha')">
+        [attr.aria-label]="selectedDate() ? displayValueFull() : (placeholder || 'Seleccionar fecha')"
+        [attr.title]="selectedDate() ? displayValueFull() : null">
         <svg class="dp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round"
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -153,11 +152,6 @@ type ColorScheme = 'orange' | 'violet';
       to   { opacity: 1; transform: none; }
     }
 
-    /* ── Backdrop (cierre al click fuera) ── */
-    .dp-backdrop {
-      position: fixed; inset: 0; z-index: 199;
-    }
-
     /* ── Root container ── */
     .dp-root { position: relative; }
 
@@ -255,6 +249,25 @@ type ColorScheme = 'orange' | 'violet';
     }
     /* Alineación a la derecha (cuando el trigger está cerca del borde derecho) */
     .dp-align-right .dp-popup { left: auto; right: 0; }
+
+    /* ══════════════════════════════════════
+       MODO INLINE (móvil dentro de bottom sheets)
+       El calendario fluye bajo el campo en vez de flotar; así nunca se recorta
+       por contenedores con overflow y empuja el contenido de forma natural.
+    ══════════════════════════════════════ */
+    .dp-inline .dp-popup {
+      position: static;
+      width: 100%;
+      margin-top: 0.625rem;
+      box-shadow: none;
+      border-radius: 0.875rem;
+      animation: dpIn 160ms cubic-bezier(0.23,1,0.32,1) both;
+    }
+    .dp-inline.dp-open-above .dp-popup { bottom: auto; } /* neutraliza dirección */
+    /* Días más grandes para tacto cómodo aprovechando el ancho completo */
+    .dp-inline .dp-grid { gap: 0.25rem; }
+    .dp-inline .dp-day { max-width: 2.75rem; font-size: 0.9375rem; }
+    .dp-inline .dp-weekdays .dp-wd { font-size: 0.75rem; }
 
     /* ══════════════════════════════════════
        HEADER
@@ -431,12 +444,35 @@ export class DatePickerComponent implements ControlValueAccessor {
    @Input() maxDate: string | null = null;
    @Input() colorScheme: ColorScheme = 'orange';
    @Input() fieldLike = false;
+   /** En móvil (<768px), renderiza el calendario en el flujo (no como popup flotante),
+       para que no se recorte dentro de contenedores con overflow (bottom sheets, etc.). */
+   @Input() inlineOnMobile = false;
 
    private el = inject(ElementRef);
+
+   /**
+    * Cierre por clic afuera / Escape, a nivel de documento — no depende de un
+    * overlay "fixed" propio. Ese approach se rompe si algún ancestro del
+    * popup (un contenedor con overflow, o una animación con transform como
+    * .card-anim) le crea un containing block distinto y deja de cubrir toda
+    * la pantalla, dejando el calendario "pegado" sin poder cerrarse.
+    */
+   @HostListener('document:click', ['$event'])
+   onDocumentClick(event: MouseEvent) {
+      if (!this.isOpen()) return;
+      const target = event.target as Node | null;
+      if (target && !this.el.nativeElement.contains(target)) this.close();
+   }
+
+   @HostListener('document:keydown.escape')
+   onEscape() {
+      if (this.isOpen()) this.close();
+   }
 
    isOpen    = signal(false);
    openAbove = signal(false);
    alignRight = signal(false);
+   isInline   = signal(false);
 
    selectedDate = signal<Date | null>(null);
    currentMonth = signal(new Date().getMonth());
@@ -446,6 +482,7 @@ export class DatePickerComponent implements ControlValueAccessor {
 
    monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+   monthNamesShort = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
    dayNames   = ['D','L','M','M','J','V','S'];
 
    private onChange: (v: string | null) => void = () => {};
@@ -502,7 +539,16 @@ export class DatePickerComponent implements ControlValueAccessor {
       return false;
    }
 
+   /** Texto visible del campo: compacto para que no se corte en columnas
+    *  angostas (2 por fila, sidebars, etc.) sin perder la fecha exacta. */
    displayValue = computed(() => {
+      const d = this.selectedDate();
+      if (!d) return this.placeholder;
+      return `${d.getDate()} ${this.monthNamesShort[d.getMonth()]} ${d.getFullYear()}`;
+   });
+
+   /** Versión larga y descriptiva — solo para title/aria-label (tooltip y lectores de pantalla). */
+   displayValueFull = computed(() => {
       const d = this.selectedDate();
       if (!d) return this.placeholder;
       const weekDay = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][d.getDay()];
@@ -536,7 +582,17 @@ export class DatePickerComponent implements ControlValueAccessor {
          this.currentYear.set(date.getFullYear());
          this.yearRangeStart.set(date.getFullYear() - 11);
          this.viewMode.set('calendar');
-         this.updateOpenDirection();
+         const inline = this.inlineOnMobile && window.innerWidth < 768;
+         this.isInline.set(inline);
+         if (inline) {
+            // El calendario fluye bajo el campo; nos aseguramos de que quede visible al scroll.
+            requestAnimationFrame(() => {
+               this.el.nativeElement.querySelector('.dp-popup')
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+         } else {
+            this.updateOpenDirection();
+         }
       }
    }
 
@@ -554,8 +610,30 @@ export class DatePickerComponent implements ControlValueAccessor {
          const spaceBelow = window.innerHeight - rect.bottom;
          const spaceAbove = rect.top;
          this.openAbove.set(spaceBelow < popupH && spaceAbove > spaceBelow);
-         this.alignRight.set(rect.left + popupW > window.innerWidth - 8);
+         // El borde derecho real no siempre es el de la ventana: si el campo
+         // vive dentro de una columna angosta con scroll propio (p.ej. el
+         // aside de la lista de visitas, con overflow-y que recorta también
+         // el eje X), el popup se corta contra ESE borde mucho antes de
+         // llegar al de la ventana. Usamos el ancestro "recortante" más
+         // cercano como límite real.
+         const boundaryRight = Math.min(window.innerWidth, this.getClippingBoundaryRight());
+         this.alignRight.set(rect.left + popupW > boundaryRight - 8);
       });
+   }
+
+   /** Borde derecho del ancestro más cercano cuyo overflow pueda recortar
+    *  contenido (overflow-x/-y distinto de "visible"), o el de la ventana
+    *  si ninguno lo hace. */
+   private getClippingBoundaryRight(): number {
+      let el = (this.el.nativeElement as HTMLElement).parentElement;
+      while (el) {
+         const style = getComputedStyle(el);
+         if (style.overflowX !== 'visible' || style.overflowY !== 'visible') {
+            return el.getBoundingClientRect().right;
+         }
+         el = el.parentElement;
+      }
+      return window.innerWidth;
    }
 
    close() { this.isOpen.set(false); this.viewMode.set('calendar'); this.onTouched(); }

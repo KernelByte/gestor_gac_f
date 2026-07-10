@@ -8,7 +8,7 @@ export interface Visita {
   fecha_fin?: string | null;
   semestre?: string | null;
   notas?: string | null;
-  agenda_json?: { titulo?: string; items: AgendaItem[] } | null;
+  agenda_json?: { titulo?: string; items: AgendaItem[]; secciones?: AgendaSecciones } | null;
   archivo_agenda?: string | null;
   creado_en: string;
   actualizado_en: string;
@@ -35,10 +35,20 @@ export interface AgendaItem {
   notas?: string | null;
 }
 
+/**
+ * Fila genérica de una sección adicional de la agenda
+ * (servicio del campo, estudios bíblicos, almuerzos, pastoreo, etc.).
+ * Las claves válidas por sección las define `seccionesConfig` en visita-main.page.ts
+ * y su espejo SECCIONES_DEF en el backend.
+ */
+export type SeccionFila = Record<string, string>;
+export type AgendaSecciones = Record<string, SeccionFila[]>;
+
 export interface AgendaRequest {
   id_visita: number;
   titulo?: string;
   items: AgendaItem[];
+  secciones?: AgendaSecciones;
 }
 
 export interface TokenVisita {
@@ -59,6 +69,14 @@ export interface EnvioCorreoRequest {
 export interface ArchivoAdjunto {
   nombre: string;
   tamano_bytes: number;
+}
+
+export interface Colaborador {
+  id_colaborador: number;
+  id_usuario: number;
+  nombre: string;
+  correo?: string | null;
+  creado_en: string;
 }
 
 export interface VistaPublica {

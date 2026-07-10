@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { AgendaRequest, EnvioCorreoRequest, TokenVisita, Visita, VisitaCreate, ArchivoAdjunto, VistaPublica } from '../models/visita.model';
+import { AgendaRequest, Colaborador, EnvioCorreoRequest, TokenVisita, Visita, VisitaCreate, ArchivoAdjunto, VistaPublica } from '../models/visita.model';
 
 @Injectable({ providedIn: 'root' })
 export class VisitaService {
@@ -63,8 +63,12 @@ export class VisitaService {
     return this.http.get<TokenVisita | null>(`${this.url}/${id}/enlace-temporal`);
   }
 
-  crearEnlaceTemporal(id: number): Observable<TokenVisita> {
-    return this.http.post<TokenVisita>(`${this.url}/${id}/enlace-temporal`, {});
+  crearEnlaceTemporal(id: number, fechaExpiracion?: string): Observable<TokenVisita> {
+    return this.http.post<TokenVisita>(`${this.url}/${id}/enlace-temporal`, fechaExpiracion ? { fecha_expiracion: fechaExpiracion } : {});
+  }
+
+  actualizarExpiracionEnlace(id: number, fechaExpiracion: string): Observable<TokenVisita> {
+    return this.http.patch<TokenVisita>(`${this.url}/${id}/enlace-temporal`, { fecha_expiracion: fechaExpiracion });
   }
 
   revocarEnlaces(id: number): Observable<{ revocados: number }> {
@@ -73,6 +77,23 @@ export class VisitaService {
 
   enviarCorreo(data: EnvioCorreoRequest): Observable<{ ok: boolean }> {
     return this.http.post<{ ok: boolean }>(`${this.url}/enviar-correo`, data);
+  }
+
+  // Colaboradores
+  misColaboraciones(): Observable<Visita[]> {
+    return this.http.get<Visita[]>(`${this.url}/mis-colaboraciones`);
+  }
+
+  listarColaboradores(id: number): Observable<Colaborador[]> {
+    return this.http.get<Colaborador[]>(`${this.url}/${id}/colaboradores`);
+  }
+
+  agregarColaborador(id: number, idUsuario: number): Observable<Colaborador> {
+    return this.http.post<Colaborador>(`${this.url}/${id}/colaboradores`, { id_usuario: idUsuario });
+  }
+
+  quitarColaborador(id: number, idUsuario: number): Observable<void> {
+    return this.http.delete<void>(`${this.url}/${id}/colaboradores/${idUsuario}`);
   }
 
   // Público

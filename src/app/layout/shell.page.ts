@@ -11,6 +11,7 @@ import { ForcePasswordChangeComponent } from '../core/components/force-password-
 import { ModalBackdropService } from '../core/services/modal-backdrop.service';
 import { ToastContainerComponent } from '../shared/components/toast/toast-container.component';
 import { CommandPaletteComponent } from '../shared/components/command-palette/command-palette.component';
+import { VisitaService } from '../features/secretario-tools/services/visita.service';
 
 @Pipe({ name: 'timeAgo', standalone: true })
 export class TimeAgoPipe implements PipeTransform {
@@ -124,6 +125,24 @@ export class TimeAgoPipe implements PipeTransform {
               </a>
             </div>
             
+            <!-- Colaboración Section — independiente del rol: visible solo si el usuario
+                 fue invitado como colaborador de alguna visita del superintendente.
+                 Va aparte del menú "Secretario" (que es exclusivo del rol Secretario). -->
+            <div *ngIf="hasColaboraciones()" class="mb-8">
+              <div class="h-px bg-slate-100 dark:bg-slate-800/60 mx-2 mb-4 mt-2"></div>
+              <p *ngIf="!collapsed()" class="px-3 mb-2 text-[0.6875rem] font-bold tracking-[0.08em] uppercase text-slate-400/70 dark:text-slate-600">Colaboración</p>
+
+              <a routerLink="/herramientas/visita-colaborador" routerLinkActive="text-brand-purple dark:text-purple-400 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04]"
+                [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Visita del circuito">
+                <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+                <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Visita del circuito</span>
+                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Visita del circuito</span>
+              </a>
+            </div>
+
             <!-- Modules Section -->
             <div *ngIf="hasAnyReunionesPermission() || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasAnyReportesPermission() || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Administrador')">
               <div class="h-px bg-slate-100 dark:bg-slate-800/60 mx-2 mb-4 mt-2"></div>
@@ -161,7 +180,7 @@ export class TimeAgoPipe implements PipeTransform {
                             [ngClass]="rlaResumen.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                       <span class="truncate">Resumen Hoy</span>
                    </a>
-                   <a *ngIf="hasPermission('reuniones.entre_semana') || hasPermission('reuniones.fin_semana') || hasPermission('reuniones.logistica') || hasPermission('reuniones.discursos') || hasRole('Secretario')" routerLink="/reuniones/programacion" routerLinkActive="sub-active" #rlaProg="routerLinkActive"
+                   <a *ngIf="hasPermission('reuniones.entre_semana') || hasPermission('reuniones.fin_semana') || hasPermission('reuniones.logistica') || hasPermission('reuniones.discursos')" routerLink="/reuniones/programacion" routerLinkActive="sub-active" #rlaProg="routerLinkActive"
                       class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaProg.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
                       <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
@@ -207,8 +226,8 @@ export class TimeAgoPipe implements PipeTransform {
                 <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Informes</span>
               </a>
 
-              <!-- Secretario Tools Accordion -->
-              <div *ngIf="hasRole('Secretario') || hasRole('Administrador') || hasRole('Coordinador')" class="relative mt-1">
+              <!-- Secretario Tools Accordion — exclusivo de Secretario/Administrador -->
+              <div *ngIf="hasRole('Secretario') || hasRole('Administrador')" class="relative mt-1">
                 <button (click)="toggleSecretarioToolsMenu()"
                   class="w-full group flex items-center justify-between text-sm transition-all duration-200 relative rounded-lg"
                   [ngClass]="{
@@ -1082,6 +1101,11 @@ export class ShellPage implements OnInit, OnDestroy {
   congregacionContext = inject(CongregacionContextService);
   notifService = inject(NotificacionesService);
   modalBackdropService = inject(ModalBackdropService);
+  private visitaService = inject(VisitaService);
+
+  /** true si el usuario fue invitado como colaborador en alguna visita del SC
+      — controla la visibilidad del ítem "Visita del circuito" en Herramientas. */
+  hasColaboraciones = signal(false);
 
   collapsed = signal(false);
   mobileMenuOpen = signal(false);
@@ -1148,6 +1172,12 @@ export class ShellPage implements OnInit, OnDestroy {
     
     // Conectar SSE para notificaciones en tiempo real
     this.notifService.connectSSE();
+
+    // ¿El usuario colabora en alguna visita del SC? (ítem del menú Herramientas)
+    this.visitaService.misColaboraciones().subscribe({
+      next: (vs) => this.hasColaboraciones.set(vs.length > 0),
+      error: () => {},
+    });
 
     // Initial Title update
     this.updateTitle(this.router.url);
@@ -1236,6 +1266,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Transferencias', subtitle: 'Paquete completo para transferencia de publicadores.' });
     } else if (url.includes('/herramientas/mis-tareas')) {
       this.pageTitle.set({ title: 'Mis Tareas', subtitle: 'Asignaciones y recordatorios personales.' });
+    } else if (url.includes('/herramientas/visita-colaborador')) {
+      this.pageTitle.set({ title: 'Visita del circuito', subtitle: 'Completa la agenda y sube tus documentos.' });
     } else if (url.includes('/admin/configuracion')) {
       this.pageTitle.set({ title: 'Configuración del Sistema', subtitle: 'Administración global de la plataforma' });
     } else if (url.includes('/configuracion')) {
@@ -1376,6 +1408,10 @@ export class ShellPage implements OnInit, OnDestroy {
         ['/herramientas/tareas', n.payload['id_tarea']],
         { queryParams: { desde: 'mis-tareas' } }
       );
+    } else if (n.tipo === 'visita_colaborador') {
+      this.hasColaboraciones.set(true);
+      this.notificationsOpen.set(false);
+      this.router.navigate(['/herramientas/visita-colaborador']);
     }
   }
 
@@ -1389,6 +1425,7 @@ export class ShellPage implements OnInit, OnDestroy {
       case 'usuario_activado':   return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400';
       case 'backup_completado':  return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
       case 'tarea_asignada':     return 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400';
+      case 'visita_colaborador': return 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400';
       default: return 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
     }
   }
