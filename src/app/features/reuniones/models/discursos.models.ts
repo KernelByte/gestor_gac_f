@@ -8,11 +8,31 @@ export interface ConfirmarDiscursosRequest {
   mes: number;
 }
 
+/** Ubicación del salón destino: dirección legible + enlace de ruta en mapas. */
+export interface UbicacionSaliente {
+  direccion_destino: string | null;
+  url_mapa: string | null;
+  lat: number | null;
+  lon: number | null;
+}
+
+/** Resultado del geocodificador (proxy backend → Photon/OSM). */
+export interface GeoResultado {
+  label: string;
+  lat: number;
+  lon: number;
+}
+
 export interface CrearSalienteRequest {
   fecha: string;
   id_publicador?: number | null;
   congregacion_destino?: string | null;
   tema_discurso?: string | null;
+  hora?: string | null;
+  direccion_destino?: string | null;
+  url_mapa?: string | null;
+  lat?: number | null;
+  lon?: number | null;
   notas?: string | null;
 }
 
@@ -20,6 +40,11 @@ export interface EditarSalienteRequest {
   id_publicador?: number | null;
   congregacion_destino?: string | null;
   tema_discurso?: string | null;
+  hora?: string | null;
+  direccion_destino?: string | null;
+  url_mapa?: string | null;
+  lat?: number | null;
+  lon?: number | null;
   notas?: string | null;
 }
 
@@ -34,6 +59,7 @@ export interface EditarEntranteRequest {
 export interface PublicadorSimple {
   id_publicador: number;
   nombre_completo: string;
+  telefono?: string | null;
 }
 
 export interface GrupoSimple {
@@ -48,6 +74,11 @@ export interface DiscursoSalienteOut {
   publicador: PublicadorSimple | null;
   congregacion_destino: string | null;
   tema_discurso: string | null;
+  hora: string | null;
+  direccion_destino: string | null;
+  url_mapa: string | null;
+  lat: number | null;
+  lon: number | null;
   notas: string | null;
   confirmado: boolean;
   mes: number;

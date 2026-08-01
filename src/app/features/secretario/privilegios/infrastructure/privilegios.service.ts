@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment'; // Ajustar ruta según corresponda
 import { Privilegio } from '../domain/models/privilegio';
 import { PublicadorPrivilegio, PublicadorPrivilegioCreate, PublicadorPrivilegioUpdate } from '../domain/models/publicador-privilegio';
+import { PrecursorConsideracion, PrecursorConsideracionCreate, PrecursorConsideracionUpdate } from '../domain/models/precursor-consideracion';
 import { Observable, lastValueFrom, shareReplay } from 'rxjs';
 
 @Injectable({
@@ -69,5 +70,34 @@ export class PrivilegiosService {
       return this.http.get<{ eliminable: boolean; motivo: string | null }>(
          `${this.baseUrl}/publicador-privilegios/${id}/eliminable`
       );
+   }
+
+   // --- Consideraciones especiales (exención del requisito de horas) ---
+
+   /** Sin idPublicador devuelve las de toda la congregación (para badges del listado). */
+   getConsideraciones(idPublicador?: number, vigentes?: boolean, idCongregacion?: number | null) {
+      let params = new HttpParams();
+      if (idPublicador !== undefined) params = params.set('id_publicador', idPublicador);
+      if (vigentes !== undefined) params = params.set('vigentes', vigentes);
+      if (idCongregacion != null) params = params.set('id_congregacion', idCongregacion);
+      return this.http.get<PrecursorConsideracion[]>(
+         `${this.baseUrl}/precursor-consideraciones/`, { params }
+      );
+   }
+
+   createConsideracion(payload: PrecursorConsideracionCreate) {
+      return this.http.post<PrecursorConsideracion>(
+         `${this.baseUrl}/precursor-consideraciones/`, payload
+      );
+   }
+
+   updateConsideracion(id: number, payload: PrecursorConsideracionUpdate) {
+      return this.http.put<PrecursorConsideracion>(
+         `${this.baseUrl}/precursor-consideraciones/${id}`, payload
+      );
+   }
+
+   deleteConsideracion(id: number) {
+      return this.http.delete<void>(`${this.baseUrl}/precursor-consideraciones/${id}`);
    }
 }

@@ -68,11 +68,16 @@ type Meridiem = 'a. m.' | 'p. m.';
               {{ m.toString().padStart(2,'0') }}
             </button>
           </div>
+          <!-- Meridiano: sólo dos opciones, así que en vez de scroll se
+               desplaza la pista para que la activa caiga en la banda central,
+               igual que hacen hora y minuto con scrollIntoView. -->
           <div class="tp-col tp-col-meridiem">
-            <button type="button" class="tp-opt tp-meridiem" [class.tp-opt--on]="meridiem() === 'a. m.'"
-                    (click)="selectMeridiem('a. m.')">a. m.</button>
-            <button type="button" class="tp-opt tp-meridiem" [class.tp-opt--on]="meridiem() === 'p. m.'"
-                    (click)="selectMeridiem('p. m.')">p. m.</button>
+            <div class="tp-meridiem-track" [class.is-pm]="meridiem() === 'p. m.'">
+              <button type="button" class="tp-opt tp-meridiem" [class.tp-opt--on]="meridiem() === 'a. m.'"
+                      (click)="selectMeridiem('a. m.')">a. m.</button>
+              <button type="button" class="tp-opt tp-meridiem" [class.tp-opt--on]="meridiem() === 'p. m.'"
+                      (click)="selectMeridiem('p. m.')">p. m.</button>
+            </div>
           </div>
         </div>
 
@@ -182,7 +187,9 @@ type Meridiem = 'a. m.' | 'p. m.';
 
     .tp-columns {
       position: relative;
-      display: grid; grid-template-columns: 1fr 1fr auto;
+      /* Tres columnas iguales: con "auto" el meridiano se dimensionaba según el
+         texto y las tres quedaban de anchos distintos. */
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
       height: calc(var(--tp-item-h) * var(--tp-visible));
       border-bottom: 1px solid #f1f5f9;
     }
@@ -224,15 +231,29 @@ type Meridiem = 'a. m.' | 'p. m.';
     .tp-col::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 9999px; }
     :host-context(.dark) .tp-col::-webkit-scrollbar-thumb { background: #334155; }
 
-    .tp-col-meridiem {
-      justify-content: center; overflow: visible; gap: 0.375rem;
-      padding-block: 0; mask-image: none; -webkit-mask-image: none;
+    /* Misma caja y mismo enmascarado que las otras columnas (hereda de .tp-col):
+       lo único que cambia es que no scrollea, se traslada. */
+    .tp-col-meridiem { overflow: hidden; padding-block: 0; }
+
+    /* La pista arranca con el mismo relleno superior que el scroll de las otras
+       columnas, así "a. m." nace ya centrada en la banda; al elegir "p. m." se
+       sube exactamente una fila y es ésa la que queda en la banda. */
+    .tp-meridiem-track {
+      display: flex; flex-direction: column;
+      padding-top: calc(var(--tp-item-h) * (var(--tp-visible) - 1) / 2);
+      transition: transform 240ms cubic-bezier(0.23,1,0.32,1);
+    }
+    .tp-meridiem-track.is-pm { transform: translateY(calc(var(--tp-item-h) * -1)); }
+    @media (prefers-reduced-motion: reduce) {
+      .tp-meridiem-track { transition: none; }
     }
 
     .tp-opt {
       position: relative; z-index: 1;
       height: var(--tp-item-h); flex-shrink: 0; box-sizing: border-box;
       scroll-snap-align: center;
+      /* Separa la píldora de las líneas divisorias de columna */
+      margin-inline: 0.25rem;
       display: flex; align-items: center; justify-content: center;
       border: none; background: transparent; cursor: pointer;
       border-radius: 0.5rem;
@@ -249,10 +270,11 @@ type Meridiem = 'a. m.' | 'p. m.';
     .tp-opt--on { background: #f97316; color: #fff; font-weight: 700; }
     .tp-violet .tp-opt--on { background: #7c3aed; box-shadow: 0 2px 8px rgba(124,58,237,0.35); }
 
+    /* Sin height:auto — comparte la altura de fila de .tp-opt para que la
+       píldora activa mida lo mismo que la de hora y minuto. */
     .tp-meridiem {
-      width: 100%; height: auto; min-height: var(--tp-item-h);
       font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.01em;
-      padding: 0.375rem 0.625rem;
+      padding-inline: 0.25rem;
     }
 
     .tp-footer {
@@ -359,7 +381,7 @@ export class TimePickerComponent implements ControlValueAccessor {
     this.closing.set(false);
     this.isOpen.set(true);
     this.updateOpenDirection();
-    requestAnimationFrame(() => this.scrollSelectedIntoView());
+    this.centerAllWhenReady();
   }
 
   private updateOpenDirection() {
@@ -376,13 +398,53 @@ export class TimePickerComponent implements ControlValueAccessor {
     });
   }
 
-  private scrollSelectedIntoView() {
+  /**
+   * Deja la opción `index` de una columna exactamente sobre la banda central.
+   *
+   * No usamos scrollIntoView({block:'center'}): además de depender de que el
+   * popup ya esté medido (durante la animación de entrada el ancestro tiene un
+   * transform y las posiciones salen mal), deja el resultado en manos del
+   * navegador y las tres columnas acababan cada una en una línea distinta.
+   *
+   * Con el relleno superior de .tp-col —item-h*(visible-1)/2— la opción i está
+   * en contentTop = pad + i*itemH y la banda en colH/2, así que centrarla es
+   * exactamente scrollTop = i * itemH. Aritmética nuestra, resultado idéntico
+   * en las tres columnas.
+   */
+  private centerOption(col: HTMLElement | undefined, index: number, smooth: boolean) {
+    if (!col || index < 0) return;
+    const item = col.querySelector('.tp-opt') as HTMLElement | null;
+    const itemH = item?.offsetHeight || 0;
+    if (!itemH) return;
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const behavior: ScrollBehavior = reduced ? 'auto' : 'smooth';
-    const hourEl = this.hourColRef?.nativeElement.querySelector('.tp-opt--on') as HTMLElement | null;
-    hourEl?.scrollIntoView({ block: 'center', behavior });
-    const minEl = this.minuteColRef?.nativeElement.querySelector('.tp-opt--on') as HTMLElement | null;
-    minEl?.scrollIntoView({ block: 'center', behavior });
+    col.scrollTo({ top: index * itemH, behavior: smooth && !reduced ? 'smooth' : 'auto' });
+  }
+
+  /** Índices de la opción activa; sin valor aún, encuadra el 12:00 de ensureDefaults(). */
+  private hourIndex(): number { return (this.hour12() ?? 12) - 1; }
+  private minuteIndex(): number { return this.minute() ?? 0; }
+
+  private centerHour(smooth = true) {
+    this.centerOption(this.hourColRef?.nativeElement, this.hourIndex(), smooth);
+  }
+  private centerMinute(smooth = true) {
+    this.centerOption(this.minuteColRef?.nativeElement, this.minuteIndex(), smooth);
+  }
+
+  /**
+   * Al abrir, el popup puede no estar aún en el DOM cuando corre el primer
+   * frame (la detección de cambios por señales no está garantizada antes del
+   * rAF), así que reintentamos hasta que las columnas existan.
+   */
+  private centerAllWhenReady(attempts = 10) {
+    requestAnimationFrame(() => {
+      if (!this.hourColRef?.nativeElement) {
+        if (attempts > 0) this.centerAllWhenReady(attempts - 1);
+        return;
+      }
+      this.centerHour(false);
+      this.centerMinute(false);
+    });
   }
 
   /** Cierra reproduciendo la animación de salida antes de desmontar el popup del DOM. */
@@ -400,17 +462,21 @@ export class TimePickerComponent implements ControlValueAccessor {
     if (this.hour24 === null) { this.hour24 = 12; this.minuteValue = 0; }
   }
 
+  /* Tras elegir, la opción se recentra en la banda: si no, quedaba donde la
+     hubieras pulsado y las tres columnas volvían a descuadrarse. */
   selectHour12(h12: number) {
     this.ensureDefaults();
     const isPm = (this.hour24 ?? 0) >= 12;
     this.hour24 = (h12 % 12) + (isPm ? 12 : 0);
     this.emit();
+    this.centerHour();
   }
 
   selectMinute(m: number) {
     this.ensureDefaults();
     this.minuteValue = m;
     this.emit();
+    this.centerMinute();
   }
 
   selectMeridiem(mer: Meridiem) {
@@ -425,7 +491,8 @@ export class TimePickerComponent implements ControlValueAccessor {
     this.hour24 = now.getHours();
     this.minuteValue = now.getMinutes();
     this.emit();
-    requestAnimationFrame(() => this.scrollSelectedIntoView());
+    this.centerHour();
+    this.centerMinute();
   }
 
   clearTime() {

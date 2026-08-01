@@ -5,6 +5,8 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, EMPTY } from 'r
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
+import { TimePickerComponent } from '../../../shared/components/time-picker/time-picker.component';
+import { UbicacionPickerComponent } from './ubicacion-picker.component';
 import { DiscursosService } from '../services/discursos.service';
 import { ConflictosService } from '../services/conflictos.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
@@ -20,6 +22,7 @@ import {
   MESES_ES,
   PublicadorSimple,
   TemaPublicador,
+  UbicacionSaliente,
 } from '../models/discursos.models';
 
 type Estado = 'idle' | 'loading' | 'ready' | 'error';
@@ -28,7 +31,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas';
 @Component({
   selector: 'app-reuniones-discursos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePickerComponent],
+  imports: [CommonModule, FormsModule, DatePickerComponent, TimePickerComponent, UbicacionPickerComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -514,13 +517,23 @@ type SubTab = 'entrantes' | 'salientes' | 'temas';
                             }
                           }
                         }
-                        @if (hasEditPermission() && !isEditandoSaliente(saliente.id_discurso_saliente)) {
-                          <button (click)="eliminarSaliente(saliente)"
-                            aria-label="Eliminar saliente"
-                            class="ml-auto w-9 h-9 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 flex items-center justify-center transition-all active:scale-95">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                          </button>
-                        }
+                        <div class="ml-auto flex items-center gap-1">
+                          @if (saliente.id_publicador) {
+                            <button (click)="abrirWhatsapp(saliente)"
+                              title="Notificar al orador por WhatsApp"
+                              aria-label="Notificar al orador por WhatsApp"
+                              class="w-9 h-9 rounded-lg flex items-center justify-center text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all active:scale-95">
+                              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                            </button>
+                          }
+                          @if (hasEditPermission() && !isEditandoSaliente(saliente.id_discurso_saliente)) {
+                            <button (click)="eliminarSaliente(saliente)"
+                              aria-label="Eliminar saliente"
+                              class="w-9 h-9 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 flex items-center justify-center transition-all active:scale-95">
+                              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                          }
+                        </div>
                       </div>
                       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 p-3 sm:p-4">
                         <div class="flex flex-col gap-1">
@@ -530,7 +543,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas';
                             (change)="onSalientePublicadorChange(saliente, $event)"
                             class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full">
                             <option value="" [selected]="!saliente.id_publicador">— Sin asignar —</option>
-                            @for (p of publicadores(); track p.id_publicador) {
+                            @for (p of opcionesPublicador(saliente); track p.id_publicador) {
                               <option [value]="p.id_publicador + ''" [selected]="saliente.id_publicador === p.id_publicador">{{ p.nombre_completo }}</option>
                             }
                           </select>
@@ -545,6 +558,15 @@ type SubTab = 'entrantes' | 'salientes' | 'temas';
                             class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full">
                         </div>
                         <div class="flex flex-col gap-1">
+                          <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Hora</label>
+                          <app-time-picker
+                            [ngModel]="saliente.hora"
+                            (ngModelChange)="onSalienteHoraChange(saliente, $event)"
+                            [ngModelOptions]="{ standalone: true }"
+                            [disabled]="!hasEditPermission() || (saliente.confirmado && !isEditandoSaliente(saliente.id_discurso_saliente))"
+                            colorScheme="violet" placeholder="Hora"></app-time-picker>
+                        </div>
+                        <div class="flex flex-col gap-1">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Tema del Discurso</label>
                           <input type="text"
                             [value]="saliente.tema_discurso ?? ''"
@@ -552,6 +574,16 @@ type SubTab = 'entrantes' | 'salientes' | 'temas';
                             (blur)="onSalienteChange(saliente, 'tema_discurso', $event)"
                             placeholder="Título del tema"
                             class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full">
+                        </div>
+                        <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
+                          <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Ubicación del Salón</label>
+                          <app-ubicacion-picker
+                            size="sm"
+                            [ngModel]="ubicacionDe(saliente)"
+                            (ngModelChange)="onSalienteUbicacionChange(saliente, $event)"
+                            [ngModelOptions]="{ standalone: true }"
+                            [disabled]="!hasEditPermission() || (saliente.confirmado && !isEditandoSaliente(saliente.id_discurso_saliente))">
+                          </app-ubicacion-picker>
                         </div>
                         <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Notas</label>
@@ -705,6 +737,12 @@ type SubTab = 'entrantes' | 'salientes' | 'temas';
               </app-date-picker>
             </div>
             <div class="flex flex-col gap-1.5">
+              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Hora de la reunión</label>
+              <app-time-picker [(ngModel)]="nuevoSaliente.hora" [ngModelOptions]="{ standalone: true }"
+                colorScheme="violet" placeholder="Seleccionar hora"></app-time-picker>
+              <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 px-1">Hora de la reunión en la congregación destino.</p>
+            </div>
+            <div class="flex flex-col gap-1.5">
               <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Publicador</label>
               <div class="relative">
                 <input
@@ -750,7 +788,16 @@ type SubTab = 'entrantes' | 'salientes' | 'temas';
             <div class="flex flex-col gap-1.5">
               <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Congregación Destino</label>
               <input type="text" [(ngModel)]="nuevoSaliente.congregacion_destino" placeholder="Nombre congregación"
+                (blur)="autorellenarUbicacion()"
                 class="h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:bg-white dark:focus:bg-slate-800 transition-[border-color,background-color] duration-150 ease-out w-full">
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ubicación del Salón</label>
+              <app-ubicacion-picker [ngModel]="nuevoSaliente.ubicacion" (ngModelChange)="onUbicacionModalChange($event)"
+                [ngModelOptions]="{ standalone: true }"></app-ubicacion-picker>
+              @if (ubicacionAutorellenada() && nuevoSaliente.ubicacion) {
+                <p class="text-[0.65rem] text-violet-600 dark:text-violet-400 px-1">Ubicación recordada de una asignación anterior.</p>
+              }
             </div>
             <div class="flex flex-col gap-1.5">
               <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tema del Discurso</label>
@@ -848,6 +895,67 @@ type SubTab = 'entrantes' | 'salientes' | 'temas';
         </div>
       </div>
     }
+
+    <!-- ===== MODAL NOTIFICAR POR WHATSAPP ===== -->
+    @if (whatsappPendiente(); as wa) {
+      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarWhatsapp()">
+        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
+
+          <div class="flex justify-center pt-3 pb-1 sm:hidden">
+            <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+          </div>
+
+          <div class="px-5 pt-3 pb-4 sm:pt-5 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center justify-between">
+              <h2 class="text-base font-black text-slate-900 dark:text-white">Notificar por WhatsApp</h2>
+              <button (click)="cerrarWhatsapp()"
+                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3 px-5 py-4">
+            <div class="flex items-center gap-2 text-sm">
+              <span class="text-slate-500 dark:text-slate-400">Para:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-100">{{ wa.nombre }}</span>
+              @if (wa.telefono) {
+                <span class="text-slate-400 dark:text-slate-500">· +{{ wa.telefono }}</span>
+              }
+            </div>
+            @if (!wa.telefono) {
+              <div class="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                </svg>
+                <p class="text-xs text-amber-700 dark:text-amber-300">
+                  Este publicador no tiene teléfono registrado. Se abrirá WhatsApp para que elijas el contacto.
+                </p>
+              </div>
+            }
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mensaje</label>
+              <textarea rows="11"
+                [value]="wa.mensaje"
+                (input)="onMensajeWhatsappChange($any($event.target).value)"
+                class="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition-[border-color,background-color] duration-150 ease-out w-full resize-none leading-relaxed"></textarea>
+            </div>
+          </div>
+
+          <div class="flex gap-2 px-5 pb-6 sm:pb-5 pt-1">
+            <button (click)="cerrarWhatsapp()"
+              class="flex-1 h-11 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-[background-color] duration-150 ease-out active:scale-[0.97]">
+              Cancelar
+            </button>
+            <button (click)="enviarWhatsapp()" [disabled]="!wa.mensaje.trim()"
+              class="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-sm font-bold text-white flex items-center justify-center gap-2 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-md shadow-emerald-500/20">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              Abrir WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class ReunionesDiscursosComponent implements OnInit {
@@ -937,9 +1045,15 @@ export class ReunionesDiscursosComponent implements OnInit {
   genMes = new Date().getMonth() + 1;
   genAno = new Date().getFullYear();
 
-  nuevoSaliente: { fecha: string; id_publicador: number | null; congregacion_destino: string; tema_discurso: string } = {
-    fecha: '', id_publicador: null, congregacion_destino: '', tema_discurso: '',
+  nuevoSaliente: {
+    fecha: string; id_publicador: number | null; congregacion_destino: string;
+    tema_discurso: string; hora: string; ubicacion: UbicacionSaliente | null;
+  } = {
+    fecha: '', id_publicador: null, congregacion_destino: '', tema_discurso: '', hora: '', ubicacion: null,
   };
+
+  /** true cuando la ubicación del modal viene del autorelleno por congregación. */
+  readonly ubicacionAutorellenada = signal(false);
 
   private get idCong(): number | null {
     return this.congCtx.effectiveCongregacionId();
@@ -1027,9 +1141,32 @@ export class ReunionesDiscursosComponent implements OnInit {
   private cargarPublicadores(): void {
     if (!this.idCong) return;
     this.svc.getPublicadores(this.idCong).subscribe({
-      next: (p) => this.publicadores.set(p),
+      next: (p) => {
+        // Si la congregación aún no tiene nadie con el permiso "orador",
+        // caemos a todos los activos para que el desplegable sea usable.
+        if (p.length === 0) {
+          this.svc.getPublicadores(this.idCong, false).subscribe({
+            next: (todos) => this.publicadores.set(todos),
+            error: () => {},
+          });
+          return;
+        }
+        this.publicadores.set(p);
+      },
       error: () => {},
     });
+  }
+
+  /**
+   * Opciones del desplegable de una tarjeta: la lista de conferenciantes más el
+   * publicador ya asignado si no figura en ella (p. ej. porque perdió el
+   * permiso "orador"), para que la asignación guardada siempre se vea.
+   */
+  opcionesPublicador(saliente: DiscursoSalienteOut): PublicadorSimple[] {
+    const lista = this.publicadores();
+    const asignado = saliente.publicador;
+    if (!asignado || lista.some(p => p.id_publicador === asignado.id_publicador)) return lista;
+    return [asignado, ...lista];
   }
 
   cargarMes(ano: number, mes: number): void {
@@ -1231,7 +1368,8 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   abrirModalSaliente(): void {
-    this.nuevoSaliente = { fecha: '', id_publicador: null, congregacion_destino: '', tema_discurso: '' };
+    this.nuevoSaliente = { fecha: '', id_publicador: null, congregacion_destino: '', tema_discurso: '', hora: '', ubicacion: null };
+    this.ubicacionAutorellenada.set(false);
     this.busquedaPublicador.set('');
     this.resultadosBusqueda.set(this.publicadores());
     this.mostrarDropdownBusqueda.set(false);
@@ -1260,6 +1398,157 @@ export class ReunionesDiscursosComponent implements OnInit {
 
   cerrarModalSaliente(): void {
     this.modalSalienteVisible.set(false);
+  }
+
+  // ── Notificación por WhatsApp al orador ────────────────────────────────────
+
+  readonly whatsappPendiente = signal<{
+    nombre: string; telefono: string | null; mensaje: string;
+  } | null>(null);
+
+  abrirWhatsapp(saliente: DiscursoSalienteOut): void {
+    const nombre = saliente.publicador?.nombre_completo ?? 'Publicador';
+    this.whatsappPendiente.set({
+      nombre,
+      telefono: this.normalizarTelefono(saliente.publicador?.telefono),
+      mensaje: this.mensajeWhatsapp(saliente),
+    });
+  }
+
+  cerrarWhatsapp(): void {
+    this.whatsappPendiente.set(null);
+  }
+
+  onMensajeWhatsappChange(texto: string): void {
+    const actual = this.whatsappPendiente();
+    if (actual) this.whatsappPendiente.set({ ...actual, mensaje: texto });
+  }
+
+  /** Abre WhatsApp con el mensaje; sin teléfono deja elegir el contacto. */
+  enviarWhatsapp(): void {
+    const w = this.whatsappPendiente();
+    if (!w) return;
+    const texto = encodeURIComponent(w.mensaje);
+    const url = w.telefono
+      ? `https://wa.me/${w.telefono}?text=${texto}`
+      : `https://wa.me/?text=${texto}`;
+    window.open(url, '_blank');
+    this.cerrarWhatsapp();
+  }
+
+  private mensajeWhatsapp(s: DiscursoSalienteOut): string {
+    const primerNombre = (s.publicador?.nombre_completo ?? '').split(' ')[0] || 'hermano';
+    const lineas = [
+      `Hola ${primerNombre},`,
+      '',
+      'Has sido programado para dar un discurso público:',
+      '',
+      `◆ *Fecha:* ${this.fechaLarga(s.fecha)}`,
+    ];
+    if (s.hora) lineas.push(`◆ *Hora:* ${this.formatHora(s.hora)}`);
+    if (s.congregacion_destino) lineas.push(`◆ *Congregación:* ${s.congregacion_destino}`);
+    if (s.tema_discurso) lineas.push(`◆ *Discurso:* ${s.tema_discurso}`);
+    if (s.direccion_destino) lineas.push(`◆ *Lugar:* ${s.direccion_destino}`);
+    if (s.url_mapa) lineas.push(`◆ *Cómo llegar:* ${s.url_mapa}`);
+    if (s.notas) lineas.push(`◆ *Notas:* ${s.notas}`);
+    lineas.push('', 'Por favor confirma que puedes atender esta asignación. ¡Gracias!');
+    return lineas.join('\n');
+  }
+
+  private fechaLarga(fechaStr: string): string {
+    const d = new Date(fechaStr + 'T00:00:00');
+    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    return `${dias[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+  }
+
+  /** "14:30" → "2:30 p. m." */
+  private formatHora(hora: string): string {
+    const [h, m] = hora.split(':').map(Number);
+    if (isNaN(h)) return hora;
+    const sufijo = h < 12 ? 'a. m.' : 'p. m.';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${String(m ?? 0).padStart(2, '0')} ${sufijo}`;
+  }
+
+  /** Deja sólo dígitos y antepone el indicativo de Colombia a los móviles. */
+  private normalizarTelefono(telefono?: string | null): string | null {
+    if (!telefono) return null;
+    const limpio = telefono.replace(/\D/g, '');
+    if (!limpio) return null;
+    return !limpio.startsWith('57') && limpio.length === 10 ? `57${limpio}` : limpio;
+  }
+
+  onUbicacionModalChange(ubic: UbicacionSaliente | null): void {
+    this.nuevoSaliente.ubicacion = ubic;
+    this.ubicacionAutorellenada.set(false);
+  }
+
+  /** Al salir de "Congregación Destino", recupera la ubicación usada la última vez. */
+  autorellenarUbicacion(): void {
+    const nombre = this.nuevoSaliente.congregacion_destino?.trim();
+    if (!nombre || this.nuevoSaliente.ubicacion || !this.idCong) return;
+    this.svc.ubicacionSugerida(nombre, this.idCong).subscribe({
+      next: (u) => {
+        if (!u?.url_mapa || this.nuevoSaliente.ubicacion) return;
+        this.nuevoSaliente.ubicacion = {
+          direccion_destino: u.direccion_destino ?? null,
+          url_mapa: u.url_mapa,
+          lat: u.lat ?? null,
+          lon: u.lon ?? null,
+        };
+        this.ubicacionAutorellenada.set(true);
+      },
+      error: () => {},
+    });
+  }
+
+  /**
+   * Objeto de ubicación memoizado por saliente: devolver una referencia nueva
+   * en cada ciclo de detección haría que ngModel reescribiera el picker sin
+   * parar (bucle infinito).
+   */
+  private ubicacionCache = new Map<number, UbicacionSaliente | null>();
+
+  ubicacionDe(saliente: DiscursoSalienteOut): UbicacionSaliente | null {
+    const cacheado = this.ubicacionCache.get(saliente.id_discurso_saliente);
+    if (cacheado !== undefined
+      && (cacheado?.url_mapa ?? null) === (saliente.url_mapa ?? null)
+      && (cacheado?.direccion_destino ?? null) === (saliente.direccion_destino ?? null)) {
+      return cacheado;
+    }
+    const ubic: UbicacionSaliente | null = saliente.url_mapa
+      ? {
+          direccion_destino: saliente.direccion_destino,
+          url_mapa: saliente.url_mapa,
+          lat: saliente.lat,
+          lon: saliente.lon,
+        }
+      : null;
+    this.ubicacionCache.set(saliente.id_discurso_saliente, ubic);
+    return ubic;
+  }
+
+  onSalienteHoraChange(saliente: DiscursoSalienteOut, hora: string | null): void {
+    const nueva = hora || null;
+    if ((saliente.hora ?? null) === nueva) return;
+    this.svc.editarSaliente(saliente.id_discurso_saliente, { hora: nueva }, this.idCong).subscribe({
+      next: (updated) => this.updateSaliente(updated),
+      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar la hora'),
+    });
+  }
+
+  onSalienteUbicacionChange(saliente: DiscursoSalienteOut, ubic: UbicacionSaliente | null): void {
+    if ((saliente.url_mapa ?? null) === (ubic?.url_mapa ?? null)) return;
+    this.svc.editarSaliente(saliente.id_discurso_saliente, {
+      direccion_destino: ubic?.direccion_destino ?? null,
+      url_mapa: ubic?.url_mapa ?? null,
+      lat: ubic?.lat ?? null,
+      lon: ubic?.lon ?? null,
+    }, this.idCong).subscribe({
+      next: (updated) => this.updateSaliente(updated),
+      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar la ubicación'),
+    });
   }
 
   loadTemas(): void {
@@ -1336,6 +1625,11 @@ export class ReunionesDiscursosComponent implements OnInit {
         id_publicador: this.nuevoSaliente.id_publicador,
         congregacion_destino: this.nuevoSaliente.congregacion_destino || null,
         tema_discurso: this.nuevoSaliente.tema_discurso || null,
+        hora: this.nuevoSaliente.hora || null,
+        direccion_destino: this.nuevoSaliente.ubicacion?.direccion_destino ?? null,
+        url_mapa: this.nuevoSaliente.ubicacion?.url_mapa ?? null,
+        lat: this.nuevoSaliente.ubicacion?.lat ?? null,
+        lon: this.nuevoSaliente.ubicacion?.lon ?? null,
       }, idCong).subscribe({
         next: (nuevo) => {
           const d = this.mesDatos();

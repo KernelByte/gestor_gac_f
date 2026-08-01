@@ -28,7 +28,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex flex-col gap-5 h-full">
+    <div class="cfg-root flex flex-col gap-5 h-full">
 
        <!-- Toast -->
        @if (toast()) {
@@ -780,8 +780,8 @@ import {
                  </div>
 
                  <!-- ── VISTA ESCRITORIO: tabla (≥ md) ── -->
-                 <div class="hidden md:flex flex-1 min-h-0 overflow-x-auto overflow-y-auto simple-scrollbar">
-                     <table class="w-full min-w-max text-left border-collapse">
+                 <div class="priv-scroll hidden md:flex flex-1 min-h-0 overflow-x-auto overflow-y-auto simple-scrollbar">
+                     <table class="priv-table w-full min-w-max text-left border-collapse">
                           <thead class="priv-thead sticky top-0 z-30">
                            <tr>
                               <th class="priv-th-publisher is-sticky px-2 py-1.5 sticky left-0 z-40 min-w-[170px] text-left">
@@ -822,7 +822,7 @@ import {
                                   </div>
                                 </th>
                               }
-                              <th class="priv-th px-0.5 py-1.5 text-center min-w-[80px] border-l border-white/[0.07]">
+                              <th class="priv-th priv-th-oratoria px-0.5 py-1.5 text-center min-w-[80px] border-l border-white/[0.07]">
                                 <span class="text-[9px] font-black text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">Oratoria</span>
                               </th>
                            </tr>
@@ -836,12 +836,12 @@ import {
                                       : (idx % 2 === 1 ? 'bg-slate-50/40 dark:bg-slate-800/20' : '')">
                                      <td class="px-2.5 py-1.5 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-purple-50/40 dark:group-hover:bg-purple-900/10 transition-colors border-r border-slate-100 dark:border-slate-800/60">
                                         <div class="flex items-center gap-1.5">
-                                             <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-semibold text-[0.625rem] shadow-sm ring-1 ring-white border border-white/50"
+                                             <div class="priv-avatar w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-semibold text-[0.625rem] shadow-sm ring-1 ring-white border border-white/50"
                                                   [ngClass]="getAvatarClass(pub)">
                                                {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
                                              </div>
                                             <div class="min-w-0">
-                                                <div class="text-xs font-bold text-slate-800 dark:text-white leading-tight tracking-tight break-words max-w-[150px]" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
+                                                <div class="priv-name text-xs font-bold text-slate-800 dark:text-white leading-tight tracking-tight break-words max-w-[150px]" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
                                           {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
                                       </div>
                                       <div class="flex flex-wrap gap-0.5 mt-0.5">
@@ -896,7 +896,7 @@ import {
                   </div>
 
                   <!-- Pagination -->
-                  <div class="shrink-0 px-4 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                  <div class="priv-pagination shrink-0 px-4 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
                     <span class="text-[0.6875rem] text-slate-400 dark:text-slate-500 font-medium tabular-nums">
                       {{ (currentPage() - 1) * pageSize() + 1 }}–{{ Math.min(currentPage() * pageSize(), filteredPublicadores().length) }}
                       <span class="text-slate-300 dark:text-slate-600">de</span>
@@ -1319,6 +1319,69 @@ import {
        :host-context(.dark) .algo-stepper-btn:not(:disabled):hover { background-color: rgba(109,40,217,0.20); color: #a78bfa; }
      }
      .algo-stepper-btn:not(:disabled):active { transform: scale(0.88); }
+
+     /* ─────── Adaptación a portátiles (MacBook Pro 14" / 16") ─────── */
+
+     /* El scroll de la matriz no arrastra la página al llegar al borde */
+     .priv-scroll { overscroll-behavior: contain; }
+
+     /* Nivel de oratoria legible completo ("Intermedio", "Principiante") en
+        vez de truncado: hay sitio de sobra en cualquier portátil. */
+     @media (min-width: 1200px) {
+       .priv-table .priv-select {
+         width: 96px;
+         font-size: 11px;
+         padding-right: 16px !important;
+       }
+     }
+
+     /* MacBook Pro 14" (1512 CSS px) — con el sidebar abierto quedan ~1148 px
+        útiles y la matriz se salía 117 px: se compactan cabeceras, columna de
+        publicador y selector de oratoria para que entre completa sin scroll
+        horizontal. Por encima de 1600 px (MBP 16" = 1728) ya cabía sola. */
+     @media (min-width: 1200px) and (max-width: 1600px) {
+       .priv-table thead th:not(.priv-th-publisher) span {
+         font-size: 8px;
+         letter-spacing: 0;
+         overflow-wrap: break-word;
+       }
+       .priv-table thead th.priv-th { max-width: 76px; }
+       .priv-table thead th.priv-restrict-header { min-width: 0; max-width: 62px; }
+       .priv-table thead th.priv-th-publisher { min-width: 140px; }
+       .priv-table .priv-name { max-width: 104px; }
+       .priv-table .priv-select {
+         width: 84px;
+         font-size: 10px;
+         padding-left: 5px;
+         padding-right: 14px !important;
+         background-position: right 3px center;
+       }
+     }
+
+     /* Alturas de portátil (14" ≈ 860 px, 16" ≈ 990 px de viewport): densidad
+        más alta para ver ~19–23 filas sin sacrificar legibilidad. */
+     @media (min-width: 1024px) and (max-height: 1000px) {
+       .cfg-root { gap: 0.75rem; }
+       .priv-table tbody td { padding-top: 3px; padding-bottom: 3px; }
+       .priv-table .priv-avatar { width: 26px; height: 26px; }
+       .priv-table .priv-name { font-size: 11.5px; }
+     }
+
+     /* Degradado que indica que la tabla continúa bajo la barra de paginación */
+     @media (min-width: 1200px) {
+       .priv-pagination { position: relative; }
+       .priv-pagination::before {
+         content: '';
+         position: absolute;
+         left: 0; right: 0; bottom: 100%;
+         height: 18px;
+         background: linear-gradient(to top, rgba(255,255,255,0.92), rgba(255,255,255,0));
+         pointer-events: none;
+       }
+       :host-context(.dark) .priv-pagination::before {
+         background: linear-gradient(to top, rgba(15,23,42,0.92), rgba(15,23,42,0));
+       }
+     }
 
      @media (prefers-reduced-motion: reduce) {
        .priv-stat, .priv-row, .priv-check, .priv-select, .priv-avatar, .priv-page-btn,

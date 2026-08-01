@@ -85,7 +85,8 @@ export class TimeAgoPipe implements PipeTransform {
         </div>
 
         <!-- Navigation (Scrollable) -->
-        <div class="flex-1 overflow-y-auto py-6 custom-scrollbar" [ngClass]="{ 'px-5': !collapsed(), 'px-3': collapsed(), 'nav-overflow-collapsed': collapsed() }">
+        <div class="sidebar-nav flex-1 min-h-0 overflow-y-auto py-6 custom-scrollbar" [ngClass]="{ 'px-5': !collapsed(), 'px-3': collapsed() }"
+             (mouseover)="onNavHover($event)" (mouseleave)="hideNavTooltip()" (scroll)="hideNavTooltip()">
           <nav class="space-y-1.5">
             <!-- Main Section -->
             <div class="mb-8">
@@ -99,7 +100,6 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Inicio</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Inicio</span>
               </a>
 
               <!-- Roles -->
@@ -110,7 +110,6 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Roles</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Roles</span>
               </a>
 
               <!-- Usuarios -->
@@ -121,7 +120,6 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Usuarios</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Usuarios</span>
               </a>
             </div>
             
@@ -139,7 +137,6 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Visita del circuito</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Visita del circuito</span>
               </a>
             </div>
 
@@ -166,7 +163,6 @@ export class TimeAgoPipe implements PipeTransform {
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>
                     </div>
                     <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Reuniones</span>
-                    <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Reuniones</span>
                   </div>
                   <svg *ngIf="!collapsed()" class="w-4 h-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]" [ngClass]="{ 'rotate-180': reunionesMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
@@ -212,7 +208,6 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Publicadores</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Publicadores</span>
               </a>
 
               <!-- Informes -->
@@ -223,7 +218,6 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Informes</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Informes</span>
               </a>
 
               <!-- Secretario Tools Accordion — exclusivo de Secretario/Administrador -->
@@ -242,7 +236,6 @@ export class TimeAgoPipe implements PipeTransform {
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </div>
                     <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Secretario</span>
-                    <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Secretario</span>
                   </div>
                   <svg *ngIf="!collapsed()" class="w-4 h-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]" [ngClass]="{ 'rotate-180': secretarioToolsMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
@@ -280,7 +273,6 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Mis Tareas</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Mis Tareas</span>
               </a>
 
               <!-- Territorios Accordion -->
@@ -299,7 +291,6 @@ export class TimeAgoPipe implements PipeTransform {
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
                     </div>
                     <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Territorios</span>
-                    <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Territorios</span>
                   </div>
                   <svg *ngIf="!collapsed()" class="w-4 h-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]" [ngClass]="{ 'rotate-180': territoriosMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
@@ -346,7 +337,6 @@ export class TimeAgoPipe implements PipeTransform {
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 3v18h18M7 15l4-4 4 4 6-6" /></svg>
                     </div>
                     <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Reportes</span>
-                    <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Reportes</span>
                   </div>
                   <svg *ngIf="!collapsed()" class="w-4 h-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]" [ngClass]="{ 'rotate-180': reportesMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
@@ -385,7 +375,6 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Exhibidores</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Exhibidores</span>
               </a>
             </div>
 
@@ -402,7 +391,6 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Configuración</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Configuración</span>
               </a>
 
               <!-- Configuracion Admin -->
@@ -413,14 +401,13 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Configuración</span>
-                <span *ngIf="collapsed()" class="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-[60] shadow-lg">Configuración</span>
               </a>
             </div>
           </nav>
         </div>
 
         <!-- Sidebar Footer Action Block (Notifs, Config, User Profile) -->
-        <div class="shrink-0 flex flex-col p-3 border-t border-gray-100 dark:border-white/5 divide-y divide-slate-100 dark:divide-slate-800">
+        <div class="sidebar-footer shrink-0 flex flex-col p-3 border-t border-gray-100 dark:border-white/5 divide-y divide-slate-100 dark:divide-slate-800">
            
            <!-- Action Row: Theme & Notifications (solo desktop) -->
            <div class="hidden lg:grid gap-1 pb-2 bg-slate-50/80 dark:bg-slate-800/50 rounded-xl p-1 border border-slate-100/80 dark:border-white/[0.05]" [ngClass]="collapsed() ? 'grid-cols-1' : 'grid-cols-2'">
@@ -433,8 +420,8 @@ export class TimeAgoPipe implements PipeTransform {
              </button>
 
              <div class="relative w-full flex">
-               <div *ngIf="notificationsOpen()" class="fixed inset-0 z-40" (click)="notificationsOpen.set(false)"></div>
                <button
+                 id="notif-button"
                  class="flex items-center justify-center p-2.5 min-h-[44px] rounded-lg transition-all w-full relative group"
                  [ngClass]="notifService.count() > 0 ? 'bg-brand-purple/10 dark:bg-purple-500/[0.13] text-brand-purple dark:text-purple-400 hover:bg-brand-purple/20 dark:hover:bg-purple-500/20' : 'hover:bg-white dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'"
                  (click)="toggleNotifications()" title="Notificaciones">
@@ -451,8 +438,9 @@ export class TimeAgoPipe implements PipeTransform {
                
                <!-- Dropdown Panel Notifications (upwards cuando expandido, a la derecha cuando colapsado) -->
                <div *ngIf="notificationsOpen()"
-                 class="hidden lg:block absolute w-[300px] bg-white dark:bg-slate-900 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.12)] border border-slate-200/60 dark:border-slate-700/60 z-50 overflow-hidden animate-fadeIn pb-1"
-                 [ngClass]="collapsed() ? 'left-[calc(100%+12px)] bottom-0' : 'bottom-[calc(100%+8px)] right-0'">
+                 id="notif-panel"
+                 class="hidden lg:block absolute bg-white dark:bg-slate-900 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.12)] border border-slate-200/60 dark:border-slate-700/60 z-50 overflow-hidden animate-fadeIn pb-1"
+                 [ngClass]="collapsed() ? 'w-[300px] left-[calc(100%+12px)] bottom-0' : 'w-[248px] bottom-[calc(100%+8px)] right-0'">
                  <div class="px-3 py-2 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
                    <div class="flex items-center gap-2">
                      <h3 class="font-bold text-slate-800 dark:text-white text-xs">Notificaciones</h3>
@@ -462,8 +450,8 @@ export class TimeAgoPipe implements PipeTransform {
                    </div>
                    <button *ngIf="notifService.count() > 0" (click)="marcarTodasLeidas()" class="text-[0.65rem] text-slate-400 hover:text-brand-purple">Marcar leídas</button>
                  </div>
-                 <div class="max-h-[300px] overflow-y-auto custom-scrollbar divide-y divide-slate-50 dark:divide-slate-800/50">
-                    <div *ngFor="let n of notifService.notificaciones()" 
+                 <div class="max-h-[min(300px,45vh)] overflow-y-auto overscroll-contain custom-scrollbar divide-y divide-slate-50 dark:divide-slate-800/50">
+                    <div *ngFor="let n of notifService.notificaciones()"
                       class="flex items-start gap-2.5 px-3 py-2.5 cursor-pointer relative"
                       [ngClass]="!n.leida ? 'bg-brand-purple/[0.02] hover:bg-brand-purple/[0.05]' : 'hover:bg-slate-50 dark:hover:bg-slate-800'"
                       (click)="onNotificacionClick(n)">
@@ -581,6 +569,13 @@ export class TimeAgoPipe implements PipeTransform {
         </div>
       </aside>
 
+      <!-- Tooltip flotante del sidebar colapsado (position: fixed → nunca lo recorta el scroll del nav) -->
+      <div *ngIf="navTooltip() as tip"
+           class="hidden lg:block fixed -translate-y-1/2 px-2.5 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-700 text-white rounded-lg whitespace-nowrap shadow-lg pointer-events-none z-[70] animate-fadeIn"
+           [style.top.px]="tip.top" [style.left.px]="tip.left">
+        {{ tip.text }}
+      </div>
+
       <!-- Main Content Area -->
       <div 
         class="flex-1 flex flex-col min-w-0 h-screen transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] print:!ml-0 print:!h-auto print:!overflow-visible" 
@@ -615,8 +610,8 @@ export class TimeAgoPipe implements PipeTransform {
 
              <!-- Notificaciones móvil -->
              <div class="relative lg:hidden">
-               <div *ngIf="notificationsOpen()" class="fixed inset-0 z-40" (click)="closeNotifications()"></div>
                <button
+                 id="mobile-notif-button"
                  class="w-10 h-10 flex items-center justify-center rounded-full relative transition-all active:scale-95"
                  [ngClass]="notifService.count() > 0 ? 'text-[#6d28d9] dark:text-purple-400' : 'text-slate-500 dark:text-slate-400'"
                  (click)="toggleNotifications()" title="Notificaciones">
@@ -633,6 +628,7 @@ export class TimeAgoPipe implements PipeTransform {
 
                <!-- Panel notificaciones móvil (hacia abajo, alineado a la derecha) -->
                <div *ngIf="notificationsOpen()"
+                    id="mobile-notif-panel"
                     class="fixed z-50 animate-fadeIn"
                     style="top: 64px; right: 8px; left: 8px;"
                     (mouseenter)="startNotifAutoClose()"
@@ -1050,8 +1046,24 @@ export class TimeAgoPipe implements PipeTransform {
 
     /* ── Submenu bullet ring — uses Tailwind ring-2 ring-white dark:ring-slate-900 inline ── */
 
-    /* ── P2-C: Allow tooltip overflow in collapsed mode ── */
-    .nav-overflow-collapsed { overflow: visible !important; }
+    /* ── Sidebar colapsado: los tooltips ya NO dependen de overflow:visible
+       (se renderizan con position:fixed fuera del contenedor), así el nav
+       siempre puede encoger y hacer scroll sin empujar el footer fuera. ── */
+
+    /* ── Pantallas de poca altura (MacBook 14", 13", ventanas reducidas):
+       densificamos el sidebar para que el nav no quede sin aire y el bloque
+       inferior (tema / notificaciones / perfil) siga completo dentro. ── */
+    @media (min-width: 1024px) and (max-height: 900px) {
+      aside .sidebar-nav { padding-top: 0.875rem; padding-bottom: 0.875rem; }
+      aside .sidebar-nav nav > div { margin-bottom: 1rem; }
+      aside .sidebar-nav nav > div > .h-px { margin-bottom: 0.75rem; margin-top: 0.25rem; }
+      aside .sidebar-footer { padding: 0.5rem; }
+    }
+    @media (min-width: 1024px) and (max-height: 720px) {
+      aside .sidebar-nav { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+      aside .sidebar-nav nav > div { margin-bottom: 0.625rem; }
+      aside .sidebar-footer .min-h-\\[44px\\] { min-height: 38px; padding-top: 0.375rem; padding-bottom: 0.375rem; }
+    }
 
 
     /* ── Ensure routed components fill the available space ── */
@@ -1129,6 +1141,36 @@ export class ShellPage implements OnInit, OnDestroy {
   // notificationCount ahora viene de notifService.count()
   @ViewChild('searchInput') searchInput!: ElementRef;
 
+  /** Tooltip del sidebar colapsado. Se posiciona con position:fixed sobre el
+      viewport, de modo que el contenedor del nav puede seguir con scroll propio
+      sin recortarlo (antes se forzaba overflow:visible y el nav dejaba de
+      encoger, empujando el bloque inferior fuera del sidebar). */
+  navTooltip = signal<{ text: string; top: number; left: number } | null>(null);
+
+  onNavHover(event: MouseEvent) {
+    if (!this.collapsed()) { this.navTooltip.set(null); return; }
+    const el = (event.target as HTMLElement | null)?.closest('a[title], button[title]') as HTMLElement | null;
+    if (!el) { this.navTooltip.set(null); return; }
+    const text = el.getAttribute('title');
+    if (!text) { this.navTooltip.set(null); return; }
+    const rect = el.getBoundingClientRect();
+    const aside = el.closest('aside')?.getBoundingClientRect();
+    this.navTooltip.set({
+      text,
+      top: rect.top + rect.height / 2,
+      left: (aside?.right ?? rect.right) + 10,
+    });
+  }
+
+  hideNavTooltip() {
+    if (this.navTooltip()) this.navTooltip.set(null);
+  }
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.hideNavTooltip();
+  }
+
   // Search Shortcut
   @HostListener('window:keydown.control.k', ['$event'])
   @HostListener('window:keydown.meta.k', ['$event'])
@@ -1157,6 +1199,15 @@ export class ShellPage implements OnInit, OnDestroy {
       if (this.mobileUserMenuOpen() && mBtn && mMenu && target) {
         if (!mBtn.contains(target) && !mMenu.contains(target)) {
           this.mobileUserMenuOpen.set(false);
+        }
+      }
+      if (this.notificationsOpen() && target) {
+        // El panel vive dentro del <aside> transformado, así que un backdrop
+        // fixed no cubre el resto de la pantalla: se cierra por click global.
+        const inside = ['notif-button', 'notif-panel', 'mobile-notif-button', 'mobile-notif-panel']
+          .some(id => document.getElementById(id)?.contains(target));
+        if (!inside) {
+          this.closeNotifications();
         }
       }
     } catch (err) { }
@@ -1359,6 +1410,7 @@ export class ShellPage implements OnInit, OnDestroy {
 
   toggleSidebar() {
     this.collapsed.update(v => !v);
+    this.hideNavTooltip();
   }
 
   openMobileMenu() { this.mobileMenuOpen.set(true); }
@@ -1412,6 +1464,9 @@ export class ShellPage implements OnInit, OnDestroy {
       this.hasColaboraciones.set(true);
       this.notificationsOpen.set(false);
       this.router.navigate(['/herramientas/visita-colaborador']);
+    } else if (n.tipo === 'transferencia_recibida') {
+      this.notificationsOpen.set(false);
+      this.router.navigate(['/secretario/publicadores']);
     }
   }
 
@@ -1426,6 +1481,7 @@ export class ShellPage implements OnInit, OnDestroy {
       case 'backup_completado':  return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
       case 'tarea_asignada':     return 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400';
       case 'visita_colaborador': return 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400';
+      case 'transferencia_recibida': return 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400';
       default: return 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
     }
   }

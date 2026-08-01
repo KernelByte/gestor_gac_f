@@ -107,7 +107,8 @@ export interface GenerarMesForm {
   mes_fin: number;
   ano_fin: number;
   id_plantilla: number;
-  dia_reunion: number;
+  /** null cuando la congregación no tiene configurado el día de reunión */
+  dia_reunion: number | null;
 }
 
 // ──────────────────────────────────────────────────────

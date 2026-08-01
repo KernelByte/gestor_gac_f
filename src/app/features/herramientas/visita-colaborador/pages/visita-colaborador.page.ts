@@ -1,24 +1,27 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { VisitaService } from '../../../secretario-tools/services/visita.service';
 import { AgendaItem, AgendaSecciones, Visita } from '../../../secretario-tools/models/visita.model';
 import { AgendaEditorComponent } from '../../../secretario-tools/visita-superintendente/components/agenda-editor.component';
+import { EntregaMetodosComponent } from '../../../secretario-tools/visita-superintendente/components/entrega-metodos.component';
+import { AuthStore } from '../../../../core/auth/auth.store';
 
-type Tab = 'agenda' | 'docs';
+type Tab = 'agenda' | 'docs' | 'entrega';
 type ToastType = 'success' | 'error' | 'info';
 interface Toast { id: number; type: ToastType; msg: string; }
 
 /**
  * Pantalla simplificada para COLABORADORES de la Visita del Superintendente:
  * usuarios (p.ej. ancianos) invitados por el secretario para completar la
- * agenda y subir documentos, sin acceso al resto de la gestión (entrega,
- * enlaces, eliminación, etc.).
+ * agenda, subir documentos y entregar la visita. Eliminar documentos queda
+ * reservado al coordinador de ancianos y al superintendente de servicio (ver
+ * `puedeEliminarDocs`); el resto de la gestión sigue siendo del secretario.
  */
 @Component({
   standalone: true,
   selector: 'app-visita-colaborador',
-  imports: [CommonModule, FormsModule, AgendaEditorComponent],
+  imports: [CommonModule, FormsModule, AgendaEditorComponent, EntregaMetodosComponent],
   template: `
   <div class="h-full flex flex-col overflow-hidden">
     <div class="flex-1 flex flex-col m-1 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
@@ -108,6 +111,11 @@ interface Toast { id: number; type: ToastType; msg: string; }
                   Documentos
                   @if (archivos().length) { <span class="tab-badge">{{ archivos().length }}</span> }
                 </button>
+                <button type="button" role="tab" class="tab-btn" [class.is-active]="activeTab() === 'entrega'"
+                        [attr.aria-selected]="activeTab() === 'entrega'" (click)="activeTab.set('entrega')">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                  Entrega
+                </button>
               </nav>
             </div>
 
@@ -132,6 +140,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
                 <app-agenda-editor
                   [items]="agendaItems()"
                   [secciones]="agendaSecciones()"
+                  [idCongregacion]="seleccionada()?.id_congregacion ?? null"
                   (changed)="markAgendaDirty()">
                 </app-agenda-editor>
 
@@ -166,10 +175,12 @@ interface Toast { id: number; type: ToastType; msg: string; }
                   </div>
                 </label>
 
-                <p class="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                  <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  Solo el secretario puede eliminar documentos.
-                </p>
+                @if (!puedeEliminarDocs()) {
+                  <p class="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Solo el secretario, el coordinador de ancianos o el superintendente de servicio pueden eliminar documentos.
+                  </p>
+                }
 
                 @if (archivos().length) {
                   <ul class="space-y-1.5">
@@ -181,13 +192,39 @@ interface Toast { id: number; type: ToastType; msg: string; }
                           </div>
                           <span class="text-sm text-slate-700 dark:text-slate-200 truncate flex-1">{{ a.nombre }}</span>
                         </div>
-                        <span class="text-xs text-slate-400 tabular-nums shrink-0">{{ (a.tamano_bytes / 1024) | number:'1.0-0' }} KB</span>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <span class="text-xs text-slate-400 tabular-nums">{{ (a.tamano_bytes / 1024) | number:'1.0-0' }} KB</span>
+                          @if (puedeEliminarDocs()) {
+                            @if (pendingDeleteFile() === a.nombre) {
+                              <div class="flex items-center gap-1.5 pl-2 border-l border-slate-200 dark:border-slate-700">
+                                <span class="text-xs text-rose-600 dark:text-rose-400 font-medium whitespace-nowrap">¿Eliminar?</span>
+                                <button (click)="confirmarEliminarArchivo(a.nombre)" class="text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 px-2 py-1 rounded-md transition-colors" style="min-height: 2rem">Sí</button>
+                                <button (click)="pendingDeleteFile.set(null)" class="text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 px-1.5 py-1" style="min-height: 2rem">No</button>
+                              </div>
+                            } @else {
+                              <button (click)="pendingDeleteFile.set(a.nombre)" class="btn-danger-ghost" [attr.aria-label]="'Eliminar ' + a.nombre">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22"/></svg>
+                              </button>
+                            }
+                          }
+                        </div>
                       </li>
                     }
                   </ul>
                 } @else {
                   <p class="text-sm text-slate-400 italic px-1">Aún no hay documentos en esta visita.</p>
                 }
+              </section>
+            }
+
+            <!-- Tab: Entrega -->
+            @if (activeTab() === 'entrega') {
+              <section class="p-4 sm:p-6 lg:px-10 space-y-4">
+                <app-entrega-metodos
+                  [idVisita]="seleccionada()!.id_visita"
+                  [correoSugerido]="seleccionada()!.correo_superintendente || null"
+                  (aviso)="toast($event.type, $event.msg)">
+                </app-entrega-metodos>
               </section>
             }
           }
@@ -349,6 +386,19 @@ interface Toast { id: number; type: ToastType; msg: string; }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     :host-context(.dark) .btn-ghost { color: #94a3b8; }
 
+    /* Quitar un documento: acción destructiva, discreta hasta que se usa. */
+    .btn-danger-ghost {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 2.25rem; min-height: 2.25rem; border-radius: 0.5rem;
+      color: #f43f5e; background: transparent; cursor: pointer;
+      transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out);
+    }
+    @media (max-width: 767px) { .btn-danger-ghost { min-width: 2.75rem; min-height: 2.75rem; } }
+    @media (hover: hover) and (pointer: fine) {
+      .btn-danger-ghost:hover { background: rgba(244,63,94,0.10); }
+    }
+    .btn-danger-ghost:active { transform: scale(0.95); }
+
     .spinner {
       display: inline-block; width: 1rem; height: 1rem; border-radius: 9999px;
       border: 2px solid currentColor; border-top-color: transparent;
@@ -467,6 +517,22 @@ interface Toast { id: number; type: ToastType; msg: string; }
 })
 export class VisitaColaboradorPage implements OnInit {
   private svc = inject(VisitaService);
+  private auth = inject(AuthStore);
+
+  /** Nombre del archivo con la confirmación de borrado abierta. */
+  pendingDeleteFile = signal<string | null>(null);
+
+  /**
+   * El coordinador de ancianos y el superintendente de servicio comparten con
+   * el secretario la responsabilidad del arreglo de la visita, así que también
+   * retiran documentos. Se compara por prefijo porque el nombre del rol varía
+   * ("Coordinador", "Coordinador del cuerpo de ancianos"). El backend aplica la
+   * misma regla: esto solo evita mostrar un botón que fallaría.
+   */
+  puedeEliminarDocs = computed(() => {
+    const rol = (this.auth.user()?.rol ?? '').trim().toLowerCase();
+    return rol.startsWith('coordinador') || rol.startsWith('superintendente de servicio');
+  });
 
   visitas = signal<Visita[]>([]);
   seleccionada = signal<Visita | null>(null);
@@ -514,6 +580,19 @@ export class VisitaColaboradorPage implements OnInit {
     this.svc.listarArchivos(v.id_visita).subscribe({
       next: (a) => this.archivos.set(a),
       error: () => this.toast('error', 'No se pudieron cargar los archivos'),
+    });
+  }
+
+  confirmarEliminarArchivo(nombre: string) {
+    const v = this.seleccionada();
+    if (!v) return;
+    this.pendingDeleteFile.set(null);
+    this.svc.eliminarArchivo(v.id_visita, nombre).subscribe({
+      next: () => {
+        this.archivos.update(arr => arr.filter(a => a.nombre !== nombre));
+        this.toast('success', 'Documento eliminado');
+      },
+      error: (e) => this.toast('error', e?.error?.detail || 'No se pudo eliminar el documento'),
     });
   }
 

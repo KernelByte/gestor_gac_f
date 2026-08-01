@@ -13,7 +13,9 @@ import {
   EditarSalienteRequest,
   EditarTemaRequest,
   GenerarDiscursosRequest,
+  GeoResultado,
   GrupoSimple,
+  UbicacionSaliente,
   MesDiscursosDisponible,
   PublicadorSimple,
   TemaPublicador,
@@ -53,6 +55,17 @@ export class DiscursosService {
 
   eliminarSaliente(id: number, idCong: number | null): Observable<void> {
     return this.http.delete<void>(`${this.base}/salientes/${id}`, { params: this.congParams(idCong) });
+  }
+
+  /** Busca direcciones (proxy backend, la CSP impide llamar al geocodificador directamente). */
+  geocodificar(q: string): Observable<GeoResultado[]> {
+    return this.http.get<GeoResultado[]>(`${this.base}/geocodificar`, { params: new HttpParams().set('q', q) });
+  }
+
+  /** Última ubicación registrada para una congregación destino con ese nombre. */
+  ubicacionSugerida(congregacion: string, idCong: number | null): Observable<Partial<UbicacionSaliente>> {
+    const params = this.congParams(idCong).set('congregacion', congregacion);
+    return this.http.get<Partial<UbicacionSaliente>>(`${this.base}/salientes/ubicacion-sugerida`, { params });
   }
 
   editarEntrante(id: number, payload: EditarEntranteRequest, idCong: number | null): Observable<DiscursoEntranteOut> {

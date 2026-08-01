@@ -154,9 +154,10 @@ export interface InformeHistorialItem {
    horas?: number;
    cursos_biblicos?: number;
    observaciones?: string;
-   credito?: number;
+   credito?: number; // Horas acreditadas por otro servicio (Betel, Salón de Asambleas)
    paux: boolean; // Precursor Auxiliar en ese mes
    es_regular?: boolean; // Precursor Regular en ese mes
+   exento?: boolean; // Consideración especial vigente: sin requisito de horas ese mes
 }
 
 
@@ -169,6 +170,8 @@ export interface PublicadorHistorial {
    nombre_estado?: string | null;
    es_precursor_regular: boolean;
    privilegio_actual?: string | null;
+   tiene_consideracion?: boolean;
+   consideracion_motivo?: string | null;
    informes: InformeHistorialItem[];
    // Totales anuales
    total_horas: number;

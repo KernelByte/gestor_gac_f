@@ -1,7 +1,10 @@
 export type EstadoTransferencia = 'borrador' | 'finalizada';
+export type AccionTransferencia = 'trasladar' | 'eliminar';
+export type AccionRealizada     = 'trasladado' | 'eliminado';
+export type OpcionUsuarioBorrado = 'sin_usuario' | 'eliminar_con_usuario' | 'reasignar_usuario';
 
 export interface TransferenciaMiembro {
-  id_publicador:        number;
+  id_publicador:        number | null;
   nombre_completo:      string;
   orden:                number;
   falta_consentimiento: boolean;
@@ -9,7 +12,7 @@ export interface TransferenciaMiembro {
 
 export interface Transferencia {
   id_transferencia:            number;
-  id_publicador:               number;
+  id_publicador:               number | null;
   id_congregacion_origen:      number;
   congregacion_destino?:       string | null;
   correo_congregacion_destino?: string | null;
@@ -22,9 +25,18 @@ export interface Transferencia {
   archivo_carta?:              string | null;
   archivo_zip?:                string | null;
   estado:                      EstadoTransferencia;
+  id_congregacion_destino?:    number | null;
+  accion_realizada?:           AccionRealizada | null;
+  procesada_en?:               string | null;
   miembros:                    TransferenciaMiembro[];
   creado_en:                   string;
   actualizado_en:              string;
+}
+
+export interface CompletarTransferenciaRequest {
+  accion:               AccionTransferencia;
+  numero_congregacion?: string | null;
+  opcion_usuario?:      OpcionUsuarioBorrado;
 }
 
 export interface TransferenciaCreate {

@@ -77,12 +77,24 @@ export class InformesHistorialEditComponent implements OnInit {
       return this.horas() > 0 && !this.esAuxiliar() && !this.esRegular() && !this.esEspecial();
    });
 
-   /** Horas extra extraídas de la observación (patrón "N Hrs") */
+   /** Horas acreditadas detectadas en la observación (mismos patrones que el backend: "N Hrs", "crédito N", "N horas extra") */
    hrsFromObservacion = computed(() => {
       const obs = this.observaciones();
       if (!obs) return null;
-      const match = obs.match(/(\d+)\s*Hrs/i);
-      return match ? parseInt(match[1], 10) : null;
+      const texto = obs.normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const patrones = [
+         /(\d{1,3})\s*(?:hrs?\.?|horas?|(?:de\s+)?betel)\b/i,
+         /(\d{1,3})\s*(?:de\s+)?creditos?\b/i,
+         /\b(?:creditos?|hrs?\.?|horas?|betel)\D{0,10}?(\d{1,3})/i,
+      ];
+      for (const re of patrones) {
+         const match = texto.match(re);
+         if (match) {
+            const valor = parseInt(match[1], 10);
+            if (valor > 0 && valor <= 200) return valor;
+         }
+      }
+      return null;
    });
 
    /** Total horas + horas de la observación */

@@ -10,6 +10,11 @@ import { lastValueFrom } from 'rxjs';
 import { PrivilegiosService } from '../../../privilegios/infrastructure/privilegios.service';
 import { Privilegio } from '../../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../../privilegios/domain/models/publicador-privilegio';
+import {
+  MOTIVOS_CONSIDERACION,
+  MotivoConsideracion,
+  PrecursorConsideracion,
+} from '../../../privilegios/domain/models/precursor-consideracion';
 import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
 import { environment } from '../../../../../../environments/environment';
@@ -1718,6 +1723,136 @@ interface TableColumn {
                                    </button>
                                </div>
                            </div>
+
+                           <!-- ── Consideración especial (solo precursores regulares) ───────── -->
+                           <div *ngIf="esPrecursorRegular()" class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                               <div class="text-center">
+                                   <label class="block text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Consideración especial</label>
+                                   <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-tight px-2">
+                                       Exime del requisito de 50 h/mes en informes y reportes. Conserva el nombramiento.
+                                   </p>
+                               </div>
+
+                               <!-- Historial de consideraciones -->
+                               <div class="space-y-2">
+                                   <div *ngFor="let c of consideraciones(); trackBy: trackConsideracionById"
+                                        class="rounded-xl border relative group transition-all"
+                                        [class]="!c.fecha_fin
+                                          ? 'border-teal-200 dark:border-teal-700/50 bg-teal-50/60 dark:bg-teal-900/20'
+                                          : 'border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50'">
+                                       <div class="p-3 flex items-start justify-between">
+                                           <div>
+                                               <h4 class="text-xs font-bold text-slate-800 dark:text-white">{{ c.motivo_label }}</h4>
+                                               <div class="text-[0.6875rem] text-slate-500 dark:text-slate-400 font-medium flex flex-wrap gap-2 mt-0.5">
+                                                   <span>Desde: {{ formatDate(c.fecha_inicio) }}</span>
+                                                   <span *ngIf="c.fecha_fin" class="text-slate-400">Hasta: {{ formatDate(c.fecha_fin) }}</span>
+                                                   <span *ngIf="!c.fecha_fin" class="text-teal-600 dark:text-teal-400 font-bold px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/40 rounded-md">Vigente</span>
+                                               </div>
+                                               <p *ngIf="c.descripcion" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">{{ c.descripcion }}</p>
+                                               <p *ngIf="c.creado_por_nombre" class="text-[9px] text-slate-400 dark:text-slate-500 mt-1">Registrado por {{ c.creado_por_nombre }}</p>
+                                           </div>
+                                           <div class="flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-all">
+                                               <button *ngIf="!c.fecha_fin && closingConsideracionId() !== c.id_consideracion"
+                                                   type="button"
+                                                   (click)="startClosingConsideracion(c.id_consideracion)"
+                                                   title="Finalizar la consideración (vuelve a aplicar el requisito de horas)"
+                                                   class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-500 dark:hover:text-white text-[10px] font-bold transition-all">
+                                                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                                   Finalizar
+                                               </button>
+                                               <button type="button"
+                                                   (click)="confirmDeleteConsideracion(c.id_consideracion)"
+                                                   title="Eliminar el registro (para conservar el historial, usá Finalizar)"
+                                                   class="p-1.5 text-slate-400 hover:text-red-500 transition-all">
+                                                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                               </button>
+                                           </div>
+                                       </div>
+                                       <!-- Panel inline para fecha de fin -->
+                                       <div *ngIf="closingConsideracionId() === c.id_consideracion" class="px-3 pb-3 border-t border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10 rounded-b-xl">
+                                           <p class="text-[0.625rem] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mt-2 mb-2">Fecha de cierre</p>
+                                           <div class="flex items-center gap-2">
+                                               <div class="flex-1">
+                                                   <app-date-picker
+                                                     [ngModel]="closingConsideracionFechaFin()"
+                                                     (ngModelChange)="closingConsideracionFechaFin.set($event)"
+                                                     [ngModelOptions]="{standalone: true}"
+                                                     placeholder="Seleccionar fecha"
+                                                   ></app-date-picker>
+                                               </div>
+                                               <button type="button" (click)="confirmClosingConsideracion()"
+                                                   [disabled]="!closingConsideracionFechaFin()"
+                                                   class="h-9 px-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                                   Guardar
+                                               </button>
+                                               <button type="button" (click)="cancelClosingConsideracion()"
+                                                   class="h-9 px-2 text-slate-400 hover:text-slate-600 transition-all">
+                                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                               </button>
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <div *ngIf="consideraciones().length === 0" class="text-center py-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                                       <p class="text-xs text-slate-400">Cumple el requisito normal de horas</p>
+                                   </div>
+                               </div>
+
+                               <!-- Otorgar consideración -->
+                               <div *ngIf="!consideracionVigente()" class="bg-teal-50/40 dark:bg-teal-900/10 rounded-xl p-3 border border-teal-100 dark:border-teal-500/20">
+                                   <p class="text-[0.625rem] font-bold text-teal-500 dark:text-teal-400 uppercase tracking-widest mb-2">Otorgar consideración</p>
+                                   <div class="space-y-3">
+                                       <!-- Motivo -->
+                                       <div class="relative">
+                                           <div *ngIf="motivoDropdownOpen()" (click)="motivoDropdownOpen.set(false)" class="fixed inset-0 z-10"></div>
+                                           <label class="block text-[9px] text-slate-500 font-bold mb-1">Motivo</label>
+                                           <button type="button" (click)="motivoDropdownOpen.set(!motivoDropdownOpen())"
+                                             class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-teal-200 dark:border-teal-800 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm flex items-center justify-between hover:border-teal-400 dark:hover:border-teal-600 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none">
+                                               <span>{{ getMotivoLabel(newConsideracion().motivo) }}</span>
+                                               <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" [class.rotate-180]="motivoDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                           </button>
+                                           <div *ngIf="motivoDropdownOpen()" class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-20 overflow-hidden animate-fadeIn">
+                                               <div class="py-1">
+                                                   <button *ngFor="let m of motivosConsideracion" type="button" (click)="selectMotivo(m.value)"
+                                                     class="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-teal-600 dark:hover:text-teal-400 transition-colors flex items-center justify-between">
+                                                       {{ m.label }}
+                                                       <svg *ngIf="newConsideracion().motivo === m.value" class="w-3.5 h-3.5 text-teal-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                   </button>
+                                               </div>
+                                           </div>
+                                       </div>
+
+                                       <!-- Fecha de inicio -->
+                                       <div>
+                                           <label class="block text-[9px] text-slate-500 font-bold mb-1">Desde</label>
+                                           <app-date-picker
+                                             [ngModel]="newConsideracion().fecha_inicio"
+                                             (ngModelChange)="updateNewConsideracion('fecha_inicio', $event)"
+                                             [ngModelOptions]="{standalone: true}"
+                                             placeholder="Seleccionar"
+                                           ></app-date-picker>
+                                       </div>
+
+                                       <!-- Detalle -->
+                                       <div>
+                                           <label class="block text-[9px] text-slate-500 font-bold mb-1">Detalle (opcional)</label>
+                                           <textarea
+                                             [ngModel]="newConsideracion().descripcion"
+                                             (ngModelChange)="updateNewConsideracion('descripcion', $event)"
+                                             [ngModelOptions]="{standalone: true}"
+                                             rows="2"
+                                             placeholder="Ej. Acuerdo del cuerpo de ancianos del 12/03/2026"
+                                             class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-teal-200 dark:border-teal-800 rounded-lg text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition-all outline-none resize-none"
+                                           ></textarea>
+                                       </div>
+
+                                       <button type="button" (click)="addConsideracion()" [disabled]="!canAddConsideracion()"
+                                         class="w-full h-8 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-xs font-bold shadow-sm shadow-teal-500/20 transition-all flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                           Otorgar Consideración
+                                       </button>
+                                   </div>
+                               </div>
+                           </div>
                        </div>
                        <div *ngIf="!editingPublicador()" class="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-center border border-dashed border-slate-200 dark:border-slate-700">
                            <p class="text-xs text-slate-400 dark:text-slate-500">Guarda el publicador para gestionar sus privilegios.</p>
@@ -2506,6 +2641,38 @@ interface TableColumn {
           </div>
       </div>
 
+      <!-- Delete Consideración Modal -->
+      <div *ngIf="consideracionToDelete() !== null" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity" (click)="closeDeleteConsideracionModal()"></div>
+
+          <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-[360px] w-full animate-fadeInUp border border-slate-100 dark:border-slate-700">
+             <div class="flex items-center gap-4 mb-4">
+                <div class="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">¿Eliminar la consideración?</h3>
+                    <p class="text-[0.6875rem] text-slate-500 font-medium">Sólo usar para corregir registros creados por error</p>
+                </div>
+             </div>
+
+             <p class="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+                 Los meses cubiertos volverán a exigir las 50 h/mes en informes y reportes. Si la consideración fue real y ya terminó, usá <span class="font-bold text-amber-600 dark:text-amber-400">Finalizar</span> en su lugar para conservar el historial.
+             </p>
+
+             <div class="flex items-center gap-2">
+                <button (click)="closeDeleteConsideracionModal()" class="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    Cancelar
+                </button>
+                <button (click)="executeDeleteConsideracion()" class="flex-1 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs hover:bg-slate-800 dark:hover:bg-white transition-all active:scale-95 shadow-sm">
+                    Confirmar
+                </button>
+              </div>
+          </div>
+      </div>
+
       <!-- Toast Notification -->
       <div 
         *ngIf="toastMessage()" 
@@ -2948,6 +3115,152 @@ export class PublicadoresListComponent implements OnInit {
 
     return null;
   });
+
+  // ── Consideración especial (exención del requisito de horas) ──────────────
+  // Solo aplica a precursores regulares: por edad avanzada o salud delicada
+  // conservan el nombramiento sin tener que cumplir las 50 h/mes.
+  // NO tiene relación con las horas de crédito (Betel, Salón de Asambleas).
+  readonly motivosConsideracion = MOTIVOS_CONSIDERACION;
+
+  consideraciones = signal<PrecursorConsideracion[]>([]);
+  newConsideracion = signal<{ motivo: MotivoConsideracion; fecha_inicio: string; descripcion: string }>({
+    motivo: 'salud',
+    fecha_inicio: new Date().toISOString().split('T')[0],
+    descripcion: ''
+  });
+  motivoDropdownOpen = signal(false);
+  closingConsideracionId = signal<number | null>(null);
+  closingConsideracionFechaFin = signal<string>('');
+  consideracionToDelete = signal<number | null>(null);
+
+  /** El publicador editado es (o fue) precursor regular. */
+  esPrecursorRegular = computed(() =>
+    this.publicadorPrivilegios().some(p =>
+      this.getPrivilegioNombre(p.id_privilegio).toLowerCase().includes('precursor regular')
+    )
+  );
+
+  /** Consideración vigente (sin fecha_fin) del publicador editado. */
+  consideracionVigente = computed(() =>
+    this.consideraciones().find(c => !c.fecha_fin) ?? null
+  );
+
+  /** Ids de publicadores con consideración vigente, para el badge del listado. */
+  consideracionesMap = signal<Set<number>>(new Set());
+
+  tieneConsideracion(idPublicador: number): boolean {
+    return this.consideracionesMap().has(idPublicador);
+  }
+
+  getMotivoLabel(motivo: MotivoConsideracion): string {
+    return MOTIVOS_CONSIDERACION.find(m => m.value === motivo)?.label ?? motivo;
+  }
+
+  updateNewConsideracion(field: 'motivo' | 'fecha_inicio' | 'descripcion', value: any) {
+    this.newConsideracion.update(prev => ({ ...prev, [field]: value }));
+  }
+
+  selectMotivo(motivo: MotivoConsideracion) {
+    this.updateNewConsideracion('motivo', motivo);
+    this.motivoDropdownOpen.set(false);
+  }
+
+  canAddConsideracion(): boolean {
+    const c = this.newConsideracion();
+    return !!c.fecha_inicio && !!c.motivo && !this.consideracionVigente();
+  }
+
+  loadConsideraciones(id: number) {
+    this.privilegiosService.getConsideraciones(id).subscribe({
+      next: (data) => {
+        this.consideraciones.set(data);
+        this.consideracionesMap.update(set => {
+          const next = new Set(set);
+          if (data.some(c => !c.fecha_fin)) next.add(id); else next.delete(id);
+          return next;
+        });
+      },
+      error: (err) => console.error('Error cargando consideraciones especiales', err)
+    });
+  }
+
+  addConsideracion() {
+    const pub = this.editingPublicador();
+    if (!pub || !this.canAddConsideracion()) return;
+
+    const data = this.newConsideracion();
+    this.privilegiosService.createConsideracion({
+      id_publicador: pub.id_publicador,
+      fecha_inicio: data.fecha_inicio,
+      motivo: data.motivo,
+      descripcion: data.descripcion?.trim() || null
+    }).subscribe({
+      next: () => {
+        this.loadConsideraciones(pub.id_publicador);
+        this.newConsideracion.set({
+          motivo: 'salud',
+          fecha_inicio: new Date().toISOString().split('T')[0],
+          descripcion: ''
+        });
+        this.showToast('Consideración especial otorgada', 'success');
+      },
+      error: (err) => this.showToast(
+        'Error: ' + (err.error?.detail || 'No se pudo otorgar la consideración'), 'error'
+      )
+    });
+  }
+
+  startClosingConsideracion(id: number) {
+    this.closingConsideracionId.set(id);
+    this.closingConsideracionFechaFin.set('');
+  }
+
+  cancelClosingConsideracion() {
+    this.closingConsideracionId.set(null);
+    this.closingConsideracionFechaFin.set('');
+  }
+
+  confirmClosingConsideracion() {
+    const id = this.closingConsideracionId();
+    const fecha = this.closingConsideracionFechaFin();
+    const pub = this.editingPublicador();
+    if (!id || !fecha || !pub) return;
+
+    this.privilegiosService.updateConsideracion(id, { fecha_fin: fecha }).subscribe({
+      next: () => {
+        this.loadConsideraciones(pub.id_publicador);
+        this.showToast('Consideración finalizada. Vuelve a aplicar el requisito de horas.', 'success');
+        this.cancelClosingConsideracion();
+      },
+      error: (err) => this.showToast('Error: ' + (err.error?.detail || err.message), 'error')
+    });
+  }
+
+  confirmDeleteConsideracion(id: number) {
+    this.consideracionToDelete.set(id);
+  }
+
+  closeDeleteConsideracionModal() {
+    this.consideracionToDelete.set(null);
+  }
+
+  executeDeleteConsideracion() {
+    const id = this.consideracionToDelete();
+    const pub = this.editingPublicador();
+    if (id === null || !pub) return;
+
+    this.privilegiosService.deleteConsideracion(id).subscribe({
+      next: () => {
+        this.loadConsideraciones(pub.id_publicador);
+        this.showToast('Consideración eliminada', 'success');
+        this.closeDeleteConsideracionModal();
+      },
+      error: (err) => {
+        this.showToast('Error al eliminar: ' + (err.error?.detail || err.message), 'error');
+        this.closeDeleteConsideracionModal();
+      }
+    });
+  }
 
   constructor() {
     effect(() => {
@@ -3421,6 +3734,7 @@ export class PublicadoresListComponent implements OnInit {
 
   async loadAuxiliaryData() {
     this.loadPrivilegiosCatalog(); // Cargar catálogo de privilegios
+    this.loadConsideracionesCongregacion(); // Badge de consideración especial en el listado
 
     try {
       const effectiveId = this.congregacionContext.effectiveCongregacionId();
@@ -3534,8 +3848,20 @@ export class PublicadoresListComponent implements OnInit {
             }
           });
         });
+
+        // Consideración especial (solo relevante si es precursor regular)
+        this.loadConsideraciones(id);
       },
       error: (err) => console.error('Error cargando privilegios de publicador', err)
+    });
+  }
+
+  /** Consideraciones vigentes de toda la congregación, para el badge del listado. */
+  loadConsideracionesCongregacion() {
+    const idCong = this.congregacionContext.effectiveCongregacionId();
+    this.privilegiosService.getConsideraciones(undefined, true, idCong).subscribe({
+      next: (data) => this.consideracionesMap.set(new Set(data.map(c => c.id_publicador))),
+      error: () => { /* el badge es informativo: si falla, no se muestra */ }
     });
   }
 
@@ -3574,6 +3900,7 @@ export class PublicadoresListComponent implements OnInit {
       permite_login_simple: true
     });
     this.publicadorPrivilegios.set([]); // Clear privileges for new form
+    this.resetConsideracionesState();
     this.panelOpen.set(true);
   }
 
@@ -3600,15 +3927,30 @@ export class PublicadoresListComponent implements OnInit {
       fecha_inicio_informe: p.fecha_inicio_informe || null,
       permite_login_simple: p.permite_login_simple ?? true
     });
-    this.loadPublicadorPrivilegios(p.id_publicador); // Fetch privileges for this publisher
+    this.resetConsideracionesState();
+    this.loadPublicadorPrivilegios(p.id_publicador); // Fetch privileges + consideraciones
     this.loadContactos(); // Fetch emergency contacts for this publisher
     this.panelOpen.set(true);
+  }
+
+  /** Limpia el estado de consideraciones al abrir/cerrar el drawer. */
+  private resetConsideracionesState() {
+    this.consideraciones.set([]);
+    this.motivoDropdownOpen.set(false);
+    this.consideracionToDelete.set(null);
+    this.cancelClosingConsideracion();
+    this.newConsideracion.set({
+      motivo: 'salud',
+      fecha_inicio: new Date().toISOString().split('T')[0],
+      descripcion: ''
+    });
   }
 
   closePanel() {
     this.panelOpen.set(false);
     this.editingPublicador.set(null);
     this.publicadorPrivilegios.set([]); // Clear privileges on close
+    this.resetConsideracionesState();
     this.contactos.set([]); // Clear emergency contacts on close
     this.showContactoForm.set(false); // Hide contact form
     this.publicadorForm.reset();
@@ -3901,6 +4243,10 @@ export class PublicadoresListComponent implements OnInit {
     return item.id_publicador_privilegio;
   }
 
+  trackConsideracionById(index: number, item: PrecursorConsideracion) {
+    return item.id_consideracion;
+  }
+
   trackGroupById(index: number, item: Grupo) {
     return item.id_grupo;
   }
@@ -3927,6 +4273,10 @@ export class PublicadoresListComponent implements OnInit {
 
     if (roleNames.some(r => r.includes('precursor regular'))) {
       roles.push({ label: 'PRECURSOR REGULAR', short: 'Prec. Regular', type: 'pill', class: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' });
+      // Exento del requisito de horas por edad avanzada o salud delicada
+      if (this.tieneConsideracion(p.id_publicador)) {
+        roles.push({ label: 'CONSIDERACIÓN ESPECIAL', short: 'Consideración esp.', type: 'pill', class: 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400' });
+      }
     }
     if (roleNames.some(r => r.includes('precursor auxiliar'))) {
       roles.push({ label: 'PRECURSOR AUXILIAR', short: 'Prec. Auxiliar', type: 'pill', class: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' });

@@ -1,9 +1,10 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TransferenciaService } from '../../services/transferencia.service';
-import { Transferencia } from '../../models/transferencia.model';
+import { CompletarTransferenciaRequest, Transferencia } from '../../models/transferencia.model';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
 import { environment } from '../../../../../environments/environment';
 
@@ -292,6 +293,20 @@ interface PublicadorLite {
     </div>
     <!-- /MODAL WIZARD -->
 
+    <!-- ── MODAL: Vista previa de la carta ── -->
+    <div *ngIf="mostrandoPreview()" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title" (click)="cerrarPreview()">
+      <div class="modal-dialog carta-preview-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 id="preview-modal-title" class="modal-title">Vista previa de la carta</h2>
+          <button (click)="cerrarPreview()" class="modal-close-btn" aria-label="Cerrar vista previa">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <iframe *ngIf="previewUrl()" [src]="previewUrl()" class="carta-preview-iframe" title="Vista previa de la carta"></iframe>
+      </div>
+    </div>
+    <!-- /MODAL PREVIEW -->
+
     <div class="h-full flex flex-col overflow-hidden">
     <div class="flex-1 flex flex-col m-1 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
 
@@ -326,7 +341,7 @@ interface PublicadorLite {
             <div class="list-panel__head flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 gap-3 flex-wrap">
               <h2 class="font-display font-bold text-base text-slate-800 dark:text-slate-200 leading-none">Transferencias</h2>
               <!-- Filter pills -->
-              <div class="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl shrink-0">
+              <div class="filter-pills-wrap flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl shrink-0">
                 <button (click)="filtro.set('todos')" class="filter-pill" [class.filter-pill--active]="filtro() === 'todos'" type="button">
                   Todos <span class="filter-count">{{ items().length }}</span>
                 </button>
@@ -339,8 +354,8 @@ interface PublicadorLite {
               </div>
             </div>
 
-            <!-- Desktop table -->
-            <div class="hidden md:flex md:flex-col flex-1 min-h-0">
+            <!-- Desktop / wide-panel table -->
+            <div class="list-table-wrap flex-1 min-h-0">
             <div class="flex-1 overflow-y-auto overflow-x-auto min-h-0">
               <table class="w-full border-collapse text-left text-sm">
                 <thead>
@@ -372,7 +387,7 @@ interface PublicadorLite {
                     <td class="px-5 py-3.5">
                       <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 font-bold font-display text-xs flex items-center justify-center shrink-0">
-                          {{ t.es_familiar ? inicialEtiqueta(t) : iniciales(t.id_publicador) }}
+                          {{ inicialesTransferencia(t) }}
                         </div>
                         <div class="flex flex-col min-w-0">
                           <span class="font-semibold text-slate-900 dark:text-slate-100 truncate text-sm leading-tight">{{ etiquetaTransferencia(t) }}</span>
@@ -386,13 +401,13 @@ interface PublicadorLite {
                     </td>
                     <td class="px-4 py-3.5">
                       <div class="flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-slate-350 dark:text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         <span class="truncate max-w-[140px] text-sm font-medium text-slate-700 dark:text-slate-300 leading-none">{{ t.congregacion_destino || '—' }}</span>
                       </div>
                     </td>
                     <td class="px-4 py-3.5">
-                      <span [class]="t.estado === 'borrador' ? 'badge-warning' : 'badge-active'" class="text-[11px] px-2.5 py-1 rounded-lg font-semibold leading-none">
-                        {{ t.estado === 'borrador' ? 'Borrador' : 'Finalizada' }}
+                      <span [class]="badgeEstadoCls(t)" class="text-[11px] px-2.5 py-1 rounded-lg font-semibold leading-none">
+                        {{ badgeEstadoTxt(t) }}
                       </span>
                     </td>
                     <td class="px-4 py-3.5">
@@ -437,11 +452,11 @@ interface PublicadorLite {
             </div><!-- /inner scroll -->
             </div><!-- /desktop table wrapper -->
 
-            <!-- Mobile card list -->
-            <div class="mobile-cards md:hidden flex flex-col gap-3 p-4 bg-slate-50/50 dark:bg-slate-900/10">
+            <!-- Compact card list (mobile + narrow panel) -->
+            <div class="mobile-cards flex-col gap-3 p-4 bg-slate-50/50 dark:bg-slate-900/10">
               @if (loading()) {
                 @for (sk of [1,2,3]; track sk) {
-                  <div class="flex items-center gap-3 p-4 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl">
+                  <div class="flex items-center gap-3 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
                     <div class="w-9 h-9 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse shrink-0"></div>
                     <div class="flex-1 flex flex-col gap-2"><div class="h-3 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div><div class="h-2 w-20 bg-slate-100 dark:bg-slate-800/60 rounded animate-pulse"></div></div>
                   </div>
@@ -452,25 +467,25 @@ interface PublicadorLite {
                    [class.border-violet-500]="seleccionada()?.id_transferencia === t.id_transferencia"
                    [class.bg-violet-50/20]="seleccionada()?.id_transferencia === t.id_transferencia"
                    [class.dark:bg-violet-950/10]="seleccionada()?.id_transferencia === t.id_transferencia"
-                   class="flex items-center gap-3 p-4 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-slate-300 dark:hover:border-slate-600 transition cursor-pointer active:scale-[0.99] shadow-sm">
-                <div class="avatar-initials w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-750 dark:text-violet-350 font-bold font-display text-sm flex items-center justify-center shrink-0">
-                  {{ t.es_familiar ? inicialEtiqueta(t) : iniciales(t.id_publicador) }}
+                   class="flex items-center gap-3 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-slate-300 dark:hover:border-slate-600 transition cursor-pointer active:scale-[0.99] shadow-sm">
+                <div class="avatar-initials w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 font-bold font-display text-sm flex items-center justify-center shrink-0">
+                  {{ inicialesTransferencia(t) }}
                 </div>
                 <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-bold text-slate-900 dark:text-slate-100 truncate text-sm leading-none">{{ etiquetaTransferencia(t) }}</span>
-                    <span [class]="t.estado === 'borrador' ? 'badge-warning' : 'badge-active'" class="text-[10px] px-2 py-0.5 rounded-full leading-none font-semibold">
-                      {{ t.estado === 'borrador' ? 'Borrador' : 'Finalizada' }}
+                    <span [class]="badgeEstadoCls(t)" class="text-[10px] px-2 py-0.5 rounded-full leading-none font-semibold">
+                      {{ badgeEstadoTxt(t) }}
                     </span>
                   </div>
                   <div class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                     <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     <span class="truncate">{{ t.congregacion_destino }}</span>
-                    <span *ngIf="t.es_familiar" class="text-slate-300 dark:text-slate-655">•</span>
+                    <span *ngIf="t.es_familiar" class="text-slate-300 dark:text-slate-600">•</span>
                     <span *ngIf="t.es_familiar" class="truncate font-normal">{{ t.miembros.length || 1 }} miembros</span>
                   </div>
                 </div>
-                <div class="text-slate-300 dark:text-slate-650 shrink-0">
+                <div class="text-slate-300 dark:text-slate-600 shrink-0">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               </div>
@@ -495,7 +510,7 @@ interface PublicadorLite {
           <aside *ngIf="seleccionada() as t" class="card p-5 detail-panel overflow-hidden flex flex-col">
 
             <!-- Mobile back button -->
-            <button class="md:hidden flex items-center justify-center gap-1.5 w-full py-3 mb-4 text-sm font-semibold text-violet-650 dark:text-violet-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer" (click)="cerrarDetalle()">
+            <button class="md:hidden flex items-center justify-center gap-1.5 w-full py-3 mb-4 text-sm font-semibold text-violet-600 dark:text-violet-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer" (click)="cerrarDetalle()">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
               Volver al listado
             </button>
@@ -503,11 +518,11 @@ interface PublicadorLite {
             <!-- Inline delete confirmation -->
             <div *ngIf="confirmandoEliminar()" class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl animate-scale-in" role="alertdialog" aria-labelledby="confirm-title">
               <div class="flex items-start gap-3">
-                <div class="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-650 dark:text-red-400 flex items-center justify-center shrink-0" aria-hidden="true">
+                <div class="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0" aria-hidden="true">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                 </div>
                 <div class="flex flex-col gap-0.5">
-                  <p id="confirm-title" class="text-sm font-bold text-red-855 dark:text-red-200">¿Eliminar esta transferencia?</p>
+                  <p id="confirm-title" class="text-sm font-bold text-red-800 dark:text-red-200">¿Eliminar esta transferencia?</p>
                   <p class="text-xs text-red-700/80 dark:text-red-400/90 leading-tight">Esta acción no se puede deshacer y borrará los registros permanentemente.</p>
                 </div>
               </div>
@@ -524,19 +539,20 @@ interface PublicadorLite {
                 <div *ngIf="t.es_familiar && t.miembros && t.miembros.length > 1" class="family-avatars shrink-0">
                   <div *ngFor="let m of t.miembros.slice(0,3); let i = index"
                        class="family-avatar" [style]="'z-index:' + (10 - i) + '; transform: translateX(' + (i * -6) + 'px)'">
-                    {{ m.nombre_completo.charAt(0) }}{{ m.nombre_completo.split(' ').slice(-1)[0].charAt(0) }}
+                    {{ inicialesDeNombre(m.nombre_completo) }}
                   </div>
                 </div>
                 <!-- Avatar individual -->
                 <div *ngIf="!t.es_familiar || !t.miembros || t.miembros.length <= 1"
                      class="avatar-initials w-11 h-11 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 text-white font-bold font-display text-sm flex items-center justify-center shrink-0 shadow-md">
-                  {{ iniciales(t.id_publicador) }}
+                  {{ inicialesTransferencia(t) }}
                 </div>
                 <div class="min-w-0">
                   <h2 class="font-display font-bold text-lg text-slate-900 dark:text-white leading-tight truncate">{{ etiquetaTransferencia(t) }}</h2>
-                  <div class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    <span>{{ t.es_familiar ? 'Familia' : 'Transferencia' }} a</span>
-                    <strong class="text-slate-800 dark:text-slate-200 font-semibold truncate max-w-[130px]">{{ t.congregacion_destino }}</strong>
+                  <div class="detail-subtitle">
+                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    <strong class="detail-subtitle__dest">{{ t.congregacion_destino || 'Sin destino' }}</strong>
+                    <span *ngIf="t.es_familiar" class="detail-subtitle__tag">{{ (t.miembros?.length || 1) }} miembros</span>
                   </div>
                 </div>
               </div>
@@ -578,19 +594,32 @@ interface PublicadorLite {
                 </div>
               </div>
 
+              <!-- ── Banner de resultado (transferencia ya completada) ── -->
+              <div *ngIf="t.procesada_en" class="detail-alert mb-4"
+                   [ngClass]="t.accion_realizada === 'trasladado'
+                     ? 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-200'
+                     : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300'">
+                <svg *ngIf="t.accion_realizada === 'trasladado'" class="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <svg *ngIf="t.accion_realizada !== 'trasladado'" class="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                <div>
+                  <p class="text-xs font-bold leading-none mb-0.5">Transferencia completada</p>
+                  <p class="text-[0.68rem] leading-snug opacity-85">{{ resultadoTexto(t) }}. Este registro es de solo lectura y se conserva como historial.</p>
+                </div>
+              </div>
+
               <!-- ── Sección 1: Resumen de estado ── -->
               <div class="detail-section">
                 <p class="detail-section__label">Estado actual</p>
-                <div class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl w-full">
-                  <button (click)="t.estado = 'borrador'"
+                <div class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl w-full" [class.opacity-60]="!!t.procesada_en">
+                  <button (click)="t.estado = 'borrador'" [disabled]="!!t.procesada_en"
                           [class]="t.estado === 'borrador' ? 'detail-estado-btn--active' : 'detail-estado-btn--idle'"
-                          class="detail-estado-btn flex-1 cursor-pointer">
+                          class="detail-estado-btn flex-1 cursor-pointer disabled:cursor-not-allowed">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     Borrador
                   </button>
-                  <button (click)="t.estado = 'finalizada'"
+                  <button (click)="t.estado = 'finalizada'" [disabled]="!!t.procesada_en"
                           [class]="t.estado === 'finalizada' ? 'detail-estado-btn--done' : 'detail-estado-btn--idle'"
-                          class="detail-estado-btn flex-1 cursor-pointer">
+                          class="detail-estado-btn flex-1 cursor-pointer disabled:cursor-not-allowed">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Finalizada
                   </button>
@@ -605,7 +634,7 @@ interface PublicadorLite {
                        class="detail-member-row">
                     <span class="detail-member-index">{{ i + 1 }}</span>
                     <div class="pub-item-avatar shrink-0" style="width:1.875rem;height:1.875rem;font-size:0.625rem">
-                      {{ m.nombre_completo.charAt(0) }}{{ m.nombre_completo.split(' ').slice(-1)[0].charAt(0) }}
+                      {{ inicialesDeNombre(m.nombre_completo) }}
                     </div>
                     <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 flex-1 min-w-0 truncate">{{ m.nombre_completo }}</span>
                     <span *ngIf="m.falta_consentimiento" class="pub-item-badge shrink-0">SC</span>
@@ -622,14 +651,14 @@ interface PublicadorLite {
                       <svg class="w-3 h-3 text-slate-400 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                       Nombre de la congregación <span class="text-red-500">*</span>
                     </label>
-                    <input class="form-control" [(ngModel)]="t.congregacion_destino" placeholder="Ej. Congregación Centro" />
+                    <input class="form-control" [(ngModel)]="t.congregacion_destino" [disabled]="!!t.procesada_en" placeholder="Ej. Congregación Centro" />
                   </div>
                   <div class="field-group" style="margin:0">
                     <label class="form-label">
                       <svg class="w-3 h-3 text-slate-400 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                       Correo del secretario destino
                     </label>
-                    <input class="form-control" type="email" [(ngModel)]="t.correo_congregacion_destino" placeholder="secretario@congregacion.org" autocomplete="off" />
+                    <input class="form-control" type="email" [(ngModel)]="t.correo_congregacion_destino" [disabled]="!!t.procesada_en" placeholder="secretario@congregacion.org" autocomplete="off" />
                   </div>
                 </div>
               </div>
@@ -640,19 +669,81 @@ interface PublicadorLite {
                 <div class="flex flex-col gap-3">
                   <div class="field-group" style="margin:0">
                     <label class="form-label">Motivo</label>
-                    <input class="form-control" [(ngModel)]="t.motivo" placeholder="Cambio de residencia, trabajo, matrimonio…" />
+                    <input class="form-control" [(ngModel)]="t.motivo" [disabled]="!!t.procesada_en" placeholder="Cambio de residencia, trabajo, matrimonio…" />
                   </div>
                   <div class="field-group" style="margin:0">
                     <label class="form-label">Fecha de transferencia</label>
-                    <input class="form-control" type="date" [(ngModel)]="t.fecha_transferencia" />
+                    <input class="form-control" type="date" [(ngModel)]="t.fecha_transferencia" [disabled]="!!t.procesada_en" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Sección 5: Completar transferencia ── -->
+              <div class="detail-section" *ngIf="!t.procesada_en">
+                <p class="detail-section__label">Completar transferencia</p>
+
+                <!-- CTA -->
+                <div *ngIf="!mostrarCompletar()" class="flex flex-col gap-2">
+                  <div class="flex items-start gap-2 p-3 rounded-xl bg-violet-50/70 dark:bg-violet-950/10 border border-violet-100 dark:border-violet-900/30">
+                    <svg class="w-4 h-4 text-violet-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4M4 17h12m0 0l-4-4m4 4l-4 4"/></svg>
+                    <p class="text-[0.68rem] leading-snug text-slate-600 dark:text-slate-400">Al completar, el publicador saldrá de esta congregación (dejará de aparecer en publicadores e informes). Elige si se traslada a otra congregación de GAC o se elimina del sistema.</p>
+                  </div>
+                  <button type="button" (click)="abrirCompletar()"
+                          class="btn-primary-violet w-full h-10 min-h-0 text-xs justify-center font-bold shadow-md cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-purple-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Completar transferencia
+                  </button>
+                </div>
+
+                <!-- Panel -->
+                <div *ngIf="mostrarCompletar()" class="flex flex-col gap-3 animate-scale-in">
+                  <div class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl w-full">
+                    <button type="button" (click)="completarAccion.set('trasladar')"
+                            [class]="completarAccion() === 'trasladar' ? 'detail-estado-btn--active' : 'detail-estado-btn--idle'"
+                            class="detail-estado-btn flex-1 cursor-pointer">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4M4 17h12m0 0l-4-4m4 4l-4 4"/></svg>
+                      Trasladar en GAC
+                    </button>
+                    <button type="button" (click)="completarAccion.set('eliminar')"
+                            [class]="completarAccion() === 'eliminar' ? 'detail-estado-btn--done' : 'detail-estado-btn--idle'"
+                            class="detail-estado-btn flex-1 cursor-pointer">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                      Eliminar del sistema
+                    </button>
+                  </div>
+
+                  <!-- Trasladar: número destino -->
+                  <div *ngIf="completarAccion() === 'trasladar'" class="field-group animate-scale-in" style="margin:0">
+                    <label class="form-label">Número de la congregación destino (GAC) <span class="text-red-500">*</span></label>
+                    <input class="form-control" [ngModel]="numeroCongDestino()" (ngModelChange)="numeroCongDestino.set($event)"
+                           placeholder="Ej. 12345" autocomplete="off" (keyup.enter)="ejecutarCompletar()" />
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Debe existir en GAC. El publicador y todo su historial se moverán a esa congregación.</p>
+                  </div>
+
+                  <!-- Eliminar: advertencia -->
+                  <div *ngIf="completarAccion() === 'eliminar'" class="consent-alert animate-scale-in">
+                    <svg class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span class="text-xs leading-normal">Se eliminará al publicador del sistema de forma <strong>permanente</strong> (junto con su usuario de acceso, si lo tiene). El registro de esta transferencia se conservará como historial.</span>
+                  </div>
+
+                  <div class="flex gap-2">
+                    <button type="button" class="btn-secondary flex-1 h-9 min-h-0 text-xs justify-center cursor-pointer" (click)="cancelarCompletar()" [disabled]="completando()">Cancelar</button>
+                    <button type="button"
+                            [class]="completarAccion() === 'eliminar' ? 'bg-red-600 hover:bg-red-700 text-white border border-transparent' : 'btn-primary-violet'"
+                            class="flex-1 h-9 min-h-0 text-xs justify-center font-bold shadow-md cursor-pointer rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            [disabled]="!completarValido() || completando()"
+                            (click)="ejecutarCompletar()">
+                      <span *ngIf="completando()" class="spinner spinner-xs text-white"></span>
+                      {{ completando() ? 'Procesando…' : (completarAccion() === 'eliminar' ? 'Eliminar y completar' : 'Trasladar y completar') }}
+                    </button>
                   </div>
                 </div>
               </div>
 
               <!-- ── Acciones ── -->
               <div class="pt-3 border-t border-slate-100 dark:border-slate-800 mt-1">
-                <button (click)="guardarTodo()" [disabled]="guardandoTodo()"
-                        class="btn-primary-violet w-full h-10 min-h-0 text-xs justify-center font-bold shadow-md cursor-pointer">
+                <button (click)="guardarTodo()" [disabled]="guardandoTodo() || !!t.procesada_en"
+                        class="btn-primary-violet w-full h-10 min-h-0 text-xs justify-center font-bold shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                   <span *ngIf="!guardandoTodo()" class="flex items-center gap-1.5 justify-center">
                     <svg class="w-3.5 h-3.5 text-purple-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
                     Guardar cambios
@@ -676,18 +767,18 @@ interface PublicadorLite {
                   <span>Notas sobre {{ t.es_familiar ? 'los miembros' : 'el publicador' }}</span>
                   <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Base para la carta</span>
                 </label>
-                <textarea rows="7" class="form-control text-sm leading-relaxed" [(ngModel)]="t.notas_para_carta"
+                <textarea rows="7" class="form-control text-sm leading-relaxed" [(ngModel)]="t.notas_para_carta" [disabled]="!!t.procesada_en"
                           [placeholder]="t.es_familiar ? 'Describe a cada miembro de la familia: antigüedad, privilegios, fortalezas espirituales, por qué se transfieren...' : 'Describe las fortalezas espirituales del publicador: antigüedad, privilegios, personalidad, apoyo a las reuniones y ministerio...'"></textarea>
               </div>
               <div class="flex flex-col sm:flex-row gap-2 mt-2">
-                <button (click)="guardarNotas()" [disabled]="guardandoNotas()" class="btn-secondary flex-1 h-10 min-h-0 text-xs justify-center cursor-pointer">
+                <button (click)="guardarNotas()" [disabled]="guardandoNotas() || !!t.procesada_en" class="btn-secondary flex-1 h-10 min-h-0 text-xs justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                   <span *ngIf="!guardandoNotas()" class="flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
                     Guardar notas
                   </span>
                   <span *ngIf="guardandoNotas()" class="flex items-center gap-1.5"><span class="spinner spinner-xs text-slate-700 dark:text-slate-200"></span> Guardando…</span>
                 </button>
-                <button (click)="redactarCarta()" [disabled]="redactando() || !t.notas_para_carta" class="btn-primary-violet flex-1 font-bold shadow-md h-10 min-h-0 text-xs justify-center cursor-pointer" [title]="!t.notas_para_carta ? 'Añade notas primero' : ''">
+                <button (click)="redactarCarta()" [disabled]="redactando() || !t.notas_para_carta || !!t.procesada_en" class="btn-primary-violet flex-1 font-bold shadow-md h-10 min-h-0 text-xs justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" [title]="!t.notas_para_carta ? 'Añade notas primero' : ''">
                   <span *ngIf="!redactando()" class="flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-purple-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 21l5.096-.813 12.39-12.39-4.283-4.283-12.39 12.39zm0 0v-4.283L22.203 1.95a2.025 2.025 0 0 1 2.864 2.864L14.096 15.904h-4.283z"/></svg>
                     Redactar con IA
@@ -697,11 +788,11 @@ interface PublicadorLite {
               </div>
               <div *ngIf="redactando()" class="mt-4 p-4 rounded-xl bg-violet-50/70 dark:bg-violet-950/10 border border-violet-100 dark:border-violet-900/30 flex flex-col gap-3 animate-pulse">
                 <div class="flex items-center gap-2.5">
-                  <span class="spinner spinner-sm text-violet-650 dark:text-violet-400"></span>
-                  <span class="text-xs font-bold text-violet-850 dark:text-violet-300">Asistente IA escribiendo la carta...</span>
+                  <span class="spinner spinner-sm text-violet-600 dark:text-violet-400"></span>
+                  <span class="text-xs font-bold text-violet-800 dark:text-violet-300">Asistente IA escribiendo la carta...</span>
                 </div>
                 <div class="w-full bg-violet-100 dark:bg-violet-900/50 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-violet-650 dark:bg-violet-400 h-full w-2/3 rounded-full animate-progress-fast"></div>
+                  <div class="bg-violet-600 dark:bg-violet-400 h-full w-2/3 rounded-full animate-progress-fast"></div>
                 </div>
                 <span class="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">
                   Redactando carta de presentación con tono formal y respetuoso. Al terminar, la pestaña "Carta" se abrirá automáticamente.
@@ -714,23 +805,31 @@ interface PublicadorLite {
               <div class="field-group">
                 <div class="flex justify-between items-center w-full mb-1">
                   <label class="form-label mb-0">Carta redactada</label>
-                  <button *ngIf="t.carta_redactada" (click)="copiarCarta(t.carta_redactada!)" class="text-[10px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-750 flex items-center gap-1 bg-violet-50 dark:bg-violet-950/40 px-2 py-1 rounded-md border border-violet-100 dark:border-violet-900/20 transition cursor-pointer">
+                  <button *ngIf="t.carta_redactada" (click)="copiarCarta(t.carta_redactada!)" class="text-[10px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 flex items-center gap-1 bg-violet-50 dark:bg-violet-950/40 px-2 py-1 rounded-md border border-violet-100 dark:border-violet-900/20 transition cursor-pointer">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     Copiar texto
                   </button>
                 </div>
-                <textarea rows="9" class="form-control font-mono text-[11px] leading-relaxed select-all" [(ngModel)]="t.carta_redactada"
+                <textarea rows="9" class="form-control font-mono text-[11px] leading-relaxed select-all" [(ngModel)]="t.carta_redactada" [disabled]="!!t.procesada_en"
                           placeholder="El texto de la carta aparecerá aquí una vez redactado por IA. Puedes revisarlo y editarlo."></textarea>
               </div>
               <div class="flex gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <button (click)="guardarTodo()" [disabled]="guardandoTodo()" class="btn-secondary px-3 py-2 text-xs h-9 min-h-0 cursor-pointer">
+                <button (click)="guardarTodo()" [disabled]="guardandoTodo() || !!t.procesada_en" class="btn-secondary px-3 py-2 text-xs h-9 min-h-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                   <span *ngIf="!guardandoTodo()" class="flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
                     Guardar
                   </span>
                   <span *ngIf="guardandoTodo()" class="flex items-center gap-1.5"><span class="spinner spinner-xs text-slate-700 dark:text-slate-200"></span>…</span>
                 </button>
-                <button (click)="generarPaquete()" [disabled]="!t.carta_redactada || generando()" class="btn-primary-violet flex-1 font-bold shadow-md text-xs h-9 min-h-0 justify-center cursor-pointer">
+                <button (click)="previsualizarCarta()" [disabled]="!t.carta_redactada || cargandoPreview()" class="btn-secondary px-3 py-2 text-xs h-9 min-h-0 cursor-pointer">
+                  <span *ngIf="!cargandoPreview()" class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Vista previa
+                  </span>
+                  <span *ngIf="cargandoPreview()" class="flex items-center gap-1.5"><span class="spinner spinner-xs text-slate-700 dark:text-slate-200"></span>…</span>
+                </button>
+                <button (click)="generarPaquete()" [disabled]="!t.carta_redactada || generando() || !!t.procesada_en" class="btn-primary-violet flex-1 font-bold shadow-md text-xs h-9 min-h-0 justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        [title]="t.procesada_en ? 'La transferencia ya fue completada. Descarga el ZIP antes de completarla.' : ''">
                   <span *ngIf="!generando()" class="flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5 text-purple-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Descargar ZIP
@@ -765,11 +864,14 @@ interface PublicadorLite {
     .hero-title  { font-size: 1.375rem; font-weight: 800; line-height: 1.15; color: #fff; letter-spacing: -0.02em; }
     .hero-desc   { color: rgba(237,233,254,0.65); font-size: 0.75rem; margin-top: 0.125rem; line-height: 1.35; }
     @media (min-width: 1024px) { .hero-title { font-size: 1.5rem; } }
-    .hero-inner  { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1.5rem; }
-    .hero-btn-desktop { display: none; }
-    @media (min-width: 768px) { .hero-btn-desktop { display: inline-flex; } }
+    .hero-inner  { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem; }
+    .hero-btn-desktop { display: inline-flex; }
     @media (max-width: 767px) { .hero-desc { display: none; } }
-    @media (max-width: 479px) { .hero-eyebrow { display: none; } .hero-title { font-size: 1.25rem; } }
+    @media (max-width: 479px) {
+      .hero-eyebrow { display: none; }
+      .hero-title { font-size: 1.2rem; }
+      .hero-inner { gap: 0.625rem; }
+    }
 
     /* ══════════════════════════════════════════════════════════
        MODAL OVERLAY
@@ -870,6 +972,20 @@ interface PublicadorLite {
     :host-context(.dark) .modal-footer {
       border-top-color: rgba(51,65,85,0.5);
       background: rgba(15,23,42,0.6);
+    }
+
+    /* Vista previa de la carta */
+    .carta-preview-dialog {
+      max-width: 720px;
+      width: 100%;
+      height: 90dvh;
+    }
+    .carta-preview-iframe {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      border: 0;
+      background: #fff;
     }
 
     /* Mobile: full height modal */
@@ -1151,6 +1267,7 @@ interface PublicadorLite {
       display: inline-flex; align-items: center; gap: 0.5rem;
       padding: 0.625rem 1.125rem; font-size: 0.8125rem; font-weight: 600;
       border-radius: 0.75rem; cursor: pointer; user-select: none;
+      white-space: nowrap; flex-shrink: 0;
       background: rgba(255,255,255,0.15); color: #fff;
       border: 1px solid rgba(255,255,255,0.30);
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -1162,6 +1279,9 @@ interface PublicadorLite {
       .btn-hero:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.45); box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); transform: translateY(-1px); }
     }
     .btn-hero:active { transform: scale(0.97); }
+    @media (max-width: 479px) {
+      .btn-hero { padding: 0.5rem 0.8rem; font-size: 0.75rem; gap: 0.35rem; border-radius: 0.625rem; }
+    }
 
     /* ── Workspace ── */
     .workspace {
@@ -1174,8 +1294,9 @@ interface PublicadorLite {
         align-items: stretch;
         height: 100%;
       }
-      .workspace--with-detail { grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); }
-      /* List panel: fill and scroll table internally */
+      /* Detail keeps a usable minimum width so the carta/notes never get cramped */
+      .workspace--with-detail { grid-template-columns: minmax(0, 1.3fr) minmax(360px, 0.72fr); }
+      /* List panel: fill and scroll list internally */
       .list-panel {
         height: 100%;
         overflow: hidden;
@@ -1186,7 +1307,26 @@ interface PublicadorLite {
         overflow: hidden;
       }
     }
+    @media (min-width: 1280px) {
+      .workspace--with-detail { grid-template-columns: minmax(0, 1.45fr) minmax(400px, 0.7fr); }
+    }
     @media (max-width: 1023px) { .workspace--mobile-detail .list-panel { display: none; } }
+
+    /* ── Adaptive list: table ⇆ compact cards, driven by the PANEL's own width ──
+       (container query, not viewport). This guarantees the list never triggers a
+       horizontal scrollbar when the detail panel narrows it on a MacBook 14"/16". */
+    .list-panel { container-type: inline-size; container-name: listpanel; }
+    .list-table-wrap { display: none; flex-direction: column; }
+    .mobile-cards    { display: flex; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    @container listpanel (min-width: 620px) {
+      .list-table-wrap { display: flex; }
+      .mobile-cards    { display: none; }
+    }
+    /* Filter pills: fill the row on a narrow panel so labels never clip */
+    @container listpanel (max-width: 468px) {
+      .filter-pills-wrap { width: 100%; }
+      .filter-pill { flex: 1 1 0; justify-content: center; padding-left: 0.4rem; padding-right: 0.4rem; }
+    }
 
     /* ── Stagger animation ── */
     .stagger-item {
@@ -1449,12 +1589,50 @@ interface PublicadorLite {
       font-size: 0.6rem; font-weight: 700; color: #94a3b8;
       width: 1rem; text-align: center; flex-shrink: 0;
     }
+
+    /* ── Detail header subtitle — single clean line "→ Destino · N miembros" ── */
+    .detail-subtitle {
+      display: flex; align-items: center; gap: 0.375rem;
+      margin-top: 0.15rem; min-width: 0; font-size: 0.75rem; color: #64748b;
+    }
+    :host-context(.dark) .detail-subtitle { color: #94a3b8; }
+    .detail-subtitle > svg { color: #8b5cf6; flex-shrink: 0; }
+    .detail-subtitle__dest {
+      font-weight: 600; color: #334155; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    :host-context(.dark) .detail-subtitle__dest { color: #e2e8f0; }
+    .detail-subtitle__tag {
+      flex-shrink: 0; font-size: 0.625rem; font-weight: 700; line-height: 1;
+      padding: 0.2rem 0.4rem; border-radius: 0.375rem;
+      background: #ede9fe; color: #6d28d9;
+    }
+    :host-context(.dark) .detail-subtitle__tag { background: rgba(109,40,217,0.22); color: #c4b5fd; }
+
+    /* ── iOS / touch polish ──────────────────────────────────────
+       • Inputs at 16px on phones so Safari never auto-zooms on focus.
+       • Kill the grey tap-flash on iOS.
+       • Momentum scrolling + safe-area insets for notch / home-indicator. */
+    @media (max-width: 767px) {
+      :host input, :host textarea, :host select,
+      .form-control, .pub-search-input { font-size: 16px; }
+    }
+    :host * { -webkit-tap-highlight-color: transparent; }
+    .modal-body, .pub-dropdown-list { -webkit-overflow-scrolling: touch; }
+    .toast-container {
+      bottom: calc(1.5rem + env(safe-area-inset-bottom));
+      right:  calc(1.5rem + env(safe-area-inset-right));
+    }
+    @media (max-width: 479px) {
+      .modal-dialog { padding-bottom: env(safe-area-inset-bottom); }
+    }
   `]
 })
-export class TransferenciasPage implements OnInit {
+export class TransferenciasPage implements OnInit, OnDestroy {
   private svc = inject(TransferenciaService);
   private http = inject(HttpClient);
   private ctx = inject(CongregacionContextService);
+  private sanitizer = inject(DomSanitizer);
 
   // ── Datos ───────────────────────────────────────────────────
   items        = signal<Transferencia[]>([]);
@@ -1473,6 +1651,12 @@ export class TransferenciasPage implements OnInit {
   guardandoNotas = signal(false);
   guardandoTodo  = signal(false);
 
+  // ── Vista previa de la carta ─────────────────────────────────
+  cargandoPreview  = signal(false);
+  mostrandoPreview = signal(false);
+  previewUrl       = signal<SafeResourceUrl | null>(null);
+  private previewObjectUrl: string | null = null;
+
   // ── Wizard ──────────────────────────────────────────────────
   creando             = signal(false);
   wizardPaso          = signal<1|2|3>(1);
@@ -1482,6 +1666,12 @@ export class TransferenciasPage implements OnInit {
   pubDropOpen         = signal(false);
   pubDropPos          = signal<{top: number; left: number; width: number}>({top: 0, left: 0, width: 0});
   pubSearch           = signal('');
+
+  // ── Completar transferencia (trasladar / eliminar) ───────────
+  mostrarCompletar    = signal(false);
+  completarAccion     = signal<'trasladar' | 'eliminar' | null>(null);
+  numeroCongDestino   = signal('');
+  completando         = signal(false);
 
   // ── Filtro lista ─────────────────────────────────────────────
   filtro = signal<'todos' | 'borrador' | 'finalizada'>('todos');
@@ -1590,6 +1780,10 @@ export class TransferenciasPage implements OnInit {
     });
   }
 
+  ngOnDestroy() {
+    if (this.previewObjectUrl) URL.revokeObjectURL(this.previewObjectUrl);
+  }
+
   // ── Wizard helpers ───────────────────────────────────────────
   abrirWizard() {
     this.form = this._resetForm();
@@ -1671,6 +1865,7 @@ export class TransferenciasPage implements OnInit {
       correo_congregacion_destino: this.form.correo_congregacion_destino || undefined,
       etiqueta_familia:           this.form.etiqueta_familia || undefined,
       motivo:                     this.form.motivo || undefined,
+      fecha_transferencia:        new Date().toISOString().slice(0, 10),
       notas_para_carta:           this.form.notas_para_carta,
     }).subscribe({
       next: (t) => {
@@ -1709,6 +1904,7 @@ export class TransferenciasPage implements OnInit {
   abrir(t: Transferencia) {
     this.seleccionada.set({ ...t });
     this.confirmandoEliminar.set(false);
+    this.cancelarCompletar();
     this.activeTab.set('info');
     this.mobileView.set('detalle');
   }
@@ -1716,6 +1912,7 @@ export class TransferenciasPage implements OnInit {
   cerrarDetalle() {
     this.seleccionada.set(null);
     this.confirmandoEliminar.set(false);
+    this.cancelarCompletar();
     this.mobileView.set('lista');
   }
 
@@ -1823,6 +2020,35 @@ export class TransferenciasPage implements OnInit {
     });
   }
 
+  // ── Vista previa de la carta ─────────────────────────────────
+  previsualizarCarta() {
+    const t = this.seleccionada();
+    if (!t?.carta_redactada) return;
+    this.cargandoPreview.set(true);
+    this.svc.previewCarta(t.id_transferencia, t.carta_redactada).subscribe({
+      next: (blob) => {
+        if (this.previewObjectUrl) URL.revokeObjectURL(this.previewObjectUrl);
+        this.previewObjectUrl = URL.createObjectURL(blob);
+        this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.previewObjectUrl));
+        this.cargandoPreview.set(false);
+        this.mostrandoPreview.set(true);
+      },
+      error: (e) => {
+        this.cargandoPreview.set(false);
+        this.toast('error', e?.error?.detail || 'Error al generar la vista previa');
+      },
+    });
+  }
+
+  cerrarPreview() {
+    this.mostrandoPreview.set(false);
+    this.previewUrl.set(null);
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
+  }
+
   // ── Eliminar ─────────────────────────────────────────────────
   confirmarEliminar() {
     const t = this.seleccionada();
@@ -1838,6 +2064,68 @@ export class TransferenciasPage implements OnInit {
         this.toast('error', e?.error?.detail || 'Error al eliminar');
       },
     });
+  }
+
+  // ── Completar transferencia (trasladar / eliminar) ───────────
+  abrirCompletar() {
+    this.completarAccion.set('trasladar');
+    this.numeroCongDestino.set('');
+    this.mostrarCompletar.set(true);
+  }
+
+  cancelarCompletar() {
+    this.mostrarCompletar.set(false);
+    this.completarAccion.set(null);
+    this.numeroCongDestino.set('');
+  }
+
+  completarValido(): boolean {
+    const a = this.completarAccion();
+    if (a === 'trasladar') return this.numeroCongDestino().trim().length > 0;
+    return a === 'eliminar';
+  }
+
+  ejecutarCompletar() {
+    const t = this.seleccionada();
+    const accion = this.completarAccion();
+    if (!t || !accion || !this.completarValido()) return;
+    this.completando.set(true);
+    const body: CompletarTransferenciaRequest = accion === 'trasladar'
+      ? { accion, numero_congregacion: this.numeroCongDestino().trim() }
+      : { accion, opcion_usuario: 'eliminar_con_usuario' };
+    this.svc.completar(t.id_transferencia, body).subscribe({
+      next: (updated) => {
+        this.seleccionada.set(updated);
+        this.items.update(arr => arr.map(x => x.id_transferencia === updated.id_transferencia ? updated : x));
+        this.completando.set(false);
+        this.cancelarCompletar();
+        this.toast('success', updated.accion_realizada === 'trasladado'
+          ? `Publicador trasladado a ${updated.congregacion_destino || 'la congregación destino'}.`
+          : 'Publicador eliminado del sistema. El registro se conserva como historial.');
+      },
+      error: (e) => {
+        this.completando.set(false);
+        this.toast('error', e?.error?.detail || 'No se pudo completar la transferencia');
+      },
+    });
+  }
+
+  /** Texto del resultado cuando la transferencia ya fue procesada */
+  resultadoTexto(t: Transferencia): string {
+    if (!t.procesada_en) return '';
+    return t.accion_realizada === 'trasladado'
+      ? `Publicador trasladado a ${t.congregacion_destino || 'la congregación destino'}`
+      : 'Publicador eliminado del sistema';
+  }
+
+  /** Etiqueta del badge de estado en la lista (considera si ya fue procesada) */
+  badgeEstadoTxt(t: Transferencia): string {
+    if (t.procesada_en) return t.accion_realizada === 'trasladado' ? 'Trasladada' : 'Eliminada';
+    return t.estado === 'borrador' ? 'Borrador' : 'Finalizada';
+  }
+  badgeEstadoCls(t: Transferencia): string {
+    if (t.procesada_en) return t.accion_realizada === 'trasladado' ? 'badge-active' : 'badge-warning';
+    return t.estado === 'borrador' ? 'badge-warning' : 'badge-active';
   }
 
   // ── Portapapeles ─────────────────────────────────────────────
@@ -1868,15 +2156,33 @@ export class TransferenciasPage implements OnInit {
   }
 
   // ── Helpers de vista ─────────────────────────────────────────
-  nombrePublicador(id: number): string {
+  nombrePublicador(id: number | null): string {
+    if (id == null) return '—';
     const p = this.publicadores().find(x => x.id_publicador === id);
     return p ? `${p.primer_nombre} ${p.primer_apellido}` : `#${id}`;
   }
 
-  iniciales(id: number): string {
+  iniciales(id: number | null): string {
+    if (id == null) return '#';
     const p = this.publicadores().find(x => x.id_publicador === id);
     if (!p) return '#';
     return ((p.primer_nombre || '').charAt(0) + (p.primer_apellido || '').charAt(0)).toUpperCase() || '#';
+  }
+
+  /** Iniciales a partir de un nombre completo (para snapshots sin publicador vivo) */
+  inicialesDeNombre(nombre: string): string {
+    const parts = (nombre || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '#';
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+
+  /** Iniciales para el avatar de una transferencia, robusto tras eliminar al publicador */
+  inicialesTransferencia(t: Transferencia): string {
+    if (t.es_familiar) return this.inicialEtiqueta(t);
+    const snap = t.miembros?.length ? t.miembros[0].nombre_completo : '';
+    if (snap) return this.inicialesDeNombre(snap);
+    return this.iniciales(t.id_publicador);
   }
 
   inicialesPub(p: PublicadorLite): string {
@@ -1888,10 +2194,11 @@ export class TransferenciasPage implements OnInit {
     return p ? !p.archivo_consentimiento : false;
   }
 
-  /** Etiqueta para mostrar en la lista: familia o nombre individual */
+  /** Etiqueta para mostrar en la lista: familia o nombre individual.
+   *  Usa el snapshot del miembro para seguir siendo legible tras eliminar al publicador. */
   etiquetaTransferencia(t: Transferencia): string {
     if (t.es_familiar && t.etiqueta_familia) return t.etiqueta_familia;
-    if (t.es_familiar && t.miembros?.length) return t.miembros[0].nombre_completo;
+    if (t.miembros?.length && t.miembros[0].nombre_completo) return t.miembros[0].nombre_completo;
     return this.nombrePublicador(t.id_publicador);
   }
 

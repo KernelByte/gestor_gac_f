@@ -12,6 +12,14 @@ export const REPORTES_ROUTES: Routes = [
       import('./pages/precursores/precursores.page').then(m => m.PrecursoresPage),
   },
   {
+    path: 'precursores/:id',
+    title: 'Detalle Precursor',
+    canActivate: [permissionGuard],
+    data: { permissions: ['reportes.precursores.gestionar'] },
+    loadComponent: () =>
+      import('./pages/precursores/precursor-detalle.page').then(m => m.PrecursorDetallePage),
+  },
+  {
     path: 'publicadores',
     title: 'Análisis Publicadores',
     canActivate: [permissionGuard],

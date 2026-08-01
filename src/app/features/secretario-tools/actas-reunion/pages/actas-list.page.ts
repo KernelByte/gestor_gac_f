@@ -51,7 +51,7 @@ type ToastType = 'error' | 'success' | 'info';
     <div class="flex-1 flex flex-col m-1 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
 
     <!-- ───────── HERO ───────── -->
-    <header class="bg-violet-700 text-white shrink-0">
+    <header class="hero-grad text-white shrink-0">
 
       <div class="px-4 sm:px-6 lg:px-10 py-4 sm:py-5">
         <!-- Row 1: eyebrow + button (botón oculto en mobile — FAB lo reemplaza) -->
@@ -943,6 +943,13 @@ type ToastType = 'error' | 'success' | 'info';
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
       }
+    }
+
+    /* ── Hero fondo: mismo degradado que visita-superintendente y transferencias ── */
+    .hero-grad {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 60%, #a855f7 100%);
+      box-shadow: 0 6px 20px -6px rgba(109,40,217,0.4);
     }
 
     /* ── Hero typography ── */

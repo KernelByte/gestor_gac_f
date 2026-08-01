@@ -906,9 +906,9 @@ import {
                 <p class="text-xs font-bold text-amber-700 dark:text-amber-300">Día de reunión no configurado</p>
                 <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5 leading-relaxed">
                   Esta congregación no tiene configurado el día de
-                  {{ tipoReunionActivo() === 'entre_semana' ? 'reunión entre semana' : 'la reunión pública' }}.
-                  Las fechas se calcularán con el día por defecto.
-                  Configúralo en <span class="font-semibold">Configuración → Congregación</span> antes de generar.
+                  {{ tipoReunionActivo() === 'entre_semana' ? 'reunión entre semana' : 'la reunión pública' }},
+                  por lo que no es posible generar el programa.
+                  Configúralo en <span class="font-semibold">Configuración → Congregación</span> y vuelve a intentarlo.
                 </p>
               </div>
             </div>
@@ -1047,7 +1047,7 @@ import {
             </button>
             <button
               (click)="onModalSubmit()"
-              [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0 || (tipoReunionActivo() === 'entre_semana' && plantillaSeleccionada?.mes_inicio == null)"
+              [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0 || diaReunionSinConfigurar() || modalForm().dia_reunion === null || (tipoReunionActivo() === 'entre_semana' && plantillaSeleccionada?.mes_inicio == null)"
               class="flex-1 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-bold transition-all shadow-sm shadow-purple-900/20 active:scale-95">
               Generar Programa
             </button>
@@ -1556,7 +1556,7 @@ export class ReunionesProgramacionComponent implements OnInit {
     mes_fin:  new Date().getMonth() + 1,
     ano_fin:  new Date().getFullYear(),
     id_plantilla: 0,
-    dia_reunion:  2,
+    dia_reunion:  null,
   });
 
   // ── UI ─────────────────────────────────────────────────────────
@@ -1696,6 +1696,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   canBorrarBorrador = computed(() => this.estado() === 'draft' && this.semanas().length > 0);
   fechasPreview = computed(() => {
     const { mes, ano, mes_fin, ano_fin, dia_reunion } = this.modalForm();
+    if (dia_reunion === null) return [];
     return this.calcFechasRango(ano, mes, ano_fin, mes_fin, dia_reunion);
   });
 
@@ -2001,8 +2002,8 @@ export class ReunionesProgramacionComponent implements OnInit {
       next: ({ plantillas, config }) => {
         const configKey = this.tipoReunionActivo() === 'entre_semana' ? 'dia_reunion_entre_semana' : 'dia_reunion_fin_semana';
         const diaRaw = config?.[configKey as keyof typeof config] as string | null ?? null;
-        this.diaReunionSinConfigurar.set(!diaRaw);
         const diaReunion = this.diaReunionToNumber(diaRaw);
+        this.diaReunionSinConfigurar.set(diaReunion === null);
         this.plantillas.set(plantillas);
         this.modalForm.update((f) => ({ ...f, dia_reunion: diaReunion }));
         if (plantillas.length > 0) {
@@ -2046,8 +2047,8 @@ export class ReunionesProgramacionComponent implements OnInit {
     }));
   }
 
-  private diaReunionToNumber(dia: string | null): number {
-    if (!dia) return this.tipoReunionActivo() === 'entre_semana' ? 2 : 7;
+  private diaReunionToNumber(dia: string | null): number | null {
+    if (!dia) return null;
     const norm = dia.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const map: Record<string, number> = {
       lunes: 1,
@@ -2058,14 +2059,15 @@ export class ReunionesProgramacionComponent implements OnInit {
       sabado: 6,
       domingo: 7,
     };
-    const defaultDay = this.tipoReunionActivo() === 'entre_semana' ? 2 : 7;
-    return map[norm] ?? defaultDay;
+    return map[norm] ?? null;
   }
 
   onModalSubmit(): void {
     const form = this.modalForm();
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong || form.id_plantilla === 0) return;
+    // Sin día de reunión configurado no se genera: evita hornear fechas con un día falso
+    if (this.diaReunionSinConfigurar() || form.dia_reunion === null) return;
 
     const fechas = this.calcFechasRango(form.ano, form.mes, form.ano_fin, form.mes_fin, form.dia_reunion);
     if (fechas.length === 0) return;

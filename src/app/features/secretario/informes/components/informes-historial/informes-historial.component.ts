@@ -101,14 +101,14 @@ export class InformesHistorialComponent implements OnChanges {
       return this.historial()?.publicadores.find(p => p.id_publicador === pid) || null;
    });
 
-   /** Total de horas extra acumuladas de todas las observaciones con "N Hrs" del publicador */
+   /** Total de horas acreditadas del publicador (calculadas por el backend desde observaciones) */
    totalHrsCreditos = computed(() => {
       const pub = this.selectedPublicador();
       if (!pub?.informes?.length) return 0;
-      return pub.informes.reduce((sum, inf) => {
-         const match = inf.observaciones?.match(/(\d+)\s*Hrs/i);
-         return sum + (match ? parseInt(match[1], 10) : 0);
-      }, 0);
+      return pub.informes.reduce(
+         (sum, inf) => sum + (inf.credito ?? this.getHrsFromObservacion(inf.observaciones) ?? 0),
+         0,
+      );
    });
 
    // Group informes by year for visual separation

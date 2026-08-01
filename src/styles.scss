@@ -87,6 +87,15 @@
   --focus-ring-width:  2px;
   --focus-ring-offset: 2px;
 
+  /* ─── Breakpoints de portátil ───────────────────────────────────
+     Los breakpoints por defecto de Tailwind parten justo en medio de
+     los MacBook Pro: el 14" tiene 1512 px de viewport (cae en `xl`,
+     no llega a `2xl:1536`) y el 16" tiene 1728 px (sí llega a `2xl`),
+     así que dos equipos casi iguales recibían layouts distintos.
+     `mbp:` cubre ambos; `mbp16:` sólo el 16" y monitores mayores. */
+  --breakpoint-mbp:   1440px;
+  --breakpoint-mbp16: 1680px;
+
   /* ─── OKLCH parallel palette (paralela a Tailwind, para uso fino) ── */
   /* Superficies neutrales tintadas hacia violet (cohesión sutil de marca) */
   --surface-0:  oklch(99.5% 0.003 295);   /* casi blanco */

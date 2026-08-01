@@ -1,0 +1,52 @@
+// Paleta común de las páginas de reportes.
+//
+// Las superficies base se mantienen idénticas a las del resto de la app
+// (blanco / slate-900) para que las tarjetas no desentonen junto a sus
+// vecinas. Filetes, texto y color semántico sí usan una rampa OKLCH: pasos
+// perceptualmente iguales y neutros tintados hacia el violeta de marca.
+//
+// En oscuro el color se aclara y pierde croma: a alta luminosidad el croma
+// alto se vuelve chillón.
+
+:host {
+  --linea:       oklch(91.5% 0.006 295);
+  --linea-suave: oklch(95.5% 0.004 295);
+
+  --txt-1: oklch(24% 0.018 295);
+  --txt-2: oklch(44% 0.012 295);
+  --txt-3: oklch(60% 0.010 295);
+  --txt-4: oklch(72% 0.008 295);
+
+  --superficie:     #ffffff;
+  --superficie-alt: oklch(98.4% 0.004 295);
+
+  --acento: oklch(48% 0.20 292);
+  --pos:    oklch(52% 0.13 162);
+  --aviso:  oklch(58% 0.14 75);
+  --neg:    oklch(54% 0.19 25);
+  /* Consideración especial: teal apagado. Deliberadamente el token menos
+     saturado de los cuatro — no es un logro ni una alarma, es "aquí no se
+     mide", y no debe competir con pos/aviso/neg en la misma columna. */
+  --exento: oklch(55% 0.07 195);
+
+  display: block;
+}
+
+:host-context(.dark) {
+  --linea:       oklch(30% 0.026 265);
+  --linea-suave: oklch(26.5% 0.026 265);
+
+  --txt-1: oklch(97% 0.006 265);
+  --txt-2: oklch(80% 0.012 265);
+  --txt-3: oklch(64% 0.014 265);
+  --txt-4: oklch(52% 0.014 265);
+
+  --superficie:     #0f172a;
+  --superficie-alt: oklch(23% 0.028 265);
+
+  --acento: oklch(75% 0.15 292);
+  --pos:    oklch(76% 0.13 162);
+  --aviso:  oklch(80% 0.13 75);
+  --neg:    oklch(71% 0.14 25);
+  --exento: oklch(75% 0.06 195);
+}

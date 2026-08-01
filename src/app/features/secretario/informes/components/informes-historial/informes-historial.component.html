@@ -331,6 +331,12 @@
                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
                      PR
                   </span>
+                  <span *ngIf="selectedPublicador()?.tiene_consideracion"
+                     class="inline-flex items-center px-2 py-1 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-[10px] font-black gap-1 shrink-0"
+                     [title]="'Consideración especial (' + (selectedPublicador()?.consideracion_motivo || '') + '): no se le exige el requisito de horas'">
+                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 000-7.8z" /></svg>
+                     S/REQ
+                  </span>
                   <span *ngIf="selectedPublicador()?.nombre_estado?.includes('Inactivo')"
                      class="inline-flex items-center px-2 py-1 rounded bg-red-100 dark:bg-red-900/30 text-red-600 text-[10px] font-black shrink-0">
                      Inactivo
@@ -399,6 +405,16 @@
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                            </svg>
                            Precursor Regular
+                        </div>
+
+                        <!-- Exento del requisito de horas por edad avanzada o salud delicada -->
+                        <div *ngIf="selectedPublicador()?.tiene_consideracion"
+                           class="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 text-xs font-bold gap-1"
+                           [title]="'Conserva el nombramiento sin tener que cumplir el requisito de 50 h/mes' + (selectedPublicador()?.consideracion_motivo ? ' · ' + selectedPublicador()?.consideracion_motivo : '')">
+                           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 000-7.8z" />
+                           </svg>
+                           Consideración especial
                         </div>
                      </div>
 
@@ -526,7 +542,7 @@
                         <div class="flex flex-col min-w-0">
                            <span class="text-xs md:text-sm font-bold text-slate-700 dark:text-slate-200 capitalize truncate leading-tight">{{ mes.mes_nombre }}</span>
                            <!-- Badges Precursor — estilo editorial minimalista -->
-                           <div *ngIf="mes.es_regular || mes.paux" class="flex flex-wrap items-center gap-1 mt-1.5">
+                           <div *ngIf="mes.es_regular || mes.paux || mes.exento" class="flex flex-wrap items-center gap-1 mt-1.5">
                               <span *ngIf="mes.es_regular"
                                  title="Precursor Regular este mes"
                                  class="inline-flex items-center gap-1 px-1.5 py-[3px] text-[10px] font-semibold tracking-wide uppercase rounded
@@ -544,6 +560,16 @@
                                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 shrink-0"></span>
                                  <span class="hidden md:inline">P. Auxiliar</span>
                                  <span class="md:hidden">Aux.</span>
+                              </span>
+                              <!-- Exento del requisito de horas por edad avanzada o salud delicada -->
+                              <span *ngIf="mes.exento"
+                                 title="Consideración especial: este mes no se le exige el requisito de horas"
+                                 class="inline-flex items-center gap-1 px-1.5 py-[3px] text-[10px] font-semibold tracking-wide uppercase rounded
+                                        bg-teal-50 text-teal-700 border border-teal-200/80
+                                        dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-700/40">
+                                 <span class="w-1.5 h-1.5 rounded-full bg-teal-500 dark:bg-teal-400 shrink-0"></span>
+                                 <span class="hidden md:inline">Sin requisito</span>
+                                 <span class="md:hidden">S/req.</span>
                               </span>
                            </div>
                         </div>
@@ -577,7 +603,7 @@
                                     : 'text-slate-500 dark:text-slate-600 font-medium'">
                                  {{ mes.horas || 0 }}
                               </span>
-                              <ng-container *ngIf="getHrsFromObservacion(mes.observaciones) as extraHrs">
+                              <ng-container *ngIf="(mes.credito || getHrsFromObservacion(mes.observaciones)) as extraHrs">
                                  <span class="text-[10px] text-slate-400">+{{ extraHrs }}</span>
                                  <span class="text-[10px] md:text-sm font-extrabold text-teal-600 dark:text-teal-400 tabular-nums bg-teal-50 dark:bg-teal-900/30 px-1 py-0 md:px-1.5 md:py-0.5 rounded">
                                     {{ (mes.horas || 0) + extraHrs }}

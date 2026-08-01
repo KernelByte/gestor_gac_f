@@ -18,6 +18,9 @@ export interface AgendaItemPortal {
 export interface AgendaOut {
   titulo: string;
   items: AgendaItemPortal[];
+  /** Secciones del formulario en papel (hospedaje, estudios, almuerzos, etc.)
+   *  con datos; clave = id de sección, valor = sus filas ya filtradas. */
+  secciones?: Record<string, Record<string, string>[]>;
 }
 
 export interface FilaMensualRegistro {
@@ -27,6 +30,15 @@ export interface FilaMensualRegistro {
   horas: number | null;
   cursos_biblicos: number | null;
   precursor_auxiliar: boolean;
+  /**
+   * Horas acreditadas por otro servicio (Betel, Salón de Asambleas) anotadas en
+   * las observaciones. Ya van incluidas en los totales de la fila.
+   */
+  horas_credito?: number | null;
+  /** Tenía nombramiento de precursor regular/especial/misionero ese mes. */
+  precursor_regular: boolean;
+  /** Nombre del privilegio de precursor vigente ese mes; null si no aplica. */
+  privilegio_mes: string | null;
   observaciones: string | null;
 }
 
@@ -40,10 +52,22 @@ export interface PublicadorRegistro {
   grupo_nombre: string | null;
   grupo_numero: number | null;
   privilegio_principal: string | null;
+  /** Inicio del nombramiento de precursor vigente (ISO); null si hoy no lo es. */
+  preg_desde: string | null;
+  /**
+   * Consideración especial vigente: conserva el nombramiento sin cumplir el
+   * requisito de horas (edad avanzada, salud delicada). null si no la tiene.
+   */
+  consideracion_motivo?: string | null;
+  consideracion_desde?: string | null;
   historial: FilaMensualRegistro[];
   total_horas: number;
   total_cursos: number;
   meses_participados: number;
+  /** Totales solo de los meses con el nombramiento de precursor vigente. */
+  total_horas_preg: number;
+  total_cursos_preg: number;
+  meses_preg: number;
 }
 
 export interface GrupoRegistro {
@@ -271,6 +295,30 @@ export class EntregaPortalService {
       `${this.publicBase(token)}/zip-fiel`,
       { responseType: 'blob', params: { anio } }
     );
+  }
+
+  /**
+   * Descarga un documento adjunto en modo interno.
+   *
+   * No vale enlazar la URL directamente: ese endpoint exige token y un <a href>
+   * es una navegación del navegador, sin la cabecera Authorization que pone el
+   * interceptor. Por eso se pide con HttpClient y se guarda el blob. En el
+   * portal público no hace falta — allí el token va en la propia ruta.
+   */
+  archivoInterno(idVisita: number, nombre: string): Observable<Blob> {
+    return this.http.get(
+      `${this.internoBase(idVisita)}/archivo/${encodeURIComponent(nombre)}`,
+      { responseType: 'blob' },
+    );
+  }
+
+  /** Tarjeta de un publicador desde el portal público. Solo individual: el
+   *  endpoint no admite modos por grupo ni masivos. */
+  tarjetaPdfPublico(token: string, publicadorId: number, anoServicio: number): Observable<Blob> {
+    return this.http.get(`${this.publicBase(token)}/tarjeta-pdf`, {
+      responseType: 'blob',
+      params: { publicador_id: String(publicadorId), ano_servicio: String(anoServicio) },
+    });
   }
 
   tarjetaPdfInterno(idVisita: number, anoServicio: number, opts: {

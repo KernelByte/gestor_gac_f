@@ -8,6 +8,7 @@ import { CongregacionContextService } from '../../../../core/congregacion-contex
 import { EntregaPortalComponent } from '../components/entrega-portal.component';
 import { EntregaPortalService } from '../services/entrega-portal.service';
 import { AgendaEditorComponent } from '../components/agenda-editor.component';
+import { EntregaMetodosComponent } from '../components/entrega-metodos.component';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
 
 type Tab = 'docs' | 'agenda' | 'entrega' | 'preview';
@@ -17,17 +18,20 @@ interface Toast { id: number; type: ToastType; msg: string; }
 @Component({
   standalone: true,
   selector: 'app-visita-main',
-  imports: [CommonModule, FormsModule, EntregaPortalComponent, AgendaEditorComponent, DatePickerComponent],
+  imports: [CommonModule, FormsModule, EntregaPortalComponent, AgendaEditorComponent, EntregaMetodosComponent, DatePickerComponent],
   template: `
   <div class="h-full flex flex-col overflow-hidden">
 
     <!-- ───────── HERO + BODY WRAPPER ───────── -->
-    <div class="flex-1 flex flex-col m-1 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
+    <div class="page-shell flex-1 flex flex-col m-1 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 min-h-0">
 
     <!-- ───────── HERO ───────── -->
     <header class="hero-grad text-white shrink-0" [class.hero-compact]="seleccionada() !== null || nuevoVisita()">
+      <!-- Misma posición que "Nueva acta" en actas-reunion: CTA en el hero,
+           arriba a la derecha del título. Se oculta cuando hay una visita
+           seleccionada o el formulario ya está abierto (mismo criterio que
+           esconde eyebrow/desc en .hero-compact) — el FAB cubre móvil. -->
       <div class="relative z-10 px-4 sm:px-6 lg:px-10 py-4 sm:py-5 hero-inner">
-        <!-- Bloque izquierdo: eyebrow + título + desc + stats -->
         <div>
           <div class="hero-eyebrow">
             <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4-9 4-9-4zm0 6l9 4 9-4M3 17l9 4 9-4"/></svg>
@@ -36,11 +40,12 @@ interface Toast { id: number; type: ToastType; msg: string; }
           <h1 class="hero-title">Visita del Superintendente</h1>
           <p class="hero-desc">Organiza la documentación, agenda y entrega al superintendente de circuito.</p>
         </div>
-        <!-- Bloque derecho: botón centrado verticalmente respecto a todo el contenido -->
-        <button (click)="abrirFormulario()" class="btn-hero group hero-btn-desktop" type="button">
-          <svg class="w-4 h-4 transition-transform duration-200 group-hover:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-          <span>Nueva visita</span>
-        </button>
+        @if (!seleccionada() && !nuevoVisita()) {
+          <button (click)="abrirFormulario()" class="btn-hero group hero-btn-desktop" type="button">
+            <svg class="w-4 h-4 transition-transform duration-200 group-hover:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+            <span>Nueva visita</span>
+          </button>
+        }
       </div>
     </header>
 
@@ -51,7 +56,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
 
         <header class="px-4 sm:px-5 lg:px-7 py-2.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
           <div class="min-w-0">
-            <div class="hidden sm:flex items-center gap-2 text-[0.65rem] font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400 mb-1">
+            <div class="detail-eyebrow hidden sm:flex items-center gap-2 text-[0.65rem] font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400 mb-1">
               <span class="w-1.5 h-1.5 rounded-full bg-violet-600 dark:bg-violet-400"></span>
               <span>Detalle de la visita</span>
             </div>
@@ -124,13 +129,16 @@ interface Toast { id: number; type: ToastType; msg: string; }
     }
 
     <!-- ───────── BODY ───────── -->
-    <div class="flex-1 bg-white dark:bg-slate-900 px-4 sm:px-6 lg:px-10 min-h-0 overflow-y-auto grid grid-cols-1 xl:grid-cols-[minmax(320px,380px)_1fr] gap-4 content-start"
+    <div class="flex-1 bg-white dark:bg-slate-900 px-4 @2xl/page:px-6 @7xl/page:px-10 min-h-0 overflow-y-auto grid grid-cols-1 @5xl/page:grid-cols-[minmax(17rem,20rem)_1fr] @7xl/page:grid-cols-[minmax(20rem,23.75rem)_1fr] gap-4 content-start"
          [class.pt-4]="activeTab() !== 'preview' || !seleccionada()"
          [class.pb-4]="true">
 
       <!-- ────────── COLUMNA IZQUIERDA: LISTA ────────── -->
+      <!-- max-h relativo al CONTENEDOR de scroll, no al viewport: el body sólo
+           mide ~585px en un portátil de 14", así que un 100vh dejaría el aside
+           más alto que su scroller y el sticky nunca llegaría a fijarse. -->
       <aside
-        class="space-y-4 xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto custom-scrollbar pr-1 xl:!block"
+        class="space-y-4 @5xl/page:sticky @5xl/page:top-4 @5xl/page:self-start @5xl/page:max-h-[calc(100%-2rem)] @5xl/page:overflow-y-auto custom-scrollbar pr-1 @5xl/page:!block"
         [class.hidden]="seleccionada() !== null">
 
         <!-- Formulario nueva visita -->
@@ -138,7 +146,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
           <!-- Sin overflow:hidden en el contenedor — recortaría el popup del
                date-picker (mismo motivo que en .sec-card). El redondeo se
                aplica en el header/body en su lugar. -->
-          <div #formContainer class="card-anim bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+          <div #formContainer class="form-shell card-anim bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
             <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between rounded-t-2xl">
               <h3 class="font-semibold text-slate-800 dark:text-slate-100 text-sm">Crear nueva visita</h3>
               <button (click)="cancelarForm()" class="icon-btn" aria-label="Cerrar formulario">
@@ -158,10 +166,14 @@ interface Toast { id: number; type: ToastType; msg: string; }
               <!-- Datos de identidad vs. programación: separador sutil, sin decoración -->
               <div class="form-section-divider"></div>
 
-              <!-- Fechas apiladas en móvil (grid-cols-1) para que el calendario
-                   inline quepa a ancho completo; lado a lado desde 768px, que es
-                   donde el date-picker deja de ser inline y vuelve a flotar. -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <!-- Fechas apiladas mientras el formulario sea estrecho, para que
+                   el calendario inline quepa a ancho completo; lado a lado sólo
+                   cuando la tarjeta pasa de 24rem. Se mide contra el FORMULARIO
+                   (container "form"), no contra el viewport: en dos columnas
+                   esta tarjeta vive en la lista de 17–23.75rem, así que un
+                   md:grid-cols-2 dejaba dos date-pickers de ~150px en cuanto la
+                   ventana pasaba de 768px. -->
+              <div class="grid grid-cols-1 @sm/form:grid-cols-2 gap-3">
                 <label class="form-label">
                   <span>Fecha inicio <span class="field-required">*</span></span>
                   <app-date-picker
@@ -190,11 +202,10 @@ interface Toast { id: number; type: ToastType; msg: string; }
               </div>
               <label class="form-label">
                 <span>Semestre <span class="field-optional">opcional</span></span>
-                <input class="field" [(ngModel)]="form.semestre" placeholder="Ej. 2026-I" />
-              </label>
-              <label class="form-label">
-                <span>Notas <span class="field-optional">opcional</span></span>
-                <textarea rows="2" class="field" [(ngModel)]="form.notas" placeholder="Detalles que le sirvan a tu equipo — nadie más los verá"></textarea>
+                <input class="field" [ngModel]="form.semestre" (ngModelChange)="onSemestreChange($event)" placeholder="Ej. 2026-I" />
+                @if (semestreEsSugerencia() && form.semestre) {
+                  <span class="field-hint">Calculado según la fecha de inicio. Puedes cambiarlo.</span>
+                }
               </label>
               <div class="flex justify-end gap-2 pt-2">
                 <button (click)="cancelarForm()" class="btn-ghost">Cancelar</button>
@@ -210,7 +221,12 @@ interface Toast { id: number; type: ToastType; msg: string; }
         }
 
         <!-- Encabezado lista -->
-        <div class="flex items-center justify-between px-1">
+        <!-- Una sola acción de crear visible a la vez:
+               · < 768px ................ FAB flotante
+               · >= 768px ............... botón en el hero (.hero-btn-desktop)
+               · lista vacía ............ el CTA del propio empty-state
+               · visita seleccionada o formulario abierto ..... ninguna -->
+        <div class="flex items-center justify-between gap-2 px-1">
           <h2 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Visitas registradas</h2>
           <span class="text-xs text-slate-400">{{ visitas().length }}</span>
         </div>
@@ -280,7 +296,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
                   }
                 </div>
                 <!-- Chevron — affordance de navegación en móvil/tablet -->
-                <svg class="xl:hidden w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0 mt-0.5 transition-colors group-hover:text-violet-400 group-active:text-violet-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg class="@5xl/page:hidden w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0 mt-0.5 transition-colors group-hover:text-violet-400 group-active:text-violet-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                 </svg>
               </div>
@@ -291,12 +307,16 @@ interface Toast { id: number; type: ToastType; msg: string; }
                 <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
               </div>
               <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Aún no hay visitas</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4 max-w-[240px] mx-auto">
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[240px] mx-auto"
+                 [class.mb-4]="!nuevoVisita()">
                 Crea tu primera visita para empezar a organizar la documentación.
               </p>
-              <button (click)="abrirFormulario()" class="btn-primary">
-                + Crear primera visita
-              </button>
+              <!-- Con el formulario ya abierto justo encima, el CTA sobra -->
+              @if (!nuevoVisita()) {
+                <button (click)="abrirFormulario()" class="btn-primary">
+                  + Crear primera visita
+                </button>
+              }
             </div>
           }
           }
@@ -304,10 +324,10 @@ interface Toast { id: number; type: ToastType; msg: string; }
       </aside>
 
       <!-- ────────── COLUMNA DERECHA: DETALLE ────────── -->
-      <main class="min-w-0 xl:!block" [class.hidden]="seleccionada() === null">
+      <main class="min-w-0 @5xl/page:!block" [class.hidden]="seleccionada() === null">
 
         <!-- Botón volver — sticky en móvil/tablet -->
-        <div class="xl:hidden sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm -mx-4 px-3 border-b border-slate-100 dark:border-slate-800"
+        <div class="@5xl/page:hidden sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm -mx-4 px-3 border-b border-slate-100 dark:border-slate-800"
              [class.py-1]="activeTab() === 'preview'"
              [class.py-2]="activeTab() !== 'preview'"
              [class.mb-2]="activeTab() !== 'preview'"
@@ -393,6 +413,9 @@ interface Toast { id: number; type: ToastType; msg: string; }
                 <app-agenda-editor
                   [items]="agendaItems()"
                   [secciones]="agendaSecciones()"
+                  [idCongregacion]="seleccionada()?.id_congregacion ?? null"
+                  [puedeVerTarjeta]="true"
+                  (verTarjeta)="descargarTarjetaPublicador($event)"
                   (changed)="markAgendaDirty()">
                 </app-agenda-editor>
 
@@ -417,123 +440,12 @@ interface Toast { id: number; type: ToastType; msg: string; }
             <!-- Tab: Entrega -->
             @if (activeTab() === 'entrega') {
               <section class="tab-panel p-5 lg:p-7">
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Elige cómo entregar la información al superintendente. Puedes usar uno o varios métodos.</p>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-                  <!-- Card: Paquete -->
-                  <div class="delivery-card">
-                    <div class="delivery-card-header">
-                      <span class="delivery-step">1</span>
-                      <span class="delivery-badge delivery-badge-amber">Archivos ZIP</span>
-                    </div>
-                    <h4 class="delivery-title">Paquete completo</h4>
-                    <p class="delivery-desc">Documentos adjuntos y agenda comprimidos en un solo archivo.</p>
-                    <button (click)="descargarZip()" [disabled]="descargandoZip()" class="btn-secondary w-full justify-center">
-                      @if (descargandoZip()) {
-                        <span class="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
-                        Generando ZIP…
-                      } @else {
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
-                        Descargar ZIP
-                      }
-                    </button>
-                  </div>
-
-                  <!-- Card: Link temporal -->
-                  <div class="delivery-card">
-                    <div class="delivery-card-header">
-                      <span class="delivery-step">2</span>
-                      <span class="delivery-badge delivery-badge-emerald">Portal web · enlace temporal</span>
-                    </div>
-                    <h4 class="delivery-title">Portal del superintendente</h4>
-                    <p class="delivery-desc">Enlace temporal con registros, totales, contactos, S-88 y documentos.</p>
-                    @if (!enlace()) {
-                      <label class="form-label mb-2">
-                        <span>Expira el</span>
-                        <app-date-picker
-                          [(ngModel)]="fechaEnlace"
-                          colorScheme="violet"
-                          [fieldLike]="true"
-                          [inlineOnMobile]="true"
-                          [minDate]="minFechaEnlace"
-                          placeholder="Por defecto, en 7 días">
-                        </app-date-picker>
-                      </label>
-                      <button (click)="crearEnlace()" [disabled]="generandoEnlace()" class="btn-secondary w-full justify-center">
-                        @if (generandoEnlace()) { <span class="spinner"></span> Generando… } @else {
-                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
-                          Generar enlace
-                        }
-                      </button>
-                    } @else {
-                      <div class="link-result">
-                        <a [href]="enlace()!.url_publica" target="_blank" rel="noopener" class="link-url">
-                          {{ enlace()!.url_publica }}
-                        </a>
-
-                        @if (!editandoFechaEnlace()) {
-                          <p class="text-[0.65rem] text-slate-400 mt-1.5 flex items-center gap-1.5 flex-wrap">
-                            <span>Expira el {{ enlace()!.fecha_expiracion | date:'short' }}</span>
-                            <button (click)="abrirEdicionFechaEnlace()" class="link-edit-fecha" type="button">
-                              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-9.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 8.5-8.5z"/></svg>
-                              Cambiar fecha
-                            </button>
-                          </p>
-                        } @else {
-                          <div class="mt-2 space-y-2">
-                            <app-date-picker
-                              [(ngModel)]="fechaEnlace"
-                              colorScheme="violet"
-                              [fieldLike]="true"
-                              [inlineOnMobile]="true"
-                              [minDate]="minFechaEnlace"
-                              placeholder="Nueva fecha de expiración">
-                            </app-date-picker>
-                            <div class="flex gap-2">
-                              <button (click)="guardarFechaEnlace()" [disabled]="actualizandoFechaEnlace() || !fechaEnlace" class="btn-primary text-xs flex-1 justify-center">
-                                @if (actualizandoFechaEnlace()) { <span class="spinner"></span> Guardando… } @else { Guardar fecha }
-                              </button>
-                              <button (click)="editandoFechaEnlace.set(false)" class="btn-ghost text-xs">Cancelar</button>
-                            </div>
-                          </div>
-                        }
-
-                        <button (click)="copiarLink()" class="btn-ghost text-xs mt-2 w-full justify-center">
-                          @if (copiado()) {
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                            Copiado
-                          } @else {
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            Copiar enlace
-                          }
-                        </button>
-                      </div>
-                    }
-                  </div>
-
-                  <!-- Card: Correo -->
-                  <div class="delivery-card">
-                    <div class="delivery-card-header">
-                      <span class="delivery-step">3</span>
-                      <span class="delivery-badge delivery-badge-violet">Correo electrónico</span>
-                    </div>
-                    <h4 class="delivery-title">Envío por correo</h4>
-                    <p class="delivery-desc">Envía el paquete directamente al correo del superintendente.</p>
-                    <label class="form-label">
-                      <span>Correo destinatario</span>
-                      <input type="email" [(ngModel)]="correoDestino" placeholder="correo@ejemplo.com" class="field" />
-                    </label>
-                    <button (click)="enviarCorreo()"
-                            [disabled]="!correoDestino || enviando()"
-                            [title]="!correoDestino ? 'Ingresa el correo del destinatario para enviar' : ''"
-                            class="btn-primary w-full justify-center">
-                      @if (enviando()) { <span class="spinner"></span> Enviando… } @else {
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/></svg>
-                        Enviar correo
-                      }
-                    </button>
-                  </div>
-                </div>
+                <app-entrega-metodos
+                  [idVisita]="v.id_visita"
+                  [correoSugerido]="v.correo_superintendente || null"
+                  (aviso)="toast($event.type, $event.msg)"
+                  (enlaceCambio)="hayEnlace.set($event)">
+                </app-entrega-metodos>
               </section>
             }
 
@@ -690,22 +602,24 @@ interface Toast { id: number; type: ToastType; msg: string; }
       </div>
     }
 
-    <!-- ───────── FAB "Nueva visita" (solo móvil/tablet) ─────────
-         El botón del hero (.hero-btn-desktop) se oculta por debajo de 768px,
-         y el único botón de creación restante vivía en el estado vacío de la
-         lista — una vez había al menos una visita, no había forma de crear
-         otra desde el móvil. Este FAB queda siempre accesible mientras se ve
-         la lista (se oculta si ya hay una visita abierta o el formulario ya
-         está desplegado, para no duplicar la acción). -->
-    @if (!seleccionada() && !nuevoVisita()) {
+    <!-- ───────── FAB "Nueva visita" (solo móvil, < 768px) ─────────
+         Es la acción de crear por debajo de 768px, donde el botón del hero está
+         oculto (.hero-btn-desktop). Se retira cuando ya hay otra forma de crear
+         delante: con una visita abierta, con el formulario desplegado, o con la
+         lista vacía (ahí manda el CTA del empty-state). -->
+    @if (!seleccionada() && !nuevoVisita() && visitas().length) {
       <button (click)="abrirFormulario()" class="fab-nueva-visita" aria-label="Nueva visita" type="button">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
       </button>
     }
 
     <!-- ───────── TOASTS ───────── -->
+    <!-- Con una visita abierta la .save-bar ocupa el borde inferior y contiene
+         el botón primario del flujo; los toasts se elevan para no taparlo. -->
     <div
-      class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-[100] flex flex-col gap-2 pointer-events-none"
+      class="fixed left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-[100] flex flex-col gap-2 pointer-events-none"
+      [class.bottom-4]="!seleccionada()"
+      [class.bottom-20]="seleccionada() !== null"
       aria-live="polite"
       role="status">
       @for (n of notifications(); track n.id) {
@@ -734,6 +648,24 @@ interface Toast { id: number; type: ToastType; msg: string; }
   `,
   styles: [`
     :host { display: block; height: 100%; min-height: 0; }
+
+    /* ───── Contexto de container queries ─────
+       El shell desplaza el contenido 292px (o 92px colapsado) con
+       lg:ml-[292px], así que el viewport miente sobre el ancho disponible: en
+       un MacBook 14" el viewport es 1512px pero esta página sólo dispone de
+       1220px. Todo el layout se mide contra el contenedor, no contra la
+       ventana, y así también reacciona al colapsar/expandir el sidebar.
+
+       Va en este wrapper y NO en :host porque container-type implica
+       "contain: layout", que convertiría al elemento en bloque contenedor de
+       sus descendientes position:fixed. Los overlays (.colab-backdrop,
+       .colab-panel, .fab-nueva-visita y los toasts) son HERMANOS de este div,
+       así que siguen anclados al viewport. */
+    .page-shell { container-type: inline-size; container-name: page; }
+
+    /* La tarjeta "Crear nueva visita" se mide aparte: cambia mucho de ancho
+       según viva en la lista (17–23.75rem) o a ancho completo en una columna. */
+    .form-shell { container-type: inline-size; container-name: form; }
 
     :host {
       --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -807,7 +739,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
     :host-context(.dark) .form-section-divider { background: var(--border-dark); }
 
     /* ───── Botones ───── */
-    .btn-primary, .btn-secondary, .btn-ghost, .btn-hero, .btn-danger-ghost {
+    .btn-primary, .btn-secondary, .btn-ghost, .btn-danger-ghost {
       display: inline-flex; align-items: center; gap: 0.5rem;
       padding: 0.5rem 0.875rem; font-size: 0.8125rem; font-weight: 500;
       border-radius: 0.625rem;
@@ -817,14 +749,6 @@ interface Toast { id: number; type: ToastType; msg: string; }
     .btn-primary { background: var(--brand-purple); color: #fff; box-shadow: 0 1px 2px rgba(109, 40, 217, 0.18); }
     .btn-secondary { border: 1px solid var(--border-light); color: #475569; background: var(--bg-light); }
     .btn-ghost { color: #64748b; }
-    .btn-hero {
-      background: rgba(255,255,255,0.15); color: #fff;
-      border: 1px solid rgba(255,255,255,0.30); padding: 0.625rem 1.125rem; font-weight: 600;
-      border-radius: 0.75rem;
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
-    }
     .btn-danger-ghost { color: #f43f5e; padding: 0.375rem 0.625rem; font-size: 0.75rem; }
 
     :host-context(.dark) .btn-secondary { background: var(--bg-dark); border-color: var(--border-dark); color: #cbd5e1; }
@@ -836,16 +760,14 @@ interface Toast { id: number; type: ToastType; msg: string; }
     }
 
     @media (hover: hover) and (pointer: fine) {
-      .btn-hero:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.45); box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); transform: translateY(-1px); }
       .btn-primary:hover:not(:disabled) { background: var(--brand-purple-hover); box-shadow: 0 4px 14px rgba(109,40,217,0.28); }
       .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
       .btn-ghost:hover { background: rgba(100,116,139,0.08); color: #334155; }
-      .btn-hero:hover { background: rgba(255,255,255,0.26); }
       .btn-danger-ghost:hover { background: rgba(244,63,94,0.08); }
       :host-context(.dark) .btn-secondary:hover { background: #334155; border-color: #475569; color: #f1f5f9; }
       :host-context(.dark) .btn-ghost:hover { background: rgba(148,163,184,0.12); color: #f1f5f9; }
     }
-    .btn-primary:active, .btn-secondary:active, .btn-ghost:active, .btn-hero:active, .btn-danger-ghost:active { transform: scale(0.97); }
+    .btn-primary:active, .btn-secondary:active, .btn-ghost:active, .btn-danger-ghost:active { transform: scale(0.97); }
     .btn-primary:disabled, .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .icon-btn {
@@ -877,18 +799,34 @@ interface Toast { id: number; type: ToastType; msg: string; }
     .hero-desc {
       color: rgba(237,233,254,0.65); font-size: 0.75rem; margin-top: 0.125rem; line-height: 1.35;
     }
-    @media (min-width: 1024px) { .hero-title { font-size: 1.5rem; } }
+    @container page (min-width: 64rem) { .hero-title { font-size: 1.5rem; } }
 
     /* ── Hero inner: flex row que centra el botón respecto a todo el contenido ── */
     .hero-inner {
       display: flex; flex-direction: row; align-items: center;
       justify-content: space-between; gap: 1.5rem;
     }
-    /* ── Botón desktop solamente — FAB reemplaza en mobile ── */
+
+    /* ── Botón "Nueva visita" en el hero — mismo patrón que "Nueva acta"
+         en actas-reunion (.btn-hero / .hero-btn-desktop) ── */
+    .btn-hero {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.625rem 1.125rem; font-size: 0.8125rem; font-weight: 600;
+      border-radius: 0.75rem; cursor: pointer; user-select: none;
+      min-height: 2.75rem; flex-shrink: 0;
+      background: rgba(255,255,255,0.16); color: #fff;
+      border: 1px solid rgba(255,255,255,0.24);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .btn-hero:hover { background: rgba(255,255,255,0.22); }
+    }
+    .btn-hero:active { transform: scale(0.97); }
     .hero-btn-desktop { display: none; }
     @media (min-width: 768px) { .hero-btn-desktop { display: inline-flex; } }
 
-    /* ── FAB "Nueva visita" (mobile/tablet) ── */
+    /* ── FAB "Nueva visita" (solo móvil) ── */
     .fab-nueva-visita {
       position: fixed; z-index: 90;
       right: 1.25rem; bottom: calc(1.25rem + env(safe-area-inset-bottom));
@@ -907,16 +845,18 @@ interface Toast { id: number; type: ToastType; msg: string; }
     /* ── Mobile: hero compacto ── */
     @media (max-width: 767px) { .hero-desc { display: none; } }
 
-    /* ── Hero compacto cuando hay visita seleccionada (xl) ── */
-    @media (min-width: 1280px) {
+    /* ── Hero compacto cuando hay visita seleccionada ──
+       Ligado al ancho de CONTENEDOR: es el mismo umbral (64rem) en el que el
+       body pasa a dos columnas y ambas quedan visibles a la vez. */
+    @container page (min-width: 64rem) {
       .hero-compact { transition: padding 200ms var(--ease-out); }
       .hero-compact .hero-inner { padding-top: 0.625rem; padding-bottom: 0.625rem; }
       .hero-compact .hero-desc { display: none; }
       .hero-compact .hero-eyebrow { display: none; }
       .hero-compact .hero-title { font-size: 1rem; }
     }
-    /* ── En móvil: ocultar hero completamente cuando hay visita seleccionada ── */
-    @media (max-width: 1279px) {
+    /* ── Una sola columna: ocultar hero cuando hay visita seleccionada ── */
+    @container page (max-width: 63.9375rem) {
       .hero-compact {
         display: none;
       }
@@ -1035,7 +975,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
     @media (min-width: 640px) {
       .stepper-nav { padding: 0.625rem 1.25rem; }
     }
-    @media (min-width: 1280px) {
+    @container page (min-width: 64rem) {
       .stepper-nav { justify-content: flex-end; }
     }
     .stepper-nav::-webkit-scrollbar { display: none; }
@@ -1188,7 +1128,9 @@ interface Toast { id: number; type: ToastType; msg: string; }
     @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 
     /* ───── Tab panel transition ───── */
-    .tab-panel { animation: panelIn 280ms cubic-bezier(0.22,1,0.36,1) both; }
+    /* backwards: con "both" el panel conserva un transform identidad que crea
+       stacking context y encierra los popups de fecha/hora del editor. */
+    .tab-panel { animation: panelIn 280ms cubic-bezier(0.22,1,0.36,1) backwards; }
     @keyframes panelIn {
       from { opacity: 0; transform: translateY(5px) scale(0.995); }
       to   { opacity: 1; transform: none; }
@@ -1235,74 +1177,6 @@ interface Toast { id: number; type: ToastType; msg: string; }
 
     /* El section de agenda no debe cortar el popup del date picker */
     .tab-panel { overflow: visible; }
-
-    /* ───── Delivery cards ───── */
-    .delivery-card-header {
-      display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;
-    }
-    .delivery-step {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 1.375rem; height: 1.375rem; border-radius: 9999px; flex-shrink: 0;
-      background: var(--border-light); color: #64748b;
-      font-size: 0.6875rem; font-weight: 800;
-    }
-    :host-context(.dark) .delivery-step { background: var(--border-dark); color: #94a3b8; }
-    .delivery-badge {
-      display: inline-flex; align-items: center;
-      padding: 0.125rem 0.5rem; border-radius: 9999px;
-      font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-    }
-    .delivery-badge-amber { background: #fef3c7; color: #92400e; }
-    .delivery-badge-emerald { background: #d1fae5; color: #065f46; }
-    .delivery-badge-violet { background: #ede9fe; color: #5b21b6; }
-    :host-context(.dark) .delivery-badge-amber { background: rgba(245,158,11,0.15); color: #fbbf24; }
-    :host-context(.dark) .delivery-badge-emerald { background: rgba(16,185,129,0.15); color: #34d399; }
-    :host-context(.dark) .delivery-badge-violet { background: rgba(139,92,246,0.15); color: #c4b5fd; }
-
-    .delivery-card {
-      background: var(--bg-light);
-      border: 1px solid var(--border-light);
-      border-radius: 1rem;
-      padding: 1.25rem;
-      display: flex; flex-direction: column; gap: 0.625rem;
-      transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out), transform 200ms var(--ease-out);
-    }
-    :host-context(.dark) .delivery-card { background: var(--bg-dark); border-color: var(--border-dark); }
-    .delivery-card { transition: border-color 240ms cubic-bezier(0.22,1,0.36,1), box-shadow 240ms cubic-bezier(0.22,1,0.36,1), transform 240ms cubic-bezier(0.22,1,0.36,1); }
-    @media (hover: hover) {
-      .delivery-card:hover { border-color: #c4b5fd; box-shadow: 0 10px 28px -8px rgba(109,40,217,0.2); transform: translateY(-3px); }
-      :host-context(.dark) .delivery-card:hover { border-color: var(--brand-purple); }
-    }
-    .delivery-card:active { transform: translateY(-1px) scale(0.99); }
-    .delivery-icon {
-      width: 2.75rem; height: 2.75rem; border-radius: 0.875rem;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .delivery-title { font-size: 0.95rem; font-weight: 700; color: #0f172a; line-height: 1.3; }
-    :host-context(.dark) .delivery-title { color: #f1f5f9; }
-    .delivery-desc { font-size: 0.8125rem; color: #64748b; line-height: 1.5; flex: 1; }
-    :host-context(.dark) .delivery-desc { color: #94a3b8; }
-
-    .link-result {
-      background: #f8fafc; border: 1px solid var(--border-light);
-      border-radius: 0.625rem; padding: 0.625rem;
-    }
-    :host-context(.dark) .link-result { background: #0f172a; border-color: var(--border-dark); }
-    .link-url {
-      display: block; font-size: 0.7rem; font-family: ui-monospace, monospace;
-      color: var(--brand-purple); word-break: break-all;
-      text-decoration: underline; text-underline-offset: 2px;
-    }
-    :host-context(.dark) .link-url { color: #a78bfa; }
-
-    .link-edit-fecha {
-      display: inline-flex; align-items: center; gap: 0.25rem;
-      font-size: 0.65rem; font-weight: 600; color: var(--brand-purple);
-      text-decoration: underline; text-underline-offset: 2px;
-      cursor: pointer; background: none; border: none; padding: 0;
-    }
-    @media (hover: hover) { .link-edit-fecha:hover { color: var(--brand-purple-hover); } }
-    :host-context(.dark) .link-edit-fecha { color: #a78bfa; }
 
     /* ───── Empty states ───── */
     .empty-state, .placeholder-detail {
@@ -1394,8 +1268,10 @@ interface Toast { id: number; type: ToastType; msg: string; }
       border-top: 1px solid #e2e8f0;
       transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
     }
-    @media (min-width: 640px) { .save-bar { padding-inline: 1.5rem; } }
-    @media (min-width: 1024px) { .save-bar { padding-inline: 2.5rem; } }
+    /* Mismos umbrales que el px del body (@2xl/page:px-6, @7xl/page:px-10) para
+       que el botón primario quede alineado con el contenido que hay encima. */
+    @container page (min-width: 42rem) { .save-bar { padding-inline: 1.5rem; } }
+    @container page (min-width: 80rem) { .save-bar { padding-inline: 2.5rem; } }
     :host-context(.dark) .save-bar { background: #0f172a; border-top-color: #334155; }
     .save-bar.is-dirty {
       border-top-color: rgba(109,40,217,0.35);
@@ -1532,9 +1408,30 @@ interface Toast { id: number; type: ToastType; msg: string; }
     .detail-sticky-bar .stepper-nav-wrap {
       animation: stickyBarIn 360ms cubic-bezier(0.22,1,0.36,1) 80ms both;
     }
-    @media (min-width: 1280px) {
-      .detail-sticky-bar.xl\:sticky {
-        box-shadow: 0 4px 12px -4px rgba(0,0,0,0.10);
+    /* ───── Densidad compacta en pantallas bajas ─────
+       El shell es h-screen: esta página vive en una altura fija. En un MacBook
+       14" el viewport útil ronda los 840px y, con una visita abierta, el cromo
+       (hero + barra de detalle + stepper + save-bar) se comía ~255px de 585px
+       de contenido. Aquí se recupera ~105px sin perder información: sólo cae
+       el eyebrow decorativo y el hero, cuyo título ya se repite en la barra de
+       detalle — la acción "Nueva visita" del hero ya está oculta en este
+       estado (hay una visita seleccionada), así que no hay CTA que perder.
+
+       Un 16" con el dock oculto (~975px) queda fuera y conserva la densidad
+       normal. La altura sí es del viewport, no del contenedor, así que esto es
+       correctamente un @media. */
+    @media (max-height: 900px) and (min-width: 1024px) {
+      .hero-compact { display: none; }
+
+      .detail-sticky-bar > header { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+      .detail-eyebrow { display: none !important; }
+
+      .stepper-nav { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+      .step-desc { font-size: 0.55rem; }
+
+      .save-bar {
+        padding-top: 0.5rem;
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
       }
     }
 
@@ -1567,23 +1464,14 @@ export class VisitaMainPage implements OnInit {
   seleccionada = signal<Visita | null>(null);
   archivos = signal<{ nombre: string; tamano_bytes: number }[]>([]);
   agendaItems = signal<AgendaItem[]>([]);
-  enlace = signal<{ url_publica: string; fecha_expiracion: string } | null>(null);
-  correoDestino = '';
+  /** ¿La visita ya tiene enlace activo? Lo reporta <app-entrega-metodos>; aquí
+   *  solo sirve para marcar el paso "Entrega" como completado en el stepper. */
+  hayEnlace = signal(false);
   nuevoVisita = signal(false);
   guardando = signal(false);
-  enviando = signal(false);
   isDragging = signal(false);
-  copiado = signal(false);
   cargandoLista = signal(false);
   subiendo = signal(false);
-  generandoEnlace = signal(false);
-  editandoFechaEnlace = signal(false);
-  actualizandoFechaEnlace = signal(false);
-  /** Fecha (YYYY-MM-DD) seleccionada para crear/editar la expiración del enlace. */
-  fechaEnlace = '';
-  /** Mínimo seleccionable en el date-picker: mañana (no tiene sentido expirar hoy mismo). */
-  minFechaEnlace = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-  descargandoZip = signal(false);
   activeTab = signal<Tab>('agenda');
   notifications = signal<Toast[]>([]);
   /** id de la visita cuya tarjeta en la lista muestra la confirmación inline de borrado. */
@@ -1619,7 +1507,7 @@ export class VisitaMainPage implements OnInit {
         const v = this.seleccionada();
         if (t.id === 'agenda')  return !!v?.archivo_agenda;
         if (t.id === 'docs')    return this.archivos().length > 0;
-        if (t.id === 'entrega') return !!this.enlace();
+        if (t.id === 'entrega') return this.hayEnlace();
         return false;
       })(),
     }))
@@ -1665,13 +1553,16 @@ export class VisitaMainPage implements OnInit {
     fecha_inicio: '',
     fecha_fin: '',
     semestre: '',
-    notas: '',
   };
 
   /** true mientras "Fecha fin" siga siendo la sugerencia automática (+7 días)
    *  y no algo que el usuario haya elegido a mano. Se apaga en cuanto toca
    *  el campo directamente, para no pisarle la elección después. */
   fechaFinEsSugerencia = signal(true);
+
+  /** true mientras "Semestre" siga siendo el calculado automáticamente a
+   *  partir de "Fecha inicio" y no algo que el usuario haya editado a mano. */
+  semestreEsSugerencia = signal(true);
 
   ngOnInit() {
     this.cargar();
@@ -1686,6 +1577,13 @@ export class VisitaMainPage implements OnInit {
   }
 
   abrirFormulario() {
+    // Si había una visita abierta, se cierra: si no, el panel derecho seguía
+    // mostrando su detalle (agenda, stepper, etc.) mientras el izquierdo ya
+    // pedía datos para una visita distinta — dos flujos mezclados en pantalla.
+    // Al limpiarla, el derecho cae en el mismo placeholder "Selecciona una
+    // visita" que ya se ve al crear desde cero, así el estado queda igual sin
+    // importar desde dónde se abrió el formulario.
+    this.seleccionada.set(null);
     this.nuevoVisita.set(true);
     setTimeout(() => {
       this.formContainerRef?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1704,6 +1602,9 @@ export class VisitaMainPage implements OnInit {
     if (value && this.fechaFinEsSugerencia()) {
       this.form.fecha_fin = this.sumarDias(value, 7);
     }
+    if (value && this.semestreEsSugerencia()) {
+      this.form.semestre = this.calcularSemestre(value);
+    }
   }
 
   /** El usuario tocó "Fecha fin" directamente: respetamos su elección y
@@ -1711,6 +1612,19 @@ export class VisitaMainPage implements OnInit {
   onFechaFinChange(value: string | null) {
     this.form.fecha_fin = value;
     this.fechaFinEsSugerencia.set(false);
+  }
+
+  /** El usuario editó "Semestre" a mano: respetamos su elección y dejamos
+   *  de recalcularlo cuando cambie "Fecha inicio". */
+  onSemestreChange(value: string) {
+    this.form.semestre = value;
+    this.semestreEsSugerencia.set(false);
+  }
+
+  /** Enero–junio → semestre I, julio–diciembre → semestre II. */
+  private calcularSemestre(fechaIso: string): string {
+    const [anio, mes] = fechaIso.split('-').map(Number);
+    return `${anio}-${mes <= 6 ? 'I' : 'II'}`;
   }
 
   private sumarDias(fechaIso: string, dias: number): string {
@@ -1725,7 +1639,8 @@ export class VisitaMainPage implements OnInit {
 
   private resetForm() {
     this.fechaFinEsSugerencia.set(true);
-    this.form = { fecha_inicio: '', fecha_fin: '', nombre_superintendente: '', correo_superintendente: '', semestre: '', notas: '' };
+    this.semestreEsSugerencia.set(true);
+    this.form = { fecha_inicio: '', fecha_fin: '', nombre_superintendente: '', correo_superintendente: '', semestre: '' };
   }
 
   crearVisita() {
@@ -1745,7 +1660,7 @@ export class VisitaMainPage implements OnInit {
         this.toast('success', 'Visita creada correctamente');
       },
       error: (e) => {
-        this.toast('error', e?.error?.detail || 'Error al crear visita');
+        this.toast('error', this.errMsg(e, 'Error al crear visita'));
         this.guardando.set(false);
       },
     });
@@ -1753,16 +1668,9 @@ export class VisitaMainPage implements OnInit {
 
   abrir(v: Visita) {
     this.seleccionada.set(v);
-    this.enlace.set(null);
-    this.editandoFechaEnlace.set(false);
-    this.fechaEnlace = '';
-    this.svc.getEnlaceActivo(v.id_visita).subscribe({
-      next: (t) => this.enlace.set(t),
-      error: () => {},
-    });
+    this.hayEnlace.set(false);
     this.activeTab.set('agenda');
     this.pendingDeleteFile.set(null);
-    this.correoDestino = v.correo_superintendente || '';
     const items = v.agenda_json?.items?.length ? structuredClone(v.agenda_json.items) : [{ dia: '', actividad: '' }];
     this.agendaItems.set(items);
     this.agendaSecciones.set(v.agenda_json?.secciones ? structuredClone(v.agenda_json.secciones) : {});
@@ -1837,7 +1745,7 @@ export class VisitaMainPage implements OnInit {
       },
       error: (e) => {
         this.invitandoId.set(null);
-        this.toast('error', e?.error?.detail || 'Error al invitar colaborador');
+        this.toast('error', this.errMsg(e, 'Error al invitar colaborador'));
       },
     });
   }
@@ -1850,7 +1758,7 @@ export class VisitaMainPage implements OnInit {
         this.colaboradores.update(arr => arr.filter(x => x.id_usuario !== c.id_usuario));
         this.toast('info', `${c.nombre} ya no es colaborador`);
       },
-      error: (e) => this.toast('error', e?.error?.detail || 'Error al quitar colaborador'),
+      error: (e) => this.toast('error', this.errMsg(e, 'Error al quitar colaborador')),
     });
   }
 
@@ -1913,7 +1821,7 @@ export class VisitaMainPage implements OnInit {
       this.svc.subirArchivo(v.id_visita, file).subscribe({
         next: () => { subidos++; if (--pendientes === 0) this.finalizarSubida(v.id_visita, subidos); },
         error: (e) => {
-          this.toast('error', e?.error?.detail || `Error al subir "${file.name}"`);
+          this.toast('error', this.errMsg(e, `Error al subir "${file.name}"`));
           if (--pendientes === 0) this.finalizarSubida(v.id_visita, subidos);
         },
       });
@@ -1935,7 +1843,7 @@ export class VisitaMainPage implements OnInit {
     this.pendingDeleteFile.set(null);
     this.svc.eliminarArchivo(this.seleccionada()!.id_visita, nombre).subscribe({
       next: () => this.archivos.update(a => a.filter(x => x.nombre !== nombre)),
-      error: (e) => this.toast('error', e?.error?.detail || 'Error al eliminar archivo'),
+      error: (e) => this.toast('error', this.errMsg(e, 'Error al eliminar archivo')),
     });
   }
 
@@ -1970,7 +1878,7 @@ export class VisitaMainPage implements OnInit {
         this.guardando.set(false);
       },
       error: (e) => {
-        this.toast('error', e?.error?.detail || 'Error al generar agenda');
+        this.toast('error', this.errMsg(e, 'Error al generar agenda'));
         this.guardando.set(false);
       },
     });
@@ -1984,88 +1892,18 @@ export class VisitaMainPage implements OnInit {
     });
   }
 
-  descargarZip() {
-    if (this.descargandoZip()) return;
-    const v = this.seleccionada()!;
+  /** Tarjeta (S-21) del publicador elegido en una fila de la agenda. */
+  descargarTarjetaPublicador(ev: { idPublicador: number; nombre: string }) {
+    const v = this.seleccionada();
+    if (!v) return;
     const now = new Date();
     const anio = now.getMonth() + 1 >= 9 ? now.getFullYear() + 1 : now.getFullYear();
-    this.descargandoZip.set(true);
-    this.portalSvc.zipFielInterno(v.id_visita, anio).subscribe({
+    this.portalSvc.tarjetaPdfInterno(v.id_visita, anio, { publicadorId: ev.idPublicador }).subscribe({
       next: (blob) => {
-        this.saveBlob(blob, `visita_circuito_${v.id_visita}_ano${anio}.zip`);
-        this.descargandoZip.set(false);
+        const slug = (ev.nombre || 'publicador').replace(/\s+/g, '_');
+        this.saveBlob(blob, `tarjeta_${slug}_ano${anio}.pdf`);
       },
-      error: () => {
-        this.descargandoZip.set(false);
-        this.toast('error', 'Error al descargar el paquete');
-      },
-    });
-  }
-
-  crearEnlace() {
-    this.generandoEnlace.set(true);
-    this.svc.crearEnlaceTemporal(this.seleccionada()!.id_visita, this.fechaEnlace || undefined).subscribe({
-      next: (t) => {
-        this.enlace.set(t);
-        this.generandoEnlace.set(false);
-        this.fechaEnlace = '';
-      },
-      error: (e) => { this.generandoEnlace.set(false); this.toast('error', e?.error?.detail || 'Error al generar el enlace'); },
-    });
-  }
-
-  /** Abre el editor inline de fecha, precargado con la fecha de expiración actual del enlace. */
-  abrirEdicionFechaEnlace() {
-    const l = this.enlace();
-    this.fechaEnlace = l ? l.fecha_expiracion.slice(0, 10) : '';
-    this.editandoFechaEnlace.set(true);
-  }
-
-  guardarFechaEnlace() {
-    const v = this.seleccionada();
-    if (!v || !this.fechaEnlace) return;
-    this.actualizandoFechaEnlace.set(true);
-    this.svc.actualizarExpiracionEnlace(v.id_visita, this.fechaEnlace).subscribe({
-      next: (t) => {
-        this.enlace.set(t);
-        this.actualizandoFechaEnlace.set(false);
-        this.editandoFechaEnlace.set(false);
-        this.toast('success', 'Fecha de expiración actualizada');
-      },
-      error: (e) => {
-        this.actualizandoFechaEnlace.set(false);
-        this.toast('error', e?.error?.detail || 'Error al actualizar la fecha');
-      },
-    });
-  }
-
-  copiarLink() {
-    const l = this.enlace();
-    if (!l) return;
-    navigator.clipboard?.writeText(l.url_publica).then(() => {
-      this.copiado.set(true);
-      this.toast('success', 'Enlace copiado al portapapeles');
-      setTimeout(() => this.copiado.set(false), 1800);
-    });
-  }
-
-  enviarCorreo() {
-    if (!this.correoDestino) return;
-    this.enviando.set(true);
-    this.svc.enviarCorreo({
-      id_visita: this.seleccionada()!.id_visita,
-      correo_destino: this.correoDestino,
-      enviar_zip: true,
-      enviar_enlace: true,
-    }).subscribe({
-      next: () => {
-        this.toast('success', 'Correo enviado correctamente');
-        this.enviando.set(false);
-      },
-      error: (e) => {
-        this.toast('error', e?.error?.detail || 'Error al enviar correo');
-        this.enviando.set(false);
-      },
+      error: (e) => this.toast('error', this.errMsg(e, 'No se pudo abrir la tarjeta del publicador')),
     });
   }
 
@@ -2078,8 +1916,20 @@ export class VisitaMainPage implements OnInit {
         if (this.seleccionada()?.id_visita === v.id_visita) this.seleccionada.set(null);
         this.toast('success', 'Visita eliminada');
       },
-      error: (e) => this.toast('error', e?.error?.detail || 'Error al eliminar visita'),
+      error: (e) => this.toast('error', this.errMsg(e, 'Error al eliminar visita')),
     });
+  }
+
+  /** Extrae un mensaje legible de un error HTTP. "detail" puede venir como
+   *  string o, en errores de validación de FastAPI/Pydantic, como un arreglo
+   *  de objetos { msg, loc, ... } que no se debe mostrar tal cual. */
+  private errMsg(e: any, fallback: string): string {
+    const detail = e?.error?.detail;
+    if (typeof detail === 'string' && detail.trim()) return detail;
+    if (Array.isArray(detail) && detail.length) {
+      return detail.map((d) => (typeof d === 'string' ? d : d?.msg)).filter(Boolean).join(', ') || fallback;
+    }
+    return fallback;
   }
 
   toast(type: ToastType, msg: string, duration = 4000) {
