@@ -60,6 +60,8 @@ export interface LogisticaItemOut {
   puesto: string;
   publicador: PublicadorBase | null;
   confirmado: boolean;
+  /** 'auto' = la puso el motor · 'manual' = la cambió una persona. */
+  origen?: 'auto' | 'manual';
 }
 
 export interface GrupoBase {
@@ -98,11 +100,48 @@ export interface AseoBloqueOut {
   confirmado: boolean;
 }
 
+/**
+ * Momentos por los que pasa un mes de logística.
+ *
+ * Antes solo existía el booleano `confirmado`, que no distinguía "guardado" de
+ * "visible para la congregación" y dejaba el mes de solo lectura al confirmarlo.
+ */
+export type LogisticaEstado =
+  | 'sin_generar'
+  | 'borrador'
+  | 'pendiente_revision'
+  | 'cambios_sin_publicar'
+  | 'publicado';
+
+/**
+ * Un puesto vacío que sí tiene a alguien capaz de cubrirlo.
+ *
+ * Se distingue del puesto vacío por falta de habilitados: aquel es una decisión
+ * de configuración y no impide publicar; éste es un hueco real y sí lo impide.
+ */
+export interface ConflictoLogisticaItem {
+  id_logistica: number;
+  fecha: string;
+  tipo_reunion: string;
+  puesto: string;
+  motivo: string;
+}
+
 export interface LogisticaMesOut {
   ano: number;
   mes: number;
   id_congregacion: number;
+  /** Se conserva para el PDF y la API pública. La pantalla usa `estado`. */
   confirmado: boolean;
+  estado: LogisticaEstado;
+  publicado_en: string | null;
+  puede_descartar: boolean;
+  /** Puestos vacíos que sí tienen a alguien capaz de cubrirlos. Bloquean publicar. */
+  conflictos: number;
+  /** Dónde están, para marcarlos en la tabla. */
+  conflictos_detalle: ConflictoLogisticaItem[];
+  cobertura_total: number;
+  cobertura_cubierta: number;
   fechas: FechaReunionOut[];
   asignaciones: LogisticaItemOut[];
   aseo: LogisticaAseoOut[];
@@ -123,12 +162,44 @@ export interface ConflictoLogistica {
 export interface MesDisponible {
   ano: number;
   mes: number;
+  estado?: LogisticaEstado;
 }
 
 export const MESES_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
+
+/**
+ * Permiso especial que habilita cada puesto, espejo de `_PUESTO_A_PERMISO`
+ * en `logistica_service.py`.
+ *
+ * Se duplica aqui a proposito: el catalogo de puestos es una constante fija en
+ * Python, no una tabla, y esta lista ya vive duplicada como PUESTOS_LABEL. Sirve
+ * para saber que permiso activar cuando se asigna a alguien que no lo tiene.
+ * Varios puestos comparten permiso (acomodador_1 y acomodador_2 -> acomodador).
+ */
+export const PUESTO_A_PERMISO: Record<string, string> = {
+  acomodador_1: 'acomodador',
+  acomodador_2: 'acomodador',
+  vigilancia_1: 'vigilancia',
+  vigilancia_2: 'vigilancia',
+  microfono_1:  'microfono',
+  microfono_2:  'microfono',
+  plataforma:   'plataforma',
+  audio:        'audio',
+  video:        'video',
+};
+
+/** Nombre del permiso tal como aparece en Configuracion, para los mensajes. */
+export const PERMISO_LABEL: Record<string, string> = {
+  acomodador: 'Acomodador',
+  vigilancia: 'Vigilancia',
+  microfono:  'Micrófono',
+  plataforma: 'Plataforma',
+  audio:      'Audio',
+  video:      'Video',
+};
 
 export const PUESTOS_LABEL: Record<string, string> = {
   acomodador_1: 'Acomodador 1',

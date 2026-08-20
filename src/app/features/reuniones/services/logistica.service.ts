@@ -54,8 +54,21 @@ export class LogisticaService {
     });
   }
 
-  confirmar(payload: ConfirmarLogisticaRequest, idCong: number | null): Observable<LogisticaMesOut> {
-    return this.http.post<LogisticaMesOut>(`${this.base}/confirmar`, payload, {
+  /**
+   * Hace visible el mes a la congregación.
+   *
+   * Responde 409 si quedan puestos vacíos que alguien podría cubrir: un hueco
+   * resoluble no debe llegar publicado a la cartelera.
+   */
+  publicar(payload: ConfirmarLogisticaRequest, idCong: number | null): Observable<LogisticaMesOut> {
+    return this.http.post<LogisticaMesOut>(`${this.base}/publicar`, payload, {
+      params: this.congParams(idCong),
+    });
+  }
+
+  /** Deshace las ediciones hechas después de la última publicación. */
+  descartarCambios(payload: ConfirmarLogisticaRequest, idCong: number | null): Observable<LogisticaMesOut> {
+    return this.http.post<LogisticaMesOut>(`${this.base}/descartar-cambios`, payload, {
       params: this.congParams(idCong),
     });
   }

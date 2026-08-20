@@ -10,6 +10,7 @@ const TIPO_LABEL: Record<string, string> = {
   fin_semana:       'Fin de semana',
   logistica:        'Logística',
   discurso_saliente:'Discurso saliente',
+  exhibidor:        'Exhibidor',
 };
 
 const TIPO_COLOR: Record<string, string> = {
@@ -17,6 +18,7 @@ const TIPO_COLOR: Record<string, string> = {
   fin_semana:       '#0369a1',
   logistica:        '#0891b2',
   discurso_saliente:'#7c3aed',
+  exhibidor:        '#165cfc',
 };
 
 @Component({
@@ -71,7 +73,15 @@ const TIPO_COLOR: Record<string, string> = {
                 <span class="conflicto-badge" [style.background]="badgeBg(a.tipo)" [style.color]="badgeColor(a.tipo)">
                   {{ tipoLabel(a.tipo) }}
                 </span>
-                <span class="conflicto-item-text">{{ a.detalle }}</span>
+                <span class="conflicto-item-body">
+                  @if (a.rol || a.sala) {
+                    <span class="conflicto-rol">
+                      @if (a.rol) { {{ a.rol }} }
+                      @if (a.sala) { <span class="conflicto-sala">{{ a.sala }}</span> }
+                    </span>
+                  }
+                  <span class="conflicto-item-text">{{ a.detalle }}</span>
+                </span>
               </li>
             }
           </ul>
@@ -242,7 +252,7 @@ const TIPO_COLOR: Record<string, string> = {
 
     .conflicto-item {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.625rem;
       padding: 0.6rem 0.75rem;
       border-radius: 10px;
@@ -262,6 +272,42 @@ const TIPO_COLOR: Record<string, string> = {
       border-radius: 6px;
       letter-spacing: 0.01em;
       white-space: nowrap;
+    }
+
+    /* El badge de tipo ya lleva color; el papel se distingue por peso y caja
+       alta para no competir con el. */
+    .conflicto-item-body {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .conflicto-rol {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #0f172a;
+    }
+    :host-context(.dark) .conflicto-rol { color: #f1f5f9; }
+
+    .conflicto-sala {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: none;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: rgba(109, 40, 217, 0.1);
+      color: #6D28D9;
+    }
+    :host-context(.dark) .conflicto-sala {
+      background: rgba(196, 181, 253, 0.16);
+      color: #c4b5fd;
     }
 
     .conflicto-item-text {

@@ -8,9 +8,16 @@ import { environment } from '../../../../environments/environment';
 import { ConflictoAlertaDialogComponent } from '../components/conflicto-alerta-dialog.component';
 
 export interface ConflictoAsignacion {
-  tipo: 'entre_semana' | 'fin_semana' | 'logistica' | 'discurso_saliente';
+  tipo: 'entre_semana' | 'fin_semana' | 'logistica' | 'discurso_saliente' | 'exhibidor';
   detalle: string;
   fecha: string;
+  /**
+   * Papel dentro de la parte cuando la comparten dos personas: Conductor,
+   * Lector, Maestro o Ayudante. Null si la parte la cubre una sola.
+   */
+  rol?: string | null;
+  /** 'Sala B' cuando la asignación no es de la sala principal. */
+  sala?: string | null;
 }
 
 export interface ConflictoResponse {
