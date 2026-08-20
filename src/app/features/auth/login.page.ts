@@ -6,7 +6,10 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import * as THREE from 'three';
+// Solo los tipos: se borran al compilar, asi que three no entra en el chunk del
+// login. La libreria se carga con import() dinamico al montar la vista, y solo
+// si el usuario no ha pedido reducir el movimiento.
+import type * as THREE from 'three';
 
 @Component({
   standalone: true,
@@ -54,7 +57,14 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   private mainGroup: THREE.Group | null = null;
   private plasmaMat: THREE.ShaderMaterial | null = null;
   private pMat: THREE.ShaderMaterial | null = null;
-  private threeTimer = new THREE.Timer();
+  private threeTimer: THREE.Timer | null = null;
+
+  /** El usuario pidio al sistema reducir animaciones: no montamos los fondos. */
+  private readonly prefiereMenosMovimiento =
+    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /** Evita montar la escena si la vista murio mientras se cargaba three. */
+  private destruido = false;
 
   ngOnInit(): void {
     const raw = localStorage.getItem(this.EMAIL_KEY);
@@ -73,17 +83,25 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.initNeuralCanvas();
-    this.initPlasmaSphere();
+    if (!this.prefiereMenosMovimiento) {
+      this.initNeuralCanvas();
+      void this.initPlasmaSphere();
+    }
     // Auto-trigger cinematic decrypt on load
     setTimeout(() => this.triggerHackerText(), 400);
   }
 
   ngOnDestroy(): void {
+    this.destruido = true;
     if (this.neuralAnimId) cancelAnimationFrame(this.neuralAnimId);
     if (this.threeAnimId) cancelAnimationFrame(this.threeAnimId);
     if (this.resizeObs) this.resizeObs.disconnect();
     if (this.hackerInterval) clearInterval(this.hackerInterval);
+    // Libera el contexto WebGL: el navegador solo admite unos pocos vivos a la
+    // vez y entrar y salir del login los iba acumulando.
+    this.threeRenderer?.dispose();
+    this.threeRenderer = null;
+    this.threeTimer = null;
   }
 
   /* ═══════════════════════════════════════════ */
@@ -167,7 +185,9 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     this.resizeObs = new ResizeObserver(() => setSize());
     this.resizeObs.observe(document.body);
 
-    this.animateNeural();
+    // Fuera de la zona: el bucle no toca estado de la vista, asi que no debe
+    // provocar un ciclo de deteccion de cambios por cada frame.
+    this.ngZone.runOutsideAngular(() => this.animateNeural());
   }
 
   private animateNeural = (): void => {
@@ -244,9 +264,16 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   /* ═══════════════════════════════════════════ */
   /* Three.js Plasma Sphere                      */
   /* ═══════════════════════════════════════════ */
-  private initPlasmaSphere(): void {
+  private async initPlasmaSphere(): Promise<void> {
     const container = this.sphereContainerRef?.nativeElement;
     if (!container) return;
+
+    // Carga diferida: three pesa mas que todo el resto del login junto y solo
+    // sirve para este fondo decorativo. Se descarga despues del primer pintado.
+    const THREE = await import('three');
+    // La vista pudo destruirse mientras se descargaba la libreria.
+    if (this.destruido) return;
+    this.threeTimer = new THREE.Timer();
 
     const rect = container.getBoundingClientRect();
     const size = Math.round(rect.width) || 160;
@@ -374,10 +401,13 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     });
     group.add(new THREE.Points(pGeo, this.pMat));
 
-    this.animateSphere();
+    // Igual que el canvas neuronal: 60 fps de render WebGL no deben disparar
+    // 60 ciclos de deteccion de cambios por segundo.
+    this.ngZone.runOutsideAngular(() => this.animateSphere());
   }
 
   private animateSphere = (): void => {
+    if (!this.threeTimer) return;
     this.threeAnimId = requestAnimationFrame(this.animateSphere);
     this.threeTimer.update();
     const t = this.threeTimer.getElapsed() * 0.78;

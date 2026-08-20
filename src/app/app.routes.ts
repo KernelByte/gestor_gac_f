@@ -61,8 +61,7 @@ export const routes: Routes = [
       },
       {
         path: 'exhibidores',
-        title: 'Exhibidores',
-        loadComponent: () => import('./features/exhibidores/pages/exhibidores.page').then(m => m.ExhibidoresPage),
+        loadChildren: () => import('./features/exhibidores/exhibidores.routes').then(m => m.EXHIBIDORES_ROUTES),
       },
       {
         path: 'reuniones',

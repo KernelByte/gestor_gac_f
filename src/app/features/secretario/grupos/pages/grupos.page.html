@@ -207,7 +207,7 @@
 
                <!-- MOBILE VIEW: Card List -->
                <div class="md:hidden p-3 space-y-3 pb-6">
-                  <div *ngFor="let grupo of pagedList(); let i = index"
+                  <div *ngFor="let grupo of pagedList(); let i = index; trackBy: trackByGrupo"
                      class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm relative group transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98] active:shadow-none">
                      
                      <!-- Acciones Rápidas (Top Right) -->
@@ -316,7 +316,7 @@
                      </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                     <tr *ngFor="let grupo of pagedList(); let i = index"
+                     <tr *ngFor="let grupo of pagedList(); let i = index; trackBy: trackByGrupo"
                         class="group hover:bg-slate-100/60 dark:hover:bg-slate-800/50 transition-colors">
 
                         <!-- Nombre -->

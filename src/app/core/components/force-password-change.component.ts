@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { AuthService } from '../auth/auth.service';
 import { AuthStore } from '../auth/auth.store';
+import { PasswordStrengthComponent } from '../../shared/components/password-strength/password-strength.component';
 import { lastValueFrom } from 'rxjs';
 
 @Component({
   standalone: true,
   selector: 'app-force-password-change',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PasswordStrengthComponent],
   template: `
     <!-- Full-screen overlay — no backdrop click, no close button -->
     <div class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -69,6 +70,7 @@ import { lastValueFrom } from 'rxjs';
               </div>
               <p *ngIf="form.get('nueva_contrasena')?.errors?.['minlength'] && form.get('nueva_contrasena')?.touched"
                 class="text-[0.625rem] text-red-500 ml-1 font-bold">Mínimo 6 caracteres</p>
+              <app-password-strength [password]="form.get('nueva_contrasena')?.value || ''" />
             </div>
 
             <!-- Confirmar contraseña -->

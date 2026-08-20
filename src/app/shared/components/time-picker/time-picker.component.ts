@@ -2,7 +2,7 @@ import { Component, Input, signal, computed, forwardRef, ElementRef, inject, Vie
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-type ColorScheme = 'orange' | 'violet';
+type ColorScheme = 'orange' | 'violet' | 'blue';
 type Meridiem = 'a. m.' | 'p. m.';
 
 /**
@@ -23,6 +23,7 @@ type Meridiem = 'a. m.' | 'p. m.';
   template: `
     <div class="tp-root"
          [class.tp-violet]="colorScheme === 'violet'"
+         [class.tp-blue]="colorScheme === 'blue'"
          [class.tp-open-above]="openAbove()"
          [class.tp-align-right]="alignRight()"
          [class.tp-closing]="closing()">
@@ -303,6 +304,26 @@ type Meridiem = 'a. m.' | 'p. m.';
       .tp-popup { animation: none !important; }
       .tp-col { scroll-behavior: auto; }
     }
+
+    /* ── Blue (Exhibidores) ─────────────────────────────── */
+    .tp-blue:focus-within .tp-trigger:not(:disabled) {
+      border-color: #165cfc;
+      box-shadow: 0 0 0 3px rgba(22,92,252,0.14);
+    }
+    :host-context(.dark) .tp-blue:focus-within .tp-trigger:not(:disabled) {
+      border-color: #6091fb; box-shadow: 0 0 0 3px rgba(96,145,251,0.18);
+    }
+    .tp-blue .tp-trigger-icon { color: #3b73fc; }
+    .tp-blue .tp-trigger:not(:disabled):hover .tp-trigger-icon { color: #165cfc; }
+    :host-context(.dark) .tp-blue .tp-trigger-icon { color: #6091fb; }
+    .tp-blue .tp-columns::before { background: rgba(22,92,252,0.05); border-color: rgba(22,92,252,0.22); }
+    :host-context(.dark) .tp-blue .tp-columns::before { background: rgba(96,145,251,0.06); border-color: rgba(96,145,251,0.22); }
+    .tp-blue .tp-opt:hover:not(.tp-opt--on) { background: rgba(22,92,252,0.08); color: #0d47d0; }
+    :host-context(.dark) .tp-blue .tp-opt:hover:not(.tp-opt--on) { background: rgba(96,145,251,0.12); color: #6091fb; }
+    .tp-blue .tp-opt--on { background: #165cfc; box-shadow: 0 2px 8px rgba(22,92,252,0.35); }
+    .tp-blue .tp-footer-now { color: #165cfc; }
+    .tp-blue .tp-footer-now:hover { color: #0d47d0; background: rgba(22,92,252,0.07); }
+    :host-context(.dark) .tp-blue .tp-footer-now { color: #6091fb; }
   `],
 })
 export class TimePickerComponent implements ControlValueAccessor {

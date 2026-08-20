@@ -33,7 +33,10 @@ import {
     ])
   ],
   template: `
-  <div class="flex flex-col gap-4 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-7 custom-scrollbar pb-10">
+  <!-- Sin padding horizontal propio: el margen exterior lo pone el shell una
+       sola vez (px-4 md:px-8). Se conserva pb-10 para que el scroll no corte
+       la última tarjeta contra el borde. -->
+  <div class="flex flex-col gap-4 overflow-y-auto overflow-x-hidden custom-scrollbar pb-10">
 
     <!-- 1. Hero Banner -->
     <div class="relative bg-gradient-to-br from-violet-600 via-violet-700 to-violet-800 rounded-2xl px-6 py-10 sm:px-8 md:px-10 md:py-12">

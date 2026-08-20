@@ -66,14 +66,14 @@ export class TimeAgoPipe implements PipeTransform {
 
           <!-- Collapsed: logo centered -->
           <div *ngIf="collapsed()" class="flex items-center justify-center w-10 h-10 rounded-xl mx-auto">
-            <img src="images/LogoAppMorado.png" alt="GAC" class="w-7 h-7 object-contain">
+            <img src="images/logo-gac-96.webp" alt="GAC" class="w-7 h-7 object-contain" width="28" height="28">
           </div>
 
           <!-- Expanded: brand left + chevron right -->
           <div *ngIf="!collapsed()" class="flex items-center justify-between w-full">
             <div class="flex items-center gap-2.5">
-              <img src="images/LogoAppMorado.png" alt="GAC Logo"
-                   class="w-8 h-8 object-contain shrink-0">
+              <img src="images/logo-gac-96.webp" alt="GAC Logo"
+                   class="w-8 h-8 object-contain shrink-0" width="32" height="32">
               <span class="font-display font-extrabold text-[1.1rem] tracking-[-0.04em] text-[#a240e3] dark:text-white leading-none">
                 GAC
               </span>
@@ -141,7 +141,7 @@ export class TimeAgoPipe implements PipeTransform {
             </div>
 
             <!-- Modules Section -->
-            <div *ngIf="hasAnyReunionesPermission() || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasPermission('territorios.ver') || hasPermission('exhibidores.ver') || hasAnyReportesPermission() || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Administrador')">
+            <div *ngIf="hasAnyReunionesPermission() || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasPermission('territorios.ver') || hasAnyExhibidoresPermission() || hasAnyReportesPermission() || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Administrador')">
               <div class="h-px bg-slate-100 dark:bg-slate-800/60 mx-2 mb-4 mt-2"></div>
               <p *ngIf="!collapsed()" class="px-3 mb-2 text-[0.6875rem] font-bold tracking-[0.08em] uppercase text-slate-400/70 dark:text-slate-600">Módulos</p>
               
@@ -368,7 +368,7 @@ export class TimeAgoPipe implements PipeTransform {
               </div>
 
               <!-- Exhibidores -->
-              <a *ngIf="hasPermission('exhibidores.ver')" routerLink="/exhibidores" routerLinkActive="text-brand-blue dark:text-blue-300 font-semibold [&_.nav-icon]:!text-brand-blue dark:[&_.nav-icon]:!text-blue-400 bg-brand-blue/10 dark:bg-blue-500/[0.13] nav-active"
+              <a *ngIf="hasAnyExhibidoresPermission()" routerLink="/exhibidores" routerLinkActive="text-brand-blue dark:text-blue-300 font-semibold [&_.nav-icon]:!text-brand-blue dark:[&_.nav-icon]:!text-blue-400 bg-brand-blue/10 dark:bg-blue-500/[0.13] nav-active"
                 class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Exhibidores">
                 <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
@@ -1396,6 +1396,20 @@ export class ShellPage implements OnInit, OnDestroy {
       this.hasPermission('reuniones.asistencia') ||
       this.hasPermission('reuniones.configuracion') ||
       (this.store.user()?.roles?.includes('Secretario') ?? false)
+    );
+  }
+
+  /**
+   * Exhibidores tiene un permiso por pestaña: el enlace del menú debe aparecer
+   * si el usuario puede entrar a cualquiera de ellas, no solo con el de lectura.
+   */
+  hasAnyExhibidoresPermission(): boolean {
+    return (
+      this.hasPermission('exhibidores.ver') ||
+      this.hasPermission('exhibidores.programacion') ||
+      this.hasPermission('exhibidores.ubicaciones') ||
+      this.hasPermission('exhibidores.participantes') ||
+      this.hasPermission('exhibidores.configuracion')
     );
   }
 

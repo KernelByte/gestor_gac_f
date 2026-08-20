@@ -35,6 +35,8 @@ export class InformesHistorialComponent implements OnChanges {
    @Input() grupos: Grupo[] = [];
    @Input() canEdit: boolean = false;
    @Input() canExport: boolean = false;
+   /** Consolidado del grupo (una fila por publicador). Solo superintendente de servicio. */
+   @Input() canExportResumenGrupo: boolean = false;
    @Input() lockedGroupId: number | null = null;
 
    // Cache de grupos ordenados — se recalcula sólo cuando cambia el input `grupos`.
@@ -382,6 +384,70 @@ export class InformesHistorialComponent implements OnChanges {
             this.exporting.set(false);
          }
       });
+   }
+
+   // --- Resumen consolidado del grupo (superintendente de servicio) ---
+   exportingResumen = signal(false);
+   resumenError = signal<string | null>(null);
+   private resumenErrorTimer: any = null;
+
+   /** Grupo sobre el que se genera el consolidado: el fijado o el filtrado. */
+   resumenGrupoId(): number | null {
+      if (this.lockedGroupId) return this.lockedGroupId;
+      const filter = this.activeFilter();
+      return typeof filter === 'number' ? filter : null;
+   }
+
+   resumenGrupoTooltip(): string {
+      if (!this.resumenGrupoId()) return 'Selecciona un grupo para generar el consolidado';
+      return `Consolidado de ${this.getActiveGroupLabel()}: una fila por publicador con horas, cursos y meses informados`;
+   }
+
+   onExportResumenGrupo() {
+      if (!this.canExportResumenGrupo) return;
+      if (this.exportingResumen()) return;
+
+      const grupoId = this.resumenGrupoId();
+      if (!grupoId) return;
+
+      this.exportingResumen.set(true);
+      this.showResumenError(null);
+
+      this.informesService.exportResumenGrupoPdf(
+         this.congregacionId,
+         grupoId,
+         this.selectedAno,
+         this.viewType()
+      ).subscribe({
+         next: (blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Analisis - ${this.getActiveGroupLabel()} - ${this.selectedAno}.pdf`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            this.exportingResumen.set(false);
+         },
+         error: (err) => {
+            console.error('Error exporting group summary PDF', err);
+            this.exportingResumen.set(false);
+            this.showResumenError(
+               err?.status === 403
+                  ? 'No tienes permiso para el consolidado de ese grupo.'
+                  : err?.status === 404
+                     ? 'El grupo no tiene publicadores para ese rango.'
+                     : 'No se pudo generar el consolidado. Intenta de nuevo.'
+            );
+         }
+      });
+   }
+
+   private showResumenError(mensaje: string | null) {
+      if (this.resumenErrorTimer) clearTimeout(this.resumenErrorTimer);
+      this.resumenError.set(mensaje);
+      if (mensaje) {
+         this.resumenErrorTimer = setTimeout(() => this.resumenError.set(null), 7000);
+      }
    }
 
    getShortPrivilegeLabel(priv: string | null | undefined): string {

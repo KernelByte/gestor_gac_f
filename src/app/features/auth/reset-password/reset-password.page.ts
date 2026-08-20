@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { PasswordStrengthComponent } from '../../../shared/components/password-strength/password-strength.component';
 import { lastValueFrom } from 'rxjs';
 
 @Component({
    selector: 'app-reset-password',
    standalone: true,
-   imports: [CommonModule, ReactiveFormsModule, RouterLink],
+   imports: [CommonModule, ReactiveFormsModule, RouterLink, PasswordStrengthComponent],
    templateUrl: './reset-password.page.html',
 })
 export class ResetPasswordPage implements OnInit {

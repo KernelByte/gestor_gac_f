@@ -19,7 +19,6 @@ import { lastValueFrom } from 'rxjs';
 import { PrivilegiosService } from '../privilegios/infrastructure/privilegios.service';
 import { Privilegio } from '../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../privilegios/domain/models/publicador-privilegio';
-import { saveAs } from 'file-saver';
 
 @Component({
   standalone: true,
@@ -95,6 +94,11 @@ export class InformesMainPage implements OnInit {
   private pendingSaveCount = 0;
   hasPendingChanges = signal(false);
 
+  /** Publicadores cuyo autoguardado falló. Persiste hasta que se reintenta con
+   *  éxito o hasta que loadResumen() trae datos frescos del servidor. */
+  private failedSaves = new Set<number>();
+  failedSaveCount = signal(0);
+
   selectedMes: string | null = null;
   selectedAno: string | null = null;
   selectedGrupo: number | string | null = null;
@@ -160,11 +164,15 @@ export class InformesMainPage implements OnInit {
     return user.permisos?.includes('informes.editar_todos') ?? false;
   });
 
+  // 'informes.editar_todos' es el alcance de la pestaña Entrada Mensual: decide
+  // tanto qué grupos se listan como cuáles se pueden guardar. Antes esta línea
+  // aceptaba además 'informes.ver_todos', un código que nunca ha existido en
+  // permisos_sistema, así que esa mitad de la condición nunca era cierta.
   canAccessAllGroups = computed(() => {
     const user = this.authStore.user();
     if (!user) return false;
     if (this.isAdminOrSecretario()) return true;
-    return (user.permisos?.includes('informes.editar_todos') || user.permisos?.includes('informes.ver_todos')) ?? false;
+    return user.permisos?.includes('informes.editar_todos') ?? false;
   });
 
   canEditInformes = computed(() => {
@@ -181,13 +189,57 @@ export class InformesMainPage implements OnInit {
     return (user.permisos?.includes('informes.ver') ?? false) || this.canEditInformes();
   });
 
-  canEditHistorial = computed(() => this.isAdminOrSecretario());
+  // Corregir el historial ya no está atado al rol: 'informes.historial_editar'
+  // permite delegarlo, igual que 'informes.editar' delega la entrada mensual.
+  canEditHistorial = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    if (this.isAdminOrSecretario()) return true;
+    return user.permisos?.includes('informes.historial_editar') ?? false;
+  });
 
   canViewHistorial = computed(() => {
     const user = this.authStore.user();
     if (!user) return false;
     if (this.isAdminOrSecretario()) return true;
-    return user.permisos?.includes('informes.historial') ?? false;
+    return (user.permisos?.includes('informes.historial') ?? false) || this.canEditHistorial();
+  });
+
+  /**
+   * Alcance de la pestaña Historial. Sin 'informes.historial_todos' la vista se
+   * fija al grupo del propio usuario — antes esto se deducía de si podía editar,
+   * lo que dejaba a cualquier delegado encerrado en su grupo aunque su encargo
+   * fuera revisar toda la congregación.
+   */
+  canViewHistorialAllGroups = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    if (this.isAdminOrSecretario()) return true;
+    return user.permisos?.includes('informes.historial_todos') ?? false;
+  });
+
+  /**
+   * Consolidado del grupo (una fila por publicador) dentro de Historial.
+   * Es la herramienta de análisis del superintendente de servicio; los roles de
+   * administración total lo ven también porque alcanzan toda la pantalla.
+   * Secretario y Coordinador también lo ven si tienen 'informes.historial'
+   * (el mismo permiso que habilita la pestaña Historial), para poder
+   * delegarlo sin cambiar el rol del usuario.
+   */
+  canExportResumenGrupo = computed(() => {
+    const user = this.authStore.user();
+    if (!user) return false;
+    const roles = user.roles ?? (user.rol ? [user.rol] : []);
+    const rolesLower = roles.map(r => (r || '').toLowerCase());
+    if (rolesLower.includes('superintendente de servicio') ||
+      rolesLower.includes('administrador') ||
+      rolesLower.includes('gestor aplicación')) {
+      return true;
+    }
+    if (rolesLower.includes('secretario') || rolesLower.includes('coordinador')) {
+      return user.permisos?.includes('informes.historial') ?? false;
+    }
+    return false;
   });
 
   canViewResumenSucursalAllGroups = computed(() => {
@@ -303,7 +355,7 @@ export class InformesMainPage implements OnInit {
   }
 
   private async loadHistorialGroupIdIfNeeded() {
-    if (this.canEditHistorial()) return;
+    if (this.canViewHistorialAllGroups()) return;
     if (!this.canViewHistorial() && !(this.canViewResumenSucursal() && !this.canViewResumenSucursalAllGroups())) return;
     if (this.historialGroupId()) return;
 
@@ -430,6 +482,9 @@ export class InformesMainPage implements OnInit {
       next: (data) => {
         // Datos frescos del servidor — ya no necesitamos el override layer
         this.localChanges = new Map();
+        this.failedSaves.clear();
+        this.failedSaveCount.set(0);
+        if (this.autoSaveStatus() === 'error') this.autoSaveStatus.set('idle');
         this.resumen.set(data);
       },
       error: (err) => console.error('Error loading resumen:', err)
@@ -506,6 +561,7 @@ export class InformesMainPage implements OnInit {
     this.informesService.guardarInformesLote({ periodo_id: pId, informes: [item] }).subscribe({
       next: () => {
         this.pendingSaveCount--;
+        this.markSaveResult(pubId, true);
         // Parchear el resumen con los valores guardados (actualiza pub.* en el signal)
         this.patchResumen(pubId, savedChange);
 
@@ -516,19 +572,32 @@ export class InformesMainPage implements OnInit {
         const allDone = this.pendingSaveCount === 0 && this.autoSaveTimers.size === 0;
         if (allDone) {
           this.hasPendingChanges.set(false);
-          this.autoSaveStatus.set('saved');
           if (this.autoSavedClearTimer) clearTimeout(this.autoSavedClearTimer);
-          this.autoSavedClearTimer = setTimeout(() => this.autoSaveStatus.set('idle'), 2500);
+          // Si quedan fallos de otras filas, el indicador sigue en rojo.
+          if (this.failedSaves.size > 0) {
+            this.autoSaveStatus.set('error');
+          } else {
+            this.autoSaveStatus.set('saved');
+            this.autoSavedClearTimer = setTimeout(() => this.autoSaveStatus.set('idle'), 2500);
+          }
         }
       },
       error: () => {
         this.pendingSaveCount--;
+        this.markSaveResult(pubId, false);
         this.hasPendingChanges.set(false);
-        this.autoSaveStatus.set('error');
+        // El error no se auto-limpia: el indicador queda en rojo mientras
+        // haya cambios que el servidor no aceptó.
         if (this.autoSavedClearTimer) clearTimeout(this.autoSavedClearTimer);
-        this.autoSavedClearTimer = setTimeout(() => this.autoSaveStatus.set('idle'), 5000);
+        this.autoSaveStatus.set('error');
       }
     });
+  }
+
+  private markSaveResult(pubId: number, ok: boolean) {
+    if (ok) this.failedSaves.delete(pubId);
+    else this.failedSaves.add(pubId);
+    this.failedSaveCount.set(this.failedSaves.size);
   }
 
   private patchResumen(pubId: number, change: Partial<InformeLoteItem>) {
@@ -599,96 +668,6 @@ export class InformesMainPage implements OnInit {
     });
   }
 
-  async exportarExcel() {
-    this.saving.set(true);
-    try {
-      const mesStr = this.selectedMes ? this.getMesLabel(this.selectedMes) : 'Mes';
-      const periodo = `${this.selectedAno}-${mesStr}`;
-      const congregacionId = this.congregacionContext.effectiveCongregacionId() ?? 1;
-
-      const pId = this.getPeriodoId();
-      if (!pId) throw new Error("Periodo seleccionado inválido");
-
-      if (this.selectedGrupo && this.selectedGrupo !== 'precursores_regulares' && this.selectedGrupo !== 'precursores_auxiliares') {
-        // Descargar por grupo
-        const g = this.grupos().find(gx => gx.id_grupo === this.selectedGrupo);
-        const nombreGrupo = g ? g.nombre_grupo : 'Grupo';
-        this.informesService.exportTemplate(pId, this.selectedGrupo as number).subscribe({
-          next: (blob) => {
-            const filename = `Informe_${nombreGrupo}_${periodo}.xlsx`;
-            saveAs(blob, filename);
-            this.saving.set(false);
-          },
-          error: (err) => {
-            console.error('Error descargando plantilla', err);
-            this.showToast('Error', 'error', 'Error al descargar la plantilla desde el servidor.');
-            this.saving.set(false);
-          }
-        });
-      } else {
-        // Descargar toda la congregación
-        if (!congregacionId) {
-          throw new Error("No se pudo identificar la congregación del usuario.");
-        }
-        this.informesService.exportTemplateCongregacion(pId, congregacionId).subscribe({
-          next: (blob) => {
-            const filename = `Informe_Congregacion_${periodo}.xlsx`;
-            saveAs(blob, filename);
-            this.saving.set(false);
-          },
-          error: (err) => {
-            console.error('Error descargando plantilla', err);
-            this.showToast('Error', 'error', 'Error al descargar la plantilla desde el servidor.');
-            this.saving.set(false);
-          }
-        });
-      }
-    } catch (e: any) {
-      console.error("Error en exportarExcel:", e);
-      this.showToast('Error', 'error', e.message || 'Ocurrió un error inesperado al exportar.');
-      this.saving.set(false);
-    }
-  }
-
-  importarExcel(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const file = input.files[0];
-    this.saving.set(true);
-
-    this.informesService.importTemplate(file).subscribe({
-      next: (result: any) => {
-        const title = `${result.tipo_plantilla}: ${result.nombre_origen || 'Importación'}`;
-        let text = `📅 Período: ${result.periodo}\n`;
-        text += `• Creados: ${result.creados}\n`;
-        text += `• Actualizados: ${result.actualizados}`;
-        if (result.omitidos > 0) {
-          text += `\n• Omitidos: ${result.omitidos}`;
-        }
-
-        if (result.errores && result.errores.length > 0) {
-          text += `\n\n⚠️ Errores:\n`;
-          for (const e of result.errores.slice(0, 3)) {
-            text += `Fila ${e.fila}: ${e.error}\n`;
-          }
-        }
-
-        this.showToast(title, result.omitidos > 0 ? 'info' : 'success', text);
-        input.value = '';
-        this.loadResumen();
-        this.saving.set(false);
-      },
-      error: (err) => {
-        console.error('Error importando plantilla:', err);
-        const detail = err.error?.detail || 'Error desconocido al importar';
-        this.showToast('Error de importación', 'error', detail);
-        input.value = '';
-        this.saving.set(false);
-      }
-    });
-  }
-
   notificarWhatsApp(pub: InformeConPublicador) {
     const periodoId = this.getPeriodoId();
     if (!periodoId) return;
@@ -727,17 +706,50 @@ export class InformesMainPage implements OnInit {
     });
   }
 
+  /**
+   * Dispara ya los autoguardados que estén esperando el debounce.
+   * localChanges NO indica cambios pendientes: es la capa de override que
+   * sobrevive al guardado (ver autoGuardar).
+   */
+  private flushAutoSaves() {
+    for (const [pubId, timer] of this.autoSaveTimers.entries()) {
+      clearTimeout(timer);
+      this.autoSaveTimers.delete(pubId);
+      this.autoGuardar(pubId);
+    }
+  }
+
+  /** Reintenta los autoguardados que fallaron. Devuelve cuántos se relanzaron. */
+  private retryFailedSaves(): number {
+    const ids = Array.from(this.failedSaves);
+    for (const pubId of ids) {
+      if (!this.localChanges.has(pubId)) {
+        this.markSaveResult(pubId, true); // ya no hay nada que reenviar
+        continue;
+      }
+      this.autoGuardar(pubId);
+    }
+    return this.failedSaves.size;
+  }
+
   tryChangeTab(tabId: string) {
     if (this.activeTab() === tabId) return;
-    if (this.localChanges.size > 0) {
-      const n = this.localChanges.size;
+
+    // Adelantamos el debounce pendiente: las peticiones siguen en vuelo
+    // aunque se cambie de pestaña, así que no hace falta preguntar.
+    this.flushAutoSaves();
+
+    // Solo hay riesgo real de perder datos si un autoguardado falló.
+    const fallidos = this.retryFailedSaves();
+    if (fallidos > 0) {
       const ok = confirm(
-        `Tienes ${n} cambio${n !== 1 ? 's' : ''} sin guardar en la pestaña Entrada.\n\n` +
-        `¿Descartarlos y cambiar de pestaña?`
+        `${fallidos} cambio${fallidos !== 1 ? 's' : ''} de la pestaña Entrada no se ` +
+        `pudo guardar${fallidos !== 1 ? 'n' : ''} (se está reintentando).\n\n` +
+        `¿Cambiar de pestaña de todos modos?`
       );
       if (!ok) return;
-      this.localChanges.clear();
     }
+
     this.activeTab.set(tabId);
   }
 

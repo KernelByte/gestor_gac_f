@@ -11,7 +11,9 @@ import {
   pyramidOption,
 } from '../../shared/chart-options';
 import { EstadoBadgeComponent } from '../precursores/components/estado-badge.component';
+import { BautismoGruposComponent } from './components/bautismo-grupos.component';
 import { ReportesService, PublicadoresReporte } from '../../services/reportes.service';
+import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 
 /**
  * Análisis de publicadores por año de servicio (Sep–Ago): demografía,
@@ -21,17 +23,18 @@ import { ReportesService, PublicadoresReporte } from '../../services/reportes.se
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ChartCardComponent, KpiCardComponent, EstadoBadgeComponent],
+  imports: [
+    CommonModule, ChartCardComponent, KpiCardComponent, EstadoBadgeComponent,
+    PageHeaderComponent, BautismoGruposComponent,
+  ],
   template: `
-    <div class="p-4 sm:p-6 space-y-5">
-      <header class="flex items-end justify-between gap-3 flex-wrap">
-        <div>
-          <h1 class="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">Análisis de Publicadores</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400">
-            Demografía, actividad, capacidad de servicio y crecimiento de los publicadores activos.
-          </p>
-        </div>
-        <div *ngIf="data() as d">
+    <!-- Sin padding propio: el margen exterior lo pone el shell una sola vez. -->
+    <div class="space-y-5">
+      <app-page-header
+        spacing="none"
+        title="Análisis de Publicadores"
+        subtitle="Demografía, actividad, capacidad de servicio y crecimiento de los publicadores activos.">
+        <ng-container *ngIf="data() as d">
           <label for="anio-servicio-pub" class="sr-only">Año de servicio</label>
           <select id="anio-servicio-pub"
                   class="h-9 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm font-medium text-slate-700 dark:text-slate-200"
@@ -40,8 +43,8 @@ import { ReportesService, PublicadoresReporte } from '../../services/reportes.se
               {{ a - 1 }}–{{ a }}
             </option>
           </select>
-        </div>
-      </header>
+        </ng-container>
+      </app-page-header>
 
       <ng-container *ngIf="data() as d; else loadingTpl">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -126,6 +129,12 @@ import { ReportesService, PublicadoresReporte } from '../../services/reportes.se
         <h2 class="pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
           Crecimiento
         </h2>
+
+        <!-- Reparto bautizados / no bautizados: encabeza la sección porque es
+             la lectura de conjunto; las gráficas y la tabla que siguen la
+             desglosan. -->
+        <app-bautismo-grupos [datos]="d.bautismo_por_grupo"
+                             [datosConInactivos]="d.bautismo_por_grupo_con_inactivos" />
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <app-chart-card title="Bautismos por año de servicio"

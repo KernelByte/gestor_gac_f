@@ -4,19 +4,19 @@ import { ChartCardComponent } from '../../shared/chart-card.component';
 import { KpiCardComponent } from '../../shared/kpi-card.component';
 import { barOption, lineOption } from '../../shared/chart-options';
 import { ReportesService, PredicacionReporte } from '../../services/reportes.service';
+import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ChartCardComponent, KpiCardComponent],
+  imports: [CommonModule, ChartCardComponent, KpiCardComponent, PageHeaderComponent],
   template: `
-    <div class="p-4 sm:p-6 space-y-5">
-      <header class="flex items-end justify-between gap-3 flex-wrap">
-        <div>
-          <h1 class="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">Análisis de Predicación</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400">Resumen de informes de servicio de la congregación.</p>
-        </div>
-      </header>
+    <!-- Sin padding propio: el margen exterior lo pone el shell una sola vez. -->
+    <div class="space-y-5">
+      <app-page-header
+        spacing="none"
+        title="Análisis de Predicación"
+        subtitle="Resumen de informes de servicio de la congregación." />
 
       <ng-container *ngIf="data() as d; else loadingTpl">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">

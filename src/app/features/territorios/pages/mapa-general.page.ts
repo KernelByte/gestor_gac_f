@@ -4,27 +4,24 @@ import { Router } from '@angular/router';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
 import { TerritoriosService } from '../services/territorios.service';
 import { GeoJSONFeatureCollection } from '../models/territorio.model';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   standalone: true,
   selector: 'app-mapa-general-page',
-  imports: [CommonModule, TerritorioMapComponent],
+  imports: [CommonModule, TerritorioMapComponent, PageHeaderComponent],
   template: `
     <div class="flex flex-col h-full overflow-hidden gap-5">
       <!-- Header -->
-      <header class="flex items-center justify-between shrink-0">
-        <div>
-          <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight font-display">Mapa General</h1>
-          <p class="text-slate-500 dark:text-slate-400 mt-1">Vista completa de todos los territorios de la congregación.</p>
-        </div>
-        <button
-          (click)="goBack()"
-          class="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-sm hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all flex items-center gap-2"
-        >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      <app-page-header
+        spacing="none"
+        title="Mapa General"
+        subtitle="Vista completa de todos los territorios de la congregación.">
+        <button (click)="goBack()" class="btn-secondary focus-ring-green whitespace-nowrap">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           Volver a Territorios
         </button>
-      </header>
+      </app-page-header>
 
       <!-- Legend -->
       <div class="flex items-center gap-6 shrink-0 px-2">

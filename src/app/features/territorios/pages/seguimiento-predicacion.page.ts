@@ -8,6 +8,7 @@ import {
   SalidaPredicacion,
   ProgresoTerritorio,
 } from '../models/territorio.model';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 interface EstadoManzana {
   nombre_capitan: string;
@@ -17,19 +18,13 @@ interface EstadoManzana {
 @Component({
   selector: 'app-seguimiento-predicacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent],
   template: `
     <div class="flex flex-col h-full overflow-hidden">
 
-      <!-- ── Fix #7: PageHeader ── -->
-      <div class="px-6 py-4 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700/50 shrink-0">
-        <h1 class="font-display font-bold text-2xl text-gray-900 dark:text-white leading-tight">
-          Seguimiento de Predicación
-        </h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Registra y monitorea las salidas por territorio
-        </p>
-      </div>
+      <app-page-header
+        title="Seguimiento de Predicación"
+        subtitle="Registra y monitorea las salidas por territorio" />
 
       <!-- ── Split panel ── -->
       <div class="flex flex-1 overflow-hidden">

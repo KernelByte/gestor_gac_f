@@ -116,6 +116,10 @@ import { ModalBackdropService } from '../../../../core/services/modal-backdrop.s
   `]
 })
 export class GruposListComponent implements OnInit, OnDestroy {
+
+   /** trackBy: evita recrear el DOM de toda la lista en cada cambio. */
+   trackByGrupo = (_: number, g: any) => g.id_grupo;
+
    private gruposService = inject(GruposService);
    private authStore = inject(AuthStore);
    private congregacionContext = inject(CongregacionContextService);

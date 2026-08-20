@@ -26,8 +26,8 @@ interface VistaPublicaBasic {
     <div class="px-4 sm:px-5 h-16 flex items-center justify-between gap-3">
       <!-- Marca -->
       <div class="flex items-center gap-3 min-w-0">
-        <span class="grid place-items-center w-10 h-10 rounded-xl bg-violet-600 shadow-sm shadow-violet-600/30 shrink-0">
-          <img src="images/LogoAppMorado.png" class="w-7 h-7" alt="GAC" />
+        <span class="grid place-items-center w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm shrink-0">
+          <img src="images/logo-gac-96.webp" class="w-7 h-7 object-contain" alt="GAC" width="28" height="28" />
         </span>
         <div class="min-w-0 leading-tight">
           <h1 class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-50 truncate">

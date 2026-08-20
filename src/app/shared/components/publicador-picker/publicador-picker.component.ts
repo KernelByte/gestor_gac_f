@@ -6,10 +6,18 @@ import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { PublicadorLookupService, PublicadorLite } from './publicador-lookup.service';
 
-type ColorScheme = 'orange' | 'violet';
+type ColorScheme = 'orange' | 'violet' | 'blue';
 
 /**
  * Selector de publicadores con búsqueda por nombre.
+ *
+ * El campo visible ES el buscador (combobox real, no botón que abre un
+ * buscador aparte): antes había que abrir un desplegable y luego enfocar un
+ * input separado adentro, y ese segundo foco dependía de un
+ * requestAnimationFrame que podía perder las primeras teclas si se escribía
+ * rápido justo al abrir. Con un solo input, escribir filtra de inmediato
+ * porque el campo ya tiene el foco desde el primer click — no hay una
+ * segunda transferencia de foco que pueda llegar tarde.
  *
  * El valor del control sigue siendo el NOMBRE (string), no el id: así encaja
  * en formularios que guardan texto plano y no rompe los datos ya capturados a
@@ -32,55 +40,44 @@ type ColorScheme = 'orange' | 'violet';
   template: `
     <div class="pp-root"
          [class.pp-violet]="colorScheme === 'violet'"
+         [class.pp-blue]="colorScheme === 'blue'"
          [class.pp-open-above]="openAbove()">
 
-      <button
-        type="button"
-        [disabled]="disabled"
-        (click)="toggle()"
-        class="pp-trigger"
-        role="combobox"
-        [attr.aria-haspopup]="'listbox'"
-        [attr.aria-expanded]="isOpen()"
-        [attr.aria-label]="value || placeholder">
+      <div class="pp-trigger" [class.pp-trigger--disabled]="disabled">
         <svg class="pp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
           <circle cx="9" cy="7" r="4"/>
           <path stroke-linecap="round" stroke-linejoin="round" d="M20 8v6M23 11h-6"/>
         </svg>
-        <span class="pp-trigger-label"
-              [class.pp-trigger-label--value]="!!value"
-              [class.pp-trigger-label--placeholder]="!value">
-          {{ value || placeholder }}
-        </span>
-        @if (value && !disabled) {
+        <input #searchInput
+               type="text"
+               class="pp-trigger-input"
+               role="combobox"
+               autocomplete="off"
+               [attr.aria-haspopup]="'listbox'"
+               [attr.aria-expanded]="isOpen()"
+               [attr.aria-autocomplete]="'list'"
+               [disabled]="disabled"
+               [placeholder]="placeholder"
+               [value]="isOpen() ? query() : (value ?? '')"
+               (focus)="onFocus()"
+               (input)="onQuery($event)"
+               (keydown)="onKeydown($event)" />
+        @if ((value || query()) && !disabled) {
           <svg class="pp-clear-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-               (click)="$event.stopPropagation(); clear()"
+               (mousedown)="$event.preventDefault()" (click)="clear()"
                role="button" aria-label="Limpiar selección">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         }
-        <svg class="pp-chevron" [class.pp-chevron--open]="isOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg class="pp-chevron" [class.pp-chevron--open]="isOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+             (mousedown)="$event.preventDefault()" (click)="onChevronClick()">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
         </svg>
-      </button>
+      </div>
 
       @if (isOpen()) {
         <div class="pp-popup">
-          <div class="pp-search">
-            <svg class="pp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M20 20l-3.5-3.5"/>
-            </svg>
-            <input #searchInput
-                   class="pp-search-input"
-                   type="text"
-                   [value]="query()"
-                   (input)="onQuery($event)"
-                   (keydown)="onKeydown($event)"
-                   placeholder="Buscar por nombre…"
-                   aria-label="Buscar publicador" />
-          </div>
-
           <div class="pp-list" role="listbox">
             @if (cargando()) {
               <p class="pp-msg">Cargando publicadores…</p>
@@ -90,14 +87,17 @@ type ColorScheme = 'orange' | 'violet';
                         [class.pp-opt--on]="p.nombre_completo === value"
                         [class.pp-opt--hl]="i === resaltado()"
                         [attr.aria-selected]="p.nombre_completo === value"
+                        (mousedown)="$event.preventDefault()"
                         (mouseenter)="resaltado.set(i)"
                         (click)="elegir(p)">
                   <span class="pp-opt-name">{{ p.nombre_completo }}</span>
-                  <span class="pp-opt-meta">
-                    @if (p.nombre_grupo) { {{ p.nombre_grupo }} }
-                    @if (p.nombre_grupo && p.telefono) { <span class="pp-dot">·</span> }
-                    @if (p.telefono) { {{ p.telefono }} }
-                  </span>
+                  @if (showMeta) {
+                    <span class="pp-opt-meta">
+                      @if (p.nombre_grupo) { {{ p.nombre_grupo }} }
+                      @if (p.nombre_grupo && p.telefono) { <span class="pp-dot">·</span> }
+                      @if (p.telefono) { {{ p.telefono }} }
+                    </span>
+                  }
                 </button>
               } @empty {
                 <p class="pp-msg">
@@ -110,7 +110,8 @@ type ColorScheme = 'orange' | 'violet';
           </div>
 
           @if (textoLibre(); as txt) {
-            <button type="button" class="pp-free" (click)="elegirTextoLibre(txt)">
+            <button type="button" class="pp-free"
+                    (mousedown)="$event.preventDefault()" (click)="elegirTextoLibre(txt)">
               Usar «{{ txt }}» como texto libre
             </button>
           }
@@ -132,31 +133,30 @@ type ColorScheme = 'orange' | 'violet';
 
     .pp-root { position: relative; }
 
-    /* ── Trigger — mismo lenguaje visual que .field / sp-trigger ── */
+    /* ── Trigger / campo de búsqueda — mismo lenguaje visual que .field ── */
     .pp-trigger {
       width: 100%; display: flex; align-items: center; gap: 0.5rem;
-      cursor: pointer; text-align: left;
       border: 1px solid #e2e8f0; background: #ffffff;
       border-radius: 0.625rem; padding: 0.5rem 0.75rem;
-      font-size: 0.875rem; color: #1e293b; min-height: 2.5rem;
+      min-height: 2.5rem;
       transition: border-color 160ms, box-shadow 160ms;
     }
-    @media (max-width: 767px) { .pp-trigger { min-height: 2.75rem; font-size: 1rem; } }
-    .pp-trigger:disabled { cursor: not-allowed; opacity: 0.55; }
+    @media (max-width: 767px) { .pp-trigger { min-height: 2.75rem; } }
+    .pp-trigger--disabled { cursor: not-allowed; opacity: 0.55; }
 
-    :host-context(.dark) .pp-trigger { background: #1e293b; border-color: #334155; color: #f1f5f9; }
-    .pp-trigger:not(:disabled):hover { border-color: #94a3b8; }
-    :host-context(.dark) .pp-trigger:not(:disabled):hover { border-color: #475569; }
+    :host-context(.dark) .pp-trigger { background: #1e293b; border-color: #334155; }
+    .pp-trigger:not(.pp-trigger--disabled):hover { border-color: #94a3b8; }
+    :host-context(.dark) .pp-trigger:not(.pp-trigger--disabled):hover { border-color: #475569; }
 
-    .pp-root:focus-within .pp-trigger:not(:disabled) {
+    .pp-root:focus-within .pp-trigger {
       outline: none; border-color: #f97316;
       box-shadow: 0 0 0 3px rgba(249,115,22,0.14);
     }
-    .pp-violet:focus-within .pp-trigger:not(:disabled) {
+    .pp-violet:focus-within .pp-trigger {
       border-color: #7c3aed;
       box-shadow: 0 0 0 3px rgba(124,58,237,0.14);
     }
-    :host-context(.dark) .pp-violet:focus-within .pp-trigger:not(:disabled) {
+    :host-context(.dark) .pp-violet:focus-within .pp-trigger {
       border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(167,139,250,0.18);
     }
 
@@ -165,18 +165,22 @@ type ColorScheme = 'orange' | 'violet';
     :host-context(.dark) .pp-icon { color: #64748b; }
     :host-context(.dark) .pp-violet .pp-icon { color: #a78bfa; }
 
-    .pp-trigger-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pp-trigger-label--value { color: #1e293b; font-weight: 500; }
-    :host-context(.dark) .pp-trigger-label--value { color: #e2e8f0; }
-    .pp-trigger-label--placeholder { color: #94a3b8; font-style: italic; }
-    :host-context(.dark) .pp-trigger-label--placeholder { color: #475569; }
+    .pp-trigger-input {
+      flex: 1; min-width: 0; border: none; background: transparent; outline: none;
+      font-size: 0.875rem; color: #1e293b; font-weight: 500; padding: 0;
+    }
+    @media (max-width: 767px) { .pp-trigger-input { font-size: 1rem; } }
+    .pp-trigger-input:disabled { cursor: not-allowed; }
+    :host-context(.dark) .pp-trigger-input { color: #e2e8f0; }
+    .pp-trigger-input::placeholder { color: #94a3b8; font-style: italic; font-weight: 400; }
+    :host-context(.dark) .pp-trigger-input::placeholder { color: #475569; }
 
     .pp-clear-btn { width: 0.875rem; height: 0.875rem; flex-shrink: 0; color: #94a3b8; cursor: pointer; transition: color 150ms; }
     .pp-clear-btn:hover { color: #f43f5e; }
     :host-context(.dark) .pp-clear-btn { color: #64748b; }
 
     .pp-chevron {
-      width: 0.875rem; height: 0.875rem; flex-shrink: 0; color: #94a3b8;
+      width: 0.875rem; height: 0.875rem; flex-shrink: 0; color: #94a3b8; cursor: pointer;
       transition: transform 200ms, color 150ms;
     }
     .pp-violet .pp-chevron { color: #8b5cf6; }
@@ -198,21 +202,6 @@ type ColorScheme = 'orange' | 'violet';
       box-shadow: 0 8px 32px -4px rgba(0,0,0,0.55), 0 2px 8px -2px rgba(0,0,0,0.35);
     }
     .pp-open-above .pp-popup { top: auto; bottom: calc(100% + 4px); animation-name: ppInUp; }
-
-    /* ── Buscador ── */
-    .pp-search {
-      display: flex; align-items: center; gap: 0.4rem;
-      padding: 0.375rem 0.5rem; border-bottom: 1px solid #f1f5f9; margin-bottom: 2px;
-    }
-    :host-context(.dark) .pp-search { border-bottom-color: #1e293b; }
-    .pp-search-icon { width: 0.875rem; height: 0.875rem; flex-shrink: 0; color: #94a3b8; }
-    .pp-search-input {
-      flex: 1; min-width: 0; border: none; background: transparent; outline: none;
-      font-size: 0.8125rem; color: #1e293b; padding: 0.125rem 0;
-    }
-    :host-context(.dark) .pp-search-input { color: #f1f5f9; }
-    .pp-search-input::placeholder { color: #94a3b8; font-style: italic; }
-    :host-context(.dark) .pp-search-input::placeholder { color: #475569; }
 
     /* ── Lista ── */
     .pp-list { max-height: 13rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
@@ -263,6 +252,22 @@ type ColorScheme = 'orange' | 'violet';
     @media (prefers-reduced-motion: reduce) {
       .pp-popup { animation: none !important; }
     }
+
+    /* ── Blue (Exhibidores) ─────────────────────────────── */
+    .pp-blue:focus-within .pp-trigger {
+      border-color: #165cfc;
+      box-shadow: 0 0 0 3px rgba(22,92,252,0.14);
+    }
+    :host-context(.dark) .pp-blue:focus-within .pp-trigger {
+      border-color: #6091fb; box-shadow: 0 0 0 3px rgba(96,145,251,0.18);
+    }
+    .pp-blue .pp-icon { color: #3b73fc; }
+    :host-context(.dark) .pp-blue .pp-icon { color: #6091fb; }
+    .pp-blue .pp-chevron { color: #3b73fc; }
+    :host-context(.dark) .pp-blue .pp-chevron { color: #6091fb; }
+    .pp-blue .pp-opt--hl:not(.pp-opt--on) { background: rgba(22,92,252,0.08); }
+    :host-context(.dark) .pp-blue .pp-opt--hl:not(.pp-opt--on) { background: rgba(96,145,251,0.12); }
+    .pp-blue .pp-opt--on { background: #165cfc; box-shadow: 0 2px 8px rgba(22,92,252,0.35); }
   `],
 })
 export class PublicadorPickerComponent implements ControlValueAccessor {
@@ -271,6 +276,8 @@ export class PublicadorPickerComponent implements ControlValueAccessor {
   @Input() placeholder = 'Buscar publicador…';
   @Input() disabled = false;
   @Input() colorScheme: ColorScheme = 'orange';
+  /** Muestra grupo/teléfono bajo el nombre en cada opción. Apagarlo cuando el nombre solo basta (p. ej. elegir con quién va alguien). */
+  @Input() showMeta = true;
 
   /** Publicador elegido, o null si el usuario escribió un nombre libre. */
   @Output() seleccionado = new EventEmitter<PublicadorLite | null>();
@@ -329,15 +336,28 @@ export class PublicadorPickerComponent implements ControlValueAccessor {
     if (this.isOpen()) this.close();
   }
 
-  toggle() {
+  /**
+   * El campo ya es el buscador, así que abrir = enfocarlo. Sin pasos
+   * intermedios: la primera tecla que se escriba ya cae sobre un input
+   * enfocado y filtra al instante, sin depender de un segundo foco async.
+   */
+  onFocus() {
     if (this.disabled) return;
-    if (this.isOpen()) { this.close(); return; }
     this.query.set('');
     this.resaltado.set(0);
     this.isOpen.set(true);
     this.cargar();
     this.updateOpenDirection();
-    requestAnimationFrame(() => this.searchInputRef?.nativeElement.focus());
+  }
+
+  onChevronClick() {
+    if (this.disabled) return;
+    if (this.isOpen()) {
+      this.close();
+      this.searchInputRef?.nativeElement.blur();
+    } else {
+      this.searchInputRef?.nativeElement.focus();
+    }
   }
 
   /** Carga perezosa: solo al abrir, y una vez por congregación. */
@@ -355,7 +375,7 @@ export class PublicadorPickerComponent implements ControlValueAccessor {
   private updateOpenDirection() {
     requestAnimationFrame(() => {
       const rect = (this.el.nativeElement as HTMLElement).getBoundingClientRect();
-      const popupH = 288; // buscador + lista + pie
+      const popupH = 288; // lista + pie
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
       this.openAbove.set(spaceBelow < popupH && spaceAbove > spaceBelow);
@@ -363,6 +383,7 @@ export class PublicadorPickerComponent implements ControlValueAccessor {
   }
 
   onQuery(ev: Event) {
+    if (!this.isOpen()) this.onFocus();
     this.query.set((ev.target as HTMLInputElement).value);
     this.resaltado.set(0);
   }
@@ -396,6 +417,7 @@ export class PublicadorPickerComponent implements ControlValueAccessor {
     this.onChange(this.value);
     this.seleccionado.emit(p);
     this.close();
+    this.searchInputRef?.nativeElement.blur();
   }
 
   elegirTextoLibre(txt: string) {
@@ -403,12 +425,15 @@ export class PublicadorPickerComponent implements ControlValueAccessor {
     this.onChange(txt);
     this.seleccionado.emit(null);
     this.close();
+    this.searchInputRef?.nativeElement.blur();
   }
 
   clear() {
     this.value = null;
     this.onChange(null);
     this.seleccionado.emit(null);
+    this.query.set('');
+    this.searchInputRef?.nativeElement.focus();
   }
 
   writeValue(value: string | null): void {

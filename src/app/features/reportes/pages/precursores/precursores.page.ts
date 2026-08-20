@@ -7,6 +7,7 @@ import { lineMetaOption } from '../../shared/chart-options';
 import { MatrizPrecursoresComponent } from './components/matriz-precursores.component';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { ReportesService, PrecursoresMatriz, PrecursorFila } from '../../services/reportes.service';
+import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 
 /**
  * Análisis de la actividad en el ministerio de los precursores regulares
@@ -19,7 +20,7 @@ import { ReportesService, PrecursoresMatriz, PrecursorFila } from '../../service
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ChartCardComponent, KpiCardComponent, MatrizPrecursoresComponent],
+  imports: [CommonModule, ChartCardComponent, KpiCardComponent, MatrizPrecursoresComponent, PageHeaderComponent],
   styleUrls: ['../../shared/reportes-tokens.scss'],
   styles: [`
     /* ── Cabecera ──────────────────────────────────────────────────────
@@ -133,16 +134,16 @@ import { ReportesService, PrecursoresMatriz, PrecursorFila } from '../../service
     }
   `],
   template: `
-    <div class="p-4 sm:p-6 mbp:py-4 space-y-5 sm:space-y-6 mbp:space-y-4 mbp16:space-y-5">
-      <header class="flex items-end justify-between gap-4 flex-wrap">
-        <div class="min-w-0">
-          <p class="rotulo-seccion">Año de servicio {{ anioSeleccionado() ? (anioSeleccionado() - 1) + '–' + anioSeleccionado() : '' }}</p>
-          <h1 class="titulo-pagina">Análisis de Precursores</h1>
-          <p class="entradilla mbp:max-w-2xl mbp16:max-w-4xl">
-            Actividad de los precursores regulares: promedio de 50 h/mes y requisito anual de 560 h (con horas acreditadas),
-            prorrateado según los meses de nombramiento de cada persona. Quien tiene consideración especial queda fuera de ese cálculo.
-          </p>
-        </div>
+    <!-- Sin padding propio: el margen exterior lo pone el shell una sola vez. -->
+    <div class="space-y-5 sm:space-y-6 mbp:space-y-4 mbp16:space-y-5">
+      <!-- spacing por defecto (mb-6), no "none": el space-y del contenedor se
+           comprime a 16px en pantallas anchas (mbp) y con una entradilla de
+           varias líneas las tarjetas quedaban pegadas al párrafo. -->
+      <app-page-header
+        [eyebrow]="'Año de servicio ' + (anioSeleccionado() ? (anioSeleccionado()! - 1) + '–' + anioSeleccionado() : '')"
+        title="Análisis de Precursores"
+        [subtitleWide]="true"
+        subtitle="Actividad de los precursores regulares: promedio de 50 h/mes y requisito anual de 560 h (con horas acreditadas), prorrateado según los meses de nombramiento de cada persona. Quien tiene consideración especial queda fuera de ese cálculo.">
         <div class="flex items-center gap-2 flex-wrap">
           <label for="anio-servicio" class="sr-only">Año de servicio</label>
           <select id="anio-servicio" class="control" (change)="cambiarAnio($event)">
@@ -159,7 +160,7 @@ import { ReportesService, PrecursoresMatriz, PrecursorFila } from '../../service
             Exportar CSV
           </button>
         </div>
-      </header>
+      </app-page-header>
 
       <ng-container *ngIf="data() as d; else loadingTpl">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">

@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { TerritoriosService } from '../services/territorios.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { Territorio } from '../models/territorio.model';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 interface Horario {
   id_horario: number;
@@ -33,21 +34,20 @@ interface Publicador {
 @Component({
   standalone: true,
   selector: 'app-horarios-page',
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PageHeaderComponent],
   template: `
-    <div class="min-h-screen bg-app-bg dark:bg-slate-950 p-4 lg:p-6">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h1 class="text-xl font-black text-slate-900 dark:text-white">Horarios de Predicación</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Programa y registra salidas de predicación</p>
-        </div>
-        <button (click)="openNuevoHorarioModal()"
-          class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/10 transition-all flex items-center gap-2">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    <!-- Sin padding ni min-h-screen propios: el margen exterior lo pone el
+         shell una sola vez. Antes esta página los añadía encima y quedaba con
+         el doble de margen que el resto de pantallas. -->
+    <div>
+      <app-page-header
+        title="Horarios de Predicación"
+        subtitle="Programa y registra salidas de predicación">
+        <button (click)="openNuevoHorarioModal()" class="btn-primary-green focus-ring-green whitespace-nowrap">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nuevo Horario
         </button>
-      </div>
+      </app-page-header>
 
       <!-- Filters -->
       <div class="flex gap-3 mb-5 flex-wrap">

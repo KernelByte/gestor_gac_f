@@ -1,5 +1,6 @@
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+// html2canvas y jspdf se cargan bajo demanda: exportar una tarjeta es una
+// accion ocasional y entre las dos librerias suman cientos de kB que antes
+// entraban en el chunk de territorios para todo el que abria la pantalla.
 
 export async function exportTerritorioCard(
   elementId: string,
@@ -13,6 +14,7 @@ export async function exportTerritorioCard(
   }
 
   try {
+    const { default: html2canvas } = await import('html2canvas');
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
@@ -34,6 +36,7 @@ export async function exportTerritorioCard(
       const pdfWidth = 210;
       const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
 
+      const { default: jsPDF } = await import('jspdf');
       const pdf = new jsPDF({
         orientation: pdfHeight > pdfWidth ? 'portrait' : 'landscape',
         unit: 'mm',

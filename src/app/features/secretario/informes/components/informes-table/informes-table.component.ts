@@ -1,9 +1,11 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ResumenMensual, InformeConPublicador, InformeLoteItem } from '../../models/informe.model';
 import { Privilegio } from '../../../privilegios/domain/models/privilegio';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
+
+type RolEtiqueta = { label: string, type: 'pill' | 'text', class: string };
 
 @Component({
    selector: 'app-informes-table',
@@ -71,11 +73,12 @@ import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.ut
       }
    `]
 })
-export class InformesTableComponent {
+export class InformesTableComponent implements OnChanges {
    @Input() resumen: ResumenMensual | null = null;
-   @Input() saving: boolean = false;
    @Input() autoSaveStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
    @Input() hasPendingChanges: boolean = false;
+   /** Filas cuyo autoguardado falló y siguen sin guardarse. */
+   @Input() failedSaveCount: number = 0;
    @Input() canEdit: boolean = true;
 
    @Input() privilegios: Privilegio[] = [];
@@ -83,11 +86,26 @@ export class InformesTableComponent {
    @Input() localChanges: Map<number, Partial<InformeLoteItem>> = new Map();
 
    @Output() informeChange = new EventEmitter<{ pub: InformeConPublicador, field: string, value: any }>();
-   @Output() exportExcel = new EventEmitter<void>();
-   @Output() importExcel = new EventEmitter<Event>();
    @Output() notifyWhatsApp = new EventEmitter<InformeConPublicador>();
 
    trackByPub = (_: number, pub: InformeConPublicador) => pub.id_publicador;
+
+   /**
+    * Roles ya calculados por publicador. La plantilla llama a getRoles y
+    * getPioneerRoles decenas de veces por fila y en cada ciclo de deteccion de
+    * cambios; sin esta cache cada llamada rehacia .map().find().filter() sobre
+    * el catalogo completo de privilegios. Se recalcula solo cuando cambian las
+    * entradas de las que depende.
+    */
+   private rolesPorPublicador = new Map<number, RolEtiqueta[]>();
+   private precursoresPorPublicador = new Map<number, RolEtiqueta[]>();
+
+   ngOnChanges(changes: SimpleChanges): void {
+      if (changes['resumen'] || changes['privilegios'] || changes['publicadorPrivilegiosMap']) {
+         this.rolesPorPublicador.clear();
+         this.precursoresPorPublicador.clear();
+      }
+   }
 
    getInitials(name: string): string {
       if (!name) return '';
@@ -98,8 +116,17 @@ export class InformesTableComponent {
       return getInitialAvatarStyle(nombre || '');
    }
 
-   getRoles(pub: InformeConPublicador): { label: string, type: 'pill' | 'text', class: string }[] {
-      const roles: { label: string, type: 'pill' | 'text', class: string }[] = [];
+   getRoles(pub: InformeConPublicador): RolEtiqueta[] {
+      if (!pub) return [];
+      const enCache = this.rolesPorPublicador.get(pub.id_publicador);
+      if (enCache) return enCache;
+      const calculados = this.calcularRoles(pub);
+      this.rolesPorPublicador.set(pub.id_publicador, calculados);
+      return calculados;
+   }
+
+   private calcularRoles(pub: InformeConPublicador): RolEtiqueta[] {
+      const roles: RolEtiqueta[] = [];
       if (!pub) return roles;
 
       // 1. Try to get from loaded map (accurate assignments)
@@ -154,8 +181,13 @@ export class InformesTableComponent {
       return roles;
    }
 
-   getPioneerRoles(pub: InformeConPublicador): { label: string, type: 'pill' | 'text', class: string }[] {
-      return this.getRoles(pub).filter(role => role.label.includes('PRECURSOR'));
+   getPioneerRoles(pub: InformeConPublicador): RolEtiqueta[] {
+      if (!pub) return [];
+      const enCache = this.precursoresPorPublicador.get(pub.id_publicador);
+      if (enCache) return enCache;
+      const soloPrecursores = this.getRoles(pub).filter(role => role.label.includes('PRECURSOR'));
+      this.precursoresPorPublicador.set(pub.id_publicador, soloPrecursores);
+      return soloPrecursores;
    }
 
    getInformeValue(pub: InformeConPublicador, field: string): any {

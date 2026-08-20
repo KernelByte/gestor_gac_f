@@ -226,7 +226,11 @@ import { ReportesService, PrecursorDetalle } from '../../services/reportes.servi
     }
   `],
   template: `
-    <div class="p-4 sm:p-6 mbp:py-4 space-y-5 sm:space-y-6 mbp:space-y-4">
+    <!-- Sin padding propio: el margen exterior lo pone el shell una sola vez.
+         La cabecera de abajo NO se migra a app-page-header a propósito: no es
+         un título de pantalla sino de entidad (nombre dinámico + badges de
+         estado + botón de volver), que es otro patrón. -->
+    <div class="space-y-5 sm:space-y-6 mbp:space-y-4">
       <ng-container *ngIf="data() as d; else loadingTpl">
         <header class="flex items-start justify-between gap-4 flex-wrap">
           <div class="flex items-start gap-3 min-w-0">

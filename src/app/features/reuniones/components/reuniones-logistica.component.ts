@@ -10,6 +10,9 @@ import { ConflictosService } from '../services/conflictos.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import {
+  AseoBloqueOut,
+  AseoPreferenciaOpcion,
+  AseoRotacion,
   FechaReunionOut,
   GrupoBase,
   LogisticaAseoOut,
@@ -320,21 +323,25 @@ function normalizarTexto(s: string): string {
                       </div>
                     }
                     <!-- Aseo -->
+                    @if (bloqueDeFecha(fecha.fecha); as bloque) {
                     <div class="px-4 py-3">
                       <div class="flex items-center gap-2 mb-2">
                         <span class="w-1.5 h-1.5 rounded-full shrink-0" [style.background]="seccionHeaderColor('Aseo')"></span>
                         <span class="text-[0.6rem] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Aseo del salón</span>
                       </div>
+                      @if (alcanceBloque(bloque)) {
+                        <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mb-2">{{ alcanceBloque(bloque) }}</p>
+                      }
                       @if (!mesDatos()!.confirmado && hasEditPermission()) {
                         <div class="flex flex-wrap gap-1.5">
                           @for (g of gruposDisponibles(); track g.id_grupo) {
                             <button
                               type="button"
-                              (click)="onToggleGrupo(fecha, g.id_grupo, !isGrupoAsignado(fecha.fecha, g.id_grupo))"
-                              [class]="isGrupoAsignado(fecha.fecha, g.id_grupo)
+                              (click)="onToggleGrupo(bloque, g.id_grupo, !isGrupoAsignado(bloque, g.id_grupo))"
+                              [class]="isGrupoAsignado(bloque, g.id_grupo)
                                 ? 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.7rem] font-bold bg-[#059669] text-white shadow-sm transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]'
                                 : 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.7rem] font-medium border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-500 transition-[transform,border-color,color] duration-150 ease-out active:scale-[0.97]'">
-                              @if (isGrupoAsignado(fecha.fecha, g.id_grupo)) {
+                              @if (isGrupoAsignado(bloque, g.id_grupo)) {
                                 <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                               }
                               {{ g.nombre_grupo }}
@@ -342,9 +349,9 @@ function normalizarTexto(s: string): string {
                           }
                         </div>
                       } @else {
-                        @if (gruposAsignadosFecha(fecha.fecha).length > 0) {
+                        @if (gruposAsignadosBloque(bloque).length > 0) {
                           <div class="flex flex-wrap gap-1.5">
-                            @for (g of gruposAsignadosFecha(fecha.fecha); track g) {
+                            @for (g of gruposAsignadosBloque(bloque); track g) {
                               <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[0.7rem] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
                                 <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                 {{ g }}
@@ -356,6 +363,7 @@ function normalizarTexto(s: string): string {
                         }
                       }
                     </div>
+                    }
                   </div>
                 }
               </div>
@@ -509,16 +517,16 @@ function normalizarTexto(s: string): string {
                   <table class="w-full text-xs">
                     <thead>
                       <tr [style.background]="seccionHeaderColor('Aseo')" class="text-white">
-                        <th class="px-2 lg:px-3 py-2 text-left font-bold whitespace-nowrap w-20">Fecha</th>
-                        <th class="px-3 py-2 text-left font-bold whitespace-nowrap hidden lg:table-cell w-20">Día</th>
+                        <th class="px-2 lg:px-3 py-2 text-left font-bold whitespace-nowrap w-20">{{ aseoCabeceras()[0] }}</th>
+                        <th class="px-3 py-2 text-left font-bold whitespace-nowrap hidden lg:table-cell w-24">{{ aseoCabeceras()[1] }}</th>
                         <th class="px-2 lg:px-3 py-2 text-left font-bold">Grupo asignado</th>
                       </tr>
                     </thead>
                     <tbody>
-                      @for (fecha of mesDatos()!.fechas; track fecha.fecha; let i = $index) {
+                      @for (bloque of aseoBloques(); track bloque.clave; let i = $index) {
                         <tr [style.background]="i % 2 === 0 ? '' : seccionRowAltColor('Aseo')" [class]="i % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'dark:bg-slate-800/40'">
-                          <td class="px-2 lg:px-3 py-1.5 whitespace-nowrap font-medium text-slate-700 dark:text-slate-200">{{ formatFecha(fecha.fecha) }}</td>
-                          <td class="px-3 py-1.5 whitespace-nowrap text-slate-500 dark:text-slate-400 hidden lg:table-cell">{{ fecha.dia_semana }}</td>
+                          <td class="px-2 lg:px-3 py-1.5 whitespace-nowrap font-medium text-slate-700 dark:text-slate-200">{{ bloque.etiqueta }}</td>
+                          <td class="px-3 py-1.5 whitespace-nowrap text-slate-500 dark:text-slate-400 hidden lg:table-cell">{{ bloque.detalle }}</td>
                           <td class="px-2 py-1.5">
                             @if (!mesDatos()!.confirmado && hasEditPermission()) {
                               <!-- Chips de grupos: seleccionado = violeta sólido, no seleccionado = outline gris -->
@@ -526,11 +534,11 @@ function normalizarTexto(s: string): string {
                                 @for (g of gruposDisponibles(); track g.id_grupo) {
                                   <button
                                     type="button"
-                                    (click)="onToggleGrupo(fecha, g.id_grupo, !isGrupoAsignado(fecha.fecha, g.id_grupo))"
-                                    [class]="isGrupoAsignado(fecha.fecha, g.id_grupo)
+                                    (click)="onToggleGrupo(bloque, g.id_grupo, !isGrupoAsignado(bloque, g.id_grupo))"
+                                    [class]="isGrupoAsignado(bloque, g.id_grupo)
                                       ? 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.65rem] font-bold bg-[#059669] text-white shadow-sm shadow-emerald-200 dark:shadow-emerald-900/30 transition-all active:scale-95'
                                       : 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.65rem] font-medium border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 transition-all active:scale-95'">
-                                    @if (isGrupoAsignado(fecha.fecha, g.id_grupo)) {
+                                    @if (isGrupoAsignado(bloque, g.id_grupo)) {
                                       <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                     }
                                     {{ g.nombre_grupo }}
@@ -539,9 +547,9 @@ function normalizarTexto(s: string): string {
                               </div>
                             } @else {
                               <!-- Vista solo lectura: badge del grupo seleccionado -->
-                              @if (getAseoLabel(fecha.fecha) !== '—') {
+                              @if (getAseoLabel(bloque) !== '—') {
                                 <div class="flex flex-wrap gap-1.5">
-                                  @for (g of gruposAsignadosFecha(fecha.fecha); track g) {
+                                  @for (g of gruposAsignadosBloque(bloque); track g) {
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.65rem] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
                                       <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                       {{ g }}
@@ -622,6 +630,33 @@ function normalizarTexto(s: string): string {
                 class="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400">
             </div>
           </div>
+
+          <!-- Rotación del aseo: cada congregación lo lleva a su manera -->
+          @if (rotacionOpciones().length > 0) {
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Rotación del aseo</label>
+              <div class="flex flex-col gap-1.5">
+                @for (op of rotacionOpciones(); track op.id) {
+                  <button
+                    type="button"
+                    (click)="modalRotacionAseo.set(op.id)"
+                    [class]="modalRotacionAseo() === op.id
+                      ? 'w-full text-left px-3 py-2 rounded-xl border-2 border-[#059669] bg-emerald-50 dark:bg-emerald-900/20 transition-all'
+                      : 'w-full text-left px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all'">
+                    <span class="flex items-center gap-2">
+                      <span
+                        [class]="modalRotacionAseo() === op.id
+                          ? 'w-3.5 h-3.5 rounded-full border-[4px] border-[#059669] shrink-0'
+                          : 'w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 shrink-0'"></span>
+                      <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{{ op.label }}</span>
+                    </span>
+                    <span class="block pl-[1.375rem] text-[0.65rem] leading-snug text-slate-500 dark:text-slate-400 mt-0.5">{{ op.description }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
           <div class="flex gap-2 justify-end pt-1">
             <button (click)="cerrarModal()" class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
               Cancelar
@@ -825,6 +860,10 @@ export class ReunionesLogisticaComponent implements OnInit {
   modalGenerarAbierto = signal(false);
   modalMes = new Date().getMonth() + 1;
   modalAno = new Date().getFullYear();
+  // Rotación del aseo: se precarga con la preferencia de la congregación y al
+  // generar queda guardada como la nueva preferencia.
+  modalRotacionAseo = signal<AseoRotacion>('reunion');
+  rotacionOpciones = signal<AseoPreferenciaOpcion[]>([]);
 
   // Sheet móvil de meses
   mobileMesesAbierto = signal(false);
@@ -937,6 +976,24 @@ export class ReunionesLogisticaComponent implements OnInit {
     this.modalMes = new Date().getMonth() + 1;
     this.modalAno = new Date().getFullYear();
     this.modalGenerarAbierto.set(true);
+    this.cargarConfiguracionAseo();
+  }
+
+  private cargarConfiguracionAseo(): void {
+    const cong = this.congregacionCtx.effectiveCongregacionId();
+    this.logisticaSvc
+      .getConfiguracionAseo(cong)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (cfg) => {
+          const pref = cfg.preferencias.find((p) => p.key === 'log_aseo_rotacion');
+          if (!pref) return;
+          this.rotacionOpciones.set(pref.options);
+          this.modalRotacionAseo.set(pref.value);
+        },
+        // Si falla, el modal sigue usable: se genera con la preferencia guardada.
+        error: () => this.rotacionOpciones.set([]),
+      });
   }
 
   cerrarModal(): void {
@@ -945,10 +1002,11 @@ export class ReunionesLogisticaComponent implements OnInit {
 
   generarMes(): void {
     const cong = this.congregacionCtx.effectiveCongregacionId();
+    const modo = this.modalRotacionAseo();
     this.cerrarModal();
     this.estado.set('loading');
     this.logisticaSvc
-      .generar({ ano: this.modalAno, mes: this.modalMes }, cong)
+      .generar({ ano: this.modalAno, mes: this.modalMes, modo_aseo: modo }, cong)
       .subscribe({
         next: (data) => {
           this.mesDatos.set(data);
@@ -1121,25 +1179,51 @@ export class ReunionesLogisticaComponent implements OnInit {
     }
   }
 
-  isGrupoAsignado(fecha: string, idGrupo: number): boolean {
-    return (
-      this.mesDatos()?.aseo.some((s) => s.fecha === fecha && s.grupo.id_grupo === idGrupo) ?? false
-    );
+  // ── Aseo por bloques ──────────────────────────────────────────
+  // Un bloque es una reunión, una semana o el mes entero, según cómo rote la
+  // congregación. El backend ya los arma; aquí solo se leen.
+
+  aseoBloques(): AseoBloqueOut[] {
+    return this.mesDatos()?.aseo_bloques ?? [];
   }
 
-  getAseoLabel(fecha: string): string {
-    const grupos = this.mesDatos()?.aseo
-      .filter((s) => s.fecha === fecha)
-      .map((s) => s.grupo.nombre_grupo);
-    return grupos?.join(', ') || '—';
+  aseoModo(): AseoRotacion {
+    return this.mesDatos()?.aseo_modo ?? 'reunion';
   }
 
-  gruposAsignadosFecha(fecha: string): string[] {
-    return (
-      this.mesDatos()?.aseo
-        .filter((s) => s.fecha === fecha)
-        .map((s) => s.grupo.nombre_grupo) ?? []
-    );
+  /** Cabeceras de las dos primeras columnas de la tabla de aseo. */
+  aseoCabeceras(): [string, string] {
+    switch (this.aseoModo()) {
+      case 'mes':    return ['Mes', 'Fechas'];
+      case 'semana': return ['Semana', 'Fechas'];
+      default:       return ['Fecha', 'Día'];
+    }
+  }
+
+  isGrupoAsignado(bloque: AseoBloqueOut, idGrupo: number): boolean {
+    return bloque.grupos.some((g) => g.id_grupo === idGrupo);
+  }
+
+  getAseoLabel(bloque: AseoBloqueOut): string {
+    return bloque.grupos.map((g) => g.nombre_grupo).join(', ') || '—';
+  }
+
+  gruposAsignadosBloque(bloque: AseoBloqueOut): string[] {
+    return bloque.grupos.map((g) => g.nombre_grupo);
+  }
+
+  /** Bloque al que pertenece una fecha (la vista móvil va tarjeta por fecha). */
+  bloqueDeFecha(fecha: string): AseoBloqueOut | null {
+    return this.aseoBloques().find((b) => b.fechas.some((f) => f.fecha === fecha)) ?? null;
+  }
+
+  /**
+   * Aviso para la tarjeta móvil: en rotación semanal o mensual el grupo cubre
+   * más de una reunión, y conviene que se vea antes de tocarlo.
+   */
+  alcanceBloque(bloque: AseoBloqueOut | null): string {
+    if (!bloque || this.aseoModo() === 'reunion' || bloque.fechas.length < 2) return '';
+    return `${bloque.etiqueta} · ${bloque.detalle}`;
   }
 
   formatFecha(fechaStr: string): string {
@@ -1208,23 +1292,45 @@ export class ReunionesLogisticaComponent implements OnInit {
       });
   }
 
-  onToggleGrupo(fecha: FechaReunionOut, idGrupo: number, checked: boolean): void {
+  /**
+   * Cambia el grupo de un bloque completo. En rotación semanal o mensual el
+   * cambio alcanza todas las fechas del tramo en una sola llamada, que es lo que
+   * espera quien ve una única fila.
+   */
+  onToggleGrupo(bloque: AseoBloqueOut, idGrupo: number, checked: boolean): void {
     const cong = this.congregacionCtx.effectiveCongregacionId();
-    const current = (this.mesDatos()?.aseo ?? [])
-      .filter((s) => s.fecha === fecha.fecha)
-      .map((s) => s.grupo.id_grupo);
+    const current = bloque.grupos.map((g) => g.id_grupo);
     const ids = checked
       ? [...new Set([...current, idGrupo])]
       : current.filter((id) => id !== idGrupo);
 
+    const fechas = bloque.fechas.map((f) => ({
+      fecha: f.fecha,
+      tipo_reunion: f.tipo_reunion,
+    }));
+    const fechasDelBloque = new Set(bloque.fechas.map((f) => f.fecha));
+
     this.logisticaSvc
-      .editarAseo({ fecha: fecha.fecha, tipo_reunion: fecha.tipo_reunion, ids_grupo: ids }, cong)
+      .editarAseo({ fechas, ids_grupo: ids }, cong)
       .subscribe({
         next: (updated: LogisticaAseoOut[]) => {
           this.mesDatos.update((d) => {
             if (!d) return d;
-            const sinEstaFecha = d.aseo.filter((s) => s.fecha !== fecha.fecha);
-            return { ...d, aseo: [...sinEstaFecha, ...updated] };
+            // El agrupado no cambia al editar —las mismas fechas siguen juntas—,
+            // así que basta con refrescar los grupos de este bloque.
+            const gruposNuevos = this.gruposDisponibles().filter((g) =>
+              ids.includes(g.id_grupo),
+            );
+            return {
+              ...d,
+              aseo: [
+                ...d.aseo.filter((s) => !fechasDelBloque.has(s.fecha)),
+                ...updated,
+              ],
+              aseo_bloques: d.aseo_bloques.map((b) =>
+                b.clave === bloque.clave ? { ...b, grupos: gruposNuevos } : b,
+              ),
+            };
           });
         },
         error: (err) => {

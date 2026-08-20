@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  ConfiguracionAseoOut,
   ConfirmarLogisticaRequest,
   ConflictoLogistica,
   EditarAseoRequest,
@@ -72,6 +73,13 @@ export class LogisticaService {
 
   getGrupos(idCong: number | null): Observable<GrupoBase[]> {
     return this.http.get<GrupoBase[]>(`${this.base}/grupos`, {
+      params: this.congParams(idCong),
+    });
+  }
+
+  /** Opciones y valor actual de la rotación del aseo, para el modal de generar. */
+  getConfiguracionAseo(idCong: number | null): Observable<ConfiguracionAseoOut> {
+    return this.http.get<ConfiguracionAseoOut>(`${this.base}/configuracion/aseo`, {
       params: this.congParams(idCong),
     });
   }

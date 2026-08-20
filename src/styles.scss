@@ -1,6 +1,58 @@
 @use 'tailwindcss';
 @variant dark (&:where(.dark, .dark *));
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Urbanist:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+/* Fuentes self-hosted (public/fonts). Antes se traian con un @import a
+   fonts.googleapis.com: eso encadenaba dos peticiones a terceros antes del
+   primer pintado y ademas la CSP de produccion (style-src 'self') lo bloqueaba,
+   dejando la app sin tipografia en prod. Son ficheros variables: un solo
+   woff2 por familia cubre todos los pesos. */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/manrope-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/manrope-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Urbanist';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/urbanist-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Urbanist';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/urbanist-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
 
 @theme {
   /* App background — content area to the right of the sidebar */
@@ -9,12 +61,30 @@
   --color-brand-purple: #6d28d9;
   --color-brand-orange: #f97316;
   --color-brand-green: #059669;
-  --color-brand-blue: #2563eb;
+  --color-brand-blue: #165cfc;
 
   --color-brand-purple-soft: #faf5ff;
   --color-brand-orange-soft: #fff7ed;
   --color-brand-green-soft: #ecfdf5;
-  --color-brand-blue-soft: #eff6ff;
+  --color-brand-blue-soft: #eff4ff;
+
+  /* ── Escala Exhibidores (azul de módulo) ──────────────────────
+     Base en -600 (#165cfc) para que coincida con la convención de
+     Tailwind: -600 = color de acción, -50/-100 = fondos suaves,
+     -300/-400 = texto y bordes en modo oscuro.
+     Blanco sobre exh-600 = 5.3:1 (AA). Definir TODOS los pasos que
+     se usen: un shade inexistente no genera CSS y falla en silencio. */
+  --color-exh-50:  #eff4ff;
+  --color-exh-100: #dce7fe;
+  --color-exh-200: #c0d4fe;
+  --color-exh-300: #94b7fd;
+  --color-exh-400: #6091fb;
+  --color-exh-500: #3b73fc;
+  --color-exh-600: #165cfc;
+  --color-exh-700: #0d47d0;
+  --color-exh-800: #123ca6;
+  --color-exh-900: #153682;
+  --color-exh-950: #10214f;
 
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Urbanist', ui-sans-serif, system-ui, sans-serif;
@@ -24,7 +94,7 @@
   --gradient-brand: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 50%, #c084fc 100%);
   --gradient-orange: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
   --gradient-green:  linear-gradient(135deg, #059669 0%, #10b981 100%);
-  --gradient-blue:   linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  --gradient-blue:   linear-gradient(135deg, #165cfc 0%, #3b73fc 100%);
 
   /* Sombras direccionales con tinte de marca */
   --shadow-soft:        0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.06);
@@ -33,7 +103,7 @@
   --shadow-violet:      0 8px 24px -8px rgba(109, 40, 217, 0.35), 0 2px 6px -2px rgba(109, 40, 217, 0.15);
   --shadow-orange:      0 8px 24px -8px rgba(249, 115, 22, 0.35), 0 2px 6px -2px rgba(249, 115, 22, 0.15);
   --shadow-green:       0 8px 24px -8px rgba(5, 150, 105, 0.35),  0 2px 6px -2px rgba(5, 150, 105, 0.15);
-  --shadow-blue:        0 8px 24px -8px rgba(37, 99, 235, 0.35),  0 2px 6px -2px rgba(37, 99, 235, 0.15);
+  --shadow-blue:        0 8px 24px -8px rgba(22, 92, 252, 0.35),  0 2px 6px -2px rgba(22, 92, 252, 0.15);
 
   --animate-blob: blob 8s ease-in-out infinite;
   --animate-fadeIn: fadeIn 0.2s ease-out forwards;
@@ -350,7 +420,7 @@
   /* --- Tabla de datos --- */
   .table-wrapper { @apply bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden; box-shadow: var(--shadow-soft); }
   .table-header-cell {
-    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-700;
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700;
   }
   .table-row {
     @apply border-b border-gray-200 dark:border-slate-700 hover:bg-violet-50/40 dark:hover:bg-slate-700/40 transition last:border-0;
@@ -364,8 +434,12 @@
   }
 
   /* --- Page Header --- */
-  .page-title    { @apply font-display font-bold text-3xl text-gray-900 dark:text-slate-100; }
-  .page-subtitle { @apply text-sm text-gray-600 dark:text-slate-400 mt-1; }
+  /* Responsive a propósito: a 30px fijos, títulos largos como "Seguimiento de
+     Predicación" se parten feo en móvil. 24px abajo, 30px desde sm. */
+  .page-title    { @apply font-display font-bold text-2xl sm:text-3xl text-gray-900 dark:text-slate-100; }
+  /* leading-relaxed a propósito: el subtítulo a veces es un párrafo de varias
+     líneas y con el interlineado por defecto (1.43) se lee apelmazado. */
+  .page-subtitle { @apply text-sm leading-relaxed text-gray-600 dark:text-slate-400 mt-1.5; }
 
   /* --- Tabs pill container --- */
   .tab-nav        { @apply flex gap-1 bg-gray-100 dark:bg-slate-900/70 rounded-xl p-1 w-fit; }
@@ -392,8 +466,15 @@
   /* --- Botones potenciados (microinteracción + sombra tintada) --- */
   .btn-primary-orange { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-orange); }
   .btn-primary-green  { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-green); }
-  .btn-primary-blue   { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-blue); }
+  .btn-primary-blue   { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-exh-600 hover:bg-exh-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-blue); }
   .btn-primary-violet { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:scale-95; box-shadow: var(--shadow-violet); }
+
+  /* Chip de filtro rápido (listados que se acotan por categoría/día) */
+  .chip-filtro {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold
+           transition-colors duration-150 active:scale-[0.97] cursor-pointer
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-exh-600 focus-visible:ring-offset-2;
+  }
 
   /* Botón glassmorphism — para usar SOBRE hero-card (fondo gradiente violeta) */
   .btn-hero-glass {
@@ -442,7 +523,7 @@
   .focus-ring { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
   .focus-ring-orange { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
   .focus-ring-green  { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
-  .focus-ring-blue   { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
+  .focus-ring-blue   { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-exh-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white; }
 
   /* --- Skeleton con shimmer real --- */
   .skeleton {
@@ -1251,4 +1332,114 @@
     transform: none !important;
     stroke-dashoffset: 0 !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* === Calendario de Exhibidores · Color por lugar de salida ========= */
+/* ═══════════════════════════════════════════════════════════════════ */
+/*
+   Cada ubicación recibe uno de 8 tonos estables. El color NUNCA es el
+   único indicador: la píldora siempre lleva el nombre del lugar escrito,
+   por eso el sistema sigue siendo legible con daltonismo o impreso en
+   blanco y negro (los 8 tonos tienen luminosidades distintas).
+
+   Tres variables por tono:
+     --loc-bar  color sólido (barra lateral, punto de leyenda)
+     --loc-bg   fondo suave de la píldora
+     --loc-fg   texto sobre --loc-bg  (siempre >= 4.5:1)
+     --loc-bd   borde de la píldora
+
+   Se definen como custom properties y no como clases de Tailwind porque
+   el índice de color se calcula en TypeScript: una clase construida en
+   runtime nunca la vería el escáner de Tailwind y no generaría CSS.
+*/
+
+.loc-1 { --loc-bar: #2563eb; --loc-bg: #eff6ff; --loc-fg: #1d4ed8; --loc-bd: #bfdbfe; }
+.loc-2 { --loc-bar: #d97706; --loc-bg: #fffbeb; --loc-fg: #92400e; --loc-bd: #fde68a; }
+.loc-3 { --loc-bar: #059669; --loc-bg: #ecfdf5; --loc-fg: #047857; --loc-bd: #a7f3d0; }
+.loc-4 { --loc-bar: #e11d48; --loc-bg: #fff1f2; --loc-fg: #be123c; --loc-bd: #fecdd3; }
+.loc-5 { --loc-bar: #7c3aed; --loc-bg: #f5f3ff; --loc-fg: #6d28d9; --loc-bd: #ddd6fe; }
+.loc-6 { --loc-bar: #0891b2; --loc-bg: #ecfeff; --loc-fg: #0e7490; --loc-bd: #a5f3fc; }
+.loc-7 { --loc-bar: #ea580c; --loc-bg: #fff7ed; --loc-fg: #c2410c; --loc-bd: #fed7aa; }
+.loc-8 { --loc-bar: #65a30d; --loc-bg: #f7fee7; --loc-fg: #4d7c0f; --loc-bd: #d9f99d; }
+
+/* Modo oscuro: fondos apagados y texto claro. No se invierten los tonos,
+   se re-tonalizan — un color invertido pierde la identidad del lugar. */
+.dark .loc-1 { --loc-bar: #60a5fa; --loc-bg: #16264a; --loc-fg: #bfdbfe; --loc-bd: #1e3a8a; }
+.dark .loc-2 { --loc-bar: #fbbf24; --loc-bg: #3a2a0c; --loc-fg: #fde68a; --loc-bd: #78350f; }
+.dark .loc-3 { --loc-bar: #34d399; --loc-bg: #0d3327; --loc-fg: #a7f3d0; --loc-bd: #065f46; }
+.dark .loc-4 { --loc-bar: #fb7185; --loc-bg: #3f1220; --loc-fg: #fecdd3; --loc-bd: #9f1239; }
+.dark .loc-5 { --loc-bar: #a78bfa; --loc-bg: #2b1e50; --loc-fg: #ddd6fe; --loc-bd: #5b21b6; }
+.dark .loc-6 { --loc-bar: #22d3ee; --loc-bg: #0c3241; --loc-fg: #a5f3fc; --loc-bd: #155e75; }
+.dark .loc-7 { --loc-bar: #fb923c; --loc-bg: #3c1e0a; --loc-fg: #fed7aa; --loc-bd: #9a3412; }
+.dark .loc-8 { --loc-bar: #a3e635; --loc-bg: #24330c; --loc-fg: #d9f99d; --loc-bd: #3f6212; }
+
+/* Píldora de un turno dentro de una celda del mes */
+.loc-pill {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--loc-bg);
+  color: var(--loc-fg);
+  border: 1px solid var(--loc-bd);
+  border-left-width: 4px;
+  border-left-color: var(--loc-bar);
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.375rem;
+  line-height: 1.25;
+  transition: filter var(--duration-fast) ease-out;
+}
+.loc-pill:hover { filter: brightness(0.97); }
+/* Tallas: el padding vive aquí y no en utilidades de Tailwind porque este
+   bloque va fuera de @layer y ganaría siempre a la utilidad. */
+.loc-pill-md { padding: 0.625rem 0.75rem; }
+.loc-pill-lg { padding: 0.75rem 1rem; }
+.dark .loc-pill:hover { filter: brightness(1.15); }
+
+/* Punto de color de la leyenda y del resumen */
+.loc-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: var(--loc-bar);
+  flex-shrink: 0;
+}
+
+/* Chip de la leyenda: es un botón de filtro, por eso tiene estado activo */
+.loc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.3125rem 0.6875rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: var(--loc-bg);
+  color: var(--loc-fg);
+  border: 1px solid var(--loc-bd);
+  transition: transform var(--duration-fast) ease-out, box-shadow var(--duration-fast) ease-out;
+}
+.loc-chip:hover { transform: translateY(-1px); }
+.loc-chip:active { transform: scale(0.97); }
+.loc-chip-activo { box-shadow: 0 0 0 2px var(--loc-bar); }
+.loc-chip-apagado { opacity: 0.4; }
+
+/* Día bloqueado: trama diagonal para que se distinga sin depender del color */
+.dia-bloqueado {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(245, 158, 11, 0.10) 0, rgba(245, 158, 11, 0.10) 6px,
+    transparent 6px, transparent 12px
+  );
+}
+.dark .dia-bloqueado {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(251, 191, 36, 0.10) 0, rgba(251, 191, 36, 0.10) 6px,
+    transparent 6px, transparent 12px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loc-chip:hover, .loc-chip:active { transform: none; }
 }

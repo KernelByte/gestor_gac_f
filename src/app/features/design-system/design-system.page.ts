@@ -84,7 +84,7 @@ import {
           <div class="card-elevated p-4">
             <div class="h-16 rounded-lg gradient-blue mb-3"></div>
             <p class="eyebrow">Exhibidores</p>
-            <p class="data-num text-xs mt-0.5">#2563eb</p>
+            <p class="data-num text-xs mt-0.5">#165cfc</p>
           </div>
         </div>
       </section>

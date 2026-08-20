@@ -83,6 +83,18 @@
          </div>
       </button>
 
+      <button (click)="setTab('apis')" type="button"
+         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
+         [ngClass]="activeTab() === 'apis' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
+         <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+            </svg>
+            APIs
+         </div>
+      </button>
+
       <button (click)="setTab('seguridad')" type="button"
          class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
          [ngClass]="activeTab() === 'seguridad' ? 'border-red-500 text-red-500 border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
@@ -141,7 +153,7 @@
 
             <!-- MOBILE LIST VIEW -->
             <div class="md:hidden p-3 sm:p-4 space-y-3 sm:space-y-4 pb-4">
-               <div *ngFor="let cong of filteredCongregations"
+               <div *ngFor="let cong of filteredCongregations(); trackBy: trackByCongregacion"
                   class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 dark:border-slate-700 relative overflow-hidden transition-colors duration-300">
 
                   <!-- Card Header -->
@@ -255,7 +267,7 @@
                   </tr>
                </thead>
                <tbody class="divide-y divide-slate-200 dark:divide-slate-700 transition-colors duration-300">
-                  <tr *ngFor="let cong of filteredCongregations"
+                  <tr *ngFor="let cong of filteredCongregations(); trackBy: trackByCongregacion"
                      class="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors duration-150">
 
                      <td class="px-6 py-4 min-w-0">
@@ -341,7 +353,7 @@
             </table>
 
             <!-- Empty State -->
-            <div *ngIf="filteredCongregations.length === 0"
+            <div *ngIf="filteredCongregations().length === 0"
                class="py-20 flex flex-col items-center justify-center text-center">
                <div class="w-20 h-20 bg-slate-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mb-4">
                   <svg class="w-10 h-10 text-slate-200 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -358,10 +370,10 @@
          </div>
 
          <!-- Pagination footer -->
-         <div *ngIf="filteredCongregations.length > 0"
+         <div *ngIf="filteredCongregations().length > 0"
             class="px-4 sm:px-6 md:px-8 py-4 sm:py-5 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 mt-auto bg-slate-50/50 dark:bg-slate-800/50 shrink-0 transition-colors duration-300">
             <span class="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide order-2 sm:order-1 text-center sm:text-left">
-               Mostrando {{ filteredCongregations.length }} de {{ totalCount }} registros
+               Mostrando {{ filteredCongregations().length }} de {{ totalCount }} registros
             </span>
             <div class="flex items-center gap-2 order-1 sm:order-2">
                <button type="button" disabled
@@ -427,11 +439,11 @@
                <div class="flex items-center gap-3 text-[0.625rem] font-bold">
                   <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100/50 dark:border-amber-900/30">
                     <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                    {{ solicitudStats.pendientes }} pendientes
+                    {{ solicitudStats().pendientes }} pendientes
                   </div>
                   <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-900/30">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    {{ solicitudStats.aprobadas }} aprobadas
+                    {{ solicitudStats().aprobadas }} aprobadas
                   </div>
                </div>
             </div>
@@ -444,7 +456,7 @@
 
          <!-- List -->
          <div *ngIf="!solicitudesLoading()" class="flex-1 min-h-0 overflow-auto divide-y divide-slate-50 dark:divide-slate-800/40">
-            <div *ngFor="let s of filteredSolicitudes"
+            <div *ngFor="let s of filteredSolicitudes()"
                class="flex flex-col sm:flex-row sm:items-center gap-4 px-4 sm:px-6 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all duration-200">
 
                <!-- Info Section -->
@@ -505,7 +517,7 @@
                </div>
             </div>
             <!-- Empty State -->
-            <div *ngIf="filteredSolicitudes.length === 0 && !solicitudesLoading()"
+            <div *ngIf="filteredSolicitudes().length === 0 && !solicitudesLoading()"
                class="py-20 flex flex-col items-center justify-center text-center">
                <div class="w-20 h-20 bg-slate-50 dark:bg-slate-700/50 rounded-2xl flex items-center justify-center mb-4">
                   <svg class="w-10 h-10 text-slate-200 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -530,6 +542,11 @@
 
       <div *ngIf="activeTab() === 'sistema'" class="flex flex-col flex-1 min-h-0 animate-fadeIn">
          <app-system-config class="flex-1 min-h-0"></app-system-config>
+      </div>
+
+      <!-- TAB: APIs — credenciales de integración para sistemas externos -->
+      <div *ngIf="activeTab() === 'apis'" class="flex flex-col flex-1 min-h-0">
+         <app-api-config class="flex-1 min-h-0"></app-api-config>
       </div>
 
    </div>

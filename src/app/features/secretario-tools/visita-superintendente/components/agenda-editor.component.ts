@@ -8,7 +8,7 @@ import { SelectPickerComponent } from '../../../../shared/components/select-pick
 import { PublicadorPickerComponent } from '../../../../shared/components/publicador-picker/publicador-picker.component';
 import { PublicadorLite } from '../../../../shared/components/publicador-picker/publicador-lookup.service';
 import { AutosizeTextareaDirective } from '../../../../shared/directives/autosize-textarea.directive';
-import { SECCIONES_CONFIG, SeccionConfig, SeccionField } from './agenda-secciones.config';
+import { CampoAutocompletable, SECCIONES_CONFIG, SeccionConfig, SeccionField } from './agenda-secciones.config';
 
 /**
  * Editor de la agenda de la Visita del Superintendente: tabla de programación
@@ -534,7 +534,7 @@ export class AgendaEditorComponent {
   /**
    * Se eligió a alguien en un campo de tipo publicador. Guardamos su id en una
    * clave aparte (no está en SECCIONES_DEF, así que no sale en el Excel) y
-   * copiamos teléfono/dirección a las columnas que declare "autocompleta".
+   * copiamos los datos de su ficha a las columnas que declare "autocompleta".
    *
    * "pub" es null cuando el usuario escribió un nombre libre: en ese caso solo
    * se olvida el id, y lo que ya haya escrito a mano en las otras columnas se
@@ -548,9 +548,9 @@ export class AgendaEditorComponent {
       return;
     }
     fila[claveId] = String(pub.id_publicador);
-    const mapa = f.autocompleta;
-    if (mapa?.telefono) fila[mapa.telefono] = pub.telefono ?? '';
-    if (mapa?.direccion) fila[mapa.direccion] = pub.direccion ?? '';
+    for (const [campoPub, claveFila] of Object.entries(f.autocompleta ?? {})) {
+      if (claveFila) fila[claveFila] = pub[campoPub as CampoAutocompletable] ?? '';
+    }
     this.emitChanged();
   }
 

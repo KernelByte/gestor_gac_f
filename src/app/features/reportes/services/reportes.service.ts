@@ -194,6 +194,15 @@ export interface SinBautizarItem {
   meses_como_publicador?: number | null;
 }
 
+/** Reparto bautizados / no bautizados dentro de un grupo de predicación. */
+export interface BautismoGrupo {
+  grupo: string;
+  total: number;
+  bautizados: number;
+  no_bautizados: number;
+  pct_bautizados: number;
+}
+
 export interface GrupoCapacidad {
   grupo: string;
   publicadores: number;
@@ -226,6 +235,9 @@ export interface PublicadoresReporte {
   // Crecimiento
   bautismos_por_anio: SeriePunto[];
   antiguedad_bautismo: SeriePunto[];
+  bautismo_por_grupo: BautismoGrupo[];
+  /** Mismo reparto contando también a los publicadores inactivos. */
+  bautismo_por_grupo_con_inactivos: BautismoGrupo[];
   sin_bautizar: SinBautizarItem[];
   cursos_mensuales: SeriePunto[];
   // Capacidad de servicio

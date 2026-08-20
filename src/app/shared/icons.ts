@@ -11,7 +11,8 @@ import {
   // estados / feedback
   AlertTriangle, AlertCircle, CheckCircle2, Info, RefreshCw, Loader2, XCircle,
   // dominio
-  Users, User, UserPlus, MapPin, Calendar, FileText, BarChart3, Settings, Home, LogOut, Bell,
+  Users, User, UserPlus, MapPin, Calendar, CalendarOff, CalendarPlus, FileText, BarChart3,
+  Settings, Home, LogOut, Bell,
   Folder, FolderOpen, FolderPlus, Inbox, Mail, Phone, Eye, EyeOff,
   // utilidad
   Copy, Download, Upload, ExternalLink, Link as LinkIcon, Lock, Unlock, HelpCircle, Star,
@@ -24,7 +25,8 @@ export const APP_ICONS = {
   // estados / feedback
   AlertTriangle, AlertCircle, CheckCircle2, Info, RefreshCw, Loader2, XCircle,
   // dominio
-  Users, User, UserPlus, MapPin, Calendar, FileText, BarChart3, Settings, Home, LogOut, Bell,
+  Users, User, UserPlus, MapPin, Calendar, CalendarOff, CalendarPlus, FileText, BarChart3,
+  Settings, Home, LogOut, Bell,
   Folder, FolderOpen, FolderPlus, Inbox, Mail, Phone, Eye, EyeOff,
   // utilidad
   Copy, Download, Upload, ExternalLink, Link: LinkIcon, Lock, Unlock, HelpCircle, Star,

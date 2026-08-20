@@ -1,4 +1,10 @@
 {
+  "/api/v1": {
+    "target": "http://backend:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
   "/api": {
     "target": "http://backend:8000",
     "secure": false,

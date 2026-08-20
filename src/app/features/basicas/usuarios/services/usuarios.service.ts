@@ -91,6 +91,20 @@ export class UsuariosService {
       return this.http.get<any[]>('/api/publicadores/', { params });
    }
 
+   /**
+    * Alta mínima de publicador desde el formulario de usuario.
+    *
+    * Existe para desbloquear la creación del primer usuario de una congregación
+    * recién creada, que todavía no tiene ningún publicador al que asociarlo.
+    * Usa el mismo endpoint y los mismos permisos que el módulo de Publicadores
+    * (POST /api/publicadores/), así que no introduce ninguna vía privilegiada:
+    * el backend sigue validando rol/permiso y que la congregación esté dentro
+    * del alcance del usuario. El registro se completa después desde su módulo.
+    */
+   createPublicadorRapido(publicador: PublicadorRapidoCreate): Observable<PublicadorResumen> {
+      return this.http.post<PublicadorResumen>('/api/publicadores/', publicador);
+   }
+
    // ---- Endpoints seguros para Coordinador/Secretario/Admin ----
 
    /**
@@ -114,6 +128,24 @@ export class UsuariosService {
    createUsuarioPublicador(usuario: UsuarioCreatePublicador): Observable<Usuario> {
       return this.http.post<Usuario>(`${this.API_URL}crear-publicador`, usuario);
    }
+}
+
+/** Campos mínimos que exige PublicadorCreate en el backend, más el teléfono. */
+export interface PublicadorRapidoCreate {
+   primer_nombre: string;
+   primer_apellido: string;
+   telefono?: string;
+   id_congregacion_publicador: number;
+   id_estado_publicador: number;
+}
+
+/** Subconjunto de PublicadorOut que consume el selector de publicadores. */
+export interface PublicadorResumen {
+   id_publicador: number;
+   primer_nombre: string;
+   primer_apellido: string;
+   telefono?: string | null;
+   id_congregacion_publicador?: number | null;
 }
 
 // Interface para creación restringida (Coordinador/Secretario)

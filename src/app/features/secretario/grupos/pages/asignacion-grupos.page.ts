@@ -42,6 +42,27 @@ interface Publicador {
   privilegios_activos?: number[];
 }
 
+// Configuracion de etiquetas de privilegio. A nivel de modulo: es inmutable y
+// antes se reconstruia dentro de getPrivilegioTags en cada llamada.
+const PRIVILEGIO_CONFIG: { [key: string]: { label: string; class: string } } = {
+  'anciano': {
+    label: 'Anciano',
+    class: 'text-indigo-700 bg-indigo-100/90 border border-indigo-200/60 dark:bg-indigo-900/40 dark:text-indigo-200 dark:border-indigo-500/40 rounded-full'
+  },
+  'siervo ministerial': {
+    label: 'Siervo Ministerial',
+    class: 'text-amber-800 bg-amber-100/90 border border-amber-200/60 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-500/40 rounded-full'
+  },
+  'precursor regular': {
+    label: 'Precursor Regular',
+    class: 'text-purple-700 bg-purple-100/90 border border-purple-200/60 dark:bg-purple-900/40 dark:text-purple-200 dark:border-purple-500/40 rounded-full'
+  },
+  'precursor auxiliar': {
+    label: 'Precursor Auxiliar',
+    class: 'text-amber-700 bg-amber-100/90 border border-amber-200/50 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-500/40 rounded-full'
+  },
+};
+
 @Component({
   standalone: true,
   selector: 'app-asignacion-grupos',
@@ -181,6 +202,10 @@ interface Publicador {
   `]
 })
 export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
+
+  /** trackBy: evita recrear el DOM de toda la lista en cada cambio. */
+  trackByGrupoId = (_: number, g: any) => g.id_grupo;
+
   private http = inject(HttpClient);
   private router = inject(Router);
   private privilegiosService = inject(PrivilegiosService);
@@ -972,27 +997,66 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
     return (cap.length > 0 && name === cap) || (aux.length > 0 && name === aux);
   }
 
+  /**
+   * Miembros por grupo, ya ordenados y sin lideres, calculados de una sola vez.
+   *
+   * La plantilla llama a estos helpers desde un *ngFor anidado dentro del
+   * *ngFor de grupos, asi que antes cada ciclo de deteccion de cambios repetia
+   * un filter+sort de la lista completa de publicadores por cada grupo. Al
+   * derivarlo con computed solo se recalcula cuando cambian los publicadores
+   * visibles o los grupos.
+   */
+  private readonly miembrosSinLideresPorGrupo = computed(() => {
+    const porGrupo = new Map<number, Publicador[]>();
+    for (const p of this.visiblePublicadores()) {
+      const id = p.id_grupo_publicador;
+      if (id == null) continue;
+      const lista = porGrupo.get(id);
+      if (lista) lista.push(p); else porGrupo.set(id, [p]);
+    }
+
+    const resultado = new Map<number, Publicador[]>();
+    for (const group of this.grupos()) {
+      const miembros = (porGrupo.get(group.id_grupo) ?? [])
+        .sort((a, b) => {
+          const oa = a.orden_en_grupo ?? 999999;
+          const ob = b.orden_en_grupo ?? 999999;
+          if (oa !== ob) return oa - ob;
+          return (a.primer_apellido || '').localeCompare(b.primer_apellido || '') || (a.primer_nombre || '').localeCompare(b.primer_nombre || '');
+        })
+        .filter(p => !this.isPublicadorLeaderInGroup(p, group));
+      resultado.set(group.id_grupo, miembros);
+    }
+    return resultado;
+  });
+
+  /** Los mismos miembros, ya aplicado el buscador propio de cada tarjeta. */
+  private readonly miembrosFiltradosPorGrupo = computed(() => {
+    const terminos = this.groupSearchTerms();
+    const resultado = new Map<number, Publicador[]>();
+    for (const [groupId, miembros] of this.miembrosSinLideresPorGrupo()) {
+      const term = (terminos[groupId] ?? '').trim().toLowerCase();
+      resultado.set(groupId, !term ? miembros : miembros.filter(p => {
+        const full = [
+          p.primer_nombre,
+          p.segundo_nombre ?? '',
+          p.primer_apellido,
+          p.segundo_apellido ?? ''
+        ].join(' ').toLowerCase();
+        return full.includes(term);
+      }));
+    }
+    return resultado;
+  });
+
   /** Miembros del grupo excluyendo capitán y auxiliar (solo para mostrar en la lista de cards). */
   getGroupMembersExcludingLeaders(groupId: number): Publicador[] {
-    const group = this.grupos().find(g => g.id_grupo === groupId);
-    if (!group) return [];
-    return this.getGroupMembers(groupId).filter(p => !this.isPublicadorLeaderInGroup(p, group));
+    return this.miembrosSinLideresPorGrupo().get(groupId) ?? [];
   }
 
   /** Miembros del grupo (sin líderes) filtrados por el término de búsqueda de esa card. */
   getFilteredGroupMembers(groupId: number): Publicador[] {
-    const members = this.getGroupMembersExcludingLeaders(groupId);
-    const term = (this.getGroupSearch(groupId) || '').trim().toLowerCase();
-    if (!term) return members;
-    return members.filter(p => {
-      const full = [
-        p.primer_nombre,
-        p.segundo_nombre ?? '',
-        p.primer_apellido,
-        p.segundo_apellido ?? ''
-      ].join(' ').toLowerCase();
-      return full.includes(term);
-    });
+    return this.miembrosFiltradosPorGrupo().get(groupId) ?? [];
   }
 
   isModified(p: Publicador): boolean {
@@ -1022,65 +1086,70 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // Obtener tags de privilegios para mostrar en la tarjeta del publicador
-  getPrivilegioTags(p: Publicador): { label: string; class: string }[] {
-    const tags: { label: string; class: string }[] = [];
+  /**
+   * Etiquetas ya calculadas por publicador. La plantilla las pide varias veces
+   * por fila (capitan, auxiliar y cada miembro) en cada ciclo de deteccion de
+   * cambios, y antes cada llamada reconstruia el objeto de configuracion y
+   * recorria el catalogo con .find() por cada privilegio.
+   */
+  private readonly etiquetasPorPublicador = computed(() => {
     const privilegiosMap = this.publicadorPrivilegiosMap();
-    const privilegiosIds = privilegiosMap.get(p.id_publicador) || [];
     const catalogo = this.privilegiosCatalogo();
-
-    const privilegioConfig: { [key: string]: { label: string; class: string } } = {
-      'anciano': {
-        label: 'Anciano',
-        class: 'text-indigo-700 bg-indigo-100/90 border border-indigo-200/60 dark:bg-indigo-900/40 dark:text-indigo-200 dark:border-indigo-500/40 rounded-full'
-      },
-      'siervo ministerial': {
-        label: 'Siervo Ministerial',
-        class: 'text-amber-800 bg-amber-100/90 border border-amber-200/60 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-500/40 rounded-full'
-      },
-      'precursor regular': {
-        label: 'Precursor Regular',
-        class: 'text-purple-700 bg-purple-100/90 border border-purple-200/60 dark:bg-purple-900/40 dark:text-purple-200 dark:border-purple-500/40 rounded-full'
-      },
-      'precursor auxiliar': {
-        label: 'Precursor Auxiliar',
-        class: 'text-amber-700 bg-amber-100/90 border border-amber-200/50 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-500/40 rounded-full'
-      },
-    };
-
-    for (const idPrivilegio of privilegiosIds) {
-      const privilegio = catalogo.find(pr => pr.id_privilegio === idPrivilegio);
-      if (privilegio) {
-        const nombreLower = privilegio.nombre_privilegio.toLowerCase().trim();
-        for (const [key, config] of Object.entries(privilegioConfig)) {
+    const porId = new Map<number, { label: string; class: string }[]>();
+    const nombrePorId = new Map<number, string>();
+    for (const pr of catalogo) {
+      nombrePorId.set(pr.id_privilegio, (pr.nombre_privilegio || '').toLowerCase().trim());
+    }
+    const entradasConfig = Object.entries(PRIVILEGIO_CONFIG);
+    for (const [idPublicador, privilegiosIds] of privilegiosMap) {
+      const tags: { label: string; class: string }[] = [];
+      for (const idPrivilegio of privilegiosIds) {
+        const nombreLower = nombrePorId.get(idPrivilegio);
+        if (!nombreLower) continue;
+        for (const [key, config] of entradasConfig) {
           if (nombreLower.includes(key)) {
             tags.push(config);
             break;
           }
         }
       }
+      porId.set(idPublicador, tags);
     }
+    return porId;
+  });
 
-    return tags;
+  getPrivilegioTags(p: Publicador): { label: string; class: string }[] {
+    return this.etiquetasPorPublicador().get(p.id_publicador) ?? [];
   }
 
-  getPrivilegioTagsByName(nombreCompleto: string | null | undefined): { label: string; class: string }[] {
-    if (!nombreCompleto) return [];
 
-    const nombreBuscado = nombreCompleto.toLowerCase().trim();
-
-    const publicador = this.publicadores().find(p => {
-      const nombres = [
+  /**
+   * Indice nombre-escrito -> publicador, con las cuatro variantes de nombre que
+   * ya se comparaban antes. La plantilla busca al capitan y al auxiliar de cada
+   * grupo por su nombre, y sin indice cada busqueda recorria linealmente la
+   * lista completa de publicadores, cuatro veces por fila y por ciclo.
+   */
+  private readonly publicadoresPorNombre = computed(() => {
+    const indice = new Map<string, Publicador>();
+    for (const p of this.publicadores()) {
+      const variantes = [
         `${p.primer_nombre} ${p.primer_apellido} `,
         `${p.primer_nombre} ${p.segundo_nombre || ''} ${p.primer_apellido} `.replace(/\s+/g, ' '),
         `${p.primer_nombre} ${p.primer_apellido} ${p.segundo_apellido || ''} `.replace(/\s+/g, ' '),
         `${p.primer_nombre} ${p.segundo_nombre || ''} ${p.primer_apellido} ${p.segundo_apellido || ''} `.replace(/\s+/g, ' ')
       ].map(n => n.toLowerCase().trim());
+      // El primero que registra cada variante gana, igual que hacia el .find().
+      for (const v of variantes) {
+        if (!indice.has(v)) indice.set(v, p);
+      }
+    }
+    return indice;
+  });
 
-      return nombres.some(n => n === nombreBuscado);
-    });
-
+  getPrivilegioTagsByName(nombreCompleto: string | null | undefined): { label: string; class: string }[] {
+    if (!nombreCompleto) return [];
+    const publicador = this.publicadoresPorNombre().get(nombreCompleto.toLowerCase().trim());
     if (!publicador) return [];
-
     return this.getPrivilegioTags(publicador);
   }
 

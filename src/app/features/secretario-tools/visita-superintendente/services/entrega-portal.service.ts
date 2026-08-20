@@ -77,6 +77,14 @@ export interface GrupoRegistro {
   publicadores: PublicadorRegistro[];
 }
 
+/** Mes cuyos informes aún se están recogiendo (el que se envía a la sucursal
+ *  durante el mes actual). Sus cifras bajas no son una caída real. */
+export interface MesEnCurso {
+  mes: number;
+  mes_nombre: string;
+  anio: number;
+}
+
 export interface RegistrosOut {
   anio: number;
   activos: {
@@ -85,6 +93,7 @@ export interface RegistrosOut {
     precursores_auxiliares: GrupoRegistro[];
   };
   inactivos: PublicadorRegistro[];
+  mes_en_curso: MesEnCurso | null;
 }
 
 export interface FilaMensualTotal {
@@ -106,6 +115,7 @@ export interface TarjetaTotal {
 
 export interface TotalesOut {
   anio: number;
+  mes_en_curso: MesEnCurso | null;
   total_publicadores: TarjetaTotal;
   total_precursores_regulares: TarjetaTotal;
   total_precursores_auxiliares: TarjetaTotal;

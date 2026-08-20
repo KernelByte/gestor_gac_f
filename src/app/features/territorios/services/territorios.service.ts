@@ -96,6 +96,14 @@ export class TerritoriosService {
     return this.http.get<CoberturaManzana[]>(`${environment.apiUrl}/manzanas/${idManzana}/cobertura`);
   }
 
+  /**
+   * Coberturas de todas las manzanas del territorio en una sola peticion,
+   * agrupadas por id_manzana. Antes la pantalla pedia manzana por manzana.
+   */
+  getCoberturasDelTerritorio(idTerritorio: number): Observable<Record<number, CoberturaManzana[]>> {
+    return this.http.get<Record<number, CoberturaManzana[]>>(`${this.baseUrl}/${idTerritorio}/coberturas`);
+  }
+
   createCobertura(idManzana: number, data: Partial<CoberturaManzana>): Observable<CoberturaManzana> {
     return this.http.post<CoberturaManzana>(`${environment.apiUrl}/manzanas/${idManzana}/cobertura`, data);
   }

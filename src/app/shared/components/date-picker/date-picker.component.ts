@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 type ViewMode = 'calendar' | 'months' | 'years';
-type ColorScheme = 'orange' | 'violet';
+type ColorScheme = 'orange' | 'violet' | 'blue';
 
 @Component({
    selector: 'app-date-picker',
@@ -17,6 +17,7 @@ type ColorScheme = 'orange' | 'violet';
    template: `
     <div class="dp-root"
          [class.dp-violet]="colorScheme === 'violet'"
+         [class.dp-blue]="colorScheme === 'blue'"
          [class.dp-field-like]="fieldLike"
          [class.dp-inline]="isInline()"
          [class.dp-open-above]="openAbove()"
@@ -435,6 +436,41 @@ type ColorScheme = 'orange' | 'violet';
 
     .dp-footer-today--off { color: #cbd5e1 !important; cursor: not-allowed; }
     :host-context(.dark) .dp-footer-today--off { color: #334155 !important; }
+
+    /* ── Blue (Exhibidores) ─────────────────────────────── */
+    .dp-blue:focus-within .dp-trigger-field:not(:disabled) {
+      border-color: #165cfc;
+      box-shadow: 0 0 0 3px rgba(22,92,252,0.14);
+    }
+    :host-context(.dark) .dp-blue:focus-within .dp-trigger-field:not(:disabled) {
+      border-color: #6091fb; box-shadow: 0 0 0 3px rgba(96,145,251,0.18);
+    }
+    .dp-blue .dp-trigger-icon { color: #3b73fc; }
+    .dp-blue .dp-trigger:not(:disabled):hover .dp-trigger-icon { color: #165cfc; }
+    :host-context(.dark) .dp-blue .dp-trigger-icon { color: #6091fb; }
+    .dp-blue .dp-nav:not(:disabled):hover { background: rgba(22,92,252,0.08); color: #165cfc; }
+    :host-context(.dark) .dp-blue .dp-nav:not(:disabled):hover { background: rgba(96,145,251,0.1); color: #6091fb; }
+    .dp-blue .dp-period:not(:disabled):hover { background: rgba(22,92,252,0.08); color: #0d47d0; }
+    :host-context(.dark) .dp-blue .dp-period:not(:disabled):hover { background: rgba(96,145,251,0.08); color: #6091fb; }
+    .dp-blue .dp-year--on, .dp-blue .dp-month--on { background: #165cfc; }
+    .dp-blue .dp-year:hover:not(.dp-year--on),
+    .dp-blue .dp-month:hover:not(.dp-month--on) { background: rgba(22,92,252,0.08); color: #0d47d0; }
+    .dp-blue .dp-day:not(.dp-day--sel):not(.dp-day--off):not(.dp-day--empty):hover {
+      background: rgba(22,92,252,0.08); color: #0d47d0;
+    }
+    :host-context(.dark) .dp-blue .dp-day:not(.dp-day--sel):not(.dp-day--off):not(.dp-day--empty):hover {
+      background: rgba(96,145,251,0.1); color: #6091fb;
+    }
+    .dp-blue .dp-day--sel {
+      background: #165cfc;
+      box-shadow: 0 2px 8px rgba(22,92,252,0.4);
+    }
+    .dp-blue .dp-day--sel:hover { background: #0d47d0; }
+    .dp-blue .dp-day--today { color: #165cfc; box-shadow: inset 0 0 0 1.5px #165cfc; }
+    :host-context(.dark) .dp-blue .dp-day--today { color: #6091fb; box-shadow: inset 0 0 0 1.5px #6091fb; }
+    .dp-blue .dp-footer-today { color: #165cfc; }
+    .dp-blue .dp-footer-today:hover:not(.dp-footer-today--off) { color: #0d47d0; background: rgba(22,92,252,0.07); }
+    :host-context(.dark) .dp-blue .dp-footer-today { color: #6091fb; }
   `]
 })
 export class DatePickerComponent implements ControlValueAccessor {

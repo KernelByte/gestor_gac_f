@@ -112,35 +112,6 @@ export class InformesService {
      return this.http.get<ResumenSucursal>(`${this.apiUrl}/resumen-sucursal`, { params: finalParams });
    }
 
-   // --- Export/Import Excel ---
-   exportTemplate(periodoId: number, grupoId: number): Observable<Blob> {
-      const params = new HttpParams()
-         .set('periodo_id', periodoId.toString())
-         .set('grupo_id', grupoId.toString());
-
-      return this.http.get(`${this.apiUrl}/export-template`, {
-         params,
-         responseType: 'blob'
-      });
-   }
-
-   importTemplate(file: File): Observable<any> {
-      const formData = new FormData();
-      formData.append('archivo', file);
-      return this.http.post(`${this.apiUrl}/import-template`, formData);
-   }
-
-   exportTemplateCongregacion(periodoId: number, congregacionId: number): Observable<Blob> {
-      const params = new HttpParams()
-         .set('periodo_id', periodoId.toString())
-         .set('congregacion_id', congregacionId.toString());
-
-      return this.http.get(`${this.apiUrl}/export-template`, {
-         params,
-         responseType: 'blob'
-      });
-   }
-
    // --- Export Historial PDF ---
    exportHistorialPdf(
       congregacionId: number,
@@ -158,6 +129,22 @@ export class InformesService {
       if (filters.publicadorId) params = params.set('publicador_id', filters.publicadorId.toString());
 
       return this.http.get(`${this.apiUrl}/export-historial-pdf`, { params, responseType: 'blob' });
+   }
+
+   // --- Export Resumen de Grupo PDF (análisis del superintendente de servicio) ---
+   exportResumenGrupoPdf(
+      congregacionId: number,
+      grupoId: number,
+      anoServicio: number,
+      viewType: string
+   ): Observable<Blob> {
+      const params = new HttpParams()
+         .set('congregacion_id', congregacionId.toString())
+         .set('grupo_id', grupoId.toString())
+         .set('ano_servicio', anoServicio.toString())
+         .set('tipo_vista', viewType);
+
+      return this.http.get(`${this.apiUrl}/export-resumen-grupo-pdf`, { params, responseType: 'blob' });
    }
 
    // --- WhatsApp ---

@@ -4,6 +4,7 @@ export * from './stat-card/stat-card.component';
 export * from './page-header/page-header.component';
 export * from './tab-nav/tab-nav.component';
 export * from './data-table/data-table.component';
+export * from './password-strength/password-strength.component';
 
 // Design System v2 — componentes nuevos
 export * from './toast/toast.service';

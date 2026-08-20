@@ -9,6 +9,7 @@ export interface PublicadorLite {
   nombre_completo: string;
   telefono?: string | null;
   direccion?: string | null;
+  barrio?: string | null;
   nombre_grupo?: string | null;
 }
 
@@ -62,6 +63,7 @@ export class PublicadorLookupService {
       nombre_completo: nombre,
       telefono: d.telefono ?? null,
       direccion: d.direccion ?? null,
+      barrio: d.barrio ?? null,
       nombre_grupo: d.nombre_grupo ?? null,
     };
   }

@@ -12,7 +12,7 @@ export interface TabItem {
  * Color activo del tab según el módulo:
  *   orange → Publicadores / Secretario  (bg-orange-500)
  *   green  → Territorios               (bg-green-600)
- *   blue   → Exhibidores               (bg-blue-600)
+ *   blue   → Exhibidores               (bg-exh-600)
  *   violet → Global / marca            (bg-violet-600)
  */
 export type TabColor = 'orange' | 'green' | 'blue' | 'violet';
@@ -50,7 +50,7 @@ export class TabNavComponent {
     const colorMap: Record<TabColor, string> = {
       orange: 'tab-item-active bg-orange-500',
       green:  'tab-item-active bg-green-600',
-      blue:   'tab-item-active bg-blue-600',
+      blue:   'tab-item-active bg-exh-600',
       violet: 'tab-item-active bg-violet-600',
     };
     return colorMap[this.color];

@@ -4,10 +4,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
-import { timeout } from 'rxjs';
+import { forkJoin, timeout } from 'rxjs';
 import { TerritoriosService } from '../services/territorios.service';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
 import { TerritorioCardComponent } from '../components/territorio-card.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { exportTerritorioCard } from '../utils/territorio-export.util';
 import {
   Territorio,
@@ -23,7 +24,7 @@ import {
 @Component({
    standalone: true,
    selector: 'app-territorios-page',
-   imports: [CommonModule, FormsModule, TerritorioMapComponent, TerritorioCardComponent],
+   imports: [CommonModule, FormsModule, TerritorioMapComponent, TerritorioCardComponent, PageHeaderComponent],
    animations: [
       trigger('slideOver', [
          transition(':enter', [
@@ -39,22 +40,19 @@ import {
     <div class="flex flex-col h-full overflow-hidden gap-5">
 
       <!-- 1. Header -->
-      <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
-        <div>
-          <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight font-display">Territorios</h1>
-          <p class="text-slate-500 dark:text-slate-400 mt-1 max-w-md">Administra, asigna y monitorea el estado de los territorios de la congregación.</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <button (click)="navigateToMap()" class="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-sm hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 flex items-center gap-2 whitespace-nowrap">
-            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-            Ver Mapa General
-          </button>
-          <button (click)="openCreateModal()" class="px-5 py-2.5 bg-[#059669] text-white font-bold rounded-xl text-sm hover:bg-[#047857] shadow-lg shadow-emerald-900/20 dark:shadow-emerald-900/40 transition-all active:scale-95 flex items-center gap-2">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Nuevo Territorio
-          </button>
-        </div>
-      </header>
+      <app-page-header
+        spacing="none"
+        title="Territorios"
+        subtitle="Administra, asigna y monitorea el estado de los territorios de la congregación.">
+        <button (click)="navigateToMap()" class="btn-secondary focus-ring-green whitespace-nowrap">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+          Ver Mapa General
+        </button>
+        <button (click)="openCreateModal()" class="btn-primary-green focus-ring-green whitespace-nowrap">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Nuevo Territorio
+        </button>
+      </app-page-header>
 
       <!-- 2. KPIs -->
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 shrink-0">
@@ -1153,27 +1151,25 @@ export class TerritoriosPage implements OnInit {
       const t = this.selectedTerritorio();
       if (!t) return;
       this.coberturaLoading.set(true);
-      this.territoriosService.getManzanas(t.id_territorio).subscribe({
-         next: (manzanas) => {
-            // For each manzana, load its latest cobertura
-            let pending = manzanas.length;
-            if (pending === 0) { this.coberturaLoading.set(false); this.manzanasConCobertura.set([]); return; }
-            const result: Array<Manzana & { ultimaCobertura?: CoberturaManzana }> = manzanas.map(m => ({ ...m }));
-            manzanas.forEach((m, i) => {
-               this.territoriosService.getCoberturas(m.id_manzana).subscribe({
-                  next: (coberturas) => {
-                     if (coberturas.length > 0) {
-                        result[i] = { ...result[i], ultimaCobertura: coberturas[coberturas.length - 1] };
-                     }
-                     pending--;
-                     if (pending === 0) {
-                        this.manzanasConCobertura.set(result);
-                        this.coberturaLoading.set(false);
-                     }
-                  },
-                  error: () => { pending--; if (pending === 0) { this.manzanasConCobertura.set(result); this.coberturaLoading.set(false); } },
-               });
-            });
+      // Dos peticiones en paralelo (manzanas + todas sus coberturas) en vez de
+      // una por manzana: un territorio de 40 manzanas lanzaba 41 peticiones.
+      forkJoin({
+         manzanas: this.territoriosService.getManzanas(t.id_territorio),
+         coberturas: this.territoriosService.getCoberturasDelTerritorio(t.id_territorio),
+      }).subscribe({
+         next: ({ manzanas, coberturas }) => {
+            this.manzanasConCobertura.set(
+               manzanas.map(m => {
+                  const deLaManzana = coberturas[m.id_manzana] ?? [];
+                  const ultimaCobertura = deLaManzana.length ? deLaManzana[deLaManzana.length - 1] : undefined;
+                  return { ...m, ultimaCobertura };
+               })
+            );
+            this.coberturaLoading.set(false);
+         },
+         error: () => {
+            this.manzanasConCobertura.set([]);
+            this.coberturaLoading.set(false);
          },
       });
    }

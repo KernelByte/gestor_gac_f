@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -9,7 +9,20 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { AIConfigComponent } from './components/ai-config.component';
 import { DbBackupComponent } from './components/db-backup.component';
 import { SystemConfigComponent } from './components/system-config.component';
+import { ApiConfigComponent } from './components/api-config.component';
 import { ImportPublicadoresModalComponent } from '../../../shared/components/import-publicadores/import-publicadores-modal.component';
+
+/**
+ * Pestañas del panel. Única fuente de verdad: el tipo `AdminTab` se deriva de
+ * esta lista, así que añadir una pestaña ya no obliga a tocar la unión de tipos,
+ * el array de validación y la firma de setTab por separado.
+ */
+export const ADMIN_TABS = [
+   'congregaciones', 'auditoria', 'solicitudes', 'ai',
+   'base-datos', 'sistema', 'apis', 'seguridad',
+] as const;
+
+export type AdminTab = typeof ADMIN_TABS[number];
 
 interface CongregacionUrl {
    id_url: number;
@@ -71,7 +84,7 @@ interface SolicitudAcceso {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ImportPublicadoresModalComponent],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ApiConfigComponent, ImportPublicadoresModalComponent],
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -95,13 +108,17 @@ interface SolicitudAcceso {
    ]
 })
 export class AdminConfigPage implements OnInit {
+
+   /** trackBy: evita recrear el DOM de toda la lista en cada cambio. */
+   trackByCongregacion = (_: number, c: any) => c.id_congregacion;
+
    private http = inject(HttpClient);
    private fb = inject(FormBuilder);
    private router = inject(Router);
    private route = inject(ActivatedRoute);
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
-   activeTab = signal<'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos' | 'solicitudes' | 'sistema'>('congregaciones');
+   activeTab = signal<AdminTab>('congregaciones');
    loading = signal(false);
 
    // Data Signals
@@ -155,10 +172,9 @@ export class AdminConfigPage implements OnInit {
       this.route.queryParams.subscribe(params => {
          const tabParam = params['tab'];
          const savedTab = localStorage.getItem('admin_active_tab');
-         const tabToSet = (tabParam || savedTab || 'congregaciones') as any;
-         const validTabs = ['congregaciones', 'auditoria', 'seguridad', 'ai', 'base-datos', 'solicitudes', 'sistema'];
+         const tabToSet = (tabParam || savedTab || 'congregaciones') as AdminTab;
 
-         if (tabToSet && validTabs.includes(tabToSet)) {
+         if (tabToSet && (ADMIN_TABS as readonly string[]).includes(tabToSet)) {
             this.activeTab.set(tabToSet);
             localStorage.setItem('admin_active_tab', tabToSet);
             
@@ -193,7 +209,7 @@ export class AdminConfigPage implements OnInit {
       });
    }
 
-   setTab(tab: 'congregaciones' | 'auditoria' | 'seguridad' | 'ai' | 'base-datos' | 'solicitudes' | 'sistema') {
+   setTab(tab: AdminTab) {
       this.activeTab.set(tab);
       localStorage.setItem('admin_active_tab', tab);
 
@@ -232,14 +248,20 @@ export class AdminConfigPage implements OnInit {
       return getInitialAvatarStyle(nombre);
    }
 
-   get filteredCongregations() {
+   /**
+    * computed en vez de getter: la plantilla lo lee en dos vistas a la vez
+    * (rejilla y tabla) y en varios *ngIf, asi que el filtro se recalculaba
+    * entero en cada ciclo de deteccion de cambios. Ahora solo cuando cambian
+    * las congregaciones o el termino de busqueda.
+    */
+   readonly filteredCongregations = computed(() => {
       const term = this.searchTerm().toLowerCase();
       return this.congregaciones().filter(c =>
          c.nombre_congregacion.toLowerCase().includes(term) ||
          (c.direccion || '').toLowerCase().includes(term) ||
          (c.circuito || '').toLowerCase().includes(term)
       );
-   }
+   });
 
    editCongregation(id: number) {
       const cong = this.congregaciones().find(c => c.id_congregacion === id);
@@ -546,11 +568,14 @@ export class AdminConfigPage implements OnInit {
       });
    }
 
-   get filteredSolicitudes() {
-      return this.solicitudes();
-   }
+   readonly filteredSolicitudes = computed(() => this.solicitudes());
 
-   get solicitudStats() {
+   /**
+    * Antes era un getter: devolvia un objeto nuevo en cada lectura, asi que los
+    * bindings de la plantilla siempre veian un valor distinto. Con computed se
+    * recalcula solo cuando cambia la lista.
+    */
+   readonly solicitudStats = computed(() => {
       const all = this.solicitudes();
       return {
          total: all.length,
@@ -558,7 +583,7 @@ export class AdminConfigPage implements OnInit {
          aprobadas: all.filter(s => s.estado === 'aprobada').length,
          rechazadas: all.filter(s => s.estado === 'rechazada').length,
       };
-   }
+   });
 
    setSolicitudFilter(filter: string) {
       this.solicitudFilter.set(filter);

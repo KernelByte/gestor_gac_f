@@ -1,16 +1,46 @@
+/** Cada cuánto cambia el grupo que hace el aseo del salón. */
+export type AseoRotacion = 'reunion' | 'semana' | 'mes';
+
 export interface GenerarLogisticaRequest {
   ano: number;
   mes: number;
+  /** Ausente = usar la preferencia guardada de la congregación. */
+  modo_aseo?: AseoRotacion;
 }
 
 export interface EditarLogisticaItemRequest {
   id_publicador: number | null;
 }
 
-export interface EditarAseoRequest {
+export interface FechaTipoIn {
   fecha: string;
   tipo_reunion: string;
+}
+
+export interface EditarAseoRequest {
+  /** Todas las fechas del bloque; una sola cuando la rotación es por reunión. */
+  fechas: FechaTipoIn[];
   ids_grupo: number[];
+}
+
+export interface AseoPreferenciaOpcion {
+  id: AseoRotacion;
+  label: string;
+  description: string;
+}
+
+export interface AseoPreferencia {
+  key: string;
+  value: AseoRotacion;
+  default: AseoRotacion;
+  label: string;
+  description: string;
+  options: AseoPreferenciaOpcion[];
+}
+
+export interface ConfiguracionAseoOut {
+  preferencias: AseoPreferencia[];
+  valores: Record<string, AseoRotacion>;
 }
 
 export interface ConfirmarLogisticaRequest {
@@ -51,6 +81,23 @@ export interface FechaReunionOut {
   dia_semana: string;
 }
 
+/**
+ * Tramo de fechas que comparte grupo de aseo. Lo arma el backend para que la
+ * tabla y el PDF agrupen exactamente igual: una fila por reunión, por semana
+ * del mes o una sola para todo el mes.
+ */
+export interface AseoBloqueOut {
+  clave: string;
+  indice: number;
+  /** "Semana 2" / "Junio" / "09 Junio" */
+  etiqueta: string;
+  /** "09 – 13 Junio" */
+  detalle: string;
+  fechas: FechaReunionOut[];
+  grupos: GrupoBase[];
+  confirmado: boolean;
+}
+
 export interface LogisticaMesOut {
   ano: number;
   mes: number;
@@ -59,6 +106,8 @@ export interface LogisticaMesOut {
   fechas: FechaReunionOut[];
   asignaciones: LogisticaItemOut[];
   aseo: LogisticaAseoOut[];
+  aseo_modo: AseoRotacion;
+  aseo_bloques: AseoBloqueOut[];
 }
 
 export interface ConflictoParteOut {

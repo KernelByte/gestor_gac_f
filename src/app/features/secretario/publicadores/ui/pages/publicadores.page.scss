@@ -1,0 +1,69 @@
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .simple-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .simple-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .simple-scrollbar::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 4px;
+    }
+    .simple-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
+    }
+    :host-context(.dark) .simple-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+    }
+    :host-context(.dark) .simple-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.25s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateX(8px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    .animate-fadeInUp {
+        animation: fadeInUp 0.25s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(8px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .box-decoration-clone {
+        box-decoration-break: clone;
+    }
+    .animate-slideInRight {
+      animation: slideInRight 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(16px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    /* Stagger rows — first 10 rows animate in cascading */
+    tbody tr:nth-child(1) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 0ms; }
+    tbody tr:nth-child(2) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 30ms; }
+    tbody tr:nth-child(3) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 60ms; }
+    tbody tr:nth-child(4) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 90ms; }
+    tbody tr:nth-child(5) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 120ms; }
+    tbody tr:nth-child(6) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 150ms; }
+    tbody tr:nth-child(7) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 180ms; }
+    tbody tr:nth-child(8) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 210ms; }
+    tbody tr:nth-child(9) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 240ms; }
+    tbody tr:nth-child(10) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 270ms; }
+    @keyframes rowIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .animate-fadeIn, .animate-fadeInUp, .animate-slideInRight { animation: none; opacity: 1; transform: none; }
+        tbody tr { animation: none !important; opacity: 1; }
+    }

@@ -7,6 +7,9 @@
  * (modules/secretario/visita_superintendente/visita_agenda_service.py).
  */
 
+/** Datos de la ficha del publicador que una columna puede copiar a su fila. */
+export type CampoAutocompletable = 'telefono' | 'direccion' | 'barrio';
+
 export interface SeccionField {
   key: string;
   label: string;
@@ -18,7 +21,7 @@ export interface SeccionField {
    * datos a otras columnas de la misma fila: { campoDelPublicador: claveDeLaFila }.
    * El usuario puede corregir a mano lo que se rellenó.
    */
-  autocompleta?: Partial<Record<'telefono' | 'direccion', string>>;
+  autocompleta?: Partial<Record<CampoAutocompletable, string>>;
   /**
    * Solo para `type: 'publicador'`. Muestra el enlace "Ver tarjeta del
    * publicador" bajo el campo (si quien edita tiene permiso). Se reserva para
@@ -161,6 +164,17 @@ export const SECCIONES_CONFIG: SeccionConfig[] = [
       { key: 'familia', label: 'Hermano/a o familia', type: 'text', placeholder: 'ej. Familia Gil', rol: 'titulo' },
       { key: 'dia', label: 'Día', type: 'select', options: DIAS_SEMANA },
       { key: 'hora', label: 'Hora', type: 'time' },
+      {
+        // Opcional: la visita suele ser en casa del hermano, así que elegirlo
+        // del listado ahorra copiar la dirección a mano. Si la visita es en
+        // otro sitio (o el hermano no está registrado) se deja vacío y la
+        // dirección se escribe libremente.
+        key: 'hermano', label: 'Hermano a visitar', type: 'publicador',
+        placeholder: 'Opcional · trae su dirección',
+        autocompleta: { direccion: 'direccion', barrio: 'barrio' }, rol: 'subtitulo',
+      },
+      { key: 'direccion', label: 'Dirección', type: 'text', placeholder: 'Opcional · se completa al elegir al hermano', rol: 'dir' },
+      { key: 'barrio', label: 'Barrio', type: 'text', placeholder: 'Opcional · se completa al elegir al hermano', rol: 'dir' },
       { key: 'motivo', label: 'Razón o motivo', type: 'textarea', placeholder: 'ej. Visita de ánimo', rol: 'nota' },
       { key: 'anciano', label: 'Anciano que irá', type: 'publicador', placeholder: 'Buscar o escribir el anciano…', rol: 'subtitulo' },
       { key: 'publicacion', label: 'Publicación', type: 'text', placeholder: 'ej. w24 12 Artículo 51', rol: 'nota' },

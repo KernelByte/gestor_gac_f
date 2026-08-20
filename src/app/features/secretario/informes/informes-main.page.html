@@ -43,11 +43,10 @@
             [isRestrictedUser]="isRestrictedUser()" [selectedMes]="selectedMes ?? ''" [selectedAno]="selectedAno ?? ''"
             [selectedGrupo]="selectedGrupo" [meses]="meses" [anos]="anos" [grupos]="grupos()"
             [vistaGrupo]="vistaGrupo()" [searchQuery]="searchQuery" [soloSinInforme]="soloSinInforme"
-            [saving]="saving()" (toggleDropdown)="toggleDropdown($event)" (closeDropdown)="closeDropdown()"
+            (toggleDropdown)="toggleDropdown($event)" (closeDropdown)="closeDropdown()"
             (selectMes)="selectMes($event)" (selectAno)="selectAno($event)" (selectGrupo)="selectGrupo($event)"
             (setVista)="setVista($event)" (searchQueryChange)="searchQuery = $event; loadResumen()"
-            (soloSinInformeChange)="onSoloSinInformeChange($event)" (exportExcel)="exportarExcel()"
-            (importExcel)="importarExcel($event)">
+            (soloSinInformeChange)="onSoloSinInformeChange($event)">
          </app-informes-filters>
       </div>
 
@@ -152,11 +151,11 @@
       <!-- Tab 1: Entrada Mensual -->
       <div [ngClass]="activeTab() === 'entrada' ? 'flex flex-col gap-3 flex-1 min-h-0 overflow-hidden' : 'hidden'">
          <!-- Data List/Table Container -->
-         <app-informes-table [resumen]="filteredResumen()" [saving]="saving()" [canEdit]="canEditInformes()"
+         <app-informes-table [resumen]="filteredResumen()" [canEdit]="canEditInformes()"
             [autoSaveStatus]="autoSaveStatus()" [hasPendingChanges]="hasPendingChanges()"
+            [failedSaveCount]="failedSaveCount()"
             [privilegios]="privilegios()" [publicadorPrivilegiosMap]="publicadorPrivilegiosMap()"
             [localChanges]="localChanges" (informeChange)="handleInformeChange($event)"
-            (exportExcel)="exportarExcel()" (importExcel)="importarExcel($event)"
             (notifyWhatsApp)="notificarWhatsApp($event)">
          </app-informes-table>
       </div>
@@ -167,7 +166,8 @@
             <app-informes-historial [selectedAno]="selectedAno ? +selectedAno : 0"
                [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0" [grupos]="grupos()"
                [canEdit]="canEditHistorial()" [canExport]="canViewHistorial()"
-               [lockedGroupId]="canEditHistorial() ? null : historialGroupId()"
+               [canExportResumenGrupo]="canExportResumenGrupo()"
+               [lockedGroupId]="canViewHistorialAllGroups() ? null : historialGroupId()"
                class="h-full flex-col flex overflow-hidden">
 
                <div tabs class="w-full shrink-0">
