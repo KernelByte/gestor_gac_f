@@ -364,6 +364,13 @@ export class TimeAgoPipe implements PipeTransform {
                           [ngClass]="rlaRepPred.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Predicación</span>
                   </a>
+                  <a *ngIf="hasPermission('reportes.logistica')" routerLink="/reportes/logistica" routerLinkActive="sub-active" #rlaRepLog="routerLinkActive"
+                     class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
+                     [ngClass]="rlaRepLog.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                    <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
+                          [ngClass]="rlaRepLog.isActive ? 'bg-brand-blue dark:bg-blue-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                    <span class="truncate">Carga de Logística</span>
+                  </a>
                 </div>
               </div>
 
@@ -402,6 +409,7 @@ export class TimeAgoPipe implements PipeTransform {
                 </div>
                 <span *ngIf="!collapsed()" class="font-medium relative z-10 text-[0.875rem]">Configuración</span>
               </a>
+
             </div>
           </nav>
         </div>
@@ -476,6 +484,7 @@ export class TimeAgoPipe implements PipeTransform {
                  </div>
                </div>
              </div>
+
            </div>
 
            <!-- Congregacion Selector (Admin) -->
@@ -909,7 +918,7 @@ export class TimeAgoPipe implements PipeTransform {
       display: flex; flex-direction: column; gap: 3px; padding-top: 2px;
     }
     .delete-modal-title {
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
       font-size: 1rem;
       font-weight: 800;
       letter-spacing: -0.02em;
@@ -978,7 +987,7 @@ export class TimeAgoPipe implements PipeTransform {
     :host-context(.dark) .delete-modal-group-icon svg { stroke: #94a3b8; }
 
     .delete-modal-group-name {
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
       font-size: 0.9rem;
       font-weight: 700;
       color: #1e293b;
@@ -1307,6 +1316,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Análisis Publicadores', subtitle: 'Distribución demográfica y por grupo.' });
     } else if (url.includes('/reportes/predicacion')) {
       this.pageTitle.set({ title: 'Análisis Predicación', subtitle: 'Resumen de informes de servicio.' });
+    } else if (url.includes('/reportes/logistica')) {
+      this.pageTitle.set({ title: 'Carga de Logística', subtitle: 'Reparto del trabajo de las reuniones por persona, categoría y grupo.' });
     } else if (url.includes('/reportes')) {
       this.pageTitle.set({ title: 'Reportes', subtitle: 'Análisis e indicadores de la congregación.' });
     } else if (url.includes('/secretario-tools/visita-superintendente')) {
@@ -1418,7 +1429,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.hasPermission('reportes.ver') ||
       this.hasPermission('reportes.precursores') ||
       this.hasPermission('reportes.publicadores') ||
-      this.hasPermission('reportes.predicacion')
+      this.hasPermission('reportes.predicacion') ||
+      this.hasPermission('reportes.logistica')
     );
   }
 

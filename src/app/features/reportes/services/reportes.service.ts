@@ -252,6 +252,85 @@ export interface PredicacionReporte {
   horas_por_grupo: SeriePunto[];
 }
 
+// ── Carga de trabajo de logística ──────────────────────────────────────
+
+/**
+ * Cuánto trabajo lleva alguien respecto al promedio del periodo consultado.
+ * Es relativo a propósito: 4 tareas al mes son muchas donde hay treinta
+ * habilitados y pocas donde hay seis.
+ */
+export type NivelCarga = 'baja' | 'normal' | 'alta';
+
+export interface CargaAsignacion {
+  fecha: string;
+  puesto: string;
+}
+
+export interface CargaPersona {
+  id_publicador: number;
+  nombre: string;
+  grupo?: string | null;
+  sexo?: string | null;
+  total: number;
+  /** Clave de categoría ('audio', 'microfono'…) → veces que la cubrió. */
+  por_categoria: Record<string, number>;
+  nivel: NivelCarga;
+  /** Distingue a quien nunca participó de quien participó y dejó de hacerlo. */
+  ultima_fecha?: string | null;
+  /** Detalle fecha + puesto de cada una de las `total` asignaciones. */
+  asignaciones: CargaAsignacion[];
+}
+
+export interface CargaCategoria {
+  categoria: string;
+  total: number;
+  personas: number;
+  disponibles: number;
+  /** Cuántos de los habilitados llegaron a cubrirla. Bajo = recae en los mismos. */
+  reparto_pct: number;
+}
+
+export interface CargaGrupo {
+  id_grupo: number;
+  nombre: string;
+  total: number;
+  nivel: NivelCarga;
+  ultima_fecha?: string | null;
+}
+
+export interface CargaGrupoOpcion {
+  id_grupo: number;
+  nombre_grupo: string;
+}
+
+export interface CargaPrivilegioOpcion {
+  id_privilegio: number;
+  nombre_privilegio: string;
+}
+
+export interface LogisticaCargaFiltros {
+  fecha_desde?: string | null;
+  fecha_hasta?: string | null;
+  categoria?: string | null;
+  id_publicador?: number | null;
+  id_grupo?: number | null;
+  sexo?: string | null;
+  id_privilegio?: number | null;
+}
+
+export interface LogisticaCargaReporte {
+  desde: string;
+  hasta: string;
+  periodo_label: string;
+  promedio: number;
+  kpis: KPIItem[];
+  por_persona: CargaPersona[];
+  por_categoria: CargaCategoria[];
+  por_grupo: CargaGrupo[];
+  grupos: CargaGrupoOpcion[];
+  privilegios: CargaPrivilegioOpcion[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportesService {
   private http = inject(HttpClient);
@@ -291,5 +370,31 @@ export class ReportesService {
 
   getPredicacion(): Observable<PredicacionReporte> {
     return this.http.get<PredicacionReporte>(`${this.base}/predicacion`);
+  }
+
+  private logisticaCargaParams(filtros: LogisticaCargaFiltros): HttpParams {
+    let params = new HttpParams();
+    // Un filtro sin elegir no debe viajar: el backend distingue "sin rango"
+    // (usa su ventana por defecto) de un rango vacío.
+    for (const [clave, valor] of Object.entries(filtros)) {
+      if (valor !== null && valor !== undefined && valor !== '') {
+        params = params.set(clave, String(valor));
+      }
+    }
+    return params;
+  }
+
+  getLogisticaCarga(filtros: LogisticaCargaFiltros = {}): Observable<LogisticaCargaReporte> {
+    return this.http.get<LogisticaCargaReporte>(`${this.base}/logistica`, {
+      params: this.logisticaCargaParams(filtros),
+    });
+  }
+
+  /** Mismos filtros que en pantalla — el .xlsx exporta exactamente lo que se ve. */
+  exportarLogisticaXlsx(filtros: LogisticaCargaFiltros = {}): Observable<Blob> {
+    return this.http.get(`${this.base}/logistica/exportar`, {
+      params: this.logisticaCargaParams(filtros),
+      responseType: 'blob',
+    });
   }
 }

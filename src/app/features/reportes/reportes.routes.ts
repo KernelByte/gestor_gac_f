@@ -35,4 +35,12 @@ export const REPORTES_ROUTES: Routes = [
     loadComponent: () =>
       import('./pages/predicacion/predicacion.page').then(m => m.PredicacionPage),
   },
+  {
+    path: 'logistica',
+    title: 'Carga de Logística',
+    canActivate: [permissionGuard],
+    data: { permissions: ['reportes.logistica'] },
+    loadComponent: () =>
+      import('./pages/logistica/logistica-carga.page').then(m => m.LogisticaCargaPage),
+  },
 ];
