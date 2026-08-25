@@ -18,6 +18,10 @@ import {
 } from '../../../privilegios/domain/models/precursor-consideracion';
 import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
+import {
+  NuevoPublicadorWizardComponent,
+  NuevoPublicadorResult,
+} from '../components/nuevo-publicador-wizard/nuevo-publicador-wizard.component';
 import { environment } from '../../../../../../environments/environment';
 
 interface Estado {
@@ -62,14 +66,15 @@ interface TableColumn {
 @Component({
   standalone: true,
   selector: 'app-publicadores-list',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePickerComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePickerComponent, NuevoPublicadorWizardComponent],
   templateUrl: './publicadores.page.html',
   styleUrl: './publicadores.page.scss',
 })
 export class PublicadoresListComponent implements OnInit {
   private facade = inject(PublicadoresFacade);
   private authStore = inject(AuthStore);
-  private congregacionContext = inject(CongregacionContextService);
+  // Público: la plantilla pasa la congregación en contexto al asistente de alta.
+  congregacionContext = inject(CongregacionContextService);
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
   private privilegiosService = inject(PrivilegiosService);
@@ -83,7 +88,13 @@ export class PublicadoresListComponent implements OnInit {
   exporting = signal(false);
   showExportMenu = signal(false);
   showMoreOptions = signal(false);
-  showStartDateModal = signal(false);
+
+  // Asistente de alta. El panel lateral quedó sólo para editar: crear y editar
+  // son tareas distintas y compartían un formulario de ~25 campos.
+  wizardOpen = signal(false);
+  creating = signal(false);
+  /** Último publicador creado, para resaltar su fila en la lista. */
+  justCreatedId = signal<number | null>(null);
   viewingPublicador = signal<Publicador | null>(null);
   editingPublicador = signal<Publicador | null>(null);
   publicadorToDelete = signal<Publicador | null>(null);
@@ -149,7 +160,7 @@ export class PublicadoresListComponent implements OnInit {
   });
 
   // ─── Column Manager ──────────────────────────────────────────────────────
-  private readonly COL_STORAGE_KEY = 'gac_pub_col_v2';
+  private readonly COL_STORAGE_KEY = 'gac_pub_col_v3';
   private _draggedColIdx: number | null = null;
   draggedColId = signal<string | null>(null);
   showColumnManager = signal(false);
@@ -164,9 +175,10 @@ export class PublicadoresListComponent implements OnInit {
     { id: 'sexo', label: 'Sexo', visible: false, optional: true },
     { id: 'direccion', label: 'Dirección', visible: false, optional: true },
     { id: 'barrio', label: 'Barrio', visible: false, optional: true },
-    { id: 'consentimiento_datos', label: 'Consentimiento', visible: true },
+    { id: 'consentimiento_datos', label: 'Consentimiento', visible: false, optional: true },
     { id: 'fecha_inicio_informe', label: 'Inicio Inf.', visible: false, optional: true },
     { id: 'fecha_inactividad', label: 'Inactividad', visible: false, optional: true },
+    { id: 'fecha_creacion', label: 'Fecha Registro', visible: false, optional: true },
   ];
 
   visibleMoveableColumns = computed(() => {
@@ -192,6 +204,7 @@ export class PublicadoresListComponent implements OnInit {
   grupos = signal<Grupo[]>([]);
   congregaciones = signal<Congregacion[]>([]);
   contactos = signal<ContactoEmergencia[]>([]);
+  quickViewContactos = signal<ContactoEmergencia[]>([]);
   showContactoForm = signal(false);
   startEditingContacto = signal(false);
   sexoDropdownOpen = signal(false);
@@ -201,7 +214,11 @@ export class PublicadoresListComponent implements OnInit {
   publicadorPrivilegiosMap = signal<Map<number, number[]>>(new Map());
 
   // Toast Notification
-  toastMessage = signal<{ text: string, type: 'success' | 'error' } | null>(null);
+  toastMessage = signal<{
+    text: string,
+    type: 'success' | 'error' | 'warning',
+    actions?: { label: string, run: () => void }[]
+  } | null>(null);
 
   // Modal de confirmación para privilegios
   privilegioToDelete = signal<number | null>(null);
@@ -247,9 +264,23 @@ export class PublicadoresListComponent implements OnInit {
     });
   }
 
-  showToast(text: string, type: 'success' | 'error' = 'success') {
-    this.toastMessage.set({ text, type });
-    setTimeout(() => this.toastMessage.set(null), 3000);
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  showToast(
+    text: string,
+    type: 'success' | 'error' | 'warning' = 'success',
+    actions?: { label: string, run: () => void }[]
+  ) {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.toastMessage.set({ text, type, actions });
+    // Con acciones hay que leer y decidir: 3 s no alcanzan.
+    this.toastTimer = setTimeout(() => this.toastMessage.set(null), actions?.length ? 8000 : 3000);
+  }
+
+  runToastAction(accion: { label: string, run: () => void }) {
+    this.toastMessage.set(null);
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    accion.run();
   }
 
   // ── Login Simple (PIN) ────────────────────────────────────────────────────
@@ -440,13 +471,6 @@ export class PublicadoresListComponent implements OnInit {
     this.consideraciones().find(c => !c.fecha_fin) ?? null
   );
 
-  /** Ids de publicadores con consideración vigente, para el badge del listado. */
-  consideracionesMap = signal<Set<number>>(new Set());
-
-  tieneConsideracion(idPublicador: number): boolean {
-    return this.consideracionesMap().has(idPublicador);
-  }
-
   getMotivoLabel(motivo: MotivoConsideracion): string {
     return MOTIVOS_CONSIDERACION.find(m => m.value === motivo)?.label ?? motivo;
   }
@@ -467,14 +491,7 @@ export class PublicadoresListComponent implements OnInit {
 
   loadConsideraciones(id: number) {
     this.privilegiosService.getConsideraciones(id).subscribe({
-      next: (data) => {
-        this.consideraciones.set(data);
-        this.consideracionesMap.update(set => {
-          const next = new Set(set);
-          if (data.some(c => !c.fecha_fin)) next.add(id); else next.delete(id);
-          return next;
-        });
-      },
+      next: (data) => this.consideraciones.set(data),
       error: (err) => console.error('Error cargando consideraciones especiales', err)
     });
   }
@@ -816,10 +833,24 @@ export class PublicadoresListComponent implements OnInit {
   openQuickView(p: Publicador) {
     this.viewingPublicador.set(p);
     this.loadPublicadorPrivilegios(p.id_publicador);
+    this.loadQuickViewContactos(p.id_publicador);
   }
 
   closeQuickView() {
     this.viewingPublicador.set(null);
+    this.quickViewContactos.set([]);
+  }
+
+  async loadQuickViewContactos(idPublicador: number) {
+    try {
+      const res = await lastValueFrom(this.http.get<ContactoEmergencia[]>('/api/contactos-emergencia/', {
+        params: { id_publicador: idPublicador }
+      }));
+      this.quickViewContactos.set(res || []);
+    } catch (e) {
+      console.error('Error loading contactos emergencia (quick view)', e);
+      this.quickViewContactos.set([]);
+    }
   }
 
   editFromQuickView() {
@@ -885,6 +916,7 @@ export class PublicadoresListComponent implements OnInit {
       case 'direccion': return p.direccion ?? '';
       case 'barrio': return p.barrio ?? '';
       case 'consentimiento_datos': return p.consentimiento_datos ? 'Sí' : 'No';
+      case 'fecha_creacion': return p.fecha_creacion ? this.formatDateExport(p.fecha_creacion) : '';
       case 'estado': return this.getEstadoNombre(p.id_estado_publicador);
       default: return '';
     }
@@ -960,6 +992,7 @@ export class PublicadoresListComponent implements OnInit {
       case 'direccion': return (p.direccion ?? '').toLowerCase();
       case 'barrio': return (p.barrio ?? '').toLowerCase();
       case 'consentimiento_datos': return p.consentimiento_datos ? 1 : 0;
+      case 'fecha_creacion': return p.fecha_creacion ? new Date(p.fecha_creacion).getTime() : 0;
       case 'estado': return this.getEstadoNombre(p.id_estado_publicador).toLowerCase();
       default: return '';
     }
@@ -1029,7 +1062,6 @@ export class PublicadoresListComponent implements OnInit {
 
   async loadAuxiliaryData() {
     this.loadPrivilegiosCatalog(); // Cargar catálogo de privilegios
-    this.loadConsideracionesCongregacion(); // Badge de consideración especial en el listado
 
     try {
       const effectiveId = this.congregacionContext.effectiveCongregacionId();
@@ -1158,14 +1190,6 @@ export class PublicadoresListComponent implements OnInit {
     });
   }
 
-  /** Consideraciones vigentes de toda la congregación, para el badge del listado. */
-  loadConsideracionesCongregacion() {
-    const idCong = this.congregacionContext.effectiveCongregacionId();
-    this.privilegiosService.getConsideraciones(undefined, true, idCong).subscribe({
-      next: (data) => this.consideracionesMap.set(new Set(data.map(c => c.id_publicador))),
-      error: () => { /* el badge es informativo: si falla, no se muestra */ }
-    });
-  }
 
   // Search & Filters
   // Search & Filters (Purely Client Side Updates)
@@ -1186,24 +1210,92 @@ export class PublicadoresListComponent implements OnInit {
     }
   }
 
-  // Panel
-  openCreateForm() {
-    this.editingPublicador.set(null);
-    this.activeTab.set('personal');
+  // ── Alta: asistente ───────────────────────────────────────────────────────
 
-    const estadoActivo = this.estadosPublicador().find(e => e.nombre_estado.includes('Activo'));
+  /** Estado "Activo", que es con el que nace todo publicador nuevo. */
+  estadoActivoId = computed(() =>
+    this.estadosPublicador().find(e => e.nombre_estado.includes('Activo'))?.id_estado ?? null
+  );
 
-    this.publicadorForm.reset({
-      consentimiento_datos: false,
-      ungido: false,
-      id_grupo_publicador: null,
-      id_congregacion_publicador: null,
-      id_estado_publicador: estadoActivo ? estadoActivo.id_estado : null,
-      permite_login_simple: true
-    });
-    this.publicadorPrivilegios.set([]); // Clear privileges for new form
-    this.resetConsideracionesState();
-    this.panelOpen.set(true);
+  openWizard() {
+    this.wizardOpen.set(true);
+  }
+
+  closeWizard() {
+    this.wizardOpen.set(false);
+  }
+
+  /**
+   * Alta en dos fases: el publicador primero, sus privilegios después, porque
+   * éstos necesitan un id_publicador que hasta aquí no existe.
+   *
+   * Si el publicador se crea pero falla algún privilegio no se deshace nada:
+   * el registro válido se queda y se avisa de lo que falta por completar.
+   */
+  async onWizardCreated(result: NuevoPublicadorResult) {
+    if (this.creating()) return;
+
+    const idCongregacion = this.congregacionContext.effectiveCongregacionId();
+    if (idCongregacion == null) {
+      this.showToast('Selecciona una congregación en la barra superior.', 'error');
+      return;
+    }
+
+    this.creating.set(true);
+    try {
+      const creado = await this.facade.create({
+        ...result.publicador,
+        id_congregacion_publicador: idCongregacion,
+      } as any);
+
+      this.wizardOpen.set(false);
+      this.justCreatedId.set(creado.id_publicador);
+      setTimeout(() => {
+        if (this.justCreatedId() === creado.id_publicador) this.justCreatedId.set(null);
+      }, 4000);
+
+      const fallidos = await this.asignarPrivilegiosIniciales(creado.id_publicador, result.privilegios);
+      const nombre = `${creado.primer_nombre} ${creado.primer_apellido}`.trim();
+
+      const acciones = [
+        { label: 'Completar ficha', run: () => this.openEditForm(creado) },
+        { label: 'Crear otro', run: () => this.openWizard() },
+      ];
+
+      if (fallidos > 0) {
+        this.showToast(
+          `Se creó a ${nombre}, pero no se pudo registrar ${fallidos === 1 ? 'un privilegio' : 'los privilegios'}. Añádelo desde su ficha.`,
+          'warning',
+          acciones
+        );
+      } else {
+        this.showToast(`${nombre} se creó correctamente`, 'success', acciones);
+      }
+    } catch (error: any) {
+      console.error('Error creating publicador:', error);
+      this.showToast('Error: ' + (error?.error?.detail || 'No se pudo crear el publicador'), 'error');
+    } finally {
+      this.creating.set(false);
+    }
+  }
+
+  /** Devuelve cuántos privilegios no se pudieron registrar. */
+  private async asignarPrivilegiosIniciales(
+    idPublicador: number,
+    privilegios: { id_privilegio: number; fecha_inicio: string; fecha_fin: string | null }[]
+  ): Promise<number> {
+    let fallidos = 0;
+    for (const priv of privilegios) {
+      try {
+        await lastValueFrom(
+          this.privilegiosService.createPublicadorPrivilegio({ id_publicador: idPublicador, ...priv })
+        );
+      } catch (err) {
+        console.error('Error asignando privilegio', priv, err);
+        fallidos++;
+      }
+    }
+    return fallidos;
   }
 
   openEditForm(p: Publicador) {
@@ -1309,7 +1401,12 @@ export class PublicadoresListComponent implements OnInit {
     });
   }
 
+  /** Guarda la ficha. El panel es sólo de edición: dar de alta va por el
+   *  asistente (openWizard), que pide únicamente lo imprescindible. */
   async onSubmit() {
+    const editingPub = this.editingPublicador();
+    if (!editingPub) return;
+
     this.publicadorForm.markAllAsTouched();
     if (this.publicadorForm.invalid) return;
 
@@ -1317,19 +1414,14 @@ export class PublicadoresListComponent implements OnInit {
     const rawData = this.publicadorForm.value;
 
     // Transform data for API compatibility
-    const editingPub = this.editingPublicador();
     const nuevoEstadoNombre = this.getEstadoNombre(rawData.id_estado_publicador).toLowerCase();
-    const estadoAnteriorNombre = editingPub
-      ? this.getEstadoNombre(editingPub.id_estado_publicador).toLowerCase()
-      : '';
+    const estadoAnteriorNombre = this.getEstadoNombre(editingPub.id_estado_publicador).toLowerCase();
 
     let fechaInactividad: string | null | undefined = undefined;
-    if (editingPub) {
-      if (nuevoEstadoNombre.includes('inactivo') && !estadoAnteriorNombre.includes('inactivo')) {
-        fechaInactividad = new Date().toISOString().split('T')[0];
-      } else if (!nuevoEstadoNombre.includes('inactivo') && estadoAnteriorNombre.includes('inactivo')) {
-        fechaInactividad = null;
-      }
+    if (nuevoEstadoNombre.includes('inactivo') && !estadoAnteriorNombre.includes('inactivo')) {
+      fechaInactividad = new Date().toISOString().split('T')[0];
+    } else if (!nuevoEstadoNombre.includes('inactivo') && estadoAnteriorNombre.includes('inactivo')) {
+      fechaInactividad = null;
     }
 
     const data: any = {
@@ -1352,75 +1444,13 @@ export class PublicadoresListComponent implements OnInit {
       data.fecha_inactividad = fechaInactividad;
     }
 
-    const user = this.authStore.user();
-    const isAdminOrGestor = user?.rol?.toLowerCase().includes('admin') || user?.rol?.toLowerCase().includes('gestor');
-    const id_congregacion = this.congregacionContext.effectiveCongregacionId();
-
-    // Validación: Si NO es admin, necesita ID congregación siempre.
-    // Si ES admin, usa la congregación seleccionada en el navbar (contexto).
-    if (id_congregacion == null && !isAdminOrGestor) {
-      alert('Error: No se ha detectado tu congregación.');
-      this.saving.set(false);
-      return;
-    }
-
-    if (id_congregacion == null && isAdminOrGestor && !this.editingPublicador()) {
-      alert('Aviso: Como administrador, debes seleccionar una congregación en la barra superior para crear miembros.');
-      this.saving.set(false);
-      return;
-    }
-
     try {
-      if (this.editingPublicador()) {
-        await this.facade.update(this.editingPublicador()!.id_publicador, data);
-        this.closePanel();
-        this.showToast('Cambios guardados correctamente', 'success');
-      } else {
-        // En lugar de crear inmediatamente, abrimos el modal para pedir la fecha de inicio de informe
-        this.showStartDateModal.set(true);
-      }
+      await this.facade.update(editingPub.id_publicador, data);
+      this.closePanel();
+      this.showToast('Cambios guardados correctamente', 'success');
     } catch (error) {
       console.error('Error saving:', error);
       this.showToast('Error al guardar los cambios', 'error');
-    } finally {
-      this.saving.set(false);
-    }
-  }
-
-  /**
-   * Finaliza la creación del publicador después de que el usuario selecciona la fecha de inicio de informe.
-   */
-  async confirmCreationWithStartDate() {
-    if (this.publicadorForm.invalid) return;
-
-    this.saving.set(true);
-    const rawData = this.publicadorForm.value;
-
-    const data = {
-      ...rawData,
-      ungido: rawData.ungido ? 'Sí' : null,
-      segundo_nombre: rawData.segundo_nombre || null,
-      segundo_apellido: rawData.segundo_apellido || null,
-      telefono: rawData.telefono || null,
-      direccion: rawData.direccion || null,
-      barrio: rawData.barrio || null,
-      fecha_nacimiento: rawData.fecha_nacimiento || null,
-      fecha_bautismo: rawData.fecha_bautismo || null,
-      sexo: rawData.sexo || null,
-      id_grupo_publicador: rawData.id_grupo_publicador || null,
-      fecha_inicio_informe: rawData.fecha_inicio_informe // Aseguramos que se envíe la fecha seleccionada
-    };
-
-    const id_congregacion = this.congregacionContext.effectiveCongregacionId();
-
-    try {
-      await this.facade.create({ ...data, id_congregacion_publicador: id_congregacion! });
-      this.showStartDateModal.set(false);
-      this.closePanel();
-      this.showToast('Publicador creado correctamente', 'success');
-    } catch (error) {
-      console.error('Error creating publicador:', error);
-      this.showToast('Error al crear el publicador', 'error');
     } finally {
       this.saving.set(false);
     }
@@ -1575,11 +1605,11 @@ export class PublicadoresListComponent implements OnInit {
 
     if (roleNames.some(r => r.includes('precursor regular'))) {
       roles.push({ label: 'PRECURSOR REGULAR', short: 'Prec. Regular', type: 'pill', class: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' });
-      // Exento del requisito de horas por edad avanzada o salud delicada
-      if (this.tieneConsideracion(p.id_publicador)) {
-        roles.push({ label: 'CONSIDERACIÓN ESPECIAL', short: 'Consideración esp.', type: 'pill', class: 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400' });
-      }
     }
+    // La consideración especial no se muestra aquí a propósito: es un dato
+    // sensible (edad avanzada o salud delicada) y el listado se proyecta y se
+    // comparte. Sigue visible donde hace falta para interpretar las horas:
+    // el historial de informes y el reporte de precursores.
     if (roleNames.some(r => r.includes('precursor auxiliar'))) {
       roles.push({ label: 'PRECURSOR AUXILIAR', short: 'Prec. Auxiliar', type: 'pill', class: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' });
     }
@@ -1602,6 +1632,17 @@ export class PublicadoresListComponent implements OnInit {
     return [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido]
       .filter(n => n && n.trim())
       .join(' ');
+  }
+
+  getYearsSince(dateStr: string | null | undefined): number | null {
+    if (!dateStr) return null;
+    const from = new Date(dateStr);
+    if (isNaN(from.getTime())) return null;
+    const now = new Date();
+    let years = now.getFullYear() - from.getFullYear();
+    const monthDiff = now.getMonth() - from.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < from.getDate())) years--;
+    return years >= 0 ? years : null;
   }
 
   getGrupoNombre(id: number | string | null | undefined): string {
