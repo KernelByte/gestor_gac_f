@@ -699,7 +699,7 @@ type MobileTab = 'info' | 'notas' | 'acta' | 'tareas';
     :host {
       display: block;
       height: 100%;
-      font-family: 'Manrope', 'Urbanist', system-ui, sans-serif;
+      font-family: var(--font-sans);
       --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
       --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
       /* Brand tokens */

@@ -507,7 +507,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
       font-size: 0.875rem;
       font-weight: 600;
       color: var(--text);
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
     }
     .btn-close {
       width: 30px;
@@ -645,7 +645,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
       margin: 0;
       line-height: 1.45;
       cursor: text;
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
       word-break: break-word;
       padding: 0.25rem 0;
       border-radius: 6px;
@@ -663,7 +663,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
       outline: none;
       width: 100%;
       box-sizing: border-box;
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
       transition: box-shadow 150ms;
     }

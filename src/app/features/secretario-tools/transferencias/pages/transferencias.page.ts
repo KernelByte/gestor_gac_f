@@ -861,7 +861,7 @@ interface PublicadorLite {
       color: rgba(196,181,253,0.9); font-size: 0.6rem; text-transform: uppercase;
       letter-spacing: 0.18em; font-weight: 600; margin-bottom: 0.25rem;
     }
-    .hero-title  { font-size: 1.375rem; font-weight: 800; line-height: 1.15; color: #fff; letter-spacing: -0.02em; }
+    .hero-title  { font-family: var(--font-display); font-size: 1.375rem; font-weight: 800; line-height: 1.15; color: #fff; letter-spacing: -0.02em; }
     .hero-desc   { color: rgba(237,233,254,0.65); font-size: 0.75rem; margin-top: 0.125rem; line-height: 1.35; }
     @media (min-width: 1024px) { .hero-title { font-size: 1.5rem; } }
     .hero-inner  { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem; }

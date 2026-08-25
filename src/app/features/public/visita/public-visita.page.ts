@@ -30,7 +30,7 @@ interface VistaPublicaBasic {
           <img src="images/logo-gac-96.webp" class="w-7 h-7 object-contain" alt="GAC" width="28" height="28" />
         </span>
         <div class="min-w-0 leading-tight">
-          <h1 class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-50 truncate">
+          <h1 class="font-display text-sm sm:text-base font-bold text-slate-800 dark:text-slate-50 truncate">
             Visita del Superintendente
           </h1>
           <p class="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5">

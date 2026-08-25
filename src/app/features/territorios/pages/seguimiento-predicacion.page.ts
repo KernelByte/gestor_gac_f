@@ -148,7 +148,7 @@ interface EstadoManzana {
                     Territorio
                   </p>
                   <!-- Fix #5: font-bold en lugar de font-black -->
-                  <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                  <h2 class="font-display text-xl font-bold text-gray-900 dark:text-white">
                     {{ territorioSeleccionado()!.codigo }} — {{ territorioSeleccionado()!.nombre }}
                   </h2>
                 </div>

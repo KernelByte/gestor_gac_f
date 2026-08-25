@@ -54,6 +54,7 @@ import { TareaDetailPanelComponent } from '../components/tarea-detail-panel.comp
       padding: 0 0.125rem;
     }
     .page-title {
+      font-family: var(--font-display);
       font-size: 1rem;
       font-weight: 600;
       color: #111827;
