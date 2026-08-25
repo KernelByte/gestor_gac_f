@@ -91,8 +91,13 @@ export interface PickerOption {
             {{ placeholder || 'Sin selección' }}
           </button>
 
+          <!-- role="option": los hijos de un listbox tienen que serlo. Sin
+               eso, aria-selected va sobre un botón, donde no es válido, y un
+               lector de pantalla anuncia la lista sin saber qué hay elegido. -->
           <button *ngFor="let opt of filtered(); let i = index"
                   type="button" class="sp-opt"
+                  role="option"
+                  [attr.data-value]="opt.value"
                   [class.sp-opt--on]="isSelected(opt)"
                   [class.sp-opt--active]="i === activeIndex()"
                   [attr.aria-selected]="isSelected(opt)"

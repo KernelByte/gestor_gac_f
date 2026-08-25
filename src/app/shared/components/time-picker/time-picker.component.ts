@@ -1,4 +1,4 @@
-import { Component, Input, signal, computed, forwardRef, ElementRef, inject, ViewChild, HostListener } from '@angular/core';
+import { Component, Input, OnDestroy, signal, computed, forwardRef, ElementRef, inject, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -326,7 +326,7 @@ type Meridiem = 'a. m.' | 'p. m.';
     :host-context(.dark) .tp-blue .tp-footer-now { color: #6091fb; }
   `],
 })
-export class TimePickerComponent implements ControlValueAccessor {
+export class TimePickerComponent implements ControlValueAccessor, OnDestroy {
   @Input() placeholder = 'Hora';
   @Input() disabled = false;
   @Input() colorScheme: ColorScheme = 'orange';
@@ -350,17 +350,27 @@ export class TimePickerComponent implements ControlValueAccessor {
    * overlay "fixed" propio (ese approach se rompe si algún ancestro del
    * popup, p.ej. un contenedor con overflow o una animación con transform,
    * le crea un containing block distinto y dejar de cubrir toda la pantalla).
+   *
+   * Se registra en fase de CAPTURA (tercer argumento `true`), no de burbuja:
+   * los modales de la app hacen `$event.stopPropagation()` en su panel para
+   * no cerrarse al clicar dentro, y eso corta un listener en fase de burbuja
+   * antes de que le llegue el clic — el popup se quedaba abierto para
+   * siempre al usar el picker dentro de un modal. La captura corre antes de
+   * que ese stopPropagation pueda actuar. Mismo criterio que el cierre por
+   * scroll de `discurso-catalogo-input.component.ts`.
    */
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent) {
-    if (!this.isOpen()) return;
+  private readonly onDocumentClickCapture = (event: MouseEvent) => {
     const target = event.target as Node | null;
     if (target && !this.el.nativeElement.contains(target)) this.close();
-  }
+  };
 
   @HostListener('document:keydown.escape')
   onEscape() {
     if (this.isOpen()) this.close();
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('click', this.onDocumentClickCapture, true);
   }
 
   /** Hora 24h (0-23) o null si no hay valor. */
@@ -401,6 +411,7 @@ export class TimePickerComponent implements ControlValueAccessor {
     clearTimeout(this.closeTimeout);
     this.closing.set(false);
     this.isOpen.set(true);
+    document.addEventListener('click', this.onDocumentClickCapture, true);
     this.updateOpenDirection();
     this.centerAllWhenReady();
   }
@@ -473,6 +484,7 @@ export class TimePickerComponent implements ControlValueAccessor {
     if (!this.isOpen()) return;
     this.isOpen.set(false);
     this.onTouched();
+    document.removeEventListener('click', this.onDocumentClickCapture, true);
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     this.closing.set(true);
     clearTimeout(this.closeTimeout);

@@ -1,4 +1,4 @@
-import { Component, Input, signal, computed, forwardRef, ElementRef, inject, HostListener } from '@angular/core';
+import { Component, Input, signal, computed, forwardRef, ElementRef, inject, HostListener, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -20,11 +20,11 @@ type ColorScheme = 'orange' | 'violet' | 'blue';
          [class.dp-blue]="colorScheme === 'blue'"
          [class.dp-field-like]="fieldLike"
          [class.dp-inline]="isInline()"
-         [class.dp-open-above]="openAbove()"
-         [class.dp-align-right]="alignRight()">
+         [class.dp-open-above]="openAbove()">
 
       <!-- Trigger -->
       <button
+        #trigger
         type="button"
         [disabled]="disabled"
         (click)="toggle()"
@@ -52,8 +52,13 @@ type ColorScheme = 'orange' | 'violet' | 'blue';
         </svg>
       </button>
 
-      <!-- Popup -->
-      <div *ngIf="isOpen()" class="dp-popup" role="dialog" aria-modal="true">
+      <!-- Popup. Con popover="auto" vive en el top layer: no lo recorta ningún
+           ancestro con overflow y el cierre por clic fuera / Escape lo da el
+           navegador. En modo inline no lleva el atributo y fluye en el flujo. -->
+      <div #popup class="dp-popup" role="dialog"
+           [attr.popover]="isInline() ? null : 'auto'"
+           [class.dp-popup--open]="isOpen()"
+           (toggle)="onPopoverToggle($event)">
 
         <!-- Header -->
         <div class="dp-header">
@@ -222,34 +227,36 @@ type ColorScheme = 'orange' | 'violet' | 'blue';
     :host-context(.dark) .dp-clear-btn { color: #64748b; }
 
     /* ══════════════════════════════════════
-       POPUP — position: absolute desde :host
+       POPUP — top layer vía API popover; el JS lo ancla al trigger con
+       coordenadas de viewport (position: fixed).
     ══════════════════════════════════════ */
     .dp-popup {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0;
+      position: fixed;
+      inset: auto;           /* anula el inset:0 del UA stylesheet del popover */
+      margin: 0;             /* idem: el UA centra con margin:auto */
+      padding: 0;
       z-index: 200;
       width: 18rem;          /* 288px */
+      max-height: calc(100dvh - 1rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 1rem;
       box-shadow: 0 8px 32px -4px rgba(0,0,0,0.16), 0 2px 8px -2px rgba(0,0,0,0.08);
-      animation: dpIn 180ms cubic-bezier(0.23,1,0.32,1) both;
+      /* "backwards" y no "both": con "both" queda un transform en matriz
+         identidad que crea stacking context y atrapa al popup. */
+      animation: dpIn 180ms cubic-bezier(0.23,1,0.32,1) backwards;
     }
+    .dp-popup:not(:popover-open) { display: none; }
     :host-context(.dark) .dp-popup {
       background: #0f172a;
       border-color: #1e293b;
       box-shadow: 0 8px 32px -4px rgba(0,0,0,0.55), 0 2px 8px -2px rgba(0,0,0,0.35);
     }
 
-    /* Apertura hacia arriba */
-    .dp-open-above .dp-popup {
-      top: auto;
-      bottom: calc(100% + 4px);
-      animation-name: dpInUp;
-    }
-    /* Alineación a la derecha (cuando el trigger está cerca del borde derecho) */
-    .dp-align-right .dp-popup { left: auto; right: 0; }
+    /* Apertura hacia arriba: solo cambia la animación; el anclaje lo pone el JS */
+    .dp-open-above .dp-popup { animation-name: dpInUp; }
 
     /* ══════════════════════════════════════
        MODO INLINE (móvil dentro de bottom sheets)
@@ -259,12 +266,16 @@ type ColorScheme = 'orange' | 'violet' | 'blue';
     .dp-inline .dp-popup {
       position: static;
       width: 100%;
+      max-height: none;
+      overflow: visible;
       margin-top: 0.625rem;
       box-shadow: none;
       border-radius: 0.875rem;
-      animation: dpIn 160ms cubic-bezier(0.23,1,0.32,1) both;
+      animation: dpIn 160ms cubic-bezier(0.23,1,0.32,1) backwards;
     }
-    .dp-inline.dp-open-above .dp-popup { bottom: auto; } /* neutraliza dirección */
+    /* Sin atributo popover, :popover-open nunca casa: la visibilidad la manda
+       la clase que refleja isOpen(). */
+    .dp-inline .dp-popup.dp-popup--open { display: block; }
     /* Días más grandes para tacto cómodo aprovechando el ancho completo */
     .dp-inline .dp-grid { gap: 0.25rem; }
     .dp-inline .dp-day { max-width: 2.75rem; font-size: 0.9375rem; }
@@ -473,7 +484,7 @@ type ColorScheme = 'orange' | 'violet' | 'blue';
     :host-context(.dark) .dp-blue .dp-footer-today { color: #6091fb; }
   `]
 })
-export class DatePickerComponent implements ControlValueAccessor {
+export class DatePickerComponent implements ControlValueAccessor, AfterViewInit, OnDestroy {
    @Input() placeholder = 'dd/mm/aaaa';
    @Input() disabled = false;
    @Input() minDate: string | null = null;
@@ -485,29 +496,31 @@ export class DatePickerComponent implements ControlValueAccessor {
    @Input() inlineOnMobile = false;
 
    private el = inject(ElementRef);
+   @ViewChild('trigger') private triggerRef?: ElementRef<HTMLButtonElement>;
+   @ViewChild('popup') private popupRef?: ElementRef<HTMLDivElement>;
+
+   /** Instante del último cierre, para distinguir el light-dismiss del popover
+    *  de un clic de cierre intencionado sobre el trigger. */
+   private lastCloseAt = 0;
 
    /**
-    * Cierre por clic afuera / Escape, a nivel de documento — no depende de un
-    * overlay "fixed" propio. Ese approach se rompe si algún ancestro del
-    * popup (un contenedor con overflow, o una animación con transform como
-    * .card-anim) le crea un containing block distinto y deja de cubrir toda
-    * la pantalla, dejando el calendario "pegado" sin poder cerrarse.
+    * Cierre por clic afuera / Escape. Solo hace falta en modo inline: cuando
+    * el calendario va en el top layer, el propio navegador se encarga.
     */
    @HostListener('document:click', ['$event'])
    onDocumentClick(event: MouseEvent) {
-      if (!this.isOpen()) return;
+      if (!this.isOpen() || !this.isInline()) return;
       const target = event.target as Node | null;
       if (target && !this.el.nativeElement.contains(target)) this.close();
    }
 
    @HostListener('document:keydown.escape')
    onEscape() {
-      if (this.isOpen()) this.close();
+      if (this.isOpen() && this.isInline()) this.close();
    }
 
    isOpen    = signal(false);
    openAbove = signal(false);
-   alignRight = signal(false);
    isInline   = signal(false);
 
    selectedDate = signal<Date | null>(null);
@@ -609,70 +622,109 @@ export class DatePickerComponent implements ControlValueAccessor {
       return days;
    });
 
-   toggle() {
-      if (this.disabled) return;
-      this.isOpen.update(v => !v);
-      if (this.isOpen()) {
-         const date = this.selectedDate() ?? this.parsedMin ?? new Date();
-         this.currentMonth.set(date.getMonth());
-         this.currentYear.set(date.getFullYear());
-         this.yearRangeStart.set(date.getFullYear() - 11);
-         this.viewMode.set('calendar');
-         const inline = this.inlineOnMobile && window.innerWidth < 768;
-         this.isInline.set(inline);
-         if (inline) {
-            // El calendario fluye bajo el campo; nos aseguramos de que quede visible al scroll.
-            requestAnimationFrame(() => {
-               this.el.nativeElement.querySelector('.dp-popup')
-                  ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            });
-         } else {
-            this.updateOpenDirection();
-         }
-      }
+   private reposition = () => this.position();
+
+   ngAfterViewInit() {
+      // En captura, para enterarse también del scroll de contenedores internos
+      // (el panel de edición scrollea por dentro, no la ventana).
+      document.addEventListener('scroll', this.reposition, { capture: true, passive: true });
+      window.addEventListener('resize', this.reposition, { passive: true });
    }
 
-   /**
-    * Detecta si hay más espacio arriba o abajo del host para decidir
-    * la dirección de apertura, y si el popup saldría por la derecha.
-    */
-   private updateOpenDirection() {
-      // rAF para que el popup ya exista en el DOM y podamos medirlo
+   ngOnDestroy() {
+      document.removeEventListener('scroll', this.reposition, { capture: true });
+      window.removeEventListener('resize', this.reposition);
+   }
+
+   toggle() {
+      if (this.disabled) return;
+      if (this.isOpen()) { this.close(); return; }
+      // El light-dismiss del popover ya cerró en el pointerdown; sin esta
+      // guarda, el click posterior sobre el trigger lo reabriría al instante.
+      if (performance.now() - this.lastCloseAt < 200) return;
+      this.open();
+   }
+
+   open() {
+      const date = this.selectedDate() ?? this.parsedMin ?? new Date();
+      this.currentMonth.set(date.getMonth());
+      this.currentYear.set(date.getFullYear());
+      this.yearRangeStart.set(date.getFullYear() - 11);
+      this.viewMode.set('calendar');
+
+      const inline = this.inlineOnMobile && window.innerWidth < 768;
+      this.isInline.set(inline);
+
+      if (inline) {
+         // El calendario fluye bajo el campo; nos aseguramos de que quede visible al scroll.
+         this.isOpen.set(true);
+         requestAnimationFrame(() => {
+            this.popupRef?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+         });
+         return;
+      }
+
+      // rAF: el atributo `popover` se escribe según isInline(), así que hay
+      // que dejar que Angular actualice el DOM antes de llamar a showPopover().
       requestAnimationFrame(() => {
-         const host = this.el.nativeElement as HTMLElement;
-         const rect = host.getBoundingClientRect();
-         const popupH = 340;
-         const popupW = 288;
-         const spaceBelow = window.innerHeight - rect.bottom;
-         const spaceAbove = rect.top;
-         this.openAbove.set(spaceBelow < popupH && spaceAbove > spaceBelow);
-         // El borde derecho real no siempre es el de la ventana: si el campo
-         // vive dentro de una columna angosta con scroll propio (p.ej. el
-         // aside de la lista de visitas, con overflow-y que recorta también
-         // el eje X), el popup se corta contra ESE borde mucho antes de
-         // llegar al de la ventana. Usamos el ancestro "recortante" más
-         // cercano como límite real.
-         const boundaryRight = Math.min(window.innerWidth, this.getClippingBoundaryRight());
-         this.alignRight.set(rect.left + popupW > boundaryRight - 8);
+         const popup = this.popupRef?.nativeElement;
+         if (!popup?.hasAttribute('popover')) return;
+         popup.showPopover();
+         this.position();
       });
    }
 
-   /** Borde derecho del ancestro más cercano cuyo overflow pueda recortar
-    *  contenido (overflow-x/-y distinto de "visible"), o el de la ventana
-    *  si ninguno lo hace. */
-   private getClippingBoundaryRight(): number {
-      let el = (this.el.nativeElement as HTMLElement).parentElement;
-      while (el) {
-         const style = getComputedStyle(el);
-         if (style.overflowX !== 'visible' || style.overflowY !== 'visible') {
-            return el.getBoundingClientRect().right;
-         }
-         el = el.parentElement;
+   /** Ancla el popup al trigger en coordenadas de viewport. Al vivir en el
+    *  top layer no lo recorta ningún contenedor, así que basta con que quepa
+    *  en la ventana. */
+   private position() {
+      const trigger = this.triggerRef?.nativeElement;
+      const popup = this.popupRef?.nativeElement;
+      // Se consulta el estado real del popover y no la señal: el evento
+      // `toggle` que la actualiza llega después de showPopover().
+      if (!trigger || !popup || !popup.matches(':popover-open')) return;
+
+      const r = trigger.getBoundingClientRect();
+      const ancho = popup.offsetWidth || 288;
+      const alto = popup.offsetHeight || 340;
+      const margen = 8;
+
+      const espacioAbajo = window.innerHeight - r.bottom;
+      const espacioArriba = r.top;
+      const arriba = espacioAbajo < alto + margen && espacioArriba > espacioAbajo;
+      this.openAbove.set(arriba);
+
+      popup.style.left = `${Math.max(margen, Math.min(r.left, window.innerWidth - ancho - margen))}px`;
+      if (arriba) {
+         popup.style.top = 'auto';
+         popup.style.bottom = `${window.innerHeight - r.top + 4}px`;
+      } else {
+         popup.style.bottom = 'auto';
+         popup.style.top = `${r.bottom + 4}px`;
       }
-      return window.innerWidth;
    }
 
-   close() { this.isOpen.set(false); this.viewMode.set('calendar'); this.onTouched(); }
+   /** El navegador también cierra por su cuenta (Escape, clic fuera). */
+   onPopoverToggle(event: Event) {
+      const abierto = (event as ToggleEvent).newState === 'open';
+      this.isOpen.set(abierto);
+      if (!abierto) {
+         this.lastCloseAt = performance.now();
+         this.viewMode.set('calendar');
+         this.onTouched();
+      }
+   }
+
+   close() {
+      if (this.isInline()) {
+         this.isOpen.set(false);
+         this.viewMode.set('calendar');
+         this.onTouched();
+         return;
+      }
+      const popup = this.popupRef?.nativeElement;
+      if (popup?.matches(':popover-open')) popup.hidePopover();
+   }
 
    toggleViewMode() {
       if (this.isRangeLockedToSingleMonth()) return;
