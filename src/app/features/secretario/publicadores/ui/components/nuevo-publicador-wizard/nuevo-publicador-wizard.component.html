@@ -1,0 +1,440 @@
+<div *ngIf="isOpen()"
+     class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4"
+     role="dialog" aria-modal="true" aria-labelledby="wizard-titulo">
+
+  <!-- Fondo: el desenfoque señala que lo de detrás está fuera de juego. -->
+  <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-fadeIn"
+       (click)="intentarCerrar()"></div>
+
+  <!-- Hoja inferior a pantalla completa en móvil, diálogo centrado a partir de sm. -->
+  <div #dialogo data-testid="wizard-publicador"
+       class="wizard-panel relative w-full sm:max-w-[34rem] max-h-[88dvh] sm:max-h-[90dvh] flex flex-col
+              bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl
+              border-t sm:border border-slate-200/60 dark:border-slate-700/60 overflow-hidden">
+
+    <!-- ── Cabecera ────────────────────────────────────────────────────── -->
+    <div class="shrink-0 px-5 sm:px-8 pt-3 sm:pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+
+      <!-- Grabber: en móvil el mismo gesto que ya tiene el panel de la ficha. -->
+      <div class="sm:hidden flex justify-center pb-3" aria-hidden="true">
+        <span class="w-10 h-1 rounded-full bg-slate-200 dark:bg-slate-700"></span>
+      </div>
+
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h2 id="wizard-titulo" class="font-display font-black text-lg sm:text-xl text-slate-900 dark:text-white tracking-tight">
+            Nuevo publicador
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Paso {{ currentStepIndex() + 1 }} de {{ steps.length }} &middot; {{ currentStepLabel() }}
+          </p>
+        </div>
+        <button type="button" (click)="intentarCerrar()" aria-label="Cerrar"
+                class="shrink-0 w-11 h-11 -mr-2 -mt-1 flex items-center justify-center rounded-xl text-slate-400
+                       hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800
+                       transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Progreso: barra segmentada en vez de círculos numerados. Ocupa menos
+           alto, que es lo escaso en móvil, y la etiqueta cabe entera. -->
+      <ol class="mt-4 grid grid-cols-4 gap-1.5">
+        <li *ngFor="let s of steps; let i = index">
+          <button type="button"
+                  [attr.data-testid]="'wizard-paso-' + s.id"
+                  [attr.aria-current]="activeStep() === s.id ? 'step' : null"
+                  [disabled]="!stepIsReachable(i)"
+                  (click)="goToStep(i)"
+                  class="w-full text-left group focus-visible:outline-none disabled:cursor-default">
+            <span class="block h-1 rounded-full transition-colors duration-200"
+                  [ngClass]="stepHasErrors(s.id)
+                    ? 'bg-red-400'
+                    : (activeStep() === s.id
+                        ? 'bg-brand-orange'
+                        : (stepIsReachable(i) ? 'bg-brand-orange/35' : 'bg-slate-200 dark:bg-slate-700'))"></span>
+            <span class="mt-1.5 flex items-center gap-1 text-[0.625rem] sm:text-[0.6875rem] font-bold leading-tight transition-colors"
+                  [ngClass]="activeStep() === s.id
+                    ? 'text-brand-orange'
+                    : 'text-slate-400 dark:text-slate-500'">
+              <!-- Check y no sólo color: el estado se lee sin distinguir tonos. -->
+              <svg *ngIf="stepIsReachable(i) && activeStep() !== s.id && stepIsValid(s.id) && !stepHasErrors(s.id)"
+                   class="w-3 h-3 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              <span class="truncate">{{ s.label }}</span>
+            </span>
+          </button>
+        </li>
+      </ol>
+    </div>
+
+    <!-- ── Cuerpo ──────────────────────────────────────────────────────── -->
+    <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar px-5 sm:px-8 py-6">
+
+      <!-- Sin congregación en contexto no hay dónde dar de alta. Se dice aquí
+           y con la salida a mano, en vez de un alert() del navegador. -->
+      <div *ngIf="!puedeCrear()" class="text-center py-8">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
+          <svg class="w-6 h-6 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 9v4M12 17h.01" />
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+        </div>
+        <h3 class="mt-4 font-display font-bold text-base text-slate-900 dark:text-white">
+          Falta elegir la congregación
+        </h3>
+        <p class="mt-1.5 text-sm text-slate-500 dark:text-slate-400 max-w-[34ch] mx-auto leading-relaxed">
+          Selecciona una congregación en la barra superior para dar de alta a alguien.
+        </p>
+      </div>
+
+      <div *ngIf="puedeCrear()" [formGroup]="form" (keydown.enter)="onEnter($event)">
+
+        <!-- ── Paso 1: nombre ──────────────────────────────────────────── -->
+        <div *ngIf="activeStep() === 'nombre'" class="wizard-step" [class.wizard-step--back]="!avanzando()">
+          <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">¿Cómo se llama?</h3>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Tal como aparece en su documento.</p>
+
+          <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-1.5" data-field="primer_nombre">
+              <label for="w-primer-nombre" class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                Primer nombre <span class="text-red-500">*</span>
+              </label>
+              <input #primerCampo id="w-primer-nombre" data-testid="wizard-primer-nombre"
+                     formControlName="primer_nombre" type="text" autocomplete="given-name"
+                     (input)="capitalizeInput('primer_nombre')"
+                     class="block w-full h-12 px-3.5 rounded-xl border bg-slate-50 dark:bg-slate-800 text-base font-medium
+                            text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500
+                            focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-4 transition-[background-color,border-color,box-shadow]"
+                     [ngClass]="form.get('primer_nombre')?.invalid && form.get('primer_nombre')?.touched
+                       ? 'border-red-300 dark:border-red-700 focus:border-red-400 focus:ring-red-500/10'
+                       : 'border-slate-200 dark:border-slate-700 focus:border-brand-orange focus:ring-brand-orange/10'"
+                     placeholder="Ana">
+              <p *ngIf="form.get('primer_nombre')?.invalid && form.get('primer_nombre')?.touched"
+                 class="text-xs font-semibold text-red-500 ml-1">Escribe el primer nombre.</p>
+            </div>
+
+            <div class="space-y-1.5" data-field="segundo_nombre">
+              <label for="w-segundo-nombre" class="flex items-baseline justify-between text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                Segundo nombre
+                <span class="font-medium text-slate-400 dark:text-slate-500">Opcional</span>
+              </label>
+              <input id="w-segundo-nombre" formControlName="segundo_nombre" type="text" autocomplete="additional-name"
+                     (input)="capitalizeInput('segundo_nombre')"
+                     class="block w-full h-12 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800
+                            text-base font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500
+                            focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10
+                            transition-[background-color,border-color,box-shadow]"
+                     placeholder="María">
+            </div>
+
+            <div class="space-y-1.5" data-field="primer_apellido">
+              <label for="w-primer-apellido" class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                Primer apellido <span class="text-red-500">*</span>
+              </label>
+              <input id="w-primer-apellido" data-testid="wizard-primer-apellido"
+                     formControlName="primer_apellido" type="text" autocomplete="family-name"
+                     (input)="capitalizeInput('primer_apellido')"
+                     class="block w-full h-12 px-3.5 rounded-xl border bg-slate-50 dark:bg-slate-800 text-base font-medium
+                            text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500
+                            focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-4 transition-[background-color,border-color,box-shadow]"
+                     [ngClass]="form.get('primer_apellido')?.invalid && form.get('primer_apellido')?.touched
+                       ? 'border-red-300 dark:border-red-700 focus:border-red-400 focus:ring-red-500/10'
+                       : 'border-slate-200 dark:border-slate-700 focus:border-brand-orange focus:ring-brand-orange/10'"
+                     placeholder="Peña">
+              <p *ngIf="form.get('primer_apellido')?.invalid && form.get('primer_apellido')?.touched"
+                 class="text-xs font-semibold text-red-500 ml-1">Escribe el primer apellido.</p>
+            </div>
+
+            <div class="space-y-1.5" data-field="segundo_apellido">
+              <label for="w-segundo-apellido" class="flex items-baseline justify-between text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                Segundo apellido
+                <span class="font-medium text-slate-400 dark:text-slate-500">Opcional</span>
+              </label>
+              <input id="w-segundo-apellido" formControlName="segundo_apellido" type="text"
+                     (input)="capitalizeInput('segundo_apellido')"
+                     class="block w-full h-12 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800
+                            text-base font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500
+                            focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10
+                            transition-[background-color,border-color,box-shadow]"
+                     placeholder="Rojas">
+            </div>
+          </div>
+
+          <!-- Cómo se verá en la lista: confirma el orden de los apellidos
+               antes de que sea un registro que hay que corregir. -->
+          <p *ngIf="nombreCompleto()" class="mt-5 text-sm text-slate-400 dark:text-slate-500">
+            Aparecerá como
+            <span class="font-bold text-slate-600 dark:text-slate-300">{{ nombreCompleto() }}</span>
+          </p>
+        </div>
+
+        <!-- ── Paso 2: datos personales ────────────────────────────────── -->
+        <div *ngIf="activeStep() === 'personal'" class="wizard-step" [class.wizard-step--back]="!avanzando()">
+          <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">Datos personales</h3>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">El sexo se usa para las asignaciones.</p>
+
+          <div class="mt-5 space-y-5">
+            <div class="space-y-2" data-field="sexo">
+              <span class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                Sexo <span class="text-red-500">*</span>
+              </span>
+              <div class="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Sexo">
+                <button *ngFor="let op of [{ v: 'M', l: 'Masculino' }, { v: 'F', l: 'Femenino' }]"
+                        type="button" role="radio"
+                        [attr.data-testid]="'wizard-sexo-' + op.v"
+                        [attr.aria-checked]="form.get('sexo')?.value === op.v"
+                        (click)="form.get('sexo')?.setValue(op.v); form.get('sexo')?.markAsDirty(); form.get('sexo')?.markAsTouched()"
+                        class="relative h-14 rounded-xl border flex items-center justify-center gap-2 font-semibold text-sm
+                               transition-[background-color,border-color,box-shadow,transform] duration-150 active:scale-[0.98]
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/30"
+                        [ngClass]="form.get('sexo')?.value === op.v
+                          ? 'border-brand-orange bg-orange-50 dark:bg-orange-500/10 text-brand-orange shadow-[0_0_0_1px_rgba(249,115,22,0.18)]'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'">
+                  <svg *ngIf="form.get('sexo')?.value === op.v" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  {{ op.l }}
+                </button>
+              </div>
+              <p *ngIf="form.get('sexo')?.invalid && form.get('sexo')?.touched"
+                 class="text-xs font-semibold text-red-500 ml-1">Elige una de las dos opciones.</p>
+            </div>
+
+            <div class="space-y-1.5" data-field="fecha_nacimiento">
+              <label class="flex items-baseline justify-between text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                Fecha de nacimiento
+                <span class="font-medium text-slate-400 dark:text-slate-500">Opcional</span>
+              </label>
+              <app-simple-date-field formControlName="fecha_nacimiento" [maxDate]="maxFecha"></app-simple-date-field>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Paso 3: en la congregación ──────────────────────────────── -->
+        <div *ngIf="activeStep() === 'congregacion'" class="wizard-step" [class.wizard-step--back]="!avanzando()">
+          <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">En la congregación</h3>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Bautismo y grupo de predicación.</p>
+
+          <div class="mt-5 space-y-5">
+            <div class="space-y-1.5" data-field="fecha_bautismo">
+              <label class="flex items-baseline justify-between text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                Fecha de bautismo
+                <span class="font-medium text-slate-400 dark:text-slate-500">Opcional</span>
+              </label>
+              <app-simple-date-field formControlName="fecha_bautismo" [maxDate]="maxFecha"></app-simple-date-field>
+              <p class="text-xs text-slate-400 dark:text-slate-500 ml-1">Si aún no está bautizado, déjala vacía.</p>
+            </div>
+
+            <div class="space-y-1.5" data-field="id_grupo_publicador">
+              <label class="flex items-baseline justify-between text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                Grupo
+                <span class="font-medium text-slate-400 dark:text-slate-500">Opcional</span>
+              </label>
+              <app-select-picker data-testid="wizard-grupo"
+                                 formControlName="id_grupo_publicador"
+                                 colorScheme="orange"
+                                 ariaLabel="Grupo de predicación"
+                                 placeholder="Sin asignar"
+                                 [options]="grupoOptions()">
+              </app-select-picker>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Paso 4: privilegios ─────────────────────────────────────── -->
+        <div *ngIf="activeStep() === 'privilegios'" class="wizard-step" [class.wizard-step--back]="!avanzando()">
+          <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">¿Tiene algún privilegio?</h3>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Se pueden añadir o cambiar después desde su ficha.
+          </p>
+
+          <div class="mt-5 space-y-3">
+            <!-- El caso normal, ya resuelto: quien no tenga nada que marcar
+                 pulsa "Crear publicador" sin leer más. -->
+            <button type="button" data-testid="wizard-sin-privilegios" (click)="limpiarPrivilegios()"
+                    class="w-full flex items-center gap-3 px-4 h-12 rounded-xl border text-left font-semibold text-sm
+                           transition-[background-color,border-color,transform] duration-150 active:scale-[0.99]
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/30"
+                    [ngClass]="sinPrivilegios()
+                      ? 'border-brand-orange bg-orange-50 dark:bg-orange-500/10 text-brand-orange'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'">
+              <svg *ngIf="sinPrivilegios()" class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              Ninguno por ahora
+            </button>
+
+            <p *ngIf="privilegios.length === 0" class="text-sm text-slate-400 dark:text-slate-500 pt-2">
+              No hay privilegios configurados en la congregación.
+            </p>
+
+            <div *ngFor="let p of privilegios"
+                 class="rounded-xl border transition-[border-color,background-color]"
+                 [ngClass]="estaSeleccionado(p.id_privilegio)
+                   ? 'border-brand-orange bg-orange-50/60 dark:bg-orange-500/5'
+                   : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'">
+
+              <button type="button"
+                      [attr.data-testid]="'wizard-privilegio-' + p.id_privilegio"
+                      [attr.aria-pressed]="estaSeleccionado(p.id_privilegio)"
+                      (click)="togglePrivilegio(p)"
+                      class="w-full flex items-center gap-3 px-4 h-12 text-left font-semibold text-sm rounded-xl
+                             transition-transform duration-150 active:scale-[0.99]
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/30"
+                      [ngClass]="estaSeleccionado(p.id_privilegio)
+                        ? 'text-brand-orange'
+                        : 'text-slate-600 dark:text-slate-300'">
+                <span class="w-5 h-5 shrink-0 rounded border flex items-center justify-center transition-colors"
+                      [ngClass]="estaSeleccionado(p.id_privilegio)
+                        ? 'border-brand-orange bg-brand-orange text-white'
+                        : 'border-slate-300 dark:border-slate-600'">
+                  <svg *ngIf="estaSeleccionado(p.id_privilegio)" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                </span>
+                <span class="truncate">{{ p.nombre_privilegio }}</span>
+              </button>
+
+              <!-- Fechas del privilegio. Sólo el auxiliar tiene fin; el resto
+                   son indefinidos y así se dice, en vez de dejar un campo
+                   vacío que parece olvidado. -->
+              <div *ngIf="estaSeleccionado(p.id_privilegio)"
+                   class="px-4 pb-4 pt-1 border-t border-orange-200/60 dark:border-orange-500/15 space-y-3">
+                <div class="space-y-3">
+                  <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">Desde</label>
+                    <app-simple-date-field [ngModel]="fechaInicioDe(p.id_privilegio)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setFechaInicioPrivilegio(p.id_privilegio, $event)">
+                    </app-simple-date-field>
+                  </div>
+
+                  <div *ngIf="esAuxiliar(p) && finVisible(p.id_privilegio)" class="space-y-1.5">
+                    <label class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300 ml-1">
+                      Hasta
+                      <button type="button" (click)="ocultarFinPara(p.id_privilegio)"
+                              class="-my-2 -mr-2 px-2 py-2 rounded-lg font-semibold text-slate-400 dark:text-slate-500
+                                     hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400
+                                     transition-colors">
+                        Quitar
+                      </button>
+                    </label>
+                    <app-simple-date-field [ngModel]="fechaFinDe(p.id_privilegio)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setFechaFinPrivilegio(p.id_privilegio, $event)">
+                    </app-simple-date-field>
+                  </div>
+
+                  <button *ngIf="esAuxiliar(p) && !finVisible(p.id_privilegio)" type="button"
+                          (click)="mostrarFinPara(p.id_privilegio)"
+                          class="-ml-2.5 flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold
+                                 text-brand-orange hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600
+                                 dark:hover:text-orange-400 transition-colors">
+                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Agregar fecha de fin
+                  </button>
+                </div>
+
+                <p *ngIf="!esAuxiliar(p) || !finVisible(p.id_privilegio)"
+                   class="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 ml-1">
+                  <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                  Sin fecha de fin &mdash; continúa vigente
+                </p>
+              </div>
+            </div>
+
+            <p *ngIf="avisoPrecursor()"
+               class="flex items-start gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400 px-1 pt-1">
+              <svg class="w-4 h-4 shrink-0 mt-px" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v5M12 16h.01" />
+              </svg>
+              Solo puede tener un tipo de precursor a la vez; se ha desmarcado el anterior.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Pie ─────────────────────────────────────────────────────────── -->
+    <div class="shrink-0 px-5 sm:px-8 py-4 border-t border-slate-100 dark:border-slate-800
+                bg-slate-50/60 dark:bg-slate-900/40 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4">
+
+      <!-- Descartar: se pregunta aquí mismo, sin sacar al usuario del diálogo. -->
+      <div *ngIf="confirmarDescarte()" class="mb-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3
+                  rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3">
+        <p class="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          ¿Descartar lo que llevas escrito?
+        </p>
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" (click)="seguirEditando()"
+                  class="px-3 h-9 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400
+                         hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            Seguir aquí
+          </button>
+          <button type="button" data-testid="wizard-descartar" (click)="cerrar()"
+                  class="px-3 h-9 rounded-lg text-xs font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors">
+            Descartar
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button type="button" data-testid="wizard-atras"
+                (click)="isFirstStep() ? intentarCerrar() : goBack()"
+                class="flex-1 sm:flex-none px-5 h-11 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700
+                       text-slate-600 dark:text-slate-300 font-semibold text-sm transition-[background-color,transform] duration-150
+                       hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98]
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40">
+          {{ isFirstStep() ? 'Cancelar' : 'Atrás' }}
+        </button>
+
+        <button *ngIf="!isLastStep()" type="button" data-testid="wizard-siguiente"
+                (click)="goNext()" [disabled]="!puedeCrear()"
+                class="flex-1 sm:flex-none sm:ml-auto px-6 h-11 rounded-lg bg-brand-orange hover:bg-orange-600 text-white
+                       font-display font-semibold text-sm flex items-center justify-center gap-2
+                       transition-[background-color,transform] duration-150 active:scale-[0.98]
+                       disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600
+                       disabled:active:scale-100 disabled:cursor-not-allowed
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange
+                       dark:focus-visible:ring-offset-slate-900">
+          Siguiente
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </button>
+
+        <button *ngIf="isLastStep()" type="button" data-testid="wizard-crear"
+                (click)="submit()" [disabled]="saving || !puedeCrear()"
+                class="flex-1 sm:flex-none sm:ml-auto px-6 h-11 rounded-lg bg-brand-orange hover:bg-orange-600 text-white
+                       font-display font-semibold text-sm flex items-center justify-center gap-2
+                       transition-[background-color,transform] duration-150 active:scale-[0.98]
+                       disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600
+                       disabled:active:scale-100 disabled:cursor-not-allowed
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange
+                       dark:focus-visible:ring-offset-slate-900">
+          <span *ngIf="saving" class="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span>
+          {{ saving ? 'Creando…' : 'Crear publicador' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

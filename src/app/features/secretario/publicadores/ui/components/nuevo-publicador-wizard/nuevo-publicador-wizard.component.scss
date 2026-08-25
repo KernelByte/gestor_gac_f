@@ -1,0 +1,51 @@
+/* El diálogo entra desde abajo en móvil (hoja) y con un escalado corto en
+   escritorio. animation-fill-mode backwards y NUNCA both: con both el elemento
+   conserva un transform en matriz identidad al terminar, lo que crea un
+   stacking context que se traga los popovers del date-picker y del
+   select-picker. */
+.wizard-panel {
+  animation: wizardSheetIn 0.26s var(--ease-out-strong, cubic-bezier(0.16, 1, 0.3, 1)) backwards;
+}
+
+@media (min-width: 640px) {
+  .wizard-panel {
+    animation-name: wizardDialogIn;
+    animation-duration: 0.22s;
+  }
+}
+
+@keyframes wizardSheetIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wizardDialogIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Cambio de paso: sólo opacidad y desplazamiento, nunca alto. */
+.wizard-step {
+  animation: wizardStepIn 0.18s var(--ease-out-strong, cubic-bezier(0.16, 1, 0.3, 1)) backwards;
+}
+
+.wizard-step--back {
+  animation-name: wizardStepInBack;
+}
+
+@keyframes wizardStepIn {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes wizardStepInBack {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wizard-panel,
+  .wizard-step {
+    animation: none;
+  }
+}
