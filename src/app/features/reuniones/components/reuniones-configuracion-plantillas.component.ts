@@ -8,6 +8,9 @@ import { AuthStore } from '../../../core/auth/auth.store';
 import { TokenService } from '../../../core/auth/token.service';
 import { environment } from '../../../../environments/environment';
 import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
+import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
+import { SelectPickerComponent, PickerOption } from '../../../shared/components/select-picker/select-picker.component';
+import { CatalogoDiscursosComponent } from './catalogo-discursos.component';
 import {
   MWBImportPreviewResponse,
   MWBImportConfirmRequest,
@@ -20,13 +23,14 @@ import {
   PublicadorMatrizItem,
   ColumnaPermiso,
   CambioPermisoPublicador,
-  UpdateMatrizRequest
+  UpdateMatrizRequest,
+  AusenciaOut,
 } from '../models/reuniones.models';
 
 @Component({
   selector: 'app-reuniones-configuracion-plantillas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, CatalogoDiscursosComponent],
   template: `
     <div class="cfg-root flex flex-col gap-5 h-full">
 
@@ -64,12 +68,22 @@ import {
                      <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                    </span>
                  }
+                 @if (tab.id === 'ausencias') {
+                   <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
+                     <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                   </span>
+                 }
                  @if (tab.id === 'parametros') {
                    <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
                      <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                    </span>
                  }
-                 @if (tab.id === 'plantillas') {
+                 @if (tab.id === 'catalogo') {
+                  <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
+                    <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="16" y2="7"/><line x1="9" y1="11" x2="14" y2="11"/></svg>
+                  </span>
+                }
+                @if (tab.id === 'plantillas') {
                    <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
                      <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                    </span>
@@ -549,6 +563,263 @@ import {
         </div>
       }
 
+       <!-- ===== TAB: AUSENCIAS ===== -->
+       @if (activeTab() === 'ausencias') {
+       <div class="aus-tab flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto simple-scrollbar animate-fadeIn">
+
+         <!-- ── Formulario de registro ──
+              Sin overflow-hidden: el calendario del date-picker es un popup
+              position:absolute anclado adentro de esta tarjeta: si se recorta
+              aquí, se ve "atras y tapado" en vez de flotar sobre la pantalla. -->
+         <div class="aus-card shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+           <div class="px-4 sm:px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+             <div class="flex items-start gap-3">
+               <div class="aus-form-icon shrink-0 w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20 flex items-center justify-center">
+                 <svg class="w-4.5 h-4.5 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9.5" y1="16" x2="14.5" y2="16"/></svg>
+               </div>
+               <div class="min-w-0">
+                 <h3 class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Registrar ausencia</h3>
+                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                   No se le asignará ningún puesto de Logística en ese rango, aunque tenga el permiso.
+                   Si ya estaba asignado, se avisa en la casilla sin quitárselo.
+                 </p>
+               </div>
+             </div>
+           </div>
+
+           <div class="p-4 sm:p-5">
+             <!-- Móvil y tablet: 2 columnas (Desde/Hasta comparten fila desde el primer momento,
+                  Publicador y Motivo ocupan la fila completa). Portátil/escritorio (lg, 1024px+): fila completa.
+                  items-start evita que, al abrir un calendario inline en móvil, la celda vecina se
+                  estire y quede con un hueco vacío debajo. -->
+             <div class="grid grid-cols-2 lg:grid-cols-12 items-start gap-3 sm:gap-4">
+               <div class="col-span-2 lg:col-span-4 flex flex-col gap-1.5">
+                 <label class="aus-label">Publicador</label>
+                 <!-- El <select> nativo lo dibuja el SO y no acepta estilos: se usa
+                      el picker propio de la app, que ademas busca al escribir y en
+                      tactil se abre como hoja inferior. -->
+                 <app-select-picker
+                   [ngModel]="ausenciaIdPublicador"
+                   (ngModelChange)="ausenciaIdPublicador = $event"
+                   [ngModelOptions]="{ standalone: true }"
+                   [options]="opcionesPublicadorAusencia()"
+                   colorScheme="violet"
+                   ariaLabel="Publicador"
+                   placeholder="Selecciona un publicador">
+                 </app-select-picker>
+               </div>
+
+               <div class="lg:col-span-2 flex flex-col gap-1.5">
+                 <label class="aus-label">Desde</label>
+                 <app-date-picker
+                   [(ngModel)]="ausenciaFechaInicio"
+                   [ngModelOptions]="{ standalone: true }"
+                   colorScheme="violet"
+                   [fieldLike]="true"
+                   [inlineOnMobile]="true"
+                   placeholder="Fecha inicio">
+                 </app-date-picker>
+               </div>
+
+               <div class="lg:col-span-2 flex flex-col gap-1.5">
+                 <label class="aus-label">Hasta</label>
+                 <app-date-picker
+                   [(ngModel)]="ausenciaFechaFin"
+                   [ngModelOptions]="{ standalone: true }"
+                   [minDate]="ausenciaFechaInicio"
+                   colorScheme="violet"
+                   [fieldLike]="true"
+                   [inlineOnMobile]="true"
+                   placeholder="Fecha fin">
+                 </app-date-picker>
+               </div>
+
+               <div class="col-span-2 lg:col-span-4 flex flex-col gap-1.5">
+                 <label for="aus-motivo" class="aus-label">
+                   Motivo <span class="font-medium normal-case tracking-normal text-slate-400 dark:text-slate-500">(opcional)</span>
+                 </label>
+                 <div class="flex items-stretch gap-2">
+                   <input
+                     id="aus-motivo"
+                     type="text"
+                     class="form-control aus-field flex-1 min-w-0"
+                     [(ngModel)]="ausenciaMotivoForm"
+                     [ngModelOptions]="{ standalone: true }"
+                     maxlength="200"
+                     placeholder="Viaje, salud, estudios...">
+                   <button
+                     (click)="registrarAusencia()"
+                     [disabled]="!puedeRegistrarAusencia() || guardandoAusencia()"
+                     aria-label="Registrar ausencia"
+                     title="Registrar ausencia"
+                     class="aus-submit shrink-0 flex items-center justify-center gap-1.5 px-4 min-h-[44px] rounded-xl bg-[#6D28D9] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+                     @if (guardandoAusencia()) {
+                       <div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                     } @else {
+                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                     }
+                   </button>
+                 </div>
+               </div>
+             </div>
+
+             @if (ausenciaError()) {
+               <div role="alert" class="aus-error mt-3 flex items-start gap-2 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200/70 dark:border-rose-800/50 px-3 py-2.5">
+                 <svg class="w-4 h-4 shrink-0 text-rose-500 mt-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                 <p class="text-xs font-semibold text-rose-700 dark:text-rose-300 leading-relaxed">{{ ausenciaError() }}</p>
+               </div>
+             }
+           </div>
+         </div>
+
+         <!-- ── Lista de ausencias ── -->
+         <!-- shrink-0 en móvil: sin esto, al no caber el formulario + esta tarjeta en la
+              altura fija de .aus-tab, flexbox la encogía por debajo de su contenido y el
+              overflow-hidden recortaba las filas — la lista "desaparecía" aunque hubiera
+              ausencias registradas. Desde sm: vuelve a poder crecer/encogerse para llenar
+              el espacio restante con su propio scroll interno. -->
+         <div class="aus-card shrink-0 sm:shrink sm:flex-1 sm:min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 overflow-hidden flex flex-col">
+
+           @if (!loadingAusencias() && ausencias().length > 0) {
+             <!-- Resumen + buscador: en móvil se apilan -->
+             <div class="shrink-0 flex flex-col sm:flex-row sm:items-center gap-3 px-4 sm:px-5 py-3 border-b border-slate-100 dark:border-slate-800">
+               <div class="flex items-center gap-2 flex-wrap min-w-0">
+                 <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Registradas</p>
+                 <span class="aus-chip aus-chip-neutral">{{ ausencias().length }}</span>
+                 @if (ausenciasEnCurso() > 0) {
+                   <span class="aus-chip aus-chip-live">
+                     <span class="aus-dot"></span>
+                     {{ ausenciasEnCurso() }} en curso
+                   </span>
+                 }
+                 @if (ausenciasProximas() > 0) {
+                   <span class="aus-chip aus-chip-soon">{{ ausenciasProximas() }} próxima{{ ausenciasProximas() > 1 ? 's' : '' }}</span>
+                 }
+               </div>
+
+               <div class="relative sm:ml-auto sm:w-56 shrink-0">
+                 <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                 <input
+                   type="text"
+                   [ngModel]="ausenciaFiltro()"
+                   (ngModelChange)="ausenciaFiltro.set($event)"
+                   [ngModelOptions]="{ standalone: true }"
+                   placeholder="Buscar persona o motivo..."
+                   aria-label="Buscar ausencias"
+                   class="aus-search w-full min-h-[40px] pl-9 pr-3 bg-slate-50 dark:bg-slate-800/50 border border-transparent dark:border-slate-700/50 rounded-xl text-xs text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none">
+               </div>
+             </div>
+           }
+
+           @if (loadingAusencias()) {
+             <div class="sm:flex-1 flex flex-col items-center justify-center gap-3 py-14">
+               <div class="w-6 h-6 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#6D28D9] animate-spin"></div>
+               <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Cargando ausencias...</p>
+             </div>
+
+           } @else if (ausencias().length === 0) {
+             <div class="sm:flex-1 flex flex-col items-center justify-center gap-3 py-14 text-center px-6">
+               <div class="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 flex items-center justify-center">
+                 <svg class="w-7 h-7 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+               </div>
+               <div>
+                 <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Nadie tiene ausencias registradas</p>
+                 <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+                   Cuando alguien viaje o no pueda participar por un tiempo, regístralo arriba y el motor dejará de asignarlo en esas fechas.
+                 </p>
+               </div>
+             </div>
+
+           } @else if (ausenciasOrdenadas().length === 0) {
+             <div class="sm:flex-1 flex flex-col items-center justify-center gap-2 py-14 text-center px-6">
+               <p class="text-sm font-bold text-slate-600 dark:text-slate-300">Sin coincidencias</p>
+               <p class="text-xs text-slate-400 dark:text-slate-500">Nadie coincide con "{{ ausenciaFiltro() }}".</p>
+               <button (click)="ausenciaFiltro.set('')" class="aus-clear mt-1 px-3 min-h-[36px] rounded-lg text-xs font-bold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20">
+                 Limpiar búsqueda
+               </button>
+             </div>
+
+           } @else {
+             <div class="sm:flex-1 sm:min-h-0 sm:overflow-y-auto simple-scrollbar divide-y divide-slate-100 dark:divide-slate-800/80">
+               @for (a of ausenciasOrdenadas(); track a.id_ausencia; let i = $index) {
+                 <div
+                   class="aus-row group flex items-center gap-3 px-4 sm:px-5 py-3"
+                   [attr.data-estado]="estadoAusencia(a)"
+                   [style.--aus-i]="i">
+
+                   <!-- Avatar: mismo lenguaje que la matriz de privilegios -->
+                   <div
+                     class="aus-avatar shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-[0.7rem] ring-1 ring-white dark:ring-slate-800 border border-white/50"
+                     [class]="avatarAusenciaClass(a)"
+                     aria-hidden="true">
+                     {{ inicialesAusencia(a) }}
+                   </div>
+
+                   <div class="min-w-0 flex-1">
+                     <div class="flex items-center gap-2 min-w-0">
+                       <p class="text-[0.8125rem] sm:text-sm font-bold text-slate-800 dark:text-white truncate">{{ a.nombre_completo }}</p>
+                       <span class="aus-state shrink-0" [attr.data-estado]="estadoAusencia(a)">
+                         @if (estadoAusencia(a) === 'en_curso') { <span class="aus-dot"></span> }
+                         {{ estadoAusenciaLabel(a) }}
+                       </span>
+                     </div>
+
+                     <p class="text-[0.6875rem] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap leading-tight">
+                       <span class="data-num">{{ formatRangoAusencia(a) }}</span>
+                       <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">&#183;</span>
+                       <span>{{ duracionAusencia(a) }}</span>
+                       @if (estadoAusencia(a) !== 'finalizada') {
+                         <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">&#183;</span>
+                         <span class="font-semibold" [attr.data-estado]="estadoAusencia(a)">{{ estadoAusenciaDetalle(a) }}</span>
+                       }
+                     </p>
+
+                     @if (a.motivo) {
+                       <p class="text-[0.6875rem] sm:text-xs text-slate-400 dark:text-slate-500 mt-1 truncate italic">{{ a.motivo }}</p>
+                     }
+                   </div>
+
+                   <!-- Siempre visible: en táctil no hay hover que revele acciones -->
+                   <button
+                     (click)="ausenciaAEliminar.set(a)"
+                     [attr.aria-label]="'Eliminar ausencia de ' + a.nombre_completo"
+                     title="Eliminar ausencia"
+                     class="aus-del shrink-0 w-11 h-11 -mr-1.5 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500">
+                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                   </button>
+                 </div>
+               }
+             </div>
+           }
+         </div>
+       </div>
+       }
+
+      <!-- ===== MODAL: CONFIRMAR ELIMINAR AUSENCIA ===== -->
+      @if (ausenciaAEliminar() !== null) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="ausenciaAEliminar.set(null)">
+          <div class="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"></div>
+          <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 w-full max-w-sm p-6 flex flex-col gap-5 animate-fadeIn" (click)="$event.stopPropagation()">
+            <div class="flex flex-col items-center gap-3 text-center">
+              <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/40 flex items-center justify-center">
+                <svg class="w-6 h-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-slate-900 dark:text-white">Eliminar ausencia</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  <span class="font-bold text-slate-700 dark:text-slate-300">{{ ausenciaAEliminar()!.nombre_completo }}</span>
+                  volverá a estar disponible del {{ formatRangoAusencia(ausenciaAEliminar()!) }}.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button (click)="ausenciaAEliminar.set(null)" class="flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
+              <button (click)="confirmarEliminarAusencia()" class="flex-1 h-9 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold shadow-sm shadow-rose-900/20 transition-all">Sí, eliminar</button>
+            </div>
+          </div>
+        </div>
+      }
+
        <!-- ===== TAB: PARÁMETROS DEL ALGORITMO ===== -->
        @if (activeTab() === 'parametros') {
         <div class="flex-1 min-h-0 flex flex-col gap-5 algo-tab animate-fadeIn overflow-y-auto simple-scrollbar pb-8">
@@ -932,6 +1203,10 @@ import {
             }
         </div>
        } <!-- end privilegios tab -->
+
+       @if (activeTab() === 'catalogo') {
+         <app-catalogo-discursos />
+       } <!-- end catalogo tab -->
 
        <!-- ===== MODAL: DUPLICATE DETECTION MWB ===== -->
        @if (mwbShowDuplicateModal()) {
@@ -1383,10 +1658,171 @@ import {
        }
      }
 
+     /* ─────── Ausencias Tab ─────── */
+
+     .aus-card {
+       box-shadow: var(--shadow-soft);
+     }
+
+     .aus-label {
+       font-size: 0.7rem;
+       font-weight: 700;
+       letter-spacing: 0.04em;
+       text-transform: uppercase;
+       color: rgb(100 116 139);
+     }
+     :host-context(.dark) .aus-label { color: rgb(148 163 184); }
+
+     /* Los campos heredan .form-control/.form-select globales; aquí solo se
+        ajusta el alto para que cumplan el mínimo táctil de 44px. */
+     .aus-field { min-height: 44px; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+     .aus-search {
+       transition: background-color 160ms var(--ease-out-strong),
+                   border-color 160ms var(--ease-out-strong),
+                   box-shadow 160ms var(--ease-out-strong);
+     }
+     .aus-search:focus {
+       background: #fff;
+       border-color: rgba(109,40,217,0.45);
+       box-shadow: 0 0 0 3px rgba(109,40,217,0.12);
+     }
+     :host-context(.dark) .aus-search:focus {
+       background: rgb(15 23 42);
+       border-color: rgba(139,92,246,0.5);
+       box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
+     }
+
+     /* Botón primario: feedback de pulsación inmediato */
+     .aus-submit {
+       transition: background-color 160ms var(--ease-out-strong),
+                   transform 140ms var(--ease-out-strong),
+                   box-shadow 160ms var(--ease-out-strong);
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .aus-submit:not(:disabled):hover { background: #5b21b6; }
+     }
+     .aus-submit:not(:disabled):active { transform: scale(0.97); }
+
+     .aus-clear { transition: background-color 150ms var(--ease-out-strong), transform 140ms var(--ease-out-strong); }
+     .aus-clear:active { transform: scale(0.97); }
+
+     .aus-error { animation: ausIn 220ms var(--ease-out-strong) both; }
+
+     /* ── Chips de resumen ── */
+     .aus-chip {
+       display: inline-flex; align-items: center; gap: 0.3rem;
+       height: 1.35rem; padding: 0 0.5rem;
+       border-radius: 9999px;
+       font-size: 0.625rem; font-weight: 800;
+       letter-spacing: 0.02em;
+       white-space: nowrap;
+     }
+     .aus-chip-neutral {
+       background: rgb(241 245 249); color: rgb(71 85 105);
+       font-variant-numeric: tabular-nums;
+     }
+     .aus-chip-live { background: rgb(209 250 229); color: rgb(4 120 87); }
+     .aus-chip-soon { background: rgb(254 243 199); color: rgb(146 64 14); }
+     :host-context(.dark) .aus-chip-neutral { background: rgb(30 41 59); color: rgb(148 163 184); }
+     :host-context(.dark) .aus-chip-live { background: rgba(16,185,129,0.15); color: rgb(110 231 183); }
+     :host-context(.dark) .aus-chip-soon { background: rgba(245,158,11,0.15); color: rgb(252 211 77); }
+
+     /* ── Etiqueta de estado por fila ── */
+     .aus-state {
+       display: inline-flex; align-items: center; gap: 0.3rem;
+       height: 1.15rem; padding: 0 0.45rem;
+       border-radius: 9999px;
+       font-size: 0.5625rem; font-weight: 800;
+       text-transform: uppercase; letter-spacing: 0.05em;
+       white-space: nowrap;
+     }
+     .aus-state[data-estado="en_curso"]   { background: rgb(209 250 229); color: rgb(4 120 87); }
+     .aus-state[data-estado="proxima"]    { background: rgb(254 243 199); color: rgb(146 64 14); }
+     .aus-state[data-estado="finalizada"] { background: rgb(241 245 249); color: rgb(100 116 139); }
+     :host-context(.dark) .aus-state[data-estado="en_curso"]   { background: rgba(16,185,129,0.15); color: rgb(110 231 183); }
+     :host-context(.dark) .aus-state[data-estado="proxima"]    { background: rgba(245,158,11,0.15); color: rgb(252 211 77); }
+     :host-context(.dark) .aus-state[data-estado="finalizada"] { background: rgb(30 41 59); color: rgb(148 163 184); }
+
+     /* Texto de apoyo coloreado igual que su estado */
+     [data-estado="en_curso"].font-semibold { color: rgb(5 150 105); }
+     [data-estado="proxima"].font-semibold  { color: rgb(180 83 9); }
+     :host-context(.dark) [data-estado="en_curso"].font-semibold { color: rgb(52 211 153); }
+     :host-context(.dark) [data-estado="proxima"].font-semibold  { color: rgb(251 191 36); }
+
+     /* Punto latente: solo para "en curso", que es lo único que pasa ahora */
+     .aus-dot {
+       width: 5px; height: 5px; border-radius: 9999px;
+       background: currentColor; flex: none;
+       animation: ausPulse 2s ease-in-out infinite;
+     }
+
+     /* ── Filas ── */
+     .aus-row {
+       position: relative;
+       transition: background-color 160ms var(--ease-out-strong);
+       animation: ausIn 260ms var(--ease-out-strong) both;
+       /* Escalonado corto y tope bajo: una lista larga no debe hacerse esperar */
+       animation-delay: calc(min(var(--aus-i, 0), 8) * 40ms);
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .aus-row:hover { background: rgb(248 250 252); }
+       :host-context(.dark) .aus-row:hover { background: rgba(30,41,59,0.45); }
+     }
+
+     /* Filete de color a la izquierda según estado: da a la lista un ritmo
+        legible de un vistazo sin recuadrar cada fila. */
+     .aus-row::before {
+       content: '';
+       position: absolute; left: 0; top: 0; bottom: 0;
+       width: 3px;
+       background: transparent;
+       transition: background-color 180ms var(--ease-out-strong);
+     }
+     .aus-row[data-estado="en_curso"]::before { background: rgb(16 185 129); }
+     .aus-row[data-estado="proxima"]::before  { background: rgb(251 191 36); }
+
+     /* Lo ya finalizado pierde peso visual, sin desaparecer */
+     .aus-row[data-estado="finalizada"] .aus-avatar { opacity: 0.55; }
+
+     .aus-avatar { transition: opacity 160ms var(--ease-out-strong); }
+
+     /* Botón eliminar: 44px reales de área táctil */
+     .aus-del {
+       transition: color 150ms var(--ease-out-strong),
+                   background-color 150ms var(--ease-out-strong),
+                   transform 140ms var(--ease-out-strong);
+     }
+     @media (hover: hover) and (pointer: fine) {
+       .aus-del:hover { color: rgb(244 63 94); background: rgb(255 241 242); }
+       :host-context(.dark) .aus-del:hover { color: rgb(251 113 133); background: rgba(159,18,57,0.22); }
+     }
+     .aus-del:active { transform: scale(0.92); }
+     .aus-del:focus-visible {
+       outline: 2px solid rgba(109,40,217,0.5);
+       outline-offset: 2px;
+     }
+
+     @keyframes ausIn {
+       from { opacity: 0; transform: translateY(6px); }
+       to   { opacity: 1; transform: translateY(0); }
+     }
+     @keyframes ausPulse {
+       0%, 100% { opacity: 1; }
+       50%      { opacity: 0.35; }
+     }
+
+     /* En pantallas chicas el formulario gana aire y la fila se compacta */
+     @media (max-width: 640px) {
+       .aus-row { padding-top: 0.875rem; padding-bottom: 0.875rem; }
+     }
+
      @media (prefers-reduced-motion: reduce) {
        .priv-stat, .priv-row, .priv-check, .priv-select, .priv-avatar, .priv-page-btn,
        .priv-row > td:first-child::before,
-       .algo-profile-card, .algo-stepper-btn { transition: none !important; animation: none !important; }
+       .algo-profile-card, .algo-stepper-btn,
+       .aus-row, .aus-row::before, .aus-del, .aus-submit, .aus-search, .aus-avatar,
+       .aus-clear, .aus-error, .aus-dot { transition: none !important; animation: none !important; }
      }
   `]
 })
@@ -1405,8 +1841,10 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   // ── Tabs — visibles para cualquiera con reuniones.configuracion ──
   private allTabs = [
     { id: 'privilegios', label: 'Asignación de Privilegios' },
+    { id: 'ausencias', label: 'Ausencias' },
     { id: 'parametros', label: 'Parámetros del Algoritmo' },
-    { id: 'plantillas', label: 'Plantillas de Reunión' }
+    { id: 'plantillas', label: 'Plantillas de Reunión' },
+    { id: 'catalogo', label: 'Catálogo de Discursos' }
   ];
 
   puedeGestionarPlantillas = computed(() => {
@@ -1417,7 +1855,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   visibleTabs = computed(() => {
     return this.puedeGestionarPlantillas()
       ? this.allTabs
-      : this.allTabs.filter(t => t.id !== 'plantillas' && t.id !== 'parametros');
+      : this.allTabs.filter(t => t.id !== 'plantillas' && t.id !== 'parametros' && t.id !== 'catalogo');
   });
 
   activeTab = signal('privilegios');
@@ -1576,6 +2014,68 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
   private matrizLoaded = false;
 
+  // ── Ausencias ──
+  ausencias = signal<AusenciaOut[]>([]);
+  loadingAusencias = signal(false);
+  guardandoAusencia = signal(false);
+  ausenciaError = signal<string | null>(null);
+  ausenciaAEliminar = signal<AusenciaOut | null>(null);
+  ausenciaIdPublicador: number | null = null;
+  ausenciaFechaInicio: string | null = null;
+  ausenciaFechaFin: string | null = null;
+  ausenciaMotivoForm = '';
+  private ausenciasLoaded = false;
+
+  /** Texto libre para filtrar la lista cuando crece. */
+  ausenciaFiltro = signal('');
+
+  /**
+   * Ordena por relevancia, no por fecha bruta: lo que está pasando ahora va
+   * primero, luego lo que viene (lo más cercano antes) y al final lo que ya
+   * terminó. Una lista ordenada solo por fecha entierra lo urgente.
+   */
+  ausenciasOrdenadas = computed<AusenciaOut[]>(() => {
+    const peso = { en_curso: 0, proxima: 1, finalizada: 2 } as Record<string, number>;
+    const q = this.ausenciaFiltro().trim().toLowerCase();
+
+    return [...this.ausencias()]
+      .filter((a) => !q
+        || a.nombre_completo.toLowerCase().includes(q)
+        || (a.motivo ?? '').toLowerCase().includes(q))
+      .sort((a, b) => {
+        const da = peso[this.estadoAusencia(a)];
+        const db = peso[this.estadoAusencia(b)];
+        if (da !== db) return da - db;
+        // Dentro del mismo grupo: las finalizadas más recientes primero,
+        // el resto por la fecha que toca antes.
+        return da === 2
+          ? b.fecha_fin.localeCompare(a.fecha_fin)
+          : a.fecha_inicio.localeCompare(b.fecha_inicio);
+      });
+  });
+
+  ausenciasEnCurso = computed(
+    () => this.ausencias().filter((a) => this.estadoAusencia(a) === 'en_curso').length,
+  );
+  ausenciasProximas = computed(
+    () => this.ausencias().filter((a) => this.estadoAusencia(a) === 'proxima').length,
+  );
+
+  /** Opciones para el picker: el valor que viaja es el id, no el nombre. */
+  opcionesPublicadorAusencia = computed<PickerOption[]>(() =>
+    this.publicadoresOrdenadosAusencia().map((p) => ({
+      value: p.id_publicador,
+      label: p.primer_nombre + ' ' + p.primer_apellido,
+    })),
+  );
+
+  /** Misma lista que "Asignación de Privilegios", solo reordenada por apellido. */
+  publicadoresOrdenadosAusencia = computed(() =>
+    [...this.publicadores()].sort((a, b) =>
+      `${a.primer_apellido} ${a.primer_nombre}`.localeCompare(`${b.primer_apellido} ${b.primer_nombre}`)
+    ),
+  );
+
   constructor() {
     effect(() => {
       if (this.activeTab() === 'parametros' && !this.algoLoaded) {
@@ -1583,6 +2083,12 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       }
       if (this.activeTab() === 'privilegios' && !this.matrizLoaded) {
         this.loadMatriz();
+      }
+      // El picker de publicador de Ausencias reutiliza la misma lista: si aún
+      // no se cargó (nadie visitó "Privilegios" primero), se carga aquí.
+      if (this.activeTab() === 'ausencias') {
+        if (!this.matrizLoaded) this.loadMatriz();
+        if (!this.ausenciasLoaded) this.loadAusencias();
       }
     });
   }
@@ -2067,6 +2573,175 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
         this.matrizLoading.set(false);
       }
     });
+  }
+
+  // ── Ausencias ──────────────────────────────────────
+  loadAusencias(): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+
+    this.loadingAusencias.set(true);
+    this.ausenciasLoaded = true;
+    this.reunionesSvc.getAusencias(idCong).subscribe({
+      next: (res) => {
+        this.ausencias.set(res);
+        this.loadingAusencias.set(false);
+      },
+      error: () => this.loadingAusencias.set(false),
+    });
+  }
+
+  /**
+   * Método plano, no computed: los campos del formulario son propiedades
+   * normales (para poder usar [(ngModel)]), no señales, así que un computed
+   * nunca se volvería a evaluar al escribir en el formulario.
+   */
+  puedeRegistrarAusencia(): boolean {
+    return this.ausenciaIdPublicador !== null && !!this.ausenciaFechaInicio && !!this.ausenciaFechaFin;
+  }
+
+  registrarAusencia(): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong || !this.puedeRegistrarAusencia()) return;
+
+    if (this.ausenciaFechaFin! < this.ausenciaFechaInicio!) {
+      this.ausenciaError.set('La fecha de fin no puede ser anterior a la de inicio.');
+      return;
+    }
+
+    this.guardandoAusencia.set(true);
+    this.ausenciaError.set(null);
+
+    this.reunionesSvc.crearAusencia({
+      id_congregacion: idCong,
+      id_publicador: this.ausenciaIdPublicador!,
+      fecha_inicio: this.ausenciaFechaInicio!,
+      fecha_fin: this.ausenciaFechaFin!,
+      motivo: this.ausenciaMotivoForm.trim() || null,
+    }).subscribe({
+      next: (nueva) => {
+        this.ausencias.update((list) => [nueva, ...list]);
+        this.guardandoAusencia.set(false);
+        this.ausenciaIdPublicador = null;
+        this.ausenciaFechaInicio = null;
+        this.ausenciaFechaFin = null;
+        this.ausenciaMotivoForm = '';
+        this.showToast('success', `Ausencia registrada para ${nueva.nombre_completo}.`);
+      },
+      error: (err) => {
+        this.guardandoAusencia.set(false);
+        this.ausenciaError.set(err?.error?.detail ?? 'No se pudo registrar la ausencia.');
+      },
+    });
+  }
+
+  confirmarEliminarAusencia(): void {
+    const a = this.ausenciaAEliminar();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!a || !idCong) return;
+    this.ausenciaAEliminar.set(null);
+
+    this.reunionesSvc.eliminarAusencia(a.id_ausencia, idCong).subscribe({
+      next: () => {
+        this.ausencias.update((list) => list.filter((x) => x.id_ausencia !== a.id_ausencia));
+      },
+      error: (err) => {
+        this.showToast('error', err?.error?.detail ?? 'No se pudo eliminar la ausencia.');
+      },
+    });
+  }
+
+  /**
+   * Estado de una ausencia respecto a hoy. Es lo que separa "esta persona no
+   * está disponible ahora mismo" de "esto ya pasó": sin esto la lista es plana
+   * y hay que leer fechas una por una.
+   */
+  estadoAusencia(a: AusenciaOut): 'en_curso' | 'proxima' | 'finalizada' {
+    const hoy = this.hoyISO();
+    if (a.fecha_fin < hoy) return 'finalizada';
+    if (a.fecha_inicio > hoy) return 'proxima';
+    return 'en_curso';
+  }
+
+  estadoAusenciaLabel(a: AusenciaOut): string {
+    switch (this.estadoAusencia(a)) {
+      case 'en_curso':   return 'En curso';
+      case 'proxima':    return 'Próxima';
+      default:           return 'Finalizada';
+    }
+  }
+
+  /** Texto de apoyo: cuánto falta o cuánto lleva. Evita hacer cuentas mentales. */
+  estadoAusenciaDetalle(a: AusenciaOut): string {
+    const estado = this.estadoAusencia(a);
+    if (estado === 'en_curso') {
+      const faltan = this.diasEntre(this.hoyISO(), a.fecha_fin);
+      return faltan === 0 ? 'Termina hoy' : (faltan === 1 ? 'Termina mañana' : 'Termina en ' + faltan + ' días');
+    }
+    if (estado === 'proxima') {
+      const faltan = this.diasEntre(this.hoyISO(), a.fecha_inicio);
+      return faltan === 1 ? 'Empieza mañana' : 'Empieza en ' + faltan + ' días';
+    }
+    return 'Finalizada';
+  }
+
+  /** Duración total del rango, inclusiva en ambos extremos. */
+  duracionAusencia(a: AusenciaOut): string {
+    const dias = this.diasEntre(a.fecha_inicio, a.fecha_fin) + 1;
+    return dias === 1 ? '1 día' : dias + ' días';
+  }
+
+  private hoyISO(): string {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + mm + '-' + dd;
+  }
+
+  private diasEntre(desdeISO: string, hastaISO: string): number {
+    const toDate = (iso: string) => {
+      const [y, m, d] = iso.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
+    const ms = toDate(hastaISO).getTime() - toDate(desdeISO).getTime();
+    return Math.round(ms / 86400000);
+  }
+
+  /** Iniciales para el avatar, mismo lenguaje visual que la matriz de privilegios. */
+  inicialesAusencia(a: AusenciaOut): string {
+    const partes = a.nombre_completo.trim().split(/\s+/);
+    const primera = partes[0]?.[0] ?? '';
+    const segunda = partes.length > 1 ? partes[partes.length - 1][0] : '';
+    return (primera + segunda).toUpperCase();
+  }
+
+  avatarAusenciaClass(a: AusenciaOut): string {
+    return getInitialAvatarStyle(a.nombre_completo.trim() || '');
+  }
+
+  /**
+   * Rango compacto: el año se escribe una sola vez al final cuando ambos
+   * extremos caen en el mismo. El formato largo ("30 de ago de 2026 – 6 de
+   * sept de 2026") partía la línea en móvil y dejaba el separador huérfano.
+   */
+  formatRangoAusencia(a: AusenciaOut): string {
+    const partes = (iso: string) => {
+      const [y, m, d] = iso.split('-').map(Number);
+      const fecha = new Date(y, m - 1, d);
+      const mes = fecha.toLocaleDateString('es-CO', { month: 'short' }).replace('.', '');
+      return { dia: d, mes, ano: y };
+    };
+
+    const ini = partes(a.fecha_inicio);
+    const fin = partes(a.fecha_fin);
+
+    if (a.fecha_inicio === a.fecha_fin) {
+      return ini.dia + ' ' + ini.mes + ' ' + ini.ano;
+    }
+    if (ini.ano === fin.ano) {
+      return ini.dia + ' ' + ini.mes + ' – ' + fin.dia + ' ' + fin.mes + ' ' + fin.ano;
+    }
+    return ini.dia + ' ' + ini.mes + ' ' + ini.ano + ' – ' + fin.dia + ' ' + fin.mes + ' ' + fin.ano;
   }
 
   getPermiso(pub: PublicadorMatrizItem, key: string): boolean {
