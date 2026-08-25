@@ -3,16 +3,20 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  ActualizarEnlaceRequest,
   ConfiguracionAseoOut,
   ConfirmarLogisticaRequest,
   ConflictoLogistica,
   EditarAseoRequest,
   EditarLogisticaItemRequest,
+  EnlacePublicoLogistica,
+  GenerarEnlaceRequest,
   GenerarLogisticaRequest,
   GrupoBase,
   LogisticaItemOut,
   LogisticaMesOut,
   MesDisponible,
+  OpcionesPdfLogistica,
   PublicadorBase,
 } from '../models/logistica.models';
 
@@ -73,8 +77,8 @@ export class LogisticaService {
     });
   }
 
-  getCandidatos(puesto: string, idCong: number | null, incluirHermanas = false): Observable<PublicadorBase[]> {
-    let params = this.congParams(idCong).set('puesto', puesto).set('incluir_hermanas', incluirHermanas);
+  getCandidatos(puesto: string, idCong: number | null): Observable<PublicadorBase[]> {
+    const params = this.congParams(idCong).set('puesto', puesto);
     return this.http.get<PublicadorBase[]>(`${this.base}/candidatos`, { params });
   }
 
@@ -107,8 +111,54 @@ export class LogisticaService {
     return this.http.delete<{ ok: boolean }>(`${this.base}/mes`, { params });
   }
 
-  descargarPdf(ano: number, mes: number, idCong: number | null): Observable<Blob> {
+  descargarPdf(
+    ano: number, mes: number, idCong: number | null, opciones: OpcionesPdfLogistica = {},
+  ): Observable<Blob> {
     let params = this.congParams(idCong).set('ano', ano).set('mes', mes);
+    if (opciones.incluir_discursos) params = params.set('incluir_discursos', 'true');
+    if (opciones.tamano_pagina) params = params.set('tamano_pagina', opciones.tamano_pagina);
+    if (opciones.orientacion) params = params.set('orientacion', opciones.orientacion);
     return this.http.get(`${this.base}/pdf`, { params, responseType: 'blob' });
+  }
+
+  // ── Enlace público ──────────────────────────────────────────
+
+  obtenerEnlace(
+    ano: number, mes: number, idCong: number | null,
+  ): Observable<EnlacePublicoLogistica | null> {
+    let params = this.congParams(idCong).set('ano', ano).set('mes', mes);
+    return this.http.get<EnlacePublicoLogistica | null>(`${this.base}/enlace`, { params });
+  }
+
+  generarEnlace(
+    payload: GenerarEnlaceRequest, idCong: number | null,
+  ): Observable<EnlacePublicoLogistica> {
+    return this.http.post<EnlacePublicoLogistica>(`${this.base}/enlace`, payload, {
+      params: this.congParams(idCong),
+    });
+  }
+
+  actualizarEnlaceExpiracion(
+    payload: ActualizarEnlaceRequest, idCong: number | null,
+  ): Observable<EnlacePublicoLogistica> {
+    return this.http.patch<EnlacePublicoLogistica>(`${this.base}/enlace`, payload, {
+      params: this.congParams(idCong),
+    });
+  }
+
+  revocarEnlaces(
+    ano: number, mes: number, idCong: number | null,
+  ): Observable<{ revocados: number }> {
+    return this.http.post<{ revocados: number }>(
+      `${this.base}/revocar-enlaces`, { ano, mes }, { params: this.congParams(idCong) },
+    );
+  }
+
+  // ── Compartir por WhatsApp ────────────────────────────────────
+
+  /** Texto ya redactado por el backend, listo para editar y enviar. */
+  resumenDia(fecha: string, idCong: number | null): Observable<{ mensaje: string }> {
+    const params = this.congParams(idCong).set('fecha', fecha);
+    return this.http.get<{ mensaje: string }>(`${this.base}/resumen-dia`, { params });
   }
 }

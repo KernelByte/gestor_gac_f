@@ -680,7 +680,7 @@ const SECCION_LABELS: Record<string, string> = {
       text-transform: uppercase;
       letter-spacing: 0.07em;
       color: #6d28d9;
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
     }
     :host-context(.dark) .tipo-eyebrow { color: #c4b5fd; }
     .tipo-icon { width: 14px; height: 14px; flex-shrink: 0; }
@@ -708,7 +708,7 @@ const SECCION_LABELS: Record<string, string> = {
       margin: 0 0 10px;
       line-height: 1.12;
       letter-spacing: -0.03em;
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
     }
     @media (min-width: 640px) {
       .header-date { font-size: 2rem; }
@@ -796,7 +796,7 @@ const SECCION_LABELS: Record<string, string> = {
       text-transform: uppercase;
       letter-spacing: 0.07em;
       color: #2563eb;
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
     }
     :host-context(.dark) .discurso-eyebrow { color: #60a5fa; }
     .discurso-eyebrow svg { width: 14px; height: 14px; flex-shrink: 0; }
@@ -808,7 +808,7 @@ const SECCION_LABELS: Record<string, string> = {
       color: var(--text);
       line-height: 1.25;
       letter-spacing: -0.018em;
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
       overflow-wrap: break-word;
     }
     @media (min-width: 640px) { .discurso-tema { font-size: 1.375rem; } }
@@ -911,7 +911,7 @@ const SECCION_LABELS: Record<string, string> = {
       margin: 0 0 6px;
       line-height: 1.3;
       letter-spacing: -0.005em;
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
     }
     :host-context(.dark) .banner-title { color: #c4b5fd; }
     @media (min-width: 640px) { .banner-title { font-size: 1.0625rem; } }
@@ -994,7 +994,7 @@ const SECCION_LABELS: Record<string, string> = {
       text-overflow: ellipsis;
       white-space: nowrap;
       -webkit-font-smoothing: antialiased;
-      font-family: 'Urbanist', sans-serif;
+      font-family: var(--font-display);
     }
     :host-context(.dark) .seccion-titulo {
       opacity: 0.9;
@@ -1768,11 +1768,16 @@ export class ReunionesResumenComponent {
 
           const log$ = this.logisticaService.getMes(ano, mes, idCong).pipe(
             map(mesData => ({
+              // El Resumen es de solo lectura para la congregación: solo debe
+              // ver lo ya publicado, igual que el resumen de la app móvil.
+              // `getMes` también alimenta el editor de logística (que sí
+              // necesita ver el borrador), así que el filtro va aquí y no
+              // en el backend.
               asignaciones: mesData.asignaciones.filter(
-                a => a.fecha === fechaIso && a.tipo_reunion === tipo,
+                a => a.fecha === fechaIso && a.tipo_reunion === tipo && a.confirmado,
               ),
               aseo: mesData.aseo.filter(
-                a => a.fecha === fechaIso && a.tipo_reunion === tipo,
+                a => a.fecha === fechaIso && a.tipo_reunion === tipo && a.confirmado,
               ),
             }) as LogisticaData),
             catchError(() => of(null as LogisticaData | null)),

@@ -127,6 +127,20 @@ export interface ConflictoLogisticaItem {
   motivo: string;
 }
 
+/**
+ * Una asignación ya guardada cuyo publicador tiene una ausencia registrada
+ * que cubre esa fecha. No bloquea nada -solo se avisa en la celda-, a
+ * diferencia de ConflictoLogisticaItem.
+ */
+export interface AusenciaLogisticaItem {
+  id_logistica: number;
+  fecha: string;
+  tipo_reunion: string;
+  puesto: string;
+  id_publicador: number;
+  motivo: string | null;
+}
+
 export interface LogisticaMesOut {
   ano: number;
   mes: number;
@@ -140,6 +154,8 @@ export interface LogisticaMesOut {
   conflictos: number;
   /** Dónde están, para marcarlos en la tabla. */
   conflictos_detalle: ConflictoLogisticaItem[];
+  /** Asignaciones ya guardadas cuyo publicador está de ausencia esa fecha. */
+  ausencias_detalle: AusenciaLogisticaItem[];
   cobertura_total: number;
   cobertura_cubierta: number;
   fechas: FechaReunionOut[];
@@ -200,6 +216,50 @@ export const PERMISO_LABEL: Record<string, string> = {
   audio:      'Audio',
   video:      'Video',
 };
+
+// ── Enlace público ──────────────────────────────────────────────────────
+
+export interface EnlacePublicoLogistica {
+  token: string;
+  url_publica: string;
+  fecha_expiracion: string;
+  contador_accesos: number;
+}
+
+export interface GenerarEnlaceRequest {
+  ano: number;
+  mes: number;
+  /** Ausente = 7 días después del fin de mes (default del servicio). */
+  fecha_expiracion?: string | null;
+}
+
+export interface ActualizarEnlaceRequest {
+  ano: number;
+  mes: number;
+  fecha_expiracion: string;
+}
+
+/** Lo que ve un publicador sin login al abrir el enlace público del mes. */
+export interface LogisticaPublicoOut {
+  nombre_congregacion: string;
+  ano: number;
+  mes: number;
+  fechas: FechaReunionOut[];
+  asignaciones: LogisticaItemOut[];
+  aseo: LogisticaAseoOut[];
+  expira_en: string;
+}
+
+// ── Opciones de impresión ───────────────────────────────────────────────
+
+export type TamanoPagina = 'carta' | 'a4';
+export type OrientacionPagina = 'vertical' | 'horizontal';
+
+export interface OpcionesPdfLogistica {
+  incluir_discursos?: boolean;
+  tamano_pagina?: TamanoPagina;
+  orientacion?: OrientacionPagina;
+}
 
 export const PUESTOS_LABEL: Record<string, string> = {
   acomodador_1: 'Acomodador 1',

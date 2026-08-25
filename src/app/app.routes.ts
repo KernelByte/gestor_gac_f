@@ -10,6 +10,7 @@ export const routes: Routes = [
 
   { path: 'public/informe/:token', title: 'Enviar Informe', loadComponent: () => import('./features/public/informe/public-informe.page').then(m => m.PublicInformePage) },
   { path: 'public/visita/:token', title: 'Visita del Superintendente', loadComponent: () => import('./features/public/visita/public-visita.page').then(m => m.PublicVisitaPage) },
+  { path: 'public/logistica/:token', title: 'Programa de la Congregación', loadComponent: () => import('./features/public/logistica/public-logistica.page').then(m => m.PublicLogisticaPage) },
 
   // Shell protegido
   {
