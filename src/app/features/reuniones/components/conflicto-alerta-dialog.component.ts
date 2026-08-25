@@ -11,6 +11,7 @@ const TIPO_LABEL: Record<string, string> = {
   logistica:        'Logística',
   discurso_saliente:'Discurso saliente',
   exhibidor:        'Exhibidor',
+  ausencia:         'Ausencia',
 };
 
 const TIPO_COLOR: Record<string, string> = {
@@ -19,6 +20,8 @@ const TIPO_COLOR: Record<string, string> = {
   logistica:        '#0891b2',
   discurso_saliente:'#7c3aed',
   exhibidor:        '#165cfc',
+  // Ámbar, no uno de los tonos de agenda: una ausencia no es una doble-reserva.
+  ausencia:         '#d97706',
 };
 
 @Component({
@@ -29,6 +32,7 @@ const TIPO_COLOR: Record<string, string> = {
   template: `
     <!-- Overlay -->
     <div
+      data-testid="dialogo-conflicto"
       class="conflicto-overlay"
       (click)="onAction(false)"
       role="dialog"
@@ -50,8 +54,8 @@ const TIPO_COLOR: Record<string, string> = {
             </svg>
           </div>
           <div class="conflicto-header-text">
-            <p class="conflicto-title" id="conflicto-title">Conflicto de asignación</p>
-            <p class="conflicto-subtitle">Se detectaron asignaciones existentes</p>
+            <p class="conflicto-title" id="conflicto-title">{{ soloAusencia ? 'Publicador ausente' : 'Conflicto de asignación' }}</p>
+            <p class="conflicto-subtitle">{{ soloAusencia ? 'Tiene una ausencia registrada en esta fecha' : 'Se detectaron asignaciones existentes' }}</p>
           </div>
         </div>
 
@@ -60,12 +64,20 @@ const TIPO_COLOR: Record<string, string> = {
 
         <!-- Body -->
         <div class="conflicto-body">
-          <p class="conflicto-desc">
-            <span class="conflicto-nombre">{{ nombre }}</span>
-            ya tiene la{{ asignaciones.length === 1 ? '' : 's' }} siguiente{{ asignaciones.length === 1 ? '' : 's' }}
-            asignación{{ asignaciones.length === 1 ? '' : 'es' }}
-            el <span class="conflicto-fecha">{{ fechaFormateada }}</span>:
-          </p>
+          @if (soloAusencia) {
+            <p class="conflicto-desc">
+              <span class="conflicto-nombre">{{ nombre }}</span>
+              tiene una ausencia registrada
+              el <span class="conflicto-fecha">{{ fechaFormateada }}</span>:
+            </p>
+          } @else {
+            <p class="conflicto-desc">
+              <span class="conflicto-nombre">{{ nombre }}</span>
+              ya tiene la{{ asignaciones.length === 1 ? '' : 's' }} siguiente{{ asignaciones.length === 1 ? '' : 's' }}
+              asignación{{ asignaciones.length === 1 ? '' : 'es' }}
+              el <span class="conflicto-fecha">{{ fechaFormateada }}</span>:
+            </p>
+          }
 
           <ul class="conflicto-list">
             @for (a of asignaciones; track a.tipo + a.detalle) {
@@ -98,10 +110,10 @@ const TIPO_COLOR: Record<string, string> = {
 
         <!-- Actions -->
         <div class="conflicto-actions">
-          <button class="conflicto-btn-cancel" (click)="onAction(false)">
+          <button data-testid="conflicto-cancelar" class="conflicto-btn-cancel" (click)="onAction(false)">
             Cancelar
           </button>
-          <button class="conflicto-btn-confirm" (click)="onAction(true)">
+          <button data-testid="conflicto-aceptar" class="conflicto-btn-confirm" (click)="onAction(true)">
             Asignar igualmente
           </button>
         </div>
@@ -409,6 +421,11 @@ export class ConflictoAlertaDialogComponent {
   @Input() fecha = '';
   @Input() asignaciones: ConflictoAsignacion[] = [];
   @Output() resolved = new EventEmitter<boolean>();
+
+  /** True cuando el único "conflicto" detectado es una ausencia registrada. */
+  get soloAusencia(): boolean {
+    return this.asignaciones.length > 0 && this.asignaciones.every((a) => a.tipo === 'ausencia');
+  }
 
   get fechaFormateada(): string {
     if (!this.fecha) return this.fecha;

@@ -8,7 +8,7 @@ import { environment } from '../../../../environments/environment';
 import { ConflictoAlertaDialogComponent } from '../components/conflicto-alerta-dialog.component';
 
 export interface ConflictoAsignacion {
-  tipo: 'entre_semana' | 'fin_semana' | 'logistica' | 'discurso_saliente' | 'exhibidor';
+  tipo: 'entre_semana' | 'fin_semana' | 'logistica' | 'discurso_saliente' | 'exhibidor' | 'ausencia';
   detalle: string;
   fecha: string;
   /**

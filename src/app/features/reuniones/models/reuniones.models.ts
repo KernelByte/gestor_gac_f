@@ -147,6 +147,27 @@ export interface UpdateMatrizRequest {
   cambios: CambioPermisoPublicador[];
 }
 
+// ──────────────────────────────────────────────────────
+// CONFIGURACIÓN — AUSENCIAS DE PUBLICADORES
+// ──────────────────────────────────────────────────────
+
+export interface AusenciaOut {
+  id_ausencia: number;
+  id_publicador: number;
+  nombre_completo: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  motivo: string | null;
+}
+
+export interface CrearAusenciaRequest {
+  id_congregacion: number;
+  id_publicador: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+  motivo?: string | null;
+}
+
 export interface ParteParsed {
   nombre_parte: string;
   seccion: string;

@@ -23,6 +23,8 @@ import {
   EditarAsignacionRequest,
   PeriodoConfirmado,
   ConflictosPlantillaResponse,
+  AusenciaOut,
+  CrearAusenciaRequest,
 } from '../models/reuniones.models';
 
 @Injectable({ providedIn: 'root' })
@@ -41,6 +43,24 @@ export class ReunionesService {
 
   updateMatrizConfiguracion(payload: UpdateMatrizRequest): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/configuracion/matriz`, payload);
+  }
+
+  // ──────────────────────────────────────────────────
+  // CONFIGURACIÓN — AUSENCIAS
+  // ──────────────────────────────────────────────────
+
+  getAusencias(idCong: number): Observable<AusenciaOut[]> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.get<AusenciaOut[]>(`${this.base}/configuracion/ausencias`, { params });
+  }
+
+  crearAusencia(payload: CrearAusenciaRequest): Observable<AusenciaOut> {
+    return this.http.post<AusenciaOut>(`${this.base}/configuracion/ausencias`, payload);
+  }
+
+  eliminarAusencia(idAusencia: number, idCong: number): Observable<{ ok: boolean }> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.delete<{ ok: boolean }>(`${this.base}/configuracion/ausencias/${idAusencia}`, { params });
   }
 
   // ──────────────────────────────────────────────────
