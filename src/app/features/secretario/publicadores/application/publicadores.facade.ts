@@ -33,11 +33,14 @@ export class PublicadoresFacade {
     }
   }
 
-  async create(payload: Partial<Publicador>) {
+  /** Devuelve el publicador creado: quien llama necesita su id para lo que
+   *  cuelga de él (privilegios, por ejemplo), que no existe hasta este punto. */
+  async create(payload: Partial<Publicador>): Promise<Publicador> {
     this.vm.update((s: VM) => ({ ...s, loading: true }));
     try {
-      await this.repo.create(payload);
+      const creado = await this.repo.create(payload);
       await this.load();
+      return creado;
     } finally {
       this.vm.update((s: VM) => ({ ...s, loading: false }));
     }

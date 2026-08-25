@@ -22,6 +22,8 @@ export interface Publicador {
   fecha_actualizacion?: string;
   fecha_inactividad?: string | null;
   fecha_inicio_informe?: string | null;
+  fecha_inicio_efectivo?: string | null;
+  origen_fecha_inicio_informe?: 'manual' | 'informe' | 'alta' | null;
   codigo_pin?: string | null;
   permite_login_simple?: boolean;
 }

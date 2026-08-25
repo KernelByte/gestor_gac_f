@@ -445,7 +445,7 @@
                         <!-- Exento del requisito de horas por edad avanzada o salud delicada -->
                         <div *ngIf="selectedPublicador()?.tiene_consideracion"
                            class="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 text-xs font-bold gap-1"
-                           [title]="'Conserva el nombramiento sin tener que cumplir el requisito de 50 h/mes' + (selectedPublicador()?.consideracion_motivo ? ' · ' + selectedPublicador()?.consideracion_motivo : '')">
+                           title="Consideración especial en su servicio de tiempo completo">
                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 000-7.8z" />
                            </svg>
