@@ -26,12 +26,24 @@ export interface AsignacionDraft {
   duracion_minutos?: number;
   fuente_informacion?: string;
   aplica_sala_b?: boolean;
+  /** Si esta ranura espera a alguien. Las canciones y las partes fijas de la
+   *  guía salen igual —el PDF las necesita— pero sin casilla que rellenar. */
+  asignable?: boolean;
   id_publicador: number;
   nombre_completo: string;
+  /** Solo para armar el enlace de WhatsApp de la papeleta S-89-S. */
+  telefono?: string | null;
+  /** Si esta ranura lleva papeleta S-89-S (Seamos Mejores Maestros / Lectura
+   *  de la Biblia): lo decide el backend, con la misma heurística del PDF. */
+  papeleta_s89?: boolean;
   es_reemplazo: boolean;
   es_ayudante?: boolean;
-  estado: 'draft' | 'conflict' | 'confirmado';
-  alternativos: CandidatoAlternativo[];
+  /** 'sin_asignar' cuando la ranura está vacía. Las dos que importan son
+   *  'borrador' y 'publicado': la misma fila, antes y después de publicar. */
+  estado: 'sin_asignar' | 'borrador' | 'publicado';
+  /** Solo vienen recién generada la semana: son los que calculó el motor. Al
+   *  reabrir el mes no están y el panel los pide al abrirse. */
+  alternativos?: CandidatoAlternativo[];
   _swapped?: boolean;
 }
 
@@ -42,8 +54,14 @@ export interface EditarAsignacionRequest {
 export interface ProgramaSemana {
   id_programa: number;
   semana_iso: number;
+  /** Año ISO que acompaña a semana_iso. Lo calcula el backend; nunca derivarlo
+   *  de `fecha` con getFullYear(): en el borde de año no coinciden. */
+  ano_iso?: number;
   fecha: string;
   titulo_guia: string | null;
+  /** Estado de la semana entera: basta una asignación en borrador para que lo
+   *  esté. Lo deriva el backend de sus propias filas. */
+  estado?: 'borrador' | 'publicado';
   partes: AsignacionDraft[];
 }
 
@@ -64,15 +82,31 @@ export interface ProgramaMensualCreateRequest {
   tipo_reunion: string;
   mes: number;
   ano: number;
+  /** Siempre completa: el ordinal de cada semana se calcula contra la guía
+   *  entera. Lo que se autoriza a crear va en `meses_a_crear`. */
   semanas: string[];
   id_plantilla: number;
+  /** Meses que el backend puede crear o reemplazar. Ausente = todos. */
+  meses_a_crear?: { ano: number; mes: number }[];
 }
 
-export interface ConfirmarDraftRequest {
+export interface PublicarProgramaRequest {
   tipo_reunion: string;
-  semanas_iso: number[];
-  ano: number;
   id_congregacion: number;
+  /** Fecha de reunión de cada semana, que es como se identifica la semana de
+   *  punta a punta. Antes viajaba un único `ano` para todas y las semanas del
+   *  año siguiente se perdían en silencio al publicar un rango a caballo de
+   *  fin de año. */
+  fechas: string[];
+}
+
+export interface PublicarProgramaResponse {
+  message: string;
+  publicadas: number;
+  /** Semanas que se pidieron publicar y no tenían nada en borrador. Si no
+   *  viene vacío, algo se quedó fuera y hay que decirlo. */
+  semanas_sin_borrador: string[];
+  semanas_omitidas_sin_reunion: string[];
 }
 
 export interface PeriodoConfirmado {
@@ -81,6 +115,9 @@ export interface PeriodoConfirmado {
   label: string;
   id_plantilla: number | null;
   nombre_plantilla: string | null;
+  /** Los borradores también salen en la lista: antes vivían en caché y
+   *  caducaban solos a las 72 h. */
+  estado?: 'borrador' | 'publicado';
 }
 
 export interface ConflictoMes {
@@ -168,6 +205,35 @@ export interface CrearAusenciaRequest {
   motivo?: string | null;
 }
 
+// ──────────────────────────────────────────────────────
+// CONFIGURACIÓN — SEMANAS SIN REUNIÓN
+// ──────────────────────────────────────────────────────
+
+/** A qué reuniones afecta el evento (asamblea, congreso, Conmemoración). */
+export type AlcanceSemana = 'entre_semana' | 'fin_semana' | 'ambas';
+
+export interface SemanaSinReunion {
+  id_semana_sin_reunion: number;
+  ano_iso: number;
+  semana_iso: number;
+  alcance: AlcanceSemana;
+  motivo: string | null;
+  fecha_inicio: string;
+  fecha_fin: string;
+  /** Cuántas asignaciones se borraron (o se borrarían, en dry_run). */
+  borradas?: number | null;
+}
+
+export interface CrearSemanaSinReunionRequest {
+  id_congregacion: number;
+  /** Cualquier fecha de la semana: el backend deriva la semana ISO. */
+  fecha: string;
+  alcance: AlcanceSemana;
+  motivo?: string | null;
+  /** Solo informa cuánto se borraría, sin tocar nada. */
+  dry_run?: boolean;
+}
+
 export interface ParteParsed {
   nombre_parte: string;
   seccion: string;
@@ -202,8 +268,22 @@ export interface SemanaConfirm {
 }
 
 export interface MWBImportConfirmRequest {
-  id_congregacion: number;
   semanas: SemanaConfirm[];
+}
+
+export interface MWBImportConfirmResponse {
+  mensaje: string;
+  id_plantilla: number;
+  partes_creadas: number;
+}
+
+/** Aviso previo del importador: si `en_uso_por` trae congregaciones,
+ *  confirmar devolverá 409. */
+export interface MWBDuplicadosResponse {
+  existe: boolean;
+  nombre: string;
+  id_plantilla?: number;
+  en_uso_por: { id_congregacion: number; nombre: string; programas: number }[];
 }
 
 // ──────────────────────────────────────────────────────

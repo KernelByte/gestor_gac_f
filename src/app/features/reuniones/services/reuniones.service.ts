@@ -12,11 +12,14 @@ import {
   GenerarAsignacionesResponse,
   GenerarAsignacionesRequest,
   ProgramaMensualCreateRequest,
-  ConfirmarDraftRequest,
+  PublicarProgramaRequest,
+  PublicarProgramaResponse,
   MatrizConfigResponse,
   UpdateMatrizRequest,
   MWBImportPreviewResponse,
   MWBImportConfirmRequest,
+  MWBImportConfirmResponse,
+  MWBDuplicadosResponse,
   AlgorithmParamsResponse,
   AlgorithmParamsUpdate,
   AlgoProfile,
@@ -25,7 +28,17 @@ import {
   ConflictosPlantillaResponse,
   AusenciaOut,
   CrearAusenciaRequest,
+  SemanaSinReunion,
+  CrearSemanaSinReunionRequest,
 } from '../models/reuniones.models';
+
+export interface PublicadorBusqueda {
+  id_publicador: number;
+  nombre_completo: string;
+  sexo?: string;
+  ausente?: boolean;
+  ausencia_motivo?: string | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ReunionesService {
@@ -64,6 +77,24 @@ export class ReunionesService {
   }
 
   // ──────────────────────────────────────────────────
+  // CONFIGURACIÓN — SEMANAS SIN REUNIÓN
+  // ──────────────────────────────────────────────────
+
+  getSemanasSinReunion(idCong: number): Observable<SemanaSinReunion[]> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.get<SemanaSinReunion[]>(`${this.base}/configuracion/semanas-sin-reunion`, { params });
+  }
+
+  crearSemanaSinReunion(payload: CrearSemanaSinReunionRequest): Observable<SemanaSinReunion> {
+    return this.http.post<SemanaSinReunion>(`${this.base}/configuracion/semanas-sin-reunion`, payload);
+  }
+
+  eliminarSemanaSinReunion(idSemana: number, idCong: number): Observable<{ ok: boolean }> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.delete<{ ok: boolean }>(`${this.base}/configuracion/semanas-sin-reunion/${idSemana}`, { params });
+  }
+
+  // ──────────────────────────────────────────────────
   // PLANTILLAS
   // ──────────────────────────────────────────────────
 
@@ -87,40 +118,37 @@ export class ReunionesService {
   }
 
   // ──────────────────────────────────────────────────
-  // DRAFTS & GENERACIÓN
+  // PROGRAMACIÓN (borrador y publicado)
   // ──────────────────────────────────────────────────
+  //
+  // Un solo lector para los dos estados: el borrador dejó de ser una copia en
+  // caché y es una fila más, con `estado: 'borrador'`. Por eso ya no hay
+  // getDraft/deleteDraft por semana, ni un endpoint distinto para el historial.
 
-  getDraft(
+  getProgramaMes(
     tipo: string,
     ano: number,
-    semanaIso: number,
-    idCong: number
-  ): Observable<ProgramaSemana | null> {
-    const params = new HttpParams().set('id_congregacion', idCong);
+    mes: number,
+    idCong: number,
+    soloPublicado = false,
+  ): Observable<ProgramaSemana[]> {
+    const params = new HttpParams()
+      .set('id_congregacion', idCong)
+      .set('solo_publicado', soloPublicado);
     return this.http
-      .get<any>(
-        `${this.base}/asignaciones/draft/${tipo}/${ano}/${semanaIso}`,
-        { params }
-      )
-      .pipe(
-        map((r) =>
-          r?.draft === null || r?.draft === undefined && Object.keys(r).length === 1
-            ? null
-            : this.normalizeSemana(r)
-        )
-      );
+      .get<{ semanas: any[] }>(`${this.base}/programas/mes/${tipo}/${ano}/${mes}`, { params })
+      .pipe(map((r) => (r.semanas ?? []).map((s) => this.normalizeSemana(s))));
   }
 
-  deleteDraft(
+  borrarBorrador(
     tipo: string,
-    ano: number,
-    semanaIso: number,
-    idCong: number
-  ): Observable<{ message: string }> {
-    const params = new HttpParams().set('id_congregacion', idCong);
-    return this.http.delete<{ message: string }>(
-      `${this.base}/asignaciones/draft/${tipo}/${ano}/${semanaIso}`,
-      { params }
+    idCong: number,
+    fechas: string[]
+  ): Observable<{ borradas: number }> {
+    return this.http.request<{ borradas: number }>(
+      'delete',
+      `${this.base}/programas/mes/${tipo}/borrador`,
+      { body: { id_congregacion: idCong, fechas } }
     );
   }
 
@@ -146,11 +174,11 @@ export class ReunionesService {
       );
   }
 
-  confirmarDrafts(
-    payload: ConfirmarDraftRequest
-  ): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(
-      `${this.base}/asignaciones/draft/confirmar`,
+  publicarPrograma(
+    payload: PublicarProgramaRequest
+  ): Observable<PublicarProgramaResponse> {
+    return this.http.post<PublicarProgramaResponse>(
+      `${this.base}/programas/publicar`,
       payload
     );
   }
@@ -166,8 +194,8 @@ export class ReunionesService {
 
   confirmarMWB(
     payload: MWBImportConfirmRequest
-  ): Observable<{ mensaje: string; programas_creados: number }> {
-    return this.http.post<{ mensaje: string; programas_creados: number }>(
+  ): Observable<MWBImportConfirmResponse> {
+    return this.http.post<MWBImportConfirmResponse>(
       `${this.base}/programas/importar-mwb/confirm`,
       payload
     );
@@ -175,8 +203,8 @@ export class ReunionesService {
 
   checkMWBDuplicates(
     payload: MWBImportConfirmRequest
-  ): Observable<{ duplicados: Array<{ semana_iso: number; ano: number; titulo_guia: string; fecha: string | null }> }> {
-    return this.http.post<{ duplicados: Array<{ semana_iso: number; ano: number; titulo_guia: string; fecha: string | null }> }>(
+  ): Observable<MWBDuplicadosResponse> {
+    return this.http.post<MWBDuplicadosResponse>(
       `${this.base}/programas/importar-mwb/check-duplicates`,
       payload
     );
@@ -191,22 +219,6 @@ export class ReunionesService {
     if (sexoFilter) params = params.set('sexo_filter', sexoFilter);
     return this.http.post<AsignacionDraft>(
       `${this.base}/programas/partes/${idProgramaParte}/ayudante`, {}, { params }
-    );
-  }
-
-  swapDraftAsignacion(
-    tipo: string,
-    ano: number,
-    semanaIso: number,
-    idCongregacion: number,
-    idProgramaParte: number,
-    nombreParte: string,
-    idPublicador: number,
-    nombreCompleto: string,
-  ): Observable<{ ok: boolean }> {
-    return this.http.patch<{ ok: boolean }>(
-      `${this.base}/asignaciones/draft/${tipo}/${ano}/${semanaIso}/asignacion`,
-      { id_congregacion: idCongregacion, id_programa_parte: idProgramaParte, nombre_parte: nombreParte, id_publicador: idPublicador, nombre_completo: nombreCompleto }
     );
   }
 
@@ -252,22 +264,6 @@ export class ReunionesService {
     );
   }
 
-  getHistorialConfirmado(
-    tipo: string,
-    ano: number,
-    mes: number,
-    idCong: number
-  ): Observable<ProgramaSemana[]> {
-    const params = new HttpParams()
-      .set('tipo_reunion', tipo)
-      .set('ano', ano)
-      .set('mes', mes)
-      .set('id_congregacion', idCong);
-    return this.http
-      .get<any[]>(`${this.base}/asignaciones/historial`, { params })
-      .pipe(map((semanas) => semanas.map((s) => this.normalizeSemana(s))));
-  }
-
   descargarProgramacionPdf(tipo: string, ano: number, mes: number, idCong: number): Observable<Blob> {
     const params = new HttpParams()
       .set('tipo_reunion', tipo)
@@ -280,6 +276,33 @@ export class ReunionesService {
     });
   }
 
+  descargarPapeletasPdf(ano: number, mes: number, idCong: number, formato: 'x4' | 'x1'): Observable<Blob> {
+    const params = new HttpParams()
+      .set('ano', ano)
+      .set('mes', mes)
+      .set('id_congregacion', idCong)
+      .set('formato', formato);
+    return this.http.get(`${this.base}/asignaciones/historial/pdf-individual`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
+  descargarPapeletaImagen(
+    ano: number, mes: number, idCong: number, idProgramaParte: number, sala: string,
+  ): Observable<Blob> {
+    const params = new HttpParams()
+      .set('ano', ano)
+      .set('mes', mes)
+      .set('id_congregacion', idCong)
+      .set('id_programa_parte', idProgramaParte)
+      .set('sala', sala);
+    return this.http.get(`${this.base}/asignaciones/papeleta-imagen`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
   eliminarHistorialMes(tipo: string, ano: number, mes: number, idCong: number): Observable<{ eliminados: number }> {
     const params = new HttpParams()
       .set('tipo_reunion', tipo)
@@ -287,6 +310,17 @@ export class ReunionesService {
       .set('mes', mes)
       .set('id_congregacion', idCong);
     return this.http.delete<{ eliminados: number }>(`${this.base}/asignaciones/historial`, { params });
+  }
+
+  /** Borra sólo la Sala B (Auxiliar) confirmada de un mes de entre semana,
+   *  sin tocar la Sala Principal. dryRun=true sólo cuenta, no borra. */
+  eliminarSalaBConfirmada(ano: number, mes: number, idCong: number, dryRun = false): Observable<{ borradas: number }> {
+    const params = new HttpParams()
+      .set('ano', ano)
+      .set('mes', mes)
+      .set('id_congregacion', idCong)
+      .set('dry_run', dryRun);
+    return this.http.delete<{ borradas: number }>(`${this.base}/asignaciones/sala-b`, { params });
   }
 
   eliminarHistorialPlantilla(idPlantilla: number, idCong: number): Observable<{ eliminados: number }> {
@@ -302,7 +336,7 @@ export class ReunionesService {
     );
   }
 
-  getCandidatosConfirmados(
+  getCandidatosAsignacion(
     idAsignacion: number,
     idCong: number
   ): Observable<CandidatoAlternativo[]> {
@@ -313,12 +347,33 @@ export class ReunionesService {
     );
   }
 
+  /** Candidatos para una ranura VACÍA, que no tiene `id_asignacion` que pasar. */
+  getCandidatosRanura(
+    idProgramaParte: number,
+    idCong: number,
+    sala: 'Principal' | 'Auxiliar' = 'Principal',
+    esAyudante = false,
+  ): Observable<CandidatoAlternativo[]> {
+    const params = new HttpParams()
+      .set('id_congregacion', idCong)
+      .set('sala', sala)
+      .set('es_ayudante', esAyudante);
+    return this.http.get<CandidatoAlternativo[]>(
+      `${this.base}/partes/${idProgramaParte}/candidatos`,
+      { params }
+    );
+  }
+
+  /** `fecha` es opcional y solo sirve para marcar a quien esté ausente ese
+   *  día: los ausentes siguen apareciendo, para poder forzarlos a conciencia. */
   buscarPublicadoresCong(
     idCong: number,
-    q: string
-  ): Observable<{ id_publicador: number; nombre_completo: string; sexo?: string }[]> {
-    const params = new HttpParams().set('id_congregacion', idCong).set('q', q);
-    return this.http.get<{ id_publicador: number; nombre_completo: string; sexo?: string }[]>(
+    q: string,
+    fecha?: string,
+  ): Observable<PublicadorBusqueda[]> {
+    let params = new HttpParams().set('id_congregacion', idCong).set('q', q);
+    if (fecha) params = params.set('fecha', fecha);
+    return this.http.get<PublicadorBusqueda[]>(
       `${this.base}/asignaciones/buscar-publicadores`,
       { params }
     );
@@ -326,23 +381,42 @@ export class ReunionesService {
 
   editarAsignacion(
     idAsignacion: number,
-    payload: EditarAsignacionRequest
+    payload: EditarAsignacionRequest,
+    idCong: number,
   ): Observable<{ id_asignacion: number; id_publicador: number; nombre_completo: string }> {
+    const params = new HttpParams().set('id_congregacion', idCong);
     return this.http.patch<{ id_asignacion: number; id_publicador: number; nombre_completo: string }>(
       `${this.base}/asignaciones/${idAsignacion}`,
-      payload
+      payload,
+      { params }
     );
   }
 
-  crearAsignacionConfirmada(
+  /** Deja una ranura sin asignar, en borrador o publicada. */
+  eliminarAsignacion(idAsignacion: number, idCongregacion: number): Observable<{ ok: boolean }> {
+    const params = new HttpParams().set('id_congregacion', idCongregacion);
+    return this.http.delete<{ ok: boolean }>(
+      `${this.base}/asignaciones/${idAsignacion}`, { params }
+    );
+  }
+
+  /** Cubre una ranura vacía de un mes confirmado.
+   *
+   *  `sala` y `esAyudante` son obligatorios en la práctica aunque tengan valor
+   *  por omisión: Principal, Sala B y sus ayudantes comparten
+   *  `id_programa_parte`, así que sin ellos el servidor no sabe cuál de las
+   *  cuatro se está rellenando. */
+  crearAsignacion(
     idProgramaParte: number,
     idPublicador: number,
-    idCong: number
+    idCong: number,
+    sala: 'Principal' | 'Auxiliar' = 'Principal',
+    esAyudante = false,
   ): Observable<{ id_asignacion: number; id_publicador: number; nombre_completo: string }> {
     const params = new HttpParams().set('id_congregacion', idCong);
     return this.http.post<{ id_asignacion: number; id_publicador: number; nombre_completo: string }>(
       `${this.base}/partes/${idProgramaParte}/asignacion`,
-      { id_publicador: idPublicador },
+      { id_publicador: idPublicador, sala, es_ayudante: esAyudante },
       { params }
     );
   }

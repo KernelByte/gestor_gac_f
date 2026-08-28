@@ -1,11 +1,12 @@
 ﻿import {
-  Component, signal, computed, inject, OnInit, effect, untracked,
+  Component, signal, computed, inject, OnInit, effect, untracked, HostListener,
 } from '@angular/core';
 import { Observable, Subject, debounceTime, distinctUntilChanged, forkJoin, switchMap, EMPTY } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { TimePickerComponent } from '../../../shared/components/time-picker/time-picker.component';
+import { whatsappUrl } from '../../../shared/whatsapp';
 import { UbicacionPickerComponent } from './ubicacion-picker.component';
 import { DiscursoCatalogoInputComponent } from './discurso-catalogo-input.component';
 import { CongregacionContactoInputComponent } from './congregacion-contacto-input.component';
@@ -42,24 +43,145 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
   template: `
     <div class="flex flex-col h-full gap-0">
 
-      <!-- PAGE HEADER (solo móvil: en escritorio el título ya se muestra
-           junto al selector de tipo de reunión, en el componente padre). -->
-      <div class="md:hidden shrink-0 flex items-center justify-between gap-3 pb-3">
-        <div class="min-w-0">
-          <h1 class="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
-            Discursos Públicos
-          </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 min-h-[1rem] truncate">Salientes · Entrantes · Hospitalidad</p>
-        </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          @if (!mesDatos() && hasEditPermission()) {
-            <button data-testid="disc-btn-generar-mes" (click)="abrirModalGenerar()" [disabled]="estado() === 'loading'"
-              aria-label="Generar mes"
-              class="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 text-xs font-bold text-white transition-all shadow-sm active:scale-95">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </button>
+      <!-- ===== BARRA SUPERIOR ===== -->
+      <!-- Comparte fila la píldora de pestañas que proyecta el shell con los
+           controles del mes: la banda del título iba de lado a lado con casi
+           todo el ancho vacío y repetía lo que la píldora encendida ya dice.
+           Los controles sólo aparecen con un mes abierto; sin él, la lista
+           vive centrada en la tarjeta del panel. -->
+      <div class="shrink-0 flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-2 pb-3 min-w-0">
+
+        <ng-content select="[cabecera]"></ng-content>
+
+        <!-- Empuja la bandeja y lo que venga en [accion-derecha] juntos al
+             extremo derecho, sin hueco entre ellos. -->
+        <span class="hidden md:block md:flex-1" aria-hidden="true"></span>
+
+        <!-- Filete: separa la píldora del resto de la barra. Sólo con un mes
+             abierto: sin él la bandeja se va al otro extremo y el filete
+             quedaba suelto a media fila. -->
+        @if (mesDatos() && estado() !== 'loading') {
+          <span class="hidden md:block w-px h-7 bg-slate-200 dark:bg-slate-700 shrink-0" aria-hidden="true"></span>
+        }
+
+        <!-- ===== BANDEJA DE CONTROL ===== -->
+        <div class="flex flex-wrap items-center gap-0.5 min-w-0 w-full md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+
+          <!-- El selector de mes sólo con un mes abierto: sin él, la lista
+               vive centrada en la tarjeta del panel. -->
+          @if (mesDatos() && estado() !== 'loading') {
+            <div class="relative shrink-0" data-mes-menu>
+              <button
+                type="button"
+                data-testid="disc-selector-mes"
+                (click)="menuMesesAbierto.set(!menuMesesAbierto())"
+                [attr.aria-expanded]="menuMesesAbierto()"
+                aria-haspopup="listbox"
+                aria-label="Cambiar de mes"
+                class="flex items-center gap-1.5 h-8 px-2.5 rounded-xl transition-colors"
+                [class]="menuMesesAbierto()
+                  ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                  : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'">
+                <svg class="w-3.5 h-3.5 shrink-0 text-violet-500/80 dark:text-violet-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 3v3M16 3v3"/></svg>
+                <span class="text-sm font-bold whitespace-nowrap">{{ mesLabel(mesDatos()!.ano, mesDatos()!.mes) }}</span>
+                <svg class="w-3.5 h-3.5 shrink-0 opacity-50 transition-transform duration-200" [class.rotate-180]="menuMesesAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+
+              @if (menuMesesAbierto()) {
+                <div role="listbox" aria-label="Meses programados" class="absolute z-40 top-[calc(100%+4px)] left-0 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
+                  <div class="max-h-[min(60vh,20rem)] overflow-y-auto overscroll-contain simple-scrollbar p-1.5">
+                    @for (grupo of mesesPorAno(); track grupo.ano) {
+                      <!-- Año como divisor del grupo, no repetido por fila. -->
+                      <p class="flex items-center gap-2 px-1.5 pt-2.5 pb-1 first:pt-0.5">
+                        <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
+                        <span class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></span>
+                      </p>
+                      @for (m of grupo.meses; track m.ano + '-' + m.mes) {
+                        <button
+                          type="button"
+                          role="option"
+                          data-testid="disc-fila-mes"
+                          [attr.data-ano]="m.ano"
+                          [attr.data-mes]="m.mes"
+                          [attr.aria-selected]="esMesActivo(m)"
+                          (click)="cargarMes(m.ano, m.mes); menuMesesAbierto.set(false)"
+                          [disabled]="estado() === 'loading'"
+                          class="w-full flex items-center gap-2 px-2 h-9 rounded-lg text-xs transition-colors disabled:opacity-40"
+                          [class]="esMesActivo(m)
+                            ? 'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 font-bold'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
+                          @if (m.confirmado) {
+                            <svg class="w-3 h-3 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round"/></svg>
+                          }
+                          <span class="flex-1 min-w-0 truncate text-left">{{ mesSoloLabel(m.mes) }}</span>
+                          @if (esMesActivo(m)) {
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          }
+                        </button>
+                      }
+                    }
+                  </div>
+                  @if (hasEditPermission()) {
+                    <div class="shrink-0 p-1.5 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        data-testid="disc-btn-generar-mes"
+                        (click)="menuMesesAbierto.set(false); abrirModalGenerar()"
+                        [disabled]="estado() === 'loading'"
+                        class="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-[0.98]">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Generar Mes
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
           }
+
+            <!-- Historial / Temas / Congregaciones: catálogos que no dependen
+                 del mes abierto, así que están siempre. -->
+            <button (click)="abrirModalHistorial()"
+              title="Historial de discursos" aria-label="Historial de discursos"
+              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors active:scale-[0.97]">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/>
+              </svg>
+              <span class="hidden sm:inline">Historial</span>
+            </button>
+            <button (click)="subTab.set('temas')"
+              role="tab" [attr.aria-selected]="subTab() === 'temas'"
+              title="Portafolio de temas"
+              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold transition-colors active:scale-[0.97]"
+              [class]="subTab() === 'temas'
+                ? 'bg-amber-500 text-white shadow-sm'
+                : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+              </svg>
+              <span>Temas</span>
+            </button>
+            <button (click)="subTab.set('congregaciones')"
+              role="tab" [attr.aria-selected]="subTab() === 'congregaciones'"
+              title="Congregaciones de contacto"
+              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold transition-colors active:scale-[0.97]"
+              [class]="subTab() === 'congregaciones'
+                ? 'bg-teal-500 text-white shadow-sm'
+                : 'text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20'">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                <circle cx="12" cy="12" r="2"/>
+              </svg>
+              <span class="hidden sm:inline">Congregaciones</span>
+            </button>
         </div>
+
+        <!-- Fuera de la bandeja: siempre cae al extremo derecho de la fila,
+             justo después de ella. -->
+        <ng-content select="[accion-derecha]"></ng-content>
       </div>
 
 
@@ -108,139 +230,48 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
       }
 
       <!-- LAYOUT -->
-      <div class="flex-1 min-h-0 flex flex-col md:flex-row gap-3 md:gap-4 overflow-hidden">
+      <!-- Sin barra lateral: el historial de meses vivía en una columna fija
+           de hasta 16rem que sólo se usaba al elegir el mes. Ahora es un
+           selector desplegable dentro de la barra de pestañas (igual que
+           Logística), y ese ancho es de la lista de discursos el resto del
+           tiempo. -->
+      <div class="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative">
 
-        <!-- SIDEBAR -->
-        <aside class="hidden md:flex md:w-52 lg:w-56 xl:w-60 2xl:w-64 shrink-0 flex-col gap-3 overflow-y-auto simple-scrollbar p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-
-          @if (mesesDisponibles().length > 0) {
-            <div class="flex flex-col gap-0.5">
-              <div class="flex items-center justify-between px-1.5 pb-1.5">
-                <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Meses programados</p>
-                <!-- Mismo pill violeta que ya usa el resto del módulo
-                     (p.ej. las etiquetas de "Historial" en Entre semana). -->
-                <span class="min-w-[1.25rem] h-[1.15rem] px-1.5 rounded-full bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-400 text-[0.6rem] font-bold data-num flex items-center justify-center">{{ mesesDisponibles().length }}</span>
+          <!-- Sub-pestañas del mes abierto. Los catálogos que no dependen
+               del mes (Historial, Temas, Congregaciones) viven arriba, en la
+               bandeja de control. -->
+          @if (mesDatos()) {
+            <div class="shrink-0 flex items-center gap-2 px-1.5 py-1.5 border-b border-slate-100 dark:border-slate-800">
+              <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1" role="tablist">
+                <button (click)="subTab.set('entrantes')"
+                  role="tab" [attr.aria-selected]="subTab() === 'entrantes'"
+                  class="flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]"
+                  [class]="subTab() === 'entrantes'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                  <!-- Entrantes: flecha apuntando hacia adentro (recepción) -->
+                  <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h13M10 6l-6 6 6 6"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 5v14" opacity=".4"/>
+                  </svg>
+                  <span>Entrantes</span>
+                </button>
+                <button (click)="subTab.set('salientes')"
+                  role="tab" [attr.aria-selected]="subTab() === 'salientes'"
+                  class="flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]"
+                  [class]="subTab() === 'salientes'
+                    ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                  <!-- Salientes: flecha apuntando hacia afuera (salida) -->
+                  <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12H8M14 6l6 6-6 6"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 5v14" opacity=".4"/>
+                  </svg>
+                  <span>Salientes</span>
+                </button>
               </div>
-              <!-- Sin caja propia: el aside ya es el contenedor, envolver la
-                   lista en otra caja adentro solo apilaba bordes. -->
-              @for (grupo of mesesPorAno(); track grupo.ano) {
-                <!-- Año como divisor del grupo, no repetido por fila; mismo
-                     filete que separa las secciones de la tabla principal. -->
-                <div class="flex items-center gap-2 px-1.5 pt-3 pb-1.5 first:pt-0.5">
-                  <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
-                  <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-                </div>
-                <!-- Misma tarjeta bordeada que el historial de Entre semana:
-                     borde propio + fondo blanco en reposo, violeta al pasar
-                     el mouse. -->
-                <div class="flex flex-col gap-1.5">
-                  @for (m of grupo.meses; track m.ano + '-' + m.mes) {
-                    <!-- Sin botones de PDF por fila: ya estan en la barra de
-                         acciones del detalle cuando el mes esta abierto. -->
-                    <button data-testid="disc-fila-mes" [attr.data-ano]="m.ano" [attr.data-mes]="m.mes" (click)="cargarMes(m.ano, m.mes)" [disabled]="estado() === 'loading'"
-                      class="w-full flex items-center justify-between gap-1 px-2.5 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:border-violet-300 dark:hover:border-violet-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-40 group">
-                      <span class="min-w-0 flex items-center gap-1.5">
-                        @if (m.confirmado) {
-                          <svg class="w-3 h-3 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round"/></svg>
-                        }
-                        <span class="truncate">{{ mesSoloLabel(m.mes) }}</span>
-                      </span>
-                      <svg class="w-3 h-3 shrink-0 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                    </button>
-                  }
-                </div>
-              }
             </div>
           }
-
-          <!-- Generar Mes -->
-          @if (hasEditPermission()) {
-            <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 shrink-0">
-              <button data-testid="disc-btn-generar-mes" (click)="abrirModalGenerar()" [disabled]="estado() === 'loading'"
-                class="w-full flex items-center justify-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Generar Mes
-              </button>
-            </div>
-          }
-        </aside>
-
-        <!-- MAIN -->
-        <div class="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative">
-
-          <!-- Tab bar: Entrantes/Salientes (left) only when a month is loaded; Temas (right) always -->
-          <div class="shrink-0 flex items-center justify-between gap-2 px-1.5 py-1.5 border-b border-slate-100 dark:border-slate-800">
-            <!-- Left: Entrantes / Salientes tabs -->
-            <div class="flex items-center">
-              @if (mesDatos()) {
-                <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1" role="tablist">
-                  <button (click)="subTab.set('entrantes')"
-                    role="tab" [attr.aria-selected]="subTab() === 'entrantes'"
-                    class="flex items-center justify-center gap-1.5 px-3 h-10 rounded-lg text-xs font-bold transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]"
-                    [class]="subTab() === 'entrantes'
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
-                    <!-- Entrantes: flecha apuntando hacia adentro (descarga/recepción) -->
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h13M10 6l-6 6 6 6"/>
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M21 5v14" opacity=".4"/>
-                    </svg>
-                    <span>Entrantes</span>
-                  </button>
-                  <button (click)="subTab.set('salientes')"
-                    role="tab" [attr.aria-selected]="subTab() === 'salientes'"
-                    class="flex items-center justify-center gap-1.5 px-3 h-10 rounded-lg text-xs font-bold transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]"
-                    [class]="subTab() === 'salientes'
-                      ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
-                    <!-- Salientes: flecha apuntando hacia afuera (envío/salida) -->
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M21 12H8M14 6l6 6-6 6"/>
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 5v14" opacity=".4"/>
-                    </svg>
-                    <span>Salientes</span>
-                  </button>
-                </div>
-              }
-            </div>
-            <!-- Right: Historial / Temas buttons (always visible, independent of month) -->
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button (click)="abrirModalHistorial()"
-                title="Historial de discursos" aria-label="Historial de discursos"
-                class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-xs font-bold border transition-[background-color,color,border-color,transform] duration-150 ease-out active:scale-[0.97] border-sky-300 dark:border-sky-700/60 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="9"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/>
-                </svg>
-                <span class="hidden sm:inline">Historial</span>
-              </button>
-              <button (click)="subTab.set('temas')"
-                role="tab" [attr.aria-selected]="subTab() === 'temas'"
-                title="Portafolio de temas"
-                class="flex items-center gap-1.5 px-3 h-10 rounded-xl text-xs font-bold border transition-[background-color,color,border-color,transform] duration-150 ease-out active:scale-[0.97]"
-                [class]="subTab() === 'temas'
-                  ? 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/25'
-                  : 'border-amber-300 dark:border-amber-700/60 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                </svg>
-                <span>Temas</span>
-              </button>
-              <button (click)="subTab.set('congregaciones')"
-                role="tab" [attr.aria-selected]="subTab() === 'congregaciones'"
-                title="Congregaciones de contacto"
-                class="flex items-center gap-1.5 px-3 h-10 rounded-xl text-xs font-bold border transition-[background-color,color,border-color,transform] duration-150 ease-out active:scale-[0.97]"
-                [class]="subTab() === 'congregaciones'
-                  ? 'bg-teal-500 border-teal-500 text-white shadow-md shadow-teal-500/25'
-                  : 'border-teal-300 dark:border-teal-700/60 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20'">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                  <circle cx="12" cy="12" r="2"/>
-                </svg>
-                <span class="hidden sm:inline">Congregaciones</span>
-              </button>
-            </div>
-          </div>
 
           @if (subTab() === 'congregaciones') {
             <!-- CONGREGACIONES DE CONTACTO tab -->
@@ -407,52 +438,57 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
               <div class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-violet-500 animate-spin"></div>
             </div>
           } @else if (!mesDatos()) {
-            <div class="flex-1 flex flex-col gap-4 p-4 md:items-center md:justify-center md:p-8 overflow-y-auto simple-scrollbar">
-              <!-- Icono/texto — oculto en móvil cuando ya hay meses -->
-              <div [class]="mesesDisponibles().length > 0 ? 'hidden md:flex flex-col items-center gap-3 text-center' : 'flex flex-col items-center gap-3 text-center pt-4 md:pt-0'">
-                <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                  <svg class="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <!-- Es el único momento sin barra de mes, así que la lista y el
+                 botón de generar viven aquí: sin ellos no habría forma de
+                 entrar a la pantalla (mismo criterio que Logística). -->
+            <div class="flex-1 flex items-center justify-center p-6 overflow-y-auto simple-scrollbar">
+              <div class="w-full max-w-sm flex flex-col items-center text-center gap-1.5">
+
+                <div class="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mb-2.5">
+                  <svg class="w-6 h-6 text-violet-500 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
-                <div>
-                  <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Ninguna programación seleccionada</h3>
-                  <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
-                    @if (mesesDisponibles().length > 0) {
-                      Selecciona un mes del historial para verlo.
-                    } @else if (hasEditPermission()) {
-                      Genera una nueva programación para comenzar.
-                    } @else {
-                      No hay discursos programados. Consulta con el secretario.
+
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Ninguna programación abierta</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-[15rem]">
+                  @if (mesesDisponibles().length > 0) {
+                    Elige un mes para verlo y editarlo.
+                  } @else if (hasEditPermission()) {
+                    Genera una nueva programación para comenzar.
+                  } @else {
+                    No hay discursos programados. Consulta con el secretario.
+                  }
+                </p>
+
+                @if (mesesDisponibles().length > 0) {
+                  <!-- Lista en tarjeta y no chips sueltos: filas del mismo
+                       ancho, una debajo de otra, se leen como un solo bloque. -->
+                  <div class="w-full mt-4 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden bg-white dark:bg-slate-900">
+                    @for (m of mesesDisponibles(); track m.ano + '-' + m.mes) {
+                      <button
+                        data-testid="disc-fila-mes"
+                        [attr.data-ano]="m.ano"
+                        [attr.data-mes]="m.mes"
+                        (click)="cargarMes(m.ano, m.mes)"
+                        [disabled]="estado() === 'loading'"
+                        class="w-full flex items-center gap-2.5 px-3.5 h-11 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="m.confirmado ? 'bg-emerald-500' : 'bg-amber-400'" [title]="m.confirmado ? 'Confirmado' : 'Borrador'"></span>
+                        <span class="min-w-0 truncate text-left flex-1">{{ mesLabel(m.ano, m.mes) }}</span>
+                        <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                      </button>
                     }
-                  </p>
-                </div>
-                @if (mesesDisponibles().length === 0 && hasEditPermission()) {
+                  </div>
+                }
+
+                @if (hasEditPermission()) {
                   <button data-testid="disc-btn-generar-mes" (click)="abrirModalGenerar()"
-                    class="flex items-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-xs font-bold text-white transition-[transform,background-color] duration-150 ease-out shadow-sm active:scale-[0.97]">
+                    [disabled]="estado() === 'loading'"
+                    class="w-full mt-4 flex items-center justify-center gap-2 px-4 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 text-xs font-bold text-white transition-all shadow-sm active:scale-[0.98]">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     Generar mes
                   </button>
                 }
+
               </div>
-              <!-- Lista de meses — solo móvil -->
-              @if (mesesDisponibles().length > 0) {
-                <div class="md:hidden flex flex-col gap-2 pb-4">
-                  <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1">Meses programados</p>
-                  @for (m of mesesDisponibles(); track m.ano + '-' + m.mes) {
-                    <!-- Sin boton de PDF: ya esta en la barra de acciones del
-                         detalle cuando el mes esta abierto. -->
-                    <button data-testid="disc-fila-mes" [attr.data-ano]="m.ano" [attr.data-mes]="m.mes" (click)="cargarMes(m.ano, m.mes)" [disabled]="estado() === 'loading'"
-                      class="w-full flex items-center justify-between px-4 h-12 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-800 dark:text-slate-100 text-sm font-medium transition-[transform,background-color] duration-150 ease-out active:scale-[0.98] disabled:opacity-40 border border-slate-200 dark:border-slate-700">
-                      <span class="flex items-center gap-2">
-                        @if (m.confirmado) {
-                          <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round"/></svg>
-                        }
-                        {{ mesLabel(m.ano, m.mes) }}
-                      </span>
-                      <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                    </button>
-                  }
-                </div>
-              }
             </div>
           } @else {
             <!-- MES header -->
@@ -480,22 +516,28 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                       <span class="hidden sm:inline">Confirmar</span>
                     </button>
                   }
+                  <!-- Mismo botón icono-solo que usa Logística (rounded-xl,
+                       gris neutro, tinte de color sólo al pasar por encima):
+                       las acciones de mes se ven igual en todas las pestañas.
+                       Estas dos conservan una etiqueta corta en pantallas
+                       anchas porque, a diferencia de las demás pestañas, aquí
+                       hay dos PDF distintos que un solo icono no distingue. -->
                   <button (click)="descargarPdf('entrantes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
                     title="PDF Entrantes" aria-label="PDF Entrantes"
-                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/40 disabled:opacity-40 text-xs font-semibold text-blue-600 dark:text-blue-400 transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.96]">
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                    <span class="hidden sm:inline">PDF Entrantes</span>
+                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/25 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span class="hidden sm:inline">Entrantes</span>
                   </button>
                   <button (click)="descargarPdf('salientes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
                     title="PDF Salientes" aria-label="PDF Salientes"
-                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 hover:bg-violet-100 dark:hover:bg-violet-500/20 hover:border-violet-300 dark:hover:border-violet-500/40 disabled:opacity-40 text-xs font-semibold text-violet-600 dark:text-violet-400 transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.96]">
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                    <span class="hidden sm:inline">PDF Salientes</span>
+                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-violet-600 dark:hover:text-violet-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span class="hidden sm:inline">Salientes</span>
                   </button>
                   <button (click)="borrarMes()" [disabled]="estado() === 'loading'"
                     title="Borrar mes" aria-label="Borrar mes"
-                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/20 hover:border-red-300 dark:hover:border-red-500/40 disabled:opacity-40 text-xs font-semibold text-red-600 dark:text-red-400 transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.96]">
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    class="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/25 hover:text-red-600 dark:hover:text-red-400 transition-all active:scale-95 disabled:opacity-40">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>
                 </div>
               }
@@ -926,42 +968,47 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
             </div>
           }
         </div>
-      </div>
     </div>
 
     <!-- ===== MODAL GENERAR MES ===== -->
     @if (modalGenerarVisible()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarModalGenerar()">
-        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4" (click)="$event.stopPropagation()">
-          <h2 data-testid="disc-modal-generar" class="text-base font-black text-slate-900 dark:text-white">Generar Mes — Discursos Públicos</h2>
+        <div data-testid="disc-modal-generar" class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-5" (click)="$event.stopPropagation()">
+          <h2 class="text-base font-black text-slate-800 dark:text-white">Generar Mes — Discursos Públicos</h2>
 
-          <!-- Año -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Año</label>
-            <div class="flex items-center gap-2">
-              <button (click)="genAno = genAno - 1" class="w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-500 hover:text-violet-600 transition-all flex items-center justify-center active:scale-95">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-              </button>
-              <span class="flex-1 text-center text-sm font-black text-slate-900 dark:text-white tabular-nums">{{ genAno }}</span>
-              <button (click)="genAno = genAno + 1" class="w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-500 hover:text-violet-600 transition-all flex items-center justify-center active:scale-95">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Mes grid -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Mes</label>
-            <div class="grid grid-cols-4 gap-1.5">
-              @for (m of MESES; track m.v) {
-                <button data-testid="disc-opcion-mes" [attr.data-mes]="m.v" (click)="genMes = m.v"
-                  class="h-9 rounded-xl text-xs font-bold transition-all active:scale-95"
-                  [class]="genMes === m.v
-                    ? 'bg-[#6D28D9] text-white shadow-md shadow-violet-200 dark:shadow-violet-900/40'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-500 hover:bg-violet-100 dark:hover:bg-violet-900/30 hover:text-violet-700 dark:hover:text-violet-300 border border-transparent hover:border-violet-200 dark:hover:border-violet-800'">
-                  {{ m.l.slice(0, 3) }}
+          <!-- Período: mes (desplegable propio, coherente con el resto del aplicativo) + año (numérico) -->
+          <div class="flex gap-3">
+            <div class="flex-1 flex flex-col gap-1">
+              <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Mes</label>
+              <div class="relative">
+                @if (mesDropdownAbierto()) {
+                  <div class="fixed inset-0 z-[59]" (click)="mesDropdownAbierto.set(false)"></div>
+                }
+                <button type="button" data-testid="disc-generar-mes" (click)="mesDropdownAbierto.set(!mesDropdownAbierto())"
+                  class="h-9 w-full px-3 rounded-xl border bg-white dark:bg-slate-800 text-sm text-left flex items-center justify-between gap-2 outline-none transition-[border-color,background-color] duration-150 ease-out"
+                  [class]="mesDropdownAbierto() ? 'border-violet-500 ring-2 ring-violet-400/30' : 'border-slate-200 dark:border-slate-600 hover:border-violet-300 dark:hover:border-violet-700'">
+                  <span class="text-slate-800 dark:text-slate-100">{{ mesSoloLabel(genMes) }}</span>
+                  <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="mesDropdownAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
-              }
+                @if (mesDropdownAbierto()) {
+                  <div class="absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
+                    @for (m of mesesOpciones; track m.value) {
+                      <button type="button" data-testid="disc-opcion-mes" [attr.data-mes]="m.value"
+                        (click)="genMes = m.value; mesDropdownAbierto.set(false)"
+                        class="w-full px-3.5 py-2 text-sm font-semibold text-left transition-colors duration-100"
+                        [class]="genMes === m.value ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
+                        {{ m.label }}
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="w-24 flex flex-col gap-1">
+              <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Año</label>
+              <input data-testid="disc-generar-ano" type="number"
+                [(ngModel)]="genAno" min="2024" max="2030"
+                class="h-9 w-full px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-400/30 transition-[border-color] duration-150 ease-out">
             </div>
           </div>
           <div class="flex gap-2 justify-end">
@@ -1428,7 +1475,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   private congCtx = inject(CongregacionContextService);
   private auth = inject(AuthStore);
 
-  readonly MESES = MESES_ES.map((l, i) => ({ l, v: i + 1 }));
+  readonly mesesOpciones = MESES_ES.map((label, i) => ({ value: i + 1, label }));
 
   estado = signal<Estado>('idle');
   errorMsg = signal('');
@@ -1457,6 +1504,24 @@ export class ReunionesDiscursosComponent implements OnInit {
   publicadores = signal<PublicadorSimple[]>([]);
   descargandoPdf = signal(false);
   subTab = signal<SubTab>('entrantes');
+
+  // Selector de mes de la barra de pestañas. Sustituye a la barra lateral
+  // fija: la lista de meses y el botón de generar sólo ocupan ancho mientras
+  // se usan, igual que en Logística.
+  menuMesesAbierto = signal(false);
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (this.menuMesesAbierto() && !target.closest('[data-mes-menu]')) {
+      this.menuMesesAbierto.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.menuMesesAbierto()) this.menuMesesAbierto.set(false);
+  }
 
   temas = signal<TemaPublicador[]>([]);
   loadingTemas = signal(false);
@@ -1570,6 +1635,7 @@ export class ReunionesDiscursosComponent implements OnInit {
 
   genMes = new Date().getMonth() + 1;
   genAno = new Date().getFullYear();
+  mesDropdownAbierto = signal(false);
 
   nuevoSaliente: {
     fecha: string; id_publicador: number | null; congregacion_destino: string;
@@ -1639,6 +1705,12 @@ export class ReunionesDiscursosComponent implements OnInit {
   /** Solo el nombre del mes, para listas ya agrupadas por año. */
   mesSoloLabel(mes: number): string {
     return MESES_ES[mes - 1];
+  }
+
+  /** El mes que está abierto ahora mismo, para marcarlo en el selector. */
+  esMesActivo(m: { ano: number; mes: number }): boolean {
+    const abierto = this.mesDatos();
+    return !!abierto && abierto.ano === m.ano && abierto.mes === m.mes;
   }
 
   mesMinDate(): string {
@@ -2286,11 +2358,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   enviarWhatsapp(): void {
     const w = this.whatsappPendiente();
     if (!w) return;
-    const texto = encodeURIComponent(w.mensaje);
-    const url = w.telefono
-      ? `https://wa.me/${w.telefono}?text=${texto}`
-      : `https://wa.me/?text=${texto}`;
-    window.open(url, '_blank');
+    window.open(whatsappUrl(w.mensaje, w.telefono), '_blank');
     this.cerrarWhatsapp();
   }
 

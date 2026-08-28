@@ -1752,7 +1752,7 @@ export class ReunionesResumenComponent {
           const fechaIso = this.toIsoDate(next.fecha);
 
           const prog$ = this.reunionesService
-            .getHistorialConfirmado(tipo, ano, mes, idCong)
+            .getProgramaMes(tipo, ano, mes, idCong, true)
             .pipe(
               switchMap(semanas => {
                 const match = semanas.find(s => s.semana_iso === targetWeek);
@@ -1760,7 +1760,7 @@ export class ReunionesResumenComponent {
                 const prevMes = mes === 1 ? 12 : mes - 1;
                 const prevAno = mes === 1 ? ano - 1 : ano;
                 return this.reunionesService
-                  .getHistorialConfirmado(tipo, prevAno, prevMes, idCong)
+                  .getProgramaMes(tipo, prevAno, prevMes, idCong, true)
                   .pipe(map(s2 => s2.find(s => s.semana_iso === targetWeek) ?? null));
               }),
               catchError(() => of(null as ProgramaSemana | null))

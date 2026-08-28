@@ -25,6 +25,8 @@ import {
   CambioPermisoPublicador,
   UpdateMatrizRequest,
   AusenciaOut,
+  SemanaSinReunion,
+  AlcanceSemana,
 } from '../models/reuniones.models';
 
 @Component({
@@ -71,6 +73,11 @@ import {
                  @if (tab.id === 'ausencias') {
                    <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
                      <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                   </span>
+                 }
+                 @if (tab.id === 'sin-reunion') {
+                   <span class="shrink-0 flex items-center justify-center w-3.5 h-3.5">
+                     <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="15" x2="15" y2="19"/><line x1="15" y1="15" x2="9" y2="19"/></svg>
                    </span>
                  }
                  @if (tab.id === 'parametros') {
@@ -337,17 +344,21 @@ import {
                        {{ p.tipo === 'entre_semana' ? 'Estudio' : 'Fin de Sem' }}
                      </span>
                    </div>
-                   <!-- Acciones siempre visibles -->
-                   <div class="flex items-center gap-0.5 shrink-0">
-                     <button (click)="editPlantilla(p.id_plantilla)"
-                             class="plt-icon-btn w-8 h-8 flex items-center justify-center text-[#6D28D9]/60 dark:text-purple-400/60 rounded-lg" title="Editar">
-                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                     </button>
-                     <button (click)="deletePlantilla(p.id_plantilla)"
-                             class="plt-icon-btn w-8 h-8 flex items-center justify-center text-rose-400/60 rounded-lg" title="Eliminar">
-                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                     </button>
-                   </div>
+                   <!-- Solo los roles globales mantienen la guía: es la misma
+                        para todas las congregaciones y editarla las alcanza a
+                        todas. Ver puedeGestionarGuia. -->
+                   @if (puedeGestionarGuia()) {
+                     <div class="flex items-center gap-0.5 shrink-0">
+                       <button (click)="editPlantilla(p.id_plantilla)"
+                               class="plt-icon-btn w-8 h-8 flex items-center justify-center text-[#6D28D9]/60 dark:text-purple-400/60 rounded-lg" title="Editar">
+                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                       </button>
+                       <button (click)="deletePlantilla(p.id_plantilla)"
+                               class="plt-icon-btn w-8 h-8 flex items-center justify-center text-rose-400/60 rounded-lg" title="Eliminar">
+                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                       </button>
+                     </div>
+                   }
                  </div>
                } @empty {
                  @if (!plantillasLoading()) {
@@ -820,6 +831,205 @@ import {
         </div>
       }
 
+      <!-- ===== TAB: SEMANAS SIN REUNIÓN ===== -->
+      @if (activeTab() === 'sin-reunion') {
+      <div class="aus-tab flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto simple-scrollbar animate-fadeIn">
+
+        <!-- ── Formulario de registro ──
+             Sin overflow-hidden: el calendario del date-picker es un popup
+             absolute anclado dentro de esta tarjeta. -->
+        <div class="aus-card shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+          <div class="px-4 sm:px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-start gap-3">
+              <div class="aus-form-icon shrink-0 w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 flex items-center justify-center">
+                <svg class="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="15" x2="15" y2="19"/><line x1="15" y1="15" x2="9" y2="19"/></svg>
+              </div>
+              <div class="min-w-0">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Marcar semana sin reunión</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  Para asambleas, congresos o la Conmemoración. No se programará a nadie esa semana,
+                  ni en las reuniones ni en la logística.
+                  <span class="font-bold text-rose-600 dark:text-rose-400">Se borra lo ya programado de esa semana, incluso lo confirmado</span>,
+                  para que esos publicadores queden libres para otras partes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 sm:p-5">
+            <div class="grid grid-cols-2 lg:grid-cols-12 items-start gap-3 sm:gap-4">
+              <div class="col-span-2 lg:col-span-3 flex flex-col gap-1.5">
+                <label class="aus-label">Semana</label>
+                <app-date-picker
+                  [(ngModel)]="ssrFecha"
+                  [ngModelOptions]="{ standalone: true }"
+                  colorScheme="violet"
+                  [fieldLike]="true"
+                  [inlineOnMobile]="true"
+                  placeholder="Cualquier día de la semana">
+                </app-date-picker>
+              </div>
+
+              <div class="col-span-2 lg:col-span-3 flex flex-col gap-1.5">
+                <label class="aus-label">Se cancela</label>
+                <app-select-picker
+                  [ngModel]="ssrAlcance"
+                  (ngModelChange)="ssrAlcance = $event"
+                  [ngModelOptions]="{ standalone: true }"
+                  [options]="opcionesAlcanceSemana"
+                  colorScheme="violet"
+                  ariaLabel="Alcance"
+                  placeholder="Selecciona el alcance">
+                </app-select-picker>
+              </div>
+
+              <div class="col-span-2 lg:col-span-6 flex flex-col gap-1.5">
+                <label for="ssr-motivo" class="aus-label">
+                  Motivo <span class="font-medium normal-case tracking-normal text-slate-400 dark:text-slate-500">(opcional)</span>
+                </label>
+                <div class="flex items-stretch gap-2">
+                  <input
+                    id="ssr-motivo"
+                    type="text"
+                    class="form-control aus-field flex-1 min-w-0"
+                    [(ngModel)]="ssrMotivo"
+                    [ngModelOptions]="{ standalone: true }"
+                    maxlength="200"
+                    placeholder="Asamblea de circuito, congreso, Conmemoración...">
+                  <button
+                    (click)="prepararSemanaSinReunion()"
+                    [disabled]="!puedeMarcarSemana() || guardandoSemana()"
+                    aria-label="Marcar semana sin reunión"
+                    title="Marcar semana sin reunión"
+                    class="aus-submit shrink-0 flex items-center justify-center gap-1.5 px-4 min-h-[44px] rounded-xl bg-[#6D28D9] text-white text-xs font-bold shadow-sm shadow-purple-900/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+                    @if (guardandoSemana()) {
+                      <div class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                    } @else {
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    }
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            @if (semanaError()) {
+              <div role="alert" class="aus-error mt-3 flex items-start gap-2 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200/70 dark:border-rose-800/50 px-3 py-2.5">
+                <svg class="w-4 h-4 shrink-0 text-rose-500 mt-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <p class="text-xs font-semibold text-rose-700 dark:text-rose-300 leading-relaxed">{{ semanaError() }}</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- ── Lista de semanas marcadas ── -->
+        <div class="aus-card shrink-0 sm:shrink sm:flex-1 sm:min-h-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 overflow-hidden flex flex-col">
+          @if (loadingSemanas()) {
+            <div class="flex items-center justify-center py-16">
+              <div class="w-6 h-6 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          } @else if (semanasSinReunion().length === 0) {
+            <div class="flex flex-col items-center justify-center py-14 px-6 text-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 flex items-center justify-center">
+                <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <p class="text-xs font-bold text-slate-500 dark:text-slate-400">No hay semanas marcadas</p>
+              <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
+                Marca aquí las semanas de asamblea, congreso o Conmemoración para que no se programe a nadie.
+              </p>
+            </div>
+          } @else {
+            <div class="shrink-0 flex items-center gap-2 flex-wrap px-4 sm:px-5 py-3 border-b border-slate-100 dark:border-slate-800">
+              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Marcadas</p>
+              <span class="aus-chip aus-chip-neutral">{{ semanasSinReunion().length }}</span>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar divide-y divide-slate-100 dark:divide-slate-800">
+              @for (s of semanasSinReunion(); track s.id_semana_sin_reunion) {
+                <div class="flex items-center gap-3 px-4 sm:px-5 py-3">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <p class="text-xs font-bold text-slate-800 dark:text-white">{{ formatRangoSemana(s) }}</p>
+                      <span class="aus-chip aus-chip-neutral">{{ etiquetaAlcance(s.alcance) }}</span>
+                    </div>
+                    <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Semana {{ s.semana_iso }} de {{ s.ano_iso }}@if (s.motivo) { · {{ s.motivo }} }
+                    </p>
+                  </div>
+                  <button
+                    (click)="semanaAEliminar.set(s)"
+                    class="btn-icon-delete shrink-0"
+                    aria-label="Quitar marca"
+                    title="Quitar marca">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- ===== MODAL: CONFIRMAR MARCAR SEMANA (destructivo) ===== -->
+      @if (semanaAConfirmar() !== null) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="semanaAConfirmar.set(null)">
+          <div class="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"></div>
+          <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 w-full max-w-sm p-6 flex flex-col gap-5 animate-fadeIn" (click)="$event.stopPropagation()">
+            <div class="flex flex-col items-center gap-3 text-center">
+              <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 flex items-center justify-center">
+                <svg class="w-6 h-6 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-slate-900 dark:text-white">Marcar semana sin reunión</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  {{ formatRangoSemana(semanaAConfirmar()!) }} —
+                  {{ etiquetaAlcance(semanaAConfirmar()!.alcance) }}.
+                </p>
+                @if ((semanaAConfirmar()!.borradas ?? 0) > 0) {
+                  <p class="text-xs mt-2 leading-relaxed font-bold text-rose-600 dark:text-rose-400">
+                    Se borrarán {{ semanaAConfirmar()!.borradas }} asignaciones ya hechas, incluidas las confirmadas.
+                    Esto no se puede deshacer.
+                  </p>
+                } @else {
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                    No hay nada programado en esa semana todavía.
+                  </p>
+                }
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button (click)="semanaAConfirmar.set(null)" class="flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
+              <button (click)="confirmarMarcarSemana()" [disabled]="guardandoSemana()" class="flex-1 h-9 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold shadow-sm shadow-rose-900/20 transition-all disabled:opacity-50">Sí, marcar</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ===== MODAL: CONFIRMAR QUITAR MARCA ===== -->
+      @if (semanaAEliminar() !== null) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="semanaAEliminar.set(null)">
+          <div class="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"></div>
+          <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 w-full max-w-sm p-6 flex flex-col gap-5 animate-fadeIn" (click)="$event.stopPropagation()">
+            <div class="flex flex-col items-center gap-3 text-center">
+              <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/40 flex items-center justify-center">
+                <svg class="w-6 h-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-slate-900 dark:text-white">Quitar la marca</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  {{ formatRangoSemana(semanaAEliminar()!) }} volverá a programarse.
+                  Las asignaciones que se borraron no se recuperan: hay que volver a generar.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button (click)="semanaAEliminar.set(null)" class="flex-1 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
+              <button (click)="confirmarEliminarSemana()" class="flex-1 h-9 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold shadow-sm shadow-rose-900/20 transition-all">Sí, quitar</button>
+            </div>
+          </div>
+        </div>
+      }
+
        <!-- ===== TAB: PARÁMETROS DEL ALGORITMO ===== -->
        @if (activeTab() === 'parametros') {
         <div class="flex-1 min-h-0 flex flex-col gap-5 algo-tab animate-fadeIn overflow-y-auto simple-scrollbar pb-8">
@@ -1217,37 +1427,55 @@ import {
                  <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                </div>
 
-               <h3 class="text-lg font-black text-slate-900 dark:text-white text-center tracking-tight">¡Atención! Semanas Ya Existentes</h3>
-               <p class="text-sm text-slate-500 dark:text-slate-400 text-center mt-2 leading-relaxed px-2">
-                 Se han detectado programas creados para las siguientes fechas. Si continúa, los datos actuales serán <b>reemplazados</b> por la nueva importación.
-               </p>
+               @if (mwbEnUsoPor().length > 0) {
+                 <!-- La guía es global: si alguna congregación ya generó su
+                      programación a partir de ella, reimportarla reescribiría
+                      las partes de las que cuelga. No se ofrece reemplazar. -->
+                 <h3 class="text-lg font-black text-slate-900 dark:text-white text-center tracking-tight">Esta guía está en uso</h3>
+                 <p class="text-sm text-slate-500 dark:text-slate-400 text-center mt-2 leading-relaxed px-2">
+                   «{{ mwbNombreGuia() }}» ya está importada y hay congregaciones que han generado
+                   su programación a partir de ella. No se puede reimportar sin destruir esa
+                   programación.
+                 </p>
 
-               <div class="mt-5 space-y-2 max-h-48 overflow-y-auto pr-1 simple-scrollbar">
-                 @for (dup of mwbDuplicates(); track $index) {
-                   <div class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
-                     <div class="min-w-0">
-                       <p class="text-[0.6875rem] font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate">{{ dup.titulo_guia }}</p>
-                       <p class="text-[0.625rem] text-slate-400 font-bold tabular-nums">Semana {{ dup.semana_iso }} ({{ dup.fecha }})</p>
+                 <div class="mt-5 space-y-2 max-h-48 overflow-y-auto pr-1 simple-scrollbar">
+                   @for (cong of mwbEnUsoPor(); track cong.id_congregacion) {
+                     <div class="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+                       <p class="text-[0.6875rem] font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate">{{ cong.nombre }}</p>
+                       <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 uppercase tracking-tighter tabular-nums">{{ cong.programas }} programas</span>
                      </div>
-                     <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 uppercase tracking-tighter">Existente</span>
-                   </div>
-                 }
-               </div>
+                   }
+                 </div>
+
+                 <p class="text-[0.6875rem] text-slate-400 text-center mt-4 leading-relaxed px-2">
+                   Cada congregación debe eliminar antes su programación desde «Eliminar guía»,
+                   en su pestaña de programación.
+                 </p>
+               } @else {
+                 <h3 class="text-lg font-black text-slate-900 dark:text-white text-center tracking-tight">Esta guía ya está subida</h3>
+                 <p class="text-sm text-slate-500 dark:text-slate-400 text-center mt-2 leading-relaxed px-2">
+                   «{{ mwbNombreGuia() }}» ya existe, pero ninguna congregación la está usando
+                   todavía. Si continúa, sus partes serán <b>reemplazadas</b> por las de esta
+                   importación.
+                 </p>
+               }
              </div>
 
              <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
                <button (click)="dismissDuplicateModal()"
                        class="flex-1 h-10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
-                 Cancelar
+                 {{ mwbEnUsoPor().length > 0 ? 'Entendido' : 'Cancelar' }}
                </button>
-               <button (click)="acceptDuplicateReplace()"
-                       [disabled]="mwbConfirming()"
-                       class="flex-1 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm shadow-amber-900/20 transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97] flex items-center justify-center gap-2">
-                 @if (mwbConfirming()) {
-                   <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                 }
-                 Reemplazar Datos
-               </button>
+               @if (mwbEnUsoPor().length === 0) {
+                 <button (click)="acceptDuplicateReplace()"
+                         [disabled]="mwbConfirming()"
+                         class="flex-1 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm shadow-amber-900/20 transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97] flex items-center justify-center gap-2">
+                   @if (mwbConfirming()) {
+                     <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                   }
+                   Reemplazar Datos
+                 </button>
+               }
              </div>
            </div>
          </div>
@@ -1830,6 +2058,17 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
   private reunionesSvc = inject(ReunionesService);
   private congregacionCtx = inject(CongregacionContextService);
+
+  /**
+   * Si el usuario puede subir, editar o borrar la guía de actividades.
+   *
+   * La guía es global: la misma para todas las congregaciones, y editarla baja
+   * el cambio a la programación de todas. Por eso la mantienen solo los roles
+   * globales, y no quien tiene 'reuniones.configuracion' de una congregación.
+   * El backend lo exige igual (requiere_guia_global); esto es para que la
+   * pantalla no ofrezca botones que van a devolver 403.
+   */
+  puedeGestionarGuia = computed(() => this.congregacionCtx.isAdmin());
   private authStore = inject(AuthStore);
   private tokenSvc = inject(TokenService);
   private route = inject(ActivatedRoute);
@@ -1842,6 +2081,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   private allTabs = [
     { id: 'privilegios', label: 'Asignación de Privilegios' },
     { id: 'ausencias', label: 'Ausencias' },
+    { id: 'sin-reunion', label: 'Semanas sin reunión' },
     { id: 'parametros', label: 'Parámetros del Algoritmo' },
     { id: 'plantillas', label: 'Plantillas de Reunión' },
     { id: 'catalogo', label: 'Catálogo de Discursos' }
@@ -1885,7 +2125,12 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   mwbTargetMonth = signal<number>(new Date().getMonth() + 1);
 
   // ── MWB Duplicate Detection ──
-  mwbDuplicates = signal<Array<{ semana_iso: number; ano: number; titulo_guia: string; fecha: string | null }>>([]);
+  /** Nombre de la guía que ya existe con el mismo periodo. */
+  mwbNombreGuia = signal('');
+  /** Congregaciones con programación generada a partir de esa guía. Si trae
+   *  algo, reimportar está bloqueado: la guía es global y reescribir sus
+   *  partes rompería la programación de todas ellas. */
+  mwbEnUsoPor = signal<Array<{ id_congregacion: number; nombre: string; programas: number }>>([]);
   mwbShowDuplicateModal = signal(false);
   private mwbPendingPayload: any = null;
 
@@ -2026,6 +2271,25 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   ausenciaMotivoForm = '';
   private ausenciasLoaded = false;
 
+  // ── Semanas sin reunión ──
+  semanasSinReunion = signal<SemanaSinReunion[]>([]);
+  loadingSemanas = signal(false);
+  guardandoSemana = signal(false);
+  semanaError = signal<string | null>(null);
+  /** Resultado del dry_run: lo que se marcará si el usuario confirma. */
+  semanaAConfirmar = signal<SemanaSinReunion | null>(null);
+  semanaAEliminar = signal<SemanaSinReunion | null>(null);
+  ssrFecha: string | null = null;
+  ssrAlcance: AlcanceSemana = 'ambas';
+  ssrMotivo = '';
+  private semanasLoaded = false;
+
+  readonly opcionesAlcanceSemana = [
+    { value: 'ambas', label: 'Ambas reuniones' },
+    { value: 'entre_semana', label: 'Solo entre semana' },
+    { value: 'fin_semana', label: 'Solo fin de semana' },
+  ];
+
   /** Texto libre para filtrar la lista cuando crece. */
   ausenciaFiltro = signal('');
 
@@ -2089,6 +2353,9 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       if (this.activeTab() === 'ausencias') {
         if (!this.matrizLoaded) this.loadMatriz();
         if (!this.ausenciasLoaded) this.loadAusencias();
+      }
+      if (this.activeTab() === 'sin-reunion' && !this.semanasLoaded) {
+        this.loadSemanasSinReunion();
       }
     });
   }
@@ -2324,16 +2591,17 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
        };
     });
 
-    const payload: MWBImportConfirmRequest = {
-        id_congregacion: idCongregacion,
-        semanas: semanasConfirm
-    };
+    // Sin id_congregacion: lo que se sube es la guía global, no la
+    // programación de nadie. Cada congregación la genera después desde su
+    // pestaña, con su propio día y hora de reunión.
+    const payload: MWBImportConfirmRequest = { semanas: semanasConfirm };
 
     this.mwbConfirming.set(true);
     this.reunionesSvc.checkMWBDuplicates(payload).subscribe({
         next: (res) => {
-            if (res.duplicados && res.duplicados.length > 0) {
-                this.mwbDuplicates.set(res.duplicados);
+            if (res.existe) {
+                this.mwbNombreGuia.set(res.nombre);
+                this.mwbEnUsoPor.set(res.en_uso_por ?? []);
                 this.mwbPendingPayload = payload;
                 this.mwbShowDuplicateModal.set(true);
                 this.mwbConfirming.set(false);
@@ -2352,7 +2620,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     this.mwbConfirming.set(true);
     this.reunionesSvc.confirmarMWB(payload).subscribe({
         next: (res) => {
-            this.showToast('success', `${res.mensaje}. Programas creados: ${res.programas_creados}`);
+            this.showToast('success', `${res.mensaje} (${res.partes_creadas} partes)`);
             this.mwbConfirming.set(false);
             this.mwbPreview.set(null);
             this.mwbDates.set(new Map());
@@ -2362,7 +2630,10 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
         },
         error: (err) => {
             console.error('Error al confirmar MWB:', err);
-            this.showToast('error', 'Error al procesar la confirmación');
+            // El 409 de "guía en uso" explica exactamente qué congregaciones la
+            // bloquean; tragárselo con un mensaje genérico deja al importador
+            // sin saber qué hacer.
+            this.showToast('error', err?.error?.detail ?? 'Error al procesar la confirmación');
             this.mwbConfirming.set(false);
         }
     });
@@ -2376,7 +2647,8 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
   dismissDuplicateModal() {
     this.mwbShowDuplicateModal.set(false);
-    this.mwbDuplicates.set([]);
+    this.mwbEnUsoPor.set([]);
+    this.mwbNombreGuia.set('');
     this.mwbPendingPayload = null;
   }
 
@@ -2459,7 +2731,10 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       },
       error: (err) => {
         console.error(err);
-        this.showToast('error', 'Error al eliminar plantilla');
+        // El backend devuelve 409 con la lista de congregaciones que tienen
+        // programación colgando de esta guía. Ese detalle es la acción a
+        // tomar; "Error al eliminar plantilla" no dice nada.
+        this.showToast('error', err?.error?.detail ?? 'Error al eliminar la guía');
       }
     });
   }
@@ -2633,6 +2908,125 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
         this.ausenciaError.set(err?.error?.detail ?? 'No se pudo registrar la ausencia.');
       },
     });
+  }
+
+  // ── Semanas sin reunión ────────────────────────────
+  loadSemanasSinReunion(): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+
+    this.loadingSemanas.set(true);
+    this.semanasLoaded = true;
+    this.reunionesSvc.getSemanasSinReunion(idCong).subscribe({
+      next: (res) => {
+        this.semanasSinReunion.set(res);
+        this.loadingSemanas.set(false);
+      },
+      error: () => this.loadingSemanas.set(false),
+    });
+  }
+
+  /** Plano, no computed: los campos del formulario son propiedades, no señales. */
+  puedeMarcarSemana(): boolean {
+    return !!this.ssrFecha;
+  }
+
+  /**
+   * Primero un dry_run para saber cuántas asignaciones se perderían, y recién
+   * entonces se pide confirmación. El borrado es irreversible.
+   */
+  prepararSemanaSinReunion(): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong || !this.puedeMarcarSemana()) return;
+
+    this.guardandoSemana.set(true);
+    this.semanaError.set(null);
+
+    this.reunionesSvc.crearSemanaSinReunion({
+      id_congregacion: idCong,
+      fecha: this.ssrFecha!,
+      alcance: this.ssrAlcance,
+      motivo: this.ssrMotivo.trim() || null,
+      dry_run: true,
+    }).subscribe({
+      next: (previo) => {
+        this.guardandoSemana.set(false);
+        this.semanaAConfirmar.set(previo);
+      },
+      error: (err) => {
+        this.guardandoSemana.set(false);
+        this.semanaError.set(err?.error?.detail ?? 'No se pudo comprobar la semana.');
+      },
+    });
+  }
+
+  confirmarMarcarSemana(): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong || !this.ssrFecha) return;
+
+    this.guardandoSemana.set(true);
+    this.reunionesSvc.crearSemanaSinReunion({
+      id_congregacion: idCong,
+      fecha: this.ssrFecha,
+      alcance: this.ssrAlcance,
+      motivo: this.ssrMotivo.trim() || null,
+    }).subscribe({
+      next: (nueva) => {
+        this.guardandoSemana.set(false);
+        this.semanaAConfirmar.set(null);
+        // Puede ser un alta o una actualización de la misma semana.
+        this.semanasSinReunion.update((list) => [
+          nueva,
+          ...list.filter((x) => x.id_semana_sin_reunion !== nueva.id_semana_sin_reunion),
+        ]);
+        this.ssrFecha = null;
+        this.ssrAlcance = 'ambas';
+        this.ssrMotivo = '';
+        const n = nueva.borradas ?? 0;
+        this.showToast('success', n > 0
+          ? `Semana marcada. Se borraron ${n} asignaciones.`
+          : 'Semana marcada como sin reunión.');
+      },
+      error: (err) => {
+        this.guardandoSemana.set(false);
+        this.semanaAConfirmar.set(null);
+        this.semanaError.set(err?.error?.detail ?? 'No se pudo marcar la semana.');
+      },
+    });
+  }
+
+  confirmarEliminarSemana(): void {
+    const s = this.semanaAEliminar();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!s || !idCong) return;
+    this.semanaAEliminar.set(null);
+
+    this.reunionesSvc.eliminarSemanaSinReunion(s.id_semana_sin_reunion, idCong).subscribe({
+      next: () => {
+        this.semanasSinReunion.update((list) =>
+          list.filter((x) => x.id_semana_sin_reunion !== s.id_semana_sin_reunion));
+        this.showToast('success', 'Se quitó la marca. Vuelve a generar para programar esa semana.');
+      },
+      error: (err) => {
+        this.showToast('error', err?.error?.detail ?? 'No se pudo quitar la marca.');
+      },
+    });
+  }
+
+  etiquetaAlcance(alcance: AlcanceSemana): string {
+    return this.opcionesAlcanceSemana.find((o) => o.value === alcance)?.label ?? alcance;
+  }
+
+  /** "8 – 14 jun 2026", omitiendo el mes repetido cuando la semana no lo cruza. */
+  formatRangoSemana(s: SemanaSinReunion): string {
+    const ini = new Date(s.fecha_inicio + 'T00:00:00');
+    const fin = new Date(s.fecha_fin + 'T00:00:00');
+    const mesIni = ini.toLocaleDateString('es', { month: 'short' });
+    const mesFin = fin.toLocaleDateString('es', { month: 'short' });
+    const cabecera = mesIni === mesFin
+      ? `${ini.getDate()} – ${fin.getDate()} ${mesFin}`
+      : `${ini.getDate()} ${mesIni} – ${fin.getDate()} ${mesFin}`;
+    return `${cabecera} ${fin.getFullYear()}`;
   }
 
   confirmarEliminarAusencia(): void {

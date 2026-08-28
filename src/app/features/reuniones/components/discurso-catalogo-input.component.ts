@@ -95,7 +95,7 @@ import { CatalogoDiscurso } from '../models/discursos.models';
                   : 'bg-slate-100 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400'">
                 {{ d.numero }}
               </span>
-              <span class="flex-1 min-w-0 text-sm font-medium truncate transition-colors duration-100"
+              <span class="flex-1 min-w-0 text-sm font-medium leading-snug transition-colors duration-100"
                 [class]="i === resaltado()
                   ? 'text-amber-700 dark:text-amber-300'
                   : 'text-slate-700 dark:text-slate-200'">
