@@ -17,6 +17,7 @@ import {
   PrecursorConsideracion,
 } from '../../../privilegios/domain/models/precursor-consideracion';
 import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
+import { whatsappUrl } from '../../../../../shared/whatsapp';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
 import {
   NuevoPublicadorWizardComponent,
@@ -335,8 +336,7 @@ export class PublicadoresListComponent implements OnInit {
 
         const mensaje = `Hola ${nombre},\n\nTus datos de acceso a la App Móvil son:\n\n*Código de Congregación:* ${codigoCongregacion}\n*CÓDIGO PIN:* ${pin}\n\nPuedes ingresar de forma segura usando estos datos.`;
         
-        const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-        window.open(url, '_blank');
+        window.open(whatsappUrl(mensaje, telefono), '_blank');
       },
       error: (err) => {
         console.error('Error obteniendo código de congregación:', err);

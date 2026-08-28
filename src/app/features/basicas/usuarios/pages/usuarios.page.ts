@@ -12,6 +12,7 @@ import { CongregacionContextService } from '../../../../core/congregacion-contex
 import { getInitialAvatarStyle } from '../../../../core/utils/avatar-style.util';
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 import { PasswordStrengthComponent } from '../../../../shared/components/password-strength/password-strength.component';
+import { whatsappUrl } from '../../../../shared/whatsapp';
 
 type UserFormTab = 'datos' | 'acceso' | 'seguridad';
 
@@ -1287,8 +1288,7 @@ export class UsuariosPage implements OnInit {
    }
 
    private openWhatsApp(phone: string, message: string) {
-      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-      window.open(url, '_blank', 'noopener,noreferrer');
+      window.open(whatsappUrl(message, phone), '_blank', 'noopener,noreferrer');
    }
 }
 

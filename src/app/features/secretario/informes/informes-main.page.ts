@@ -6,6 +6,7 @@ import { InformesService } from './services/informes.service';
 import { GruposService } from '../grupos/services/grupos.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
+import { whatsappUrl } from '../../../shared/whatsapp';
 import { ResumenMensual, InformeConPublicador, InformeLoteItem, Periodo, HistorialAnual, ResumenSucursal } from './models/informe.model';
 import { InformesStatsComponent } from './components/informes-stats/informes-stats.component';
 import { InformesFiltersComponent } from './components/informes-filters/informes-filters.component';
@@ -679,16 +680,10 @@ export class InformesMainPage implements OnInit {
     }).subscribe({
       next: (res) => {
         this.saving.set(false);
-        const encodedMsg = encodeURIComponent(res.mensaje_wa);
 
-        let waUrl = `https://wa.me/?text=${encodedMsg}`;
         if (res.telefono && res.telefono.trim() !== '') {
-          // Limpiar teléfono (quitar +, espacios, guiones)
-          const cleanPhone = res.telefono.replace(/[\+\-\s()]/g, '');
-          waUrl = `https://wa.me/${cleanPhone}?text=${encodedMsg}`;
-
           // Abrir WhatsApp en nueva pestaña
-          window.open(waUrl, '_blank');
+          window.open(whatsappUrl(res.mensaje_wa, res.telefono), '_blank');
           this.showToast('Enlace generado', 'success', 'Se ha abierto WhatsApp para enviar el mensaje.');
 
           // Actualizar contador visualmente
