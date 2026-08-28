@@ -261,6 +261,34 @@ export interface OpcionesPdfLogistica {
   orientacion?: OrientacionPagina;
 }
 
+/** Reparto del mes, para comparar el antes y el después de un rebalanceo. */
+export interface RebalanceoDispersion {
+  min: number;
+  max: number;
+  brecha: number;
+  promedio: number;
+  /** Lo que de verdad dice si el reparto mejoró: ver `_dispersion` en el backend. */
+  desviacion: number;
+  personas: number;
+}
+
+export interface RebalanceoCambio {
+  id_logistica: number;
+  fecha: string;
+  puesto: string;
+  de: PublicadorBase;
+  a: PublicadorBase;
+}
+
+export interface RebalanceoPropuesta {
+  cambios: RebalanceoCambio[];
+  antes: RebalanceoDispersion;
+  despues: RebalanceoDispersion;
+  aplicado: boolean;
+  /** Casillas intocables por estar puestas a mano. */
+  protegidas_manual: number;
+}
+
 export const PUESTOS_LABEL: Record<string, string> = {
   acomodador_1: 'Acomodador 1',
   acomodador_2: 'Acomodador 2',

@@ -18,6 +18,7 @@ import {
   MesDisponible,
   OpcionesPdfLogistica,
   PublicadorBase,
+  RebalanceoPropuesta,
 } from '../models/logistica.models';
 
 @Injectable({ providedIn: 'root' })
@@ -80,6 +81,33 @@ export class LogisticaService {
   getCandidatos(puesto: string, idCong: number | null): Observable<PublicadorBase[]> {
     const params = this.congParams(idCong).set('puesto', puesto);
     return this.http.get<PublicadorBase[]>(`${this.base}/candidatos`, { params });
+  }
+
+  /**
+   * Reparte la carga del mes. Con `aplicar: false` sólo devuelve la propuesta
+   * y no escribe nada, para poder enseñarla antes de confirmar.
+   */
+  rebalancearMes(
+    ano: number, mes: number, aplicar: boolean, idCong: number | null,
+  ): Observable<RebalanceoPropuesta> {
+    return this.http.post<RebalanceoPropuesta>(
+      `${this.base}/rebalancear`,
+      { ano, mes, aplicar },
+      { params: this.congParams(idCong) },
+    );
+  }
+
+  /**
+   * Quién ya tiene algo asignado ese día en las otras programaciones
+   * (entre semana, fin de semana, discursos salientes, exhibidores), como
+   * { id_publicador: motivo }.
+   *
+   * No incluye logística: esa pantalla ya tiene el mes en memoria y la
+   * resuelve al instante, sin quedar desfasada tras cada asignación.
+   */
+  getOcupados(fecha: string, idCong: number | null): Observable<Record<number, string>> {
+    const params = this.congParams(idCong).set('fecha', fecha);
+    return this.http.get<Record<number, string>>(`${this.base}/ocupados`, { params });
   }
 
   buscarPublicadores(q: string, idCong: number | null): Observable<PublicadorBase[]> {

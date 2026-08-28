@@ -1,11 +1,12 @@
 ﻿import {
-  Component, signal, computed, inject, OnInit, HostListener, DestroyRef,
+  Component, signal, computed, inject, OnInit, HostListener, DestroyRef, NgZone,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { whatsappUrl } from '../../../shared/whatsapp';
 import { LogisticaService } from '../services/logistica.service';
 import { ConflictosService } from '../services/conflictos.service';
 import { ReunionesService } from '../services/reuniones.service';
@@ -31,6 +32,7 @@ import {
   PUESTO_A_PERMISO,
   PUESTOS_LABEL,
   PublicadorBase,
+  RebalanceoPropuesta,
   TamanoPagina,
 } from '../models/logistica.models';
 
@@ -67,10 +69,13 @@ const SECCION_PUESTOS: Record<string, string[]> = {
   'Audio / Video':             ['audio', 'video'],
 };
 
-// Color principal por sección (mismo que se usa en el PDF)
+// Color de identidad por sección. Antes acomodadores y micrófono compartían
+// el mismo azul: dos bandas idénticas una debajo de otra que no distinguían
+// nada, así que el color no informaba, sólo decoraba. Con un tono por sección
+// el ojo ubica de un vistazo en qué bloque está sin leer el título.
 const SECCION_COLOR: Record<string, string> = {
   'Acomodadores y Vigilancia': '#0369a1',
-  'Micrófono y Plataforma':    '#0369a1',
+  'Micrófono y Plataforma':    '#6d28d9',
   'Audio / Video':             '#0891b2',
   'Aseo':                      '#059669',
 };
@@ -86,27 +91,397 @@ function normalizarTexto(s: string): string {
   template: `
     <div class="flex flex-col h-full gap-0">
 
-      <!-- ===== PAGE HEADER (solo móvil) ===== -->
-      <!-- En escritorio el titulo ya se muestra junto al selector de tipo de
-           reunion, en el componente padre -asi el selector y el titulo
-           comparten una sola fila en vez de dos-. En movil ese selector ocupa
-           todo el ancho y no queda sitio a su lado, asi que aqui se conserva. -->
-      <div class="md:hidden shrink-0 flex items-center justify-between gap-3 pb-2">
-        <div class="min-w-0">
-          <h1 class="text-lg sm:text-xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
-            Logística de Reuniones
-          </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">Acomodadores · Vigilancia · Micrófono · Audio/Video</p>
-        </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          <!-- Menú móvil (meses + generar) -->
+      <!-- ===== BARRA SUPERIOR ===== -->
+      <!-- La banda del título iba de lado a lado con el 70% del ancho vacío,
+           mientras los controles del mes se apretaban en una fila propia
+           dentro del panel. Ahora comparten esta: a la izquierda lo que
+           proyecta el shell -el selector de pestaña y el título-, a la derecha
+           qué mes se está viendo y qué se puede hacer con él. Es una fila menos
+           y ni un pixel de ancho desaprovechado. -->
+      <!-- Envuelve sólo en móvil: en escritorio todo va en una línea y quien
+           cede espacio es el título, que se recorta. Partir la fila dejaba las
+           acciones solas en una segunda banda igual de vacía que la que se
+           acaba de aprovechar. -->
+      <div class="shrink-0 flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-2 pb-3 min-w-0">
+
+        <ng-content select="[cabecera]"></ng-content>
+
+        <!-- Empuja la bandeja del mes y lo que venga en [accion-derecha]
+             juntos al extremo derecho, sin hueco entre ellos. -->
+        <span class="hidden md:block md:flex-1" aria-hidden="true"></span>
+
+        @if (mesDatos() && estado() !== 'loading') {
+          <!-- Filete: separa el título del resto de la barra. -->
+          <span class="hidden md:block w-px h-7 bg-slate-200 dark:bg-slate-700 shrink-0" aria-hidden="true"></span>
+
+          <!-- ===== BANDEJA DE CONTROL DEL MES ===== -->
+          <!-- Antes cada control era su propia píldora suelta sobre el fondo
+               de la página: mes y estado a un lado sin chrome propio, y las
+               acciones -vista, carga, publicar, borrar- en su propia bandeja
+               aparte. Dos superficies para lo que es una sola tarea. Ahora
+               todo vive dentro de una única bandeja con su propio fondo y
+               borde, como una barra de herramientas real; los separadores
+               finos marcan dónde empieza cada grupo sin gastar una etiqueta.
+               El color se reserva para lo que importa: violeta cuando algo
+               está abierto, ámbar sólo si hay carga desigual, rojo sólo al
+               pasar sobre "Borrar". El resto vive en gris hasta que se toca. -->
+          <div class="flex flex-wrap items-center gap-0.5 min-w-0 w-full md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+
+            <!-- Selector de mes: el propio título es el control.
+                 Antes la lista de meses ocupaba una columna fija de unos
+                 15rem a la izquierda durante toda la sesión, para algo
+                 que se toca una vez al abrir la pantalla; ese ancho es
+                 justo el que le faltaba a la tabla, que tiene once
+                 columnas y se leía con scroll horizontal. Desplegado
+                 desde aquí ocupa ancho sólo mientras se usa. -->
+            <div class="relative shrink-0" data-mes-menu>
+              <button
+                type="button"
+                data-testid="log-selector-mes"
+                (click)="menuMesesAbierto.set(!menuMesesAbierto())"
+                [attr.aria-expanded]="menuMesesAbierto()"
+                aria-haspopup="listbox"
+                aria-label="Cambiar de mes"
+                class="flex items-center gap-1.5 h-8 px-2.5 rounded-xl transition-colors"
+                [class]="menuMesesAbierto()
+                  ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                  : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'">
+                <svg class="w-3.5 h-3.5 shrink-0 text-violet-500/80 dark:text-violet-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 3v3M16 3v3"/></svg>
+                <span class="text-sm font-bold whitespace-nowrap">
+                  {{ mesLabel({ ano: mesDatos()!.ano, mes: mesDatos()!.mes }) }}
+                </span>
+                <svg
+                  class="w-3.5 h-3.5 shrink-0 opacity-50 transition-transform duration-200"
+                  [class.rotate-180]="menuMesesAbierto()"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+
+              @if (menuMesesAbierto()) {
+                <div
+                  role="listbox"
+                  aria-label="Meses programados"
+                  class="absolute z-40 top-[calc(100%+4px)] left-0 w-60 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
+                  <div class="max-h-[min(60vh,20rem)] overflow-y-auto overscroll-contain simple-scrollbar p-1.5">
+                    @for (grupo of mesesPorAno(); track grupo.ano) {
+                      <!-- El año como divisor del grupo, no repetido en
+                           cada fila: doce "2026" seguidos no distinguen
+                           nada. -->
+                      <p class="flex items-center gap-2 px-1.5 pt-2.5 pb-1 first:pt-0.5">
+                        <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
+                        <span class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></span>
+                      </p>
+                      @for (m of grupo.meses; track m.ano + '-' + m.mes) {
+                        <button
+                          type="button"
+                          role="option"
+                          data-testid="log-fila-mes"
+                          [attr.data-ano]="m.ano"
+                          [attr.data-mes]="m.mes"
+                          [attr.aria-selected]="esMesActivo(m)"
+                          (click)="cargarMes(m.ano, m.mes); menuMesesAbierto.set(false)"
+                          [disabled]="estado() === 'loading'"
+                          class="w-full flex items-center gap-2 px-2 h-9 rounded-lg text-xs transition-colors disabled:opacity-40"
+                          [class]="esMesActivo(m)
+                            ? 'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 font-bold'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
+                          <!-- Punto de estado: el texto va en el title,
+                               el color sólo refuerza. -->
+                          <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="puntoEstadoClass(m)" [title]="etiquetaEstadoMes(m)"></span>
+                          <span class="flex-1 min-w-0 truncate text-left">{{ mesSoloLabel(m) }}</span>
+                          @if (esMesActivo(m)) {
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          }
+                        </button>
+                      }
+                    }
+                  </div>
+                  <!-- Generar cierra la lista: es lo único de aquí que no
+                       es elegir entre lo que ya existe. -->
+                  @if (hasEditPermission()) {
+                    <div class="shrink-0 p-1.5 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        data-testid="log-btn-generar-mes"
+                        (click)="menuMesesAbierto.set(false); abrirModalGenerar()"
+                        [disabled]="estado() === 'loading'"
+                        class="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-brand-purple hover:brightness-110 disabled:opacity-50 text-xs font-bold text-white transition-all active:scale-[0.98]">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Generar mes
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
+
+            <div class="flex items-center gap-2 min-w-0 px-1">
+              <!-- El texto siempre está: el icono y el color solo refuerzan.
+                   Antes era sólo una pastilla de color; un icono distinto por
+                   estado -visto, lápiz, alerta, reloj- se reconoce sin leer
+                   ni depender del color, y es el mismo lenguaje que ya usa el
+                   punto de cada fila en la lista de meses. -->
+              <span
+                class="shrink-0 flex items-center gap-1 pl-1.5 pr-2 py-0.5 rounded-full text-[0.6rem] font-bold"
+                [class]="estadoBadgeClass()">
+                @switch (estadoMes()) {
+                  @case ('publicado') {
+                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  }
+                  @case ('cambios_sin_publicar') {
+                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                  }
+                  @case ('pendiente_revision') {
+                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  }
+                  @default {
+                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/></svg>
+                  }
+                }
+                {{ estadoLabel() }}
+              </span>
+              <!-- Cobertura — el dato que dice si el mes está listo -->
+              @if (coberturaLabel()) {
+                <span class="hidden md:inline shrink-0 text-[0.65rem] text-slate-500 dark:text-slate-500 data-num">
+                  {{ coberturaLabel() }}
+                </span>
+              }
+            </div>
+
+            <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
+
+          <!-- Cuanto se mira de una vez. El mes entero ya esta cargado, asi
+               que acercarse a una semana o a un dia no pide nada al servidor.
+               Un boton con la vista actual en vez de un interruptor de tres
+               opciones siempre visibles: ocupa el ancho de una sola palabra
+               y despliega la lista solo cuando hace falta cambiar. -->
+          <div class="relative shrink-0" data-vista-menu>
+            <button
+              type="button"
+              (click)="vistaPeriodoAbierta.set(!vistaPeriodoAbierta())"
+              [attr.aria-expanded]="vistaPeriodoAbierta()"
+              aria-haspopup="listbox"
+              aria-label="Cambiar cuánto se muestra del mes"
+              class="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold transition-colors"
+              [class]="vistaPeriodoAbierta()
+                ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'">
+              <svg class="w-3.5 h-3.5 shrink-0 text-sky-500/80 dark:text-sky-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 3v3M16 3v3"/></svg>
+              <span class="text-slate-400 dark:text-slate-500 font-semibold">Vista:</span>
+              {{ vistaActivaLabel() }}
+              <svg
+                class="w-3 h-3 shrink-0 opacity-60 transition-transform duration-200"
+                [class.rotate-180]="vistaPeriodoAbierta()"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+
+            @if (vistaPeriodoAbierta()) {
+              <div
+                role="listbox"
+                aria-label="Cuánto mostrar del mes"
+                class="absolute z-30 top-[calc(100%+6px)] left-0 w-32 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl">
+                @for (v of vistasPeriodo; track v.id) {
+                  <button
+                    type="button"
+                    role="option"
+                    [attr.aria-selected]="vistaPeriodo() === v.id"
+                    (click)="cambiarVista(v.id); vistaPeriodoAbierta.set(false)"
+                    class="w-full flex items-center justify-between gap-2 text-left text-xs px-3 h-9 transition-colors"
+                    [class]="vistaPeriodo() === v.id
+                      ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
+                    {{ v.full }}
+                    @if (vistaPeriodo() === v.id) {
+                      <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Balance de carga: se abre en un panel propio, al lado de la
+               tabla en pantallas anchas y como hoja en las estrechas. Antes
+               era un desplegable encima de la tabla y abrirlo le robaba
+               media pantalla de alto, que es justo donde se trabaja. El
+               boton ya adelanta lo unico accionable -cuantos van cargados
+               de mas- para que abrirlo sea opcional. -->
+          @if (puedeVerBalance() && balanceCarga().length > 0) {
+            <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
+            <button
+              type="button"
+              data-testid="log-btn-balance"
+              (click)="alternarPanelBalance()"
+              [attr.aria-expanded]="panelBalanceAbierto()"
+              [title]="balanceResumen()"
+              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold transition-colors"
+              [class]="panelBalanceAbierto()
+                ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'">
+              <svg class="w-3.5 h-3.5 shrink-0 text-amber-500/80 dark:text-amber-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12.5" y="8" width="3" height="10" rx="1"/><rect x="18" y="14" width="3" height="4" rx="1"/></svg>
+              Carga
+              @if (balanceConteos().alta > 0) {
+                <span class="px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[0.6rem] font-bold data-num">{{ balanceConteos().alta }}</span>
+              }
+            </button>
+          }
+
+          <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
+
+          <!-- Acciones del mes, todas en icono.
+               Cada una lleva aria-label y title: sin rótulo visible, el nombre
+               tiene que estar en el árbol de accesibilidad y al pasar el ratón,
+               no sólo en la cabeza de quien ya conoce la pantalla. Mismo tamaño
+               y misma forma para todas; el color aparece sólo al pasar por
+               encima -salvo en Publicar, la única que va rellena por ser la
+               acción primaria del mes-. -->
+          <div class="flex items-center gap-0.5 min-w-0 overflow-x-auto simple-scrollbar md:overflow-visible">
+            <!-- Acción primaria: publicar. Una sola cada vez. -->
+            @if (puedePublicar()) {
+              <button
+                data-testid="log-btn-publicar"
+                (click)="publicarMes()"
+                [disabled]="estado() === 'loading'"
+                [title]="conflictosLabel()
+                  ? 'Publicar — ' + conflictosLabel()
+                  : 'Publicar: hacer visible este mes a la congregación'"
+                [attr.aria-label]="conflictosLabel()
+                  ? 'Publicar. ' + conflictosLabel()
+                  : 'Publicar'"
+                class="relative flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 shrink-0 rounded-xl bg-brand-purple text-white shadow-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-40">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                <!-- Los puestos sin cubrir siguen contándose encima del botón:
+                     es la única señal de que publicar todavía no toca. -->
+                @if (conflictosLabel()) {
+                  <span class="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[0.6rem] font-bold data-num ring-2 ring-white dark:ring-slate-900">{{ mesDatos()!.conflictos }}</span>
+                }
+              </button>
+            }
+            <!-- Volver a lo publicado: junto a Publicar, no dentro del menú.
+                 Son la pareja "publicar / deshacer" del mismo estado -mes con
+                 cambios sin publicar-, así que van visibles una al lado de la
+                 otra en vez de obligar a abrir algo para deshacer. -->
+            @if (puedeDescartar()) {
+              <button
+                data-testid="log-btn-descartar"
+                (click)="descartarCambios()"
+                [disabled]="estado() === 'loading'"
+                title="Descartar: deshacer los cambios y volver a la versión que ve la congregación"
+                aria-label="Descartar cambios"
+                class="flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100 transition-all active:scale-95 disabled:opacity-40">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>
+              </button>
+            }
+
+            <!-- PDF, Compartir y Eliminar viven detrás de un menú: las tres
+                 son sobre el mes ya cerrado -exportarlo, difundirlo o
+                 borrarlo-, no sobre editarlo, así que se agrupan aparte de
+                 Publicar/Descartar en vez de competir por la misma fila.
+                 Sin condición de visibilidad: el PDF (ítem del menú) ya
+                 estaba siempre presente antes, sólo que a veces deshabilitado
+                 mientras el mes no tenía publicación. -->
+              <div class="relative shrink-0" data-acciones-menu>
+                <button
+                  type="button"
+                  data-testid="log-btn-acciones"
+                  (click)="menuAccionesAbierto.set(!menuAccionesAbierto())"
+                  [attr.aria-expanded]="menuAccionesAbierto()"
+                  aria-haspopup="menu"
+                  title="Más acciones sobre este mes"
+                  aria-label="Más acciones sobre este mes"
+                  class="flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 rounded-xl transition-all active:scale-95"
+                  [class]="menuAccionesAbierto()
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                </button>
+
+                @if (menuAccionesAbierto()) {
+                  <div role="menu" class="absolute z-40 top-[calc(100%+4px)] right-0 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden p-1.5 flex flex-col gap-0.5">
+                    <!-- PDF — necesita que exista una versión publicada -->
+                    <button
+                      type="button"
+                      role="menuitem"
+                      (click)="menuAccionesAbierto.set(false); descargarPdf()"
+                      [disabled]="!tienePublicacion() || descargandoPdf()"
+                      class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-40">
+                      @if (descargandoPdf()) {
+                        <div class="w-4 h-4 shrink-0 mt-px rounded-full border-2 border-emerald-200 border-t-emerald-500 animate-spin"></div>
+                      } @else {
+                        <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                      }
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-xs font-bold leading-tight">Descargar PDF</span>
+                        <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">
+                          {{ tienePublicacion() ? 'La programación de este mes.' : 'Publica el mes primero.' }}
+                        </span>
+                      </span>
+                    </button>
+
+                    <!-- Compartir: enlace público + WhatsApp + imprimir,
+                         todo en un mismo panel. Necesita mes publicado -no
+                         tiene sentido dar a conocer una versión que no es la
+                         vigente-. -->
+                    @if (hasEditPermission() && tienePublicacion()) {
+                      <button
+                        type="button"
+                        role="menuitem"
+                        (click)="menuAccionesAbierto.set(false); abrirPanelCompartir()"
+                        class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
+                        <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51L8.59 10.49"/></svg>
+                        <span class="min-w-0 flex-1">
+                          <span class="block text-xs font-bold leading-tight">Compartir</span>
+                          <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Enlace público, WhatsApp o impresión.</span>
+                        </span>
+                      </button>
+                    }
+
+                    @if (hasEditPermission()) {
+                      <span class="h-px bg-slate-100 dark:bg-slate-800 mx-1 my-0.5" aria-hidden="true"></span>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        data-testid="log-btn-eliminar-mes"
+                        (click)="menuAccionesAbierto.set(false); eliminarMes()"
+                        [disabled]="estado() === 'loading'"
+                        class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-40">
+                        <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <span class="min-w-0 flex-1">
+                          <span class="block text-xs font-bold leading-tight">Eliminar el mes</span>
+                          <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Borra toda la programación de logística.</span>
+                        </span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+          </div>
+
+          <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
+
+          <!-- Salir del mes. Va al final y con rótulo, como en las demás
+               pantallas de reuniones: es la única acción de la bandeja que no
+               opera sobre el mes sino que lo abandona, y con el resto en
+               iconos el texto la separa sin gastar otro filete. -->
           <button
-            (click)="mobileMesesAbierto.set(true)"
-            title="Meses programados"
-            class="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 text-white transition-[transform,background-color] duration-150 ease-out shadow-sm active:scale-[0.97]">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            type="button"
+            data-testid="log-btn-volver"
+            (click)="volverAListado()"
+            title="Volver al listado de programaciones"
+            aria-label="Volver al listado de programaciones"
+            class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Volver
           </button>
         </div>
+        }
+
+        <!-- Fuera del @if del mes: sea cual sea el estado, este botón siempre
+             cae al extremo derecho de la fila. Con bandeja, se apoya justo
+             después de ella; sin bandeja, su propio md:ml-auto lo empuja
+             solo. -->
+        <ng-content select="[accion-derecha]"></ng-content>
       </div>
 
       <!-- ===== ERROR ===== -->
@@ -147,22 +522,20 @@ function normalizarTexto(s: string): string {
 
       <!-- ===== PUESTOS POR CUBRIR ===== -->
       <!-- El recuento por si solo obliga a repasar el mes entero a ojo. Cada
-           chip lleva a su casilla y la resalta. -->
+           chip lleva a su casilla y la resalta. Todo en una sola linea con
+           scroll propio: envueltos, veinte conflictos formaban un bloque rojo
+           de cuatro filas que empujaba la tabla fuera de la pantalla. -->
       @if (listaConflictos().length > 0 && mesDatos()) {
-        <div class="shrink-0 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200/70 dark:border-red-900/60 px-4 py-3 mb-3">
-          <div class="flex items-center gap-2 mb-2">
-            <svg class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
-            <p class="text-red-700 dark:text-red-300 text-xs">
-              <span class="font-bold">{{ conflictosLabel() }}</span>
-              <span class="hidden sm:inline"> antes de publicar. Toca uno para ir a su casilla.</span>
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-1.5">
+        <div class="shrink-0 flex items-center gap-2 min-w-0 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200/70 dark:border-red-900/60 pl-3 pr-2 py-1.5 mb-3">
+          <svg class="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+          <p class="shrink-0 text-red-700 dark:text-red-300 text-xs font-bold">{{ conflictosLabel() }}</p>
+          <div class="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             @for (c of listaConflictos(); track c.id_logistica) {
               <button
                 type="button"
                 (click)="irAConflicto(c)"
-                class="inline-flex items-center gap-1.5 px-3 h-11 sm:h-8 rounded-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-[0.7rem] font-semibold transition-all hover:-translate-y-px hover:border-red-400 active:scale-95">
+                [title]="'Ir a ' + conflictoEtiqueta(c)"
+                class="shrink-0 inline-flex items-center gap-1.5 px-3 h-9 sm:h-7 rounded-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-[0.7rem] font-semibold transition-all hover:-translate-y-px hover:border-red-400 active:scale-95">
                 <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
                 {{ conflictoEtiqueta(c) }}
               </button>
@@ -171,173 +544,8 @@ function normalizarTexto(s: string): string {
         </div>
       }
 
-      <!-- ===== BALANCE DE CARGA ===== -->
-      <!-- Panel de apoyo, solo informa: no mueve ni reasigna nada. Plegado por
-           defecto para no empujar la tabla, pero el encabezado ya adelanta la
-           conclusion -cuantas personas, media y cuantas descompensadas- para
-           que abrirlo sea opcional y no un requisito. -->
-      @if (puedeVerBalance() && balanceCarga().length > 0) {
-        <section class="shrink-0 mb-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <button
-            type="button"
-            (click)="panelBalanceAbierto.set(!panelBalanceAbierto())"
-            [attr.aria-expanded]="panelBalanceAbierto()"
-            aria-controls="panel-balance-carga"
-            class="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60">
-            <svg class="w-4 h-4 shrink-0 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12.5" y="8" width="3" height="10" rx="1"/><rect x="18" y="14" width="3" height="4" rx="1"/></svg>
-            <span class="min-w-0 flex-1">
-              <span class="block text-xs font-bold text-slate-800 dark:text-slate-100">Balance de carga del mes</span>
-              <span class="block text-[0.7rem] text-slate-500 dark:text-slate-400 truncate data-num">{{ balanceResumen() }}</span>
-            </span>
-            <svg
-              class="w-4 h-4 shrink-0 text-slate-400 transition-transform duration-200"
-              [class.rotate-180]="panelBalanceAbierto()"
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-
-          @if (panelBalanceAbierto()) {
-            <div id="panel-balance-carga" class="border-t border-slate-200 dark:border-slate-800">
-              <!-- Alto acotado con scroll propio: sin esto, una congregacion
-                   con 30+ personas hace crecer el panel sin limite y aplasta
-                   la tabla de abajo -que vive en el resto de la altura fija de
-                   la pantalla-. overscroll-contain evita que, al llegar al
-                   final de esta lista con el dedo, el scroll se "escape" hacia
-                   la pagina completa. -->
-              <div class="max-h-[46dvh] sm:max-h-[26rem] overflow-y-auto overscroll-contain px-4 py-3">
-                <!-- Dos columnas desde tablet: son filas cortas y apilarlas
-                     todas en una sola desperdiciaria la mitad del ancho. -->
-                <ul class="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-                  @for (f of balanceCarga(); track f.id) {
-                    <li class="min-w-0 border-b border-slate-100 dark:border-slate-800/70 sm:border-none last:border-none">
-                      <button
-                        type="button"
-                        (click)="toggleExpandirPersona(f.id)"
-                        [attr.aria-expanded]="personaExpandida() === f.id"
-                        class="w-full h-11 sm:h-8 flex items-center gap-2.5 min-w-0 rounded-lg transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 active:bg-slate-100 dark:active:bg-slate-800 -mx-1.5 px-1.5">
-                        <svg
-                          class="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600 transition-transform duration-200"
-                          [class.rotate-90]="personaExpandida() === f.id"
-                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                        <span class="min-w-0 flex-1 truncate text-left text-xs text-slate-700 dark:text-slate-200">{{ f.nombre }}</span>
-                        <!-- La barra es apoyo visual; el numero y la etiqueta van
-                             aparte para no depender solo del color ni del largo. -->
-                        <span class="hidden sm:block w-16 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0" aria-hidden="true">
-                          <span class="block h-full rounded-full transition-[width] duration-300 ease-out" [class]="nivelBarraClass(f.nivel)" [style.width.%]="f.pct"></span>
-                        </span>
-                        <span class="w-4 text-right text-xs font-bold text-slate-800 dark:text-slate-100 data-num shrink-0">{{ f.total }}</span>
-                        <span
-                          class="w-[3.4rem] text-center px-1.5 py-0.5 rounded-full border text-[0.6rem] font-bold shrink-0"
-                          [class]="nivelChipClass(f.nivel)">{{ nivelLabel(f.nivel) }}</span>
-                      </button>
-
-                      @if (personaExpandida() === f.id) {
-                        <!-- Chips de solo lectura: cada uno salta a su celda en
-                             la tabla, mismo mecanismo que los conflictos de arriba. -->
-                        <div class="flex flex-wrap gap-1.5 pl-[1.375rem] pb-2.5 pt-0.5">
-                          @for (a of f.asignaciones; track a.fecha + a.puesto) {
-                            <button
-                              type="button"
-                              (click)="irACeldaBalance(a)"
-                              class="inline-flex items-center gap-1.5 px-2.5 h-9 sm:h-7 rounded-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[0.65rem] font-medium transition-all hover:-translate-y-px hover:border-violet-300 dark:hover:border-violet-700 hover:text-violet-700 dark:hover:text-violet-300 active:scale-95">
-                              {{ formatFecha(a.fecha) }} · {{ a.puestoLabel }}
-                            </button>
-                          }
-                        </div>
-                      }
-                    </li>
-                  }
-                </ul>
-              </div>
-
-              <!-- Fuera del area con scroll: la pista y el enlace deben verse
-                   siempre, sin obligar a bajar hasta el final de 30 nombres. -->
-              <p class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800/70 text-[0.65rem] leading-relaxed text-slate-500 dark:text-slate-400">
-                Alta o baja es respecto a la media de este mes, no a un numero fijo.
-                No incluye el aseo, que se asigna por grupo. Toca un nombre para ver sus asignaciones.
-                @if (puedeVerReporteCarga()) {
-                  <a routerLink="/reportes/logistica" class="font-semibold text-violet-600 dark:text-violet-400 hover:underline">Ver varios meses</a>
-                }
-              </p>
-            </div>
-          }
-        </section>
-      }
-
       <!-- ===== LAYOUT principal ===== -->
       <div class="flex-1 min-h-0 flex flex-col md:flex-row gap-3 md:gap-4 overflow-hidden">
-
-        <!-- ── SIDEBAR ── -->
-        <aside class="hidden md:flex md:w-52 lg:w-56 xl:w-60 2xl:w-64 shrink-0 flex-col gap-3 overflow-y-auto simple-scrollbar p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-
-          <!-- Historial de meses -->
-          @if (mesesDisponibles().length > 0) {
-            <div class="flex flex-col gap-0.5">
-              <div class="flex items-center justify-between px-1.5 pb-1.5">
-                <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Meses programados</p>
-                <!-- Mismo pill violeta que ya usa el resto del módulo
-                     (p.ej. las etiquetas de "Historial" en Entre semana). -->
-                <span class="min-w-[1.25rem] h-[1.15rem] px-1.5 rounded-full bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-400 text-[0.6rem] font-bold data-num flex items-center justify-center">{{ mesesDisponibles().length }}</span>
-              </div>
-              <!-- Sin caja propia: el aside ya es el contenedor, envolver la
-                   lista en otra caja adentro solo apilaba bordes. -->
-              @for (grupo of mesesPorAno(); track grupo.ano) {
-                <!-- Año como divisor del grupo, no repetido por fila; mismo
-                     filete que separa las secciones de la tabla principal. -->
-                <div class="flex items-center gap-2 px-1.5 pt-3 pb-1.5 first:pt-0.5">
-                  <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
-                  <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-                </div>
-                <!-- Misma tarjeta bordeada que el historial de Entre semana:
-                     borde propio + fondo blanco en reposo, violeta al pasar
-                     el mouse o al estar activo. -->
-                <div class="flex flex-col gap-1.5">
-                  @for (m of grupo.meses; track m.ano + '-' + m.mes) {
-                    <!-- Sin boton de PDF por fila -el mes abierto ya tiene el
-                         suyo en la barra de acciones de la derecha- ni etiqueta
-                         "Viendo": el fondo violeta y el negrita ya distinguen
-                         cual esta abierto sin gastar texto ni ancho. -->
-                    <button
-                      data-testid="log-fila-mes"
-                      [attr.data-ano]="m.ano"
-                      [attr.data-mes]="m.mes"
-                      (click)="cargarMes(m.ano, m.mes)"
-                      [disabled]="estado() === 'loading'"
-                      [attr.aria-current]="esMesActivo(m) ? 'true' : null"
-                      class="w-full flex items-center justify-between gap-2 px-2.5 h-10 rounded-xl border text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-40 group"
-                      [class]="esMesActivo(m)
-                        ? 'bg-violet-50 dark:bg-violet-900/25 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300 font-bold'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:border-violet-300 dark:hover:border-violet-700'">
-                      <span class="truncate">{{ mesSoloLabel(m) }}</span>
-                      <span class="flex items-center gap-2 shrink-0">
-                        <!-- Punto de estado: forma distinta por estado además
-                             del color, y el texto va en el title. -->
-                        <span
-                          class="w-1.5 h-1.5 rounded-full"
-                          [class]="puntoEstadoClass(m)"
-                          [title]="etiquetaEstadoMes(m)"></span>
-                        <svg class="w-3 h-3 shrink-0 text-slate-400 group-hover:text-violet-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                      </span>
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          }
-
-          <!-- Generar nuevo mes -->
-          @if (hasEditPermission()) {
-            <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 shrink-0">
-            <button
-              data-testid="log-btn-generar-mes"
-              (click)="abrirModalGenerar()"
-              [disabled]="estado() === 'loading'"
-              class="w-full flex items-center justify-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow-sm shadow-purple-900/20 active:scale-95 shrink-0 mt-auto">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Generar Mes
-            </button>
-            </div>
-          }
-        </aside>
 
         <!-- ── PANEL PRINCIPAL ── -->
         <div class="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative">
@@ -353,237 +561,69 @@ function normalizarTexto(s: string): string {
           }
 
           @if (!mesDatos() && estado() !== 'loading') {
-            <!-- Estado vacío -->
-            <div class="flex-1 flex flex-col gap-4 p-4 md:items-center md:justify-center md:p-8 overflow-y-auto simple-scrollbar">
+            <!-- Estado vacío. Es el único momento sin barra de mes, así que la
+                 lista y el botón de generar viven aquí: sin ellos no habría
+                 forma de entrar a la pantalla. Todo vive dentro de una sola
+                 tarjeta para que no se vea como piezas sueltas en el centro. -->
+            <div class="flex-1 flex items-center justify-center p-6 overflow-y-auto simple-scrollbar">
+              <div class="w-full max-w-sm flex flex-col items-center text-center gap-1.5">
 
-              <!-- Encabezado vacío — oculto en móvil cuando hay meses (la lista los muestra) -->
-              <div class="flex flex-col items-center gap-3 text-center pt-4 md:pt-0"
-                [class]="mesesDisponibles().length > 0 ? 'hidden md:flex' : 'flex'">
-                <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                  <svg class="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <div class="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mb-2.5">
+                  <svg class="w-6 h-6 text-violet-500 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
-                <div>
-                  <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Ninguna programación seleccionada</h3>
-                  <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
-                    @if (mesesDisponibles().length > 0) {
-                      Selecciona un mes del historial para verlo.
-                    } @else if (hasEditPermission()) {
-                      Genera una nueva programación para comenzar.
-                    } @else {
-                      No hay logística programada. Consulta con el secretario.
+
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Ninguna programación abierta</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-[15rem]">
+                  @if (mesesDisponibles().length > 0) {
+                    Elige un mes para verlo y editarlo.
+                  } @else if (hasEditPermission()) {
+                    Genera una nueva programación para comenzar.
+                  } @else {
+                    No hay logística programada. Consulta con el secretario.
+                  }
+                </p>
+
+                @if (mesesDisponibles().length > 0) {
+                  <!-- Lista en tarjeta y no chips sueltos: filas del mismo ancho,
+                       una debajo de otra, se leen como un solo bloque. -->
+                  <div class="w-full mt-4 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden bg-white dark:bg-slate-900">
+                    @for (m of mesesDisponibles(); track m.ano + '-' + m.mes) {
+                      <!-- Aquí sí cabe la etiqueta, a diferencia del
+                           desplegable compacto de la barra superior: en vez
+                           del punto de 6px -que obligaba a acercarse para
+                           distinguir el color-, una píldora con el texto del
+                           estado, la misma que ya existía sin usar. -->
+                      <button
+                        data-testid="log-fila-mes"
+                        [attr.data-ano]="m.ano"
+                        [attr.data-mes]="m.mes"
+                        (click)="cargarMes(m.ano, m.mes)"
+                        [disabled]="estado() === 'loading'"
+                        class="w-full flex items-center gap-2.5 px-3.5 h-11 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
+                        <span class="min-w-0 truncate text-left flex-1">{{ mesLabel(m) }}</span>
+                        <span class="shrink-0 px-2 h-5 flex items-center rounded-full text-[0.6rem] font-bold" [class]="badgeEstadoMesClass(m)">{{ etiquetaEstadoMes(m) }}</span>
+                        <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                      </button>
                     }
-                  </p>
-                </div>
-                @if (mesesDisponibles().length === 0 && hasEditPermission()) {
+                  </div>
+                }
+
+                @if (hasEditPermission()) {
                   <button
+                    data-testid="log-btn-generar-mes"
                     (click)="abrirModalGenerar()"
-                    class="flex items-center gap-2 px-4 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-xs font-bold text-white transition-[transform,background-color] duration-150 ease-out shadow-sm active:scale-[0.97]">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    [disabled]="estado() === 'loading'"
+                    class="w-full mt-4 flex items-center justify-center gap-2 px-4 h-11 rounded-xl bg-brand-purple hover:brightness-110 disabled:opacity-50 text-xs font-bold text-white transition-all shadow-sm active:scale-[0.98]">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     Generar mes
                   </button>
                 }
+
               </div>
-
-              <!-- Lista de meses disponibles — visible en móvil directamente, oculta en desktop (el sidebar la muestra) -->
-              @if (mesesDisponibles().length > 0) {
-                <div class="md:hidden flex flex-col gap-2 pb-4">
-                  <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1">Meses programados</p>
-                  @for (m of mesesDisponibles(); track m.ano + '-' + m.mes) {
-                    <div class="flex items-center gap-2">
-                      <button
-                        (click)="cargarMes(m.ano, m.mes)"
-                        [disabled]="estado() === 'loading'"
-                        class="flex-1 flex items-center justify-between px-4 h-12 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-800 dark:text-slate-100 text-sm font-medium transition-[transform,background-color] duration-150 ease-out active:scale-[0.98] disabled:opacity-40 border border-slate-200 dark:border-slate-700">
-                        <span class="truncate">{{ mesLabel(m) }}</span>
-                        <span class="flex items-center gap-2 shrink-0">
-                          <!-- En móvil hay sitio para la etiqueta completa, no solo el punto. -->
-                          <span
-                            class="px-2 py-0.5 rounded-full text-[0.6rem] font-bold"
-                            [class]="badgeEstadoMesClass(m)">
-                            {{ etiquetaEstadoMes(m) }}
-                          </span>
-                          <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                        </span>
-                      </button>
-                      <button
-                        (click)="descargarPdfMes(m)"
-                        [disabled]="descargandoPdf()"
-                        title="Descargar PDF"
-                        class="shrink-0 w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 text-emerald-600 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] flex items-center justify-center disabled:opacity-40 border border-emerald-200 dark:border-emerald-800/50">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                      </button>
-                    </div>
-                  }
-                </div>
-              }
-
             </div>
           }
 
           @if (mesDatos() && estado() !== 'loading') {
-            <!-- Toolbar del mes cargado.
-                 En móvil se apila: cuatro acciones y el título no caben en 390px
-                 y se montaban unas sobre otras. -->
-            <div class="shrink-0 flex flex-col md:flex-row md:items-center md:justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-              <div class="flex items-center gap-2 min-w-0">
-                <!-- Volver — solo móvil -->
-                <button
-                  (click)="mesDatos.set(null); estado.set('idle')"
-                  class="md:hidden shrink-0 w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors active:scale-[0.95]"
-                  title="Volver"
-                  aria-label="Volver">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                </button>
-                <!-- En móvil el estado baja a una segunda línea: es demasiado
-                     importante para esconderlo, y no cabe junto al mes. -->
-                <div class="min-w-0 flex flex-col md:flex-row md:items-center gap-x-2">
-                  <span class="text-sm font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                    {{ mesLabel({ ano: mesDatos()!.ano, mes: mesDatos()!.mes }) }}
-                  </span>
-                  <div class="flex items-center gap-2 min-w-0">
-                    <!-- El texto siempre está: el color solo refuerza. -->
-                    <span
-                      class="shrink-0 px-2 py-0.5 rounded-full text-[0.6rem] font-bold"
-                      [class]="estadoBadgeClass()">
-                      {{ estadoLabel() }}
-                    </span>
-                    <!-- Cobertura — el dato que dice si el mes está listo -->
-                    @if (coberturaLabel()) {
-                      <span class="hidden mbp:inline shrink-0 text-[0.65rem] text-slate-400 dark:text-slate-500 data-num">
-                        {{ coberturaLabel() }}
-                      </span>
-                    }
-                  </div>
-                </div>
-              </div>
-              <!-- Interruptor + acciones comparten fila para no robarle una
-                   tercera linea de alto a la tabla en movil. -->
-              <div class="flex items-center gap-2 min-w-0">
-
-              <!-- Cuanto se mira de una vez. El mes entero ya esta cargado, asi
-                   que acercarse a una semana o a un dia no pide nada al servidor.
-                   Un boton con la vista actual en vez de un interruptor de tres
-                   opciones siempre visibles: ocupa el ancho de una sola palabra
-                   y despliega la lista solo cuando hace falta cambiar. -->
-              <div class="relative shrink-0" data-vista-menu>
-                <button
-                  type="button"
-                  (click)="vistaPeriodoAbierta.set(!vistaPeriodoAbierta())"
-                  [attr.aria-expanded]="vistaPeriodoAbierta()"
-                  aria-haspopup="listbox"
-                  aria-label="Cambiar cuánto se muestra del mes"
-                  class="flex items-center gap-1.5 h-7 pl-2 pr-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[0.65rem] font-bold transition-colors hover:bg-slate-200 dark:hover:bg-slate-700">
-                  <svg class="w-3 h-3 shrink-0 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 3v3M16 3v3"/></svg>
-                  {{ vistaActivaLabel() }}
-                  <svg
-                    class="w-3 h-3 shrink-0 text-slate-400 transition-transform duration-200"
-                    [class.rotate-180]="vistaPeriodoAbierta()"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </button>
-
-                @if (vistaPeriodoAbierta()) {
-                  <div
-                    role="listbox"
-                    aria-label="Cuánto mostrar del mes"
-                    class="absolute z-30 top-[calc(100%+4px)] left-0 w-32 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl">
-                    @for (v of vistasPeriodo; track v.id) {
-                      <button
-                        type="button"
-                        role="option"
-                        [attr.aria-selected]="vistaPeriodo() === v.id"
-                        (click)="cambiarVista(v.id); vistaPeriodoAbierta.set(false)"
-                        class="w-full flex items-center justify-between gap-2 text-left text-xs px-3 h-9 transition-colors"
-                        [class]="vistaPeriodo() === v.id
-                          ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300'
-                          : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
-                        {{ v.full }}
-                        @if (vistaPeriodo() === v.id) {
-                          <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        }
-                      </button>
-                    }
-                  </div>
-                }
-              </div>
-
-              <!-- Las secundarias pierden su etiqueta en móvil y quedan en icono
-                   con aria-label; la primaria conserva el texto. -->
-              <div class="flex items-center gap-1 shrink-0 overflow-x-auto simple-scrollbar md:overflow-visible">
-                <!-- Acción primaria: publicar. Una sola cada vez. -->
-                @if (puedePublicar()) {
-                  <button
-                    data-testid="log-btn-publicar"
-                    (click)="publicarMes()"
-                    [disabled]="estado() === 'loading'"
-                    [title]="conflictosLabel()
-                      ? 'Faltan ' + conflictosLabel() + ' antes de poder publicar'
-                      : 'Hacer visible este mes a la congregación'"
-                    class="flex items-center gap-1.5 px-4 h-11 sm:px-3.5 sm:h-9 rounded-full bg-brand-purple text-white text-[0.65rem] font-bold shadow-sm transition-all hover:-translate-y-px active:scale-95 disabled:opacity-40">
-                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                    Publicar
-                    @if (conflictosLabel()) {
-                      <span class="px-1.5 rounded-full bg-white/25 text-[0.6rem] data-num">{{ mesDatos()!.conflictos }}</span>
-                    }
-                  </button>
-                }
-                <!-- Volver a lo publicado -->
-                @if (puedeDescartar()) {
-                  <button
-                    data-testid="log-btn-descartar"
-                    (click)="descartarCambios()"
-                    [disabled]="estado() === 'loading'"
-                    title="Deshacer los cambios y volver a la versión que ve la congregación"
-                    aria-label="Descartar cambios"
-                    class="flex items-center justify-center gap-1 w-11 h-11 sm:w-auto sm:h-9 sm:px-3 rounded-full border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-[0.65rem] font-bold transition-all active:scale-95 disabled:opacity-40">
-                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>
-                    <span class="hidden sm:inline">Descartar</span>
-                  </button>
-                }
-                <!-- Eliminar mes -->
-                @if (hasEditPermission()) {
-                  <button
-                    data-testid="log-btn-eliminar-mes"
-                    (click)="eliminarMes()"
-                    [disabled]="estado() === 'loading'"
-                    title="Eliminar programación del mes"
-                    aria-label="Eliminar programación del mes"
-                    class="flex items-center justify-center gap-1 w-11 h-11 sm:w-auto sm:h-9 sm:px-3 rounded-full border border-red-300 dark:border-red-700 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-[0.65rem] font-bold transition-all active:scale-95 disabled:opacity-40">
-                    <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    <span class="hidden sm:inline">Borrar</span>
-                  </button>
-                }
-                <!-- PDF — necesita que exista una versión publicada -->
-                <button
-                  (click)="descargarPdf()"
-                  [disabled]="!tienePublicacion() || descargandoPdf()"
-                  [title]="tienePublicacion()
-                    ? 'Descargar PDF del mes'
-                    : 'Publica el mes antes de descargar el PDF'"
-                  aria-label="Descargar PDF del mes"
-                  class="flex items-center justify-center gap-1 w-11 h-11 sm:w-auto sm:h-9 sm:px-3 rounded-full border text-[0.65rem] font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                  [class]="tienePublicacion()
-                    ? 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                    : 'border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'">
-                  <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                  <span class="hidden sm:inline">PDF</span>
-                </button>
-                <!-- Compartir: enlace público + WhatsApp + imprimir con opciones,
-                     todo en un mismo panel. Necesita mes publicado -no tiene
-                     sentido dar a conocer una versión que no es la vigente-. -->
-                @if (hasEditPermission() && tienePublicacion()) {
-                  <button
-                    (click)="abrirPanelCompartir()"
-                    title="Compartir y publicar"
-                    aria-label="Compartir y publicar"
-                    class="flex items-center justify-center gap-1 w-11 h-11 sm:w-auto sm:h-9 sm:px-3 rounded-full border border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-[0.65rem] font-bold transition-all active:scale-95">
-                    <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51L8.59 10.49"/></svg>
-                    <span class="hidden sm:inline">Compartir</span>
-                  </button>
-                }
-              </div>
-              </div>
-            </div>
-
             <!-- Navegador del periodo. Solo aparece si hay algo entre lo que
                  elegir: en vista de mes completo no hace falta. -->
             @if (vistaPeriodo() === 'semana' && semanasDelMes().length > 0) {
@@ -635,17 +675,20 @@ function normalizarTexto(s: string): string {
                 class="flex flex-col gap-3 logistica-stagger"
                 [class]="usaTarjetas() ? 'max-w-2xl mx-auto w-full' : 'md:hidden'">
                 @for (fecha of fechasVisibles(); track fecha.fecha) {
-                  <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
-                    <!-- Card header -->
-                    <div class="flex items-baseline gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                      <span class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ formatFecha(fecha.fecha) }}</span>
+                  <div class="sec-card sec-bg rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-[var(--shadow-soft)]">
+                    <!-- Card header. El día de la semana faltaba: "05
+                         Septiembre" no dice si toca entre semana o fin de
+                         semana, que es lo primero que se comprueba. -->
+                    <div class="flex items-baseline gap-2 px-4 py-2.5 bg-slate-50 dark:bg-white/[0.04] border-b border-slate-200 dark:border-white/10">
+                      <span class="font-mono tabular-nums text-base font-bold text-slate-900 dark:text-white">{{ diaNumero(fecha.fecha) }}</span>
+                      <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ fecha.dia_semana }}</span>
                     </div>
                     <!-- Secciones de puestos -->
                     @for (seccion of seccionesKeys; track seccion) {
-                      <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                      <div class="sec-card px-4 py-3 border-b border-slate-100 dark:border-slate-800" [style.--sec]="seccionHeaderColor(seccion)">
                         <div class="flex items-center gap-2 mb-2">
                           <span class="w-1.5 h-1.5 rounded-full shrink-0" [style.background]="seccionHeaderColor(seccion)"></span>
-                          <span class="text-[0.6rem] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{{ seccion }}</span>
+                          <span class="sec-ink text-[0.6rem] font-black uppercase tracking-widest">{{ seccion }}</span>
                         </div>
                         <div class="flex flex-col gap-1.5">
                           @for (puesto of seccionPuestos(seccion); track puesto) {
@@ -684,10 +727,10 @@ function normalizarTexto(s: string): string {
                     }
                     <!-- Aseo -->
                     @if (bloqueDeFecha(fecha.fecha); as bloque) {
-                    <div class="px-4 py-3">
+                    <div class="sec-card px-4 py-3" [style.--sec]="seccionHeaderColor('Aseo')">
                       <div class="flex items-center gap-2 mb-2">
                         <span class="w-1.5 h-1.5 rounded-full shrink-0" [style.background]="seccionHeaderColor('Aseo')"></span>
-                        <span class="text-[0.6rem] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Aseo del salón</span>
+                        <span class="sec-ink text-[0.6rem] font-black uppercase tracking-widest">Aseo del salón</span>
                       </div>
                       @if (alcanceBloque(bloque)) {
                         <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mb-2">{{ alcanceBloque(bloque) }}</p>
@@ -736,35 +779,42 @@ function normalizarTexto(s: string): string {
 
               <!-- ── Secciones de puestos ── -->
               @for (seccion of seccionesKeys; track seccion) {
-                <div>
-                  <!-- Cabecera de sección -->
-                  <div class="flex items-center gap-2 mb-2">
-                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-                    <span class="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-2 whitespace-nowrap">
-                      {{ seccion }}
-                    </span>
-                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-                  </div>
+                <!-- La sección y su tabla son una sola pieza. Antes eran dos:
+                     un título flotante entre dos filetes y, debajo, una tarjeta
+                     coronada por una banda azul saturada de lado a lado. La
+                     banda pesaba más que los propios nombres -que es lo único
+                     que se viene a leer- y repetía el mismo azul en dos
+                     secciones seguidas. Ahora el color de identidad cabe en un
+                     punto y la cabecera vuelve a ser lo que era: rótulos. -->
+                <section class="sec-card sec-bg sec-frame rounded-2xl border shadow-[var(--shadow-soft)] overflow-hidden" [style.--sec]="seccionHeaderColor(seccion)">
+                  <header class="sec-surface sec-bg flex items-center gap-2.5 px-4 py-3 border-b">
+                    <span class="w-2 h-2 rounded-full shrink-0" [style.background]="seccionHeaderColor(seccion)" aria-hidden="true"></span>
+                    <h3 class="sec-ink font-display text-[0.85rem] font-bold tracking-tight">{{ seccion }}</h3>
+                  </header>
 
-                  <!-- Tabla responsive -->
-                  <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[var(--shadow-soft)]">
+                  <div class="overflow-x-auto">
                     <table class="w-full text-xs">
-                      <!-- Cabecera solida con el color de identidad de la seccion
-                           (mismo tono que el PDF), texto blanco para contraste. -->
-                      <thead class="sticky top-0 z-10" [style.background]="seccionHeaderColor(seccion)">
-                        <tr class="text-white/85">
-                          <th class="sticky left-0 z-10 px-3 py-2.5 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap" [style.background]="seccionHeaderColor(seccion)">Fecha</th>
-                          <th class="px-3 py-2.5 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap hidden lg:table-cell">Día</th>
+                      <thead class="sec-head sec-bg sticky top-0 z-10">
+                        <tr class="text-slate-500 dark:text-slate-400">
+                          <th class="sec-head sec-bg sticky left-0 z-10 px-4 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap">Fecha</th>
                           @for (puesto of seccionPuestos(seccion); track puesto) {
-                            <th class="px-3 py-2.5 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap min-w-[140px]">{{ puestoLabel(puesto) }}</th>
+                            <th class="px-3 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap min-w-[140px]">{{ puestoLabel(puesto) }}</th>
                           }
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                      <tbody class="sec-line divide-y [&>tr]:border-[color:var(--card-line)]">
                         @for (fecha of fechasVisibles(); track fecha.fecha) {
-                          <tr class="group transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                            <td class="sticky left-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50/80 dark:group-hover:bg-slate-800/40 transition-colors px-3 py-2 whitespace-nowrap font-semibold text-[0.8rem] text-slate-700 dark:text-slate-200">{{ formatFecha(fecha.fecha) }}</td>
-                            <td class="px-3 py-2 whitespace-nowrap text-slate-400 dark:text-slate-500 hidden lg:table-cell">{{ fecha.dia_semana }}</td>
+                          <tr class="group transition-colors hover:bg-[color:var(--card-bg-hover)]">
+                            <!-- Día y día de semana en una sola columna: el mes
+                                 lo dice el selector de arriba, así que escribirlo
+                                 diez veces gastaba una columna entera para no
+                                 añadir nada. -->
+                            <td class="sec-bg sec-bg-hover sticky left-0 z-10 transition-colors px-4 py-2 whitespace-nowrap">
+                              <span class="flex items-baseline gap-1.5">
+                                <span class="font-mono tabular-nums text-[0.9rem] font-bold text-slate-900 dark:text-white">{{ diaNumero(fecha.fecha) }}</span>
+                                <span class="text-[0.65rem] font-medium text-slate-500 dark:text-slate-400">{{ fecha.dia_semana }}</span>
+                              </span>
+                            </td>
                             @for (puesto of seccionPuestos(seccion); track puesto) {
                               <td class="px-2 py-1">
                                 @if (puedeEditar()) {
@@ -839,93 +889,6 @@ function normalizarTexto(s: string): string {
                                         }
                                       }
                                     </div>
-
-                                    <!-- Dropdown flotante — no afecta el layout -->
-                                    @if (activeCellKey() === (fecha.fecha + '::' + puesto)) {
-                                      <div
-                                        data-dropdown
-                                        class="absolute z-50 left-0 w-72 max-h-72 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl simple-scrollbar"
-                                        [class]="dropdownArriba()
-                                          ? 'bottom-[calc(100%+4px)]'
-                                          : 'top-[calc(100%+4px)]'">
-
-                                        @if (getAsignacion(fecha.fecha, puesto)?.publicador) {
-                                          <button
-                                            type="button"
-                                            (mousedown)="$event.preventDefault(); seleccionarCandidato(fecha.fecha, puesto, null)"
-                                            class="w-full text-left text-xs px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800">
-                                            <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                                            Quitar asignación
-                                          </button>
-                                        }
-
-                                        <!-- Quienes tienen el permiso del puesto. Se ven de
-                                             entrada: obligar a escribir un nombre para
-                                             descubrirlos escondía la respuesta. -->
-                                        @if (getCandidatosFiltrados(puesto).length > 0) {
-                                          <p class="text-[0.55rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-2.5 pb-1">
-                                            Habilitados para {{ puestoLabel(puesto) }}
-                                          </p>
-                                          @for (c of getCandidatosFiltrados(puesto); track c.id_publicador) {
-                                            <button
-                                              type="button"
-                                              (mousedown)="$event.preventDefault(); seleccionarCandidato(fecha.fecha, puesto, c.id_publicador)"
-                                              [class]="'w-full text-left text-xs px-3 py-2 transition-colors ' + (getAsignacion(fecha.fecha, puesto)?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800')">
-                                              {{ c.nombre_completo }}
-                                            </button>
-                                          }
-                                        } @else if (sinHabilitados(puesto)) {
-                                          <p class="text-[0.65rem] text-slate-400 px-3 py-3 text-center leading-relaxed">
-                                            Nadie tiene el permiso de {{ puestoLabel(puesto) }}.<br>
-                                            Actívalo en Configuración o busca abajo.
-                                          </p>
-                                        } @else {
-                                          <p class="text-[0.65rem] text-slate-400 px-3 py-2.5 italic text-center">
-                                            Ningún habilitado coincide
-                                          </p>
-                                        }
-
-                                        <!-- Búsqueda libre: permite asignar a alguien sin el
-                                             permiso, dejando claro que va aparte. -->
-                                        @if (cellSearch().trim().length > 0) {
-                                          @if (buscandoPublicador()) {
-                                            <p class="text-[0.65rem] text-slate-400 px-3 py-2.5 italic text-center border-t border-slate-100 dark:border-slate-800">Buscando...</p>
-                                          } @else if (otrosPublicadores(puesto).length > 0) {
-                                            <p class="text-[0.55rem] font-black uppercase tracking-wider text-amber-600/90 dark:text-amber-500/90 px-3 pt-2.5 pb-1 border-t border-slate-100 dark:border-slate-800">
-                                              Sin el permiso de {{ permisoLabel(puesto) }}
-                                            </p>
-                                            @for (c of otrosPublicadores(puesto); track c.id_publicador) {
-                                              <!-- Dos acciones por fila: el nombre asigna solo hoy;
-                                                   el boton ademas deja el permiso configurado. No se
-                                                   repite el aviso: ya lo dice el encabezado. -->
-                                              <div class="flex items-center gap-1 px-1.5">
-                                                <button
-                                                  type="button"
-                                                  (mousedown)="$event.preventDefault(); seleccionarCandidato(fecha.fecha, puesto, c.id_publicador)"
-                                                  class="flex-1 min-w-0 text-left text-xs px-1.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors truncate">
-                                                  {{ c.nombre_completo }}
-                                                </button>
-                                                @if (puedeGestionarPermisos() && permisoDePuesto(puesto)) {
-                                                  <button
-                                                    type="button"
-                                                    (mousedown)="$event.preventDefault(); otorgarPermisoYAsignar(fecha.fecha, puesto, c.id_publicador, c.nombre_completo)"
-                                                    [disabled]="esOtorgando(c.id_publicador)"
-                                                    [attr.aria-label]="'Dar el permiso de ' + permisoLabel(puesto) + ' a ' + c.nombre_completo"
-                                                    class="shrink-0 flex items-center gap-1 pl-1.5 pr-2 h-7 rounded-lg border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 text-[0.6rem] font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95 disabled:opacity-40">
-                                                    @if (esOtorgando(c.id_publicador)) {
-                                                      <div class="w-3 h-3 rounded-full border-2 border-violet-200 border-t-violet-500 animate-spin"></div>
-                                                    } @else {
-                                                      <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                                                      Dar permiso
-                                                    }
-                                                  </button>
-                                                }
-                                              </div>
-                                            }
-                                          }
-                                        }
-                                      </div>
-                                    }
                                   </div>
                                 } @else {
                                   <span class="text-slate-700 dark:text-slate-200">
@@ -939,32 +902,29 @@ function normalizarTexto(s: string): string {
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </section>
               }
 
               <!-- ── Aseo del Salón ── -->
-              <div>
-                <div class="flex items-center gap-2 mb-2">
-                  <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-                  <span class="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-2 whitespace-nowrap">
-                    Aseo del Salón
-                  </span>
-                  <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-                </div>
-                <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[var(--shadow-soft)] overflow-hidden">
+              <section class="sec-card sec-bg sec-frame rounded-2xl border shadow-[var(--shadow-soft)] overflow-hidden" [style.--sec]="seccionHeaderColor('Aseo')">
+                <header class="sec-surface sec-bg flex items-center gap-2.5 px-4 py-3 border-b">
+                  <span class="w-2 h-2 rounded-full shrink-0" [style.background]="seccionHeaderColor('Aseo')" aria-hidden="true"></span>
+                  <h3 class="sec-ink font-display text-[0.85rem] font-bold tracking-tight">Aseo del Salón</h3>
+                </header>
+                <div class="overflow-x-auto">
                   <table class="w-full text-xs">
-                    <thead [style.background]="seccionHeaderColor('Aseo')">
-                      <tr class="text-white/85">
-                        <th class="px-3 py-2.5 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap w-20">{{ aseoCabeceras()[0] }}</th>
-                        <th class="px-3 py-2.5 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap hidden lg:table-cell w-24">{{ aseoCabeceras()[1] }}</th>
-                        <th class="px-3 py-2.5 text-left text-[0.6rem] font-bold uppercase tracking-widest">Grupo asignado</th>
+                    <thead class="sec-head sec-bg">
+                      <tr class="text-slate-500 dark:text-slate-400">
+                        <th class="px-4 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap w-20">{{ aseoCabeceras()[0] }}</th>
+                        <th class="px-3 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest whitespace-nowrap hidden lg:table-cell w-24">{{ aseoCabeceras()[1] }}</th>
+                        <th class="px-3 py-2 text-left text-[0.6rem] font-bold uppercase tracking-widest">Grupo asignado</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody class="sec-line divide-y [&>tr]:border-[color:var(--card-line)]">
                       @for (bloque of aseoBloquesVisibles(); track bloque.clave) {
-                        <tr class="group transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                          <td class="px-3 py-2 whitespace-nowrap font-semibold text-[0.8rem] text-slate-700 dark:text-slate-200">{{ bloque.etiqueta }}</td>
-                          <td class="px-3 py-2 whitespace-nowrap text-slate-400 dark:text-slate-500 hidden lg:table-cell">{{ bloque.detalle }}</td>
+                        <tr class="group transition-colors hover:bg-[color:var(--card-bg-hover)]">
+                          <td class="px-4 py-2 whitespace-nowrap font-semibold text-[0.8rem] text-slate-900 dark:text-white">{{ bloque.etiqueta }}</td>
+                          <td class="px-3 py-2 whitespace-nowrap text-slate-500 dark:text-slate-400 hidden lg:table-cell">{{ bloque.detalle }}</td>
                           <td class="px-3 py-2">
                             @if (puedeEditar()) {
                               <!-- Chips de grupos: seleccionado = violeta sólido, no seleccionado = outline gris -->
@@ -1004,7 +964,7 @@ function normalizarTexto(s: string): string {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </section>
 
               </div> <!-- fin grid desktop -->
 
@@ -1012,13 +972,112 @@ function normalizarTexto(s: string): string {
           }
 
         </div>
+
+        <!-- ── PANEL DE CARGA (acoplado en pantallas anchas) ──
+             Ocupa una columna propia en vez de una franja encima de la tabla:
+             ninguna de las dos se encoge por abrir la otra, y los saltos a una
+             casilla se ven sin cerrar nada. Por debajo de xl no cabe al lado y
+             pasa a ser una hoja lateral -o inferior en movil-. -->
+        @if (balancePanelVisible()) {
+          <aside
+            id="panel-balance-carga"
+            aria-label="Balance de carga del mes"
+            class="hidden xl:flex xl:w-[19rem] 2xl:w-[21rem] shrink-0 flex-col overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm balance-dock">
+            <ng-container [ngTemplateOutlet]="balancePanelBody"></ng-container>
+          </aside>
+        }
       </div>
 
     </div>
 
+    <!-- ===== MODAL REEQUILIBRAR MES ===== -->
+    <!-- La propuesta se enseña entera antes de tocar nada: son muchas casillas
+         a la vez y aceptar a ciegas un cambio así no es razonable. -->
+    @if (rebalanceoAbierto()) {
+      <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarRebalanceo()">
+        <div
+          class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col border border-slate-200 dark:border-slate-700"
+          (click)="$event.stopPropagation()">
+
+          <div class="shrink-0 px-5 pt-5 pb-3">
+            <p class="text-sm font-bold text-slate-900 dark:text-white">Reequilibrar el mes</p>
+            @if (rebalanceando() && !rebalanceoPropuesta()) {
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Calculando el reparto…</p>
+            } @else if (rebalanceoPropuesta(); as p) {
+              @if (p.cambios.length > 0) {
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {{ p.cambios.length }} cambios. El reparto pasa de una desviación de
+                  <span class="font-mono tabular-nums font-bold text-slate-700 dark:text-slate-200">{{ p.antes.desviacion }}</span>
+                  a
+                  <span class="font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">{{ p.despues.desviacion }}</span>,
+                  repartiendo entre {{ p.despues.personas }} personas en vez de {{ p.antes.personas }}.
+                </p>
+              }
+            }
+          </div>
+
+          @if (rebalanceoPropuesta(); as p) {
+            @if (p.cambios.length > 0) {
+              <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar px-3 pb-2">
+                @for (c of p.cambios; track c.id_logistica) {
+                  <div class="flex items-center gap-2 px-2 py-2 rounded-lg border-b border-slate-100 dark:border-slate-800 last:border-0">
+                    <span class="shrink-0 w-24 text-[0.65rem] text-slate-500 dark:text-slate-400">
+                      {{ formatFecha(c.fecha) }}
+                    </span>
+                    <span class="shrink-0 w-24 truncate text-[0.65rem] font-semibold text-slate-600 dark:text-slate-300">
+                      {{ puestoLabel(c.puesto) }}
+                    </span>
+                    <span class="flex-1 min-w-0 flex items-center gap-1.5 text-xs">
+                      <span class="min-w-0 truncate text-slate-400 dark:text-slate-500 line-through">{{ c.de.nombre_completo }}</span>
+                      <svg class="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                      <span class="min-w-0 truncate font-semibold text-slate-800 dark:text-slate-100">{{ c.a.nombre_completo }}</span>
+                    </span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <!-- Un modal vacío parecería un fallo: hay que decir por qué no
+                   hay nada que mover. -->
+              <div class="flex-1 px-5 py-6 text-center">
+                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  El mes ya está todo lo repartido que se puede sin crear choques.
+                </p>
+                @if (p.protegidas_manual > 0) {
+                  <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">
+                    {{ p.protegidas_manual }} {{ p.protegidas_manual === 1 ? 'casilla asignada' : 'casillas asignadas' }} a mano
+                    {{ p.protegidas_manual === 1 ? 'quedó' : 'quedaron' }} sin tocar.
+                  </p>
+                }
+              </div>
+            }
+          }
+
+          <div class="shrink-0 flex items-center gap-2 justify-end px-5 py-3 border-t border-slate-100 dark:border-slate-800">
+            @if (rebalanceoPropuesta()?.protegidas_manual && rebalanceoPropuesta()!.cambios.length > 0) {
+              <p class="flex-1 min-w-0 text-[0.65rem] text-slate-400 dark:text-slate-500 leading-tight">
+                No se toca lo que asignaste a mano.
+              </p>
+            }
+            <button (click)="cerrarRebalanceo()"
+              class="shrink-0 px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+              {{ rebalanceoPropuesta()?.cambios?.length ? 'Cancelar' : 'Cerrar' }}
+            </button>
+            @if (rebalanceoPropuesta()?.cambios?.length) {
+              <button (click)="aplicarRebalanceo()"
+                [disabled]="rebalanceando()"
+                data-testid="log-btn-aplicar-rebalanceo"
+                class="shrink-0 px-4 h-9 rounded-xl text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 transition-all active:scale-95 disabled:opacity-40">
+                Aplicar
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- ===== MODAL CONFIRMACIÓN ===== -->
     @if (confirmPendiente()) {
-      <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div data-testid="log-modal-confirm" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 border border-slate-200 dark:border-slate-700">
           <div class="flex items-start gap-3">
             <div
@@ -1240,13 +1299,29 @@ function normalizarTexto(s: string): string {
           <div class="flex gap-3">
             <div class="flex-1 flex flex-col gap-1">
               <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Mes</label>
-              <select
-                [(ngModel)]="modalMes"
-                class="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400">
-                @for (m of mesesOpciones; track m.value) {
-                  <option [value]="m.value">{{ m.label }}</option>
+              <div class="relative">
+                @if (mesModalDropdownAbierto()) {
+                  <div class="fixed inset-0 z-[59]" (click)="mesModalDropdownAbierto.set(false)"></div>
                 }
-              </select>
+                <button type="button" data-testid="log-generar-mes" (click)="mesModalDropdownAbierto.set(!mesModalDropdownAbierto())"
+                  class="h-9 w-full px-3 rounded-xl border bg-white dark:bg-slate-800 text-sm text-left flex items-center justify-between gap-2 outline-none transition-[border-color,background-color] duration-150 ease-out"
+                  [class]="mesModalDropdownAbierto() ? 'border-violet-500 ring-2 ring-violet-400/30' : 'border-slate-200 dark:border-slate-600 hover:border-violet-300 dark:hover:border-violet-700'">
+                  <span class="text-slate-800 dark:text-slate-100">{{ mesesOpciones[modalMes - 1].label }}</span>
+                  <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="mesModalDropdownAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                @if (mesModalDropdownAbierto()) {
+                  <div class="absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
+                    @for (m of mesesOpciones; track m.value) {
+                      <button type="button" data-testid="log-opcion-mes" [attr.data-mes]="m.value"
+                        (click)="modalMes = m.value; mesModalDropdownAbierto.set(false)"
+                        class="w-full px-3.5 py-2 text-sm font-semibold text-left transition-colors duration-100"
+                        [class]="modalMes === m.value ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
+                        {{ m.label }}
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
             </div>
             <div class="w-24 flex flex-col gap-1">
               <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Año</label>
@@ -1300,54 +1375,344 @@ function normalizarTexto(s: string): string {
       </div>
     }
 
-    <!-- ===== SHEET MÓVIL: MESES PROGRAMADOS ===== -->
-    @if (mobileMesesAbierto()) {
-      <div class="md:hidden fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm sheet-overlay" (click)="mobileMesesAbierto.set(false)">
-        <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl border-t border-slate-200 dark:border-slate-700 max-h-[85vh] flex flex-col sheet-content" (click)="$event.stopPropagation()">
-          <div class="shrink-0 pt-2.5 pb-2 flex justify-center">
-            <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
-          </div>
-          <div class="px-5 pb-3">
-            <h2 class="text-base font-black text-slate-800 dark:text-white">Meses programados</h2>
-          </div>
-          <div class="flex-1 overflow-y-auto simple-scrollbar px-4 pb-5 flex flex-col gap-2">
-            @if (hasEditPermission()) {
+    <!-- ===== BALANCE DE CARGA: cuerpo compartido ===== -->
+    <!-- Un solo cuerpo para las dos presentaciones -columna acoplada en xl y
+         hoja por debajo-: dos copias del mismo listado se habrian separado a
+         la primera correccion. -->
+    <ng-template #balancePanelBody>
+      <!-- Encabezado: la conclusion antes que la lista. Quien abre esto
+           pregunta "a quien le estoy pidiendo de mas", y la media es la vara
+           con la que se mide esa respuesta. -->
+      <div class="shrink-0 flex items-start gap-3 px-4 pt-3.5 pb-3">
+        <div class="min-w-0 flex-1">
+          <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Balance de carga</p>
+          <p class="flex items-baseline gap-1.5 mt-1">
+            <span class="text-xl font-black leading-none text-slate-900 dark:text-white data-num">{{ promedioCargaLabel() }}</span>
+            <span class="text-[0.7rem] text-slate-500 dark:text-slate-400">tareas de media · {{ balanceCarga().length }} personas</span>
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="cerrarPanelBalance()"
+          aria-label="Cerrar balance de carga"
+          title="Cerrar"
+          class="shrink-0 w-8 h-8 -mr-1 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Buscar y acotar: con treinta nombres, recorrer la lista a ojo para
+           comprobar a una persona concreta es el gasto real de esta pantalla. -->
+      <div class="shrink-0 px-4 pb-3 flex flex-col gap-2">
+        <div class="flex items-center gap-2 px-2.5 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 focus-within:border-violet-400 dark:focus-within:border-violet-500 transition-colors">
+          <svg class="w-3.5 h-3.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input
+            type="text"
+            class="flex-1 min-w-0 text-xs bg-transparent text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-400"
+            placeholder="Buscar persona..."
+            aria-label="Buscar persona en el balance de carga"
+            [value]="balanceBusqueda()"
+            (input)="balanceBusqueda.set($any($event.target).value)"
+            autocomplete="off"
+            spellcheck="false" />
+          @if (balanceBusqueda()) {
+            <button
+              type="button"
+              (click)="balanceBusqueda.set('')"
+              aria-label="Limpiar búsqueda"
+              class="shrink-0 w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          }
+        </div>
+        <!-- Solo los dos extremos se pueden filtrar: "normal" no lleva a
+             ninguna decision, y ofrecerlo solo alarga el interruptor. -->
+        <div class="flex items-center gap-1" role="group" aria-label="Filtrar por nivel de carga">
+          @for (f of balanceFiltros; track f.id) {
+            <button
+              type="button"
+              (click)="balanceFiltro.set(f.id)"
+              [attr.aria-pressed]="balanceFiltro() === f.id"
+              class="flex-1 flex items-center justify-center gap-1.5 h-7 px-2 rounded-lg border text-[0.65rem] font-bold transition-colors"
+              [class]="balanceFiltro() === f.id
+                ? 'bg-slate-900 dark:bg-slate-100 border-slate-900 dark:border-slate-100 text-white dark:text-slate-900'
+                : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'">
+              {{ f.label }}
+              <span class="data-num opacity-60">{{ balanceConteos()[f.id] }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Lista con el scroll aqui dentro: el encabezado y la nota del pie no
+           se van con ella. -->
+      <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain simple-scrollbar px-2 pb-2">
+        @for (grupo of balanceGrupos(); track grupo.nivel) {
+          <!-- El nivel va en el encabezado del grupo y no repetido en una
+               etiqueta por fila: treinta pastillas diciendo lo mismo son ruido,
+               y agrupar deja el desequilibrio visible de un vistazo. -->
+          <p
+            class="sticky top-0 z-10 flex items-center gap-2 px-2 py-1.5 bg-white dark:bg-slate-900 text-[0.6rem] font-black uppercase tracking-wider"
+            [class]="nivelTextoClass(grupo.nivel)">
+            <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="nivelBarraClass(grupo.nivel)"></span>
+            {{ grupo.label }}
+            <span class="data-num opacity-60">{{ grupo.filas.length }}</span>
+          </p>
+          @for (f of grupo.filas; track f.id) {
+            <div class="min-w-0">
               <button
-                (click)="mobileMesesAbierto.set(false); abrirModalGenerar()"
-                [disabled]="estado() === 'loading'"
-                class="w-full flex items-center justify-center gap-2 px-4 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 text-xs font-bold text-white transition-[transform,background-color] duration-150 ease-out shadow-sm active:scale-[0.97] shrink-0">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Generar mes
+                type="button"
+                (click)="toggleExpandirPersona(f.id)"
+                [attr.aria-expanded]="personaExpandida() === f.id"
+                class="w-full h-9 flex items-center gap-2 min-w-0 px-2 rounded-lg transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60 active:bg-slate-100 dark:active:bg-slate-800">
+                <svg
+                  class="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600 transition-transform duration-200"
+                  [class.rotate-90]="personaExpandida() === f.id"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                <span class="min-w-0 flex-1 truncate text-left text-xs text-slate-700 dark:text-slate-200">{{ f.nombre }}</span>
+                <!-- La barra es apoyo visual; el numero va aparte para no
+                     depender solo del color ni del largo. -->
+                <span class="w-12 h-1 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0" aria-hidden="true">
+                  <span class="block h-full rounded-full transition-[width] duration-300 ease-out" [class]="nivelBarraClass(f.nivel)" [style.width.%]="f.pct"></span>
+                </span>
+                <span class="w-4 text-right text-xs font-bold text-slate-800 dark:text-slate-100 data-num shrink-0">{{ f.total }}</span>
               </button>
-            }
-            @if (mesesDisponibles().length > 0) {
-              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 pt-2 pb-1">Historial</p>
-              @for (m of mesesDisponibles(); track m.ano + '-' + m.mes) {
-                <div class="flex items-center gap-2">
-                  <button
-                    (click)="cargarMes(m.ano, m.mes); mobileMesesAbierto.set(false)"
-                    [disabled]="estado() === 'loading'"
-                    class="flex-1 flex items-center justify-between px-3 h-11 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-sm font-medium transition-[transform,background-color] duration-150 ease-out active:scale-[0.98] disabled:opacity-40">
-                    <span>{{ mesLabel(m) }}</span>
-                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                  </button>
-                  @if (!esMesActivo(m)) {
-                    <button
-                      (click)="descargarPdfMes(m)"
-                      [disabled]="descargandoPdf()"
-                      [title]="'Descargar PDF de ' + mesLabel(m)"
-                      [attr.aria-label]="'Descargar PDF de ' + mesLabel(m)"
-                      class="shrink-0 w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-600 transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] flex items-center justify-center disabled:opacity-40">
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                    </button>
+
+              @if (personaExpandida() === f.id) {
+                <!-- Chips de solo lectura: cada uno salta a su celda en la
+                     tabla, mismo mecanismo que los conflictos de arriba. -->
+                <div class="flex flex-col gap-1.5 pl-7 pr-2 pb-2.5 pt-0.5">
+                  @for (a of f.asignaciones; track a.fecha + a.puesto) {
+                    <div class="flex items-center gap-1 min-w-0">
+                      <button
+                        type="button"
+                        (click)="irACeldaBalance(a)"
+                        class="flex-1 min-w-0 truncate text-left inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[0.65rem] font-medium transition-all hover:border-violet-300 dark:hover:border-violet-700 hover:text-violet-700 dark:hover:text-violet-300 active:scale-95">
+                        {{ formatFecha(a.fecha) }} · {{ a.puestoLabel }}
+                      </button>
+                      <!-- Pasarle esta parte a alguien menos cargado. Sólo con
+                           permiso de edición: sin él el panel sigue siendo de
+                           consulta, como hasta ahora. -->
+                      @if (puedeEditar()) {
+                        <button
+                          type="button"
+                          (click)="abrirReemplazo(a)"
+                          [attr.aria-expanded]="reemplazoAbierto()?.fecha === a.fecha && reemplazoAbierto()?.puesto === a.puesto"
+                          [title]="'Pasar ' + a.puestoLabel + ' del ' + formatFecha(a.fecha) + ' a otra persona'"
+                          aria-label="Pasar esta parte a otra persona"
+                          class="shrink-0 w-7 h-7 flex items-center justify-center rounded-full border transition-colors active:scale-95"
+                          [class]="reemplazoAbierto()?.fecha === a.fecha && reemplazoAbierto()?.puesto === a.puesto
+                            ? 'border-violet-400 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300'
+                            : 'border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-violet-300 hover:text-violet-600 dark:hover:text-violet-400'">
+                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
+                        </button>
+                      }
+                    </div>
+
+                    @if (reemplazoAbierto()?.fecha === a.fecha && reemplazoAbierto()?.puesto === a.puesto) {
+                      <div class="rounded-xl border border-violet-200 dark:border-violet-800/70 bg-violet-50/40 dark:bg-violet-900/10 p-1.5 mb-1">
+                        @if (candidatosParaAliviar(a).length > 0) {
+                          <p class="text-[0.55rem] font-black uppercase tracking-wider text-violet-600 dark:text-violet-400 px-1.5 pb-1">
+                            Pasar a quien va con menos
+                          </p>
+                          @for (c of candidatosParaAliviar(a); track c.id_publicador) {
+                            <button
+                              type="button"
+                              (click)="reemplazarDesdeBalance(a, c.id_publicador)"
+                              class="w-full flex items-center gap-2 px-2 h-8 rounded-lg text-left transition-colors hover:bg-white dark:hover:bg-slate-800 active:scale-[0.98]">
+                              <span class="flex-1 min-w-0 truncate text-[0.7rem] text-slate-700 dark:text-slate-200">{{ c.nombre_completo }}</span>
+                              <!-- Su carga actual: es el dato por el que se
+                                   elige, así que va al lado del nombre. -->
+                              <span class="shrink-0 font-mono tabular-nums text-[0.65rem] font-bold text-emerald-600 dark:text-emerald-400">{{ cargaDe(c.id_publicador) }}</span>
+                            </button>
+                          }
+                        } @else {
+                          <p class="text-[0.65rem] text-slate-500 dark:text-slate-400 px-2 py-2 leading-relaxed">
+                            Nadie con este permiso está libre ese día y va con menos carga.
+                          </p>
+                        }
+                      </div>
+                    }
                   }
                 </div>
               }
+            </div>
+          }
+        } @empty {
+          <p class="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
+            Nadie coincide con lo que buscas.
+          </p>
+        }
+      </div>
+
+      <!-- Fuera del area con scroll: la pista y el enlace deben verse siempre,
+           sin bajar hasta el final de treinta nombres. -->
+      <p class="shrink-0 px-4 py-2.5 border-t border-slate-100 dark:border-slate-800/70 text-[0.65rem] leading-relaxed text-slate-500 dark:text-slate-400">
+        Alta o baja es respecto a la media de este mes, no a un numero fijo. No incluye el aseo, que se asigna por grupo.
+        @if (puedeVerReporteCarga()) {
+          <a routerLink="/reportes/logistica" class="font-semibold text-violet-600 dark:text-violet-400 hover:underline">Ver varios meses</a>
+        }
+      </p>
+
+      <!-- Reparto de todo el mes de una vez. No aplica nada al pulsar: abre la
+           propuesta para revisarla. -->
+      @if (puedeEditar()) {
+        <div class="shrink-0 px-4 pb-3">
+          <button
+            type="button"
+            data-testid="log-btn-rebalancear"
+            (click)="pedirRebalanceo()"
+            [disabled]="rebalanceando()"
+            class="w-full flex items-center justify-center gap-2 h-9 rounded-xl border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 text-xs font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-[0.98] disabled:opacity-40">
+            @if (rebalanceando()) {
+              <div class="w-3.5 h-3.5 rounded-full border-2 border-violet-200 border-t-violet-500 animate-spin"></div>
+              Calculando…
             } @else {
-              <p class="text-xs italic text-slate-400 dark:text-slate-500 text-center py-6">No hay meses programados.</p>
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+              Reequilibrar el mes
             }
-          </div>
+          </button>
         </div>
+      }
+    </ng-template>
+
+    <!-- ===== BALANCE DE CARGA: hoja (por debajo de xl) ===== -->
+    @if (balancePanelVisible()) {
+      <div
+        class="xl:hidden fixed inset-0 z-[58] bg-slate-900/40 backdrop-blur-sm sheet-overlay"
+        (click)="cerrarPanelBalance()">
+        <!-- Movil: hoja inferior, el gesto que ya usan los otros paneles.
+             Tablet: hoja lateral, que deja la tabla a la vista mientras se
+             salta de una asignacion a otra. -->
+        <div
+          class="absolute inset-x-0 bottom-0 max-h-[85dvh] rounded-tl-3xl rounded-tr-3xl border-t
+                 sm:inset-y-0 sm:left-auto sm:right-0 sm:w-[21rem] sm:max-h-none sm:rounded-tl-2xl sm:rounded-tr-none sm:rounded-bl-2xl sm:border-t-0 sm:border-l
+                 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col balance-sheet"
+          (click)="$event.stopPropagation()">
+          <div class="shrink-0 sm:hidden pt-2.5 pb-1 flex justify-center">
+            <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+          </div>
+          <ng-container [ngTemplateOutlet]="balancePanelBody"></ng-container>
+        </div>
+      </div>
+    }
+
+    <!-- ===== POPOVER ESCRITORIO: COMBOBOX BÚSQUEDA PUBLICADOR ===== -->
+    <!-- Vivía como <div absolute> dentro de la celda, adentro de la tabla con
+         overflow-x-auto. Ese contenedor recorta también en vertical -es como
+         funciona overflow: si un eje no es "visible" el otro deja de serlo
+         también-, así que en las filas de arriba el desplegable quedaba
+         cortado por su propio techo y quien lo abría lo veía nacer detrás de
+         la cabecera pegajosa, como un elemento roto. Ahora es uno solo,
+         fijo respecto al viewport y calculado con la posición real del
+         disparador: nunca vive dentro de un contenedor con scroll, así que
+         nada vuelve a recortarlo. -->
+    @if (activeCellKey() && puedeEditar() && comboboxPos(); as pos) {
+      <div
+        class="hidden md:block fixed z-[70] w-72 max-h-72 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl simple-scrollbar combobox-pop"
+        data-combobox-popover
+        [style.top.px]="pos.top"
+        [style.left.px]="pos.left"
+        [style.transform]="pos.openUp ? 'translateY(-100%)' : 'none'">
+
+        @if (activeCellAsignacion()?.publicador) {
+          <button
+            type="button"
+            (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(null)"
+            class="w-full text-left text-xs px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800">
+            <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            Quitar asignación
+          </button>
+        }
+
+        <!-- Habilitados y libres ese día: los que de verdad sirven de
+             reemplazo. Antes iban mezclados con quienes ya tenían una parte
+             en otra reunión, así que elegir al primero de la lista era jugar
+             a la lotería y el choque sólo se descubría al guardar. -->
+        @if (candidatosLibres(activeCellPuesto()).length > 0) {
+          <p class="text-[0.55rem] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 px-3 pt-2.5 pb-1">
+            Libres ese día
+          </p>
+          @for (c of candidatosLibres(activeCellPuesto()); track c.id_publicador) {
+            <button
+              type="button"
+              (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
+              [class]="'w-full text-left text-xs px-3 py-2 transition-colors ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800')">
+              {{ c.nombre_completo }}
+            </button>
+          }
+        }
+
+        <!-- Con el permiso pero ya ocupados. No se ocultan: a veces la mejor
+             opción sigue siendo alguien con otra parte, y esconderlo obligaría
+             a buscarlo a mano sin saber por qué no salía. -->
+        @if (candidatosOcupados(activeCellPuesto()).length > 0) {
+          <p class="text-[0.55rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-2.5 pb-1 border-t border-slate-100 dark:border-slate-800">
+            Ya tienen algo ese día
+          </p>
+          @for (c of candidatosOcupados(activeCellPuesto()); track c.id_publicador) {
+            <button
+              type="button"
+              (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
+              [class]="'w-full text-left px-3 py-2 transition-colors flex items-baseline gap-2 ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800')">
+              <span class="flex-1 min-w-0 truncate text-xs text-slate-500 dark:text-slate-400">{{ c.nombre_completo }}</span>
+              <span class="shrink-0 text-[0.55rem] font-semibold text-amber-600 dark:text-amber-500">{{ motivoOcupado(c.id_publicador) }}</span>
+            </button>
+          }
+        }
+
+        @if (getCandidatosFiltrados(activeCellPuesto()).length === 0) {
+          @if (sinHabilitados(activeCellPuesto())) {
+            <p class="text-[0.65rem] text-slate-400 px-3 py-3 text-center leading-relaxed">
+              Nadie tiene el permiso de {{ activeCellPuestoLabel() }}.<br>
+              Actívalo en Configuración o busca abajo.
+            </p>
+          } @else {
+            <p class="text-[0.65rem] text-slate-400 px-3 py-2.5 italic text-center">
+              Ningún habilitado coincide
+            </p>
+          }
+        }
+
+        <!-- Búsqueda libre: permite asignar a alguien sin el permiso,
+             dejando claro que va aparte. -->
+        @if (cellSearch().trim().length > 0) {
+          @if (buscandoPublicador()) {
+            <p class="text-[0.65rem] text-slate-400 px-3 py-2.5 italic text-center border-t border-slate-100 dark:border-slate-800">Buscando...</p>
+          } @else if (otrosPublicadores(activeCellPuesto()).length > 0) {
+            <p class="text-[0.55rem] font-black uppercase tracking-wider text-amber-600/90 dark:text-amber-500/90 px-3 pt-2.5 pb-1 border-t border-slate-100 dark:border-slate-800">
+              Sin el permiso de {{ permisoLabel(activeCellPuesto()) }}
+            </p>
+            @for (c of otrosPublicadores(activeCellPuesto()); track c.id_publicador) {
+              <!-- Dos acciones por fila: el nombre asigna solo hoy; el botón
+                   además deja el permiso configurado. No se repite el aviso:
+                   ya lo dice el encabezado. -->
+              <div class="flex items-center gap-1 px-1.5">
+                <button
+                  type="button"
+                  (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
+                  class="flex-1 min-w-0 text-left text-xs px-1.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors truncate">
+                  {{ c.nombre_completo }}
+                </button>
+                @if (puedeGestionarPermisos() && permisoDePuesto(activeCellPuesto())) {
+                  <button
+                    type="button"
+                    (mousedown)="$event.preventDefault(); otorgarPermisoYAsignarActiva(c.id_publicador, c.nombre_completo)"
+                    [disabled]="esOtorgando(c.id_publicador)"
+                    [attr.aria-label]="'Dar el permiso de ' + permisoLabel(activeCellPuesto()) + ' a ' + c.nombre_completo"
+                    class="shrink-0 flex items-center gap-1 pl-1.5 pr-2 h-7 rounded-lg border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 text-[0.6rem] font-bold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95 disabled:opacity-40">
+                    @if (esOtorgando(c.id_publicador)) {
+                      <div class="w-3 h-3 rounded-full border-2 border-violet-200 border-t-violet-500 animate-spin"></div>
+                    } @else {
+                      <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                      Dar permiso
+                    }
+                  </button>
+                }
+              </div>
+            }
+          }
+        }
       </div>
     }
 
@@ -1390,12 +1755,13 @@ function normalizarTexto(s: string): string {
                 Quitar asignación
               </button>
             }
-            <!-- Mismo orden que en escritorio: primero los habilitados. -->
-            @if (getCandidatosFiltrados(activeCellPuesto()).length > 0) {
-              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-2 pb-1">
-                Habilitados para {{ activeCellPuestoLabel() }}
+            <!-- Mismo criterio que en escritorio: primero quien puede y está
+                 libre; después quien puede pero ya tiene algo, diciendo qué. -->
+            @if (candidatosLibres(activeCellPuesto()).length > 0) {
+              <p class="text-[0.6rem] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 px-3 pt-2 pb-1">
+                Libres ese día
               </p>
-              @for (c of getCandidatosFiltrados(activeCellPuesto()); track c.id_publicador) {
+              @for (c of candidatosLibres(activeCellPuesto()); track c.id_publicador) {
                 <button
                   type="button"
                   (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
@@ -1403,13 +1769,32 @@ function normalizarTexto(s: string): string {
                   {{ c.nombre_completo }}
                 </button>
               }
-            } @else if (sinHabilitados(activeCellPuesto())) {
-              <p class="text-xs text-slate-400 px-3 py-5 text-center leading-relaxed">
-                Nadie tiene el permiso de {{ activeCellPuestoLabel() }}.<br>
-                Actívalo en Configuración o busca arriba.
+            }
+
+            @if (candidatosOcupados(activeCellPuesto()).length > 0) {
+              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 pt-3 pb-1 border-t border-slate-100 dark:border-slate-800">
+                Ya tienen algo ese día
               </p>
-            } @else {
-              <p class="text-xs text-slate-400 px-3 py-4 italic text-center">Ningún habilitado coincide</p>
+              @for (c of candidatosOcupados(activeCellPuesto()); track c.id_publicador) {
+                <button
+                  type="button"
+                  (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
+                  [class]="'w-full text-left px-3 py-3 rounded-xl transition-colors flex items-baseline gap-2 ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800')">
+                  <span class="flex-1 min-w-0 truncate text-sm text-slate-500 dark:text-slate-400">{{ c.nombre_completo }}</span>
+                  <span class="shrink-0 text-[0.6rem] font-semibold text-amber-600 dark:text-amber-500">{{ motivoOcupado(c.id_publicador) }}</span>
+                </button>
+              }
+            }
+
+            @if (getCandidatosFiltrados(activeCellPuesto()).length === 0) {
+              @if (sinHabilitados(activeCellPuesto())) {
+                <p class="text-xs text-slate-400 px-3 py-5 text-center leading-relaxed">
+                  Nadie tiene el permiso de {{ activeCellPuestoLabel() }}.<br>
+                  Actívalo en Configuración o busca arriba.
+                </p>
+              } @else {
+                <p class="text-xs text-slate-400 px-3 py-4 italic text-center">Ningún habilitado coincide</p>
+              }
             }
 
 
@@ -1453,6 +1838,58 @@ function normalizarTexto(s: string): string {
     }
   `,
   styles: [`
+    /* Identidad de color por sección.
+       El tono llega como --sec desde la plantilla (un solo hex por sección) y
+       de ahí se derivan la superficie y la tinta. Se deriva en CSS y no en el
+       TypeScript porque cada tema necesita mezclas distintas del mismo tono:
+       en claro la superficie es un velo del 7% y la tinta se oscurece para
+       pasar contraste -cian y esmeralda al 100% se quedan en 3.5:1 sobre
+       blanco, por debajo del mínimo-; en oscuro es al revés, la superficie
+       necesita más cuerpo y la tinta se aclara. */
+    .sec-card {
+      --sec-surface: color-mix(in oklch, var(--sec) 20%, transparent);
+      --sec-head:    color-mix(in oklch, var(--sec) 12%, transparent);
+      --sec-ink:     color-mix(in oklch, var(--sec) 75%, black 25%);
+      --sec-edge:    color-mix(in oklch, var(--sec) 42%, transparent);
+      --sec-frame:   color-mix(in oklch, var(--sec) 24%, transparent);
+      /* Superficie de la tarjeta. En claro basta el blanco sobre el panel
+         porque el borde gris ya la recorta; en oscuro no: el panel que las
+         contiene es tambien slate-900, asi que tarjeta y fondo eran el mismo
+         color y las tablas se disolvian. En un tema oscuro la elevacion se
+         dice aclarando la superficie, no con sombra. */
+      --card-bg:       #ffffff;
+      --card-bg-hover: #f8fafc;
+      --card-line:     rgba(15, 23, 42, 0.07);
+    }
+    :host-context(.dark) .sec-card {
+      --sec-surface: color-mix(in oklch, var(--sec) 40%, transparent);
+      --sec-head:    color-mix(in oklch, var(--sec) 24%, transparent);
+      --sec-ink:     color-mix(in oklch, var(--sec) 45%, white 55%);
+      --sec-edge:    color-mix(in oklch, var(--sec) 52%, transparent);
+      --sec-frame:   color-mix(in oklch, var(--sec) 40%, transparent);
+      --card-bg:       #161d2c;
+      --card-bg-hover: #1d2739;
+      --card-line:     rgba(255, 255, 255, 0.07);
+    }
+    /* Un unico color de superficie para la tarjeta, la cabecera pegajosa y la
+       columna de fecha: si se separan, al desplazar se ve el escalon. */
+    .sec-bg    { background-color: var(--card-bg); }
+    .sec-frame { border-color: var(--sec-frame); }
+    .sec-line  { border-color: var(--card-line); }
+    .group:hover .sec-bg-hover { background-color: var(--card-bg-hover); }
+    /* El velo va como background-image sobre el color de fondo que ya pone
+       Tailwind, no como background: si fuera el atajo pisaria ese color y la
+       cabecera pegajosa -que tiene que tapar las filas al desplazar- se
+       volveria translucida. */
+    .sec-surface {
+      background-image: linear-gradient(var(--sec-surface), var(--sec-surface));
+      border-color: var(--sec-edge);
+    }
+    .sec-head {
+      background-image: linear-gradient(var(--sec-head), var(--sec-head));
+    }
+    .sec-ink { color: var(--sec-ink); }
+
     /* Sheet móvil: entrada desde abajo con curva tipo drawer iOS */
     .sheet-overlay {
       animation: sheetFadeIn 200ms cubic-bezier(0.32, 0.72, 0, 1);
@@ -1467,6 +1904,44 @@ function normalizarTexto(s: string): string {
     @keyframes sheetSlideUp {
       from { transform: translateY(100%); }
       to { transform: translateY(0); }
+    }
+    /* Popover del combobox: solo opacidad. El propio elemento ya usa
+       [style.transform] para plantarse arriba o abajo del disparador -animar
+       ahí tambien un scale/translate competiria con esa transformada fija en
+       vez de combinarse con ella. */
+    .combobox-pop {
+      animation: comboboxFadeIn 120ms ease-out;
+    }
+    @keyframes comboboxFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    /* Hoja del balance: sube desde abajo en movil y entra desde la derecha en
+       cuanto hay ancho para ponerla al lado de la tabla. El corte va aqui y no
+       con un prefijo sm: porque Tailwind solo genera variantes de sus propias
+       utilidades, no de una clase del componente.
+       Sin fill-mode: dejar la transformada fija crearia un contexto de apilado
+       que atraparia los desplegables de dentro. */
+    .balance-sheet {
+      animation: sheetSlideUp 280ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    @media (min-width: 640px) {
+      .balance-sheet {
+        animation: balanceSlideIn 260ms cubic-bezier(0.32, 0.72, 0, 1);
+      }
+    }
+    @keyframes balanceSlideIn {
+      from { transform: translateX(100%); }
+      to   { transform: translateX(0); }
+    }
+    /* Columna acoplada: aparece sin animar el ancho -eso repinta la tabla
+       entera en cada fotograma-, solo su propio contenido. */
+    .balance-dock {
+      animation: balanceDockIn 220ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    @keyframes balanceDockIn {
+      from { opacity: 0; transform: translateX(8px); }
+      to   { opacity: 1; transform: translateX(0); }
     }
     /* Stagger sutil en las cards móviles */
     .logistica-stagger > * {
@@ -1486,7 +1961,7 @@ function normalizarTexto(s: string): string {
       to { opacity: 1; transform: translateY(0); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .sheet-overlay, .sheet-content, .logistica-stagger > * {
+      .sheet-overlay, .sheet-content, .balance-sheet, .balance-dock, .logistica-stagger > * {
         animation: none;
         opacity: 1;
         transform: none;
@@ -1503,6 +1978,7 @@ export class ReunionesLogisticaComponent implements OnInit {
   private congregacionCtx = inject(CongregacionContextService);
   private authStore = inject(AuthStore);
   private destroyRef = inject(DestroyRef);
+  private zone = inject(NgZone);
 
   estado = signal<Estado>('idle');
   errorMsg = signal('');
@@ -1678,8 +2154,7 @@ export class ReunionesLogisticaComponent implements OnInit {
   /** Sin teléfono fijo: abre el selector de contacto de WhatsApp — esto es
    *  difusión a la congregación, no un mensaje 1 a 1. */
   enviarWhatsapp(): void {
-    const texto = encodeURIComponent(this.whatsappMensaje());
-    window.open(`https://wa.me/?text=${texto}`, '_blank');
+    window.open(whatsappUrl(this.whatsappMensaje()), '_blank');
     this.cerrarWhatsapp();
   }
 
@@ -1715,6 +2190,12 @@ export class ReunionesLogisticaComponent implements OnInit {
   // Candidatos cacheados por clave `${puesto}::${incluirHermanas}` (para auto-asignación)
   private candidatosCache = signal<Record<string, PublicadorBase[]>>({});
   cargandoCandidatos = signal(false);
+
+  // Quién está ocupado ese día en las OTRAS programaciones, cacheado por
+  // fecha. Va por fecha y los candidatos por puesto porque cada uno cambia
+  // con una cosa distinta: así moverse por la misma fila o la misma columna
+  // no vuelve a pedir nada.
+  private ocupadosPorFecha = signal<Record<string, Record<number, string>>>({});
   gruposDisponibles = signal<GrupoBase[]>([]);
 
   // Buscador de publicadores (manual)
@@ -1725,7 +2206,8 @@ export class ReunionesLogisticaComponent implements OnInit {
   // Combobox state
   activeCellKey = signal<string | null>(null);
   /** El desplegable se voltea hacia arriba cuando abajo lo recortaría la tabla. */
-  dropdownArriba = signal(false);
+  /** Posición fija (viewport) del popover de escritorio. Ver posicionarCombobox(). */
+  comboboxPos = signal<{ top: number; left: number; openUp: boolean } | null>(null);
   cellSearch = signal<string>('');
 
   // Modal de confirmación (reemplaza window.confirm)
@@ -1741,6 +2223,7 @@ export class ReunionesLogisticaComponent implements OnInit {
 
   // Modal generar
   modalGenerarAbierto = signal(false);
+  mesModalDropdownAbierto = signal(false);
   modalMes = new Date().getMonth() + 1;
   modalAno = new Date().getFullYear();
   // Rotación del aseo: se precarga con la preferencia de la congregación y al
@@ -1748,19 +2231,56 @@ export class ReunionesLogisticaComponent implements OnInit {
   modalRotacionAseo = signal<AseoRotacion>('reunion');
   rotacionOpciones = signal<AseoPreferenciaOpcion[]>([]);
 
-  // Sheet móvil de meses
-  mobileMesesAbierto = signal(false);
+  // Selector de mes de la barra. Sustituye a la barra lateral fija: la lista
+  // de meses y el botón de generar sólo ocupan ancho mientras se usan, y el
+  // resto del tiempo ese ancho es de la tabla.
+  menuMesesAbierto = signal(false);
+
+  /** Menú "…" con PDF, Compartir y Eliminar. Siempre disponible: el PDF
+   *  (primer ítem) ya se mostraba sin condición, sólo deshabilitado hasta
+   *  que hubiera publicación. */
+  menuAccionesAbierto = signal(false);
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    if (this.activeCellKey() && !target.closest('[data-cell]') && !target.closest('[data-cell-sheet]')) {
-      // En móvil el combobox se renderiza en un sheet (data-cell-sheet), no en una celda
+    if (
+      this.activeCellKey()
+      && !target.closest('[data-cell]')
+      && !target.closest('[data-cell-sheet]')
+      && !target.closest('[data-combobox-popover]')
+    ) {
+      // En móvil el combobox vive en un sheet (data-cell-sheet); en escritorio,
+      // en un popover fijo (data-combobox-popover) que ya no cuelga de la celda.
       this.cerrarCombobox();
     }
     if (this.vistaPeriodoAbierta() && !target.closest('[data-vista-menu]')) {
       this.vistaPeriodoAbierta.set(false);
     }
+    if (this.menuMesesAbierto() && !target.closest('[data-mes-menu]')) {
+      this.menuMesesAbierto.set(false);
+    }
+    if (this.menuAccionesAbierto() && !target.closest('[data-acciones-menu]')) {
+      this.menuAccionesAbierto.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    // Lo desplegado primero: cerrar el panel de carga teniendo abierto el
+    // selector de mes encima sería responder a algo que no se ve.
+    if (this.menuMesesAbierto()) this.menuMesesAbierto.set(false);
+    else if (this.menuAccionesAbierto()) this.menuAccionesAbierto.set(false);
+    else if (this.balancePanelVisible()) this.cerrarPanelBalance();
+    else if (this.activeCellKey()) this.cerrarCombobox();
+  }
+
+  // El popover del combobox se posiciona una sola vez, en coordenadas fijas
+  // de viewport; si la ventana cambia de tamaño esas coordenadas quedan
+  // obsoletas. Cerrarlo es más simple y predecible que recalcularlo en vivo.
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.activeCellKey()) this.cerrarCombobox();
   }
 
   readonly seccionesKeys = Object.keys(SECCION_PUESTOS);
@@ -1966,12 +2486,110 @@ export class ReunionesLogisticaComponent implements OnInit {
   // entre sus integrantes inventaría una carga que nadie asignó. La rotación de
   // grupos se mira en el reporte de Carga de logística.
 
+  // El panel vive fuera del flujo vertical de la pantalla: columna propia al
+  // lado de la tabla en pantallas anchas, hoja lateral o inferior en las
+  // estrechas. Cuando era un desplegable encima de la tabla, abrirlo dejaba la
+  // programación reducida a una franja de dos filas, que es justo lo que se
+  // está mirando cuando se consulta la carga.
   panelBalanceAbierto = signal(false);
+
+  /** ¿Hay algo que enseñar y permiso para verlo? Lo comparten las dos formas. */
+  balancePanelVisible = computed(
+    () => this.panelBalanceAbierto() && this.puedeVerBalance() && this.balanceCarga().length > 0,
+  );
 
   /** Persona cuya lista de asignaciones está desplegada. Una a la vez. */
   personaExpandida = signal<number | null>(null);
 
+  /** Filtra por nombre. Con treinta personas, recorrer la lista a ojo para
+   *  comprobar a una concreta es el gasto real del panel. */
+  balanceBusqueda = signal('');
+
+  /** Sólo los extremos: "normal" no lleva a ninguna decisión. */
+  readonly balanceFiltros = [
+    { id: 'todos' as const, label: 'Todos' },
+    { id: 'alta' as const,  label: 'Alta' },
+    { id: 'baja' as const,  label: 'Baja' },
+  ];
+
+  balanceFiltro = signal<'todos' | 'alta' | 'baja'>('todos');
+
+  alternarPanelBalance(): void {
+    if (this.panelBalanceAbierto()) this.cerrarPanelBalance();
+    else this.panelBalanceAbierto.set(true);
+  }
+
+  cerrarPanelBalance(): void {
+    this.panelBalanceAbierto.set(false);
+    this.personaExpandida.set(null);
+    this.limpiarCeldasMarcadas();
+  }
+
+  // ── Rebalanceo del mes ────────────────────────────────────
+  // Nunca se aplica a ciegas: primero se pide la propuesta, se enseña qué
+  // cambiaría, y sólo entonces se confirma. Reescribir el mes de golpe sin
+  // mostrar nada es lo que haría que nadie se atreviera a pulsar el botón.
+  rebalanceoPropuesta = signal<RebalanceoPropuesta | null>(null);
+  rebalanceando = signal(false);
+  /** El modal está abierto aunque la propuesta venga vacía: hay que decirlo. */
+  rebalanceoAbierto = signal(false);
+
+  pedirRebalanceo(): void {
+    const datos = this.mesDatos();
+    if (!datos || this.rebalanceando()) return;
+    this.rebalanceando.set(true);
+    this.rebalanceoPropuesta.set(null);
+    this.rebalanceoAbierto.set(true);
+    this.logisticaSvc
+      .rebalancearMes(datos.ano, datos.mes, false, this.congregacionCtx.effectiveCongregacionId())
+      .subscribe({
+        next: (p) => {
+          this.rebalanceoPropuesta.set(p);
+          this.rebalanceando.set(false);
+        },
+        error: (err) => {
+          this.rebalanceando.set(false);
+          this.rebalanceoAbierto.set(false);
+          this.errorMsg.set(err?.error?.detail ?? 'No se pudo calcular el reparto');
+          this.estado.set('error');
+        },
+      });
+  }
+
+  aplicarRebalanceo(): void {
+    const datos = this.mesDatos();
+    const propuesta = this.rebalanceoPropuesta();
+    if (!datos || !propuesta?.cambios.length || this.rebalanceando()) return;
+    this.rebalanceando.set(true);
+    const cong = this.congregacionCtx.effectiveCongregacionId();
+    this.logisticaSvc.rebalancearMes(datos.ano, datos.mes, true, cong).subscribe({
+      next: () => {
+        this.rebalanceando.set(false);
+        this.cerrarRebalanceo();
+        // Se recarga el mes entero en vez de parchear cada casilla en memoria:
+        // un rebalanceo toca muchas a la vez y aquí el estado publicado del
+        // periodo también cambia.
+        this.cargarMes(datos.ano, datos.mes);
+      },
+      error: (err) => {
+        this.rebalanceando.set(false);
+        this.errorMsg.set(err?.error?.detail ?? 'No se pudo aplicar el reparto');
+        this.estado.set('error');
+      },
+    });
+  }
+
+  cerrarRebalanceo(): void {
+    this.rebalanceoAbierto.set(false);
+    this.rebalanceoPropuesta.set(null);
+  }
+
   toggleExpandirPersona(id: number): void {
+    // Al pasar a otra persona -o al plegar la actual- las casillas marcadas
+    // dejan de tener dueño visible en el panel: se apagan aquí y no sólo al
+    // pulsar el siguiente chip, porque si no quedarían encendidas mientras se
+    // recorre la lista buscando a quién revisar.
+    this.limpiarCeldasMarcadas();
     this.personaExpandida.set(this.personaExpandida() === id ? null : id);
   }
 
@@ -2054,35 +2672,71 @@ export class ReunionesLogisticaComponent implements OnInit {
     return partes.join(' · ');
   });
 
+  /** La media con el formato del sitio, para el número grande del panel. */
+  promedioCargaLabel = computed(
+    () => this.promedioCarga().toLocaleString('es', { maximumFractionDigits: 1 }),
+  );
+
+  /** Cuántos hay en cada nivel. Alimenta el interruptor y el aviso del botón. */
+  balanceConteos = computed(() => {
+    const filas = this.balanceCarga();
+    return {
+      todos: filas.length,
+      alta: filas.filter((f) => f.nivel === 'alta').length,
+      baja: filas.filter((f) => f.nivel === 'baja').length,
+    };
+  });
+
+  /**
+   * La lista agrupada por nivel, ya filtrada. El nivel pasa al encabezado del
+   * grupo en vez de repetirse en una etiqueta por fila: treinta pastillas
+   * diciendo lo mismo son ruido, y agrupadas el desequilibrio se ve de golpe.
+   */
+  balanceGrupos = computed(() => {
+    const busqueda = normalizarTexto(this.balanceBusqueda().trim());
+    const filtro = this.balanceFiltro();
+    const filas = this.balanceCarga().filter((f) => {
+      if (filtro !== 'todos' && f.nivel !== filtro) return false;
+      return !busqueda || normalizarTexto(f.nombre).includes(busqueda);
+    });
+    // Mismo orden que la lista: primero quien más lleva.
+    const orden: NivelCarga[] = ['alta', 'normal', 'baja'];
+    return orden
+      .map((nivel) => ({
+        nivel,
+        label: this.nivelGrupoLabel(nivel),
+        filas: filas.filter((f) => f.nivel === nivel),
+      }))
+      .filter((g) => g.filas.length > 0);
+  });
+
+  private nivelGrupoLabel(nivel: NivelCarga): string {
+    switch (nivel) {
+      case 'alta': return 'Carga alta';
+      case 'baja': return 'Carga baja';
+      default:     return 'Carga normal';
+    }
+  }
+
+  /** Color del encabezado de grupo: el mismo criterio que la barra. */
+  nivelTextoClass(nivel: NivelCarga): string {
+    switch (nivel) {
+      case 'alta': return 'text-amber-600 dark:text-amber-400';
+      case 'baja': return 'text-sky-600 dark:text-sky-400';
+      default:     return 'text-emerald-600 dark:text-emerald-400';
+    }
+  }
+
   /**
    * Ámbar para carga alta, no rojo: el rojo de esta pantalla significa "esto
    * impide publicar", y una carga desigual no impide nada. Azul para la baja
    * porque tampoco es un fallo: es margen para repartir.
    */
-  nivelChipClass(nivel: NivelCarga): string {
-    switch (nivel) {
-      case 'alta':
-        return 'bg-amber-50 dark:bg-amber-900/25 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60';
-      case 'baja':
-        return 'bg-sky-50 dark:bg-sky-900/25 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60';
-      default:
-        return 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60';
-    }
-  }
-
   nivelBarraClass(nivel: NivelCarga): string {
     switch (nivel) {
       case 'alta': return 'bg-amber-500 dark:bg-amber-400';
       case 'baja': return 'bg-sky-500 dark:bg-sky-400';
       default:     return 'bg-emerald-500 dark:bg-emerald-400';
-    }
-  }
-
-  nivelLabel(nivel: NivelCarga): string {
-    switch (nivel) {
-      case 'alta': return 'Alta';
-      case 'baja': return 'Baja';
-      default:     return 'Normal';
     }
   }
 
@@ -2160,10 +2814,20 @@ export class ReunionesLogisticaComponent implements OnInit {
       .find((el) => el.offsetParent !== null);
     if (!celda) return;
     celda.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Las marcas se acumulan a propósito: repasando a una persona se van
+    // encendiendo todas sus fechas a la vez, que es justo lo que se quiere
+    // ver. Quien las apaga es el cambio de persona, no el siguiente chip.
     celda.classList.remove('highlight-flash');
     // Reinicia la animación si se pulsa dos veces el mismo elemento.
     void celda.offsetWidth;
     celda.classList.add('highlight-flash');
+  }
+
+  /** Apaga todas las casillas resaltadas, en ambas maquetas. */
+  private limpiarCeldasMarcadas(): void {
+    document
+      .querySelectorAll<HTMLElement>('.highlight-flash')
+      .forEach((el) => el.classList.remove('highlight-flash'));
   }
 
   /** Estado de un mes de la lista lateral (el detalle aún no está cargado). */
@@ -2205,6 +2869,7 @@ export class ReunionesLogisticaComponent implements OnInit {
     this.cargarMeses(cong);
     this.cargarGrupos(cong);
     this.precargarCandidatos(cong);
+    this.vigilarScrollParaCerrarCombobox();
 
     // Debounce para el buscador de publicadores
     this.searchSubject.pipe(
@@ -2276,6 +2941,31 @@ export class ReunionesLogisticaComponent implements OnInit {
     });
   }
 
+  /**
+   * Cierra el mes abierto y vuelve al listado de programaciones.
+   *
+   * Ese listado ya existía -es lo que se ve cuando no hay ningún mes cargado-,
+   * pero sólo se llegaba a él recargando la pantalla: una vez abierto un mes no
+   * había salida. El desplegable deja saltar de un mes a otro, que no es lo
+   * mismo que volver al índice.
+   *
+   * Se cierra todo lo que colgaba del mes; si no, quedarían abiertos paneles
+   * apuntando a asignaciones que ya no están en memoria.
+   */
+  volverAListado(): void {
+    this.cerrarCombobox();
+    this.cerrarPanelBalance();
+    this.cerrarRebalanceo();
+    this.menuMesesAbierto.set(false);
+    this.vistaPeriodoAbierta.set(false);
+    this.limpiarCeldasMarcadas();
+    this.mesDatos.set(null);
+    this.estado.set('idle');
+    // La lista puede haber cambiado mientras se editaba -un mes recién
+    // generado, otro publicado-, así que se refresca al volver a ella.
+    this.cargarMeses(this.congregacionCtx.effectiveCongregacionId());
+  }
+
   abrirModalGenerar(): void {
     this.modalMes = new Date().getMonth() + 1;
     this.modalAno = new Date().getFullYear();
@@ -2328,24 +3018,44 @@ export class ReunionesLogisticaComponent implements OnInit {
     const cong = this.congregacionCtx.effectiveCongregacionId();
     const datos = this.mesDatos();
     if (!datos) return;
-    this.estado.set('loading');
-    this.logisticaSvc
-      .publicar({ ano: datos.ano, mes: datos.mes }, cong)
-      .subscribe({
-        next: (updated) => {
-          this.mesDatos.set(updated);
-          this.estado.set('ready');
-          this.confirmadoBanner.set(true);
-          setTimeout(() => this.confirmadoBanner.set(false), 4000);
-          this.cargarMeses(cong);
-        },
-        error: (err) => {
-          // 409 = quedan huecos que alguien podría cubrir. El backend ya
-          // explica cuántos; se muestra tal cual en vez de un texto genérico.
-          this.errorMsg.set(err?.error?.detail ?? 'Error al publicar');
-          this.estado.set('error');
-        },
+    const mesNombre = MESES_ES[datos.mes - 1] ?? `${datos.mes}`;
+    const conflictos = this.conflictosLabel();
+    if (conflictos) {
+      this.confirmPendiente.set({
+        titulo: 'No puedes publicar todavía',
+        mensaje: `Quedan ${conflictos}. Cúbrelos primero: no se puede publicar un mes con puestos sin asignar.`,
+        accionLabel: 'Entendido',
+        tono: 'peligro',
+        callback: () => {},
       });
+      return;
+    }
+    this.confirmPendiente.set({
+      titulo: `Publicar ${mesNombre} ${datos.ano}`,
+      mensaje: 'La programación quedará visible para toda la congregación y cada publicador podrá ver su asignación.',
+      accionLabel: 'Publicar',
+      tono: 'accion',
+      callback: () => {
+        this.estado.set('loading');
+        this.logisticaSvc
+          .publicar({ ano: datos.ano, mes: datos.mes }, cong)
+          .subscribe({
+            next: (updated) => {
+              this.mesDatos.set(updated);
+              this.estado.set('ready');
+              this.confirmadoBanner.set(true);
+              setTimeout(() => this.confirmadoBanner.set(false), 4000);
+              this.cargarMeses(cong);
+            },
+            error: (err) => {
+              // 409 = quedan huecos que alguien podría cubrir. El backend ya
+              // explica cuántos; se muestra tal cual en vez de un texto genérico.
+              this.errorMsg.set(err?.error?.detail ?? 'Error al publicar');
+              this.estado.set('error');
+            },
+          });
+      },
+    });
   }
 
   descartarCambios(): void {
@@ -2419,10 +3129,6 @@ export class ReunionesLogisticaComponent implements OnInit {
 
   seccionHeaderColor(seccion: string): string {
     return SECCION_COLOR[seccion] ?? '#6D28D9';
-  }
-
-  seccionRowAltColor(seccion: string): string {
-    return `${SECCION_COLOR[seccion] ?? '#6D28D9'}12`;
   }
 
   puestoLabel(puesto: string): string {
@@ -2565,6 +3271,134 @@ export class ReunionesLogisticaComponent implements OnInit {
     return todos.filter((c) => normalizarTexto(c.nombre_completo).includes(q));
   }
 
+  /**
+   * Quién no está libre en la casilla abierta, y por qué.
+   *
+   * Se calcula una vez por apertura y no por candidato: la plantilla consulta
+   * esto para cada nombre de la lista y, resuelto a base de recorrer las
+   * asignaciones del mes en cada consulta, serían treinta barridos completos
+   * en cada ciclo de detección de cambios.
+   *
+   * Dos fuentes que a propósito no se unifican en el servidor: la logística
+   * del propio mes ya está en memoria y se lee al instante -en cuanto se
+   * asigna a alguien deja de estar libre sin volver a preguntar-, y el resto
+   * de programaciones vienen del backend cacheadas por fecha.
+   */
+  private ocupacionCasillaActiva = computed<Record<number, string>>(() => {
+    const p = this.parseActiveCell();
+    return p ? this.ocupacionEnCasilla(p.fecha, p.puesto) : {};
+  });
+
+  /**
+   * Quién no está libre en una fecha, sin contar la casilla indicada.
+   *
+   * Lo usan dos sitios: el desplegable de asignación de la tabla y el
+   * reemplazo desde el panel de balance. Es la misma pregunta -"¿quién puede
+   * coger esto?"- hecha desde dos pantallas, así que comparten respuesta.
+   */
+  private ocupacionEnCasilla(fecha: string, puesto: string): Record<number, string> {
+    // El backend primero, la logística después: si alguien ya tiene otro
+    // puesto ese mismo día, eso es lo más cercano a lo que se está editando
+    // y es el motivo más útil que mostrar.
+    const mapa: Record<number, string> = { ...(this.ocupadosPorFecha()[fecha] ?? {}) };
+    for (const a of this.mesDatos()?.asignaciones ?? []) {
+      const id = a.publicador?.id_publicador;
+      // La propia casilla no cuenta: quien la ocupa ahora no está "ocupado".
+      if (!id || a.fecha !== fecha || a.puesto === puesto) continue;
+      mapa[id] = this.puestoLabel(a.puesto);
+    }
+    return mapa;
+  }
+
+  /** Por qué esta persona no está libre en la fecha abierta, o '' si lo está. */
+  motivoOcupado(idPublicador: number): string {
+    return this.ocupacionCasillaActiva()[idPublicador] ?? '';
+  }
+
+  /** Habilitados para el puesto que además están libres ese día. */
+  candidatosLibres(puesto: string): PublicadorBase[] {
+    return this.getCandidatosFiltrados(puesto)
+      .filter((c) => !this.motivoOcupado(c.id_publicador));
+  }
+
+  /**
+   * Habilitados que ya tienen algo ese día. No se ocultan -a veces la mejor
+   * opción sigue siendo alguien con otra parte, y esconderlo obligaría a
+   * buscarlo a mano sin saber por qué no salía-, pero van después y dicen en
+   * qué están.
+   */
+  candidatosOcupados(puesto: string): PublicadorBase[] {
+    return this.getCandidatosFiltrados(puesto)
+      .filter((c) => !!this.motivoOcupado(c.id_publicador));
+  }
+
+  // ── Aliviar a alguien desde el panel de balance ───────────
+  // El panel detectaba el desequilibrio pero no dejaba corregirlo: había que
+  // memorizar el nombre, cerrarlo, buscar la casilla en la tabla y reasignar
+  // a ciegas, sin saber a quién le venía bien la carga. Esto cierra el círculo
+  // en el mismo sitio donde se ve el problema.
+
+  /** Chip de fecha cuyo selector de reemplazo está abierto. Uno a la vez. */
+  reemplazoAbierto = signal<AsignacionBalance | null>(null);
+
+  abrirReemplazo(a: AsignacionBalance): void {
+    this.reemplazoAbierto.set(
+      this.reemplazoAbierto()?.fecha === a.fecha && this.reemplazoAbierto()?.puesto === a.puesto
+        ? null
+        : a,
+    );
+    if (this.reemplazoAbierto()) this.cargarOcupados(a.fecha);
+  }
+
+  cerrarReemplazo(): void {
+    this.reemplazoAbierto.set(null);
+  }
+
+  /** Cuántas tareas lleva cada quien este mes. Sin asignaciones = 0. */
+  private cargaPorPersona = computed<Record<number, number>>(() => {
+    const mapa: Record<number, number> = {};
+    for (const f of this.balanceCarga()) mapa[f.id] = f.total;
+    return mapa;
+  });
+
+  cargaDe(idPublicador: number): number {
+    return this.cargaPorPersona()[idPublicador] ?? 0;
+  }
+
+  /**
+   * A quién se le puede pasar esta parte: tiene el permiso, está libre ese
+   * día, y va menos cargado que quien la tiene ahora.
+   *
+   * Ordenados por carga ascendente porque el objetivo es descargar: el primero
+   * de la lista debe ser el que más lo necesita. `balanceCarga()` sólo incluye
+   * a quien tiene al menos una tarea, así que quien va con cero -el candidato
+   * ideal- no aparece ahí; `cargaDe` lo resuelve devolviendo 0.
+   *
+   * Se excluye a quien ya va igual o más cargado: ofrecerlo sería mover el
+   * problema de sitio en vez de repartirlo.
+   */
+  candidatosParaAliviar(a: AsignacionBalance): PublicadorBase[] {
+    const actual = this.getAsignacion(a.fecha, a.puesto)?.publicador?.id_publicador;
+    const cargaActual = actual ? this.cargaDe(actual) : 0;
+    const ocupados = this.ocupacionEnCasilla(a.fecha, a.puesto);
+    return (this.candidatosCache()[a.puesto] ?? [])
+      .filter((c) =>
+        c.id_publicador !== actual
+        && !ocupados[c.id_publicador]
+        && this.cargaDe(c.id_publicador) < cargaActual,
+      )
+      .sort((x, y) =>
+        this.cargaDe(x.id_publicador) - this.cargaDe(y.id_publicador)
+        || x.nombre_completo.localeCompare(y.nombre_completo),
+      );
+  }
+
+  /** Pasa la parte a otra persona. Reutiliza el flujo normal de reasignación. */
+  reemplazarDesdeBalance(a: AsignacionBalance, idPublicador: number): void {
+    this.cerrarReemplazo();
+    this.onCambiarPublicador(a.fecha, a.puesto, idPublicador);
+  }
+
   onSearchInput(value: string): void {
     this.cellSearch.set(value);
     if (value.trim().length > 0) {
@@ -2579,38 +3413,113 @@ export class ReunionesLogisticaComponent implements OnInit {
     this.activeCellKey.set(`${fecha}::${puesto}`);
     this.cellSearch.set('');
     this.resultadosBusqueda.set([]);
-    this.dropdownArriba.set(false);
-    this.ajustarDireccionDropdown(fecha, puesto);
+    this.comboboxPos.set(null);
+    this.cargarOcupados(fecha);
+    this.posicionarCombobox(fecha, puesto);
   }
 
   /**
-   * Decide si el desplegable se abre hacia abajo o hacia arriba.
+   * Cierra el popover en cuanto se desplaza cualquier cosa que lo mueva de
+   * sitio.
    *
-   * La tabla vive dentro de un contenedor con overflow para poder desplazarse en
-   * horizontal, y eso recorta también en vertical: en las últimas filas la lista
-   * de candidatos quedaba cortada y parecía que no había ninguno. Se mide el
-   * desplegable ya renderizado en vez de estimar su alto, que depende de cuántos
-   * habilitados haya.
+   * El popover es `fixed`: se planta en coordenadas de pantalla y ahí se
+   * queda, pero la celda que lo abrió viaja con el scroll. Al desplazar la
+   * lista quedaban separados y el panel terminaba flotando sobre filas que no
+   * eran las suyas.
+   *
+   * Un único listener en `document` y en fase de captura porque el scroll
+   * puede venir de varios sitios -el área de contenido, el contenedor
+   * horizontal de cada tabla, la ventana- y los eventos `scroll` de un
+   * elemento no burbujean; en captura, en cambio, bajan desde `document`
+   * hasta el objetivo, así que uno solo los ve todos.
+   *
+   * Se registra fuera de la zona de Angular: durante un desplazamiento esto
+   * se dispara en cada fotograma y no vale la pena una ronda de detección de
+   * cambios para comprobar una bandera que casi siempre está apagada.
    */
-  private ajustarDireccionDropdown(fecha: string, puesto: string, intentos = 5): void {
+  private vigilarScrollParaCerrarCombobox(): void {
+    const alScroll = (ev: Event) => {
+      if (!this.activeCellKey()) return;
+      const t = ev.target as HTMLElement | null;
+      // Desplazarse DENTRO de la lista de candidatos no la cierra: ahí el
+      // popover no se mueve respecto a la pantalla, que es lo que importa.
+      if (t?.closest?.('[data-combobox-popover]')) return;
+      this.zone.run(() => this.cerrarCombobox());
+    };
+    this.zone.runOutsideAngular(() => {
+      document.addEventListener('scroll', alScroll, { capture: true, passive: true });
+    });
+    this.destroyRef.onDestroy(() => {
+      document.removeEventListener('scroll', alScroll, { capture: true });
+    });
+  }
+
+  /**
+   * Trae quién está ocupado ese día, una vez por fecha.
+   *
+   * Si la respuesta aún no llegó, la lista se pinta con todos como libres y
+   * se reordena al llegar. Es preferible a bloquear el desplegable: abrirlo
+   * es la acción más repetida de la pantalla y suele resolverse escribiendo
+   * un nombre que ya se tenía en mente.
+   */
+  private cargarOcupados(fecha: string): void {
+    if (this.ocupadosPorFecha()[fecha]) return;
+    const cong = this.congregacionCtx.effectiveCongregacionId();
+    this.logisticaSvc.getOcupados(fecha, cong).subscribe({
+      next: (mapa) => {
+        this.ocupadosPorFecha.update((c) => ({ ...c, [fecha]: mapa ?? {} }));
+      },
+      // Sin este dato la lista sigue siendo usable: se muestra sin separar.
+      error: () => {},
+    });
+  }
+
+  /**
+   * Posición del popover de escritorio, en coordenadas de viewport.
+   *
+   * Antes el desplegable era `absolute` dentro de la celda, y la celda vive en
+   * una tabla con `overflow-x-auto`. Ese contenedor recorta también en
+   * vertical -es como funciona `overflow`: si un eje no es "visible" el otro
+   * deja de serlo también-, así que el menú nacía cortado por el borde del
+   * contenedor y, cerca del principio de la tabla, aparecía detrás de la
+   * cabecera pegajosa. `fixed` con coordenadas propias escapa de cualquier
+   * contenedor con scroll: ya no hay nada que lo recorte.
+   *
+   * El alto del panel varía según cuántos habilitados haya, así que en vez de
+   * adivinarlo se decide con el espacio disponible: si abajo no entra un
+   * panel razonable Y arriba hay más sitio, se abre hacia arriba con
+   * `translateY(-100%)` desde el borde superior del disparador -así no hace
+   * falta conocer el alto real para posicionarlo-. El eje horizontal se
+   * ajusta para que nunca quede fuera de la pantalla.
+   */
+  private posicionarCombobox(fecha: string, puesto: string, intentos = 5): void {
     requestAnimationFrame(() => {
       // Hay dos maquetas en el DOM (tarjetas y tabla): sólo interesa la visible.
-      const celda = Array.from(
+      const disparador = Array.from(
         document.querySelectorAll<HTMLElement>(`[data-cell="${fecha}::${puesto}"]`),
       ).find((el) => el.offsetParent !== null);
-      const menu = celda?.querySelector<HTMLElement>('[data-dropdown]');
-      const contenedor = celda?.closest<HTMLElement>('.overflow-x-auto');
-      if (!menu || !contenedor) {
-        // La detección de cambios de Angular puede pintar el desplegable después
-        // de este frame; se reintenta unos pocos en vez de rendirse en el primero.
-        if (intentos > 0) this.ajustarDireccionDropdown(fecha, puesto, intentos - 1);
+      if (!disparador) {
+        // La detección de cambios de Angular puede pintar la celda después de
+        // este frame; se reintenta unos pocos en vez de rendirse en el primero.
+        if (intentos > 0) this.posicionarCombobox(fecha, puesto, intentos - 1);
         return;
       }
-      // Se mide una sola vez por apertura: volver a medir ya volteado invertiría
-      // el resultado y el menú oscilaría.
-      this.dropdownArriba.set(
-        menu.getBoundingClientRect().bottom > contenedor.getBoundingClientRect().bottom,
+      const PANEL_ANCHO = 288; // w-72
+      const PANEL_ALTO_ESTIMADO = 240;
+      const MARGEN = 6;
+      const rect = disparador.getBoundingClientRect();
+      const espacioAbajo = window.innerHeight - rect.bottom;
+      const espacioArriba = rect.top;
+      const openUp = espacioAbajo < PANEL_ALTO_ESTIMADO && espacioArriba > espacioAbajo;
+      const left = Math.min(
+        Math.max(rect.left, MARGEN),
+        window.innerWidth - PANEL_ANCHO - MARGEN,
       );
+      this.comboboxPos.set({
+        top: openUp ? rect.top - MARGEN : rect.bottom + MARGEN,
+        left,
+        openUp,
+      });
     });
   }
 
@@ -2619,7 +3528,7 @@ export class ReunionesLogisticaComponent implements OnInit {
     this.cellSearch.set('');
     this.resultadosBusqueda.set([]);
     this.buscandoPublicador.set(false);
-    this.dropdownArriba.set(false);
+    this.comboboxPos.set(null);
   }
 
   seleccionarCandidato(fecha: string, puesto: string, idPublicador: number | null): void {
@@ -2715,6 +3624,15 @@ export class ReunionesLogisticaComponent implements OnInit {
   formatFecha(fechaStr: string): string {
     const d = new Date(fechaStr + 'T00:00:00');
     return `${String(d.getDate()).padStart(2, '0')} ${MESES_ES[d.getMonth()]}`;
+  }
+
+  /**
+   * Sólo el día. Dentro de la tabla el mes ya lo dice el selector de la barra
+   * superior, así que repetirlo en las diez filas gastaba media columna para
+   * escribir "Septiembre" diez veces.
+   */
+  diaNumero(fechaStr: string): string {
+    return String(new Date(fechaStr + 'T00:00:00').getDate()).padStart(2, '0');
   }
 
   mesLabel(m: MesDisponible): string {
