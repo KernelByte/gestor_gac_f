@@ -9,6 +9,7 @@ import { PrivilegiosService } from '../../privilegios/infrastructure/privilegios
 import { Privilegio } from '../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../privilegios/domain/models/publicador-privilegio';
 import { getInitialAvatarStyle } from '../../../../core/utils/avatar-style.util';
+import { inicialesDe, nombreMostrado } from '../../../../core/utils/nombre.util';
 
 interface Publicador {
    id_publicador: number;
@@ -134,14 +135,14 @@ export class FormularioAsignacionPage implements OnInit {
 
    filteredAvailable() {
       return this.availablePublishers().filter(p => {
-         const fullName = [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido].filter(Boolean).join(' ');
+         const fullName = nombreMostrado(p);
          return fullName.toLowerCase().includes(this.searchAvailable.toLowerCase());
       }).sort((a, b) => a.primer_nombre.localeCompare(b.primer_nombre));
    }
 
    filteredGroupMembers() {
       return this.groupMembers().filter(p => {
-         const fullName = [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido].filter(Boolean).join(' ');
+         const fullName = nombreMostrado(p);
          return fullName.toLowerCase().includes(this.searchGroup.toLowerCase());
       }).sort((a, b) => a.primer_nombre.localeCompare(b.primer_nombre));
    }
@@ -250,13 +251,11 @@ export class FormularioAsignacionPage implements OnInit {
    }
 
    getFullName(p: Publicador): string {
-      return [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido]
-         .filter(Boolean)
-         .join(' ');
+      return nombreMostrado(p);
    }
 
    getInitials(p: Publicador): string {
-      return (p.primer_nombre.charAt(0) + p.primer_apellido.charAt(0)).toUpperCase();
+      return inicialesDe(p);
    }
 
    getAvatarStyle(p: Publicador): string {

@@ -6,6 +6,13 @@ import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from '../../core/auth/auth.store';
 import { ImportPublicadoresModalComponent } from '../../shared/components/import-publicadores/import-publicadores-modal.component';
+import { FormatoNombreService } from '../../core/utils/formato-nombre.service';
+import {
+   ETIQUETA_FORMATO,
+   FORMATOS_NOMBRE,
+   FormatoNombre,
+   formatearNombre,
+} from '../../core/utils/nombre.util';
 
 interface Configuracion {
    id_congregacion: number;
@@ -23,6 +30,7 @@ interface Configuracion {
    hora_reunion_fin_semana:   string;
    correo_congregacion?: string | null;
    numero_congregacion?: string | null;
+   formato_nombre_visible?: FormatoNombre;
 }
 
 @Component({
@@ -50,6 +58,36 @@ interface Configuracion {
    ]
 })
 export class ConfiguracionPage implements OnInit {
+   readonly formatoNombre = inject(FormatoNombreService);
+
+   /** Las cuatro reglas, cada una con su etiqueta y su ejemplo. */
+   readonly formatosNombre = FORMATOS_NOMBRE;
+   readonly etiquetaFormato = ETIQUETA_FORMATO;
+
+   /**
+    * Publicador de ejemplo para las tarjetas.
+    *
+    * Se rellena con uno REAL de la congregación en cuanto se carga la lista:
+    * ver el efecto sobre un nombre conocido es lo que hace la decisión obvia.
+    * Mientras tanto, un ejemplo neutro para que las tarjetas nunca salgan vacías.
+    */
+   ejemploNombre = signal<Record<string, string>>({
+      primer_nombre: 'Ana',
+      segundo_nombre: 'Lucía',
+      primer_apellido: 'Restrepo',
+      segundo_apellido: 'Vélez',
+   });
+
+   /** Cómo se vería el ejemplo con una regla dada. */
+   ejemploCon(formato: FormatoNombre): string {
+      return formatearNombre(this.ejemploNombre() as any, formato);
+   }
+
+   elegirFormato(formato: FormatoNombre): void {
+      if (!this.canEdit()) return;
+      this.config.formato_nombre_visible = formato;
+   }
+
    private http = inject(HttpClient);
    private auth = inject(AuthStore);
    private API_URL = `${environment.apiUrl}/configuracion/`;
@@ -192,6 +230,32 @@ export class ConfiguracionPage implements OnInit {
       this.loadConfig();
       this.loadPeriodos();
       this.detectGlobalRole();
+      this.cargarEjemploNombre();
+   }
+
+   /**
+    * Coge un publicador real para las tarjetas de "Nombre para mostrar".
+    *
+    * Un ejemplo inventado obliga a imaginar el efecto; uno de la propia
+    * congregación lo enseña. Si falla, se queda el ejemplo neutro: es una
+    * ayuda visual, no debe impedir configurar nada.
+    */
+   private cargarEjemploNombre(): void {
+      this.http
+         .get<any[]>(`${environment.apiUrl}/publicadores/`, { params: { limit: 50, offset: 0 } })
+         .subscribe({
+            next: (lista) => {
+               // El que más partes de nombre tenga: es el que mejor distingue
+               // unas reglas de otras.
+               const mejor = (lista || [])
+                  .filter(p => p?.primer_nombre && p?.primer_apellido)
+                  .sort((a, b) =>
+                     (!!b.segundo_nombre as any) + (!!b.segundo_apellido as any) -
+                     ((!!a.segundo_nombre as any) + (!!a.segundo_apellido as any)))[0];
+               if (mejor) this.ejemploNombre.set(mejor);
+            },
+            error: () => {},
+         });
    }
 
    private detectGlobalRole() {
@@ -251,12 +315,16 @@ export class ConfiguracionPage implements OnInit {
          hora_reunion_fin_semana:    this.config.hora_reunion_fin_semana   || null,
          correo_congregacion:        this.config.correo_congregacion       || null,
          numero_congregacion:        this.config.numero_congregacion       || null,
+         formato_nombre_visible:     this.config.formato_nombre_visible    || 'completo',
       };
 
       this.http.put<Configuracion>(this.API_URL, payload).subscribe({
          next: (data) => {
             this.config = data;
             this.originalConfig = { ...data };
+            // El servicio cachea la regla para las vistas previas; sin esto,
+            // el formulario de publicador seguiría enseñando la anterior.
+            this.formatoNombre.aplicar(data.formato_nombre_visible);
             this.saving.set(false);
             this.showNotification('Configuración guardada exitosamente', 'success');
          },

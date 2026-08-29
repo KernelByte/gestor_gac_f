@@ -2,11 +2,19 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, map, shareReplay, catchError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { nombreLegal, nombreMostrado } from '../../../core/utils/nombre.util';
 
 /** Datos mínimos de un publicador para elegirlo en un formulario. */
 export interface PublicadorLite {
   id_publicador: number;
+  /** El nombre con el que se muestra a la persona: alias o regla de la congregación. */
   nombre_completo: string;
+  /**
+   * Los cuatro campos de la ficha. Se lleva aparte para que el filtro del
+   * picker encuentre a la persona tanto por su alias como por su nombre real:
+   * quien escribe "Juan Pérez" no tiene por qué saber que aquí sale "Juanca".
+   */
+  nombre_legal: string;
   telefono?: string | null;
   direccion?: string | null;
   barrio?: string | null;
@@ -55,12 +63,10 @@ export class PublicadorLookupService {
   }
 
   private toLite(d: any): PublicadorLite {
-    const nombre = [d.primer_nombre, d.segundo_nombre, d.primer_apellido, d.segundo_apellido]
-      .filter((p) => (p ?? '').toString().trim())
-      .join(' ');
     return {
       id_publicador: d.id_publicador,
-      nombre_completo: nombre,
+      nombre_completo: nombreMostrado(d),
+      nombre_legal: nombreLegal(d),
       telefono: d.telefono ?? null,
       direccion: d.direccion ?? null,
       barrio: d.barrio ?? null,

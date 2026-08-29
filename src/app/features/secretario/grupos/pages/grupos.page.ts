@@ -11,6 +11,7 @@ import { Grupo } from '../models/grupo.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
 import { ModalBackdropService } from '../../../../core/services/modal-backdrop.service';
+import { inicialesDe, nombreMostrado } from '../../../../core/utils/nombre.util';
 
 @Component({
    standalone: true,
@@ -389,15 +390,14 @@ export class GruposListComponent implements OnInit, OnDestroy {
       return 'bg-orange-50 text-brand-orange';
    }
 
-   // Helper to get full name
+   /** El nombre con el que se muestra a la persona en toda la app. */
    getFullName(pub: any): string {
-      const parts = [
-         pub.primer_nombre,
-         pub.segundo_nombre,
-         pub.primer_apellido,
-         pub.segundo_apellido
-      ].filter(Boolean);
-      return parts.join(' ');
+      return nombreMostrado(pub);
+   }
+
+   /** Iniciales del avatar, derivadas del nombre mostrado. */
+   getInitials(pub: any): string {
+      return inicialesDe(pub);
    }
 
    // Load publicadores for autocomplete

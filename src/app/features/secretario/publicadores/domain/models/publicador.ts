@@ -5,6 +5,10 @@ export interface Publicador {
   segundo_nombre?: string | null;
   primer_apellido: string;
   segundo_apellido?: string | null;
+  /** Alias propio. Vacío = seguir la regla de la congregación. Editable. */
+  nombre_visible?: string | null;
+  /** Nombre ya compuesto por el backend. De solo lectura. */
+  nombre_mostrado?: string | null;
   direccion?: string | null;
   barrio?: string | null;
   telefono?: string | null;

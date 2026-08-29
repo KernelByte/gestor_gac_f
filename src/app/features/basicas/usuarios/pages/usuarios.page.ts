@@ -13,6 +13,7 @@ import { getInitialAvatarStyle } from '../../../../core/utils/avatar-style.util'
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 import { PasswordStrengthComponent } from '../../../../shared/components/password-strength/password-strength.component';
 import { whatsappUrl } from '../../../../shared/whatsapp';
+import { nombreMostrado } from '../../../../core/utils/nombre.util';
 
 type UserFormTab = 'datos' | 'acceso' | 'seguridad';
 
@@ -634,7 +635,7 @@ export class UsuariosPage implements OnInit {
    publicadorOptions = computed<PickerOption[]>(() =>
       this.publicadores().map(p => ({
          value: p.id_publicador,
-         label: `${p.primer_nombre} ${p.primer_apellido}`,
+         label: nombreMostrado(p),
          hint: p.telefono || undefined
       }))
    );

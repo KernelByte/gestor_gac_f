@@ -17,6 +17,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { SelectPickerComponent, PickerOption } from '../../../shared/components/select-picker/select-picker.component';
 import { AusenciaOut, SemanaSinReunion, AlcanceSemana } from '../models/reuniones.models';
+import { nombreMostrado } from '../../../core/utils/nombre.util';
 
 type AjustesTab = 'semanas' | 'ausencias';
 
@@ -761,7 +762,7 @@ export class ReunionesAjustesDialogComponent {
         (a.primer_apellido + ' ' + a.primer_nombre).localeCompare(b.primer_apellido + ' ' + b.primer_nombre))
       .map((p) => ({
         value: p.id_publicador,
-        label: p.primer_nombre + ' ' + p.primer_apellido,
+        label: nombreMostrado(p),
       })),
   );
 

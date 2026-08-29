@@ -24,6 +24,8 @@ import {
   NuevoPublicadorResult,
 } from '../components/nuevo-publicador-wizard/nuevo-publicador-wizard.component';
 import { environment } from '../../../../../../environments/environment';
+import { formatearNombre, inicialesDe, nombreLegal, nombreMostrado } from '../../../../../core/utils/nombre.util';
+import { FormatoNombreService } from '../../../../../core/utils/formato-nombre.service';
 
 interface Estado {
   id_estado: number;
@@ -78,6 +80,20 @@ export class PublicadoresListComponent implements OnInit {
   congregacionContext = inject(CongregacionContextService);
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
+  /** La regla con la que se compone el nombre cuando no hay alias. */
+  readonly formatoNombre = inject(FormatoNombreService);
+
+  /**
+   * Espejo del valor del formulario, para que la vista previa del alias
+   * reaccione mientras se teclean los nombres.
+   */
+  private readonly valorFormulario = signal<Record<string, any>>({});
+
+  /** Lo que se mostraría SIN alias, con el nombre que hay ahora en pantalla. */
+  readonly nombreSegunRegla = computed(() =>
+    formatearNombre(this.valorFormulario() as any, this.formatoNombre.formato()),
+  );
+
   private privilegiosService = inject(PrivilegiosService);
   vm = this.facade.vm;
   Math = Math;
@@ -626,6 +642,7 @@ export class PublicadoresListComponent implements OnInit {
       segundo_nombre: ['', Validators.maxLength(100)],
       primer_apellido: ['', [Validators.required, Validators.maxLength(100)]],
       segundo_apellido: ['', Validators.maxLength(100)],
+      nombre_visible: ['', Validators.maxLength(150)],
       sexo: [''],
       fecha_nacimiento: [null],
       telefono: [''],
@@ -640,6 +657,11 @@ export class PublicadoresListComponent implements OnInit {
       fecha_inicio_informe: [null],
       permite_login_simple: [true]
     });
+
+    // Espejo del formulario: la vista previa del alias tiene que reaccionar
+    // mientras se teclean los nombres, no sólo al guardar.
+    this.publicadorForm.valueChanges.subscribe(v => this.valorFormulario.set(v ?? {}));
+    this.formatoNombre.asegurarCargado();
 
     this.contactoForm = this.fb.group({
       nombre: ['', Validators.required],
@@ -1327,7 +1349,7 @@ export class PublicadoresListComponent implements OnInit {
       }, 4000);
 
       const fallidos = await this.asignarPrivilegiosIniciales(creado.id_publicador, result.privilegios);
-      const nombre = `${creado.primer_nombre} ${creado.primer_apellido}`.trim();
+      const nombre = nombreMostrado(creado);
 
       const acciones = [
         { label: 'Completar ficha', run: () => this.openEditForm(creado) },
@@ -1379,6 +1401,7 @@ export class PublicadoresListComponent implements OnInit {
       segundo_nombre: p.segundo_nombre || '',
       primer_apellido: p.primer_apellido,
       segundo_apellido: p.segundo_apellido || '',
+      nombre_visible: p.nombre_visible || '',
       sexo: p.sexo || '',
       fecha_nacimiento: p.fecha_nacimiento || null,
       telefono: p.telefono || '',
@@ -1502,6 +1525,78 @@ export class PublicadoresListComponent implements OnInit {
     this.publicadorForm.markAllAsTouched();
     if (this.publicadorForm.invalid) return;
 
+    // Si cambió el nombre y esta persona tiene alias, hay que preguntar antes
+    // de guardar: el alias podría haber quedado describiendo a otra persona.
+    if (this.debePreguntarPorAlias(editingPub)) {
+      this.abrirDialogoAlias();
+      return;
+    }
+
+    await this.guardarPublicador();
+  }
+
+  // ── Diálogo "¿actualizar el nombre para mostrar?" ────────────────────────
+
+  dialogoAliasAbierto = signal(false);
+
+  /** El alias guardado hoy. */
+  aliasActual = signal('');
+
+  /** El que saldría de aplicar la regla al nombre nuevo. */
+  aliasSugerido = signal('');
+
+  /**
+   * true si el alias venía sincronizado con el nombre anterior.
+   *
+   * Decide cuál de los dos botones es el principal. Si el alias era sólo un
+   * formato ("Juan Pérez"), lo que casi siempre se quiere es actualizarlo. Si
+   * es un apodo de verdad ("Juanca"), lo que se quiere es conservarlo, y el
+   * diálogo lo dice en vez de empujar a romperlo.
+   */
+  aliasEstabaSincronizado = signal(false);
+
+  private debePreguntarPorAlias(original: Publicador): boolean {
+    const alias = (this.publicadorForm.value.nombre_visible || '').trim();
+    if (!alias) return false;
+
+    const campos = ['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido'] as const;
+    const cambioElNombre = campos.some(
+      c => (this.publicadorForm.value[c] || '').trim() !== ((original as any)[c] || '').trim(),
+    );
+    if (!cambioElNombre) return false;
+
+    const formato = this.formatoNombre.formato();
+    const sugerido = formatearNombre(this.publicadorForm.value as any, formato);
+    // Si la regla produce justo lo que ya hay, no hay nada que preguntar.
+    if (!sugerido || sugerido === alias) return false;
+
+    this.aliasActual.set(alias);
+    this.aliasSugerido.set(sugerido);
+    this.aliasEstabaSincronizado.set(formatearNombre(original as any, formato) === alias);
+    return true;
+  }
+
+  private abrirDialogoAlias() {
+    this.dialogoAliasAbierto.set(true);
+  }
+
+  /** Conserva el alias tal como está y guarda. */
+  async mantenerAlias() {
+    this.dialogoAliasAbierto.set(false);
+    await this.guardarPublicador();
+  }
+
+  /** Pone el alias sugerido y guarda. */
+  async actualizarAlias() {
+    this.publicadorForm.get('nombre_visible')?.setValue(this.aliasSugerido());
+    this.dialogoAliasAbierto.set(false);
+    await this.guardarPublicador();
+  }
+
+  private async guardarPublicador() {
+    const editingPub = this.editingPublicador();
+    if (!editingPub) return;
+
     this.saving.set(true);
     const rawData = this.publicadorForm.value;
 
@@ -1523,6 +1618,7 @@ export class PublicadoresListComponent implements OnInit {
       // Convert empty strings to null for optional fields
       segundo_nombre: rawData.segundo_nombre || null,
       segundo_apellido: rawData.segundo_apellido || null,
+      nombre_visible: (rawData.nombre_visible || '').trim() || null,
       telefono: rawData.telefono || null,
       direccion: rawData.direccion || null,
       barrio: rawData.barrio || null,
@@ -1561,7 +1657,9 @@ export class PublicadoresListComponent implements OnInit {
     const q = this.busquedaReasignar().toLowerCase().trim();
     if (!q) return this.publicadoresParaReasignar();
     return this.publicadoresParaReasignar().filter(p => {
-      const nombre = `${p.primer_nombre} ${p.segundo_nombre ?? ''} ${p.primer_apellido} ${p.segundo_apellido ?? ''}`.toLowerCase();
+      // Alias y nombre de la ficha: se encuentra a la persona escribiendo
+      // cualquiera de los dos.
+      const nombre = (nombreMostrado(p) + ' ' + nombreLegal(p)).toLowerCase();
       return nombre.includes(q);
     });
   });
@@ -1676,10 +1774,9 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   getInitials(p: Publicador | null): string {
-    if (!p) return '';
-    const first = p.primer_nombre?.charAt(0) || '';
-    const last = p.primer_apellido?.charAt(0) || '';
-    return (first + last).toUpperCase();
+    // Derivadas del nombre mostrado: un avatar "JP" junto al texto "Juanca"
+    // se lee como un error de datos.
+    return p ? inicialesDe(p) : '';
   }
 
   getAvatarStyle(name: string): string {
@@ -1720,10 +1817,20 @@ export class PublicadoresListComponent implements OnInit {
     return roles;
   }
 
+  /** El nombre con el que se muestra a la persona en toda la app. */
   getFullName(p: Publicador): string {
-    return [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido]
-      .filter(n => n && n.trim())
-      .join(' ');
+    return nombreMostrado(p);
+  }
+
+  /** Los cuatro campos de la ficha. Para la línea secundaria del listado. */
+  getLegalName(p: Publicador): string {
+    return nombreLegal(p);
+  }
+
+  /** true si el nombre mostrado no coincide con el de la ficha. */
+  tieneNombreDistinto(p: Publicador): boolean {
+    const mostrado = nombreMostrado(p);
+    return !!mostrado && mostrado !== nombreLegal(p);
   }
 
   getYearsSince(dateStr: string | null | undefined): number | null {

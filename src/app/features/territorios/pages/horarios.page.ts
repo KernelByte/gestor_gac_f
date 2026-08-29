@@ -7,6 +7,7 @@ import { TerritoriosService } from '../services/territorios.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { Territorio } from '../models/territorio.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { nombreMostrado } from '../../../core/utils/nombre.util';
 
 interface Horario {
   id_horario: number;
@@ -191,7 +192,7 @@ interface Publicador {
               class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
               <option [ngValue]="null">— Sin asignar —</option>
               @for (p of publicadores(); track p.id_publicador) {
-                <option [ngValue]="p.id_publicador">{{ p.primer_nombre }} {{ p.primer_apellido }}</option>
+                <option [ngValue]="p.id_publicador">{{ nombreMostrado(p) }}</option>
               }
             </select>
           </div>
@@ -214,6 +215,9 @@ interface Publicador {
   `,
 })
 export class HorariosPage implements OnInit {
+  /** Expuesto a la plantilla: las funciones sueltas no son accesibles desde el HTML. */
+  readonly nombreMostrado = nombreMostrado;
+
   private http = inject(HttpClient);
   private territoriosService = inject(TerritoriosService);
   private congregacionCtx = inject(CongregacionContextService);

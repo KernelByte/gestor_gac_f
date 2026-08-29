@@ -118,6 +118,48 @@
                      </div>
                   </label>
 
+
+               <!--
+                  Nombre para mostrar. Cada regla enseña su resultado sobre un
+                  publicador real de la congregación: se decide viendo, no
+                  imaginando. Ocupa el ancho completo porque los ejemplos son
+                  el contenido, no un adorno de la etiqueta.
+               -->
+               <div class="md:col-span-2">
+                  <label class="block text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1 mb-1.5">Nombre para mostrar</label>
+                  <p class="text-xs font-medium text-slate-500 dark:text-slate-400 pl-1 mb-3 leading-snug">
+                     Cómo aparece el nombre de los publicadores en listados, informes, asignaciones y PDF.
+                  </p>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                     <button *ngFor="let f of formatosNombre" type="button"
+                             [disabled]="!canEdit()"
+                             (click)="elegirFormato(f)"
+                             [attr.aria-pressed]="config.formato_nombre_visible === f"
+                             class="group text-left px-4 py-3.5 rounded-2xl border transition-all active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                             [ngClass]="config.formato_nombre_visible === f
+                                ? 'border-brand-purple bg-purple-50/60 dark:bg-purple-500/10 shadow-[0_0_0_1px_rgba(109,40,217,0.25)]'
+                                : 'border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800/40 hover:border-brand-purple/40 dark:hover:border-purple-500/40'">
+                        <span class="flex items-center gap-2">
+                           <span class="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors"
+                                 [ngClass]="config.formato_nombre_visible === f
+                                    ? 'border-brand-purple'
+                                    : 'border-slate-300 dark:border-slate-600'">
+                              <span *ngIf="config.formato_nombre_visible === f" class="w-2 h-2 rounded-full bg-brand-purple"></span>
+                           </span>
+                           <span class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ etiquetaFormato[f] }}</span>
+                        </span>
+                        <span class="block mt-2 pl-6 text-sm font-bold text-slate-800 dark:text-slate-100 break-words">
+                           {{ ejemploCon(f) }}
+                        </span>
+                     </button>
+                  </div>
+
+                  <p class="text-xs font-medium text-slate-400 dark:text-slate-500 pl-1 mt-3 leading-snug">
+                     Quien tenga un nombre para mostrar propio en su ficha conserva el suyo.
+                  </p>
+               </div>
+
                   <!-- 6. Periodo Activo de Informes (Ocupa ambas columnas en MD si queremos, o solo una. Pongamoslo completo abajo) -->
                   <div class="md:col-span-2 relative">
                      <label class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl transition-all">

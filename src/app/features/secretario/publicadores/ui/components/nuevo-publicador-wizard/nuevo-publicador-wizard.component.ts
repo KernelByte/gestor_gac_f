@@ -7,6 +7,8 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { SelectPickerComponent, PickerOption } from '../../../../../../shared/components/select-picker/select-picker.component';
 import { SimpleDateFieldComponent } from './simple-date-field/simple-date-field.component';
 import { Privilegio } from '../../../../privilegios/domain/models/privilegio';
+import { formatearNombre, nombreMostrado } from '../../../../../../core/utils/nombre.util';
+import { FormatoNombreService } from '../../../../../../core/utils/formato-nombre.service';
 
 export interface WizardGrupo {
   id_grupo: number;
@@ -55,6 +57,8 @@ function hoyIso(): string {
 })
 export class NuevoPublicadorWizardComponent {
   private fb = inject(FormBuilder);
+  /** Para la vista previa: es lo único que necesita saber la regla. */
+  readonly formatoNombre = inject(FormatoNombreService);
 
   @Input() set open(value: boolean) {
     const wasOpen = this.isOpen();
@@ -84,6 +88,7 @@ export class NuevoPublicadorWizardComponent {
     segundo_nombre: ['', Validators.maxLength(100)],
     primer_apellido: ['', [Validators.required, Validators.maxLength(100)]],
     segundo_apellido: ['', Validators.maxLength(100)],
+    nombre_visible: ['', Validators.maxLength(150)],
     sexo: [null as string | null, Validators.required],
     fecha_nacimiento: [null as string | null],
     fecha_bautismo: [null as string | null],
@@ -100,7 +105,7 @@ export class NuevoPublicadorWizardComponent {
   ];
 
   private readonly STEP_FIELDS: Record<StepId, string[]> = {
-    nombre: ['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido'],
+    nombre: ['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'nombre_visible'],
     personal: ['sexo', 'fecha_nacimiento'],
     congregacion: ['fecha_bautismo', 'id_grupo_publicador'],
     privilegios: [],
@@ -198,13 +203,22 @@ export class NuevoPublicadorWizardComponent {
 
   // ── Paso 1: nombre ───────────────────────────────────────────────────────
 
-  nombreCompleto = computed(() => {
-    const v = this.formValue();
-    return [v['primer_nombre'], v['segundo_nombre'], v['primer_apellido'], v['segundo_apellido']]
-      .map(s => (s ?? '').toString().trim())
-      .filter(Boolean)
-      .join(' ');
-  });
+  /**
+   * Cómo se verá esta persona en el resto de la app: su alias si lo escribe,
+   * si no los campos según la regla de la congregación. Confirma de paso el
+   * orden de los apellidos antes de que sea un registro que hay que corregir.
+   */
+  nombreCompleto = computed(() =>
+    nombreMostrado(this.formValue() as any, this.formatoNombre.formato()),
+  );
+
+  /** Lo que se vería SIN alias. El texto de ayuda del campo lo compara. */
+  nombreSegunRegla = computed(() =>
+    formatearNombre(
+      { ...(this.formValue() as any), nombre_visible: null, nombre_mostrado: null },
+      this.formatoNombre.formato(),
+    ),
+  );
 
   /** Espejo del valor del formulario para que los computed reaccionen. */
   private formValue = signal<Record<string, any>>({});
@@ -382,6 +396,7 @@ export class NuevoPublicadorWizardComponent {
       segundo_nombre: (v.segundo_nombre ?? '').trim() || null,
       primer_apellido: (v.primer_apellido ?? '').trim(),
       segundo_apellido: (v.segundo_apellido ?? '').trim() || null,
+      nombre_visible: (v.nombre_visible ?? '').trim() || null,
       sexo: v.sexo || null,
       fecha_nacimiento: v.fecha_nacimiento || null,
       fecha_bautismo: v.fecha_bautismo || null,
@@ -416,6 +431,7 @@ export class NuevoPublicadorWizardComponent {
       segundo_nombre: '',
       primer_apellido: '',
       segundo_apellido: '',
+      nombre_visible: '',
       sexo: null,
       fecha_nacimiento: null,
       fecha_bautismo: null,

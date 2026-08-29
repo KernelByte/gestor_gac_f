@@ -9,6 +9,7 @@ import { Privilegio } from '../../privilegios/domain/models/privilegio';
 import { PublicadorPrivilegio } from '../../privilegios/domain/models/publicador-privilegio';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
+import { inicialesDe, nombreLegal, nombreMostrado } from '../../../../core/utils/nombre.util';
 
 // Interfaces simplificadas para la vista
 interface Grupo {
@@ -32,6 +33,10 @@ interface Publicador {
   segundo_nombre?: string | null;
   primer_apellido: string;
   segundo_apellido?: string | null;
+  /** Alias propio de la persona. Ver core/utils/nombre.util.ts */
+  nombre_visible?: string | null;
+  /** Nombre ya compuesto por el backend. */
+  nombre_mostrado?: string | null;
   id_grupo_publicador?: number | null;
   orden_en_grupo?: number | null;
   id_congregacion_publicador?: number;
@@ -202,6 +207,9 @@ const PRIVILEGIO_CONFIG: { [key: string]: { label: string; class: string } } = {
   `]
 })
 export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
+  /** Expuesto a la plantilla: las funciones sueltas no son accesibles desde el HTML. */
+  readonly nombreMostrado = nombreMostrado;
+
 
   /** trackBy: evita recrear el DOM de toda la lista en cada cambio. */
   trackByGrupoId = (_: number, g: any) => g.id_grupo;
@@ -759,9 +767,31 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
     this.groupSearchTerms.update(prev => ({ ...prev, [groupId]: value ?? '' }));
   }
 
-  /** Nombre en el mismo formato que se guarda en capitan_grupo/auxiliar_grupo. */
+  /**
+   * Nombre que se ESCRIBE en capitan_grupo/auxiliar_grupo.
+   *
+   * El nombre legal a propósito: esas columnas son texto libre y el backend
+   * (grupo_report, import_service, export_router) casa contra ellas partiendo
+   * de los campos de la ficha. Si guardáramos el alias y luego alguien lo
+   * cambiara, el capitán dejaría de reconocerse. Para PINTARLO se usa
+   * `nombreLiderMostrado`, que vuelve a resolver el alias.
+   */
   getPublicadorLeaderName(p: Publicador): string {
-    return `${p.primer_nombre} ${p.primer_apellido}${p.segundo_apellido ? ' ' + p.segundo_apellido : ''}`.trim();
+    return nombreLegal(p);
+  }
+
+  /**
+   * Nombre con el que se PINTA un capitán/auxiliar guardado como texto.
+   *
+   * Resuelve la cadena guardada al publicador y devuelve su nombre mostrado,
+   * para que la tarjeta diga lo mismo que el resto de la app. Si no se
+   * reconoce a nadie -alguien escrito a mano, o que ya no está- devuelve el
+   * texto tal cual en vez de dejar el hueco vacío.
+   */
+  nombreLiderMostrado(texto: string | null | undefined): string {
+    if (!texto) return '';
+    const p = this.publicadoresPorNombre().get(texto.toLowerCase().trim());
+    return p ? nombreMostrado(p) : texto;
   }
 
   // ── Drag & Drop de tarjetas de encargados ────────────────────────────────
@@ -1037,12 +1067,10 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
     for (const [groupId, miembros] of this.miembrosSinLideresPorGrupo()) {
       const term = (terminos[groupId] ?? '').trim().toLowerCase();
       resultado.set(groupId, !term ? miembros : miembros.filter(p => {
-        const full = [
-          p.primer_nombre,
-          p.segundo_nombre ?? '',
-          p.primer_apellido,
-          p.segundo_apellido ?? ''
-        ].join(' ').toLowerCase();
+        // Encuentra tanto por el nombre que se ve en la tarjeta como por el
+        // de la ficha: quien busca "Juan Pérez" no tiene por qué saber que
+        // aquí sale "Juanca".
+        const full = (nombreMostrado(p) + ' ' + nombreLegal(p)).toLowerCase();
         return full.includes(term);
       }));
     }
@@ -1072,7 +1100,7 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getInitials(p: Publicador): string {
-    return (p.primer_nombre.charAt(0) + p.primer_apellido.charAt(0)).toUpperCase();
+    return inicialesDe(p);
   }
 
   getAvatarColor(id: number): string {
@@ -1136,8 +1164,13 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
         `${p.primer_nombre} ${p.primer_apellido} `,
         `${p.primer_nombre} ${p.segundo_nombre || ''} ${p.primer_apellido} `.replace(/\s+/g, ' '),
         `${p.primer_nombre} ${p.primer_apellido} ${p.segundo_apellido || ''} `.replace(/\s+/g, ' '),
-        `${p.primer_nombre} ${p.segundo_nombre || ''} ${p.primer_apellido} ${p.segundo_apellido || ''} `.replace(/\s+/g, ' ')
-      ].map(n => n.toLowerCase().trim());
+        `${p.primer_nombre} ${p.segundo_nombre || ''} ${p.primer_apellido} ${p.segundo_apellido || ''} `.replace(/\s+/g, ' '),
+        // El alias y el nombre mostrado: si a alguien se le nombró capitán
+        // desde una pantalla que ya mostraba su alias, esa es la cadena que
+        // quedó escrita y ninguna variante de los cuatro campos la encontraría.
+        nombreMostrado(p),
+        p.nombre_visible ?? ''
+      ].filter(Boolean).map(n => n.toLowerCase().trim());
       // El primero que registra cada variante gana, igual que hacia el .find().
       for (const v of variantes) {
         if (!indice.has(v)) indice.set(v, p);
@@ -1427,7 +1460,7 @@ export class AsignacionGruposPage implements OnInit, AfterViewInit, OnDestroy {
     const p = this.draggedPublishers[0];
     this.draggedPublishers = [];
 
-    const fullName = `${p.primer_nombre} ${p.primer_apellido}${p.segundo_apellido ? ' ' + p.segundo_apellido : ''}`.trim();
+    const fullName = this.getPublicadorLeaderName(p);
 
     this.grupos.update(currentGrupos => {
       return currentGrupos.map(g => {

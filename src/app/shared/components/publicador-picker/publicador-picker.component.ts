@@ -305,7 +305,14 @@ export class PublicadorPickerComponent implements ControlValueAccessor {
     const q = this.normalizar(this.query());
     const lista = this.publicadores();
     if (!q) return lista;
-    return lista.filter(p => this.normalizar(p.nombre_completo).includes(q));
+    // Busca por el nombre que se ve en la lista y también por el de la ficha:
+    // si alguien aparece como "Juanca", quien teclee "Juan Pérez" -su nombre
+    // real- tiene que encontrarlo igual.
+    return lista.filter(
+      p =>
+        this.normalizar(p.nombre_completo).includes(q) ||
+        this.normalizar(p.nombre_legal ?? '').includes(q),
+    );
   });
 
   /** Texto tecleado que no corresponde exactamente a ningún publicador. */

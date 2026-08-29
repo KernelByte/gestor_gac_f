@@ -7,6 +7,7 @@ import { TransferenciaService } from '../../services/transferencia.service';
 import { CompletarTransferenciaRequest, Transferencia } from '../../models/transferencia.model';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
 import { environment } from '../../../../../environments/environment';
+import { inicialesDe, nombreLegal, nombreMostrado } from '../../../../core/utils/nombre.util';
 
 type ToastType = 'success' | 'error' | 'info';
 interface Toast { id: number; type: ToastType; msg: string; }
@@ -67,7 +68,7 @@ interface PublicadorLite {
                   [class.pub-dropdown-item--selected]="form.id_publicadores.includes(p.id_publicador)"
                   (click)="selectPub(p.id_publicador); $event.stopPropagation()">
             <span class="pub-item-avatar shrink-0">{{ inicialesPub(p) }}</span>
-            <span class="pub-item-name">{{ p.primer_nombre }} {{ p.primer_apellido }}</span>
+            <span class="pub-item-name">{{ nombreMostrado(p) }}</span>
             <span *ngIf="!p.archivo_consentimiento" class="pub-item-badge">Sin consent.</span>
             <svg *ngIf="form.id_publicadores.includes(p.id_publicador)" class="pub-item-check ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
           </button>
@@ -1629,6 +1630,9 @@ interface PublicadorLite {
   `]
 })
 export class TransferenciasPage implements OnInit, OnDestroy {
+  /** Expuesto a la plantilla: las funciones sueltas no son accesibles desde el HTML. */
+  readonly nombreMostrado = nombreMostrado;
+
   private svc = inject(TransferenciaService);
   private http = inject(HttpClient);
   private ctx = inject(CongregacionContextService);
@@ -1723,7 +1727,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     const base = this.publicadoresDisponibles();
     if (!q) return base;
     return base.filter(p =>
-      `${p.primer_nombre} ${p.segundo_nombre ?? ''} ${p.primer_apellido} ${p.segundo_apellido ?? ''}`.toLowerCase().includes(q)
+      (nombreMostrado(p) + ' ' + nombreLegal(p)).toLowerCase().includes(q)
     );
   }
 
@@ -2159,14 +2163,14 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   nombrePublicador(id: number | null): string {
     if (id == null) return '—';
     const p = this.publicadores().find(x => x.id_publicador === id);
-    return p ? `${p.primer_nombre} ${p.primer_apellido}` : `#${id}`;
+    return p ? nombreMostrado(p) : `#${id}`;
   }
 
   iniciales(id: number | null): string {
     if (id == null) return '#';
     const p = this.publicadores().find(x => x.id_publicador === id);
     if (!p) return '#';
-    return ((p.primer_nombre || '').charAt(0) + (p.primer_apellido || '').charAt(0)).toUpperCase() || '#';
+    return inicialesDe(p);
   }
 
   /** Iniciales a partir de un nombre completo (para snapshots sin publicador vivo) */
@@ -2186,7 +2190,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   }
 
   inicialesPub(p: PublicadorLite): string {
-    return ((p.primer_nombre || '').charAt(0) + (p.primer_apellido || '').charAt(0)).toUpperCase() || '#';
+    return inicialesDe(p);
   }
 
   pubLacksConsent(id: number): boolean {

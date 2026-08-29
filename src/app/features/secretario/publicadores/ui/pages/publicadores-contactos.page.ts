@@ -8,6 +8,7 @@ import { Publicador } from '../../domain/models/publicador';
 import { AuthStore } from '../../../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../../../core/congregacion-context/congregacion-context.service';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
+import { inicialesDe, nombreLegal, nombreMostrado } from '../../../../../core/utils/nombre.util';
 
 interface ContactoEmergencia {
     id_contacto_emergencia?: number;
@@ -145,7 +146,7 @@ interface Toast {
               <div class="min-w-0 flex-1">
                 <h4 class="text-sm font-bold truncate leading-tight transition-colors"
                     [ngClass]="selectedPublicador()?.id_publicador === p.id_publicador ? 'text-brand-orange' : 'text-slate-800 dark:text-slate-200 group-hover:text-brand-orange'">
-                  {{ p.primer_nombre }} {{ p.primer_apellido }}
+                  {{ nombreMostrado(p) }}
                 </h4>
                 <p class="text-xs font-medium truncate flex items-center gap-1.5 mt-0.5"
                    [ngClass]="p.telefono ? 'text-slate-500 dark:text-slate-400' : 'text-amber-500 dark:text-amber-400'">
@@ -226,7 +227,7 @@ interface Toast {
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-baseline gap-2 md:gap-3">
                   <h1 class="text-base md:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">
-                    {{ p.primer_nombre }} {{ p.primer_apellido }}
+                    {{ nombreMostrado(p) }}
                   </h1>
                   <span *ngIf="p.id_estado_publicador === 1"
                         class="hidden md:inline shrink-0 text-[0.625rem] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800 uppercase tracking-wide">
@@ -676,6 +677,9 @@ interface Toast {
   `]
 })
 export class PublicadoresContactosComponent {
+    /** Expuesto a la plantilla: las funciones sueltas no son accesibles desde el HTML. */
+    readonly nombreMostrado = nombreMostrado;
+
     private facade = inject(PublicadoresFacade);
     private authStore = inject(AuthStore);
     private congregacionContext = inject(CongregacionContextService);
@@ -786,8 +790,8 @@ export class PublicadoresContactosComponent {
         const q = this.searchQuery().toLowerCase();
         if (q.trim()) {
             list = list.filter(p =>
-                p.primer_nombre.toLowerCase().includes(q) ||
-                p.primer_apellido.toLowerCase().includes(q)
+                nombreMostrado(p).toLowerCase().includes(q) ||
+                nombreLegal(p).toLowerCase().includes(q)
             );
         }
 
@@ -997,12 +1001,11 @@ export class PublicadoresContactosComponent {
     }
 
     getInitials(p: Publicador): string {
-        return (p.primer_nombre.charAt(0) + p.primer_apellido.charAt(0)).toUpperCase();
+        return inicialesDe(p);
     }
 
     getAvatarStyle(p: Publicador): string {
-        const name = [p.primer_nombre, p.primer_apellido].filter(Boolean).join(' ');
-        return getInitialAvatarStyle(name);
+        return getInitialAvatarStyle(nombreMostrado(p));
     }
 
     async exportarPDF() {

@@ -7,6 +7,8 @@ export function dtoToModel(dto: any): Publicador {
     segundo_nombre: dto.segundo_nombre,
     primer_apellido: dto.primer_apellido,
     segundo_apellido: dto.segundo_apellido,
+    nombre_visible: dto.nombre_visible ?? null,
+    nombre_mostrado: dto.nombre_mostrado ?? null,
     direccion: dto.direccion,
     barrio: dto.barrio,
     telefono: dto.telefono,

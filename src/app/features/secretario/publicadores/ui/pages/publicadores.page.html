@@ -510,6 +510,10 @@
                         </div>
                         <div class="min-w-0 flex-1 flex flex-col">
                             <h3 class="font-bold text-slate-900 dark:text-slate-100 leading-tight truncate">{{ getFullName(p) }}</h3>
+                            <!-- El nombre de la ficha, sólo si no es el que ya
+                                 se ve arriba: si no, sería repetir la línea. -->
+                            <p *ngIf="tieneNombreDistinto(p)"
+                               class="text-xs text-slate-400 dark:text-slate-500 leading-tight truncate">{{ getLegalName(p) }}</p>
 
                             <div class="flex flex-wrap gap-1 items-center mt-1" *ngIf="getRoles(p).length > 0">
                                  <ng-container *ngFor="let role of getRoles(p)">
@@ -719,6 +723,8 @@
                                </div>
                                   <div class="flex flex-col gap-0.5 justify-center">
                                       <p class="text-sm font-bold text-slate-900 dark:text-white leading-tight mb-0.5">{{ getFullName(p) }}</p>
+                                      <p *ngIf="tieneNombreDistinto(p)"
+                                         class="text-xs text-slate-400 dark:text-slate-500 leading-tight truncate">{{ getLegalName(p) }}</p>
                                       <div class="flex flex-wrap gap-1 items-center">
                                          <ng-container *ngFor="let role of getRoles(p)">
                                               <span *ngIf="role.type === 'pill'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[0.625rem] font-bold uppercase tracking-wider shadow-sm" [ngClass]="role.class">
@@ -1095,6 +1101,30 @@
                                   Segundo Apellido
                                </label>
                                <input formControlName="segundo_apellido" (input)="capitalizeInput('segundo_apellido')" placeholder="Ej: García" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                             </div>
+
+                             <!--
+                               Alias. Ocupa la fila entera y va después de los
+                               cuatro campos porque depende de ellos: el texto de
+                               ayuda muestra en vivo lo que saldría sin alias.
+                             -->
+                             <div class="col-span-2 space-y-2">
+                               <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
+                                  Nombre para mostrar
+                                  <span class="ml-auto normal-case tracking-normal font-medium text-slate-400 dark:text-slate-500">Opcional</span>
+                               </label>
+                               <input formControlName="nombre_visible" maxlength="150" (input)="capitalizeInput('nombre_visible')"
+                                      [placeholder]="nombreSegunRegla() || 'Ej: Juanca'"
+                                      class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 focus:ring-1 focus:ring-brand-orange focus:border-brand-orange transition-all outline-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal">
+                               <p class="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                 <svg class="w-3 h-3 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+                                 <span>
+                                   Así se le nombra en listados, informes y asignaciones.
+                                   Vacío, se usa
+                                   <strong class="font-semibold text-slate-500 dark:text-slate-400">{{ nombreSegunRegla() || 'el nombre de arriba' }}</strong>.
+                                 </span>
+                               </p>
                              </div>
 
                              <!-- Fila 3: Sexo y Nacimiento -->
@@ -2340,7 +2370,7 @@
                   {{ deleteStep() === 'reassign-picker' ? 'Reasignar usuario del sistema' : deleteStep() === 'confirm-delete-both' ? 'Confirmar eliminación doble' : '¿Eliminar miembro?' }}
                 </h3>
                 <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  {{ publicadorToDelete()?.primer_nombre }} {{ publicadorToDelete()?.primer_apellido }}
+                  {{ getFullName(publicadorToDelete()!) }}
                 </p>
               </div>
             </div>
@@ -2364,7 +2394,7 @@
             <!-- Step: simple (sin usuario vinculado) -->
             <div *ngIf="deleteStep() === 'simple'">
               <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
-                Estás a punto de eliminar permanentemente a <strong class="text-slate-900 dark:text-white">{{ publicadorToDelete()?.primer_nombre }} {{ publicadorToDelete()?.primer_apellido }}</strong>. Esta acción no se puede deshacer.
+                Estás a punto de eliminar permanentemente a <strong class="text-slate-900 dark:text-white">{{ getFullName(publicadorToDelete()!) }}</strong>. Esta acción no se puede deshacer.
               </p>
               <div class="flex items-center gap-3">
                 <button (click)="closeDeleteModal()" [disabled]="isDeleting()" class="flex-1 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Cancelar</button>
@@ -2442,7 +2472,7 @@
                 <ul class="text-sm text-red-700 dark:text-red-400 space-y-2 mt-2">
                   <li class="flex items-start gap-2">
                     <svg class="w-3.5 h-3.5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    <span>Publicador: <strong>{{ publicadorToDelete()?.primer_nombre }} {{ publicadorToDelete()?.primer_apellido }}</strong></span>
+                    <span>Publicador: <strong>{{ getFullName(publicadorToDelete()!) }}</strong></span>
                   </li>
                   <li class="flex items-start gap-2">
                     <svg class="w-3.5 h-3.5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -2494,7 +2524,7 @@
                        [class.dark:border-slate-600]="publicadorReasignadoId() !== pub.id_publicador">
                     <div *ngIf="publicadorReasignadoId() === pub.id_publicador" class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400"></div>
                   </div>
-                  <span class="text-sm text-slate-800 dark:text-slate-200 font-medium">{{ pub.primer_nombre }} {{ pub.primer_apellido }}</span>
+                  <span class="text-sm text-slate-800 dark:text-slate-200 font-medium">{{ getFullName(pub) }}</span>
                 </button>
                 <!-- Sin publicadores en la congregación -->
                 <div *ngIf="publicadoresParaReasignar().length === 0" class="px-4 py-8 text-center">
@@ -2674,3 +2704,70 @@
         (cancelled)="closeWizard()"
         (created)="onWizardCreated($event)">
       </app-nuevo-publicador-wizard>
+
+      <!--
+        ¿Actualizar el nombre para mostrar?
+
+        Sale al guardar cuando cambió el nombre y esta persona tiene alias. El
+        botón principal depende de si el alias venía sincronizado: si era un
+        formato, lo normal es actualizarlo; si es un apodo de verdad, lo normal
+        es conservarlo. Se pregunta siempre, pero con la opción correcta ya
+        marcada. Cerrar sin elegir equivale a mantener.
+      -->
+      <div *ngIf="dialogoAliasAbierto()" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/50 transition-opacity" (click)="mantenerAlias()"></div>
+
+        <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-5 sm:p-7 max-w-[440px] w-full animate-fadeInUp border border-slate-100 dark:border-slate-700"
+             role="dialog" aria-modal="true" aria-labelledby="alias-dlg-title">
+          <div class="flex items-center gap-4 mb-5">
+            <div class="w-12 h-12 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center shrink-0">
+              <svg class="w-6 h-6 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
+                <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <h3 id="alias-dlg-title" class="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                ¿Actualizar el nombre para mostrar?
+              </h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                Cambiaste el nombre de esta persona.
+              </p>
+            </div>
+          </div>
+
+          <!-- La comparación es el contenido: dos filas, sin cajas, separadas
+               por una línea. El valor pesa más que su etiqueta. -->
+          <dl class="divide-y divide-slate-100 dark:divide-slate-700 mb-5">
+            <div class="flex items-baseline justify-between gap-4 py-2.5">
+              <dt class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide shrink-0">Ahora se muestra</dt>
+              <dd class="text-sm font-bold text-slate-800 dark:text-slate-100 text-right break-words">{{ aliasActual() }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-4 py-2.5">
+              <dt class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide shrink-0">Con el nuevo nombre</dt>
+              <dd class="text-sm font-bold text-brand-orange text-right break-words">{{ aliasSugerido() }}</dd>
+            </div>
+          </dl>
+
+          <p *ngIf="!aliasEstabaSincronizado()" class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-5">
+            <strong class="font-semibold text-slate-600 dark:text-slate-300">{{ aliasActual() }}</strong>
+            no parece derivado del nombre, así que probablemente sea un apodo que quieres conservar.
+          </p>
+
+          <div class="flex items-center gap-3">
+            <button type="button" (click)="mantenerAlias()"
+                    [ngClass]="aliasEstabaSincronizado()
+                      ? 'flex-1 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors'
+                      : 'flex-1 min-h-[44px] rounded-xl bg-brand-orange text-white font-semibold text-sm hover:brightness-95 transition-all active:scale-95'">
+              Mantener
+            </button>
+            <button type="button" (click)="actualizarAlias()"
+                    [ngClass]="aliasEstabaSincronizado()
+                      ? 'flex-1 min-h-[44px] rounded-xl bg-brand-orange text-white font-semibold text-sm hover:brightness-95 transition-all active:scale-95'
+                      : 'flex-1 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors'">
+              Actualizar
+            </button>
+          </div>
+        </div>
+      </div>
+

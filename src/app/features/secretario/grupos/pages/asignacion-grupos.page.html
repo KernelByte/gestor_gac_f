@@ -603,7 +603,7 @@
                                     [class.italic]="!grupo.capitan_grupo"
                                     [class.font-normal]="!grupo.capitan_grupo"
                                     [class.text-[0.625rem]]="!grupo.capitan_grupo">
-                                    {{ grupo.capitan_grupo || 'Suelta aquí al capitán...' }}
+                                    {{ nombreLiderMostrado(grupo.capitan_grupo) || 'Suelta aquí al capitán...' }}
                                  </p>
                                  <div class="flex flex-wrap gap-1 mt-0.5" *ngIf="getPrivilegioTagsByName(grupo.capitan_grupo).length > 0">
                                     <span *ngFor="let tag of getPrivilegioTagsByName(grupo.capitan_grupo)"
@@ -685,7 +685,7 @@
                                     [class.italic]="!grupo.auxiliar_grupo"
                                     [class.font-normal]="!grupo.auxiliar_grupo"
                                     [class.text-[0.625rem]]="!grupo.auxiliar_grupo">
-                                    {{ grupo.auxiliar_grupo || 'Suelta aquí al auxiliar...' }}
+                                    {{ nombreLiderMostrado(grupo.auxiliar_grupo) || 'Suelta aquí al auxiliar...' }}
                                  </p>
                                  <div class="flex flex-wrap gap-1 mt-0.5" *ngIf="getPrivilegioTagsByName(grupo.auxiliar_grupo).length > 0">
                                     <span *ngFor="let tag of getPrivilegioTagsByName(grupo.auxiliar_grupo)"
@@ -1212,7 +1212,7 @@
             [class.dark:text-red-400]="isInactivePublisher(p) && !isSelected(p.id_publicador)"
             [class.text-orange-700]="isSelected(p.id_publicador)"
             [class.dark:text-orange-300]="isSelected(p.id_publicador)">
-            {{ p.primer_nombre }} {{ p.primer_apellido }}
+            {{ nombreMostrado(p) }}
          </p>
          <div class="flex gap-1 mt-0.5 flex-wrap items-center" *ngIf="isInactivePublisher(p) || getPrivilegioTags(p).length > 0">
             <span *ngIf="isInactivePublisher(p)"

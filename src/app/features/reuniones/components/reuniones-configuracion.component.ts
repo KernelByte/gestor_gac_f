@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReunionesService } from '../services/reuniones.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
+import { inicialesDe, nombreMostrado } from '../../../core/utils/nombre.util';
 import {
   PublicadorMatrizItem,
   ColumnaPermiso,
@@ -275,11 +276,11 @@ import {
                                        <div class="flex items-center gap-2.5">
                                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[0.6875rem] shrink-0 ring-1 ring-white dark:ring-slate-800"
                                                 [class]="avatarClass(pub)">
-                                             {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
+                                             {{ inicialesDe(pub) }}
                                            </div>
                                            <div class="min-w-0">
-                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[150px] leading-tight" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
-                                                 {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
+                                               <div class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate max-w-[150px] leading-tight" [title]="nombreMostrado(pub)">
+                                                 {{ nombreMostrado(pub) }}
                                                </div>
                                                <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                                                  @for (priv of pub.privilegios; track priv) {
@@ -392,6 +393,10 @@ import {
   `]
 })
 export class ReunionesConfiguracionComponent implements OnInit {
+  /** Expuestos a la plantilla: las funciones sueltas no son accesibles desde el HTML. */
+  readonly nombreMostrado = nombreMostrado;
+  readonly inicialesDe = inicialesDe;
+
 
   private reunionesSvc = inject(ReunionesService);
   private congregacionCtx = inject(CongregacionContextService);
@@ -437,7 +442,7 @@ export class ReunionesConfiguracionComponent implements OnInit {
 
     if (q) {
       list = list.filter(p =>
-        `${p.primer_nombre} ${p.primer_apellido}`.toLowerCase().includes(q)
+        nombreMostrado(p).toLowerCase().includes(q)
       );
     }
 
