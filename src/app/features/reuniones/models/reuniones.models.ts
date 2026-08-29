@@ -124,6 +124,10 @@ export interface PeriodoConfirmado {
   /** Los borradores también salen en la lista: antes vivían en caché y
    *  caducaban solos a las 72 h. */
   estado?: 'borrador' | 'publicado';
+  /** Fechas (ISO) ya generadas de este mes. Una guía puede cruzar el mes o
+   *  dejar una semana suelta sin generar, así que el mes solo no dice si está
+   *  completo — hay que ver sus fechas. */
+  fechas: string[];
 }
 
 export interface ConflictoMes {

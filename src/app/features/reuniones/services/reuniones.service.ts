@@ -98,10 +98,11 @@ export class ReunionesService {
   // PLANTILLAS
   // ──────────────────────────────────────────────────
 
-  getPlantillas(tipo: string, idCong: number): Observable<PlantillaOption[]> {
-    const params = new HttpParams()
-      .set('tipo', tipo)
-      .set('id_congregacion', idCong);
+  getPlantillas(tipo: string, idCong?: number | null): Observable<PlantillaOption[]> {
+    // Las plantillas son globales: id_congregacion es opcional (solo lo usa el
+    // backend para autorizar roles no globales, que siempre lo mandan).
+    let params = new HttpParams().set('tipo', tipo);
+    if (idCong != null) params = params.set('id_congregacion', idCong);
     return this.http.get<PlantillaOption[]>(`${this.base}/plantillas`, { params });
   }
 
@@ -207,6 +208,39 @@ export class ReunionesService {
     return this.http.post<MWBDuplicadosResponse>(
       `${this.base}/programas/importar-mwb/check-duplicates`,
       payload
+    );
+  }
+
+  // ──────────────────────────────────────────────────
+  // IMPORTACIÓN LA ATALAYA (fin de semana)
+  //
+  // A diferencia de MWB, esto no crea una plantilla nueva: agrega el tema
+  // semanal a la plantilla de fin de semana que ya existe. Por eso no hay
+  // check-duplicates — reimportar solo reemplaza el tema de esas semanas
+  // puntuales, nunca la plantilla entera.
+  // ──────────────────────────────────────────────────
+
+  importarAtalaya(file: File): Observable<MWBImportPreviewResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<MWBImportPreviewResponse>(
+      `${this.base}/programas/importar-atalaya`,
+      formData
+    );
+  }
+
+  confirmarAtalaya(
+    payload: MWBImportConfirmRequest
+  ): Observable<MWBImportConfirmResponse> {
+    return this.http.post<MWBImportConfirmResponse>(
+      `${this.base}/programas/importar-atalaya/confirm`,
+      payload
+    );
+  }
+
+  eliminarTemaAtalaya(idPlantilla: number, semanaOrdinal: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(
+      `${this.base}/plantillas/${idPlantilla}/temas-atalaya/${semanaOrdinal}`
     );
   }
 

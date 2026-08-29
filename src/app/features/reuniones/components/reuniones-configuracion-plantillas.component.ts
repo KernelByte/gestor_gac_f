@@ -11,6 +11,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { SelectPickerComponent, PickerOption } from '../../../shared/components/select-picker/select-picker.component';
 import { CatalogoDiscursosComponent } from './catalogo-discursos.component';
+import { inicialesDe, nombreLegal, nombreMostrado } from '../../../core/utils/nombre.util';
 import {
   MWBImportPreviewResponse,
   MWBImportConfirmRequest,
@@ -249,13 +250,33 @@ import {
        <!-- ===== TAB: PLANTILLAS ===== -->
        @if (activeTab() === 'plantillas') {
 
+       <!-- Selector de guía: dos plantillas globales distintas, cada una con
+            su propio histórico y su propio importador de IA. -->
+       <div class="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl w-fit shrink-0">
+         <button (click)="setPlantillaTipoActivo('entre_semana')"
+                 class="px-3.5 h-8 rounded-lg text-[0.6875rem] font-bold transition-colors duration-150"
+                 [class]="plantillaTipoActivo() === 'entre_semana' ? 'bg-[#6D28D9] text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+           Entre semana
+         </button>
+         <button (click)="setPlantillaTipoActivo('fin_semana')"
+                 class="px-3.5 h-8 rounded-lg text-[0.6875rem] font-bold transition-colors duration-150"
+                 [class]="plantillaTipoActivo() === 'fin_semana' ? 'bg-[#6D28D9] text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+           Fin de semana
+         </button>
+       </div>
+
        <!-- Toolbar -->
        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
            <div class="flex items-center gap-3">
               <div class="w-9 h-9 bg-[#6D28D9]/10 dark:bg-[#6D28D9]/20 rounded-xl flex items-center justify-center shrink-0">
                  <svg class="w-4.5 h-4.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               </div>
-              <h3 class="font-bold text-slate-800 dark:text-white text-[0.8125rem]">Generador de Plantillas <span class="text-[#6D28D9] dark:text-purple-400 font-black">Motor IA</span></h3>
+              <div>
+                <h3 class="font-bold text-slate-800 dark:text-white text-[0.8125rem]">Generador de Plantillas <span class="text-[#6D28D9] dark:text-purple-400 font-black">Motor IA</span></h3>
+                <p class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">
+                  {{ plantillaTipoActivo() === 'fin_semana' ? 'Reunión Pública y Estudio de La Atalaya' : 'Vida y Ministerio Cristiano' }}
+                </p>
+              </div>
            </div>
 
            <input type="file" #fileInput (change)="onFileSelected($event)" accept=".pdf" class="hidden">
@@ -300,6 +321,58 @@ import {
               <button (click)="mwbJsonInputOpen.set(false)" class="plt-btn-secondary h-8 px-4 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 text-[0.6875rem] font-bold rounded-lg">Cancelar</button>
               <button (click)="processJsonInput()" class="plt-btn-primary h-8 px-4 bg-[#6D28D9] text-white text-[0.6875rem] font-bold rounded-lg shadow-sm">Procesar JSON</button>
            </div>
+         </div>
+       }
+
+       <!-- Temas de La Atalaya cargados — separado a propósito del editor de
+            la plantilla: el editor de abajo es SIEMPRE la estructura fija
+            (lo genérico), y aquí se ve, semana por semana, qué trajo cada
+            import de PDF/JSON. Así queda claro si el import realmente
+            guardó algo, sin tener que abrir "Editar" y buscarlo mezclado. -->
+       @if (plantillaTipoActivo() === 'fin_semana') {
+         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 shrink-0">
+           <div class="flex items-center justify-between mb-3">
+             <h3 class="text-[0.6875rem] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
+               <svg class="w-3.5 h-3.5 text-[#6D28D9] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+               Temas de La Atalaya Cargados
+               @if (atalayaTemas().length > 0) {
+                 <span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 text-[9px] font-black tabular-nums">{{ atalayaTemas().length }}</span>
+               }
+             </h3>
+             @if (atalayaTemasLoading()) {
+               <div class="w-3 h-3 border-2 border-[#6D28D9] border-t-transparent rounded-full animate-spin"></div>
+             }
+           </div>
+
+           @if (atalayaTemas().length > 0) {
+             <!-- max-h + scroll propio: sin tope, una guía con muchas semanas
+                  importadas (un año completo son ~52) crecía sin límite y
+                  empujaba el panel de Histórico/Editor de abajo fuera de la
+                  vista — la tarjeta es shrink-0 dentro de una columna de
+                  altura fija, así que lo de abajo era quien pagaba el espacio. -->
+             <div class="flex flex-col gap-1.5 max-h-56 overflow-y-auto simple-scrollbar pr-1 -mr-1">
+               @for (tema of atalayaTemas(); track tema.id_parte) {
+                 <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                   <div class="min-w-0 flex-1">
+                     <h4 class="text-[0.6875rem] font-bold text-slate-700 dark:text-slate-200 truncate">{{ tema.titulo_semana }}</h4>
+                     @if (tema.fuente_informacion) {
+                       <p class="text-[9px] text-slate-400 dark:text-slate-500 truncate">{{ tema.fuente_informacion }}</p>
+                     }
+                   </div>
+                   @if (puedeGestionarGuia()) {
+                     <button (click)="eliminarTemaAtalaya(tema)" title="Quitar este tema"
+                             class="plt-icon-btn w-8 h-8 flex items-center justify-center text-rose-400/60 rounded-lg shrink-0">
+                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                     </button>
+                   }
+                 </div>
+               }
+             </div>
+           } @else if (!atalayaTemasLoading()) {
+             <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 text-center py-3">
+               Ningún mes tiene tema cargado todavía. Sube el PDF de La Atalaya arriba para agregarlos.
+             </p>
+           }
          </div>
        }
 
@@ -491,18 +564,22 @@ import {
                    @for (week of plantillaByWeek(); track week.ordinal) {
                      <div class="border border-slate-200 dark:border-slate-700/80 rounded-[14px] overflow-hidden shadow-sm">
                        <div class="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2.5">
-                         <div class="w-6 h-6 rounded-lg bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 flex items-center justify-center font-black text-[0.6rem] shrink-0">W{{ week.ordinal }}</div>
+                         <div class="w-6 h-6 rounded-lg bg-[#6D28D9]/10 text-[#6D28D9] dark:text-purple-400 flex items-center justify-center font-black text-[0.55rem] shrink-0">{{ week.ordinal === 0 ? 'GEN' : ('S' + week.ordinal) }}</div>
                          <div class="flex flex-col gap-0.5 min-w-0 flex-1">
-                           <input [ngModel]="week.titulo_semana || ''" (ngModelChange)="updateSemanaMeta(week.ordinal, 'titulo_semana', $event)"
-                                  placeholder="Título de la semana"
-                                  class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
-                           <div class="flex items-center gap-1 px-1">
-                             <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                             <span class="text-[9px] font-bold text-slate-400">Lectura:</span>
-                             <input [ngModel]="week.lectura_semanal || ''" (ngModelChange)="updateSemanaMeta(week.ordinal, 'lectura_semanal', $event)"
-                                    placeholder="—"
-                                    class="flex-1 bg-transparent border-none text-[9px] font-bold text-slate-500 dark:text-slate-400 outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
-                           </div>
+                           @if (week.ordinal === 0) {
+                             <span class="text-[0.6875rem] font-bold text-slate-800 dark:text-white uppercase tracking-wide px-1">General — se repite en cada semana</span>
+                           } @else {
+                             <input [ngModel]="week.titulo_semana || ''" (ngModelChange)="updateSemanaMeta(week.ordinal, 'titulo_semana', $event)"
+                                    placeholder="Título de la semana"
+                                    class="w-full bg-transparent border-none font-bold text-slate-800 dark:text-white uppercase tracking-wide text-[0.6875rem] outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
+                             <div class="flex items-center gap-1 px-1">
+                               <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                               <span class="text-[9px] font-bold text-slate-400">Lectura:</span>
+                               <input [ngModel]="week.lectura_semanal || ''" (ngModelChange)="updateSemanaMeta(week.ordinal, 'lectura_semanal', $event)"
+                                      placeholder="—"
+                                      class="flex-1 bg-transparent border-none text-[9px] font-bold text-slate-500 dark:text-slate-400 outline-none focus:ring-1 focus:ring-[#6D28D9]/50 rounded px-1 min-w-0">
+                             </div>
+                           }
                          </div>
                        </div>
                        <div class="bg-white dark:bg-slate-900">
@@ -535,12 +612,36 @@ import {
                                      <span class="text-[8px] font-bold text-slate-400 uppercase">min</span>
                                    </div>
                                  </td>
+                                 <td class="py-2 pr-2 w-8 align-middle">
+                                   <button (click)="removeParte(parte)" title="Quitar parte"
+                                           class="plt-icon-btn w-7 h-7 flex items-center justify-center text-rose-400/60 rounded-lg">
+                                     <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                   </button>
+                                 </td>
                                </tr>
                              }
                            </tbody>
                          </table>
+                         <button (click)="addParte(week.ordinal)"
+                                 class="w-full flex items-center justify-center gap-1.5 py-2 text-[0.625rem] font-bold text-[#6D28D9]/70 dark:text-purple-400/70 hover:bg-[#6D28D9]/5 dark:hover:bg-purple-400/5 border-t border-slate-100 dark:border-slate-800/50 transition-colors">
+                           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                           Agregar parte
+                         </button>
                        </div>
                      </div>
+                   }
+
+                   @if (plantillaEditing() && selectedPlantilla()) {
+                     <button (click)="addSemana()"
+                             class="w-full flex items-center justify-center gap-1.5 h-10 rounded-[14px] border border-dashed border-slate-300 dark:border-slate-700 text-[0.6875rem] font-bold text-slate-500 dark:text-slate-400 hover:border-[#6D28D9]/40 hover:text-[#6D28D9] dark:hover:text-purple-400 transition-colors">
+                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                       {{ plantillaTipoActivo() === 'fin_semana' ? 'Agregar parte general' : 'Agregar semana' }}
+                     </button>
+                     @if (plantillaTipoActivo() === 'fin_semana') {
+                       <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 text-center px-2 -mt-1">
+                         El tema semanal de La Atalaya (título, cántico) se agrega solo, importando el PDF arriba — esto es solo para el resto de la reunión.
+                       </p>
+                     }
                    }
                  }
                </div>
@@ -1169,11 +1270,11 @@ import {
                             (click)="toggleCard(pub.id_publicador)">
                           <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
                                [ngClass]="getAvatarClass(pub)">
-                            {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
+                            {{ inicialesDe(pub) }}
                           </div>
                          <div class="flex-1 min-w-0">
                            <p class="text-[0.8125rem] font-bold text-slate-800 dark:text-white leading-tight break-words">
-                             {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
+                             {{ nombreMostrado(pub) }}
                            </p>
                            <div class="flex flex-wrap gap-1 mt-0.5">
                              @if (pub.privilegios.length > 0) {
@@ -1319,11 +1420,11 @@ import {
                                         <div class="flex items-center gap-1.5">
                                              <div class="priv-avatar w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-semibold text-[0.625rem] shadow-sm ring-1 ring-white border border-white/50"
                                                   [ngClass]="getAvatarClass(pub)">
-                                               {{ pub.primer_nombre[0] }}{{ pub.primer_apellido[0] }}
+                                               {{ inicialesDe(pub) }}
                                              </div>
                                             <div class="min-w-0">
-                                                <div class="priv-name text-xs font-bold text-slate-800 dark:text-white leading-tight tracking-tight break-words max-w-[150px]" [title]="pub.primer_nombre + ' ' + pub.primer_apellido">
-                                          {{ pub.primer_nombre.split(' ')[0] }} {{ pub.primer_apellido.split(' ')[0] }}
+                                                <div class="priv-name text-xs font-bold text-slate-800 dark:text-white leading-tight tracking-tight break-words max-w-[150px]" [title]="nombreMostrado(pub)">
+                                          {{ nombreMostrado(pub) }}
                                       </div>
                                       <div class="flex flex-wrap gap-0.5 mt-0.5">
                                           @if (pub.privilegios.length > 0) {
@@ -2055,6 +2156,10 @@ import {
   `]
 })
 export class ReunionesConfiguracionPlantillasComponent implements OnInit {
+  /** Expuestos a la plantilla: las funciones sueltas no son accesibles desde el HTML. */
+  readonly nombreMostrado = nombreMostrado;
+  readonly inicialesDe = inicialesDe;
+
 
   private reunionesSvc = inject(ReunionesService);
   private congregacionCtx = inject(CongregacionContextService);
@@ -2135,6 +2240,10 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   private mwbPendingPayload: any = null;
 
   // ── Plantillas Histórico ──
+  /** Qué guía se administra en este tab: MWB (entre semana) o La Atalaya (fin
+   *  de semana). Decide tanto qué trae el histórico como qué endpoint de
+   *  importación con IA se usa — son dos guías distintas, cada una global. */
+  plantillaTipoActivo = signal<'entre_semana' | 'fin_semana'>('entre_semana');
   savedPlantillas = signal<PlantillaOption[]>([]);
   plantillasLoading = signal(false);
   selectedPlantilla = signal<PlantillaDetailResponse | null>(null);
@@ -2145,7 +2254,11 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     if (!p) return [];
     const weeksMap = new Map<number, { partes: PlantillaParteDetail[]; titulo_semana?: string; lectura_semanal?: string }>();
     p.partes.forEach(parte => {
-      const ord = parte.semana_ordinal || 1;
+      // 0 es el grupo "General": partes sin semana propia (sin
+      // titulo_semana) que se repiten en cada programa generado, a
+      // diferencia de una semana real importada de La Atalaya (ordinal =
+      // su semana ISO, siempre >= 1).
+      const ord = parte.semana_ordinal ?? 0;
       if (!weeksMap.has(ord)) {
         weeksMap.set(ord, {
           partes: [],
@@ -2155,10 +2268,81 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       }
       weeksMap.get(ord)!.partes.push(parte);
     });
-    return Array.from(weeksMap.entries())
+    let groups = Array.from(weeksMap.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([ordinal, data]) => ({ ordinal, ...data }));
+    // El editor de fin de semana solo muestra lo genérico ("General", ordinal
+    // 0): los temas de La Atalaya por semana se ven y se borran aparte, en la
+    // tarjeta "Temas de La Atalaya Cargados" — mezclarlos aquí es lo que
+    // hacía parecer que un import "no se veía".
+    if (this.plantillaTipoActivo() === 'fin_semana') {
+      groups = groups.filter(g => g.ordinal === 0);
+    }
+    return groups;
   });
+
+  // ── Temas de La Atalaya (fin de semana) ──
+  /** Los temas ya cargados sobre la plantilla de fin de semana, mostrados
+   *  aparte del editor genérico para que se vea claramente qué trajo cada
+   *  import — independiente de si el editor está abierto o no. */
+  atalayaTemas = signal<PlantillaParteDetail[]>([]);
+  atalayaTemasLoading = signal(false);
+  private atalayaPlantillaId: number | null = null;
+
+  /** Autosuficiente a propósito: busca la plantilla de fin de semana por su
+   *  cuenta en vez de depender de `savedPlantillas()` ya estar en sync (esa
+   *  dependencia era lo que dejaba la tarjeta vacía hasta refrescar la
+   *  página a mano después de confirmar un import). Se puede llamar desde
+   *  cualquier lado sin preocuparse del orden de otras cargas. */
+  loadAtalayaTemas() {
+    const idCongregacion = this.congregacionCtx.effectiveCongregacionId();
+
+    this.atalayaTemasLoading.set(true);
+    this.reunionesSvc.getPlantillas('fin_semana', idCongregacion).subscribe({
+      next: (plantillas) => {
+        const plantillaFinSemana = plantillas[0];
+        if (!plantillaFinSemana) {
+          this.atalayaTemas.set([]);
+          this.atalayaPlantillaId = null;
+          this.atalayaTemasLoading.set(false);
+          return;
+        }
+        this.atalayaPlantillaId = plantillaFinSemana.id_plantilla;
+        this.reunionesSvc.getPlantillaDetail(plantillaFinSemana.id_plantilla).subscribe({
+          next: (res) => {
+            this.atalayaTemas.set(
+              res.partes
+                .filter(p => !!p.titulo_semana)
+                .sort((a, b) => (a.semana_ordinal ?? 0) - (b.semana_ordinal ?? 0))
+            );
+            this.atalayaTemasLoading.set(false);
+          },
+          error: (err) => {
+            console.error(err);
+            this.atalayaTemasLoading.set(false);
+          }
+        });
+      },
+      error: (err) => {
+        console.error(err);
+        this.atalayaTemasLoading.set(false);
+      }
+    });
+  }
+
+  eliminarTemaAtalaya(tema: PlantillaParteDetail) {
+    if (!this.atalayaPlantillaId || tema.semana_ordinal == null) return;
+    this.reunionesSvc.eliminarTemaAtalaya(this.atalayaPlantillaId, tema.semana_ordinal).subscribe({
+      next: () => {
+        this.showToast('success', 'Tema eliminado');
+        this.loadAtalayaTemas();
+      },
+      error: (err) => {
+        console.error(err);
+        this.showToast('error', err?.error?.detail ?? 'Error al eliminar el tema');
+      }
+    });
+  }
 
   // ── Matriz de Publicadores (Privilegios) ──
   publicadores = signal<PublicadorMatrizItem[]>([]);
@@ -2232,7 +2416,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     const privFilter = this.filtroPrivilegio();
     const permisoFilter = this.filtroPermiso();
     if (q) {
-      list = list.filter(p => `${p.primer_nombre} ${p.primer_apellido}`.toLowerCase().includes(q));
+      list = list.filter(p => (nombreMostrado(p) + ' ' + nombreLegal(p)).toLowerCase().includes(q));
     }
     if (sexoFilter === 'solo_hombres') {
       list = list.filter(p => this.isHermano(p));
@@ -2329,7 +2513,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   opcionesPublicadorAusencia = computed<PickerOption[]>(() =>
     this.publicadoresOrdenadosAusencia().map((p) => ({
       value: p.id_publicador,
-      label: p.primer_nombre + ' ' + p.primer_apellido,
+      label: nombreMostrado(p),
     })),
   );
 
@@ -2392,8 +2576,11 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       formData.append('file', file);
 
       const token = this.tokenSvc.accessToken() || '';
+      const streamPath = this.plantillaTipoActivo() === 'fin_semana'
+        ? 'importar-atalaya/stream'
+        : 'importar-mwb/stream';
       const response = await fetch(
-        `${environment.apiUrl}/reuniones/programas/importar-mwb/stream`,
+        `${environment.apiUrl}/reuniones/programas/${streamPath}`,
         {
           method: 'POST',
           body: formData,
@@ -2561,12 +2748,8 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     const preview = this.mwbPreview();
     if (!preview) return;
 
-    const idCongregacion = this.congregacionCtx.effectiveCongregacionId();
-    if (!idCongregacion) {
-        this.showToast('error', 'Seleccione una congregacion');
-        return;
-    }
-
+    // Subir la guía es una operación global (ver payload más abajo): no
+    // depende de tener una congregación seleccionada.
     const datesMap = this.mwbDates();
     for (let i = 0; i < preview.semanas.length; i++) {
         if (!datesMap.get(i)) {
@@ -2596,6 +2779,15 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     // pestaña, con su propio día y hora de reunión.
     const payload: MWBImportConfirmRequest = { semanas: semanasConfirm };
 
+    // Atalaya no crea una plantilla nueva ni reescribe nada de la existente:
+    // solo agrega/reemplaza el tema de las semanas que vienen en el payload,
+    // así que no hay nada "en uso" que pueda bloquear el guardado — se
+    // confirma directo, sin el paso de check-duplicates que sí necesita MWB.
+    if (this.plantillaTipoActivo() === 'fin_semana') {
+      this.doConfirmMWB(payload);
+      return;
+    }
+
     this.mwbConfirming.set(true);
     this.reunionesSvc.checkMWBDuplicates(payload).subscribe({
         next: (res) => {
@@ -2617,8 +2809,12 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   }
 
   doConfirmMWB(payload: MWBImportConfirmRequest) {
+    const confirmar$ = this.plantillaTipoActivo() === 'fin_semana'
+      ? this.reunionesSvc.confirmarAtalaya(payload)
+      : this.reunionesSvc.confirmarMWB(payload);
+
     this.mwbConfirming.set(true);
-    this.reunionesSvc.confirmarMWB(payload).subscribe({
+    confirmar$.subscribe({
         next: (res) => {
             this.showToast('success', `${res.mensaje} (${res.partes_creadas} partes)`);
             this.mwbConfirming.set(false);
@@ -2627,6 +2823,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
             this.mwbShowDuplicateModal.set(false);
             this.mwbPendingPayload = null;
             this.loadSavedPlantillas(); // Refrescar el histórico automáticamente
+            if (this.plantillaTipoActivo() === 'fin_semana') this.loadAtalayaTemas();
         },
         error: (err) => {
             console.error('Error al confirmar MWB:', err);
@@ -2667,20 +2864,31 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
   // ── Plantillas Management ──
   loadSavedPlantillas() {
+    // Las plantillas son globales: un rol global puede verlas sin haber
+    // seleccionado congregación todavía.
     const idCongregacion = this.congregacionCtx.effectiveCongregacionId();
-    if (!idCongregacion) return;
 
+    const tipo = this.plantillaTipoActivo();
     this.plantillasLoading.set(true);
-    this.reunionesSvc.getPlantillas('entre_semana', idCongregacion).subscribe({
+    this.reunionesSvc.getPlantillas(tipo, idCongregacion).subscribe({
       next: (res) => {
         this.savedPlantillas.set(res);
         this.plantillasLoading.set(false);
+        if (tipo === 'fin_semana') this.loadAtalayaTemas();
       },
       error: (err) => {
         console.error(err);
         this.plantillasLoading.set(false);
       }
     });
+  }
+
+  setPlantillaTipoActivo(tipo: 'entre_semana' | 'fin_semana') {
+    if (this.plantillaTipoActivo() === tipo) return;
+    this.plantillaTipoActivo.set(tipo);
+    this.mwbPreview.set(null);
+    this.closePlantillaEditor();
+    this.loadSavedPlantillas();
   }
 
   editPlantilla(id: number) {
@@ -2708,11 +2916,77 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     const p = this.selectedPlantilla();
     if (!p) return;
     p.partes.forEach(parte => {
-      if ((parte.semana_ordinal || 1) === ordinal) {
+      if ((parte.semana_ordinal ?? 0) === ordinal) {
         (parte as any)[field] = value;
       }
     });
     this.selectedPlantilla.set({ ...p, partes: [...p.partes] });
+  }
+
+  /** Quita una parte del editor en memoria; se borra en BD recién al Guardar
+   *  (update_plantilla borra las que no vengan en el payload). */
+  removeParte(parte: PlantillaParteDetail) {
+    const p = this.selectedPlantilla();
+    if (!p) return;
+    p.partes = p.partes.filter(x => x !== parte);
+    this.selectedPlantilla.set({ ...p, partes: [...p.partes] });
+  }
+
+  /** Agrega una fila vacía al final de un grupo existente (una semana real,
+   *  o el grupo 0 "General" que se repite en cada programa). */
+  addParte(ordinal: number) {
+    const p = this.selectedPlantilla();
+    if (!p) return;
+    const week = this.plantillaByWeek().find(w => w.ordinal === ordinal);
+    const maxOrden = Math.max(0, ...p.partes.filter(x => (x.semana_ordinal ?? 0) === ordinal).map(x => x.orden_visual));
+    const nueva: PlantillaParteDetail = {
+      nombre_parte: '',
+      seccion: '',
+      privilegios_permitidos: [],
+      requiere_pareja: false,
+      aplica_sala_b: false,
+      es_informativa: false,
+      orden_visual: maxOrden + 1,
+      // El grupo 0 es "General": sin semana_ordinal propio ni titulo_semana,
+      // para que el backend lo repita en cada semana que se genere (con o
+      // sin tema de La Atalaya importado para esa semana).
+      semana_ordinal: ordinal === 0 ? undefined : ordinal,
+      titulo_semana: week?.titulo_semana,
+      lectura_semanal: week?.lectura_semanal,
+    };
+    p.partes = [...p.partes, nueva];
+    this.selectedPlantilla.set({ ...p, partes: p.partes });
+  }
+
+  /** Agrega contenido a la plantilla:
+   *  - Fin de semana: los temas por semana los trae el importador de La
+   *    Atalaya, así que aquí solo hace falta el grupo "General" (lo que se
+   *    repite siempre) — si ya existe, se le agrega una fila más.
+   *  - Entre semana: agrega un nuevo bloque de semana con ordinal siguiente,
+   *    como antes. */
+  addSemana() {
+    const p = this.selectedPlantilla();
+    if (!p) return;
+
+    if (this.plantillaTipoActivo() === 'fin_semana') {
+      this.addParte(0);
+      return;
+    }
+
+    const ordinales = p.partes.map(x => x.semana_ordinal ?? 0);
+    const nuevoOrdinal = (ordinales.length ? Math.max(...ordinales) : 0) + 1;
+    const nueva: PlantillaParteDetail = {
+      nombre_parte: '',
+      seccion: '',
+      privilegios_permitidos: [],
+      requiere_pareja: false,
+      aplica_sala_b: false,
+      es_informativa: false,
+      orden_visual: 1,
+      semana_ordinal: nuevoOrdinal,
+    };
+    p.partes = [...p.partes, nueva];
+    this.selectedPlantilla.set({ ...p, partes: p.partes });
   }
 
   deletePlantilla(id: number) {
@@ -2754,6 +3028,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       next: (res) => {
         this.showToast('success', 'Plantilla actualizada correctamente');
         this.loadSavedPlantillas();
+        if (this.plantillaTipoActivo() === 'fin_semana') this.loadAtalayaTemas();
         this.closePlantillaEditor();
         this.plantillasLoading.set(false);
       },
@@ -3344,8 +3619,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   }
 
   getAvatarClass(pub: PublicadorMatrizItem): string {
-    const name = (pub.primer_nombre || '') + ' ' + (pub.primer_apellido || '');
-    return getInitialAvatarStyle(name.trim() || '');
+    return getInitialAvatarStyle(nombreMostrado(pub));
   }
 
   privilegioLabel(priv: string): string {

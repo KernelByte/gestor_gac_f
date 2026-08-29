@@ -610,8 +610,19 @@ import { whatsappUrl } from '../../../shared/whatsapp';
                           [attr.data-mes]="p.mes"
                           (click)="loadMes(p.mes, p.ano)"
                           [disabled]="loadingHistorial()"
-                          class="w-full flex items-center gap-2.5 px-3.5 h-11 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
-                          <span class="min-w-0 truncate text-left flex-1">{{ p.label }}</span>
+                          class="w-full flex items-center gap-2.5 px-3.5 py-2 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
+                          <div class="min-w-0 flex-1 text-left">
+                            <span class="block truncate">{{ p.label }}</span>
+                            @if (p.fechas.length > 0) {
+                              <!-- La etiqueta del mes no dice si está completo:
+                                   una guía cruza el mes o deja una semana suelta
+                                   sin generar, y sin ver las fechas hay que abrir
+                                   el mes para descubrirlo. -->
+                              <span class="block truncate text-[0.65rem] font-normal text-slate-400 dark:text-slate-500 mt-0.5">
+                                {{ fechasResumen(p) }}
+                              </span>
+                            }
+                          </div>
                           <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
                         </button>
                       }
@@ -726,6 +737,15 @@ import { whatsappUrl } from '../../../shared/whatsapp';
                                 </span>
                               }
                             </div>
+                            @if (grupo.partes[0].fuente_informacion) {
+                              <!-- El tema de La Atalaya y las referencias de la
+                                   guía ("Tema: ...", "lmd lección 4"): es lo
+                                   que se va a tratar, y sin esto había que
+                                   abrir el PDF para saberlo. -->
+                              <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 leading-snug mt-0.5 line-clamp-2">
+                                {{ grupo.partes[0].fuente_informacion }}
+                              </p>
+                            }
                             @if (grupoHasConflict(grupo.partes) || grupoHasReemplazo(grupo.partes) || grupoHasSwapped(grupo.partes)) {
                               <!-- Estados con punto + texto, no sólo color:
                                    quien no distingue rojo de ámbar sigue
@@ -1954,14 +1974,41 @@ export class ReunionesProgramacionComponent implements OnInit {
   totalPeriodos = computed(() => this.gruposPlantilla().reduce((acc, g) => acc + g.periodos.length, 0));
 
   /**
+   * Un solo item por (año, mes), aunque el backend haya devuelto dos: la
+   * última semana de una guía puede caer, por fecha de reunión, en el mes
+   * siguiente (ver guia-semanas-iso-vs-mes) y entonces ese mes queda repartido
+   * entre dos plantillas — "Septiembre" con el 1-sep de la guía de
+   * Julio-Agosto, y "Septiembre" otra vez con el resto, de la guía
+   * Septiembre-Octubre. Al usuario le da igual de qué guía viene cada semana;
+   * ve el mismo mes repetido dos veces y no sabe cuál abrir. `loadMes` además
+   * trae el mes completo por fecha, sin filtrar por plantilla, así que
+   * cualquiera de los dos ítems abría exactamente lo mismo.
+   */
+  private periodosUnificados = computed<PeriodoConfirmado[]>(() => {
+    const mapa = new Map<string, PeriodoConfirmado>();
+    for (const p of this.periodos()) {
+      const key = `${p.ano}-${p.mes}`;
+      const existente = mapa.get(key);
+      if (!existente) {
+        mapa.set(key, { ...p, fechas: [...p.fechas] });
+        continue;
+      }
+      existente.fechas = Array.from(new Set([...existente.fechas, ...p.fechas])).sort();
+      // Basta que una de las dos guías tenga algo en borrador para que el mes
+      // entero lo esté, mismo criterio que ya usa el backend por semana.
+      if (p.estado === 'borrador') existente.estado = 'borrador';
+    }
+    return Array.from(mapa.values());
+  });
+
+  /**
    * Agrupa el historial por año consecutivo, para mostrar el año una sola
    * vez por grupo en vez de repetirlo en cada fila (mismo criterio que
-   * Logística y Discursos). Se agrupa sobre la lista plana, sin importar de
-   * qué guía viene cada mes: esa agrupación no se muestra en este listado.
+   * Logística y Discursos). Se agrupa sobre la lista ya unificada por mes.
    */
   periodosPorAno = computed<{ ano: number; periodos: PeriodoConfirmado[] }[]>(() => {
     const grupos: { ano: number; periodos: PeriodoConfirmado[] }[] = [];
-    for (const p of this.periodos()) {
+    for (const p of this.periodosUnificados()) {
       const ultimo = grupos[grupos.length - 1];
       if (ultimo && ultimo.ano === p.ano) {
         ultimo.periodos.push(p);
@@ -1975,6 +2022,20 @@ export class ReunionesProgramacionComponent implements OnInit {
   /** Solo el nombre del mes, para listas ya agrupadas por año. */
   mesSoloLabel(p: PeriodoConfirmado): string {
     return p.label.split(' ')[0];
+  }
+
+  private static readonly MESES_ABREV = [
+    'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+  ];
+
+  /** "10, 17, 24 sep": los días ya generados de este período. Todas las fechas
+   *  de `p.fechas` caen en el mes de `p.mes` (así las agrupa el backend), así
+   *  que basta un solo sufijo de mes para toda la lista. */
+  fechasResumen(p: PeriodoConfirmado): string {
+    const dias = p.fechas
+      .map(f => new Date(f + 'T00:00:00').getDate())
+      .sort((a, b) => a - b);
+    return `${dias.join(', ')} ${ReunionesProgramacionComponent.MESES_ABREV[p.mes - 1]}`;
   }
 
   gruposExpandidos = signal<Set<string>>(new Set());
@@ -2103,7 +2164,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   periodoActivoCompleto = computed<PeriodoConfirmado | undefined>(() => {
     const activo = this.periodoActivo();
     if (!activo) return undefined;
-    return this.periodos().find((x) => x.ano === activo.ano && x.mes === activo.mes);
+    return this.periodosUnificados().find((x) => x.ano === activo.ano && x.mes === activo.mes);
   });
 
   /** Mes y año del periodo abierto, para el rótulo del selector. */
@@ -2384,9 +2445,11 @@ export class ReunionesProgramacionComponent implements OnInit {
       const n = (p.nombre_parte || '').toLowerCase();
       if (n.startsWith('canción') || n.startsWith('cancion') || n.startsWith('canto')) return false;
       if (n.includes('palabras de conclusión') || n.includes('palabras de conclusion')) return false;
-      if (this.tipoReunionActivo() === 'fin_semana' &&
-          (n.includes('conductor') || n.includes('estudio de la atalaya')) &&
-          !n.includes('lector')) return false;
+      // El conductor del Estudio de La Atalaya se ocultaba aquí porque el tema
+      // importado del PDF entraba como una parte aparte de 60 minutos y hacían
+      // pareja duplicada. Ahora el tema es un dato de la semana que cuelga de
+      // esta misma parte ("Tema: ..."), así que el conductor vuelve a verse —y
+      // las semanas sin tema importado dejan de quedarse sin conductor.
       return true;
     })) {
       const key = this._inferSeccion(p);
@@ -2439,18 +2502,29 @@ export class ReunionesProgramacionComponent implements OnInit {
       const key = uid(p, i);
 
       if (esConductor) {
+        // Emparejar conductor + lector es cosa del Estudio Bíblico de la
+        // Congregación (entre semana): ahí el lector es una ranura del mismo
+        // `id_programa_parte` del conductor, así que sin agrupar saldrían dos
+        // filas con el mismo título.
+        //
+        // En fin de semana NO: "Conductor del Estudio de La Atalaya" y "Lector
+        // de La Atalaya" son dos partes distintas, con su propio id y su propia
+        // asignación, y se reparten por separado. Por eso el emparejado excluye
+        // La Atalaya en vez de mirar solo si el nombre dice "estudio".
+        const esEbc = (n: string) =>
+          (n.includes('estudio') || n.includes('congregaci')) && !n.includes('atalaya');
         // EBC lector shares same id_programa_parte, has "lector" in nombre_parte, es_ayudante=false
         const lectorM = maestros.find(q => {
           if (used.has(q)) return false;
           const qn = (q.nombre_parte || '').toLowerCase();
           return (q.id_programa_parte === p.id_programa_parte && qn.includes('lector')) ||
                  (qn === nombre) ||
-                 (qn.includes('lector') && (nombre.includes('estudio') || nombre.includes('atalaya')));
+                 (qn.includes('lector') && esEbc(nombre));
         });
         const lectorA = !lectorM ? ayudantes.find(q => {
           if (used.has(q)) return false;
           const qn = (q.nombre_parte || '').toLowerCase();
-          return qn.includes('lector') && (qn.includes('estudio') || qn.includes('atalaya'));
+          return qn.includes('lector') && esEbc(qn);
         }) : null;
         const lector = lectorM ?? lectorA;
         if (lector) {
@@ -3795,10 +3869,34 @@ export class ReunionesProgramacionComponent implements OnInit {
     mesFin: number, anoFin: number,
     diaSemana: number
   ): string[] {
+    // La guía de fin de semana (mes_inicio null) es UNA sola para todos los
+    // meses, y `semanas_lunes` solo trae los lunes de las semanas que YA
+    // tienen tema de La Atalaya importado — no las que faltan. Usarla para
+    // decidir las fechas a generar dejaba sin nada un mes sin tema cargado
+    // todavía (ej. mayo, si el PDF de mayo aún no se subió): "0 semanas a
+    // crear" y el botón sin producir nada.
+    //
+    // El tema no hace falta para generar: es un dato que se cuelga después,
+    // al leer el programa (ver SECCION_TEMA_ATALAYA/_aplicar_temas_atalaya en
+    // el backend). Lo único que de verdad decide qué fechas crear es el
+    // calendario — todos los sábados o domingos del mes elegido, según el día
+    // que tenga configurado la congregación — igual que la plantilla comodín.
+    // Si luego se importa el PDF de ese mes, el tema aparece solo la próxima
+    // vez que se abra el programa, sin tener que regenerarlo.
+    const esGuiaGlobal = plantilla?.mes_inicio == null;
+    if (esGuiaGlobal) {
+      return this.calcFechasRango(ano, mes, anoFin, mesFin, diaSemana);
+    }
+
     const lunes = plantilla?.semanas_lunes ?? [];
     if (lunes.length === 0) {
       return this.calcFechasRango(ano, mes, anoFin, mesFin, diaSemana);
     }
+    // La guía de entre semana SÍ tiene mes_inicio/mes_fin propios (dos meses
+    // fijos por guía) y su última semana puede caer, para la fecha de
+    // reunión, en el mes siguiente al que el título anuncia — es la guía
+    // entera y se genera completa, sin recortar esa semana por el calendario
+    // (ver guia-semanas-iso-vs-mes).
     return lunes.map((l) => {
       const d = new Date(l + 'T00:00:00');
       d.setDate(d.getDate() + (diaSemana - 1));
