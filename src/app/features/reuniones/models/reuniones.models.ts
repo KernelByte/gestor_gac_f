@@ -31,6 +31,10 @@ export interface AsignacionDraft {
   orden_visual?: number;
   duracion_minutos?: number;
   fuente_informacion?: string;
+  /** El cántico que abre el Estudio de La Atalaya, cuando el PDF de la revista
+   *  ya se importó para esa semana. Viene aparte de `fuente_informacion` para
+   *  que cada pantalla decida si lo enseña. */
+  cantico?: string | null;
   aplica_sala_b?: boolean;
   /** Si esta ranura espera a alguien. Las canciones y las partes fijas de la
    *  guía salen igual —el PDF las necesita— pero sin casilla que rellenar. */

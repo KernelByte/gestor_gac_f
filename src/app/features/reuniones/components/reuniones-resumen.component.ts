@@ -364,6 +364,7 @@ const SECCION_LABELS: Record<string, string> = {
                     <span class="badge-reemplazo">Reemplazo</span>
                   </div>
 
+
                   <!-- ── Caso 1: Sin Sala B (layout simple) ── -->
                   <ng-container *ngIf="!parte.salaB">
                     <div *ngIf="requiereEtiquetaSala(parte.principal.nombre_parte)" class="sala-tag-row">
@@ -423,9 +424,14 @@ const SECCION_LABELS: Record<string, string> = {
                     </div>
                   </ng-container>
 
-                  <!-- Fuente de información -->
+                  <!-- Fuente de información (referencia bíblica, o el tema
+                       de La Atalaya cuando el PDF ya se importó para esa
+                       semana) -->
                   <p *ngIf="parte.principal.fuente_informacion" class="fuente-info">
                     {{ parte.principal.fuente_informacion }}
+                  </p>
+                  <p *ngIf="parte.principal.cantico" class="parte-cantico">
+                    {{ parte.principal.cantico }}
                   </p>
                 </div>
               </article>
@@ -535,7 +541,11 @@ const SECCION_LABELS: Record<string, string> = {
 
     .resumen-layout {
       width: 100%;
-      max-width: 760px;
+      /* 760px hasta que sobra ancho de verdad (~927px de viewport): antes de
+         eso es exactamente el mismo ancho que ya tenía, para no mover nada en
+         móvil ni tablet. De ahí crece con la ventana hasta 960px, en vez de
+         quedarse angosto en medio de una pantalla de escritorio. */
+      max-width: clamp(760px, 82vw, 960px);
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -1110,6 +1120,16 @@ const SECCION_LABELS: Record<string, string> = {
     }
     :host-context(.dark) .badge-reemplazo { background: rgba(245, 158, 11, 0.16); color: #fbbf24; }
 
+    /* Cántico del Estudio de La Atalaya: junto a .fuente-info (el tema),
+       mismo tono discreto pero un peldaño más tenue. */
+    .parte-cantico {
+      font-size: 0.7rem;
+      font-style: italic;
+      color: var(--text-3);
+      margin: 2px 0 0;
+      line-height: 1.4;
+    }
+
     /* "Sala Principal" tag (caso simple) */
     .sala-tag-row {
       display: flex; gap: 6px;
@@ -1420,21 +1440,21 @@ export class ReunionesResumenComponent {
   private scrollDone = false;
 
   // ─── Computed ───
-  private esConductorAtalaya(nombre?: string): boolean {
-    const n = (nombre ?? '').toLowerCase();
-    return n.includes('conductor') && n.includes('atalaya');
-  }
+  // El conductor del Estudio de La Atalaya se escondía aquí porque el tema
+  // importado del PDF entraba como una parte asignable de 60 minutos y hacía
+  // de conductor de hecho, así que la de verdad salía siempre vacía. Ahora el
+  // tema es un dato que cuelga de esta misma parte ("Tema: ...", más el
+  // cántico), y quien conduce sí se asigna: se ve como una parte más.
 
   misPartes = computed(() => {
     const userId = this.authStore.user()?.id_usuario_publicador;
     if (!userId) return [];
     return (this.programa()?.partes ?? [])
-      .filter(p => p.id_publicador === userId && !this.esConductorAtalaya(p.nombre_parte));
+      .filter(p => p.id_publicador === userId);
   });
 
   partesAgrupadas = computed((): SeccionGroup[] => {
-    const partes = (this.programa()?.partes ?? [])
-      .filter(p => !this.esConductorAtalaya(p.nombre_parte));
+    const partes = this.programa()?.partes ?? [];
     const userId = this.authStore.user()?.id_usuario_publicador;
 
     const normName = (n?: string) =>
