@@ -1250,6 +1250,14 @@ import { whatsappUrl } from '../../../shared/whatsapp';
           </div>
           @if (mesesFaltantes().length > 0) {
             <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Se pueden generar los meses faltantes:</p>
+            <!-- Una guía cubre semanas de lunes a domingo, y la última suele
+                 cruzar al mes siguiente ("31 de agosto a 6 de septiembre" es
+                 del cuaderno de julio-agosto). Por eso aquí puede aparecer un
+                 mes que no está en el nombre de la guía: es esa semana. -->
+            <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 mb-2 leading-relaxed">
+              La última semana de una guía puede caer en el mes siguiente; si aparece aquí un mes
+              de más, es esa semana.
+            </p>
             <div class="flex flex-wrap gap-1.5 mb-5">
               @for (m of mesesFaltantes(); track m.ano + '-' + m.mes) {
                 <span class="px-2.5 py-1 rounded-full bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 text-xs font-semibold text-violet-700 dark:text-violet-400">
@@ -2304,9 +2312,10 @@ export class ReunionesProgramacionComponent implements OnInit {
   canPublicar = computed(() => this.estado() === 'borrador' && this.semanas().length > 0);
   canBorrarBorrador = computed(() => this.estado() === 'borrador' && this.semanas().length > 0);
   fechasPreview = computed(() => {
-    const { mes, ano, mes_fin, ano_fin, dia_reunion } = this.modalForm();
+    const { mes, ano, mes_fin, ano_fin, dia_reunion, id_plantilla } = this.modalForm();
     if (dia_reunion === null) return [];
-    return this.calcFechasRango(ano, mes, ano_fin, mes_fin, dia_reunion);
+    const plantilla = this.plantillas().find(p => p.id_plantilla === id_plantilla);
+    return this.fechasAGenerar(plantilla, mes, ano, mes_fin, ano_fin, dia_reunion);
   });
 
   seccionesActuales = computed(() => {
@@ -2730,7 +2739,9 @@ export class ReunionesProgramacionComponent implements OnInit {
     // Sin día de reunión configurado no se genera: evita hornear fechas con un día falso
     if (this.diaReunionSinConfigurar() || form.dia_reunion === null) return;
 
-    const fechas = this.calcFechasRango(form.ano, form.mes, form.ano_fin, form.mes_fin, form.dia_reunion);
+    const fechas = this.fechasAGenerar(
+      this.plantillaSeleccionada, form.mes, form.ano, form.mes_fin, form.ano_fin, form.dia_reunion,
+    );
     if (fechas.length === 0) return;
 
     const createPayload: ProgramaMensualCreateRequest = {
@@ -2818,11 +2829,18 @@ export class ReunionesProgramacionComponent implements OnInit {
     // Si el backend conservó algún mes por tener asignaciones confirmadas, hay
     // que decirlo: el usuario pidió reemplazar y no se reemplazó todo.
     let conservados: Array<{ fecha: string; titulo_guia?: string | null }> = [];
+    // Fechas que la guía no cubre. El backend ya no les inventa contenido
+    // copiando la semana vecina, así que se quedan sin programa y hay que
+    // decir cuáles y por qué.
+    let fueraDeGuia: string[] = [];
 
     this.reunionesSvc
       .crearProgramaMensual(createPayload)
       .pipe(
-        tap((res: any) => { conservados = res?.conservados ?? []; }),
+        tap((res: any) => {
+          conservados = res?.conservados ?? [];
+          fueraDeGuia = res?.fuera_de_guia ?? [];
+        }),
         switchMap(() => this.reunionesSvc.generarAsignaciones(genPayload)),
       )
       .subscribe({
@@ -2833,13 +2851,21 @@ export class ReunionesProgramacionComponent implements OnInit {
           this.selectedWeekIdx.set(0);
           this.selectedSala.set('Principal');
           this.estado.set('borrador');
-          this.avisoConservados.set(
-            conservados.length > 0
-              ? `Se conservaron ${conservados.length} semana(s) que ya tenían asignaciones ` +
-                `publicadas (${conservados.map(c => c.fecha).join(', ')}). ` +
-                'Elimina su programación desde el historial si quieres regenerarlas.'
-              : null
-          );
+          const avisos: string[] = [];
+          if (conservados.length > 0) {
+            avisos.push(
+              `Se conservaron ${conservados.length} semana(s) que ya tenían asignaciones ` +
+              `publicadas (${conservados.map(c => c.fecha).join(', ')}). ` +
+              'Elimina su programación desde el historial si quieres regenerarlas.'
+            );
+          }
+          if (fueraDeGuia.length > 0) {
+            avisos.push(
+              `${fueraDeGuia.length} semana(s) quedaron sin programa porque esta guía no las ` +
+              `cubre (${fueraDeGuia.join(', ')}). Genéralas con la guía que corresponda.`
+            );
+          }
+          this.avisoConservados.set(avisos.length > 0 ? avisos.join(' ') : null);
           this.loadPeriodos(this.congregacionCtx.effectiveCongregacionId()!);
         },
         error: (err) => {
@@ -3745,6 +3771,44 @@ export class ReunionesProgramacionComponent implements OnInit {
   }
 
   // ── Date utilities ─────────────────────────────────────────────
+
+  /**
+   * Las fechas de reunión a generar para una plantilla.
+   *
+   * Una guía de actividades cubre semanas ISO (lunes-domingo) y la reunión
+   * cae en el día que tenga configurado la congregación dentro de esa semana,
+   * así que las fechas salen de los lunes de la guía, no del calendario.
+   *
+   * Enumerar por mes calendario —lo que se hacía antes— parte la guía en los
+   * bordes: la semana "31 de agosto a 6 de septiembre" pertenece al cuaderno
+   * de julio-agosto, pero para una congregación que se reúne los martes cae
+   * el 1 de septiembre. Quedaba fuera del rango "julio-agosto" (que perdía su
+   * última semana) y dentro del de "septiembre-octubre", donde el backend le
+   * pegaba el contenido de otra semana y salían dos semanas repetidas.
+   *
+   * Las plantillas comodín no tienen semanas propias: para ellas sigue
+   * valiendo el rango de meses que elija el usuario.
+   */
+  private fechasAGenerar(
+    plantilla: PlantillaOption | undefined,
+    mes: number, ano: number,
+    mesFin: number, anoFin: number,
+    diaSemana: number
+  ): string[] {
+    const lunes = plantilla?.semanas_lunes ?? [];
+    if (lunes.length === 0) {
+      return this.calcFechasRango(ano, mes, anoFin, mesFin, diaSemana);
+    }
+    return lunes.map((l) => {
+      const d = new Date(l + 'T00:00:00');
+      d.setDate(d.getDate() + (diaSemana - 1));
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    });
+  }
+
   private calcFechasRango(
     anoInicio: number, mesInicio: number,
     anoFin: number,   mesFin: number,

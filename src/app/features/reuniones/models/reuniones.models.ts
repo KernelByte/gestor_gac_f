@@ -6,6 +6,12 @@ export interface PlantillaOption {
   ano_inicio?: number | null;
   mes_fin?: number | null;
   ano_fin?: number | null;
+  /**
+   * Los lunes (YYYY-MM-DD) de las semanas que cubre la guía, ordenados.
+   * De aquí salen las fechas a generar: un lunes + el día de reunión de la
+   * congregación. Vacío = plantilla comodín, sin semanas propias.
+   */
+  semanas_lunes?: string[];
 }
 
 export interface CandidatoAlternativo {
