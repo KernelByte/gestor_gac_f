@@ -39,6 +39,7 @@ import {
   GrupoPlantilla,
 } from '../models/reuniones.models';
 import { whatsappUrl } from '../../../shared/whatsapp';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-reuniones-programacion',
@@ -828,6 +829,8 @@ import { whatsappUrl } from '../../../shared/whatsapp';
                                   type="button"
                                   data-testid="btn-whatsapp-papeleta"
                                   (click)="enviarPapeletaWhatsapp(asig, $event)"
+                                  (pointerenter)="precargarPapeleta(asig)"
+                                  (focus)="precargarPapeleta(asig)"
                                   [disabled]="enviandoEstaPapeleta(asig)"
                                   title="Enviar su asignación por WhatsApp"
                                   aria-label="Enviar su asignación por WhatsApp"
@@ -1333,13 +1336,20 @@ import { whatsappUrl } from '../../../shared/whatsapp';
 
           <img [src]="prev.url" alt="Papeleta de asignación de {{ prev.nombre }}" class="papeleta-img" />
 
+          <!-- El aviso dice qué hacer AHORA, no qué se puede hacer: copiada ya
+               está en el portapapeles y solo falta pegarla; compartible tiene
+               panel del sistema, que es el único camino a un adjunto real en
+               escritorio; y si no, queda la descarga. -->
           <div class="papeleta-hint" [class.ok]="prev.copiada">
             @if (prev.copiada) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               <span>Imagen copiada. En el chat, pégala con <b>Ctrl/Cmd + V</b> y envíala.</span>
+            } @else if (prev.compartible) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+              <span>Usa <b>Compartir</b> para adjuntarla, o cópiala y pégala en el chat.</span>
             } @else {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
-              <span>Descarga la imagen y adjúntala en el chat.</span>
+              <span>Copia la imagen y pégala en el chat, o descárgala y adjúntala.</span>
             }
           </div>
 
@@ -1347,10 +1357,28 @@ import { whatsappUrl } from '../../../shared/whatsapp';
             <p class="papeleta-sin-tel">Sin teléfono registrado: WhatsApp abrirá para que elijas el contacto.</p>
           }
 
-          <div class="confirm-actions">
-            <button class="confirm-btn-cancel" (click)="descargarPapeletaPreview()">Descargar imagen</button>
-            <button class="papeleta-btn-wa" (click)="abrirChatPapeleta()">Abrir WhatsApp</button>
+          <!-- Las tres formas de llevarse la imagen van juntas y en segundo
+               plano; el primario es el salto al chat, que es el último paso.
+               Antes "Descargar imagen" usaba el estilo de cancelar y se leía
+               como la salida del diálogo. -->
+          <div class="papeleta-acciones">
+            <button class="papeleta-btn-sec" (click)="copiarPapeletaPreview()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar
+            </button>
+            @if (prev.compartible) {
+              <button class="papeleta-btn-sec" (click)="compartirPapeletaPreview()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+                Compartir
+              </button>
+            }
+            <button class="papeleta-btn-sec" (click)="descargarPapeletaPreview()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+              Descargar
+            </button>
           </div>
+
+          <button class="papeleta-btn-wa papeleta-btn-wa-full" (click)="abrirChatPapeleta()">Abrir WhatsApp</button>
         </div>
       </div>
     }
@@ -1793,6 +1821,28 @@ import { whatsappUrl } from '../../../shared/whatsapp';
     .papeleta-sin-tel {
       font-size: 0.68rem; line-height: 1.4; color: #94a3b8; margin-top: -0.3rem;
     }
+    /* Copiar / Compartir / Descargar: mismo peso entre ellas, porque cuál
+       sirve depende del navegador y del SO, no de una preferencia nuestra. */
+    .papeleta-acciones {
+      display: grid;
+      grid-auto-columns: 1fr;
+      grid-auto-flow: column;
+      gap: 0.4rem;
+    }
+    .papeleta-btn-sec {
+      display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+      height: 34px; padding: 0 0.5rem;
+      border-radius: 10px;
+      font-size: 0.72rem; font-weight: 600;
+      color: #475569;
+      background: rgba(100,116,139,0.09);
+      transition: background-color 140ms, color 140ms, transform 140ms;
+    }
+    .papeleta-btn-sec svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .papeleta-btn-sec:hover { background: rgba(100,116,139,0.17); color: #1e293b; }
+    .papeleta-btn-sec:active { transform: scale(0.97); }
+    :host-context(.dark) .papeleta-btn-sec { color: #cbd5e1; background: rgba(148,163,184,0.14); }
+    :host-context(.dark) .papeleta-btn-sec:hover { background: rgba(148,163,184,0.24); color: #f1f5f9; }
     .papeleta-btn-wa {
       height: 36px; padding: 0 1.1rem;
       border-radius: 10px;
@@ -1800,6 +1850,7 @@ import { whatsappUrl } from '../../../shared/whatsapp';
       color: white; background: #059669;
       transition: background-color 140ms, transform 140ms;
     }
+    .papeleta-btn-wa-full { width: 100%; }
     .papeleta-btn-wa:hover { background: #047857; }
     .papeleta-btn-wa:active { transform: scale(0.97); }
 
@@ -1898,6 +1949,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   private authStore = inject(AuthStore);
   private zone = inject(NgZone);
   private destroyRef = inject(DestroyRef);
+  private toast = inject(ToastService);
 
   hasEditPermission = computed(() => {
     const tipo = this.tipoReunionActivo();
@@ -1949,11 +2001,31 @@ export class ReunionesProgramacionComponent implements OnInit {
    *  WhatsApp; deshabilita ese ícono en particular mientras carga. */
   enviandoPapeletaKey = signal<string | null>(null);
   /** Papeleta lista para mandar: se enseña antes de saltar a WhatsApp, que es
-   *  el único momento en que el usuario todavía está mirando esta pestaña. */
+   *  el único momento en que el usuario todavía está mirando esta pestaña.
+   *  Guarda el blob y no sólo su URL porque los botones del diálogo -copiar y
+   *  compartir- necesitan el archivo, no una imagen ya pintada. */
   papeletaPreview = signal<{
     nombre: string; telefono: string | null; mensaje: string;
-    url: string; copiada: boolean;
+    url: string; blob: Blob; copiada: boolean; compartible: boolean;
   } | null>(null);
+
+  /** PNGs ya descargados, por ranura. Se llena al enfocar el ícono para que el
+   *  clic tenga el archivo a mano: `navigator.share` exige activación
+   *  transitoria y esperar la descarga dentro del gesto la pierde (Safari lo
+   *  rechaza con NotAllowedError). El `effect` del constructor lo vacía en
+   *  cuanto cambian las semanas, para no mandar una papeleta con el nombre de
+   *  quien ya no tiene la parte. */
+  private papeletaCache = new Map<string, Blob>();
+  /** Descargas en vuelo, por ranura. Evita pedir el mismo PNG dos veces
+   *  cuando el cursor entra y sale del ícono, y sobre todo en táctil: ahí el
+   *  `pointerenter` llega inmediatamente antes del tap, así que la precarga y
+   *  el clic caerían sobre la misma ranura con microsegundos de diferencia. */
+  private papeletaPrefetch = new Map<string, Promise<Blob>>();
+  /** Sube en cada cambio de las semanas. Una descarga que salió antes del
+   *  cambio ya no vale, y vaciar la caché no basta para pararla: su `then`
+   *  llega después y volvería a meter el PNG viejo. Se compara la generación
+   *  con la que tenía al pedirla y, si no coincide, se tira. */
+  private papeletaGen = 0;
 
   gruposPlantilla = computed<GrupoPlantilla[]>(() => {
     const mapa = new Map<string, GrupoPlantilla>();
@@ -2190,6 +2262,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   onEscape(): void {
     if (this.menuMesesAbierto()) this.menuMesesAbierto.set(false);
     if (this.menuAccionesAbierto()) this.menuAccionesAbierto.set(false);
+    if (this.papeletaPreview()) this.cerrarPapeletaPreview();
   }
 
   // ── Meeting type toggle ────────────────────────────────────────
@@ -2609,6 +2682,27 @@ export class ReunionesProgramacionComponent implements OnInit {
       if (this.editingHistorialId() === null) {
         untracked(() => this.dropdownPos.set(null));
       }
+    });
+
+    // Las papeletas precargadas llevan dentro el nombre del asignado, así que
+    // cualquier cambio en las semanas las deja obsoletas. `semanas` se muta
+    // desde una docena de sitios distintos -reasignar, quitar, publicar,
+    // cambiar de mes-, y engancharse a cada uno era la forma segura de olvidar
+    // alguno: se vacía aquí, en el único punto por el que pasan todos.
+    effect(() => {
+      this.semanas();
+      untracked(() => {
+        this.papeletaCache.clear();
+        this.papeletaPrefetch.clear();
+        this.papeletaGen++;
+      });
+    });
+
+    // El objectURL de la vista previa se revoca al cerrarla, pero si se sale de
+    // la pantalla con el diálogo abierto nadie lo cierra.
+    this.destroyRef.onDestroy(() => {
+      const prev = this.papeletaPreview();
+      if (prev) URL.revokeObjectURL(prev.url);
     });
 
     this.vigilarScrollParaCerrarDropdown();
@@ -3416,12 +3510,63 @@ export class ReunionesProgramacionComponent implements OnInit {
     return this.enviandoPapeletaKey() === this.papeletaKey(asig);
   }
 
-  /** En escritorio, navigator.share con archivos abre el panel nativo de
-   *  "Compartir" del sistema operativo (busca extensiones instaladas, no
-   *  WhatsApp). Solo en móvil ese panel incluye de verdad la app de WhatsApp
-   *  como destino, que es el único camino donde la imagen viaja adjunta. */
-  private esMovil(): boolean {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  /** Si el panel de compartir del sistema acepta este archivo. Se pregunta por
+   *  la capacidad y no por el User-Agent, que es como se decidía antes: el
+   *  iPad se declara «Macintosh» desde iPadOS 13 -así que un regex con /iPad/
+   *  no acierta nunca en un iPad moderno- y Windows con WhatsApp instalado
+   *  también adjunta de verdad. Los dos quedaban fuera. */
+  private puedeCompartirArchivo(file: File): boolean {
+    return typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] });
+  }
+
+  /** Táctil de verdad. En móvil y tablet el panel del sistema lleva WhatsApp
+   *  como destino y la imagen viaja adjunta, así que saltar directo ahí es
+   *  mejor que enseñar un diálogo intermedio. En escritorio no: aunque el
+   *  panel exista, puede no tener WhatsApp, y quitarle al usuario el
+   *  portapapeles y la descarga sería un paso atrás. */
+  private esTactil(): boolean {
+    return navigator.maxTouchPoints > 1;
+  }
+
+  private papeletaFile(blob: Blob): File {
+    return new File([blob], 'asignacion.png', { type: 'image/png' });
+  }
+
+  /** Pide el PNG de esta ranura, o devuelve la petición que ya está en vuelo.
+   *  `null` si todavía no hay mes ni congregación con los que construirla. */
+  private descargarPapeleta(asig: AsignacionDraft): Promise<Blob> | null {
+    const key = this.papeletaKey(asig);
+    const enVuelo = this.papeletaPrefetch.get(key);
+    if (enVuelo) return enVuelo;
+
+    const p = this.periodoActivo();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!p || !idCong) return null;
+
+    const imagen = firstValueFrom(
+      this.reunionesSvc.descargarPapeletaImagen(
+        p.ano, p.mes, idCong, asig.id_programa_parte, asig.sala || 'Principal',
+      ),
+    );
+    const gen = this.papeletaGen;
+    this.papeletaPrefetch.set(key, imagen);
+    imagen
+      .then(blob => { if (gen === this.papeletaGen) this.papeletaCache.set(key, blob); })
+      .catch(() => undefined)
+      .finally(() => {
+        if (this.papeletaPrefetch.get(key) === imagen) this.papeletaPrefetch.delete(key);
+      });
+    return imagen;
+  }
+
+  /** Adelanta la descarga al pasar el cursor o tabular hasta el ícono, para
+   *  que el clic encuentre el PNG ya listo (ver `papeletaCache`). Es una
+   *  optimización opcional: si falla, no se avisa de nada y el clic vuelve a
+   *  pedirlo por el camino normal, que sí informa del error. */
+  precargarPapeleta(asig: AsignacionDraft): void {
+    if (!this.mostrarWhatsappPapeleta(asig)) return;
+    if (this.papeletaCache.has(this.papeletaKey(asig))) return;
+    this.descargarPapeleta(asig)?.catch(() => undefined);
   }
 
   /** Deja el PNG en el portapapeles. Recibe la promesa y no el blob porque
@@ -3452,53 +3597,116 @@ export class ReunionesProgramacionComponent implements OnInit {
    *  a enviar, y el salto a WhatsApp lo da el usuario. */
   async enviarPapeletaWhatsapp(asig: AsignacionDraft, event: Event): Promise<void> {
     event.stopPropagation();
-    const p = this.periodoActivo();
-    const idCong = this.congregacionCtx.effectiveCongregacionId();
-    if (!p || !idCong || this.enviandoPapeletaKey()) return;
-    this.enviandoPapeletaKey.set(this.papeletaKey(asig));
+    if (this.enviandoPapeletaKey()) return;
 
-    const imagen = firstValueFrom(
-      this.reunionesSvc.descargarPapeletaImagen(
-        p.ano, p.mes, idCong, asig.id_programa_parte, asig.sala || 'Principal',
-      ),
-    );
+    const mensaje = `Hola ${asig.nombre_completo}, te comparto tu asignación para la reunión Vida y Ministerio Cristianos.`;
+    const key = this.papeletaKey(asig);
+
+    // Camino rápido: la precarga del hover ya dejó el PNG listo, así que el
+    // panel de compartir se abre DENTRO del gesto del usuario. Es el único
+    // orden que Safari acepta -esperar la descarga aquí pierde la activación
+    // transitoria y `share` se rechaza con NotAllowedError-, y también el
+    // único donde la imagen viaja de verdad como adjunto.
+    const enCache = this.papeletaCache.get(key);
+    if (enCache && this.esTactil()) {
+      const file = this.papeletaFile(enCache);
+      if (this.puedeCompartirArchivo(file)) {
+        this.compartirArchivo(file, mensaje);
+        return;
+      }
+    }
+
+    this.enviandoPapeletaKey.set(key);
+
+    const imagen = enCache ? Promise.resolve(enCache) : this.descargarPapeleta(asig);
+    if (!imagen) {
+      this.enviandoPapeletaKey.set(null);
+      return;
+    }
     // Si solo la consume el portapapeles, su rechazo quedaría sin manejar.
     imagen.catch(() => undefined);
 
-    const mensaje = `Hola ${asig.nombre_completo}, te comparto tu asignación para la reunión Vida y Ministerio Cristianos.`;
-
     // El portapapeles se intenta antes de esperar la descarga, para no perder
     // el gesto del usuario (ver copiarPapeletaAlPortapapeles).
-    const copiada = this.esMovil() ? false : await this.copiarPapeletaAlPortapapeles(imagen);
+    const copiada = this.esTactil() ? false : await this.copiarPapeletaAlPortapapeles(imagen);
 
     let blob: Blob;
     try {
       blob = await imagen;
     } catch {
       this.enviandoPapeletaKey.set(null);
+      this.toast.error(
+        'No se pudo preparar la papeleta',
+        `No se generó la imagen de la asignación de ${asig.nombre_completo}. Inténtalo de nuevo.`,
+      );
       return;
     }
+    // No se guarda en caché aquí: `descargarPapeleta` ya lo hace, y sólo si la
+    // generación sigue siendo la misma.
     this.enviandoPapeletaKey.set(null);
 
-    // Móvil: el panel de compartir sí lleva la imagen adjunta de verdad, así
+    const file = this.papeletaFile(blob);
+    const compartible = this.puedeCompartirArchivo(file);
+
+    // Táctil: el panel de compartir sí lleva la imagen adjunta de verdad, así
     // que no hay nada que pegar ni que explicar.
-    const file = new File([blob], 'asignacion.png', { type: 'image/png' });
-    if (this.esMovil() && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: 'Asignación', text: mensaje });
-      } catch {
-        // Canceló el panel de compartir: ya decidió no mandarlo.
-      }
+    if (compartible && this.esTactil()) {
+      await this.compartirArchivo(file, mensaje);
       return;
     }
 
+    // Por si quedara una vista previa anterior sin cerrar: `set` a secas se
+    // llevaría por delante su objectURL sin revocarlo.
+    this.cerrarPapeletaPreview();
     this.papeletaPreview.set({
       nombre: asig.nombre_completo,
       telefono: asig.telefono ?? null,
       mensaje,
       url: URL.createObjectURL(blob),
+      blob,
       copiada,
+      compartible,
     });
+  }
+
+  /** Abre el panel de compartir del sistema con el PNG adjunto. Cancelarlo es
+   *  una decisión del usuario y no se avisa; cualquier otro fallo sí, porque
+   *  ahí la papeleta no salió y nadie lo sabría. */
+  private async compartirArchivo(file: File, mensaje: string): Promise<void> {
+    try {
+      await navigator.share({ files: [file], title: 'Asignación', text: mensaje });
+    } catch (err) {
+      if ((err as DOMException)?.name === 'AbortError') return;
+      this.toast.error('No se pudo compartir la papeleta', 'Prueba a copiarla o descargarla.');
+    }
+  }
+
+  /** Reintento manual del portapapeles desde el diálogo. Vale la pena tenerlo
+   *  aparte del intento automático: es un gesto nuevo -que es justo lo que el
+   *  portapapeles exige para dejar escribir- y sirve también cuando el usuario
+   *  copió otra cosa mientras buscaba el chat. */
+  async copiarPapeletaPreview(): Promise<void> {
+    const prev = this.papeletaPreview();
+    if (!prev) return;
+    const ok = await this.copiarPapeletaAlPortapapeles(Promise.resolve(prev.blob));
+    if (ok) {
+      this.papeletaPreview.update(p => (p ? { ...p, copiada: true } : p));
+      return;
+    }
+    this.toast.warning(
+      'Tu navegador no deja copiar imágenes',
+      'Descarga la papeleta y adjúntala en el chat.',
+    );
+  }
+
+  /** Compartir desde el diálogo: en escritorio no se hace solo, porque el
+   *  panel del sistema puede no tener WhatsApp entre sus destinos y sustituir
+   *  el portapapeles por él sería un paso atrás. Como botón, en cambio, es el
+   *  único camino a un adjunto real cuando sí lo tiene. */
+  async compartirPapeletaPreview(): Promise<void> {
+    const prev = this.papeletaPreview();
+    if (!prev) return;
+    await this.compartirArchivo(this.papeletaFile(prev.blob), prev.mensaje);
   }
 
   cerrarPapeletaPreview(): void {
