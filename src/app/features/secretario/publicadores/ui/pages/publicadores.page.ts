@@ -393,13 +393,42 @@ export class PublicadoresListComponent implements OnInit {
     'audio', 'vigilancia', 'acomodador', 'video', 'micrófono', 'microfono', 'plataforma'
   ];
 
+  // Orden lógico del selector: primero los cargos, luego el precursorado.
+  // Evita que "Precursor Regular" y "Siervo Ministerial" queden pegados
+  // (el backend devuelve el catálogo alfabéticamente) y se elija uno por otro.
+  private readonly ORDEN_PRIVILEGIOS_ASIGNABLES = [
+    'superintendente', 'anciano', 'siervo ministerial',
+    'precursor especial', 'precursor regular', 'precursor auxiliar',
+  ];
+
+  private ordenPrivilegio(nombre: string): number {
+    const i = this.ORDEN_PRIVILEGIOS_ASIGNABLES.indexOf(nombre.toLowerCase());
+    return i === -1 ? this.ORDEN_PRIVILEGIOS_ASIGNABLES.length : i;
+  }
+
   privilegiosAsignables = computed(() =>
-    this.privilegios().filter(p =>
-      !this.PRIVILEGIOS_EXCLUIDOS_ASIGNACION.includes(p.nombre_privilegio.toLowerCase())
-    )
+    this.privilegios()
+      .filter(p =>
+        !this.PRIVILEGIOS_EXCLUIDOS_ASIGNACION.includes(p.nombre_privilegio.toLowerCase())
+      )
+      .slice()
+      .sort((a, b) => this.ordenPrivilegio(a.nombre_privilegio) - this.ordenPrivilegio(b.nombre_privilegio))
   );
 
+  /** true en el primer "precursor…" de la lista: el template dibuja un separador antes. */
+  esInicioGrupoPrecursor(p: Privilegio, index: number): boolean {
+    if (!p.nombre_privilegio.toLowerCase().includes('precursor')) return false;
+    const prev = this.privilegiosAsignables()[index - 1];
+    return !prev || !prev.nombre_privilegio.toLowerCase().includes('precursor');
+  }
+
   publicadorPrivilegios = signal<PublicadorPrivilegio[]>([]);
+  /** Privilegios de la Vista Rápida: signal aparte para no pisar los del panel de edición. */
+  quickViewPrivilegios = signal<PublicadorPrivilegio[]>([]);
+  /** true mientras se cargan los privilegios del publicador en edición. */
+  privilegiosLoading = signal(false);
+  /** Secuencia de peticiones: descarta respuestas que llegan fuera de orden. */
+  private privilegiosReqSeq = 0;
   // Cache de eliminabilidad por id_publicador_privilegio (lo consulta el backend)
   eliminableMap = signal<Map<number, { eliminable: boolean; motivo: string | null }>>(new Map());
 
@@ -418,6 +447,13 @@ export class PublicadoresListComponent implements OnInit {
     fecha_fin: null
   });
 
+  // Grupos de privilegios mutuamente excluyentes. Debe coincidir con el backend:
+  // publicador_privilegio_service.GRUPOS_EXCLUSIVOS (solo uno activo por grupo).
+  private readonly GRUPOS_EXCLUSIVOS_PRIVILEGIOS: string[][] = [
+    ['precursor regular', 'precursor auxiliar'],
+    ['anciano', 'siervo ministerial'],
+  ];
+
   privilegioConflictoMsg = computed<string | null>(() => {
     const id = this.newPrivilegio().id_privilegio;
     if (!id) return null;
@@ -426,16 +462,18 @@ export class PublicadoresListComponent implements OnInit {
     const activos = this.publicadorPrivilegios().filter(p => !p.fecha_fin);
 
     if (activos.some(p => p.id_privilegio === Number(id))) {
-      return 'Este privilegio ya está activo para este publicador.';
+      return `El publicador ya tiene "${this.getPrivilegioNombre(Number(id))}" activo. Usá "Finalizar" si querés cerrarlo.`;
     }
 
-    if (nombre.includes('precursor')) {
-      const tieneOtroPrecursor = activos.some(p =>
-        this.getPrivilegioNombre(p.id_privilegio).toLowerCase().includes('precursor') &&
-        p.id_privilegio !== Number(id)
+    const grupo = this.GRUPOS_EXCLUSIVOS_PRIVILEGIOS.find(g => g.includes(nombre));
+    if (grupo) {
+      const enConflicto = activos.find(p =>
+        p.id_privilegio !== Number(id) &&
+        grupo.includes(this.getPrivilegioNombre(p.id_privilegio).toLowerCase())
       );
-      if (tieneOtroPrecursor) {
-        return 'El publicador ya tiene un tipo de Precursor activo. Solo puede tener uno a la vez.';
+      if (enConflicto) {
+        const nombreConflicto = this.getPrivilegioNombre(enConflicto.id_privilegio);
+        return `El publicador ya tiene "${nombreConflicto}" activo. Cerralo primero (botón "Finalizar").`;
       }
     }
 
@@ -832,13 +870,14 @@ export class PublicadoresListComponent implements OnInit {
   // ─── Vista Rápida ────────────────────────────────────────────────────────
   openQuickView(p: Publicador) {
     this.viewingPublicador.set(p);
-    this.loadPublicadorPrivilegios(p.id_publicador);
+    this.loadQuickViewPrivilegios(p.id_publicador);
     this.loadQuickViewContactos(p.id_publicador);
   }
 
   closeQuickView() {
     this.viewingPublicador.set(null);
     this.quickViewContactos.set([]);
+    this.quickViewPrivilegios.set([]);
   }
 
   async loadQuickViewContactos(idPublicador: number) {
@@ -1123,9 +1162,16 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   loadPublicadorPrivilegios(id: number) {
+    // Guarda de secuencia: si mientras esta petición está en vuelo se dispara
+    // otra (p.ej. el usuario abre otro publicador), descartamos la respuesta
+    // tardía para no mostrar los privilegios de un publicador que ya no es el
+    // que se está editando. Ese desfase permitía enviar el privilegio equivocado.
+    const seq = ++this.privilegiosReqSeq;
+    this.privilegiosLoading.set(true);
     // Obtenemos todos los registros (sin filtrar por activos)
     this.privilegiosService.getPublicadorPrivilegios(id).subscribe({
       next: (data) => {
+        if (seq !== this.privilegiosReqSeq) return; // respuesta obsoleta
         // Agrupar por id_privilegio y quedarnos solo con el más reciente o el activo
         const latestPrivsMap = new Map<number, any>();
         data.forEach(pp => {
@@ -1185,8 +1231,34 @@ export class PublicadoresListComponent implements OnInit {
 
         // Consideración especial (solo relevante si es precursor regular)
         this.loadConsideraciones(id);
+        this.privilegiosLoading.set(false);
       },
-      error: (err) => console.error('Error cargando privilegios de publicador', err)
+      error: (err) => {
+        if (seq === this.privilegiosReqSeq) this.privilegiosLoading.set(false);
+        console.error('Error cargando privilegios de publicador', err);
+      }
+    });
+  }
+
+  /** Carga los privilegios para la Vista Rápida en su propio signal (no toca el panel de edición). */
+  loadQuickViewPrivilegios(id: number) {
+    this.quickViewPrivilegios.set([]);
+    this.privilegiosService.getPublicadorPrivilegios(id).subscribe({
+      next: (data) => {
+        const latest = new Map<number, PublicadorPrivilegio>();
+        data.forEach(pp => {
+          const existing = latest.get(pp.id_privilegio);
+          if (!existing || (!pp.fecha_fin) ||
+              (existing.fecha_fin && new Date(pp.fecha_inicio).getTime() > new Date(existing.fecha_inicio).getTime())) {
+            latest.set(pp.id_privilegio, pp);
+          }
+        });
+        this.quickViewPrivilegios.set(Array.from(latest.values()));
+      },
+      error: (err) => {
+        console.error('Error cargando privilegios (vista rápida)', err);
+        this.quickViewPrivilegios.set([]);
+      }
     });
   }
 
@@ -1322,9 +1394,27 @@ export class PublicadoresListComponent implements OnInit {
       permite_login_simple: p.permite_login_simple ?? true
     });
     this.resetConsideracionesState();
+    this.resetPrivilegiosPanelState(); // Evita arrastrar la selección/lista del publicador anterior
     this.loadPublicadorPrivilegios(p.id_publicador); // Fetch privileges + consideraciones
     this.loadContactos(); // Fetch emergency contacts for this publisher
     this.panelOpen.set(true);
+  }
+
+  /**
+   * Limpia el estado del bloque de privilegios al abrir/cerrar el panel.
+   * Sin esto, `newPrivilegio` y `publicadorPrivilegios` conservaban los datos
+   * del publicador anterior y se podía enviar el privilegio equivocado.
+   */
+  private resetPrivilegiosPanelState() {
+    this.publicadorPrivilegios.set([]);
+    this.eliminableMap.set(new Map());
+    this.newPrivilegio.set({
+      id_privilegio: null,
+      fecha_inicio: new Date().toISOString().split('T')[0],
+      fecha_fin: null
+    });
+    this.privilegeDropdownOpen.set(false);
+    this.cancelClosingPrivilegio();
   }
 
   /** Limpia el estado de consideraciones al abrir/cerrar el drawer. */
@@ -1343,7 +1433,9 @@ export class PublicadoresListComponent implements OnInit {
   closePanel() {
     this.panelOpen.set(false);
     this.editingPublicador.set(null);
-    this.publicadorPrivilegios.set([]); // Clear privileges on close
+    this.privilegiosReqSeq++; // invalida respuestas de privilegios en vuelo
+    this.privilegiosLoading.set(false);
+    this.resetPrivilegiosPanelState(); // Clear privileges + selección on close
     this.resetConsideracionesState();
     this.contactos.set([]); // Clear emergency contacts on close
     this.showContactoForm.set(false); // Hide contact form
@@ -1844,6 +1936,9 @@ export class PublicadoresListComponent implements OnInit {
 
   canAddPrivilegio(): boolean {
     const p = this.newPrivilegio();
+    // Mientras cargan los privilegios del publicador no validamos contra datos
+    // frescos: bloqueamos para no enviar una asignación que el backend rechazará.
+    if (this.privilegiosLoading()) return false;
     return !!p.id_privilegio && !!p.fecha_inicio && !this.privilegioConflictoMsg();
   }
 
