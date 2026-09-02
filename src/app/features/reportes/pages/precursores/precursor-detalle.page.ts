@@ -1,21 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { EChartsOption } from 'echarts';
 import { ChartCardComponent } from '../../shared/chart-card.component';
 import { KpiCardComponent } from '../../shared/kpi-card.component';
 import { EstadoBadgeComponent } from './components/estado-badge.component';
 import { SeguimientosPanelComponent } from './components/seguimientos-panel.component';
-import { ReportesService, PrecursorDetalle } from '../../services/reportes.service';
+import { ReportesService, PrecursorDetalle, ObjetivoPrecursor } from '../../services/reportes.service';
+import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 
 /**
- * Detalle individual de un precursor regular: matriz mensual, progreso hacia
- * las 560 h anuales, histórico de años anteriores y seguimientos.
+ * Detalle individual de un precursor regular: matriz mensual, progreso hacia el
+ * objetivo anual (600 h vista publicador / 560 h vista comité, prorrateado),
+ * histórico de años anteriores y seguimientos.
  */
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, ChartCardComponent, KpiCardComponent, EstadoBadgeComponent, SeguimientosPanelComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ChartCardComponent, KpiCardComponent, EstadoBadgeComponent, SeguimientosPanelComponent, SelectPickerComponent],
   styleUrls: ['../../shared/reportes-tokens.scss'],
   styles: [`
     /* ── Cabecera ──────────────────────────────────────────────────────
@@ -67,6 +70,20 @@ import { ReportesService, PrecursorDetalle } from '../../services/reportes.servi
     }
     .control-icono { width: 2.25rem; padding-inline: 0; justify-content: center; }
     .control-icono:active { transform: scale(0.94); }
+    .nav-off { opacity: 0.3; pointer-events: none; }
+    .nav-contador {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--txt-3);
+      padding-inline: 0.25rem;
+      white-space: nowrap;
+    }
+    .sel-objetivo { display: block; width: 14rem; }
+    .sel-anio { display: block; width: 8.5rem; }
+    @media (max-width: 480px) {
+      .sel-objetivo, .sel-anio { width: 100%; }
+    }
 
     /* ── Paneles ───────────────────────────────────────────────────────
        Un filete, sin sombra: el contenido es lo que separa, no el relieve. */
@@ -234,13 +251,41 @@ import { ReportesService, PrecursorDetalle } from '../../services/reportes.servi
       <ng-container *ngIf="data() as d; else loadingTpl">
         <header class="flex items-start justify-between gap-4 flex-wrap">
           <div class="flex items-start gap-3 min-w-0">
-            <a [routerLink]="['/reportes/precursores']"
-               class="control control-icono mt-1.5"
-               aria-label="Volver al análisis de precursores">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-              </svg>
-            </a>
+            <div class="flex items-center gap-1 mt-1.5">
+              <a [routerLink]="['/reportes/precursores']"
+                 [queryParams]="{ anio: d.anio_servicio, objetivo: d.objetivo }"
+                 class="control control-icono"
+                 aria-label="Volver al análisis de precursores"
+                 title="Volver al listado">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+              </a>
+              <a [routerLink]="d.anterior ? ['/reportes/precursores', d.anterior.id_publicador] : null"
+                 [queryParams]="{ anio: d.anio_servicio, objetivo: d.objetivo }"
+                 class="control control-icono nav-flecha"
+                 [class.nav-off]="!d.anterior"
+                 [attr.aria-disabled]="!d.anterior"
+                 [attr.aria-label]="d.anterior ? ('Precursor anterior: ' + d.anterior.nombre) : 'No hay anterior'"
+                 [title]="d.anterior ? ('◀ ' + d.anterior.nombre) : 'Primero del listado'">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+              </a>
+              <span *ngIf="d.total_roster" class="nav-contador" aria-hidden="true"
+                    title="Usa ← y → para moverte entre precursores">{{ d.posicion }} / {{ d.total_roster }}</span>
+              <a [routerLink]="d.siguiente ? ['/reportes/precursores', d.siguiente.id_publicador] : null"
+                 [queryParams]="{ anio: d.anio_servicio, objetivo: d.objetivo }"
+                 class="control control-icono nav-flecha"
+                 [class.nav-off]="!d.siguiente"
+                 [attr.aria-disabled]="!d.siguiente"
+                 [attr.aria-label]="d.siguiente ? ('Precursor siguiente: ' + d.siguiente.nombre) : 'No hay siguiente'"
+                 [title]="d.siguiente ? (d.siguiente.nombre + ' ▶') : 'Último del listado'">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
             <div class="min-w-0">
               <h1 class="titulo-persona">{{ d.nombre }}</h1>
               <div class="senas">
@@ -257,16 +302,34 @@ import { ReportesService, PrecursorDetalle } from '../../services/reportes.servi
               </div>
             </div>
           </div>
-          <label for="anio-servicio-det" class="sr-only">Año de servicio</label>
-          <select id="anio-servicio-det" class="control mt-1.5" (change)="cambiarAnio($event)">
-            <option *ngFor="let a of d.anios_disponibles" [value]="a" [selected]="a === d.anio_servicio">{{ a - 1 }}–{{ a }}</option>
-          </select>
+          <div class="flex items-center gap-2 flex-wrap mt-1.5">
+            <app-select-picker
+              class="sel-objetivo"
+              [ngModel]="d.objetivo"
+              (ngModelChange)="seleccionarObjetivo($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [options]="opcionesObjetivo"
+              [clearable]="false"
+              [searchable]="false"
+              colorScheme="violet"
+              ariaLabel="Objetivo del cálculo" />
+            <app-select-picker
+              class="sel-anio"
+              [ngModel]="d.anio_servicio"
+              (ngModelChange)="seleccionarAnio($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [options]="opcionesAnio(d)"
+              [clearable]="false"
+              [searchable]="false"
+              colorScheme="violet"
+              ariaLabel="Año de servicio" />
+          </div>
         </header>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           <app-kpi-card label="Horas acumuladas" [value]="d.resumen.total_anual" [hint]="metaHint()" />
-          <app-kpi-card label="Promedio mensual" [value]="d.resumen.promedio" suffix="h" [hint]="d.resumen.exento ? 'sin requisito' : 'meta 50 h/mes'" />
-          <app-kpi-card *ngIf="!d.resumen.exento" label="Balance (Acu)" [value]="d.resumen.acu" suffix="h" [hint]="d.resumen.acu < 0 ? 'atrasado vs 50 h/mes' : 'al día vs 50 h/mes'" />
+          <app-kpi-card label="Promedio mensual" [value]="d.resumen.promedio" suffix="h" [hint]="d.resumen.exento ? 'sin requisito' : ('meta ' + ritmoMensual() + ' h/mes')" />
+          <app-kpi-card *ngIf="!d.resumen.exento" label="Balance (Acu)" [value]="d.resumen.acu" suffix="h" [hint]="(d.resumen.acu < 0 ? 'atrasado vs ' : 'al día vs ') + ritmoMensual() + ' h/mes'" />
           <app-kpi-card *ngIf="!d.resumen.exento" label="Proyección anual" [value]="d.resumen.proyeccion_anual" suffix="h" [hint]="proyeccionHint()" />
           <app-kpi-card class="col-span-2 sm:col-span-1" label="Cursos bíblicos" [value]="d.resumen.cursos_total" [hint]="'prom ' + d.resumen.cursos_promedio + '/mes'" />
         </div>
@@ -276,7 +339,7 @@ import { ReportesService, PrecursorDetalle } from '../../services/reportes.servi
           <p class="pauta-texto">
             Tiene <strong class="frase">consideración especial</strong> desde
             <strong>{{ c.fecha_inicio | date:'d MMM y' }}</strong> — {{ c.motivo_label }}.
-            <strong class="frase clave">No se le aplica el requisito de 50 h/mes ni las 560 h del año.</strong>
+            <strong class="frase clave">No se le aplica el requisito de {{ ritmoMensual() }} h/mes ni las {{ d.objetivo_anual }} h del año.</strong>
             <span class="pauta-nota">
               Conserva el nombramiento de precursor(a) regular. Sus horas se siguen registrando de forma informativa.
               <ng-container *ngIf="c.descripcion"><br>{{ c.descripcion }}</ng-container>
@@ -295,7 +358,7 @@ import { ReportesService, PrecursorDetalle } from '../../services/reportes.servi
               sin consideración especial.
             </span>
             <span *ngIf="d.resumen.meses_exigibles === d.resumen.meses_vigentes && d.resumen.meses_vigentes < 12" class="pauta-nota">
-              Meta prorrateada: las 560 h del requisito anual × {{ d.resumen.meses_vigentes }} de los 12 meses
+              Meta prorrateada: las {{ d.objetivo_anual }} h del objetivo anual × {{ d.resumen.meses_vigentes }} de los 12 meses
               del año de servicio en que es precursor(a) regular.
             </span>
           </p>
@@ -397,6 +460,14 @@ export class PrecursorDetallePage {
   readonly data = signal<PrecursorDetalle | null>(null);
   readonly error = signal<string | null>(null);
 
+  readonly opcionesObjetivo: PickerOption[] = [
+    { value: 'publicador', label: 'Vista publicador (600 h)' },
+    { value: 'comite', label: 'Comité de servicio (560 h)' },
+  ];
+  opcionesAnio(d: PrecursorDetalle): PickerOption[] {
+    return d.anios_disponibles.map(a => ({ value: a, label: `${a - 1}–${a}` }));
+  }
+
   readonly progresoOption = computed<EChartsOption | null>(() => {
     const d = this.data();
     if (!d) return null;
@@ -406,9 +477,10 @@ export class PrecursorDetallePage {
     const reales: (number | null)[] = [];
     const metas: number[] = [];
     const labels: string[] = [];
+    const ritmo = this.ritmoMensual();
     for (const m of cerrados) {
       labels.push(m.label.split(' ')[0]);
-      meta += 50;
+      meta += ritmo;
       metas.push(meta);
       if (this.esCerrado(d, m)) {
         acumulado += m.total;
@@ -443,7 +515,7 @@ export class PrecursorDetallePage {
           }),
         },
         ...(d.resumen.exento ? [] : [
-          { name: 'Ritmo 50 h/mes', type: 'line' as const, data: metas, symbol: 'none' as const, lineStyle: { width: 2, type: 'dashed' as const } },
+          { name: `Ritmo ${this.ritmoMensual()} h/mes`, type: 'line' as const, data: metas, symbol: 'none' as const, lineStyle: { width: 2, type: 'dashed' as const } },
         ]),
       ],
     };
@@ -460,7 +532,7 @@ export class PrecursorDetallePage {
     const d = this.data();
     if (!d) return '';
     if (d.resumen.exento) return 'Horas acumuladas (pred + crédito) · sin requisito por consideración especial';
-    const base = 'Horas acumuladas (pred + crédito) vs ritmo de 50 h/mes';
+    const base = `Horas acumuladas (pred + crédito) vs ritmo de ${this.ritmoMensual()} h/mes`;
     return d.resumen.meses_vigentes < 12
       ? `${base} · meta prorrateada a ${d.resumen.meses_vigentes} meses`
       : base;
@@ -485,6 +557,11 @@ export class PrecursorDetallePage {
       : `meta ${d.resumen.meta_prorrateada} h`;
   }
 
+  /** Ritmo mensual derivado del objetivo activo: 50 h/mes (600) o 47 h/mes (560). */
+  ritmoMensual(): number {
+    return Math.round((this.data()?.objetivo_anual ?? 600) / 12);
+  }
+
   esCerrado(d: PrecursorDetalle, m: { anio: number; mes: number }): boolean {
     const hoy = new Date();
     return new Date(m.anio, m.mes - 1, 1) < new Date(hoy.getFullYear(), hoy.getMonth(), 1);
@@ -493,25 +570,57 @@ export class PrecursorDetallePage {
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       const id = Number(params.get('id'));
-      const anio = Number(this.route.snapshot.queryParamMap.get('anio')) || undefined;
-      if (id) this.cargar(id, anio);
+      const qp = this.route.snapshot.queryParamMap;
+      const anio = Number(qp.get('anio')) || undefined;
+      const objetivo = (qp.get('objetivo') as ObjetivoPrecursor) || undefined;
+      if (id) this.cargar(id, anio, objetivo);
     });
   }
 
-  cargar(id: number, anio?: number): void {
+  cargar(id: number, anio?: number, objetivo?: ObjetivoPrecursor): void {
     this.error.set(null);
     this.data.set(null);
-    this.api.getPrecursorDetalle(id, anio).subscribe({
+    this.api.getPrecursorDetalle(id, anio, objetivo).subscribe({
       next: (res) => this.data.set(res),
       error: (err) => this.error.set(err?.error?.detail ?? 'No fue posible cargar el detalle.'),
     });
   }
 
-  cambiarAnio(ev: Event): void {
-    const anio = Number((ev.target as HTMLSelectElement).value);
+  seleccionarAnio(v: unknown): void {
+    const anio = Number(v);
     const d = this.data();
     if (!d || !anio || anio === d.anio_servicio) return;
     this.router.navigate([], { relativeTo: this.route, queryParams: { anio }, queryParamsHandling: 'merge' });
-    this.cargar(d.id_publicador, anio);
+    this.cargar(d.id_publicador, anio, d.objetivo);
+  }
+
+  seleccionarObjetivo(v: unknown): void {
+    const objetivo = v as ObjetivoPrecursor;
+    const d = this.data();
+    if (!d || !objetivo || objetivo === d.objetivo) return;
+    this.router.navigate([], { relativeTo: this.route, queryParams: { objetivo }, queryParamsHandling: 'merge' });
+    this.cargar(d.id_publicador, d.anio_servicio, objetivo);
+  }
+
+  /** Navega al precursor contiguo del roster, conservando año y objetivo. */
+  irA(vecino?: { id_publicador: number } | null): void {
+    const d = this.data();
+    if (!d || !vecino) return;
+    this.router.navigate(['/reportes/precursores', vecino.id_publicador], {
+      queryParams: { anio: d.anio_servicio, objetivo: d.objetivo },
+    });
+  }
+
+  /** ← / → saltan entre precursores (salvo si el foco está en un campo). */
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(ev: KeyboardEvent): void {
+    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.shiftKey) return;
+    const t = ev.target as HTMLElement | null;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    const d = this.data();
+    if (!d) return;
+    const vecino = ev.key === 'ArrowLeft' ? d.anterior : d.siguiente;
+    if (vecino) { ev.preventDefault(); this.irA(vecino); }
   }
 }

@@ -1,26 +1,30 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ChartCardComponent } from '../../shared/chart-card.component';
 import { KpiCardComponent } from '../../shared/kpi-card.component';
 import { lineMetaOption } from '../../shared/chart-options';
 import { MatrizPrecursoresComponent } from './components/matriz-precursores.component';
 import { AuthStore } from '../../../../core/auth/auth.store';
-import { ReportesService, PrecursoresMatriz, PrecursorFila } from '../../services/reportes.service';
+import { ReportesService, PrecursoresMatriz, PrecursorFila, ObjetivoPrecursor } from '../../services/reportes.service';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
+import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 
 /**
  * Análisis de la actividad en el ministerio de los precursores regulares
- * por año de servicio (Sep–Ago): meta 50 h/mes, requisito anual 560 h.
+ * por año de servicio (Sep–Ago).
  *
- * El requisito anual se prorratea por los meses en que cada persona fue
- * precursora regular, de modo que un nombramiento a mitad de año no exige
- * las 560 h completas (columna Total: horas / meta).
+ * El selector "Objetivo" elige el número anual contra el que se calcula todo:
+ * vista del publicador (600 h → 50 h/mes, por defecto) o vista del comité de
+ * servicio (560 h, el mínimo para continuar). El objetivo se prorratea por los
+ * meses en que cada persona fue precursora regular, de modo que un nombramiento
+ * a mitad de año no exige el objetivo entero (columna Total: horas / meta).
  */
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ChartCardComponent, KpiCardComponent, MatrizPrecursoresComponent, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, ChartCardComponent, KpiCardComponent, MatrizPrecursoresComponent, PageHeaderComponent, SelectPickerComponent],
   styleUrls: ['../../shared/reportes-tokens.scss'],
   styles: [`
     /* ── Cabecera ──────────────────────────────────────────────────────
@@ -83,27 +87,15 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
     .control-boton:disabled { opacity: 0.4; cursor: not-allowed; }
     .control-busqueda { padding-left: 2.25rem; }
     .control-busqueda::placeholder { color: var(--txt-4); }
-    .icono-busqueda { color: var(--txt-4); }
 
-    /* ── Leyenda ───────────────────────────────────────────────────────
-       Es una clave de lectura, no prosa: los símbolos van en la
-       monoespaciada, igual que en la tabla que describen. */
-    .leyenda {
-      font-size: 0.6875rem;
-      line-height: 1.7;
-      color: var(--txt-4);
+    /* Selectores de cabecera con el componente propio de la app. Ancho fijo
+       para que el desplegable no salte al cambiar la etiqueta. */
+    .sel-objetivo { display: block; width: 14rem; }
+    .sel-anio { display: block; width: 8.5rem; }
+    @media (max-width: 480px) {
+      .sel-objetivo, .sel-anio { width: 100%; }
     }
-    .leyenda .clave {
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--txt-3);
-    }
-    /* La clave se tiñe con el mismo token que el chip de la fila: es la pista
-       que permite descifrarlo sin tener que pasar el ratón por encima. */
-    .leyenda .clave-exento { color: var(--exento); }
-    .leyenda .glifo { font-family: var(--font-mono); color: var(--txt-3); }
-    .leyenda .sep { color: var(--linea); margin-inline: 0.25rem; }
+    .icono-busqueda { color: var(--txt-4); }
 
     /* ── Estado vacío y error ──────────────────────────────────────── */
     .panel {
@@ -143,12 +135,28 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
         [eyebrow]="'Año de servicio ' + (anioSeleccionado() ? (anioSeleccionado()! - 1) + '–' + anioSeleccionado() : '')"
         title="Análisis de Precursores"
         [subtitleWide]="true"
-        subtitle="Actividad de los precursores regulares: promedio de 50 h/mes y requisito anual de 560 h (con horas acreditadas), prorrateado según los meses de nombramiento de cada persona. Quien tiene consideración especial queda fuera de ese cálculo.">
+        [subtitle]="'Actividad de los precursores regulares: ritmo de ' + ritmoMensual() + ' h/mes y objetivo anual de ' + objetivoAnual() + ' h (con horas acreditadas), prorrateado según los meses de nombramiento de cada persona. ' + (objetivo() === 'comite' ? 'Vista del comité: 560 h es el mínimo para continuar como precursor regular.' : 'Vista del publicador: 600 h (50 h/mes) es la orientación mensual.') + ' Quien tiene consideración especial queda fuera de ese cálculo.'">
         <div class="flex items-center gap-2 flex-wrap">
-          <label for="anio-servicio" class="sr-only">Año de servicio</label>
-          <select id="anio-servicio" class="control" (change)="cambiarAnio($event)">
-            <option *ngFor="let a of data()?.anios_disponibles ?? []" [value]="a" [selected]="a === anioSeleccionado()">{{ a - 1 }}–{{ a }}</option>
-          </select>
+          <app-select-picker
+            class="sel-objetivo"
+            [ngModel]="objetivo()"
+            (ngModelChange)="seleccionarObjetivo($event)"
+            [ngModelOptions]="{ standalone: true }"
+            [options]="opcionesObjetivo"
+            [clearable]="false"
+            [searchable]="false"
+            colorScheme="violet"
+            ariaLabel="Objetivo del cálculo" />
+          <app-select-picker
+            class="sel-anio"
+            [ngModel]="anioSeleccionado()"
+            (ngModelChange)="seleccionarAnio($event)"
+            [ngModelOptions]="{ standalone: true }"
+            [options]="opcionesAnio()"
+            [clearable]="false"
+            [searchable]="false"
+            colorScheme="violet"
+            ariaLabel="Año de servicio" />
           <button *ngIf="puedeGestionar"
                   type="button"
                   (click)="exportarCsv()"
@@ -168,39 +176,26 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
         </div>
 
         <ng-container *ngIf="d.precursores.length; else emptyTpl">
-          <div class="flex items-center justify-between gap-4 flex-wrap">
-            <div class="relative w-full sm:w-auto">
-              <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none icono-busqueda" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
-              </svg>
-              <input type="search"
-                     placeholder="Buscar precursor…"
-                     class="control control-busqueda w-full sm:w-56"
-                     [value]="filtro()"
-                     (input)="filtro.set($any($event.target).value)" />
-            </div>
-            <p class="leyenda">
-              <span class="clave">Total</span> horas <span class="glifo">/</span> meta prorrateada
-              <span class="sep">·</span>
-              <span class="clave">Balance</span> horas acumuladas <span class="glifo">−</span> 50 h <span class="glifo">×</span> meses como precursor(a)
-              <span class="sep">·</span>
-              <span class="glifo">×</span> sin informe
-              <span class="sep">·</span>
-              <span class="glifo">–</span> no era precursor(a)
-              <span class="sep">·</span>
-              <span class="clave clave-exento">Consideración especial</span> meses sin requisito de horas
-              <ng-container *ngIf="otrosHint()"><span class="sep">·</span> {{ otrosHint() }}</ng-container>
-            </p>
+          <div class="relative w-full sm:w-auto">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none icono-busqueda" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+            </svg>
+            <input type="search"
+                   placeholder="Buscar precursor…"
+                   class="control control-busqueda w-full sm:w-56"
+                   [value]="filtro()"
+                   (input)="filtro.set($any($event.target).value)" />
           </div>
 
           <app-matriz-precursores
             [filasInput]="filasFiltradas()"
             [meses]="d.meses"
+            [objetivoAnual]="d.objetivo_anual"
             [clickable]="puedeGestionar"
             (rowClick)="abrirDetalle($event)" />
 
           <app-chart-card title="Horas de la congregación por mes"
-                          subtitle="Predicación + crédito de los precursores regulares vs meta (50 h × precursores vigentes)"
+                          [subtitle]="'Predicación + crédito de los precursores regulares vs meta (' + ritmoMensual() + ' h × precursores vigentes)'"
                           [option]="tendenciaOption()"
                           [height]="300" />
         </ng-container>
@@ -237,14 +232,29 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
 export class PrecursoresPage {
   private api = inject(ReportesService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private auth = inject(AuthStore);
 
   readonly data = signal<PrecursoresMatriz | null>(null);
   readonly error = signal<string | null>(null);
   readonly anioSeleccionado = signal<number>(0);
+  readonly objetivo = signal<ObjetivoPrecursor>('publicador');
   readonly filtro = signal('');
 
+  /** Objetivo anual activo (600 publicador / 560 comité). */
+  readonly objetivoAnual = computed(() => this.data()?.objetivo_anual ?? 600);
+  /** Ritmo mensual derivado del objetivo (50 / 47 h/mes). */
+  readonly ritmoMensual = computed(() => Math.round(this.objetivoAnual() / 12));
+
   readonly puedeGestionar = this.auth.hasPermission('reportes.precursores.gestionar');
+
+  readonly opcionesObjetivo: PickerOption[] = [
+    { value: 'publicador', label: 'Vista publicador (600 h)' },
+    { value: 'comite', label: 'Comité de servicio (560 h)' },
+  ];
+  readonly opcionesAnio = computed<PickerOption[]>(() =>
+    (this.data()?.anios_disponibles ?? []).map(a => ({ value: a, label: `${a - 1}–${a}` })),
+  );
 
   readonly filasFiltradas = computed(() => {
     const d = this.data();
@@ -258,39 +268,54 @@ export class PrecursoresPage {
     return d ? lineMetaOption(d.tendencia_horas, { nombreValor: 'Horas (pred + crédito)' }) : null;
   });
 
-  readonly otrosHint = computed(() => {
-    const o = this.data()?.kpis_otros;
-    if (!o) return '';
-    const partes: string[] = [];
-    if (o.auxiliares) partes.push(`${o.auxiliares} aux.`);
-    if (o.especiales) partes.push(`${o.especiales} esp.`);
-    return partes.length ? `Además: ${partes.join(', ')}` : '';
-  });
-
   ngOnInit(): void {
-    this.cargar();
+    // El año y el objetivo se guardan en la URL para que al volver del detalle
+    // (o al recargar) se conserve lo que estaba seleccionado.
+    const qp = this.route.snapshot.queryParamMap;
+    const obj = qp.get('objetivo') as ObjetivoPrecursor | null;
+    if (obj === 'publicador' || obj === 'comite') this.objetivo.set(obj);
+    this.cargar(Number(qp.get('anio')) || undefined);
   }
 
   cargar(anio?: number): void {
     this.error.set(null);
     this.data.set(null);
-    this.api.getPrecursores(anio).subscribe({
+    this.api.getPrecursores(anio, this.objetivo()).subscribe({
       next: (res) => {
         this.data.set(res);
         this.anioSeleccionado.set(res.anio_servicio);
+        this.objetivo.set(res.objetivo);
+        this.sincronizarUrl();
       },
       error: (err) => this.error.set(err?.error?.detail ?? 'No fue posible cargar el análisis.'),
     });
   }
 
-  cambiarAnio(ev: Event): void {
-    const anio = Number((ev.target as HTMLSelectElement).value);
+  private sincronizarUrl(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { anio: this.anioSeleccionado(), objetivo: this.objetivo() },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  seleccionarAnio(v: unknown): void {
+    const anio = Number(v);
     if (anio && anio !== this.anioSeleccionado()) this.cargar(anio);
+  }
+
+  seleccionarObjetivo(v: unknown): void {
+    const obj = v as ObjetivoPrecursor;
+    if (obj && obj !== this.objetivo()) {
+      this.objetivo.set(obj);
+      this.cargar(this.anioSeleccionado() || undefined);
+    }
   }
 
   abrirDetalle(f: PrecursorFila): void {
     this.router.navigate(['/reportes/precursores', f.id_publicador], {
-      queryParams: { anio: this.anioSeleccionado() },
+      queryParams: { anio: this.anioSeleccionado(), objetivo: this.objetivo() },
     });
   }
 
@@ -327,7 +352,7 @@ export class PrecursoresPage {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `precursores_${d.anio_servicio - 1}-${d.anio_servicio}.csv`;
+    a.download = `precursores_${d.anio_servicio - 1}-${d.anio_servicio}_${d.objetivo}-${d.objetivo_anual}h.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }

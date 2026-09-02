@@ -19,6 +19,15 @@ export interface SeriePunto {
 export type EstadoPrecursor = 'en_meta' | 'atencion' | 'riesgo' | 'exento';
 
 /**
+ * Objetivo anual contra el que se calcula todo el análisis:
+ *   • 'publicador' → 600 h/año (50 h/mes): la orientación que el precursor debe
+ *     tener en mente. Modo por defecto.
+ *   • 'comite'     → 560 h/año: mínimo para continuar como precursor regular,
+ *     dato de análisis del secretario / superintendente de servicio.
+ */
+export type ObjetivoPrecursor = 'publicador' | 'comite';
+
+/**
  * Consideración especial: exime del requisito de horas por edad avanzada o
  * salud delicada. Se otorga desde Publicadores › drawer › Privilegios.
  * No confundir con `horas_credito` (Betel, Salón de Asambleas), que son horas
@@ -91,6 +100,8 @@ export interface PrecursoresMatriz {
   kpis_otros: { auxiliares?: number; especiales?: number };
   tendencia_horas: SeriePuntoMeta[];
   precursores: PrecursorFila[];
+  objetivo: ObjetivoPrecursor;
+  objetivo_anual: number;
 }
 
 // ── Detalle de un precursor ────────────────────────────────────────────
@@ -145,6 +156,11 @@ export interface SeguimientoCreate {
   descripcion: string;
 }
 
+export interface VecinoPrecursor {
+  id_publicador: number;
+  nombre: string;
+}
+
 export interface PrecursorDetalle {
   id_publicador: number;
   nombre: string;
@@ -159,6 +175,12 @@ export interface PrecursorDetalle {
   resumen: PrecursorResumen;
   historico_anios: HistoricoAnio[];
   seguimientos: Seguimiento[];
+  objetivo: ObjetivoPrecursor;
+  objetivo_anual: number;
+  anterior?: VecinoPrecursor | null;
+  siguiente?: VecinoPrecursor | null;
+  posicion: number;       // 1-based; 0 si el publicador no está en el roster
+  total_roster: number;
 }
 
 // ── Otros dashboards ───────────────────────────────────────────────────
@@ -336,21 +358,29 @@ export class ReportesService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/reportes`;
 
-  private anioParams(anioServicio?: number | null): HttpParams {
+  private anioParams(anioServicio?: number | null, objetivo?: ObjetivoPrecursor | null): HttpParams {
     let params = new HttpParams();
     if (anioServicio) params = params.set('anio_servicio', anioServicio);
+    if (objetivo) params = params.set('objetivo', objetivo);
     return params;
   }
 
-  getPrecursores(anioServicio?: number | null): Observable<PrecursoresMatriz> {
+  getPrecursores(
+    anioServicio?: number | null,
+    objetivo?: ObjetivoPrecursor | null,
+  ): Observable<PrecursoresMatriz> {
     return this.http.get<PrecursoresMatriz>(`${this.base}/precursores`, {
-      params: this.anioParams(anioServicio),
+      params: this.anioParams(anioServicio, objetivo),
     });
   }
 
-  getPrecursorDetalle(idPublicador: number, anioServicio?: number | null): Observable<PrecursorDetalle> {
+  getPrecursorDetalle(
+    idPublicador: number,
+    anioServicio?: number | null,
+    objetivo?: ObjetivoPrecursor | null,
+  ): Observable<PrecursorDetalle> {
     return this.http.get<PrecursorDetalle>(`${this.base}/precursores/${idPublicador}`, {
-      params: this.anioParams(anioServicio),
+      params: this.anioParams(anioServicio, objetivo),
     });
   }
 

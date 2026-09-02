@@ -12,11 +12,11 @@ const PESO_ESTADO = { riesgo: 0, atencion: 1, en_meta: 2, exento: 3 } as const;
 /**
  * Matriz precursor × mes del año de servicio (réplica mejorada del Excel):
  * meses agrupados por trimestre con Total/Prom y balance acumulado (Acu)
- * contra el ritmo de 50 h/mes.
+ * contra el ritmo mensual (objetivoAnual / 12).
  *
  * La columna Total muestra debajo la meta individual, que se prorratea con
  * los meses en que la persona fue precursora regular: a quien fue nombrado
- * en noviembre se le exigen 10/12 de las 560 h, no las 560 completas.
+ * en noviembre se le exigen 10/12 del objetivo, no el objetivo completo.
  */
 @Component({
   selector: 'app-matriz-precursores',
@@ -361,16 +361,16 @@ const PESO_ESTADO = { riesgo: 0, atencion: 1, en_meta: 2, exento: 3 } as const;
                     class="text-right"
                     [class.mes-abierto]="!m.cerrado">{{ m.label }}</th>
                 <th class="col-trim text-right"
-                    [title]="'Trimestre ' + (t + 1) + ': total de horas del trimestre y, debajo, el balance acumulado al cierre (horas − 50 h × meses transcurridos)'">
+                    [title]="'Trimestre ' + (t + 1) + ': total de horas del trimestre y, debajo, el balance acumulado al cierre (horas − ' + ritmoMensual + ' h × meses transcurridos)'">
                   T{{ t + 1 }}
                 </th>
               </ng-container>
               <th class="col-total text-right ordenable" (click)="ordenarPor('total')"
-                  title="Total de horas del año de servicio (predicación + crédito) y, debajo, la meta individual: 560 h prorrateadas según los meses como precursor(a) regular.">Total <span class="flecha">{{ flecha('total') }}</span></th>
+                  [title]="'Total de horas del año de servicio (predicación + crédito) y, debajo, la meta individual: ' + objetivoAnual + ' h prorrateadas según los meses como precursor(a) regular.'">Total <span class="flecha">{{ flecha('total') }}</span></th>
               <th class="col-prom text-right ordenable" (click)="ordenarPor('promedio')"
-                  title="Promedio mensual de los meses informados (meta: 50 h/mes)">Prom <span class="flecha">{{ flecha('promedio') }}</span></th>
+                  [title]="'Promedio mensual de los meses informados (ritmo: ' + ritmoMensual + ' h/mes)'">Prom <span class="flecha">{{ flecha('promedio') }}</span></th>
               <th class="col-balance text-right ordenable" (click)="ordenarPor('acu')"
-                  title="Balance acumulado: horas acumuladas (predicación + crédito) menos 50 h por cada mes transcurrido. Positivo = va adelantado a la meta; negativo = va atrasado.">
+                  [title]="'Balance acumulado: horas acumuladas (predicación + crédito) menos ' + ritmoMensual + ' h por cada mes transcurrido. Positivo = va adelantado a la meta; negativo = va atrasado.'">
                 Balance <span class="flecha">{{ flecha('acu') }}</span>
               </th>
               <th class="col-estado text-left ordenable" (click)="ordenarPor('estado')">Estado <span class="flecha">{{ flecha('estado') }}</span></th>
@@ -466,8 +466,13 @@ const PESO_ESTADO = { riesgo: 0, atencion: 1, en_meta: 2, exento: 3 } as const;
 export class MatrizPrecursoresComponent {
   @Input() set filasInput(v: PrecursorFila[]) { this._filas.set(v ?? []); }
   @Input() meses: MesColumna[] = [];
+  /** Objetivo anual activo (600 vista publicador / 560 vista comité). */
+  @Input() objetivoAnual = 600;
   @Input() clickable = false;
   @Output() rowClick = new EventEmitter<PrecursorFila>();
+
+  /** Ritmo mensual derivado del objetivo: 50 h/mes (600) o 47 h/mes (560). */
+  get ritmoMensual(): number { return Math.round(this.objetivoAnual / 12); }
 
   private _filas = signal<PrecursorFila[]>([]);
   readonly orden = signal<ColumnaOrden>('nombre');
@@ -553,10 +558,11 @@ export class MatrizPrecursoresComponent {
   }
 
   tituloAcu(acu: number, contexto: string): string {
-    if (acu === 0) return `Va exactamente al ritmo de 50 h/mes ${contexto}`;
+    const ritmo = `${this.ritmoMensual} h/mes`;
+    if (acu === 0) return `Va exactamente al ritmo de ${ritmo} ${contexto}`;
     return acu > 0
-      ? `Lleva ${acu} h por encima del ritmo de 50 h/mes ${contexto}`
-      : `Le faltan ${Math.abs(acu)} h para ir al ritmo de 50 h/mes ${contexto}`;
+      ? `Lleva ${acu} h por encima del ritmo de ${ritmo} ${contexto}`
+      : `Le faltan ${Math.abs(acu)} h para ir al ritmo de ${ritmo} ${contexto}`;
   }
 
   claseAcu(acu: number): string {
@@ -623,7 +629,7 @@ export class MatrizPrecursoresComponent {
       return `${base}. La meta solo cuenta los ${f.meses_exigibles} de ${f.meses_vigentes} meses sin consideración especial.`;
     }
     return f.meses_vigentes < 12
-      ? `${base}. Meta prorrateada: 560 h × ${f.meses_vigentes} de los 12 meses del año de servicio en que fue precursor(a) regular.`
-      : `${base}, el requisito anual completo (12 meses como precursor(a) regular).`;
+      ? `${base}. Meta prorrateada: ${this.objetivoAnual} h × ${f.meses_vigentes} de los 12 meses del año de servicio en que fue precursor(a) regular.`
+      : `${base}, el objetivo anual completo (12 meses como precursor(a) regular).`;
   }
 }
