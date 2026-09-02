@@ -1066,9 +1066,12 @@
 .month-grid > *:nth-child(6)  { animation: cardEnter 0.25s var(--ease-out-strong) 200ms both; }
 .month-grid > *:nth-child(n+7) { animation: cardEnter 0.25s var(--ease-out-strong) 240ms both; }
 
-/* Simple spring for toggle thumb */
+/* Deslizamiento del círculo del interruptor. Antes usaba --ease-spring
+   (rebote elástico, cubic-bezier con overshoot a 1.56): en un control tan
+   pequeño el rebote se lee como un tirón, no como resorte. Con
+   --ease-out-quart llega y frena sin pasarse. */
 .toggle-thumb {
-  transition: transform 200ms var(--ease-spring);
+  transition: transform 200ms var(--ease-out-quart);
 }
 
 /* Reduce motion: keep opacity/color, remove movement */
