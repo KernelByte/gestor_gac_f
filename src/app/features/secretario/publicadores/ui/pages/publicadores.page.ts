@@ -271,6 +271,17 @@ export class PublicadoresListComponent implements OnInit {
     const pub = this.editingPublicador();
     if (!id || !fecha || !pub) return;
 
+    // Cerrar antes de la fecha de inicio deja el rango invertido. El PUT solo
+    // manda fecha_fin, así que hay que comparar contra el registro cargado.
+    const registro = this.publicadorPrivilegios().find(p => p.id_publicador_privilegio === id);
+    if (registro && fecha < registro.fecha_inicio) {
+      this.showToast(
+        `La fecha de cierre no puede ser anterior al inicio del privilegio (${registro.fecha_inicio}).`,
+        'error'
+      );
+      return;
+    }
+
     this.privilegiosService.updatePublicadorPrivilegio(id, { fecha_fin: fecha }).subscribe({
       next: () => {
         this.loadPublicadorPrivilegios(pub.id_publicador);
@@ -471,8 +482,14 @@ export class PublicadoresListComponent implements OnInit {
   ];
 
   privilegioConflictoMsg = computed<string | null>(() => {
-    const id = this.newPrivilegio().id_privilegio;
+    const nuevo = this.newPrivilegio();
+    const id = nuevo.id_privilegio;
     if (!id) return null;
+
+    // Rango invertido. El backend lo rechaza, pero avisamos antes de enviar.
+    if (nuevo.fecha_inicio && nuevo.fecha_fin && nuevo.fecha_fin < nuevo.fecha_inicio) {
+      return 'La fecha de fin no puede ser anterior a la fecha de inicio.';
+    }
 
     const nombre = this.getPrivilegioNombre(Number(id)).toLowerCase();
     const activos = this.publicadorPrivilegios().filter(p => !p.fecha_fin);
@@ -1135,7 +1152,7 @@ export class PublicadoresListComponent implements OnInit {
       const requests: any[] = [
         lastValueFrom(this.http.get<Estado[]>('/api/estados/')),
         lastValueFrom(this.http.get<Grupo[]>('/api/grupos/', { params })),
-        lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/', { params: { limit: 500, ...(effectiveId != null ? { id_congregacion: effectiveId } : {}) } }))
+        this.fetchPrivilegiosActivos(effectiveId)
       ];
 
       if (this.isAdminOrGestor()) {
@@ -1155,17 +1172,18 @@ export class PublicadoresListComponent implements OnInit {
       this.estados.set(estados || []);
       this.grupos.set(grupos || []);
 
-      // Process Privileges Map for List View
-      const today = new Date().toISOString().split('T')[0];
+      // Process Privileges Map for List View.
+      // fetchPrivilegiosActivos ya pide solo los vigentes (fecha_fin nula), que
+      // es el mismo criterio que aplica el backend. Antes se filtraba aquí con
+      // `!fecha_fin || fecha_fin >= today`, así que un privilegio cerrado con
+      // fecha futura salía como badge activo pero el backend no lo consideraba.
       const privilegiosMap = new Map<number, number[]>();
 
       for (const pp of (allPrivilegios || [])) {
-        if (!pp.fecha_fin || pp.fecha_fin >= today) {
-          if (!privilegiosMap.has(pp.id_publicador)) {
-            privilegiosMap.set(pp.id_publicador, []);
-          }
-          privilegiosMap.get(pp.id_publicador)!.push(pp.id_privilegio);
+        if (!privilegiosMap.has(pp.id_publicador)) {
+          privilegiosMap.set(pp.id_publicador, []);
         }
+        privilegiosMap.get(pp.id_publicador)!.push(pp.id_privilegio);
       }
       this.publicadorPrivilegiosMap.set(privilegiosMap);
 
@@ -1174,6 +1192,35 @@ export class PublicadoresListComponent implements OnInit {
     } catch (error) {
       console.error('Error loading auxiliary data:', error);
     }
+  }
+
+  /**
+   * Trae TODOS los privilegios vigentes de la congregación, paginando.
+   *
+   * Antes se pedía una sola página de `limit: 500` sobre el histórico completo
+   * (sin filtrar activos). Pasadas 500 filas la respuesta se truncaba sin aviso:
+   * los publicadores del final se quedaban sin badges y, como el filtro por
+   * privilegio del listado se apoya en este mapa, desaparecían del resultado
+   * como si no tuvieran el privilegio.
+   */
+  private async fetchPrivilegiosActivos(idCongregacion: number | null): Promise<PublicadorPrivilegio[]> {
+    const PAGE_SIZE = 500;   // tope que admite el endpoint
+    const acumulado: PublicadorPrivilegio[] = [];
+    let offset = 0;
+
+    while (true) {
+      const params: any = { limit: PAGE_SIZE, offset, activos: true };
+      if (idCongregacion != null) {
+        params.id_congregacion = idCongregacion;
+      }
+      const pagina = await lastValueFrom(
+        this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/', { params })
+      ) || [];
+      acumulado.push(...pagina);
+      if (pagina.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
+    return acumulado;
   }
 
   loadPrivilegiosCatalog() {
@@ -1217,10 +1264,11 @@ export class PublicadoresListComponent implements OnInit {
         const filteredData = Array.from(latestPrivsMap.values());
         this.publicadorPrivilegios.set(filteredData);
 
-        // Update GLOBAL MAP so the list updates immediately
-        const today = new Date().toISOString().split('T')[0];
+        // Update GLOBAL MAP so the list updates immediately.
+        // Vigente = sin fecha de fin, el mismo criterio que usa el backend y que
+        // fetchPrivilegiosActivos pide al cargar el listado.
         const activePrivs = data
-          .filter(pp => !pp.fecha_fin || pp.fecha_fin >= today)
+          .filter(pp => !pp.fecha_fin)
           .map(pp => pp.id_privilegio);
 
         this.publicadorPrivilegiosMap.update(map => {
