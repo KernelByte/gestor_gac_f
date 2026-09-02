@@ -27,7 +27,7 @@ export interface BackupCreate {
 
 export interface BackupProgramacion {
    habilitado: boolean;
-   frecuencia_horas: number;
+   horarios: string[];
    tipo: string;
    id_congregacion: number | null;
    enviar_email: boolean;
@@ -45,7 +45,7 @@ export interface RestaurarResponse {
 
 export interface ProgramacionUpdate {
    habilitado: boolean;
-   frecuencia_horas: number;
+   horarios: string[];
    tipo: string;
    id_congregacion?: number | null;
    enviar_email: boolean;

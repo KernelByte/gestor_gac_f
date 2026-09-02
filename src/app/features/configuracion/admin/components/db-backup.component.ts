@@ -331,18 +331,25 @@ interface CongregacionOption {
                <!-- Schedule Config -->
                <div *ngIf="scheduleHabilitado()" class="animate-slideIn space-y-4">
 
-                  <!-- Frequency -->
+                  <!-- Horarios -->
                   <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
-                     <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Frecuencia</label>
-                     <select [(ngModel)]="scheduleFrecuencia"
-                        class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
-                        <option [ngValue]="6">Cada 6 horas</option>
-                        <option [ngValue]="12">Cada 12 horas</option>
-                        <option [ngValue]="24">Cada 24 horas (diario)</option>
-                        <option [ngValue]="48">Cada 48 horas</option>
-                        <option [ngValue]="72">Cada 72 horas</option>
-                        <option [ngValue]="168">Cada 7 d&iacute;as (semanal)</option>
-                     </select>
+                     <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Horarios (hora de Colombia)</label>
+                     <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">El respaldo corre cada d&iacute;a a estas horas. M&iacute;nimo 2.</p>
+                     <div class="space-y-2">
+                        <div *ngFor="let h of scheduleHorarios(); let i = index; trackBy: trackByIndex" class="flex items-center gap-2">
+                           <input type="time" [ngModel]="h" (ngModelChange)="updateHorario(i, $event)"
+                              class="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
+                           <button type="button" (click)="removeHorario(i)" [disabled]="scheduleHorarios().length <= 2"
+                              class="shrink-0 w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-red-500 hover:border-red-300 disabled:opacity-30 transition-colors flex items-center justify-center">
+                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                           </button>
+                        </div>
+                     </div>
+                     <button type="button" (click)="addHorario()"
+                        class="mt-3 text-xs font-bold text-brand-purple hover:text-purple-700 flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Agregar horario
+                     </button>
                   </div>
 
                   <!-- Type -->
@@ -410,6 +417,10 @@ interface CongregacionOption {
                         <span class="text-xs font-bold" [ngClass]="programacion()!.habilitado ? 'text-emerald-600' : 'text-slate-400'">
                            {{ programacion()!.habilitado ? 'Activo' : 'Inactivo' }}
                         </span>
+                     </div>
+                     <div *ngIf="programacion()!.horarios?.length" class="flex items-center justify-between">
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Horarios (Colombia)</span>
+                        <span class="text-xs font-medium text-slate-700 dark:text-slate-300">{{ programacion()!.horarios.join(' · ') }}</span>
                      </div>
                      <div *ngIf="programacion()!.ultima_ejecucion" class="flex items-center justify-between">
                         <span class="text-xs text-slate-500 dark:text-slate-400">&Uacute;ltima ejecuci&oacute;n</span>
@@ -692,7 +703,7 @@ export class DbBackupComponent implements OnInit {
    // Programacion
    programacion = signal<BackupProgramacion | null>(null);
    scheduleHabilitado = signal(false);
-   scheduleFrecuencia = signal(24);
+   scheduleHorarios = signal<string[]>(['06:00', '18:00']);
    scheduleTipo = signal<'completo' | 'congregacion'>('completo');
    scheduleCongregacion = signal<number | null>(null);
    scheduleEmail = signal(false);
@@ -764,7 +775,9 @@ export class DbBackupComponent implements OnInit {
          next: config => {
             this.programacion.set(config);
             this.scheduleHabilitado.set(config.habilitado);
-            this.scheduleFrecuencia.set(config.frecuencia_horas);
+            this.scheduleHorarios.set(
+               config.horarios?.length ? [...config.horarios] : ['06:00', '18:00']
+            );
             this.scheduleTipo.set(config.tipo as 'completo' | 'congregacion');
             this.scheduleCongregacion.set(config.id_congregacion);
             this.scheduleEmail.set(config.enviar_email);
@@ -772,6 +785,22 @@ export class DbBackupComponent implements OnInit {
          },
          error: () => {}
       });
+   }
+
+   trackByIndex(i: number): number {
+      return i;
+   }
+
+   addHorario() {
+      this.scheduleHorarios.update(hs => [...hs, '12:00']);
+   }
+
+   removeHorario(i: number) {
+      this.scheduleHorarios.update(hs => hs.length <= 2 ? hs : hs.filter((_, idx) => idx !== i));
+   }
+
+   updateHorario(i: number, valor: string) {
+      this.scheduleHorarios.update(hs => hs.map((h, idx) => idx === i ? valor : h));
    }
 
    ejecutarBackup() {
@@ -841,7 +870,7 @@ export class DbBackupComponent implements OnInit {
 
       this.backupService.actualizarProgramacion({
          habilitado: this.scheduleHabilitado(),
-         frecuencia_horas: this.scheduleFrecuencia(),
+         horarios: this.scheduleHorarios(),
          tipo: this.scheduleTipo(),
          id_congregacion: this.scheduleTipo() === 'congregacion' ? this.scheduleCongregacion() : null,
          enviar_email: this.scheduleEmail(),
@@ -850,11 +879,18 @@ export class DbBackupComponent implements OnInit {
          next: config => {
             this.guardandoProgramacion.set(false);
             this.programacion.set(config);
+            this.scheduleHorarios.set([...config.horarios]);
             this.showNotification('Programaci\u00f3n guardada correctamente', 'success');
          },
-         error: () => {
+         error: err => {
             this.guardandoProgramacion.set(false);
-            this.showNotification('Error al guardar la programaci\u00f3n', 'error');
+            const detail = err?.error?.detail;
+            const msg = typeof detail === 'string'
+               ? detail
+               : Array.isArray(detail) && detail[0]?.msg
+                  ? detail[0].msg
+                  : 'Error al guardar la programaci\u00f3n';
+            this.showNotification(msg, 'error');
          }
       });
    }
