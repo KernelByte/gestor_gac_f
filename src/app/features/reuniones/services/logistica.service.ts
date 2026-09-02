@@ -4,7 +4,8 @@ import { Observable, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   ActualizarEnlaceRequest,
-  ConfiguracionAseoOut,
+  ActualizarPreferenciasRequest,
+  ConfiguracionPreferenciasOut,
   ConfirmarLogisticaRequest,
   ConflictoLogistica,
   EditarAseoRequest,
@@ -122,11 +123,23 @@ export class LogisticaService {
     });
   }
 
-  /** Opciones y valor actual de la rotación del aseo, para el modal de generar. */
-  getConfiguracionAseo(idCong: number | null): Observable<ConfiguracionAseoOut> {
-    return this.http.get<ConfiguracionAseoOut>(`${this.base}/configuracion/aseo`, {
-      params: this.congParams(idCong),
-    });
+  /** Cómo genera esta congregación: rotación de cada puesto y revisión previa. */
+  getConfiguracionPreferencias(idCong: number | null): Observable<ConfiguracionPreferenciasOut> {
+    return this.http.get<ConfiguracionPreferenciasOut>(
+      `${this.base}/configuracion/preferencias`,
+      { params: this.congParams(idCong) },
+    );
+  }
+
+  /** Guarda solo las claves que cambian y devuelve el estado ya persistido. */
+  actualizarPreferencias(
+    cambios: Record<string, string>, idCong: number | null,
+  ): Observable<ConfiguracionPreferenciasOut> {
+    return this.http.put<ConfiguracionPreferenciasOut>(
+      `${this.base}/configuracion/preferencias`,
+      { cambios } as ActualizarPreferenciasRequest,
+      { params: this.congParams(idCong) },
+    );
   }
 
   verificarConflicto(idPublicador: number, fecha: string): Observable<ConflictoLogistica> {

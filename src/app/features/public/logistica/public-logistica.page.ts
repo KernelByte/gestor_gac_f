@@ -28,7 +28,8 @@ const PUESTOS_LABEL: Record<string, string> = {
 
 interface FilaPuesto {
   etiqueta: string;
-  nombres: string;
+  /** Uno o dos nombres -acomodador_1/_2 comparten fila-, cada uno en su línea. */
+  nombres: string[];
 }
 
 interface FechaVista {
@@ -105,21 +106,25 @@ interface FechaVista {
             <p class="text-xs font-black uppercase tracking-wide text-violet-600 dark:text-violet-400">{{ f.diaSemana }}</p>
             <p class="text-sm font-bold text-slate-800 dark:text-slate-100">{{ f.fechaLarga }}</p>
           </header>
-          <dl class="px-4 py-3 space-y-1.5">
+          <dl class="divide-y divide-slate-100 dark:divide-slate-800">
             @for (fila of f.filas; track fila.etiqueta) {
-              <div class="flex items-baseline gap-2 text-sm">
-                <dt class="w-24 shrink-0 text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wide">{{ fila.etiqueta }}</dt>
-                <dd class="text-slate-700 dark:text-slate-200 min-w-0">{{ fila.nombres }}</dd>
+              <div class="flex gap-3 px-4 py-2">
+                <dt class="w-24 shrink-0 pt-px text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wide">{{ fila.etiqueta }}</dt>
+                <dd class="min-w-0 flex-1 flex flex-col gap-1">
+                  @for (nombre of fila.nombres; track nombre) {
+                    <span class="text-sm text-slate-700 dark:text-slate-200 leading-snug">{{ nombre }}</span>
+                  }
+                </dd>
               </div>
             }
             @if (f.aseo) {
-              <div class="flex items-baseline gap-2 text-sm pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">
-                <dt class="w-24 shrink-0 text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wide">Aseo</dt>
-                <dd class="text-slate-700 dark:text-slate-200 min-w-0">{{ f.aseo }}</dd>
+              <div class="flex gap-3 px-4 py-2">
+                <dt class="w-24 shrink-0 pt-px text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wide">Aseo</dt>
+                <dd class="text-sm text-slate-700 dark:text-slate-200 min-w-0">{{ f.aseo }}</dd>
               </div>
             }
             @if (!f.filas.length && !f.aseo) {
-              <p class="text-xs text-slate-400 dark:text-slate-500">Sin asignaciones registradas para esta fecha.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 px-4 py-3">Sin asignaciones registradas para esta fecha.</p>
             }
           </dl>
         </article>
@@ -164,14 +169,18 @@ export class PublicLogisticaPage implements OnInit {
     const d = this.data();
     if (!d) return [];
 
-    const porFecha = new Map<string, Map<string, string>>();
+    // Un puesto con dos turnos (acomodador_1 y _2) llega como dos filas del
+    // backend con la misma etiqueta; se acumulan en una lista en vez de unirse
+    // en un string, para que cada persona quede en su propia línea al mostrar.
+    const porFecha = new Map<string, Map<string, string[]>>();
     for (const a of d.asignaciones) {
       if (!a.publicador) continue;
       if (!porFecha.has(a.fecha)) porFecha.set(a.fecha, new Map());
       const fila = porFecha.get(a.fecha)!;
       const etiqueta = PUESTOS_LABEL[a.puesto] ?? a.puesto;
-      const previo = fila.get(etiqueta);
-      fila.set(etiqueta, previo ? `${previo} / ${a.publicador.nombre_completo}` : a.publicador.nombre_completo);
+      const nombres = fila.get(etiqueta) ?? [];
+      nombres.push(a.publicador.nombre_completo);
+      fila.set(etiqueta, nombres);
     }
 
     const aseoPorFecha = new Map<string, string>();

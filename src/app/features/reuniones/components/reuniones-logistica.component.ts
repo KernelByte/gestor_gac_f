@@ -14,8 +14,9 @@ import { CongregacionContextService } from '../../../core/congregacion-context/c
 import { AuthStore } from '../../../core/auth/auth.store';
 import {
   AseoBloqueOut,
-  AseoPreferenciaOpcion,
   AseoRotacion,
+  CLAVE_REQUIERE_REVISION,
+  CLAVE_ROTACION_ASEO,
   EnlacePublicoLogistica,
   FechaReunionOut,
   GrupoBase,
@@ -29,7 +30,9 @@ import {
   OpcionesPdfLogistica,
   OrientacionPagina,
   PERMISO_LABEL,
+  PreferenciaLogistica,
   PUESTO_A_PERMISO,
+  PUESTO_ROTACION_CLAVES,
   PUESTOS_LABEL,
   PublicadorBase,
   RebalanceoPropuesta,
@@ -1295,7 +1298,23 @@ function normalizarTexto(s: string): string {
     @if (modalGenerarAbierto()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarModal()">
         <div data-testid="log-modal-generar" class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-5" (click)="$event.stopPropagation()">
-          <h2 class="text-base font-black text-slate-800 dark:text-white">Generar programación</h2>
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-base font-black text-slate-800 dark:text-white">Generar programación</h2>
+            <!-- Cómo se arma la programación de esta congregación. Vive detrás de
+                 un botón y no en este modal porque no es una decisión de este mes:
+                 se configura una vez y vale para todos los meses siguientes. -->
+            <button
+              type="button"
+              data-testid="log-btn-config"
+              (click)="abrirModalConfig()"
+              title="Configurar cómo se genera la programación"
+              class="shrink-0 -mr-2 flex items-center gap-1.5 px-2 h-8 rounded-lg text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 hover:text-violet-700 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors focus-ring">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>
+              </svg>
+              Configuración
+            </button>
+          </div>
           <div class="flex gap-3">
             <div class="flex-1 flex flex-col gap-1">
               <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Mes</label>
@@ -1311,7 +1330,7 @@ function normalizarTexto(s: string): string {
                 </button>
                 @if (mesModalDropdownAbierto()) {
                   <div class="absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
-                    @for (m of mesesOpciones; track m.value) {
+                    @for (m of mesesOpcionesDesc; track m.value) {
                       <button type="button" data-testid="log-opcion-mes" [attr.data-mes]="m.value"
                         (click)="modalMes = m.value; mesModalDropdownAbierto.set(false)"
                         class="w-full px-3.5 py-2 text-sm font-semibold text-left transition-colors duration-100"
@@ -1333,31 +1352,9 @@ function normalizarTexto(s: string): string {
             </div>
           </div>
 
-          <!-- Rotación del aseo: cada congregación lo lleva a su manera -->
-          @if (rotacionOpciones().length > 0) {
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Rotación del aseo</label>
-              <div class="flex flex-col gap-1.5">
-                @for (op of rotacionOpciones(); track op.id) {
-                  <button
-                    type="button"
-                    (click)="modalRotacionAseo.set(op.id)"
-                    [class]="modalRotacionAseo() === op.id
-                      ? 'w-full text-left px-3 py-2 rounded-xl border-2 border-[#059669] bg-emerald-50 dark:bg-emerald-900/20 transition-all'
-                      : 'w-full text-left px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all'">
-                    <span class="flex items-center gap-2">
-                      <span
-                        [class]="modalRotacionAseo() === op.id
-                          ? 'w-3.5 h-3.5 rounded-full border-[4px] border-[#059669] shrink-0'
-                          : 'w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 shrink-0'"></span>
-                      <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{{ op.label }}</span>
-                    </span>
-                    <span class="block pl-[1.375rem] text-[0.65rem] leading-snug text-slate-500 dark:text-slate-400 mt-0.5">{{ op.description }}</span>
-                  </button>
-                }
-              </div>
-            </div>
-          }
+          <!-- La rotación del aseo y las demás particularidades de esta
+               congregación viven en "Configuración" (botón de arriba): son
+               permanentes, no una elección de este mes puntual. -->
 
           <div class="flex gap-2 justify-end pt-1">
             <button (click)="cerrarModal()" class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
@@ -1369,6 +1366,142 @@ function normalizarTexto(s: string): string {
               [disabled]="estado() === 'loading'"
               class="px-5 h-9 rounded-xl text-xs font-bold text-white bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 transition-all active:scale-95">
               Generar
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ===== MODAL CONFIGURACIÓN DE GENERACIÓN ===== -->
+    <!-- z-[70]: se abre encima del modal de generar y de su desplegable de mes. -->
+    @if (modalConfigAbierto()) {
+      <div class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarModalConfig()">
+        <div
+          data-testid="log-modal-config"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="log-config-titulo"
+          class="w-full max-w-md max-h-[85vh] flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+          (click)="$event.stopPropagation()">
+
+          <div class="shrink-0 flex items-start gap-3 px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div class="min-w-0 flex-1">
+              <h2 id="log-config-titulo" class="text-base font-black text-slate-800 dark:text-white">Cómo se genera</h2>
+              <p class="text-[0.7rem] leading-snug text-slate-500 dark:text-slate-400 mt-0.5">
+                La forma de trabajar de esta congregación. Se guarda al momento y
+                vale para todos los meses que se generen a partir de ahora.
+              </p>
+            </div>
+            <button
+              type="button"
+              (click)="cerrarModalConfig()"
+              aria-label="Cerrar configuración"
+              class="shrink-0 -mr-2 -mt-1 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-ring">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto simple-scrollbar px-6 py-4">
+            @if (configCargando()) {
+              <div class="flex flex-col gap-2.5" aria-hidden="true">
+                @for (fila of filasEsqueletoConfig; track fila) {
+                  <div class="flex items-center gap-3">
+                    <div class="flex-1 h-3 rounded bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
+                    <div class="w-28 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Rotación
+              </p>
+              <p class="text-[0.7rem] leading-snug text-slate-500 dark:text-slate-400 mt-1 mb-2">
+                Por reunión rota siempre; por semana repite entre semana y fin de
+                semana; por mes deja a la misma persona todo el mes.
+              </p>
+
+              <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                @for (f of filasRotacion; track f.clave) {
+                  <div class="flex items-center gap-2 py-1.5">
+                    <p class="min-w-0 flex-1 text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
+                      {{ f.label }}
+                    </p>
+                    <!-- Ancho reservado siempre: el spinner se desvanece en su
+                         sitio en vez de empujar el selector al aparecer. -->
+                    <div class="w-3 h-3 shrink-0 border-2 border-violet-400 border-t-transparent rounded-full animate-spin transition-opacity duration-150"
+                         [class.opacity-0]="configGuardando() !== f.clave"
+                         aria-hidden="true"></div>
+                    <div
+                      role="radiogroup"
+                      [attr.aria-label]="f.label + ': rotación'"
+                      class="inline-flex shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 gap-0.5">
+                      @for (op of opcionesPref(f.clave); track op.id) {
+                        <button
+                          type="button"
+                          role="radio"
+                          [attr.data-testid]="'log-rot-' + f.testid + '-' + op.id"
+                          [attr.aria-checked]="valorPref(f.clave) === op.id"
+                          [attr.title]="op.description"
+                          [disabled]="configGuardando() !== null"
+                          (click)="guardarPreferencia(f.clave, op.id)"
+                          class="px-2.5 h-6 rounded-md text-[0.65rem] font-bold transition-colors duration-150 disabled:cursor-not-allowed"
+                          [class]="valorPref(f.clave) === op.id
+                            ? 'bg-[#6D28D9] text-white'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:hover:text-slate-500'">
+                          {{ op.label }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-2">
+                  <p class="min-w-0 flex-1 text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
+                    Que otra persona revise antes de publicar
+                  </p>
+                  <div class="w-3 h-3 shrink-0 border-2 border-violet-400 border-t-transparent rounded-full animate-spin transition-opacity duration-150"
+                       [class.opacity-0]="configGuardando() !== claveRequiereRevision"
+                       aria-hidden="true"></div>
+                  <div
+                    role="radiogroup"
+                    aria-label="Exigir revisión antes de publicar"
+                    class="inline-flex shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 gap-0.5">
+                    @for (op of opcionesPref(claveRequiereRevision); track op.id) {
+                      <button
+                        type="button"
+                        role="radio"
+                        [attr.data-testid]="'log-revision-' + op.id"
+                        [attr.aria-checked]="valorPref(claveRequiereRevision) === op.id"
+                        [attr.title]="op.description"
+                        [disabled]="configGuardando() !== null"
+                        (click)="guardarPreferencia(claveRequiereRevision, op.id)"
+                        class="px-2.5 h-6 rounded-md text-[0.65rem] font-bold transition-colors duration-150 disabled:cursor-not-allowed"
+                        [class]="valorPref(claveRequiereRevision) === op.id
+                          ? 'bg-[#6D28D9] text-white'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:hover:text-slate-500'">
+                        {{ op.label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="shrink-0 flex items-center gap-3 px-6 py-3 border-t border-slate-100 dark:border-slate-800">
+            <p class="min-w-0 flex-1 text-[0.65rem] leading-snug"
+               [class]="configError()
+                 ? 'text-red-600 dark:text-red-400 font-bold'
+                 : 'text-slate-400 dark:text-slate-500'">
+              {{ configError() ?? 'Los cambios se guardan solos.' }}
+            </p>
+            <button
+              type="button"
+              (click)="cerrarModalConfig()"
+              class="shrink-0 px-4 h-9 rounded-xl text-xs font-bold text-white bg-[#6D28D9] hover:bg-[#5b21b6] transition-all active:scale-95 focus-ring">
+              Listo
             </button>
           </div>
         </div>
@@ -2226,10 +2359,35 @@ export class ReunionesLogisticaComponent implements OnInit {
   mesModalDropdownAbierto = signal(false);
   modalMes = new Date().getMonth() + 1;
   modalAno = new Date().getFullYear();
-  // Rotación del aseo: se precarga con la preferencia de la congregación y al
-  // generar queda guardada como la nueva preferencia.
-  modalRotacionAseo = signal<AseoRotacion>('reunion');
-  rotacionOpciones = signal<AseoPreferenciaOpcion[]>([]);
+
+  // Configuración de generación: cómo arma la programación esta congregación.
+  // Vive aparte del modal de generar porque no es una decisión del mes que se
+  // está armando, sino la forma de trabajar de la congregación: se guarda al
+  // instante y el siguiente `generar` la respeta sin volver a preguntar.
+  modalConfigAbierto = signal(false);
+  configPreferencias = signal<PreferenciaLogistica[]>([]);
+  configCargando = signal(false);
+  /** Clave que se está guardando ahora mismo, para el spinner de esa fila. */
+  configGuardando = signal<string | null>(null);
+  configError = signal<string | null>(null);
+
+  /**
+   * Filas de la sección "Rotación": un puesto por permiso más el aseo al
+   * final, todas con el mismo selector de tres vías (reunión/semana/mes).
+   * `testid` identifica cada fila en los data-testid de sus botones.
+   */
+  readonly filasRotacion = [
+    ...PUESTO_ROTACION_CLAVES.map((p) => ({
+      clave: p.clave,
+      testid: p.permiso,
+      label: PERMISO_LABEL[p.permiso] ?? p.permiso,
+    })),
+    { clave: CLAVE_ROTACION_ASEO, testid: 'aseo', label: 'Aseo del salón' },
+  ];
+  readonly claveRequiereRevision = CLAVE_REQUIERE_REVISION;
+  readonly claveRotacionAseo = CLAVE_ROTACION_ASEO;
+  /** Fuera de la plantilla: un literal inline se recrearía en cada ciclo. */
+  readonly filasEsqueletoConfig = [1, 2, 3, 4, 5, 6, 7];
 
   // Selector de mes de la barra. Sustituye a la barra lateral fija: la lista
   // de meses y el botón de generar sólo ocupan ancho mientras se usan, y el
@@ -2269,7 +2427,8 @@ export class ReunionesLogisticaComponent implements OnInit {
   onEscape(): void {
     // Lo desplegado primero: cerrar el panel de carga teniendo abierto el
     // selector de mes encima sería responder a algo que no se ve.
-    if (this.menuMesesAbierto()) this.menuMesesAbierto.set(false);
+    if (this.modalConfigAbierto()) this.cerrarModalConfig();
+    else if (this.menuMesesAbierto()) this.menuMesesAbierto.set(false);
     else if (this.menuAccionesAbierto()) this.menuAccionesAbierto.set(false);
     else if (this.balancePanelVisible()) this.cerrarPanelBalance();
     else if (this.activeCellKey()) this.cerrarCombobox();
@@ -2402,6 +2561,10 @@ export class ReunionesLogisticaComponent implements OnInit {
   }
 
   readonly mesesOpciones = MESES_ES.map((label, i) => ({ value: i + 1, label }));
+  /** Mismas opciones, de Diciembre a Enero: es como se listan en el desplegable
+   *  del modal de generar. `mesesOpciones` se deja en orden calendario porque
+   *  `mesesOpciones[modalMes - 1]` depende de esa posición para el label del botón. */
+  readonly mesesOpcionesDesc = [...this.mesesOpciones].reverse();
 
   hasEditPermission(): boolean {
     return this.authStore.hasPermission('reuniones.logistica');
@@ -2970,48 +3133,138 @@ export class ReunionesLogisticaComponent implements OnInit {
     this.modalMes = new Date().getMonth() + 1;
     this.modalAno = new Date().getFullYear();
     this.modalGenerarAbierto.set(true);
-    this.cargarConfiguracionAseo();
-  }
-
-  private cargarConfiguracionAseo(): void {
-    const cong = this.congregacionCtx.effectiveCongregacionId();
-    this.logisticaSvc
-      .getConfiguracionAseo(cong)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (cfg) => {
-          const pref = cfg.preferencias.find((p) => p.key === 'log_aseo_rotacion');
-          if (!pref) return;
-          this.rotacionOpciones.set(pref.options);
-          this.modalRotacionAseo.set(pref.value);
-        },
-        // Si falla, el modal sigue usable: se genera con la preferencia guardada.
-        error: () => this.rotacionOpciones.set([]),
-      });
   }
 
   cerrarModal(): void {
     this.modalGenerarAbierto.set(false);
   }
 
-  generarMes(): void {
-    const cong = this.congregacionCtx.effectiveCongregacionId();
-    const modo = this.modalRotacionAseo();
-    this.cerrarModal();
-    this.estado.set('loading');
+  // ── Configuración de generación ──────────────────────────────────────
+
+  abrirModalConfig(): void {
+    this.modalConfigAbierto.set(true);
+    this.configError.set(null);
+    this.configCargando.set(true);
     this.logisticaSvc
-      .generar({ ano: this.modalAno, mes: this.modalMes, modo_aseo: modo }, cong)
+      .getConfiguracionPreferencias(this.congregacionCtx.effectiveCongregacionId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (data) => {
-          this.mesDatos.set(data);
-          this.estado.set('ready');
-          this.cargarMeses(cong);
+        next: (cfg) => {
+          this.configPreferencias.set(cfg.preferencias);
+          this.configCargando.set(false);
         },
-        error: (err) => {
-          this.errorMsg.set(err?.error?.detail ?? 'Error al generar el mes');
-          this.estado.set('error');
+        error: () => {
+          this.configError.set('No se pudo cargar la configuración.');
+          this.configCargando.set(false);
         },
       });
+  }
+
+  cerrarModalConfig(): void {
+    this.modalConfigAbierto.set(false);
+    this.configGuardando.set(null);
+    this.configError.set(null);
+  }
+
+  /** Valor actual de una preferencia; el default mientras no haya cargado. */
+  valorPref(clave: string): string {
+    const pref = this.configPreferencias().find((p) => p.key === clave);
+    return pref?.value ?? '';
+  }
+
+  /** Opciones de una preferencia de varias vías (ej. rotación del aseo). */
+  opcionesPref(clave: string): PreferenciaLogistica['options'] {
+    return this.configPreferencias().find((p) => p.key === clave)?.options ?? [];
+  }
+
+  /**
+   * Guarda una preferencia sola, en cuanto se toca.
+   *
+   * Se pinta el valor nuevo antes de que responda el servidor -el interruptor
+   * tiene que moverse con el dedo- y se revierte si la llamada falla, para que
+   * la pantalla nunca afirme algo que no quedó guardado.
+   */
+  guardarPreferencia(clave: string, valor: string): void {
+    const anterior = this.valorPref(clave);
+    if (anterior === valor || this.configGuardando()) return;
+
+    this.aplicarValorPref(clave, valor);
+    this.configGuardando.set(clave);
+    this.configError.set(null);
+    this.logisticaSvc
+      .actualizarPreferencias({ [clave]: valor }, this.congregacionCtx.effectiveCongregacionId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (cfg) => {
+          this.configPreferencias.set(cfg.preferencias);
+          this.configGuardando.set(null);
+        },
+        error: (err) => {
+          this.aplicarValorPref(clave, anterior);
+          this.configGuardando.set(null);
+          this.configError.set(err?.error?.detail ?? 'No se pudo guardar el cambio.');
+        },
+      });
+  }
+
+  private aplicarValorPref(clave: string, valor: string): void {
+    this.configPreferencias.update((prefs) =>
+      prefs.map((p) => (p.key === clave ? { ...p, value: valor } : p)),
+    );
+  }
+
+  generarMes(): void {
+    const cong = this.congregacionCtx.effectiveCongregacionId();
+    const ano = this.modalAno;
+    const mes = this.modalMes;
+    this.cerrarModal();
+
+    // El backend, al encontrar filas para el mes, las devuelve tal cual sin
+    // tocar nada -por diseño, `generar` nunca pisa un mes ya armado. Aquí se
+    // adelanta esa pregunta: dejarlo como está (no pasa nada) o recrearlo
+    // desde cero, que sí es una acción destructiva y merece confirmación.
+    const existente = this.mesesDisponibles().find((m) => m.ano === ano && m.mes === mes);
+    if (existente) {
+      const mesNombre = MESES_ES[mes - 1] ?? `${mes}`;
+      this.confirmPendiente.set({
+        titulo: `${mesNombre} ${ano} ya tiene programación`,
+        mensaje: `Estado actual: ${this.etiquetaEstadoMes(existente)}. Puedes dejarla tal como está, o `
+          + 'recrearla desde cero: se perderían las asignaciones manuales y la publicación de ese mes.',
+        accionLabel: 'Recrear desde cero',
+        tono: 'peligro',
+        callback: () => this.recrearMes(ano, mes, cong),
+      });
+      return;
+    }
+
+    this.ejecutarGenerar(ano, mes, cong);
+  }
+
+  private recrearMes(ano: number, mes: number, cong: number | null): void {
+    this.estado.set('loading');
+    this.logisticaSvc.eliminarMes(ano, mes, cong).subscribe({
+      next: () => this.ejecutarGenerar(ano, mes, cong),
+      error: (err) => {
+        this.errorMsg.set(err?.error?.detail ?? 'Error al recrear el mes');
+        this.estado.set('error');
+      },
+    });
+  }
+
+  private ejecutarGenerar(ano: number, mes: number, cong: number | null): void {
+    this.estado.set('loading');
+    // Sin modo_aseo: el backend ya toma la rotación guardada en "Configuración".
+    this.logisticaSvc.generar({ ano, mes }, cong).subscribe({
+      next: (data) => {
+        this.mesDatos.set(data);
+        this.estado.set('ready');
+        this.cargarMeses(cong);
+      },
+      error: (err) => {
+        this.errorMsg.set(err?.error?.detail ?? 'Error al generar el mes');
+        this.estado.set('error');
+      },
+    });
   }
 
   publicarMes(): void {

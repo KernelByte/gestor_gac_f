@@ -4,8 +4,6 @@ export type AseoRotacion = 'reunion' | 'semana' | 'mes';
 export interface GenerarLogisticaRequest {
   ano: number;
   mes: number;
-  /** Ausente = usar la preferencia guardada de la congregación. */
-  modo_aseo?: AseoRotacion;
 }
 
 export interface EditarLogisticaItemRequest {
@@ -23,25 +21,50 @@ export interface EditarAseoRequest {
   ids_grupo: number[];
 }
 
-export interface AseoPreferenciaOpcion {
-  id: AseoRotacion;
-  label: string;
-  description: string;
-}
+// ── Configuración de generación por congregación ────────────────────────
 
-export interface AseoPreferencia {
+/**
+ * Una preferencia de logística tal como la sirve el backend: su valor actual y
+ * las opciones entre las que puede moverse. La forma es la misma para todas
+ * -rotación de un puesto, del aseo, revisión antes de publicar- porque el
+ * backend las serializa con un solo `serializar_prefs`.
+ */
+export interface PreferenciaLogistica {
   key: string;
-  value: AseoRotacion;
-  default: AseoRotacion;
+  value: string;
+  default: string;
   label: string;
   description: string;
-  options: AseoPreferenciaOpcion[];
+  options: { id: string; label: string; description: string }[];
 }
 
-export interface ConfiguracionAseoOut {
-  preferencias: AseoPreferencia[];
-  valores: Record<string, AseoRotacion>;
+export interface ConfiguracionPreferenciasOut {
+  preferencias: PreferenciaLogistica[];
+  valores: Record<string, string>;
 }
+
+/** Solo lo que cambia; el backend valida clave y valor. */
+export interface ActualizarPreferenciasRequest {
+  cambios: Record<string, string>;
+}
+
+export const CLAVE_REQUIERE_REVISION = 'log_requiere_revision';
+
+/** Misma clave que `CLAVE_ROTACION_ASEO` en preferencias.py. */
+export const CLAVE_ROTACION_ASEO = 'log_aseo_rotacion';
+
+/**
+ * Puestos configurables y la clave donde vive su modo de rotación, en el orden
+ * en que se muestran. Espejo de `CLAVES_ROTACION_PUESTO` en `preferencias.py`.
+ */
+export const PUESTO_ROTACION_CLAVES: { permiso: string; clave: string }[] = [
+  { permiso: 'acomodador', clave: 'log_rotacion_acomodador' },
+  { permiso: 'vigilancia', clave: 'log_rotacion_vigilancia' },
+  { permiso: 'microfono',  clave: 'log_rotacion_microfono' },
+  { permiso: 'plataforma', clave: 'log_rotacion_plataforma' },
+  { permiso: 'audio',      clave: 'log_rotacion_audio' },
+  { permiso: 'video',      clave: 'log_rotacion_video' },
+];
 
 export interface ConfirmarLogisticaRequest {
   ano: number;
