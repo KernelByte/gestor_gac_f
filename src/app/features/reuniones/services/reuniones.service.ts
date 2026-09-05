@@ -14,6 +14,7 @@ import {
   ProgramaMensualCreateRequest,
   PublicarProgramaRequest,
   PublicarProgramaResponse,
+  RevisionPublicacionResponse,
   MatrizConfigResponse,
   UpdateMatrizRequest,
   MWBImportPreviewResponse,
@@ -32,6 +33,9 @@ import {
   CrearAusenciaRequest,
   SemanaSinReunion,
   CrearSemanaSinReunionRequest,
+  Seguimiento,
+  SeguimientoPayload,
+  SeguimientoHistorialResponse,
 } from '../models/reuniones.models';
 
 export interface PublicadorBusqueda {
@@ -191,6 +195,17 @@ export class ReunionesService {
           semanas: (r.semanas ?? []).map((s: any) => this.normalizeSemana(s)),
         }))
       );
+  }
+
+  /** Qué mirar antes de publicar: quién quedó con demasiadas partes en una
+   *  misma reunión. Mismo payload que publicar, porque es su revisión previa. */
+  revisarPublicacion(
+    payload: PublicarProgramaRequest
+  ): Observable<RevisionPublicacionResponse> {
+    return this.http.post<RevisionPublicacionResponse>(
+      `${this.base}/programas/revisar-publicacion`,
+      payload
+    );
   }
 
   publicarPrograma(
@@ -532,6 +547,43 @@ export class ReunionesService {
       `${this.base}/partes/${idProgramaParte}/asignacion`,
       { id_publicador: idPublicador, sala, es_ayudante: esAyudante },
       { params }
+    );
+  }
+
+  // ──────────────────────────────────────────────────
+  // SEGUIMIENTO DEL CONSEJERO
+  // ──────────────────────────────────────────────────
+
+  /** Crea o actualiza el seguimiento de una asignación. PUT y no POST: la
+   *  asignación ya identifica la fila, guardar dos veces no duplica nada. */
+  guardarSeguimiento(idAsignacion: number, payload: SeguimientoPayload): Observable<Seguimiento> {
+    return this.http.put<Seguimiento>(
+      `${this.base}/asignaciones/${idAsignacion}/seguimiento`, payload
+    );
+  }
+
+  borrarSeguimiento(idAsignacion: number, idCong: number): Observable<{ ok: boolean }> {
+    const params = new HttpParams().set('id_congregacion', idCong);
+    return this.http.delete<{ ok: boolean }>(
+      `${this.base}/asignaciones/${idAsignacion}/seguimiento`, { params }
+    );
+  }
+
+  getSeguimientoHistorial(
+    idCong: number,
+    tipoReunion: string,
+    desde: string | null,
+    hasta: string | null,
+    idPublicador?: number | null,
+  ): Observable<SeguimientoHistorialResponse> {
+    let params = new HttpParams()
+      .set('id_congregacion', idCong)
+      .set('tipo_reunion', tipoReunion);
+    if (desde) params = params.set('desde', desde);
+    if (hasta) params = params.set('hasta', hasta);
+    if (idPublicador) params = params.set('id_publicador', idPublicador);
+    return this.http.get<SeguimientoHistorialResponse>(
+      `${this.base}/seguimiento/historial`, { params }
     );
   }
 

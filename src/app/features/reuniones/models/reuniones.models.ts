@@ -54,6 +54,9 @@ export interface AsignacionDraft {
   /** Solo vienen recién generada la semana: son los que calculó el motor. Al
    *  reabrir el mes no están y el panel los pide al abrirse. */
   alternativos?: CandidatoAlternativo[];
+  /** Lo que el consejero registró sobre esta asignación después de la reunión.
+   *  `null` mientras no haya nada apuntado; el backend siempre manda la clave. */
+  seguimiento?: Seguimiento | null;
   _swapped?: boolean;
 }
 
@@ -117,6 +120,37 @@ export interface PublicarProgramaResponse {
    *  viene vacío, algo se quedó fuera y hay que decirlo. */
   semanas_sin_borrador: string[];
   semanas_omitidas_sin_reunion: string[];
+}
+
+/** Una parte concreta que cargó una persona dentro de una misma reunión. */
+export interface ParteRepetida {
+  detalle: string;
+  rol: string | null;
+  sala: string | null;
+}
+
+export interface PersonaRecargada {
+  id_publicador: number;
+  nombre_completo: string;
+  partes: ParteRepetida[];
+}
+
+export interface ReunionRecargada {
+  fecha: string;
+  /** Ranuras asignadas en esa reunión. */
+  ranuras: number;
+  /** Con cuánta gente cuenta la congregación para este tipo de reunión. */
+  personas_disponibles: number;
+  /** Partes por persona a partir de las cuales se avisa: sale de dividir las
+   *  ranuras entre la gente disponible, así que en una congregación pequeña
+   *  sube solo y repetir deja de ser motivo de aviso. */
+  umbral: number;
+  personas: PersonaRecargada[];
+}
+
+export interface RevisionPublicacionResponse {
+  tiene_repeticiones: boolean;
+  reuniones: ReunionRecargada[];
 }
 
 export interface PeriodoConfirmado {
@@ -412,4 +446,132 @@ export interface PlantillaUpdateRequest {
   nombre?: string;
   tiene_sala_b?: boolean;
   partes?: PlantillaParteDetail[];
+}
+
+
+// ──────────────────────────────────────────────────────
+// SEGUIMIENTO DEL CONSEJERO
+// ──────────────────────────────────────────────────────
+
+export type AsistenciaSeguimiento = 'si' | 'no' | 'sustituido';
+/** Contra la duración prevista de la parte. `null` cuando falta el tiempo real
+ *  o la parte no tiene duración (canciones, partes fijas): de lo que no se ha
+ *  medido no se dice nada. */
+export type NivelTiempo = 'ok' | 'corto' | 'pasado';
+
+export interface Seguimiento {
+  id_seguimiento: number;
+  id_asignacion: number;
+  id_publicador: number;
+  asistio?: AsistenciaSeguimiento | null;
+  duracion_real_seg?: number | null;
+  notas?: string | null;
+  /** Lo calcula el servidor; no se guarda. */
+  desviacion_seg?: number | null;
+  nivel?: NivelTiempo | null;
+}
+
+/** Lo que se manda al guardar. Todo opcional: el seguimiento se rellena a
+ *  trozos —el tiempo durante la reunión, las notas al día siguiente—. */
+export interface SeguimientoPayload {
+  id_congregacion: number;
+  asistio?: AsistenciaSeguimiento | null;
+  duracion_real_seg?: number | null;
+  notas?: string | null;
+}
+
+export interface SeguimientoOcurrencia {
+  id_asignacion: number;
+  id_publicador: number;
+  /** Viaja en la ocurrencia y no solo en la persona porque la vista por reunión
+   *  las lista sueltas, fuera del publicador que las agrupa. */
+  nombre_completo: string;
+  fecha: string;
+  detalle: string;
+  /** 'Conductor', 'Lector', 'Ayudante'… o null si la parte la lleva una sola
+   *  persona y su nombre ya basta. */
+  papel?: string | null;
+  sala?: string | null;
+  es_ayudante: boolean;
+  duracion_minutos?: number | null;
+  seguimiento?: Seguimiento | null;
+}
+
+export interface SeguimientoRolDePersona {
+  rol_key: string;
+  etiqueta: string;
+  veces: number;
+  /** `null` cuando todas sus veces están por delante: "la última" no puede ser
+   *  una reunión que aún no se ha celebrado. */
+  ultima_fecha?: string | null;
+  dias_desde_ultima?: number | null;
+  proxima_fecha?: string | null;
+  ocurrencias: SeguimientoOcurrencia[];
+}
+
+/** Cómo se le da el tiempo a alguien. `medidas` es el denominador honesto:
+ *  solo cuenta lo cronometrado contra una duración prevista. */
+export interface SeguimientoResumenTiempo {
+  medidas: number;
+  en_tiempo: number;
+  pasado: number;
+  corto: number;
+  desviacion_media_seg?: number | null;
+}
+
+export interface SeguimientoPersona {
+  id_publicador: number;
+  nombre_completo: string;
+  total: number;
+  sin_seguimiento: number;
+  ultima_fecha?: string | null;
+  dias_desde_ultima?: number | null;
+  /** La más cercana de sus partes futuras: dice que ya está cubierta. */
+  proxima_fecha?: string | null;
+  tiempo?: SeguimientoResumenTiempo | null;
+  roles: SeguimientoRolDePersona[];
+}
+
+/** Una reunión ya celebrada con todo lo asignado en ella: la hoja de trabajo
+ *  para apuntar los tiempos de una sentada al salir de la reunión. */
+export interface SeguimientoReunion {
+  fecha: string;
+  total: number;
+  registradas: number;
+  partes: SeguimientoOcurrencia[];
+}
+
+/** Entre qué fechas hay algo, para poder explicar un rango vacío. */
+export interface SeguimientoRangoDisponible {
+  desde?: string | null;
+  hasta?: string | null;
+}
+
+export interface SeguimientoPersonaDeRol {
+  id_publicador: number;
+  nombre_completo: string;
+  veces: number;
+  ultima_fecha?: string | null;
+  dias_desde_ultima?: number | null;
+  proxima_fecha?: string | null;
+}
+
+export interface SeguimientoRol {
+  rol_key: string;
+  etiqueta: string;
+  total: number;
+  personas: SeguimientoPersonaDeRol[];
+}
+
+export interface SeguimientoHistorialResponse {
+  total_apariciones: number;
+  total_personas: number;
+  total_con_seguimiento: number;
+  /** Ya celebradas y todavía sin registrar. */
+  total_pendientes: number;
+  tiempo: SeguimientoResumenTiempo;
+  rango_disponible: SeguimientoRangoDisponible;
+  reuniones: SeguimientoReunion[];
+  personas: SeguimientoPersona[];
+  roles: SeguimientoRol[];
 }

@@ -9,6 +9,8 @@
   HostListener,
   NgZone,
   DestroyRef,
+  ViewChild,
+  ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,6 +19,11 @@ import { forkJoin, of, firstValueFrom, Observable } from 'rxjs'; // 'of' used in
 import { ReunionesLogisticaComponent } from './reuniones-logistica.component';
 import { ReunionesDiscursosComponent } from './reuniones-discursos.component';
 import { ReunionesAjustesDialogComponent } from './reuniones-ajustes-dialog.component';
+import { RevisionPublicacionDialogComponent } from './revision-publicacion-dialog.component';
+import { SeguimientoReunionesComponent } from './seguimiento-reuniones.component';
+import {
+  SeguimientoAsignacionPanelComponent, SeguimientoObjetivo,
+} from './seguimiento-asignacion-panel.component';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 import { ReunionesService, PublicadorBusqueda } from '../services/reuniones.service';
 import { ConflictosService } from '../services/conflictos.service';
@@ -33,12 +40,14 @@ import {
   GenerarAsignacionesRequest,
   ProgramaMensualCreateRequest,
   PublicarProgramaRequest,
+  ReunionRecargada,
   EditarAsignacionRequest,
   PeriodoConfirmado,
   PeriodoGuia,
   PeriodoNav,
   ConservadoGuia,
   ConflictoMes,
+  Seguimiento,
 } from '../models/reuniones.models';
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { ToastService } from '../../../shared/components/toast/toast.service';
@@ -46,7 +55,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 @Component({
   selector: 'app-reuniones-programacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ReunionesLogisticaComponent, ReunionesDiscursosComponent, ReunionesAjustesDialogComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ReunionesLogisticaComponent, ReunionesDiscursosComponent, ReunionesAjustesDialogComponent, RevisionPublicacionDialogComponent, SeguimientoReunionesComponent, SeguimientoAsignacionPanelComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -433,6 +442,32 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   </button>
                 }
               }
+            }
+
+            <!-- Seguimiento: cuántas veces le ha tocado a cada uno el mismo
+                 papel, con el tiempo, el punto de consejo y las observaciones
+                 de cada vez. Fuera del bloque de "publicado" y del mes activo a
+                 propósito: mira un rango de meses, no el que esté abierto, así
+                 que tiene sentido incluso con la pantalla vacía.
+                 Detrás de 'reuniones.seguimiento', un permiso propio y no el
+                 de programar: quien programa la reunión no necesariamente da
+                 seguimiento a las partes (y viceversa), así que se reparten
+                 por separado en la ficha del usuario. Solo entre semana. -->
+            @if (hasSeguimientoPermission()) {
+              <button
+                type="button"
+                data-testid="btn-seguimiento"
+                (click)="seguimientoAbierto.set(true)"
+                title="Seguimiento: historial, tiempos y puntos de consejo"
+                aria-label="Seguimiento: historial, tiempos y puntos de consejo"
+                class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/25 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-95">
+                <!-- Cronómetro: es lo que distingue esta pantalla de un informe
+                     más, y lo que la gente viene a buscar aquí. -->
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5l2.5 1.5M9.5 2h5M12 6V2"/></svg>
+              </button>
+            }
+
+            @if (periodoActivoCompleto(); as mesActivo) {
               <!-- El menú de borrado, en cambio, no depende de si ya se
                    publicó: un borrador se puede querer descartar o eliminar
                    igual que algo publicado, y antes no había forma de hacerlo
@@ -876,23 +911,50 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                   </span>
                                 }
                               </button>
-                              @if (mostrarWhatsappPapeleta(asig)) {
-                                <button
-                                  type="button"
-                                  data-testid="btn-whatsapp-papeleta"
-                                  (click)="enviarPapeletaWhatsapp(asig, $event)"
-                                  (pointerenter)="precargarPapeleta(asig)"
-                                  (focus)="precargarPapeleta(asig)"
-                                  [disabled]="enviandoEstaPapeleta(asig)"
-                                  title="Enviar su asignación por WhatsApp"
-                                  aria-label="Enviar su asignación por WhatsApp"
-                                  class="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 text-white shadow ring-2 ring-white dark:ring-slate-900 hover:bg-emerald-600 transition-all active:scale-90 disabled:opacity-50">
-                                  @if (enviandoEstaPapeleta(asig)) {
-                                    <svg class="w-2.5 h-2.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                                  } @else {
-                                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.44 1.32 4.94L2.05 22l5.29-1.39a9.85 9.85 0 0 0 4.7 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.86 9.86 0 0 0 12.04 2m0 1.67c2.2 0 4.27.86 5.82 2.42a8.2 8.2 0 0 1 2.42 5.82c0 4.54-3.7 8.24-8.25 8.24a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.14.82.84-3.06-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.55 3.7-8.22 8.26-8.22M8.53 6.7c-.17 0-.45.06-.68.32-.24.25-.9.88-.9 2.15s.92 2.5 1.05 2.67c.13.17 1.8 2.87 4.43 3.91 2.19.87 2.64.7 3.11.65.48-.04 1.53-.62 1.75-1.22.22-.6.22-1.11.15-1.22-.06-.1-.24-.16-.5-.29-.26-.13-1.53-.75-1.77-.84-.24-.09-.41-.13-.58.13-.17.26-.67.84-.82 1.01-.15.17-.3.19-.56.06-.26-.13-1.09-.4-2.07-1.28-.77-.68-1.28-1.53-1.44-1.79-.15-.26-.02-.4.11-.53.12-.11.26-.3.4-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45C9.44 8.4 8.94 7.14 8.72 6.63c-.18-.42-.36-.4-.5-.4"/></svg>
+                              <!-- Las dos insignias de ESTA asignación viven en
+                                   el mismo pico —arriba a la derecha— y no una
+                                   a cada lado: puestas en esquinas opuestas
+                                   chocaban con las de la pastilla vecina, que
+                                   tiene su propia insignia justo al otro lado
+                                   del hueco. Y en un mismo orden siempre: la
+                                   papeleta primero, porque se manda ANTES de
+                                   la reunión; el seguimiento después, porque se
+                                   registra DESPUÉS. -->
+                              @if (mostrarWhatsappPapeleta(asig) || mostrarSeguimientoPill(asig)) {
+                                <div class="absolute -top-1.5 -right-1.5 flex items-center gap-1">
+                                  @if (mostrarWhatsappPapeleta(asig)) {
+                                    <button
+                                      type="button"
+                                      data-testid="btn-whatsapp-papeleta"
+                                      (click)="enviarPapeletaWhatsapp(asig, $event)"
+                                      (pointerenter)="precargarPapeleta(asig)"
+                                      (focus)="precargarPapeleta(asig)"
+                                      [disabled]="enviandoEstaPapeleta(asig)"
+                                      title="Enviar su asignación por WhatsApp"
+                                      aria-label="Enviar su asignación por WhatsApp"
+                                      class="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 text-white shadow ring-2 ring-white dark:ring-slate-900 hover:bg-emerald-600 transition-all active:scale-90 disabled:opacity-50">
+                                      @if (enviandoEstaPapeleta(asig)) {
+                                        <svg class="w-2.5 h-2.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                      } @else {
+                                        <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.44 1.32 4.94L2.05 22l5.29-1.39a9.85 9.85 0 0 0 4.7 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.86 9.86 0 0 0 12.04 2m0 1.67c2.2 0 4.27.86 5.82 2.42a8.2 8.2 0 0 1 2.42 5.82c0 4.54-3.7 8.24-8.25 8.24a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.14.82.84-3.06-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.55 3.7-8.22 8.26-8.22M8.53 6.7c-.17 0-.45.06-.68.32-.24.25-.9.88-.9 2.15s.92 2.5 1.05 2.67c.13.17 1.8 2.87 4.43 3.91 2.19.87 2.64.7 3.11.65.48-.04 1.53-.62 1.75-1.22.22-.6.22-1.11.15-1.22-.06-.1-.24-.16-.5-.29-.26-.13-1.53-.75-1.77-.84-.24-.09-.41-.13-.58.13-.17.26-.67.84-.82 1.01-.15.17-.3.19-.56.06-.26-.13-1.09-.4-2.07-1.28-.77-.68-1.28-1.53-1.44-1.79-.15-.26-.02-.4.11-.53.12-.11.26-.3.4-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45C9.44 8.4 8.94 7.14 8.72 6.63c-.18-.42-.36-.4-.5-.4"/></svg>
+                                      }
+                                    </button>
                                   }
-                                </button>
+                                  @if (mostrarSeguimientoPill(asig)) {
+                                    <button
+                                      type="button"
+                                      data-testid="btn-seguimiento-asignacion"
+                                      (click)="abrirSeguimientoPill(asig, $event)"
+                                      [title]="asig.seguimiento ? 'Ver el seguimiento de esta parte' : 'Registrar el seguimiento de esta parte'"
+                                      [attr.aria-label]="asig.seguimiento ? 'Ver el seguimiento de ' + asig.nombre_completo : 'Registrar el seguimiento de ' + asig.nombre_completo"
+                                      class="flex items-center justify-center w-4 h-4 rounded-full shadow ring-2 ring-white dark:ring-slate-900 transition-all active:scale-90"
+                                      [class]="asig.seguimiento
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                        : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-600 hover:text-blue-600 hover:border-blue-400'">
+                                      <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5l2.5 1.5M9.5 2h5"/></svg>
+                                    </button>
+                                  }
+                                </div>
                               }
                             </div>
                             }
@@ -974,6 +1036,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                 <svg class="w-3 h-3 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input
+                  #buscadorDesktop
+                  data-buscador-asignado="escritorio"
                   type="text"
                   placeholder="Buscar persona..."
                   [value]="busquedaCandidato()"
@@ -1458,6 +1522,36 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           </div>
         </div>
       </div>
+    }
+
+    <!-- ===== REVISIÓN PREVIA A PUBLICAR ===== -->
+    @if (revisionPublicacion(); as reuniones) {
+      <app-revision-publicacion-dialog
+        [reuniones]="reuniones"
+        (resolved)="onRevisionPublicacionAction($event)">
+      </app-revision-publicacion-dialog>
+    }
+
+    <!-- ===== SEGUIMIENTO DEL CONSEJERO ===== -->
+    @if (seguimientoAbierto()) {
+      <app-seguimiento-reuniones
+        [idCong]="congregacionCtx.effectiveCongregacionId()"
+        [tipoReunion]="tipoReunionActivo()"
+        (cambiado)="onSeguimientoCambiadoDesdeModal()"
+        (cerrar)="cerrarSeguimiento()">
+      </app-seguimiento-reuniones>
+    }
+
+    <!-- El panel de una sola asignación, abierto desde su pastilla. El modal
+         de arriba abre el suyo por su cuenta: cada uno sabe a qué fila
+         devolver el resultado. -->
+    @if (seguimientoPill(); as obj) {
+      <app-seguimiento-asignacion-panel
+        [objetivo]="obj"
+        [idCong]="congregacionCtx.effectiveCongregacionId()!"
+        (guardado)="onSeguimientoPillGuardado(obj.id_asignacion, $event)"
+        (cerrar)="seguimientoPill.set(null)">
+      </app-seguimiento-asignacion-panel>
     }
   `,
   styles: [`
@@ -2068,6 +2162,14 @@ export class ReunionesProgramacionComponent implements OnInit {
     return this.authStore.hasPermission(perm);
   });
 
+  /** Permiso propio, no una consecuencia de `hasEditPermission()`: quien
+   *  programa la reunión no necesariamente da seguimiento a las partes, y
+   *  quien lo hace no necesariamente programa. Solo aplica a entre semana —el
+   *  punto de consejo es cosa de esa reunión, no de la de fin de semana. */
+  hasSeguimientoPermission = computed(() =>
+    this.tipoReunionActivo() === 'entre_semana' && this.authStore.hasPermission('reuniones.seguimiento')
+  );
+
   puedeCargarGuia = computed(() => {
     const roles = this.authStore.user()?.roles ?? [];
     return roles.includes('Administrador') || roles.includes('Gestor Aplicación');
@@ -2356,6 +2458,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   // todas comparten id_programa_parte, así que cualquier clave derivada de él
   // abriría el panel de las cuatro de golpe.
   editingHistorialId = signal<string | null>(null);
+  @ViewChild('buscadorDesktop') private buscadorDesktopRef?: ElementRef<HTMLInputElement>;
   historialCandidatos = signal<CandidatoAlternativo[]>([]);
   loadingCandidatos = signal(false);
   busquedaCandidato = signal('');
@@ -2437,6 +2540,70 @@ export class ReunionesProgramacionComponent implements OnInit {
     if (this.menuMesesAbierto()) this.menuMesesAbierto.set(false);
     if (this.menuAccionesAbierto()) this.menuAccionesAbierto.set(false);
     if (this.papeletaPreview()) this.cerrarPapeletaPreview();
+  }
+
+  // ──────────────────────────────────────────────────
+  // SEGUIMIENTO DEL CONSEJERO
+  // ──────────────────────────────────────────────────
+  // Todo esto va detrás de `hasEditPermission()`, que es el permiso de la
+  // pestaña ('reuniones.entre_semana' / '.fin_semana'). Sin él no se pinta ni
+  // el botón de la barra ni la insignia: el backend responde 403 a los mismos
+  // usuarios, así que pantalla y servidor dicen lo mismo.
+
+  seguimientoAbierto = signal(false);
+  seguimientoPill = signal<SeguimientoObjetivo | null>(null);
+  /** Se marca cuando el modal guarda algo, para releer el mes al cerrarlo: sus
+   *  cambios pueden ser de cualquier semana, no solo de la que está abierta. */
+  private seguimientoTocado = false;
+
+  /** La insignia solo tiene sentido sobre una asignación real y en una semana
+   *  ya celebrada: el seguimiento se apunta después de la reunión, no antes. */
+  mostrarSeguimientoPill(asig: AsignacionDraft): boolean {
+    if (!this.hasSeguimientoPermission()) return false;
+    if (asig.id_asignacion == null || asig.estado === 'sin_asignar') return false;
+    const fecha = this.currentSemana()?.fecha;
+    return !!fecha && fecha.slice(0, 10) <= new Date().toISOString().slice(0, 10);
+  }
+
+  abrirSeguimientoPill(asig: AsignacionDraft, ev: Event): void {
+    // La insignia vive dentro del botón de la pastilla: sin esto, abrirla
+    // dispararía también el panel de "cambiar asignado".
+    ev.stopPropagation();
+    ev.preventDefault();
+    if (asig.id_asignacion == null) return;
+    this.seguimientoPill.set({
+      id_asignacion: asig.id_asignacion,
+      nombre_completo: asig.nombre_completo,
+      nombre_parte: asig.nombre_parte,
+      fecha: this.currentSemana()?.fecha ?? null,
+      duracion_minutos: asig.duracion_minutos ?? null,
+      seguimiento: asig.seguimiento ?? null,
+    });
+  }
+
+  /** Escribe el resultado en la semana que ya está en pantalla en vez de releer
+   *  el mes: lo único que cambia es esa fila. */
+  onSeguimientoPillGuardado(idAsignacion: number, seg: Seguimiento | null): void {
+    this.semanas.update((semanas) =>
+      semanas.map((sem) => ({
+        ...sem,
+        partes: sem.partes.map((p) =>
+          p.id_asignacion === idAsignacion ? { ...p, seguimiento: seg } : p
+        ),
+      }))
+    );
+  }
+
+  onSeguimientoCambiadoDesdeModal(): void {
+    this.seguimientoTocado = true;
+  }
+
+  cerrarSeguimiento(): void {
+    this.seguimientoAbierto.set(false);
+    if (!this.seguimientoTocado) return;
+    this.seguimientoTocado = false;
+    const activo = this.periodoActivoCompleto();
+    if (activo) this.abrirPeriodo(activo);
   }
 
   // ── Meeting type toggle ────────────────────────────────────────
@@ -3324,12 +3491,30 @@ export class ReunionesProgramacionComponent implements OnInit {
   }
 
   // ── Publicar ───────────────────────────────────────────────────
+
+  /** Lo que quedó cargado de más, mientras se pregunta si se publica así. */
+  revisionPublicacion = signal<ReunionRecargada[] | null>(null);
+  private resolverRevisionPublicacion: ((seguir: boolean) => void) | null = null;
+
+  onRevisionPublicacionAction(seguir: boolean): void {
+    this.revisionPublicacion.set(null);
+    const resolver = this.resolverRevisionPublicacion;
+    this.resolverRevisionPublicacion = null;
+    resolver?.(seguir);
+  }
+
+  /**
+   * Publicar es donde se revisa quién quedó con demasiadas partes en una misma
+   * reunión, no al asignar: en borrador se mueve gente de un lado a otro y
+   * avisar ahí sería estorbar en mitad del trabajo. Aquí ya es una decisión.
+   */
   publicar(): void {
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong) return;
     const semanas = this.semanas();
     if (semanas.length === 0) return;
 
+    const estadoPrevio = this.estado();
     this.estado.set('loading');
 
     // Va la fecha de CADA semana, no un único año para todas: es lo que
@@ -3340,6 +3525,31 @@ export class ReunionesProgramacionComponent implements OnInit {
       fechas: semanas.map((s) => s.fecha.slice(0, 10)),
     };
 
+    this.reunionesSvc
+      .revisarPublicacion(payload)
+      .pipe(
+        // Si la revisión falla no se puede dejar el programa sin publicar: es
+        // un aviso, no un requisito. Se sigue de largo como si no hubiera nada
+        // que enseñar.
+        catchError(() => of({ tiene_repeticiones: false, reuniones: [] })),
+      )
+      .subscribe(async (revision) => {
+        if (revision.tiene_repeticiones) {
+          // Fuera del spinner mientras se decide: la pantalla de atrás tiene
+          // que poder leerse para valorar lo que el diálogo está enseñando.
+          this.estado.set(estadoPrevio);
+          const seguir = await new Promise<boolean>((resolve) => {
+            this.resolverRevisionPublicacion = resolve;
+            this.revisionPublicacion.set(revision.reuniones);
+          });
+          if (!seguir) return;
+          this.estado.set('loading');
+        }
+        this.enviarPublicacion(payload, idCong);
+      });
+  }
+
+  private enviarPublicacion(payload: PublicarProgramaRequest, idCong: number): void {
     this.reunionesSvc.publicarPrograma(payload).subscribe({
       next: (res) => {
         this.loadPeriodos(idCong);
@@ -4293,6 +4503,7 @@ export class ReunionesProgramacionComponent implements OnInit {
     this.historialCandidatos.set([]);
     this.busquedaCandidato.set('');
     this.busquedaResultados.set([]);
+    this.enfocarBuscadorAsignado();
     // La semana recién generada ya trae los candidatos que calculó el motor.
     if (asig.alternativos?.length) return;
     // Si no, se piden. Por ranura y no por asignación: una casilla vacía no
@@ -4311,6 +4522,39 @@ export class ReunionesProgramacionComponent implements OnInit {
         this.loadingCandidatos.set(false);
       },
       error: () => this.loadingCandidatos.set(false),
+    });
+  }
+
+  /**
+   * Si se abrió el panel "Cambiar asignado" es porque se va a escribir: el
+   * cursor espera ya en el buscador en vez de pedir un clic más.
+   *
+   * Sólo en escritorio. En el sheet móvil el teclado taparía justo la lista
+   * de sugeridos, que es lo que se va a mirar antes de escribir nada.
+   */
+  private enfocarBuscadorAsignado(intentos = 12): void {
+    requestAnimationFrame(() => {
+      // Cerrado mientras esperábamos: ya no hay a qué apuntar.
+      if (this.editingHistorialId() === null) return;
+      // Se mira el DOM y no sólo el @ViewChild: las consultas de vista se
+      // refrescan con la detección de cambios, que aquí va coalescida por
+      // evento, así que en los primeros frames aún puede venir vacía aunque
+      // el input ya esté puesto.
+      const input =
+        this.buscadorDesktopRef?.nativeElement ??
+        document.querySelector<HTMLInputElement>('input[data-buscador-asignado="escritorio"]');
+      // Sin caja de layout es que no se está viendo: o el panel todavía no
+      // existe -su posición se resuelve en otro frame, en `posicionarDropdown`-
+      // o estamos por debajo de `md`, donde manda el sheet móvil. Se reintenta
+      // unos frames y, si sigue sin aparecer, se deja estar.
+      if (!input?.offsetParent) {
+        if (intentos > 0) this.enfocarBuscadorAsignado(intentos - 1);
+        return;
+      }
+      // `preventScroll` porque el panel es `fixed` y va anclado a la píldora:
+      // si el navegador desplazara la lista para revelar el input, el
+      // vigilante de scroll cerraría el panel recién abierto.
+      if (document.activeElement !== input) input.focus({ preventScroll: true });
     });
   }
 
@@ -4368,7 +4612,10 @@ export class ReunionesProgramacionComponent implements OnInit {
             // ranura vacía escribía el nombre en las cuatro filas a la vez.
             partes: sem.partes.map((p) =>
               this.pillKey(p) === this.pillKey(asig)
-                ? { ...p, id_asignacion: result.id_asignacion, id_publicador: result.id_publicador, nombre_completo: result.nombre_completo, estado: this.estado() === 'publicado' ? 'publicado' as const : 'borrador' as const, _swapped: true }
+                // `seguimiento: null` porque el backend lo borra al cambiar de
+                // persona: el tiempo y el punto de consejo eran de quien
+                // estaba antes, no de quien entra.
+                ? { ...p, id_asignacion: result.id_asignacion, id_publicador: result.id_publicador, nombre_completo: result.nombre_completo, estado: this.estado() === 'publicado' ? 'publicado' as const : 'borrador' as const, seguimiento: null, _swapped: true }
                 : p
             ),
           };
