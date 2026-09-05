@@ -134,6 +134,58 @@ export interface PeriodoConfirmado {
   fechas: string[];
 }
 
+/** Una semana que no se borró por estar ya publicada. Misma forma que la que
+ *  devuelve generar, para poder reutilizar el mismo aviso. */
+export interface ConservadoGuia {
+  ano: number;
+  semana_iso: number;
+  fecha: string;
+  titulo_guia?: string | null;
+}
+
+/** Una guía con programación generada. La unidad de navegación de entre
+ *  semana: la guía se genera por semanas ISO y su última semana cae en el mes
+ *  siguiente, así que listar por mes la partía en dos y borrar un mes se
+ *  llevaba una semana que luego nadie sabía regenerar. */
+export interface PeriodoGuia {
+  clave: string;
+  id_plantilla: number;
+  nombre_plantilla: string;
+  label: string;
+  estado: 'borrador' | 'publicado';
+  fechas: string[];
+  fecha_inicio: string;
+  fecha_fin: string;
+  /** Semanas realmente generadas. */
+  semanas: number;
+  /** Semanas que la guía define. Si es mayor que `semanas`, faltan por
+   *  generar y la pantalla lo dice: es el detector del hueco silencioso. */
+  semanas_guia: number;
+  /** Primer mes de la guía, por compatibilidad (PDF por defecto, papelera). */
+  ano: number;
+  mes: number;
+  /** Los meses de calendario que toca la guía. El PDF y las papeletas se
+   *  siguen pidiendo por (ano, mes), así que la fila los necesita. */
+  meses: { ano: number; mes: number }[];
+}
+
+/** La fila que pinta el historial, venga de una guía (entre semana) o de un
+ *  mes (fin de semana y programas sin guía asociada). */
+export interface PeriodoNav {
+  clave: string;
+  tipo: 'guia' | 'mes';
+  label: string;
+  sublabel: string;
+  estado: 'borrador' | 'publicado';
+  fechas: string[];
+  id_plantilla: number | null;
+  /** Faltan semanas por generar respecto a lo que la guía define. */
+  incompleta: boolean;
+  ano: number;
+  mes: number;
+  meses: { ano: number; mes: number }[];
+}
+
 export interface ConflictoMes {
   ano: number;
   mes: number;

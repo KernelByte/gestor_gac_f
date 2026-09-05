@@ -252,58 +252,6 @@ function normalizarTexto(s: string): string {
               }
             </div>
 
-            <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
-
-          <!-- Cuanto se mira de una vez. El mes entero ya esta cargado, asi
-               que acercarse a una semana o a un dia no pide nada al servidor.
-               Un boton con la vista actual en vez de un interruptor de tres
-               opciones siempre visibles: ocupa el ancho de una sola palabra
-               y despliega la lista solo cuando hace falta cambiar. -->
-          <div class="relative shrink-0" data-vista-menu>
-            <button
-              type="button"
-              (click)="vistaPeriodoAbierta.set(!vistaPeriodoAbierta())"
-              [attr.aria-expanded]="vistaPeriodoAbierta()"
-              aria-haspopup="listbox"
-              aria-label="Cambiar cuánto se muestra del mes"
-              class="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold transition-colors"
-              [class]="vistaPeriodoAbierta()
-                ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'">
-              <svg class="w-3.5 h-3.5 shrink-0 text-sky-500/80 dark:text-sky-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 3v3M16 3v3"/></svg>
-              <span class="text-slate-400 dark:text-slate-500 font-semibold">Vista:</span>
-              {{ vistaActivaLabel() }}
-              <svg
-                class="w-3 h-3 shrink-0 opacity-60 transition-transform duration-200"
-                [class.rotate-180]="vistaPeriodoAbierta()"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-            </button>
-
-            @if (vistaPeriodoAbierta()) {
-              <div
-                role="listbox"
-                aria-label="Cuánto mostrar del mes"
-                class="absolute z-30 top-[calc(100%+6px)] left-0 w-32 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl">
-                @for (v of vistasPeriodo; track v.id) {
-                  <button
-                    type="button"
-                    role="option"
-                    [attr.aria-selected]="vistaPeriodo() === v.id"
-                    (click)="cambiarVista(v.id); vistaPeriodoAbierta.set(false)"
-                    class="w-full flex items-center justify-between gap-2 text-left text-xs px-3 h-9 transition-colors"
-                    [class]="vistaPeriodo() === v.id
-                      ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300'
-                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
-                    {{ v.full }}
-                    @if (vistaPeriodo() === v.id) {
-                      <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    }
-                  </button>
-                }
-              </div>
-            }
-          </div>
-
           <!-- Balance de carga: se abre en un panel propio, al lado de la
                tabla en pantallas anchas y como hoja en las estrechas. Antes
                era un desplegable encima de la tabla y abrirlo le robaba
@@ -332,13 +280,12 @@ function normalizarTexto(s: string): string {
 
           <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
 
-          <!-- Acciones del mes, todas en icono.
-               Cada una lleva aria-label y title: sin rótulo visible, el nombre
-               tiene que estar en el árbol de accesibilidad y al pasar el ratón,
-               no sólo en la cabeza de quien ya conoce la pantalla. Mismo tamaño
-               y misma forma para todas; el color aparece sólo al pasar por
-               encima -salvo en Publicar, la única que va rellena por ser la
-               acción primaria del mes-. -->
+          <!-- Acciones del mes. Publicar y Descartar van en la misma píldora
+               con rótulo -icono + texto, h-8, rounded-xl- que usan Volver y
+               Borrar en Entre semana/Fin de semana: es el mismo par de
+               acciones sobre el mismo estado (mes con cambios sin publicar),
+               así que se ven igual en las tres pantallas. El resto de
+               acciones del mes siguen en icono. -->
           <div class="flex items-center gap-0.5 min-w-0 overflow-x-auto simple-scrollbar md:overflow-visible">
             <!-- Acción primaria: publicar. Una sola cada vez. -->
             @if (puedePublicar()) {
@@ -352,8 +299,9 @@ function normalizarTexto(s: string): string {
                 [attr.aria-label]="conflictosLabel()
                   ? 'Publicar. ' + conflictosLabel()
                   : 'Publicar'"
-                class="relative flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 shrink-0 rounded-xl bg-brand-purple text-white shadow-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-40">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                class="relative shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Publicar
                 <!-- Los puestos sin cubrir siguen contándose encima del botón:
                      es la única señal de que publicar todavía no toca. -->
                 @if (conflictosLabel()) {
@@ -372,8 +320,9 @@ function normalizarTexto(s: string): string {
                 [disabled]="estado() === 'loading'"
                 title="Descartar: deshacer los cambios y volver a la versión que ve la congregación"
                 aria-label="Descartar cambios"
-                class="flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100 transition-all active:scale-95 disabled:opacity-40">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>
+                class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>
+                Descartar
               </button>
             }
 
@@ -402,6 +351,31 @@ function normalizarTexto(s: string): string {
 
                 @if (menuAccionesAbierto()) {
                   <div role="menu" class="absolute z-40 top-[calc(100%+4px)] right-0 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden p-1.5 flex flex-col gap-0.5">
+                    <!-- Vista: cuánto se mira del mes. Vivía como su propio
+                         desplegable en la barra; ahora entra aquí para
+                         dejarle sitio a Publicar/Descartar cuando la barra
+                         no tiene ancho de sobra. No cierra el menú al
+                         elegir -es un ajuste, no una acción de una vez-. -->
+                    <div class="px-1 pt-0.5 pb-1">
+                      <p class="px-1 pb-1 text-[0.6rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Vista</p>
+                      <div role="radiogroup" aria-label="Cuánto mostrar del mes" class="flex items-center gap-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5">
+                        @for (v of vistasPeriodo; track v.id) {
+                          <button
+                            type="button"
+                            role="menuitemradio"
+                            [attr.aria-checked]="vistaPeriodo() === v.id"
+                            (click)="cambiarVista(v.id)"
+                            class="flex-1 h-7 rounded-md text-xs font-semibold transition-colors"
+                            [class]="vistaPeriodo() === v.id
+                              ? 'bg-white dark:bg-slate-900 text-violet-700 dark:text-violet-300 shadow-sm'
+                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                            {{ v.full }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                    <span class="h-px bg-slate-100 dark:bg-slate-800 mx-1 my-0.5" aria-hidden="true"></span>
+
                     <!-- PDF — necesita que exista una versión publicada -->
                     <button
                       type="button"
@@ -2412,9 +2386,6 @@ export class ReunionesLogisticaComponent implements OnInit {
       // en un popover fijo (data-combobox-popover) que ya no cuelga de la celda.
       this.cerrarCombobox();
     }
-    if (this.vistaPeriodoAbierta() && !target.closest('[data-vista-menu]')) {
-      this.vistaPeriodoAbierta.set(false);
-    }
     if (this.menuMesesAbierto() && !target.closest('[data-mes-menu]')) {
       this.menuMesesAbierto.set(false);
     }
@@ -2458,15 +2429,6 @@ export class ReunionesLogisticaComponent implements OnInit {
   vistaPeriodo = signal<'mes' | 'semana' | 'dia'>('mes');
   semanaSel = signal(0);
   diaSel = signal(0);
-
-  // Boton unico con la vista actual, en vez de un interruptor de tres
-  // opciones siempre visibles: ocupa el ancho de una palabra y despliega la
-  // lista solo cuando hace falta cambiar.
-  vistaPeriodoAbierta = signal(false);
-
-  vistaActivaLabel = computed(
-    () => this.vistasPeriodo.find((v) => v.id === this.vistaPeriodo())?.full ?? '',
-  );
 
   /** Numero de semana ISO de una fecha 'YYYY-MM-DD'. */
   private semanaIso(fechaStr: string): number {
@@ -3120,7 +3082,6 @@ export class ReunionesLogisticaComponent implements OnInit {
     this.cerrarPanelBalance();
     this.cerrarRebalanceo();
     this.menuMesesAbierto.set(false);
-    this.vistaPeriodoAbierta.set(false);
     this.limpiarCeldasMarcadas();
     this.mesDatos.set(null);
     this.estado.set('idle');

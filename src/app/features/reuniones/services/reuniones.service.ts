@@ -25,6 +25,8 @@ import {
   AlgoProfile,
   EditarAsignacionRequest,
   PeriodoConfirmado,
+  PeriodoGuia,
+  ConservadoGuia,
   ConflictosPlantillaResponse,
   AusenciaOut,
   CrearAusenciaRequest,
@@ -138,6 +140,22 @@ export class ReunionesService {
       .set('solo_publicado', soloPublicado);
     return this.http
       .get<{ semanas: any[] }>(`${this.base}/programas/mes/${tipo}/${ano}/${mes}`, { params })
+      .pipe(map((r) => (r.semanas ?? []).map((s) => this.normalizeSemana(s))));
+  }
+
+  /** Las semanas de una guía completa, sin recortar por mes. Mismo formato de
+   *  respuesta que `getProgramaMes`, así que se normaliza igual. */
+  getProgramaGuia(
+    tipo: string,
+    idPlantilla: number,
+    idCong: number,
+    soloPublicado = false,
+  ): Observable<ProgramaSemana[]> {
+    const params = new HttpParams()
+      .set('id_congregacion', idCong)
+      .set('solo_publicado', soloPublicado);
+    return this.http
+      .get<{ semanas: any[] }>(`${this.base}/programas/guia/${tipo}/${idPlantilla}`, { params })
       .pipe(map((r) => (r.semanas ?? []).map((s) => this.normalizeSemana(s))));
   }
 
@@ -298,6 +316,18 @@ export class ReunionesService {
     );
   }
 
+  /** Las guías con programación. Es el historial de entre semana; fin de
+   *  semana sigue con `getPeriodosConfirmados` porque su plantilla es global y
+   *  no tiene semanas propias de las que tirar. */
+  getPeriodosGuia(tipo: string, idCong: number): Observable<PeriodoGuia[]> {
+    const params = new HttpParams()
+      .set('tipo_reunion', tipo)
+      .set('id_congregacion', idCong);
+    return this.http.get<PeriodoGuia[]>(
+      `${this.base}/asignaciones/periodos-guia`, { params }
+    );
+  }
+
   descargarProgramacionPdf(tipo: string, ano: number, mes: number, idCong: number): Observable<Blob> {
     const params = new HttpParams()
       .set('tipo_reunion', tipo)
@@ -310,10 +340,36 @@ export class ReunionesService {
     });
   }
 
+  /** El mismo PDF que `descargarProgramacionPdf`, pero con la guía completa —
+   *  todas sus semanas, incluida la que cae en el mes siguiente— en un solo
+   *  documento, en vez de uno por cada mes que la guía toca. */
+  descargarProgramacionPdfGuia(tipo: string, idPlantilla: number, idCong: number): Observable<Blob> {
+    const params = new HttpParams()
+      .set('tipo_reunion', tipo)
+      .set('id_plantilla', idPlantilla)
+      .set('id_congregacion', idCong);
+    return this.http.get(`${this.base}/asignaciones/historial/pdf`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
   descargarPapeletasPdf(ano: number, mes: number, idCong: number, formato: 'x4' | 'x1'): Observable<Blob> {
     const params = new HttpParams()
       .set('ano', ano)
       .set('mes', mes)
+      .set('id_congregacion', idCong)
+      .set('formato', formato);
+    return this.http.get(`${this.base}/asignaciones/historial/pdf-individual`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
+  /** Gemelo de `descargarPapeletasPdf`, por guía completa en vez de por mes. */
+  descargarPapeletasPdfGuia(idPlantilla: number, idCong: number, formato: 'x4' | 'x1'): Observable<Blob> {
+    const params = new HttpParams()
+      .set('id_plantilla', idPlantilla)
       .set('id_congregacion', idCong)
       .set('formato', formato);
     return this.http.get(`${this.base}/asignaciones/historial/pdf-individual`, {
@@ -357,9 +413,33 @@ export class ReunionesService {
     return this.http.delete<{ borradas: number }>(`${this.base}/asignaciones/sala-b`, { params });
   }
 
-  eliminarHistorialPlantilla(idPlantilla: number, idCong: number): Observable<{ eliminados: number }> {
-    const params = new HttpParams().set('id_congregacion', idCong);
-    return this.http.delete<{ eliminados: number }>(
+  /** Quita la Sala B de una guía entera. Acotar por mes no sirve con una guía
+   *  abierta: sus semanas se reparten en tres meses, así que limpiaba uno y
+   *  dejaba las ranuras vivas en los otros. */
+  eliminarSalaBGuia(idPlantilla: number, idCong: number, dryRun = false): Observable<{ borradas: number }> {
+    const params = new HttpParams()
+      .set('id_plantilla', idPlantilla)
+      .set('id_congregacion', idCong)
+      .set('dry_run', dryRun);
+    return this.http.delete<{ borradas: number }>(`${this.base}/asignaciones/sala-b`, { params });
+  }
+
+  /** Borra la programación de una guía entera, con todas sus semanas.
+   *
+   *  Devuelve también las semanas que NO se borraron por estar publicadas;
+   *  con `forzar` se van también. Es el criterio de generar: quitar de la
+   *  vista de la congregación algo ya anunciado no puede pasar de largo. */
+  eliminarHistorialPlantilla(
+    idPlantilla: number,
+    idCong: number,
+    tipo?: string,
+    forzar = false,
+  ): Observable<{ eliminados: number; conservados: ConservadoGuia[] }> {
+    let params = new HttpParams()
+      .set('id_congregacion', idCong)
+      .set('forzar', forzar);
+    if (tipo) params = params.set('tipo_reunion', tipo);
+    return this.http.delete<{ eliminados: number; conservados: ConservadoGuia[] }>(
       `${this.base}/programas/plantilla/${idPlantilla}`, { params }
     );
   }

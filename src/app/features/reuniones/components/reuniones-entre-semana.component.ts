@@ -13,7 +13,7 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin, of, firstValueFrom } from 'rxjs'; // 'of' used in tryLoadDrafts catchError
+import { forkJoin, of, firstValueFrom, Observable } from 'rxjs'; // 'of' used in tryLoadDrafts catchError
 import { ReunionesLogisticaComponent } from './reuniones-logistica.component';
 import { ReunionesDiscursosComponent } from './reuniones-discursos.component';
 import { ReunionesAjustesDialogComponent } from './reuniones-ajustes-dialog.component';
@@ -35,8 +35,10 @@ import {
   PublicarProgramaRequest,
   EditarAsignacionRequest,
   PeriodoConfirmado,
+  PeriodoGuia,
+  PeriodoNav,
+  ConservadoGuia,
   ConflictoMes,
-  GrupoPlantilla,
 } from '../models/reuniones.models';
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { ToastService } from '../../../shared/components/toast/toast.service';
@@ -69,56 +71,60 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               <button
                 (click)="onTipoChange('entre_semana')"
                 aria-label="Entre semana"
-                class="min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] active:transition-transform"
+                class="tab-pill min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold flex items-center justify-center"
+                [class.tab-pill--active]="tipoReunionActivo() === 'entre_semana'"
                 [ngClass]="tipoReunionActivo() === 'entre_semana'
                   ? 'flex-none px-3 bg-brand-purple text-white shadow-md shadow-purple-500/20'
                   : 'flex-1 md:flex-none px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                @if (tipoReunionActivo() === 'entre_semana') {
-                  <span class="whitespace-nowrap">Entre semana</span>
-                }
+                <svg class="tab-pill__icon w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <span class="tab-pill__label" [class.tab-pill__label--active]="tipoReunionActivo() === 'entre_semana'">
+                  <span class="tab-pill__label-text">Entre semana</span>
+                </span>
               </button>
             }
             @if (canViewFinSemana()) {
               <button
                 (click)="onTipoChange('fin_semana')"
                 aria-label="Fin de semana"
-                class="min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] active:transition-transform"
+                class="tab-pill min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold flex items-center justify-center"
+                [class.tab-pill--active]="tipoReunionActivo() === 'fin_semana'"
                 [ngClass]="tipoReunionActivo() === 'fin_semana'
                   ? 'flex-none px-3 bg-brand-purple text-white shadow-md shadow-purple-500/20'
                   : 'flex-1 md:flex-none px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                @if (tipoReunionActivo() === 'fin_semana') {
-                  <span class="whitespace-nowrap">Fin de semana</span>
-                }
+                <svg class="tab-pill__icon w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                <span class="tab-pill__label" [class.tab-pill__label--active]="tipoReunionActivo() === 'fin_semana'">
+                  <span class="tab-pill__label-text">Fin de semana</span>
+                </span>
               </button>
             }
             @if (canViewLogistica()) {
               <button
                 (click)="onTipoChange('logistica')"
                 aria-label="Logística"
-                class="min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] active:transition-transform"
+                class="tab-pill min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold flex items-center justify-center"
+                [class.tab-pill--active]="tipoReunionActivo() === 'logistica'"
                 [ngClass]="tipoReunionActivo() === 'logistica'
                   ? 'flex-none px-3 bg-brand-purple text-white shadow-md shadow-purple-500/20'
                   : 'flex-1 md:flex-none px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                @if (tipoReunionActivo() === 'logistica') {
-                  <span class="whitespace-nowrap">Logistica</span>
-                }
+                <svg class="tab-pill__icon w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span class="tab-pill__label" [class.tab-pill__label--active]="tipoReunionActivo() === 'logistica'">
+                  <span class="tab-pill__label-text">Logistica</span>
+                </span>
               </button>
             }
             @if (canViewDiscursos()) {
               <button
                 (click)="onTipoChange('discursos')"
                 aria-label="Discursos públicos"
-                class="min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.97] active:transition-transform"
+                class="tab-pill min-w-0 h-9 rounded-lg text-[10px] md:text-xs font-bold flex items-center justify-center"
+                [class.tab-pill--active]="tipoReunionActivo() === 'discursos'"
                 [ngClass]="tipoReunionActivo() === 'discursos'
                   ? 'flex-none px-3 bg-brand-purple text-white shadow-md shadow-purple-500/20'
                   : 'flex-1 md:flex-none px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80'">
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                @if (tipoReunionActivo() === 'discursos') {
-                  <span class="whitespace-nowrap">Discursos</span>
-                }
+                <svg class="tab-pill__icon w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span class="tab-pill__label" [class.tab-pill__label--active]="tipoReunionActivo() === 'discursos'">
+                  <span class="tab-pill__label-text">Discursos</span>
+                </span>
               </button>
             }
           </div>
@@ -281,7 +287,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 (click)="menuMesesAbierto.set(!menuMesesAbierto())"
                 [attr.aria-expanded]="menuMesesAbierto()"
                 aria-haspopup="listbox"
-                aria-label="Cambiar de mes"
+                [attr.aria-label]="navegacionPorGuia() ? 'Cambiar de guía' : 'Cambiar de mes'"
                 class="flex items-center gap-1.5 h-8 px-2.5 rounded-xl transition-colors"
                 [class]="menuMesesAbierto()
                   ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
@@ -292,7 +298,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               </button>
 
               @if (menuMesesAbierto()) {
-                <div role="listbox" aria-label="Meses programados" class="absolute z-40 top-[calc(100%+4px)] left-0 w-72 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
+                <div role="listbox" [attr.aria-label]="navegacionPorGuia() ? 'Guías programadas' : 'Meses programados'" class="absolute z-40 top-[calc(100%+4px)] left-0 w-72 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
                   <div class="max-h-[min(60vh,20rem)] overflow-y-auto overscroll-contain simple-scrollbar p-1.5">
                     @for (grupo of periodosPorAno(); track grupo.ano) {
                       <!-- Año como divisor del grupo, no repetido por fila. -->
@@ -300,28 +306,45 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                         <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
                         <span class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></span>
                       </p>
-                      @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
+                      @for (p of grupo.periodos; track p.clave) {
                         <div class="flex items-center gap-1">
                           <button
                             type="button"
                             role="option"
                             data-testid="fila-mes"
+                            [attr.data-clave]="p.clave"
                             [attr.data-ano]="p.ano"
                             [attr.data-mes]="p.mes"
                             [attr.aria-selected]="esPeriodoActivo(p)"
-                            (click)="loadMes(p.mes, p.ano); menuMesesAbierto.set(false)"
+                            (click)="abrirPeriodo(p); menuMesesAbierto.set(false)"
                             [disabled]="loadingHistorial()"
                             class="flex-1 min-w-0 flex items-center gap-2 px-2 h-9 rounded-lg text-xs transition-colors disabled:opacity-40"
                             [class]="esPeriodoActivo(p)
                               ? 'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 font-bold'
                               : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
                             <span class="flex-1 min-w-0 truncate text-left">{{ mesSoloLabel(p) }}</span>
+                            <!-- Punto de estado, no la píldora con texto: aquí
+                                 no cabe, entre el nombre y los iconos de PDF y
+                                 borrar. Mismo criterio que el sidebar
+                                 compacto de Logística. -->
+                            <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="p.estado === 'publicado' ? 'bg-emerald-500' : 'bg-amber-400'" [title]="etiquetaEstadoPeriodo(p)"></span>
+                            <!-- Una guía a la que le faltan semanas por generar
+                                 lo dice aquí: antes el hueco solo se descubría
+                                 abriendo el mes y notando que faltaba un día. -->
+                            @if (p.incompleta) {
+                              <span class="shrink-0 text-[0.6rem] font-bold text-amber-600 dark:text-amber-400" title="Faltan semanas por generar">incompleta</span>
+                            }
                             @if (esPeriodoActivo(p)) {
                               <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             }
                           </button>
+                          <!-- Un solo PDF por fila, sea guía o mes: el
+                               generador ya arma una tabla por semana sin
+                               importar a cuántos meses de calendario
+                               pertenezcan, así que una guía de dos meses ya no
+                               necesita desplegar un botón por cada uno. -->
                           <button
-                            (click)="descargarPdfMes(p, $event)"
+                            (click)="descargarPdf(p, $event)"
                             [disabled]="descargandoPdf()"
                             title="Descargar PDF de {{ p.label }}"
                             class="shrink-0 w-9 h-9 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500 hover:text-emerald-700 dark:text-emerald-400 transition-all active:scale-95 flex items-center justify-center disabled:opacity-40">
@@ -329,7 +352,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           </button>
                           @if (periodoEliminable(p) && hasEditPermission()) {
                             <button
-                              (click)="eliminarHistorial(p, $event)"
+                              (click)="eliminarPeriodo(p, $event)"
                               title="Eliminar {{ p.label }}"
                               class="shrink-0 w-9 h-9 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-all active:scale-95 flex items-center justify-center">
                               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -377,33 +400,43 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                  Mismo botón icono-solo que usa Logística (rounded-xl, gris
                  neutro, tinte de color sólo al pasar por encima) para que las
                  acciones de mes se vean igual en todas las pestañas. -->
-            @if (estado() === 'publicado' && periodoActivoCompleto(); as mesActivo) {
-              <button
-                (click)="descargarPdfMes(mesActivo, $event)"
-                [disabled]="descargandoPdf()"
-                title="Descargar PDF de {{ mesActivo.label }}"
-                aria-label="Descargar PDF de {{ mesActivo.label }}"
-                class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/25 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
-              </button>
-
-              <!-- Papeletas S-89-S: solo entre semana, es lo que se reparte a
-                   los estudiantes de Seamos Mejores Maestros y Lectura de la
-                   Biblia, 4 por hoja para cortar. Para mandarle a uno solo su
-                   asignación por WhatsApp está el ícono junto a cada nombre
-                   asignado en la lista, que envía solo esa papeleta. -->
-              @if (tipoReunionActivo() === 'entre_semana') {
+            @if (periodoActivoCompleto(); as mesActivo) {
+              <!-- El PDF y las papeletas reparten lo asignado a estudiantes y
+                   conductores: solo tienen sentido sobre algo ya publicado. Un
+                   borrador se sigue reasignando, así que enseñarlo aquí sería
+                   repartir nombres que pueden cambiar antes de publicar. -->
+              @if (estado() === 'publicado') {
                 <button
-                  type="button"
-                  data-testid="btn-papeletas-s89"
-                  (click)="descargarPapeletas(mesActivo, 'x4', $event)"
-                  [disabled]="descargandoPapeletas()"
-                  title="Formulario S-89-S de {{ mesActivo.label }} (4 por hoja)"
-                  aria-label="Formulario S-89-S de {{ mesActivo.label }} (4 por hoja)"
-                  class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-violet-600 dark:hover:text-violet-400 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M8 13h8M8 17h8"/></svg>
+                  (click)="descargarPdf(mesActivo, $event)"
+                  [disabled]="descargandoPdf()"
+                  title="Descargar PDF de {{ mesActivo.label }}"
+                  aria-label="Descargar PDF de {{ mesActivo.label }}"
+                  class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/25 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
                 </button>
+
+                <!-- Papeletas S-89-S: solo entre semana, es lo que se reparte a
+                     los estudiantes de Seamos Mejores Maestros y Lectura de la
+                     Biblia, 4 por hoja para cortar. Para mandarle a uno solo su
+                     asignación por WhatsApp está el ícono junto a cada nombre
+                     asignado en la lista, que envía solo esa papeleta. -->
+                @if (tipoReunionActivo() === 'entre_semana') {
+                  <button
+                    type="button"
+                    data-testid="btn-papeletas-s89"
+                    (click)="descargarPapeletasBoton(mesActivo, $event)"
+                    [disabled]="descargandoPapeletas()"
+                    title="Formulario S-89-S de {{ mesActivo.label }} (4 por hoja)"
+                    aria-label="Formulario S-89-S de {{ mesActivo.label }} (4 por hoja)"
+                    class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-violet-600 dark:hover:text-violet-400 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M8 13h8M8 17h8"/></svg>
+                  </button>
+                }
               }
+              <!-- El menú de borrado, en cambio, no depende de si ya se
+                   publicó: un borrador se puede querer descartar o eliminar
+                   igual que algo publicado, y antes no había forma de hacerlo
+                   sin publicarlo primero. -->
               <!-- Lo que borra vive detrás de un menú, no suelto en la barra.
                    Antes había dos papeleras pegadas -"quitar Sala B" y
                    "eliminar el mes"- que son cosas muy distintas y se veían
@@ -462,12 +495,19 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           type="button"
                           role="menuitem"
                           data-testid="btn-eliminar-mes-activo"
-                          (click)="menuAccionesAbierto.set(false); eliminarHistorial(mesActivo, $event)"
+                          (click)="menuAccionesAbierto.set(false); eliminarPeriodo(mesActivo, $event)"
                           class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors">
                           <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                           <span class="min-w-0 flex-1">
                             <span class="block text-xs font-bold leading-tight">Eliminar {{ mesActivo.label }}</span>
-                            <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">El mes entero, con todas sus asignaciones.</span>
+                            <!-- Decir que se va TAMBIÉN la semana del mes
+                                 siguiente: es la que sorprende, y es justo la
+                                 que antes se perdía sin poder recuperarla. -->
+                            <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">
+                              {{ mesActivo.tipo === 'guia'
+                                 ? 'La guía entera, con todas sus semanas y asignaciones.'
+                                 : 'El mes entero, con todas sus asignaciones.' }}
+                            </span>
                           </span>
                         </button>
                       }
@@ -478,7 +518,12 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
             }
 
-            @if (estado() === 'publicado') {
+            <!-- Publicado o borrador, siempre hay por dónde salir sin
+                 publicar ni borrar: el borrador ya vive guardado en la base,
+                 no en una copia aparte, así que volver a la lista no pierde
+                 nada — antes esta pantalla se quedaba sin más salida que
+                 "Publicar" o "Borrar" mientras hubiera algo en borrador. -->
+            @if (estado() === 'publicado' || estado() === 'borrador') {
               <button
                 (click)="semanas.set([]); estado.set('idle'); periodoActivo.set(null)"
                 title="Volver a la lista"
@@ -590,8 +635,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
                 <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Ninguna programación abierta</h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400 max-w-[15rem]">
-                  @if (gruposPlantilla().length > 0) {
-                    Elige un mes para verlo y editarlo.
+                  @if (periodosNav().length > 0) {
+                    {{ navegacionPorGuia() ? 'Elige una guía para verla y editarla.' : 'Elige un mes para verlo y editarlo.' }}
                   } @else if (hasEditPermission()) {
                     Genera una nueva programación para comenzar.
                   } @else {
@@ -599,34 +644,41 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   }
                 </p>
 
-                @if (gruposPlantilla().length > 0) {
+                @if (periodosNav().length > 0) {
                   <!-- Lista en tarjeta y no chips sueltos: filas del mismo
-                       ancho, una debajo de otra, se leen como un solo bloque. -->
+                       ancho, una debajo de otra, se leen como un solo bloque.
+                       Entre semana cada fila es una GUÍA con todas sus semanas,
+                       incluida la que cae en el mes siguiente: por mes, esa
+                       semana se perdía al borrar y no volvía al regenerar. -->
                   <div class="w-full mt-4 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden bg-white dark:bg-slate-900">
-                    @for (grupo of periodosPorAno(); track grupo.ano) {
-                      @for (p of grupo.periodos; track p.ano + '-' + p.mes) {
-                        <button
-                          data-testid="fila-mes"
-                          [attr.data-ano]="p.ano"
-                          [attr.data-mes]="p.mes"
-                          (click)="loadMes(p.mes, p.ano)"
-                          [disabled]="loadingHistorial()"
-                          class="w-full flex items-center gap-2.5 px-3.5 py-2 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
-                          <div class="min-w-0 flex-1 text-left">
-                            <span class="block truncate">{{ p.label }}</span>
-                            @if (p.fechas.length > 0) {
-                              <!-- La etiqueta del mes no dice si está completo:
-                                   una guía cruza el mes o deja una semana suelta
-                                   sin generar, y sin ver las fechas hay que abrir
-                                   el mes para descubrirlo. -->
-                              <span class="block truncate text-[0.65rem] font-normal text-slate-400 dark:text-slate-500 mt-0.5">
-                                {{ fechasResumen(p) }}
-                              </span>
-                            }
-                          </div>
-                          <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-                        </button>
-                      }
+                    @for (p of periodosNav(); track p.clave) {
+                      <button
+                        data-testid="fila-mes"
+                        [attr.data-clave]="p.clave"
+                        [attr.data-ano]="p.ano"
+                        [attr.data-mes]="p.mes"
+                        (click)="abrirPeriodo(p)"
+                        [disabled]="loadingHistorial()"
+                        class="w-full flex items-center gap-2.5 px-3.5 py-2 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
+                        <div class="min-w-0 flex-1 text-left">
+                          <span class="block truncate">{{ p.label }}</span>
+                          <!-- El rótulo por sí solo no dice si está completo.
+                               Aquí van el rango, cuántas semanas hay y, si
+                               faltan respecto a las que la guía define,
+                               cuántas: es lo que hace visible el hueco. -->
+                          <span class="block truncate text-[0.65rem] font-normal mt-0.5"
+                                [class]="p.incompleta
+                                  ? 'text-amber-600 dark:text-amber-400 font-semibold'
+                                  : 'text-slate-400 dark:text-slate-500'">
+                            {{ p.sublabel }}
+                          </span>
+                        </div>
+                        <!-- Publicado/Borrador, misma píldora y misma paleta
+                             que Logística: el estado de una programación se
+                             lee igual en toda la sección de Reuniones. -->
+                        <span class="shrink-0 px-2 h-5 flex items-center rounded-full text-[0.6rem] font-bold" [class]="badgeEstadoPeriodoClass(p)">{{ etiquetaEstadoPeriodo(p) }}</span>
+                        <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                      </button>
                     }
                   </div>
                 }
@@ -1417,6 +1469,65 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       --ease-in-out-expo: cubic-bezier(0.77, 0, 0.175, 1);
     }
 
+    /* ── Píldora de pestañas (Entre semana / Fin de semana / Logística /
+       Discursos) ──
+       El estado activo/inactivo antes se resolvía con un swap de clases de
+       Tailwind: el fondo violeta y la sombra aparecían de golpe y el rótulo
+       entraba/salía con un @if, así que el ancho de la píldora saltaba en
+       vez de crecer. Aquí background-color/box-shadow/padding quedan bajo
+       una sola transición coordinada, y el rótulo se revela con la técnica
+       de grid-template-columns 0fr→1fr -la única forma de animar un ancho
+       "auto" sin saltos, ver reference/motion-design- en lugar de montar y
+       desmontar el <span>. */
+    .tab-pill {
+      position: relative;
+      transition: background-color 260ms var(--ease-out-expo),
+                  color 200ms var(--ease-out-expo),
+                  box-shadow 260ms var(--ease-out-expo),
+                  padding 260ms var(--ease-out-expo),
+                  transform 140ms var(--ease-out-expo);
+    }
+    .tab-pill:active { transform: scale(0.97); }
+
+    .tab-pill__icon {
+      transition: transform 220ms var(--ease-out-expo);
+    }
+    /* Un pequeño "asentamiento" del icono al activarse -no un rebote: sólo
+       decelera hacia su tamaño final- para que el cambio de pestaña se
+       sienta confirmado, no sólo repintado. */
+    .tab-pill--active .tab-pill__icon {
+      animation: tabIconSettle 260ms var(--ease-out-expo);
+    }
+    @keyframes tabIconSettle {
+      from { transform: scale(0.8); opacity: 0.6; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .tab-pill__label {
+      display: grid;
+      grid-template-columns: 0fr;
+      min-width: 0;
+      margin-left: 0;
+      transition: grid-template-columns 260ms var(--ease-out-expo),
+                  margin-left 260ms var(--ease-out-expo);
+    }
+    .tab-pill__label--active {
+      grid-template-columns: 1fr;
+      margin-left: 0.375rem;
+    }
+    .tab-pill__label-text {
+      overflow: hidden;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tab-pill, .tab-pill__icon, .tab-pill__label {
+        transition: none !important;
+      }
+      .tab-pill--active .tab-pill__icon { animation: none !important; }
+    }
+
     /* ── Identidad de color por sección ──
        Mismo sistema que Logística: el tono llega como --sec desde la plantilla
        (un solo hex por sección) y de ahí se derivan superficie, tinta y
@@ -2027,60 +2138,104 @@ export class ReunionesProgramacionComponent implements OnInit {
    *  con la que tenía al pedirla y, si no coincide, se tira. */
   private papeletaGen = 0;
 
-  gruposPlantilla = computed<GrupoPlantilla[]>(() => {
-    const mapa = new Map<string, GrupoPlantilla>();
-    for (const p of this.periodos()) {
-      const key = p.id_plantilla !== null ? String(p.id_plantilla) : 'sin-plantilla';
-      if (!mapa.has(key)) {
-        mapa.set(key, {
-          id_plantilla: p.id_plantilla,
-          nombre_plantilla: p.nombre_plantilla ?? 'Sin guía asociada',
-          periodos: [],
-        });
-      }
-      mapa.get(key)!.periodos.push(p);
-    }
-    return Array.from(mapa.values());
-  });
+  // `gruposPlantilla` y `totalPeriodos` vivían aquí: agrupaban los meses por
+  // guía para poder pintarlos juntos. Ya no hacen falta — la guía ES la fila,
+  // no un grupo de meses—, y `periodosNav` los sustituye.
 
-  totalPeriodos = computed(() => this.gruposPlantilla().reduce((acc, g) => acc + g.periodos.length, 0));
+  /** Las guías con programación. Vacío en fin de semana, que navega por mes. */
+  guias = signal<PeriodoGuia[]>([]);
 
   /**
-   * Un solo item por (año, mes), aunque el backend haya devuelto dos: la
-   * última semana de una guía puede caer, por fecha de reunión, en el mes
-   * siguiente (ver guia-semanas-iso-vs-mes) y entonces ese mes queda repartido
-   * entre dos plantillas — "Septiembre" con el 1-sep de la guía de
-   * Julio-Agosto, y "Septiembre" otra vez con el resto, de la guía
-   * Septiembre-Octubre. Al usuario le da igual de qué guía viene cada semana;
-   * ve el mismo mes repetido dos veces y no sabe cuál abrir. `loadMes` además
-   * trae el mes completo por fecha, sin filtrar por plantilla, así que
-   * cualquiera de los dos ítems abría exactamente lo mismo.
+   * Entre semana navega por GUÍA; fin de semana, por mes.
+   *
+   * No es una inconsistencia: la guía de entre semana define sus semanas (cada
+   * parte lleva su lunes), mientras que la de fin de semana es una plantilla
+   * global sin semanas propias —solo se le cuelgan los temas de La Atalaya de
+   * las semanas ya importadas—. No hay de dónde sacar un rango de guía para
+   * fin de semana, y forzarlo sería inventar una estructura que no existe.
    */
-  private periodosUnificados = computed<PeriodoConfirmado[]>(() => {
-    const mapa = new Map<string, PeriodoConfirmado>();
-    for (const p of this.periodos()) {
-      const key = `${p.ano}-${p.mes}`;
-      const existente = mapa.get(key);
-      if (!existente) {
-        mapa.set(key, { ...p, fechas: [...p.fechas] });
-        continue;
-      }
-      existente.fechas = Array.from(new Set([...existente.fechas, ...p.fechas])).sort();
-      // Basta que una de las dos guías tenga algo en borrador para que el mes
-      // entero lo esté, mismo criterio que ya usa el backend por semana.
-      if (p.estado === 'borrador') existente.estado = 'borrador';
+  navegacionPorGuia = computed(() => this.tipoReunionActivo() === 'entre_semana');
+
+  /**
+   * La lista que pinta el historial, venga de guías o de meses.
+   *
+   * Aquí murió `periodosUnificados`, que colapsaba el mes repetido: cuando la
+   * última semana de una guía caía en el mes siguiente, el backend devolvía
+   * "Septiembre" dos veces —una por guía— y había que fundirlas para que el
+   * usuario no viera el mismo mes duplicado sin saber cuál abrir. Con la guía
+   * como unidad el problema no existe: cada guía es una fila y sus semanas son
+   * suyas, incluida la que cruza el mes.
+   */
+  periodosNav = computed<PeriodoNav[]>(() => {
+    if (!this.navegacionPorGuia()) {
+      return this.periodos().map((p) => this.periodoNavDeMes(p));
     }
-    return Array.from(mapa.values());
+
+    const filas: PeriodoNav[] = this.guias().map((g) => ({
+      clave: g.clave,
+      tipo: 'guia' as const,
+      label: g.label,
+      sublabel: this.rangoResumen(g),
+      estado: g.estado,
+      fechas: g.fechas,
+      id_plantilla: g.id_plantilla,
+      incompleta: g.semanas_guia > g.semanas,
+      ano: g.ano,
+      mes: g.mes,
+      meses: g.meses,
+    }));
+
+    // Los programas sin guía asociada no salen del listado por guía. Se
+    // añaden por mes para que sigan siendo navegables y borrables: si no,
+    // quedarían invisibles con sus asignaciones dentro.
+    for (const p of this.periodos()) {
+      if (p.id_plantilla === null) filas.push(this.periodoNavDeMes(p));
+    }
+
+    return filas.sort((a, b) => (a.fechas[0] < b.fechas[0] ? 1 : -1));
   });
+
+  private periodoNavDeMes(p: PeriodoConfirmado): PeriodoNav {
+    return {
+      clave: `mes-${p.ano}-${p.mes}`,
+      tipo: 'mes',
+      label: p.label,
+      sublabel: this.fechasResumen(p),
+      estado: p.estado ?? 'publicado',
+      fechas: p.fechas,
+      id_plantilla: p.id_plantilla,
+      incompleta: false,
+      ano: p.ano,
+      mes: p.mes,
+      meses: [{ ano: p.ano, mes: p.mes }],
+    };
+  }
+
+  /** "7 jul – 1 sep · 9 semanas". El resumen de una guía no puede usar
+   *  `fechasResumen`, que asume que todas las fechas caen en el mismo mes. */
+  private rangoResumen(g: PeriodoGuia): string {
+    const corto = (iso: string) => {
+      const d = new Date(iso + 'T00:00:00');
+      return `${d.getDate()} ${ReunionesProgramacionComponent.MESES_ABREV[d.getMonth()]}`;
+    };
+    const base = `${corto(g.fecha_inicio)} – ${corto(g.fecha_fin)} · ${g.semanas} semanas`;
+    return g.semanas_guia > g.semanas
+      ? `${base} · faltan ${g.semanas_guia - g.semanas}`
+      : base;
+  }
 
   /**
    * Agrupa el historial por año consecutivo, para mostrar el año una sola
    * vez por grupo en vez de repetirlo en cada fila (mismo criterio que
-   * Logística y Discursos). Se agrupa sobre la lista ya unificada por mes.
+   * Logística y Discursos).
+   *
+   * El año de una fila es el de su primera fecha. En una guía que cruza el
+   * año —Noviembre-Diciembre acaba en enero— eso la deja en el grupo donde
+   * empieza, que es donde el usuario la busca.
    */
-  periodosPorAno = computed<{ ano: number; periodos: PeriodoConfirmado[] }[]>(() => {
-    const grupos: { ano: number; periodos: PeriodoConfirmado[] }[] = [];
-    for (const p of this.periodosUnificados()) {
+  periodosPorAno = computed<{ ano: number; periodos: PeriodoNav[] }[]>(() => {
+    const grupos: { ano: number; periodos: PeriodoNav[] }[] = [];
+    for (const p of this.periodosNav()) {
       const ultimo = grupos[grupos.length - 1];
       if (ultimo && ultimo.ano === p.ano) {
         ultimo.periodos.push(p);
@@ -2091,9 +2246,27 @@ export class ReunionesProgramacionComponent implements OnInit {
     return grupos;
   });
 
-  /** Solo el nombre del mes, para listas ya agrupadas por año. */
-  mesSoloLabel(p: PeriodoConfirmado): string {
-    return p.label.split(' ')[0];
+  /** El rótulo sin el año, para listas ya agrupadas por año. Una guía trae su
+   *  propio rango ("Julio 2026 – Agosto 2026"), del que se quitan los años. */
+  mesSoloLabel(p: PeriodoNav): string {
+    if (p.tipo === 'mes') return p.label.split(' ')[0];
+    return p.label.replace(/\s+\d{4}/g, '');
+  }
+
+  /** Texto de la píldora de estado del historial. Mismo texto y misma paleta
+   *  que la de Logística (`etiquetaEstadoMes`/`badgeEstadoMesClass`), para que
+   *  el estado de una programación se lea igual en toda la sección de
+   *  Reuniones. Aquí solo hay dos estados —Logística tiene además "cambios
+   *  sin publicar" y "pendiente por revisar", que no existen en Programación—
+   *  así que el resto del switch no aplica. */
+  etiquetaEstadoPeriodo(p: PeriodoNav): string {
+    return p.estado === 'publicado' ? 'Publicado' : 'Borrador';
+  }
+
+  badgeEstadoPeriodoClass(p: PeriodoNav): string {
+    return p.estado === 'publicado'
+      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+      : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300';
   }
 
   private static readonly MESES_ABREV = [
@@ -2109,8 +2282,6 @@ export class ReunionesProgramacionComponent implements OnInit {
       .sort((a, b) => a - b);
     return `${dias.join(', ')} ${ReunionesProgramacionComponent.MESES_ABREV[p.mes - 1]}`;
   }
-
-  gruposExpandidos = signal<Set<string>>(new Set());
 
   showPlantillaDropdown = signal(false);
   showMesAnoDropdown = signal(false);
@@ -2211,7 +2382,9 @@ export class ReunionesProgramacionComponent implements OnInit {
    *  ésta -que recorta con overflow-hidden- nunca vuelve a cortarlo. */
   dropdownPos = signal<{ top: number; left: number; openUp: boolean } | null>(null);
   selectedSala = signal<'Principal' | 'Auxiliar'>('Principal');
-  periodoActivo = signal<{ mes: number; ano: number } | null>(null);
+  /** La `clave` de la fila abierta ("guia-4" o "mes-2026-9"). Antes era
+   *  {mes, ano}, que no sabía nombrar una guía que abarca varios meses. */
+  periodoActivo = signal<string | null>(null);
   mobileSheetAsig = signal<AsignacionDraft | null>(null);
   mobileSheetSeccion = signal<any>(null);
 
@@ -2232,19 +2405,20 @@ export class ReunionesProgramacionComponent implements OnInit {
     return puedeQuitarSalaB || this.periodoEliminable(mes);
   });
 
-  /** Periodo confirmado que corresponde al mes actualmente abierto. */
-  periodoActivoCompleto = computed<PeriodoConfirmado | undefined>(() => {
-    const activo = this.periodoActivo();
-    if (!activo) return undefined;
-    return this.periodosUnificados().find((x) => x.ano === activo.ano && x.mes === activo.mes);
+  /** La fila del historial que corresponde a lo que está abierto. */
+  periodoActivoCompleto = computed<PeriodoNav | undefined>(() => {
+    const clave = this.periodoActivo();
+    if (!clave) return undefined;
+    return this.periodosNav().find((x) => x.clave === clave);
   });
 
-  /** Mes y año del periodo abierto, para el rótulo del selector. */
-  periodoActivoLabel = computed(() => this.periodoActivoCompleto()?.label ?? 'Meses');
+  /** Rótulo del selector: la guía o el mes abierto. */
+  periodoActivoLabel = computed(() =>
+    this.periodoActivoCompleto()?.label ?? (this.navegacionPorGuia() ? 'Guías' : 'Meses')
+  );
 
-  esPeriodoActivo(p: { ano: number; mes: number }): boolean {
-    const activo = this.periodoActivo();
-    return !!activo && activo.ano === p.ano && activo.mes === p.mes;
+  esPeriodoActivo(p: PeriodoNav): boolean {
+    return this.periodoActivo() === p.clave;
   }
 
   @HostListener('document:click', ['$event'])
@@ -2296,8 +2470,8 @@ export class ReunionesProgramacionComponent implements OnInit {
    */
   onAjustesCambiaron(): void {
     this.loadSemanasSinReunion();
-    const activo = this.periodoActivo();
-    if (activo) this.loadMes(activo.mes, activo.ano);
+    const activo = this.periodoActivoCompleto();
+    if (activo) this.abrirPeriodo(activo);
   }
 
   tituloReunion = computed(() => {
@@ -2667,7 +2841,11 @@ export class ReunionesProgramacionComponent implements OnInit {
       untracked(() => {
         const tipo = this.tipoReunionActivo();
         if (tipo === 'logistica' || tipo === 'discursos') return;
-        this.loadPeriodos(idCong, { abrirBorrador: true });
+        // Fin de semana no tiene guías que retomar a medias -su plantilla es
+        // global-, así que abrir sola la del borrador tapaba el listado y no
+        // dejaba elegir otro mes sin primero volver. Entre semana sí abre el
+        // borrador pendiente: ahí sí puede quedar a medias una guía completa.
+        this.loadPeriodos(idCong, { abrirBorrador: tipo === 'entre_semana' });
         this.verificarGuiasDisponibles(idCong);
         this.loadSemanasSinReunion();
       });
@@ -2761,17 +2939,29 @@ export class ReunionesProgramacionComponent implements OnInit {
   private loadPeriodos(idCong: number, opciones: { abrirBorrador?: boolean } = {}): void {
     this.loadingPeriodos.set(true);
     if (opciones.abrirBorrador) this.estado.set('loading');
-    this.reunionesSvc.getPeriodosConfirmados(this.tipoReunionActivo(), idCong).subscribe({
-      next: (p) => {
-        this.periodos.set(p);
+    const tipo = this.tipoReunionActivo();
+
+    // Entre semana navega por guía, pero la lista por mes se sigue pidiendo:
+    // de ella salen los programas SIN guía asociada, que no aparecen en el
+    // listado por guía y sin esto quedarían invisibles con sus asignaciones
+    // dentro. Fin de semana usa solo la de meses: su plantilla es global y no
+    // tiene semanas propias de las que tirar.
+    const porGuia = this.navegacionPorGuia();
+    forkJoin({
+      meses: this.reunionesSvc.getPeriodosConfirmados(tipo, idCong),
+      guias: porGuia
+        ? this.reunionesSvc.getPeriodosGuia(tipo, idCong)
+        : of([] as PeriodoGuia[]),
+    }).subscribe({
+      next: ({ meses, guias }) => {
+        this.periodos.set(meses);
+        this.guias.set(guias);
         this.loadingPeriodos.set(false);
         if (!opciones.abrirBorrador) return;
-        // Todos los meses en borrador, no solo el primero: generar puede
-        // abarcar dos meses de una vez y el borrador es uno solo. Abrir la
-        // mitad dejaría media programación fuera de la vista sin decirlo.
-        const borradores = p
-          .filter((m) => m.estado === 'borrador')
-          .sort((a, b) => a.ano - b.ano || a.mes - b.mes);
+        // Todo lo que esté en borrador, no solo lo primero: generar puede
+        // abarcar varias semanas de una vez y el borrador es uno solo. Abrir
+        // la mitad dejaría media programación fuera de la vista sin decirlo.
+        const borradores = this.periodosNav().filter((p) => p.estado === 'borrador');
         if (borradores.length > 0) this.abrirBorradorPendiente(idCong, borradores);
         else this.estado.set('idle');
       },
@@ -3428,28 +3618,70 @@ export class ReunionesProgramacionComponent implements OnInit {
   // ── Historial ──────────────────────────────────────────────────
   readonly MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  periodoEliminable(p: { ano: number; mes: number }): boolean {
+  /**
+   * Solo se puede borrar lo reciente (hasta 4 meses atrás).
+   *
+   * Para una guía cuenta su ÚLTIMO mes, no el primero: una guía que empezó
+   * hace cinco meses pero terminó el mes pasado sigue siendo reciente, y
+   * mirando el primero se le escondía la papelera.
+   */
+  periodoEliminable(p: { ano: number; mes: number; meses?: { ano: number; mes: number }[] }): boolean {
     const hoy = new Date();
     const limite = new Date(hoy.getFullYear(), hoy.getMonth() - 4, 1);
-    const periodo = new Date(p.ano, p.mes - 1, 1);
+    const ultimo = p.meses?.length ? p.meses[p.meses.length - 1] : p;
+    const periodo = new Date(ultimo.ano, ultimo.mes - 1, 1);
     return periodo >= limite;
   }
 
-  toggleGrupo(key: string, event: Event): void {
+  /** El botón de PDF de una fila del historial, sea guía o mes. El generador
+   *  ya arma una tabla por semana sin importar el mes de calendario, así que
+   *  una guía se descarga entera en un solo documento — ya no hace falta
+   *  desplegar un botón por cada mes que toca. */
+  descargarPdf(p: PeriodoNav, event: Event): void {
+    if (p.tipo === 'guia' && p.id_plantilla !== null) {
+      this.descargarPdfGuia(p, event);
+    } else {
+      this.descargarPdfMes(p, event);
+    }
+  }
+
+  /** Nombre de archivo estilo jw.org para el PDF de una guía completa:
+   *  "mwbAA.MM-GDDMMAAAA" — AA/MM son el año/mes en que empieza la guía y la
+   *  fecha tras la "G" es la del día en que se genera el archivo. Debe
+   *  coincidir con `ReunionService.nombre_archivo_guia_pdf` del backend. */
+  private _nombreArchivoGuiaPdf(p: PeriodoNav | PeriodoGuia): string {
+    const hoy = new Date();
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const aa = String(p.ano % 100).padStart(2, '0');
+    const mesIni = String(p.mes).padStart(2, '0');
+    return `mwb${aa}.${mesIni}-G${dd}${mm}${hoy.getFullYear()}.pdf`;
+  }
+
+  private descargarPdfGuia(p: PeriodoNav, event: Event): void {
     event.stopPropagation();
-    this.gruposExpandidos.update(set => {
-      const next = new Set(set);
-      if (next.has(key)) { next.delete(key); } else { next.add(key); }
-      return next;
-    });
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong || this.descargandoPdf() || p.id_plantilla === null) return;
+    this.descargandoPdf.set(true);
+    this.reunionesSvc
+      .descargarProgramacionPdfGuia(this.tipoReunionActivo(), p.id_plantilla, idCong)
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = this._nombreArchivoGuiaPdf(p);
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          this.descargandoPdf.set(false);
+        },
+        error: () => this.descargandoPdf.set(false),
+      });
   }
 
-  abreviarNombreGuia(nombre: string): string {
-    // "Guía de Actividades - Mayo 2026" → "GDA - Mayo 2026"
-    return nombre.replace(/Gu[ií]a\s+de\s+Actividades/i, 'GDA');
-  }
-
-  descargarPdfMes(p: PeriodoConfirmado, event: Event): void {
+  descargarPdfMes(p: { ano: number; mes: number; label: string }, event: Event): void {
     event.stopPropagation();
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong || this.descargandoPdf()) return;
@@ -3472,7 +3704,42 @@ export class ReunionesProgramacionComponent implements OnInit {
       });
   }
 
-  descargarPapeletas(p: PeriodoConfirmado, formato: 'x4', event: Event): void {
+  /** El botón "Formulario S-89-S" de la barra superior, sea guía o mes.
+   *  Mismo criterio que `descargarPdf`: el documento de papeletas nunca llevó
+   *  membrete de mes/año, así que agruparlas por guía es tan directo como
+   *  cambiar de dónde se leen las semanas. */
+  descargarPapeletasBoton(p: PeriodoNav, event: Event): void {
+    if (p.tipo === 'guia' && p.id_plantilla !== null) {
+      this.descargarPapeletasGuia(p.id_plantilla, event);
+    } else {
+      this.descargarPapeletas(p, 'x4', event);
+    }
+  }
+
+  private descargarPapeletasGuia(idPlantilla: number, event: Event): void {
+    event.stopPropagation();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong || this.descargandoPapeletas()) return;
+    this.descargandoPapeletas.set(true);
+    this.reunionesSvc
+      .descargarPapeletasPdfGuia(idPlantilla, idCong, 'x4')
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `papeletas_guia_${idPlantilla}_x4.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          this.descargandoPapeletas.set(false);
+        },
+        error: () => this.descargandoPapeletas.set(false),
+      });
+  }
+
+  descargarPapeletas(p: { ano: number; mes: number }, formato: 'x4', event: Event): void {
     event.stopPropagation();
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong || this.descargandoPapeletas()) return;
@@ -3532,6 +3799,24 @@ export class ReunionesProgramacionComponent implements OnInit {
     return new File([blob], 'asignacion.png', { type: 'image/png' });
   }
 
+  /**
+   * El (año, mes) de la SEMANA a la que pertenece esta asignación.
+   *
+   * No vale el del periodo abierto: la papeleta se busca dentro del mes que se
+   * le pasa al backend, y una guía abarca tres meses de calendario, así que
+   * con el primero una asignación de septiembre daría 404 estando la guía
+   * abierta. Con la fecha de su propia semana acierta siempre, se navegue por
+   * guía o por mes.
+   */
+  private mesDeAsignacion(asig: AsignacionDraft): { ano: number; mes: number } | null {
+    const semana = this.semanas().find((s) =>
+      s.partes?.some((p: any) => p.id_programa_parte === asig.id_programa_parte),
+    );
+    if (!semana?.fecha) return null;
+    const d = new Date(semana.fecha + 'T00:00:00');
+    return { ano: d.getFullYear(), mes: d.getMonth() + 1 };
+  }
+
   /** Pide el PNG de esta ranura, o devuelve la petición que ya está en vuelo.
    *  `null` si todavía no hay mes ni congregación con los que construirla. */
   private descargarPapeleta(asig: AsignacionDraft): Promise<Blob> | null {
@@ -3539,7 +3824,7 @@ export class ReunionesProgramacionComponent implements OnInit {
     const enVuelo = this.papeletaPrefetch.get(key);
     if (enVuelo) return enVuelo;
 
-    const p = this.periodoActivo();
+    const p = this.mesDeAsignacion(asig);
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!p || !idCong) return null;
 
@@ -3733,24 +4018,6 @@ export class ReunionesProgramacionComponent implements OnInit {
     this.cerrarPapeletaPreview();
   }
 
-  async eliminarHistorial(p: PeriodoConfirmado, event: Event): Promise<void> {
-    event.stopPropagation();
-    const idCong = this.congregacionCtx.effectiveCongregacionId();
-    if (!idCong) return;
-    const ok = await this.openConfirmDialog(
-      `Eliminar ${p.label}`,
-      `Se borrarán todas las semanas, partes y asignaciones de este mes. Esta acción no se puede deshacer.`
-    );
-    if (!ok) return;
-    this.reunionesSvc.eliminarHistorialMes(this.tipoReunionActivo(), p.ano, p.mes, idCong).subscribe({
-      next: () => {
-        this.periodos.update(list => list.filter(x => !(x.ano === p.ano && x.mes === p.mes)));
-        this.semanas.set([]);
-        this.estado.set('idle');
-      },
-    });
-  }
-
   borrandoSalaB = signal(false);
 
   /**
@@ -3767,30 +4034,40 @@ export class ReunionesProgramacionComponent implements OnInit {
    */
   async eliminarSalaBDelMes(event: Event): Promise<void> {
     event.stopPropagation();
-    const activo = this.periodoActivo();
+    const activo = this.periodoActivoCompleto();
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!activo || !idCong || this.borrandoSalaB()) return;
 
+    // Por guía cuando se navega por guía: acotar por mes limpiaría solo uno de
+    // los tres que abarca y dejaría las ranuras vivas en los otros — y como el
+    // botón sigue apareciendo mientras quede alguna, parecería no hacer nada.
+    const porGuia = activo.tipo === 'guia' && activo.id_plantilla !== null;
+    const ambito = porGuia ? 'esta guía' : 'este mes';
+    const quitar = (dryRun: boolean) =>
+      porGuia
+        ? this.reunionesSvc.eliminarSalaBGuia(activo.id_plantilla!, idCong, dryRun)
+        : this.reunionesSvc.eliminarSalaBConfirmada(activo.ano, activo.mes, idCong, dryRun);
+
     this.borrandoSalaB.set(true);
-    this.reunionesSvc.eliminarSalaBConfirmada(activo.ano, activo.mes, idCong, true).subscribe({
+    quitar(true).subscribe({
       next: async (previo) => {
         this.borrandoSalaB.set(false);
 
         const mensaje = previo.borradas > 0
-          ? `Se borrarán ${previo.borradas} asignaciones y las casillas de Sala B de este mes. ` +
+          ? `Se borrarán ${previo.borradas} asignaciones y las casillas de Sala B de ${ambito}. ` +
             'La Sala Principal no se toca. Esta acción no se puede deshacer.'
-          : 'Las casillas de Sala B de este mes dejarán de ofrecerse. ' +
+          : `Las casillas de Sala B de ${ambito} dejarán de ofrecerse. ` +
             'La Sala Principal no se toca. Esta acción no se puede deshacer.';
-        const ok = await this.openConfirmDialog('Quitar la Sala B de este mes', mensaje);
+        const ok = await this.openConfirmDialog(`Quitar la Sala B de ${ambito}`, mensaje);
         if (!ok) return;
 
         this.borrandoSalaB.set(true);
-        this.reunionesSvc.eliminarSalaBConfirmada(activo.ano, activo.mes, idCong, false).subscribe({
+        quitar(false).subscribe({
           next: () => {
             this.borrandoSalaB.set(false);
             // La vista puede estar parada en "Sala B", que ya no existe.
             this.selectedSala.set('Principal');
-            this.loadMes(activo.mes, activo.ano);
+            this.abrirPeriodo(activo);
           },
           error: (err) => {
             this.borrandoSalaB.set(false);
@@ -3807,60 +4084,120 @@ export class ReunionesProgramacionComponent implements OnInit {
     });
   }
 
-  async eliminarGuiaCompleta(grupo: GrupoPlantilla, event: Event): Promise<void> {
+  /**
+   * Borra una guía entera, con todas sus semanas — incluida la que cae en el
+   * mes siguiente.
+   *
+   * Es la razón de ser de toda esta pantalla: borrar por mes se llevaba esa
+   * última semana, que pertenece a la guía ANTERIOR, y al regenerar el mes con
+   * la guía nueva no volvía nunca —no está entre sus lunes— ni se avisaba de
+   * ello. Borrando por guía, lo que se borra es exactamente lo que se sabe
+   * regenerar.
+   *
+   * Es todo o nada: si hay semanas publicadas, el backend no borra ninguna y
+   * las devuelve en `conservados`. Hace falta un segundo sí para llevárselas.
+   * Borrar "las que se puede" dejaría la guía a medias, que es justo el hueco
+   * que esta pantalla existe para evitar.
+   */
+  async eliminarGuia(p: PeriodoNav, event: Event): Promise<void> {
     event.stopPropagation();
     const idCong = this.congregacionCtx.effectiveCongregacionId();
-    if (!idCong) return;
-    const mesesLabel = grupo.periodos.map(p => p.label).join(', ');
+    if (!idCong || p.id_plantilla === null) return;
+    const tipo = this.tipoReunionActivo();
+
     const ok = await this.openConfirmDialog(
-      `Eliminar "${grupo.nombre_plantilla}"`,
-      `Se eliminarán todos los programas de ${mesesLabel}. Las semanas, partes y asignaciones se perderán permanentemente.`
+      `Eliminar "${p.label}"`,
+      `Se eliminarán las ${p.fechas.length} semanas de esta guía, con sus partes y ` +
+      'asignaciones. Esta acción no se puede deshacer.',
     );
     if (!ok) return;
 
-    const mesSet = new Set(grupo.periodos.map(p => `${p.ano}-${p.mes}`));
     const limpiar = () => {
-      this.periodos.update(list => list.filter(p => !mesSet.has(`${p.ano}-${p.mes}`)));
+      this.guias.update((list) => list.filter((g) => g.id_plantilla !== p.id_plantilla));
+      this.periodos.update((list) => list.filter((m) => m.id_plantilla !== p.id_plantilla));
       this.semanas.set([]);
+      this.periodoActivo.set(null);
       this.estado.set('idle');
     };
 
-    if (grupo.id_plantilla !== null) {
-      this.reunionesSvc.eliminarHistorialPlantilla(grupo.id_plantilla, idCong).subscribe({ next: limpiar });
-    } else {
-      // "Sin guía asociada": eliminar mes a mes en serie
-      const tipo = this.tipoReunionActivo();
-      const periodos = [...grupo.periodos];
-      const deleteNext = (idx: number) => {
-        if (idx >= periodos.length) { limpiar(); return; }
-        const p = periodos[idx];
-        this.reunionesSvc.eliminarHistorialMes(tipo, p.ano, p.mes, idCong).subscribe({
-          next: () => deleteNext(idx + 1),
-          error: () => deleteNext(idx + 1),
-        });
-      };
-      deleteNext(0);
-    }
+    this.reunionesSvc.eliminarHistorialPlantilla(p.id_plantilla, idCong, tipo).subscribe({
+      next: async (res) => {
+        const conservados = res?.conservados ?? [];
+        if (conservados.length === 0) { limpiar(); return; }
+
+        // No se borró NADA: hay semanas publicadas. Decir cuáles y pedir un
+        // segundo sí, en vez de llevarse media guía por delante.
+        const fechas = conservados.map((c: ConservadoGuia) => c.fecha).join(', ');
+        const forzar = await this.openConfirmDialog(
+          'Esta guía tiene semanas publicadas',
+          `No se ha borrado nada todavía. ${conservados.length} de sus semanas ya están ` +
+          `publicadas y la congregación las tiene a la vista (${fechas}). ` +
+          'Si continúas se eliminará la guía entera, con esas semanas incluidas.',
+        );
+        if (!forzar) return;
+        this.reunionesSvc
+          .eliminarHistorialPlantilla(p.id_plantilla!, idCong, tipo, true)
+          .subscribe({ next: limpiar });
+      },
+    });
   }
 
-  /** Abre de una vez todos los meses que tengan borrador pendiente. */
-  private abrirBorradorPendiente(idCong: number, meses: PeriodoConfirmado[]): void {
+  /** Borra un mes suelto: fin de semana y los programas sin guía asociada. */
+  async eliminarMes(p: PeriodoNav, event: Event): Promise<void> {
+    event.stopPropagation();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+    const ok = await this.openConfirmDialog(
+      `Eliminar ${p.label}`,
+      'Se borrarán todas las semanas, partes y asignaciones de este mes. Esta acción no se puede deshacer.',
+    );
+    if (!ok) return;
+    this.reunionesSvc
+      .eliminarHistorialMes(this.tipoReunionActivo(), p.ano, p.mes, idCong)
+      .subscribe({
+        next: () => {
+          this.periodos.update((list) =>
+            list.filter((x) => !(x.ano === p.ano && x.mes === p.mes)),
+          );
+          this.semanas.set([]);
+          this.periodoActivo.set(null);
+          this.estado.set('idle');
+        },
+      });
+  }
+
+  /** La papelera de la fila, sea guía o mes. */
+  eliminarPeriodo(p: PeriodoNav, event: Event): void {
+    if (p.tipo === 'guia') void this.eliminarGuia(p, event);
+    else void this.eliminarMes(p, event);
+  }
+
+  /**
+   * Abre lo que tenga borrador pendiente.
+   *
+   * Una petición por fila, no por mes: un borrador de guía se reparte en tres
+   * meses de calendario, así que pedirlo por mes lanzaba tres peticiones cuyos
+   * resultados se solapaban al aplanarlos y repetían semanas.
+   */
+  private abrirBorradorPendiente(idCong: number, pendientes: PeriodoNav[]): void {
     this.estado.set('loading');
     this.errorMsg.set(null);
     this.recienPublicado.set(false);
+    const tipo = this.tipoReunionActivo();
     forkJoin(
-      meses.map((m) =>
-        this.reunionesSvc
-          .getProgramaMes(this.tipoReunionActivo(), m.ano, m.mes, idCong)
-          .pipe(catchError(() => of([] as ProgramaSemana[]))),
+      pendientes.map((p) =>
+        (p.tipo === 'guia' && p.id_plantilla !== null
+          ? this.reunionesSvc.getProgramaGuia(tipo, p.id_plantilla, idCong)
+          : this.reunionesSvc.getProgramaMes(tipo, p.ano, p.mes, idCong)
+        ).pipe(catchError(() => of([] as ProgramaSemana[]))),
       ),
-    ).subscribe((porMes) => {
-      const semanas = porMes.flat();
+    ).subscribe((porFila) => {
+      const semanas = porFila.flat();
       if (semanas.length === 0) { this.estado.set('idle'); return; }
       this.semanas.set(semanas);
       this.selectedWeekIdx.set(0);
       this.selectedSala.set('Principal');
-      this.periodoActivo.set({ mes: meses[0].mes, ano: meses[0].ano });
+      this.periodoActivo.set(pendientes[0].clave);
       this.estado.set('borrador');
     });
   }
@@ -3876,20 +4213,56 @@ export class ReunionesProgramacionComponent implements OnInit {
   loadMes(mes: number, ano: number): void {
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong) return;
-    this.periodoActivo.set({ mes, ano });
+    this._abrir(
+      `mes-${ano}-${mes}`,
+      this.reunionesSvc.getProgramaMes(this.tipoReunionActivo(), ano, mes, idCong),
+      `No hay programación para ${this.MESES[mes - 1]} ${ano}.`,
+    );
+  }
+
+  /**
+   * Abre una guía entera, con todas sus semanas.
+   *
+   * El gemelo de `loadMes` por guía. Trae también la semana que cae en el mes
+   * siguiente, que por mes se quedaba fuera de la vista: es justo la que se
+   * perdía al borrar y regenerar.
+   */
+  loadGuia(idPlantilla: number): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+    this._abrir(
+      `guia-${idPlantilla}`,
+      this.reunionesSvc.getProgramaGuia(this.tipoReunionActivo(), idPlantilla, idCong),
+      'No hay programación para esta guía.',
+    );
+  }
+
+  /** Abre la fila del historial que toque, sea guía o mes. */
+  abrirPeriodo(p: PeriodoNav): void {
+    if (p.tipo === 'guia' && p.id_plantilla !== null) this.loadGuia(p.id_plantilla);
+    else this.loadMes(p.mes, p.ano);
+  }
+
+  /** El tramo común de `loadMes` y `loadGuia`: pedir, pintar y fijar estado. */
+  private _abrir(
+    clave: string,
+    origen: Observable<ProgramaSemana[]>,
+    mensajeVacio: string,
+  ): void {
+    this.periodoActivo.set(clave);
     this.loadingHistorial.set(true);
     this.errorMsg.set(null);
     this.recienPublicado.set(false);
-    this.reunionesSvc.getProgramaMes(this.tipoReunionActivo(), ano, mes, idCong).subscribe({
+    origen.subscribe({
       next: (semanas) => {
         if (semanas.length === 0) {
-          this.errorMsg.set(`No hay programación para ${this.MESES[mes - 1]} ${ano}.`);
+          this.errorMsg.set(mensajeVacio);
           this.estado.set('error');
         } else {
           this.semanas.set(semanas);
           this.selectedWeekIdx.set(0);
           this.selectedSala.set('Principal');
-          // Basta una semana en borrador para que el mes entero lo esté:
+          // Basta una semana en borrador para que el conjunto entero lo esté:
           // publicar es todo o nada.
           this.estado.set(
             semanas.some((s) => s.estado === 'borrador') ? 'borrador' : 'publicado'
@@ -3898,7 +4271,7 @@ export class ReunionesProgramacionComponent implements OnInit {
         this.loadingHistorial.set(false);
       },
       error: () => {
-        this.errorMsg.set('Error al cargar la programación del mes.');
+        this.errorMsg.set('Error al cargar la programación.');
         this.estado.set('error');
         this.loadingHistorial.set(false);
       },
@@ -4187,7 +4560,7 @@ export class ReunionesProgramacionComponent implements OnInit {
     this.editingHistorialId.set(null);
     // Reload for the new type
     const idCong = this.congregacionCtx.effectiveCongregacionId();
-    if (idCong) this.loadPeriodos(idCong, { abrirBorrador: true });
+    if (idCong) this.loadPeriodos(idCong, { abrirBorrador: tipo === 'entre_semana' });
   }
 }
 
