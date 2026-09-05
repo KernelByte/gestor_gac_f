@@ -88,7 +88,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
               </button>
 
               @if (menuMesesAbierto()) {
-                <div role="listbox" aria-label="Meses programados" class="absolute z-40 top-[calc(100%+4px)] left-0 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
+                <div role="listbox" aria-label="Meses programados" class="disc-dropdown absolute z-40 top-[calc(100%+4px)] left-0 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
                   <div class="max-h-[min(60vh,20rem)] overflow-y-auto overscroll-contain simple-scrollbar p-1.5">
                     @for (grupo of mesesPorAno(); track grupo.ano) {
                       <!-- Año como divisor del grupo, no repetido por fila. -->
@@ -204,8 +204,8 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
 
       <!-- MODAL DE CONFIRMACIÓN (reemplaza window.confirm) -->
       @if (confirmPendiente()) {
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 border border-slate-200 dark:border-slate-700">
+        <div class="disc-overlay fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div class="disc-dialog bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 border border-slate-200 dark:border-slate-700">
             <div class="flex items-start gap-3">
               <div class="shrink-0 w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                 <svg class="w-4.5 h-4.5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
@@ -299,7 +299,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                 </div>
               } @else {
                 @for (c of congregacionesContacto(); track c.id_congregacion_contacto) {
-                  <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+                  <div class="disc-card rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
                     <div class="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
                       <div class="w-7 h-7 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-xs font-black text-teal-600 dark:text-teal-400 shrink-0">
                         {{ c.nombre.charAt(0).toUpperCase() }}
@@ -389,7 +389,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                 </div>
               } @else {
                 @for (grupo of temasAgrupados(); track grupo.nombre) {
-                  <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+                  <div class="disc-card rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
                     <div class="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                       <div class="flex items-center gap-2">
                         <div class="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-black text-amber-600 dark:text-amber-400 shrink-0">
@@ -592,7 +592,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                     </div>
                   }
                   @for (entrante of mesDatos()!.entrantes; track entrante.id_discurso_entrante) {
-                    <div class="rounded-xl border bg-white dark:bg-slate-900 overflow-hidden transition-colors"
+                    <div class="disc-card rounded-xl border bg-white dark:bg-slate-900 overflow-hidden transition-colors"
                       [class]="isEditandoEntrante(entrante.id_discurso_entrante)
                         ? 'border-amber-400 dark:border-amber-500'
                         : 'border-slate-200 dark:border-slate-700'">
@@ -812,7 +812,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                   }
 
                   @for (saliente of mesDatos()!.salientes; track saliente.id_discurso_saliente) {
-                    <div class="rounded-xl border bg-white dark:bg-slate-900 overflow-hidden transition-colors"
+                    <div class="disc-card rounded-xl border bg-white dark:bg-slate-900 overflow-hidden transition-colors"
                       [class]="isEditandoSaliente(saliente.id_discurso_saliente)
                         ? 'border-amber-400 dark:border-amber-500'
                         : 'border-slate-200 dark:border-slate-700'">
@@ -972,8 +972,8 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
 
     <!-- ===== MODAL GENERAR MES ===== -->
     @if (modalGenerarVisible()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarModalGenerar()">
-        <div data-testid="disc-modal-generar" class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-5" (click)="$event.stopPropagation()">
+      <div class="disc-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarModalGenerar()">
+        <div data-testid="disc-modal-generar" class="disc-dialog w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-5" (click)="$event.stopPropagation()">
           <h2 class="text-base font-black text-slate-800 dark:text-white">Generar Mes — Discursos Públicos</h2>
 
           <!-- Período: mes (desplegable propio, coherente con el resto del aplicativo) + año (numérico) -->
@@ -991,7 +991,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                   <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="mesDropdownAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 @if (mesDropdownAbierto()) {
-                  <div class="absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
+                  <div class="disc-dropdown absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
                     @for (m of mesesOpciones; track m.value) {
                       <button type="button" data-testid="disc-opcion-mes" [attr.data-mes]="m.value"
                         (click)="genMes = m.value; mesDropdownAbierto.set(false)"
@@ -1024,8 +1024,8 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
 
     <!-- ===== MODAL AÑADIR/EDITAR TEMA ===== -->
     @if (modalCongregacionContactoVisible()) {
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarModalCongregacionContacto()">
-        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
+      <div class="disc-overlay fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarModalCongregacionContacto()">
+        <div class="disc-sheet bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
           <div class="flex justify-center pt-3 pb-1 sm:hidden">
             <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
           </div>
@@ -1060,7 +1060,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                     <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="diaDropdownAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                   </button>
                   @if (diaDropdownAbierto()) {
-                    <div class="absolute left-0 top-full mt-1.5 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
+                    <div class="disc-dropdown absolute left-0 top-full mt-1.5 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
                       <button type="button" (click)="seleccionarDiaCongregacionContacto(null)"
                         class="w-full flex items-center gap-2 px-3.5 py-2 text-sm font-semibold text-left transition-colors duration-100"
                         [class]="!nuevaCongregacionContacto.dia_reunion_fin_semana ? 'bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
@@ -1133,8 +1133,8 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
     }
 
     @if (modalTemaVisible()) {
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarModalTema()">
-        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
+      <div class="disc-overlay fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarModalTema()">
+        <div class="disc-sheet bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
           <div class="flex justify-center pt-3 pb-1 sm:hidden">
             <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
           </div>
@@ -1193,8 +1193,8 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
 
     <!-- ===== MODAL AÑADIR SALIENTE ===== -->
     @if (modalSalienteVisible()) {
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarModalSaliente()">
-        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm flex flex-col gap-0 border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
+      <div class="disc-overlay fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarModalSaliente()">
+        <div class="disc-sheet bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm flex flex-col gap-0 border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
 
           <!-- Handle bar (móvil) -->
           <div class="flex justify-center pt-3 pb-1 sm:hidden">
@@ -1248,7 +1248,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                   </button>
                 }
                 @if (mostrarDropdownBusqueda()) {
-                  <div class="pub-dropdown absolute z-10 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl shadow-black/10 max-h-48 overflow-y-auto py-1">
+                  <div class="disc-dropdown pub-dropdown absolute z-10 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl shadow-black/10 max-h-48 overflow-y-auto py-1">
                     @if (buscandoPublicador()) {
                       <div class="px-4 py-3 text-xs text-slate-400">Buscando…</div>
                     } @else if (resultadosBusqueda().length === 0) {
@@ -1321,7 +1321,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                     </svg>
                   </button>
                   @if (mostrarDropdownTemas()) {
-                    <div class="tema-dropdown absolute z-30 left-0 right-0 mt-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
+                    <div class="disc-dropdown tema-dropdown absolute z-30 left-0 right-0 mt-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
                       <div class="flex flex-col p-1.5 gap-0.5 max-h-52 overflow-y-auto simple-scrollbar">
                         @for (t of temasDelPublicadorSeleccionado(); track t.id_tema) {
                           <button type="button"
@@ -1400,8 +1400,8 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
 
     <!-- ===== MODAL NOTIFICAR POR WHATSAPP ===== -->
     @if (whatsappPendiente(); as wa) {
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarWhatsapp()">
-        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
+      <div class="disc-overlay fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarWhatsapp()">
+        <div class="disc-sheet bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
 
           <div class="flex justify-center pt-3 pb-1 sm:hidden">
             <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
@@ -1468,6 +1468,73 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
       </app-historial-discursos>
     }
   `,
+  styles: [`
+    :host { display: block; height: 100%; }
+
+    /* Mismo vocabulario de movimiento que Entre semana / Logística / Ajustes:
+       esta pestaña compartía estructura con ellas pero no llevaba animación
+       propia, así que al cambiar a Discursos todo aparecía de golpe. */
+    :host {
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── Entrada de tarjetas (entrantes / salientes / temas / congregaciones) ── */
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .disc-card {
+      animation: cardIn 220ms var(--ease-out-expo) backwards;
+    }
+    .disc-card:nth-child(1)  { animation-delay:  15ms; }
+    .disc-card:nth-child(2)  { animation-delay:  40ms; }
+    .disc-card:nth-child(3)  { animation-delay:  65ms; }
+    .disc-card:nth-child(4)  { animation-delay:  90ms; }
+    .disc-card:nth-child(5)  { animation-delay: 115ms; }
+    .disc-card:nth-child(6)  { animation-delay: 140ms; }
+    .disc-card:nth-child(n+7){ animation-delay: 160ms; }
+
+    /* ── Dropdown origin-aware (Emil: never scale from center on popovers) ── */
+    @keyframes dropIn {
+      from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+    .disc-dropdown {
+      transform-origin: top;
+      animation: dropIn 160ms var(--ease-out-expo);
+    }
+
+    /* ── Overlay + diálogo centrado (confirmación, generar mes) ── */
+    @keyframes overlayIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes dialogIn {
+      from { opacity: 0; transform: scale(0.95) translateY(4px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+    .disc-overlay { animation: overlayIn 140ms ease-out; }
+    .disc-dialog  { animation: dialogIn 200ms var(--ease-out-expo) backwards; }
+
+    /* ── Hoja móvil / diálogo en escritorio ──
+       Estos modales cambian de posición con el viewport (items-end en móvil,
+       items-center desde sm:) así que la animación cambia con ellos: sube
+       desde abajo como una hoja en móvil y entra centrada en escritorio. */
+    @keyframes sheetUp {
+      from { opacity: 0; transform: translateY(100%); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .disc-sheet { animation: sheetUp 220ms cubic-bezier(0.32, 0.72, 0, 1) backwards; }
+    @media (min-width: 640px) {
+      .disc-sheet { animation: dialogIn 200ms var(--ease-out-expo) backwards; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .disc-card, .disc-dropdown, .disc-overlay, .disc-dialog, .disc-sheet {
+        animation: none !important;
+      }
+    }
+  `],
 })
 export class ReunionesDiscursosComponent implements OnInit {
   private svc = inject(DiscursosService);
