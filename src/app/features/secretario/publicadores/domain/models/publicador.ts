@@ -30,6 +30,8 @@ export interface Publicador {
   origen_fecha_inicio_informe?: 'manual' | 'informe' | 'alta' | null;
   codigo_pin?: string | null;
   permite_login_simple?: boolean;
+  /** Ya tiene un usuario del sistema (correo+contraseña): su acceso a la app es esa cuenta, no el PIN. */
+  tiene_usuario_sistema?: boolean;
 }
 
 export interface UsuarioVinculado {

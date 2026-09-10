@@ -66,6 +66,14 @@ export const PUESTO_ROTACION_CLAVES: { permiso: string; clave: string }[] = [
   { permiso: 'video',      clave: 'log_rotacion_video' },
 ];
 
+/**
+ * Cuántos turnos de vigilancia/micrófono genera el motor: algunas
+ * congregaciones solo tienen una persona habilitada para el puesto. Espejo
+ * de `CLAVES_CANTIDAD_PUESTO` en `preferencias.py`.
+ */
+export const CLAVE_CANTIDAD_VIGILANCIA = 'log_cantidad_vigilancia';
+export const CLAVE_CANTIDAD_MICROFONO = 'log_cantidad_microfono';
+
 export interface ConfirmarLogisticaRequest {
   ano: number;
   mes: number;
@@ -186,6 +194,8 @@ export interface LogisticaMesOut {
   aseo: LogisticaAseoOut[];
   aseo_modo: AseoRotacion;
   aseo_bloques: AseoBloqueOut[];
+  /** Turnos vigentes ahora mismo para esta congregación (p. ej. sin `vigilancia_2` si solo usa uno). */
+  puestos_activos: string[];
 }
 
 export interface ConflictoParteOut {
@@ -262,6 +272,21 @@ export interface ActualizarEnlaceRequest {
   fecha_expiracion: string;
 }
 
+export interface DiscursoPublico {
+  titulo: string | null;
+  orador: string | null;
+  congregacion_origen: string | null;
+}
+
+/** Presidente/lector/discurso de una fecha, igual cálculo que el mensaje de WhatsApp. */
+export interface ProgramaDiaOut {
+  fecha: string;
+  presidente: string | null;
+  lector: string | null;
+  discurso: DiscursoPublico | null;
+  hospitalidad: string | null;
+}
+
 /** Lo que ve un publicador sin login al abrir el enlace público del mes. */
 export interface LogisticaPublicoOut {
   nombre_congregacion: string;
@@ -270,6 +295,8 @@ export interface LogisticaPublicoOut {
   fechas: FechaReunionOut[];
   asignaciones: LogisticaItemOut[];
   aseo: LogisticaAseoOut[];
+  programa: ProgramaDiaOut[];
+  actualizado_en: string | null;
   expira_en: string;
 }
 

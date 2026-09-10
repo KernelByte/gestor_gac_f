@@ -14,6 +14,16 @@ export interface PlantillaOption {
   semanas_lunes?: string[];
 }
 
+/**
+ * Quien queda a cargo de la Sala B durante toda la reunión.
+ *
+ * Espejo de `NOMBRE_RESPONSABLE_SALA_B` en `engine/hard_constraints.py`: el
+ * backend crea la parte con ese nombre exacto y por él se la reconoce aquí.
+ * No confundir con las partes de la guía que se dan en la otra sala, que
+ * llevan "(Sala B)" en el nombre y sí son asignaciones de estudiante.
+ */
+export const NOMBRE_RESPONSABLE_SALA_B = 'Responsable de Sala B';
+
 export interface CandidatoAlternativo {
   id_publicador: number;
   nombre_completo: string;
@@ -254,7 +264,10 @@ export interface GenerarMesForm {
 
 export interface ColumnaPermiso {
   key: string;
+  /** Encabezado corto de la columna. */
   label: string;
+  /** Nombre completo del permiso (tooltip de la matriz y título en el reporte). */
+  nombre_largo: string;
   solo_hombres: boolean;
 }
 
@@ -262,15 +275,36 @@ export interface PublicadorMatrizItem {
   id_publicador: number;
   primer_nombre: string;
   primer_apellido: string;
+  /** Ya resuelto por el backend (alias + regla de la congregación). */
+  nombre_mostrado?: string | null;
   sexo: string;
   privilegios: string[];  // ['Anciano', 'Precursor Regular'] — all active
   permisos: Record<string, boolean>;
   nivel_oratoria?: number;
+  id_grupo?: number | null;
+  nombre_grupo?: string | null;
+}
+
+export interface GrupoMatrizOption {
+  id_grupo: number;
+  nombre_grupo: string;
 }
 
 export interface MatrizConfigResponse {
   publicadores: PublicadorMatrizItem[];
   columnas: ColumnaPermiso[];
+  grupos: GrupoMatrizOption[];
+}
+
+/** Lo que el usuario elige en el diálogo "Reporte de permisos". */
+export interface ReportePrivilegiosOpciones {
+  formato: 'matriz' | 'resumen';
+  agrupar_por: 'ninguno' | 'grupo' | 'privilegio';
+  sexo: 'todos' | 'solo_hombres' | 'solo_mujeres';
+  ids_grupo: number[];
+  privilegio: string | null;
+  permisos: string[];
+  solo_con_permiso: boolean;
 }
 
 export interface CambioPermisoPublicador {

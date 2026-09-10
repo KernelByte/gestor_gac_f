@@ -20,6 +20,18 @@ export interface Estado {
    tipo: string;
 }
 
+export type CanalAcceso = 'whatsapp' | 'correo' | 'manual';
+
+export interface AccesoGenerado {
+   id_usuario: number;
+   nombre: string;
+   correo: string;
+   telefono: string | null;
+   password_temporal: string;
+   mensaje_whatsapp: string;
+   correo_enviado: boolean;
+}
+
 @Injectable({
    providedIn: 'root'
 })
@@ -47,6 +59,24 @@ export class UsuariosService {
 
    deleteUsuario(id: number): Observable<void> {
       return this.http.delete<void>(`${this.API_URL}${id}`);
+   }
+
+   /**
+    * Envía por correo la contraseña recién tecleada al crear la cuenta. No la
+    * cambia ni toca "forzar cambio": eso ya quedó decidido en el formulario.
+    */
+   enviarCredencialesCorreo(id: number, contrasena: string): Observable<void> {
+      return this.http.post<void>(`${this.API_URL}${id}/enviar-credenciales-correo`, { contrasena });
+   }
+
+   /**
+    * Para una cuenta que ya existe: no hay forma de recuperar su contraseña
+    * (está hasheada), así que esto siempre la reemplaza por una temporal con
+    * cambio obligatorio al primer ingreso, y devuelve esa contraseña en claro
+    * (además de enviarla ya, si el canal es 'correo').
+    */
+   generarAcceso(id: number, canal: CanalAcceso): Observable<AccesoGenerado> {
+      return this.http.post<AccesoGenerado>(`${this.API_URL}${id}/generar-acceso`, { canal });
    }
 
    private roles$: Observable<Rol[]> | null = null;

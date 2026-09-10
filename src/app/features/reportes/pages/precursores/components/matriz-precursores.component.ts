@@ -52,10 +52,14 @@ const PESO_ESTADO = { riesgo: 0, atencion: 1, en_meta: 2, exento: 3 } as const;
       --txt-3:         oklch(60% 0.010 295);
       --txt-4:         oklch(76% 0.008 295);
 
-      /* Color semántico: sólo balance, falta de informe y crédito. */
+      /* Color semántico: balance, falta de informe, crédito y franja de fila.
+         Mismos valores que app-estado-badge — la franja y el badge deben
+         leerse como el mismo semáforo, no como dos paletas distintas. */
       --pos:           oklch(52% 0.13 162);
       --neg:           oklch(54% 0.19 25);
       --credito:       oklch(52% 0.17 295);
+      --aviso:         oklch(58% 0.14 75);
+      --exento:        oklch(55% 0.07 195);
 
       /* Densidad de celda. Por defecto cómoda (escritorio ancho, tablet). */
       --cell-px: 0.5rem;
@@ -89,6 +93,8 @@ const PESO_ESTADO = { riesgo: 0, atencion: 1, en_meta: 2, exento: 3 } as const;
       --pos:           oklch(76% 0.13 162);
       --neg:           oklch(71% 0.14 25);
       --credito:       oklch(73% 0.12 295);
+      --aviso:         oklch(80% 0.13 75);
+      --exento:        oklch(75% 0.06 195);
     }
 
     /* ── MacBook Pro 14" (1512 px de viewport ≈ 1100 px útiles) ────────
@@ -211,7 +217,19 @@ const PESO_ESTADO = { riesgo: 0, atencion: 1, en_meta: 2, exento: 3 } as const;
       background: var(--bg-row);
     }
     thead .col-nombre, tfoot .col-nombre { z-index: 30; }
-    tbody .col-nombre { z-index: 10; }
+    /* Franja de estado: 3px de color a la izquierda, visible incluso antes de
+       desplazarse hacia la columna Estado (que en portátil puede quedar fuera
+       de vista). Riesgo/atención/consideración se marcan; "en meta" es el
+       caso por defecto y no gasta color en él. El filete inferior va en la
+       misma declaración porque, al ganar por especificidad a la regla
+       genérica "tbody td", perdería la línea separadora si fuera aparte. */
+    tbody .col-nombre { z-index: 10; box-shadow: inset 3px 0 0 transparent, inset 0 1px 0 var(--linea-suave); }
+    tbody tr.fila-riesgo   .col-nombre { box-shadow: inset 3px 0 0 var(--neg), inset 0 1px 0 var(--linea-suave); }
+    tbody tr.fila-atencion .col-nombre { box-shadow: inset 3px 0 0 var(--aviso), inset 0 1px 0 var(--linea-suave); }
+    tbody tr.fila-exento   .col-nombre { box-shadow: inset 3px 0 0 var(--exento), inset 0 1px 0 var(--linea-suave); }
+
+    .fila-nombre { display: flex; flex-direction: column; gap: 0.1875rem; padding-block: 0.0625rem; }
+    .linea-nombre { display: flex; align-items: center; gap: 0.375rem; min-width: 0; }
     .col-nombre .nombre-txt {
       display: block;
       max-width: var(--nombre-max);
@@ -220,44 +238,33 @@ const PESO_ESTADO = { riesgo: 0, atencion: 1, en_meta: 2, exento: 3 } as const;
       white-space: nowrap;
     }
 
-    /* Marca de nombramiento parcial: una anotación al margen, no una
-       etiqueta de color. Comparte el violeta del crédito porque ambos
-       dicen lo mismo — "esta cifra tiene una salvedad". */
-    .chip-desde {
-      font-family: var(--font-mono);
-      font-size: 0.5625rem;
-      letter-spacing: 0.02em;
-      color: var(--credito);
-      border: 1px solid color-mix(in oklch, var(--credito) 28%, transparent);
-      border-radius: 0.25rem;
-      padding: 0.0625rem 0.25rem;
-      line-height: 1.4;
-    }
-    /* Misma geometría que .chip-desde: ambos explican por qué la meta de esa
-       fila es menor que 560 h, así que deben leerse como el mismo tipo de
-       anotación. Sólo cambia el tono, que enlaza con el token de exento. */
-    .chip-consid {
-      font-family: var(--font-mono);
-      font-size: 0.5625rem;
-      letter-spacing: 0.02em;
-      color: var(--exento);
-      border: 1px solid color-mix(in oklch, var(--exento) 30%, transparent);
-      border-radius: 0.25rem;
-      padding: 0.0625rem 0.25rem;
-      line-height: 1.4;
-      display: inline-flex;
+    /* Segunda línea de la celda: metadatos de la fila. Nunca disputan ancho
+       con el nombre porque viven en su propia línea; si son varios, envuelven
+       en vez de estirar la columna a costa de los meses. Un solo idioma
+       visual (icono + texto de color) en vez de chips con borde por cada
+       salvedad — menos ruido, misma información. */
+    .linea-meta {
+      display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 0.1875rem;
+      column-gap: 0.5rem;
+      row-gap: 0.0625rem;
+      font-family: var(--font-mono);
+      font-size: 0.625rem;
+      letter-spacing: 0;
+      color: var(--txt-4);
     }
-    .chip-consid svg { width: 0.5625rem; height: 0.5625rem; flex: none; }
+    .meta-item { display: inline-flex; align-items: center; gap: 0.1875rem; white-space: nowrap; }
+    .meta-item svg { width: 0.625rem; height: 0.625rem; flex: none; }
+    .meta-desde { color: var(--credito); }
+    .meta-consid { color: var(--exento); }
 
-    .icono-seg { width: 0.8125rem; height: 0.8125rem; color: var(--txt-4); }
+    .icono-seg { width: 0.8125rem; height: 0.8125rem; color: var(--txt-4); flex: none; }
 
-    /* Los chips pierden el prefijo en portátil: el contexto ya los explica y
-       la columna gana ~28 px. */
+    /* En portátil el nombre compite por ancho con 12 meses de datos: la
+       segunda línea se recorta a lo esencial en vez de forzar scroll. */
     @media (min-width: 1440px) and (max-width: 1679.98px) {
-      .chip-desde-txt { display: none; }
-      .chip-consid-txt { display: none; }
+      .linea-meta { font-size: 0.5625rem; }
     }
 
     /* ── Métricas ancladas a la derecha ────────────────────────────────
@@ -378,34 +385,51 @@ const PESO_ESTADO = { riesgo: 0, atencion: 1, en_meta: 2, exento: 3 } as const;
           </thead>
           <tbody>
             <tr *ngFor="let f of filasOrdenadas(); trackBy: trackFila"
+                class="fila-precursor"
+                [ngClass]="'fila-' + f.estado"
                 [class.cursor-pointer]="clickable"
                 (click)="clickable && rowClick.emit(f)">
               <td class="col-nombre">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="nombre-txt" [title]="f.nombre">{{ f.nombre }}</span>
-                  <span *ngIf="f.mes_inicio_privilegio"
-                        class="chip-desde shrink-0"
-                        [title]="'Nombrado dentro del año de servicio: ' + mesInicioLabel(f.mes_inicio_privilegio)">
-                    <span class="chip-desde-txt">Desde </span>{{ mesInicioLabel(f.mes_inicio_privilegio) }}
-                  </span>
-                  <!-- Sólo en el caso parcial: si está exento todo el año ya lo
-                       dice el badge de Estado y repetirlo recargaría la fila. -->
-                  <span *ngIf="f.consideracion && !f.exento"
-                        class="chip-consid shrink-0"
-                        [title]="tituloConsideracion(f)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <div class="fila-nombre min-w-0">
+                  <div class="linea-nombre">
+                    <span class="nombre-txt" [title]="f.nombre">{{ f.nombre }}</span>
+                    <svg *ngIf="f.seguimientos_count > 0" class="icono-seg shrink-0"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         [attr.aria-label]="f.seguimientos_count + ' seguimientos'"
+                         title="Tiene seguimientos registrados">
                       <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 000-7.8z"/>
+                            d="M8 10h8m-8 4h5m-9 6V6a2 2 0 012-2h12a2 2 0 012 2v9a2 2 0 01-2 2H8l-4 3z"/>
                     </svg>
-                    <span class="chip-consid-txt">Consideración </span>especial
-                  </span>
-                  <svg *ngIf="f.seguimientos_count > 0" class="icono-seg shrink-0"
-                       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                       [attr.aria-label]="f.seguimientos_count + ' seguimientos'"
-                       title="Tiene seguimientos registrados">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M8 10h8m-8 4h5m-9 6V6a2 2 0 012-2h12a2 2 0 012 2v9a2 2 0 01-2 2H8l-4 3z"/>
-                  </svg>
+                  </div>
+                  <!-- Segunda línea: metadatos, nunca compitiendo por ancho con
+                       el nombre. Todo lo que aquí aparece es una salvedad sobre
+                       la meta de la fila, así que comparte un solo idioma visual
+                       (icono + texto de color, sin caja) en vez de acumular chips
+                       con borde que antes empujaban la columna entera. -->
+                  <div class="linea-meta"
+                       *ngIf="f.antiguedad_anios != null || f.mes_inicio_privilegio || (f.consideracion && !f.exento)">
+                    <span *ngIf="f.antiguedad_anios != null"
+                          class="meta-item"
+                          [title]="'Precursor(a) regular desde hace ' + f.antiguedad_anios + ' años (primer nombramiento, historial completo)'">
+                      {{ antiguedadTexto(f.antiguedad_anios) }}
+                    </span>
+                    <span *ngIf="f.mes_inicio_privilegio"
+                          class="meta-item meta-desde"
+                          [title]="'Nombrado dentro del año de servicio: ' + mesInicioLabel(f.mes_inicio_privilegio)">
+                      Desde {{ mesInicioLabel(f.mes_inicio_privilegio) }}
+                    </span>
+                    <!-- Sólo en el caso parcial: si está exento todo el año ya lo
+                         dice el badge de Estado y repetirlo recargaría la fila. -->
+                    <span *ngIf="f.consideracion && !f.exento"
+                          class="meta-item meta-consid"
+                          [title]="tituloConsideracion(f)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 000-7.8z"/>
+                      </svg>
+                      Consideración especial
+                    </span>
+                  </div>
                 </div>
               </td>
               <ng-container *ngFor="let t of [0,1,2,3]">
@@ -511,6 +535,13 @@ export class MatrizPrecursoresComponent {
   }
 
   trackFila = (_: number, f: PrecursorFila) => f.id_publicador;
+
+  /** Años de precursorado en texto compacto: "12 años" / "1 año" / "<1 año". */
+  /** Años de precursorado con un decimal: "3.5 años", o "5 años" si es exacto. */
+  antiguedadTexto(anios: number): string {
+    const texto = anios.toFixed(1).replace(/\.0$/, '');
+    return texto === '1' ? '1 año' : `${texto} años`;
+  }
 
   /** "2025-11" → "Nov 2025" usando las etiquetas de las columnas. */
   mesInicioLabel(mesInicio: string): string {

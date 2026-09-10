@@ -119,7 +119,7 @@ interface CalendarWeek {
           <button (click)="onExportPdf()" [disabled]="!currentPeriodo() || loading()"
                   class="press-btn h-10 px-4 flex items-center gap-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-black text-xs disabled:opacity-40">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-            PDF
+            PDF S-3-S
           </button>
           <button (click)="onSave()" *ngIf="hasEditPermission()" [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges() || !congregacionCtx.effectiveCongregacionId()"
                   [title]="!congregacionCtx.effectiveCongregacionId() ? 'Selecciona una congregación para guardar' : ''"
@@ -406,9 +406,17 @@ interface CalendarWeek {
           <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/20 shrink-0">
             <div>
               <h4 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Desglose Anual</h4>
-              <p class="text-[0.6rem] font-black text-slate-400 mt-0.5 uppercase tracking-widest">Año {{ resumenServiceYear() }}</p>
+              <div class="flex items-center gap-1 mt-0.5">
+                <button (click)="prevResumenYear()" class="press-btn p-1 -ml-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-400">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <p class="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest tabular-nums">Año {{ resumenServiceYear() }}</p>
+                <button (click)="nextResumenYear()" class="press-btn p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-400">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              </div>
             </div>
-            <button (click)="onExportS88Pdf()" class="press-btn h-8 px-3 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-[0.65rem] font-black shadow-lg shadow-indigo-500/20">PDF S-88</button>
+            <button (click)="onExportS88Pdf()" class="press-btn h-8 px-3 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-[0.65rem] font-black shadow-lg shadow-indigo-500/20 shrink-0">PDF S-88</button>
           </div>
 
           <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
@@ -436,6 +444,17 @@ interface CalendarWeek {
               </tbody>
             </table>
           </div>
+
+          @if (resumenAnualHistorico().length > 0) {
+            <div class="shrink-0 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 px-4 py-2.5 flex items-center justify-between text-[0.7rem] font-black">
+              <span class="text-slate-400 uppercase tracking-widest">Promedio anual</span>
+              <div class="flex items-center gap-3 tabular-nums text-sm">
+                <span class="text-brand-purple">{{ midweekPromedioAnual() ?? '–' }}</span>
+                <span class="text-slate-300 dark:text-slate-700">/</span>
+                <span class="text-orange-500">{{ weekendPromedioAnual() ?? '–' }}</span>
+              </div>
+            </div>
+          }
         </div>
       </div>
 
@@ -443,7 +462,7 @@ interface CalendarWeek {
       <div class="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-800/80 p-2.5 flex gap-2.5 animate-fadeIn">
         <button (click)="onExportPdf()" [disabled]="!currentPeriodo() || loading()"
                 class="press-btn flex-1 h-12 flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-900/50 text-slate-600 dark:text-slate-500 rounded-xl font-black text-sm">
-          PDF
+          PDF S-3-S
         </button>
         <button (click)="onSave()" *ngIf="hasEditPermission() && activeMobileTab() === 'registro'" [disabled]="saving() || !currentPeriodo() || loading() || !hasChanges() || !congregacionCtx.effectiveCongregacionId()"
                 class="press-btn flex-[2.5] h-12 bg-brand-purple text-white rounded-xl font-black text-sm shadow-xl shadow-purple-950/30">
@@ -1282,6 +1301,18 @@ export class ReunionesAsistenciaComponent implements OnInit {
     this.selectedMonth.set(m);
     this.selectedYear.set(y);
   }
+
+  // Promedio de los meses con datos (redondeado a 1 decimal); null si el año no tiene datos.
+  private promedioDe(valores: (number | null | undefined)[]): number | null {
+    const nums = valores.filter((v): v is number => v != null);
+    if (nums.length === 0) return null;
+    return Math.round((nums.reduce((s, v) => s + v, 0) / nums.length) * 10) / 10;
+  }
+  midweekPromedioAnual = computed(() => this.promedioDe(this.resumenAnualHistorico().map(r => r.midweek_promedio)));
+  weekendPromedioAnual = computed(() => this.promedioDe(this.resumenAnualHistorico().map(r => r.weekend_promedio)));
+
+  prevResumenYear(): void { this.resumenServiceYear.update(y => y - 1); }
+  nextResumenYear(): void { this.resumenServiceYear.update(y => y + 1); }
 
   selectWeek(w: number): void { this.selectedWeek.set(w); }
 

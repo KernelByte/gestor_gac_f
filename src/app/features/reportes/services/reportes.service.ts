@@ -84,6 +84,7 @@ export interface PrecursorFila {
   cursos_total: number;
   estado: EstadoPrecursor;
   seguimientos_count: number;
+  antiguedad_anios?: number | null;
 }
 
 export interface SeriePuntoMeta {

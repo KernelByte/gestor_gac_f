@@ -15,6 +15,8 @@ import { AuthStore } from '../../../core/auth/auth.store';
 import {
   AseoBloqueOut,
   AseoRotacion,
+  CLAVE_CANTIDAD_MICROFONO,
+  CLAVE_CANTIDAD_VIGILANCIA,
   CLAVE_REQUIERE_REVISION,
   CLAVE_ROTACION_ASEO,
   EnlacePublicoLogistica,
@@ -1431,6 +1433,50 @@ function normalizarTexto(s: string): string {
               </div>
 
               <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <p class="text-[0.6rem] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Cantidad de puestos
+                </p>
+                <p class="text-[0.7rem] leading-snug text-slate-500 dark:text-slate-400 mt-1 mb-2">
+                  Algunas congregaciones solo tienen una persona habilitada para
+                  vigilancia o micrófono.
+                </p>
+
+                <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                  @for (f of filasCantidad; track f.clave) {
+                    <div class="flex items-center gap-2 py-1.5">
+                      <p class="min-w-0 flex-1 text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
+                        {{ f.label }}
+                      </p>
+                      <div class="w-3 h-3 shrink-0 border-2 border-violet-400 border-t-transparent rounded-full animate-spin transition-opacity duration-150"
+                           [class.opacity-0]="configGuardando() !== f.clave"
+                           aria-hidden="true"></div>
+                      <div
+                        role="radiogroup"
+                        [attr.aria-label]="f.label + ': cantidad de puestos'"
+                        class="inline-flex shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 gap-0.5">
+                        @for (op of opcionesPref(f.clave); track op.id) {
+                          <button
+                            type="button"
+                            role="radio"
+                            [attr.data-testid]="'log-cant-' + f.testid + '-' + op.id"
+                            [attr.aria-checked]="valorPref(f.clave) === op.id"
+                            [attr.title]="op.description"
+                            [disabled]="configGuardando() !== null"
+                            (click)="guardarPreferencia(f.clave, op.id)"
+                            class="px-2.5 h-6 rounded-md text-[0.65rem] font-bold transition-colors duration-150 disabled:cursor-not-allowed"
+                            [class]="valorPref(f.clave) === op.id
+                              ? 'bg-[#6D28D9] text-white'
+                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:hover:text-slate-500'">
+                            {{ op.label }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <div class="flex items-center gap-2">
                   <p class="min-w-0 flex-1 text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
                     Que otra persona revise antes de publicar
@@ -2357,6 +2403,11 @@ export class ReunionesLogisticaComponent implements OnInit {
       label: PERMISO_LABEL[p.permiso] ?? p.permiso,
     })),
     { clave: CLAVE_ROTACION_ASEO, testid: 'aseo', label: 'Aseo del salón' },
+  ];
+  /** Filas de la sección "Cantidad de puestos": mismo selector, con opciones 1/2. */
+  readonly filasCantidad = [
+    { clave: CLAVE_CANTIDAD_VIGILANCIA, testid: 'vigilancia', label: 'Vigilancia' },
+    { clave: CLAVE_CANTIDAD_MICROFONO, testid: 'microfono', label: 'Micrófono' },
   ];
   readonly claveRequiereRevision = CLAVE_REQUIERE_REVISION;
   readonly claveRotacionAseo = CLAVE_ROTACION_ASEO;
@@ -3338,7 +3389,9 @@ export class ReunionesLogisticaComponent implements OnInit {
   // ── Acceso a datos ────────────────────────────────────────────
 
   seccionPuestos(seccion: string): string[] {
-    return SECCION_PUESTOS[seccion] ?? [];
+    const base = SECCION_PUESTOS[seccion] ?? [];
+    const activos = this.mesDatos()?.puestos_activos;
+    return activos ? base.filter((p) => activos.includes(p)) : base;
   }
 
   seccionHeaderColor(seccion: string): string {

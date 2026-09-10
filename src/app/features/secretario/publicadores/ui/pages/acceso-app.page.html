@@ -1,0 +1,426 @@
+<div class="flex flex-col h-full gap-3">
+
+  <!-- ══ Toolbar ═══════════════════════════════════════════════════════════
+       Misma tarjeta que el listado de Publicadores: búsqueda + filtros +
+       acción dentro de una sola barra blanca con borde y sombra suave. -->
+  <div class="shrink-0 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-1.5 flex items-center gap-1.5 flex-wrap lg:flex-nowrap">
+
+    <!-- Búsqueda -->
+    <div class="relative flex-1 min-w-[200px]">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </div>
+      <!-- text-base en móvil: por debajo de 16px Safari iOS hace zoom al
+           enfocar y deja la pantalla descuadrada. -->
+      <input type="search" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)"
+             aria-label="Buscar publicador por nombre o PIN"
+             placeholder="Buscar por nombre o PIN"
+             class="campo w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-base sm:text-sm text-slate-700 dark:text-slate-100 font-medium placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none" />
+    </div>
+
+    <!-- Grupo -->
+    <select [ngModel]="filtroGrupo()" (ngModelChange)="filtroGrupo.set($event === 'null' ? null : +$event)"
+            aria-label="Filtrar por grupo"
+            class="campo h-9 px-3 bg-slate-50 dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-base sm:text-sm text-slate-700 dark:text-slate-100 font-medium focus:bg-white dark:focus:bg-slate-700 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/20 transition-all outline-none sm:w-44 shrink-0">
+      <option [ngValue]="null">Todos los grupos</option>
+      @for (g of grupos(); track g.id) {
+        <option [ngValue]="g.id">{{ g.nombre }}</option>
+      }
+    </select>
+
+    <!-- Chips de estado: mismo patrón que los filtros rápidos del listado -->
+    <div class="flex items-center gap-1 overflow-x-auto sin-barra w-full lg:w-auto order-last lg:order-none" role="group" aria-label="Filtrar por estado de acceso">
+      <button type="button" (click)="filtroEstado.set(null)"
+              [attr.aria-pressed]="filtroEstado() === null"
+              class="chip flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap shrink-0"
+              [ngClass]="filtroEstado() === null
+                ? 'bg-brand-orange text-white shadow-sm'
+                : 'bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200'">
+        Todos <span class="text-[0.625rem] opacity-80">{{ items().length }}</span>
+      </button>
+      @for (e of estados; track e.id) {
+        <button type="button" (click)="filtroEstado.set(filtroEstado() === e.id ? null : e.id)"
+                [attr.aria-pressed]="filtroEstado() === e.id"
+                class="chip flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold whitespace-nowrap shrink-0"
+                [ngClass]="filtroEstado() === e.id
+                  ? 'bg-brand-orange text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'">
+          <!-- El punto usa el color del estado solo cuando el chip está en su
+               fondo neutro. Activo, el propio chip ya es naranja: pintar el
+               punto con el tono del estado (violeta, rosa...) chocaba contra
+               ese naranja, así que pasa a ser un punto blanco translúcido. -->
+          <span class="w-1.5 h-1.5 rounded-full shrink-0"
+                [ngClass]="filtroEstado() === e.id ? 'bg-white/70' : claseFondo(e.tono)" aria-hidden="true"></span>
+          {{ e.label }} <span class="text-[0.625rem]" [class]="filtroEstado() === e.id ? 'opacity-80' : 'opacity-60'">{{ conteos()[e.id] }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Actualizar -->
+    <button type="button" (click)="cargar()" [disabled]="cargando()"
+            aria-label="Actualizar"
+            title="Actualizar"
+            class="btn-sec shrink-0 flex items-center justify-center w-9 h-9 rounded-lg transition-all border bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-slate-200 disabled:opacity-50">
+      <svg class="w-4 h-4" [class.animate-spin]="cargando()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+    </button>
+  </div>
+
+  <!-- ══ Listado ═══════════════════════════════════════════════════════════
+       Misma tarjeta que el "Main Content Area" del listado de Publicadores. -->
+  <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all duration-300">
+
+    <!-- Cabecera: seleccionar todo + código de la congregación -->
+    <div class="shrink-0 flex items-center gap-3 px-3 sm:px-4 h-12 border-b border-slate-200 dark:border-slate-700">
+      <label class="flex items-center gap-3 h-11 cursor-pointer select-none">
+        <input type="checkbox" [checked]="todosVisiblesSeleccionados()" (change)="alternarTodosVisibles()"
+               [disabled]="!filtrados().length"
+               class="w-[18px] h-[18px] rounded border-slate-300 dark:border-slate-600 text-brand-orange focus:ring-brand-orange/40 cursor-pointer disabled:opacity-40" />
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          <span class="tabular-nums">{{ filtrados().length }}</span> publicador{{ filtrados().length === 1 ? '' : 'es' }}
+        </span>
+      </label>
+
+      @if (codigoSeguridad()) {
+        <button type="button" (click)="copiar(codigoSeguridad(), 'Código de congregación')"
+                class="btn-txt ml-auto shrink-0 h-9 px-2 -mr-1 rounded-lg text-xs text-slate-400 dark:text-slate-500">
+          <span class="hidden sm:inline">Código de congregación </span>
+          <span class="font-mono font-semibold tabular-nums text-slate-500 dark:text-slate-400">{{ codigoSeguridad() }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Cabecera de columnas: solo en escritorio, con el mismo tratamiento
+         que el <thead> pegajoso del listado de Publicadores. -->
+    @if (!cargando() && filtrados().length) {
+      <div class="shrink-0 hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm text-xs font-bold text-slate-400 uppercase tracking-wider"
+           aria-hidden="true">
+        <span class="w-11 -ml-2 shrink-0"></span>
+        <span class="w-[30%] shrink-0">Publicador</span>
+        <span class="flex-1 min-w-0">Estado</span>
+        <span class="hidden sm:block w-32 shrink-0">Acceso</span>
+        <span class="w-[6.5rem] shrink-0"></span>
+      </div>
+    }
+
+    <div class="flex-1 overflow-y-auto">
+
+      <!-- Cargando: esqueleto con la forma real de las filas -->
+      @if (cargando()) {
+        <div aria-hidden="true">
+          @for (n of [1,2,3,4,5,6]; track n) {
+            <div class="flex items-center gap-3 px-3 sm:px-4 py-3.5 border-b border-slate-100 dark:border-slate-700 animate-pulse">
+              <div class="w-[18px] h-[18px] rounded bg-gray-200 dark:bg-slate-700 shrink-0"></div>
+              <div class="flex-1 min-w-0 space-y-2">
+                <div class="h-3.5 bg-gray-200 dark:bg-slate-700 rounded-lg" [style.width.%]="45 + n * 4"></div>
+                <div class="h-3 w-28 bg-gray-200 dark:bg-slate-700 rounded"></div>
+              </div>
+              <div class="hidden md:block h-3 w-40 bg-gray-200 dark:bg-slate-700 rounded"></div>
+              <div class="h-9 w-20 bg-gray-200 dark:bg-slate-700 rounded-lg shrink-0"></div>
+            </div>
+          }
+        </div>
+        <p class="sr-only" role="status">Cargando el estado de acceso</p>
+      }
+
+      <!-- Vacío: dice qué hacer, no solo que no hay nada -->
+      @if (!cargando() && !filtrados().length) {
+        <div class="px-6 py-16 text-center max-w-sm mx-auto">
+          <div class="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 border border-slate-200 dark:border-slate-700">
+            <svg class="w-6 h-6 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/></svg>
+          </div>
+          <p class="text-slate-800 dark:text-slate-100 font-bold mb-1">
+            {{ items().length ? 'Ningún publicador coincide' : 'Todavía no hay publicadores' }}
+          </p>
+          <p class="text-slate-400 dark:text-gray-500 text-sm mb-5">
+            {{ items().length
+                ? 'Prueba con otro grupo o quita el filtro de estado.'
+                : 'Cuando registres publicadores aparecerán aquí para darles acceso a la app.' }}
+          </p>
+          @if (items().length) {
+            <button type="button" (click)="limpiarFiltros()"
+                    class="btn-sec inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+              Quitar filtros
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Filas -->
+      @for (it of filtrados(); track it.id_publicador; let i = $index) {
+        <div class="fila relative flex items-start md:items-center gap-3 px-3 sm:px-4 py-3 border-b border-slate-100 dark:border-slate-700/50"
+             [class.bg-orange-50]="estaSeleccionado(it.id_publicador)"
+             [class.dark:bg-orange-500/10]="estaSeleccionado(it.id_publicador)"
+             [style.--i]="i">
+
+          <label class="flex items-center justify-center w-11 h-11 -my-1 -ml-2 shrink-0 cursor-pointer">
+            <input type="checkbox" [checked]="estaSeleccionado(it.id_publicador)"
+                   (change)="alternar(it.id_publicador)"
+                   [attr.aria-label]="'Seleccionar ' + it.nombre"
+                   class="w-[18px] h-[18px] rounded border-slate-300 dark:border-slate-600 text-brand-orange focus:ring-brand-orange/40 cursor-pointer" />
+          </label>
+
+          <!-- Identidad -->
+          <div class="min-w-0 flex-1 md:flex-none md:w-[30%]">
+            <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ it.nombre }}</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">
+              {{ it.grupo || 'Sin grupo' }}@if (it.privilegio) { · {{ it.privilegio }} }
+            </p>
+
+            <!-- En móvil el estado va aquí debajo: es la información con la que
+                 se decide la siguiente acción, no puede desaparecer. -->
+            <div class="md:hidden mt-2">
+              <span class="insignia" [ngClass]="claseBadge(tonoEstado(it.estado_acceso))">
+                {{ etiquetaEstado(it.estado_acceso) }}
+              </span>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5">{{ detalleEstado(it) }}</p>
+            </div>
+          </div>
+
+          <!-- Estado (escritorio) -->
+          <div class="hidden md:block min-w-0 flex-1">
+            <span class="insignia" [ngClass]="claseBadge(tonoEstado(it.estado_acceso))">
+              {{ etiquetaEstado(it.estado_acceso) }}
+            </span>
+            <p class="text-xs text-slate-400 dark:text-slate-500 truncate mt-1">{{ detalleEstado(it) }}</p>
+          </div>
+
+          <!-- PIN o correo, según cómo entra esta persona -->
+          @if (it.tiene_usuario_sistema) {
+            <button type="button" (click)="copiar(it.correo, 'Correo')" [disabled]="!it.correo"
+                    [attr.aria-label]="it.correo ? 'Copiar correo de ' + it.nombre : null"
+                    class="btn-txt hidden sm:flex flex-col justify-center shrink-0 w-32 h-11 px-2 rounded-lg text-left disabled:opacity-60 disabled:pointer-events-none">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Correo</span>
+              <span class="font-mono text-xs font-semibold text-violet-600 dark:text-violet-400 truncate">{{ it.correo || '—' }}</span>
+            </button>
+          } @else {
+            <button type="button" (click)="copiar(it.codigo_pin, 'PIN')" [disabled]="!it.codigo_pin"
+                    [attr.aria-label]="it.codigo_pin ? 'Copiar PIN de ' + it.nombre : null"
+                    class="btn-txt hidden sm:flex flex-col justify-center shrink-0 w-32 h-11 px-2 rounded-lg text-left disabled:opacity-60 disabled:pointer-events-none">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">PIN</span>
+              <span class="font-mono text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300 truncate">{{ it.codigo_pin || '—' }}</span>
+            </button>
+          }
+
+          <button type="button" (click)="invitarUno(it)" [disabled]="trabajando()"
+                  [attr.title]="it.tiene_usuario_sistema ? 'Enviar contraseña temporal por correo' : 'Generar enlace de invitación'"
+                  class="btn-sec shrink-0 w-[6.5rem] h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-xs font-semibold text-slate-600 dark:text-slate-300 disabled:opacity-50 self-center">
+            {{ it.tiene_usuario_sistema ? 'Enviar acceso' : 'Invitar' }}
+          </button>
+        </div>
+      }
+
+      <!-- Aire para que la barra flotante no tape la última fila -->
+      @if (haySeleccion() && filtrados().length) { <div class="h-24 md:h-4"></div> }
+    </div>
+  </div>
+</div>
+
+<!-- ══ Acciones masivas ════════════════════════════════════════════════════
+     En móvil flota abajo, al alcance del pulgar; en escritorio se ancla al
+     ancho del contenido. -->
+@if (haySeleccion()) {
+  <!-- Fondo invisible que cierra el menú al tocar fuera. -->
+  @if (menuMas()) {
+    <div class="fixed inset-0 z-30" (click)="menuMas.set(false)" aria-hidden="true"></div>
+  }
+
+  <div class="barra fixed z-40 left-3 right-3 bottom-3 md:left-auto md:right-6 md:bottom-6 md:max-w-xl
+              rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800
+              shadow-xl shadow-slate-200/50 dark:shadow-black/50"
+       role="region" aria-label="Acciones sobre la selección">
+    <div class="flex items-center gap-2 px-3 h-12 border-b border-slate-100 dark:border-slate-700">
+      <span class="text-sm font-semibold text-slate-800 dark:text-slate-100">
+        <span class="tabular-nums">{{ seleccion().size }}</span> seleccionado{{ seleccion().size === 1 ? '' : 's' }}
+      </span>
+      <button type="button" (click)="limpiarSeleccion()"
+              class="btn-txt ml-auto h-9 px-2.5 rounded-lg text-xs font-medium text-slate-500 dark:text-slate-400">
+        Quitar
+      </button>
+    </div>
+
+    <!-- Una sola acción primaria; el resto queda subordinado y lo raro se
+         pliega en "Más". Antes eran siete botones del mismo peso visual. -->
+    <div class="flex items-center gap-2 p-3">
+      <button type="button" (click)="prepararWhatsapp()" [disabled]="trabajando()"
+              class="btn-pri flex-1 sm:flex-none h-11 px-4 rounded-xl bg-brand-orange hover:bg-orange-600 text-white text-xs font-bold shadow-sm shadow-orange-900/10 disabled:opacity-50">
+        Enviar por WhatsApp
+      </button>
+      <button type="button" (click)="enviarCorreo()" [disabled]="trabajando()"
+              class="btn-sec h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-xs font-semibold text-slate-600 dark:text-slate-300 disabled:opacity-50">
+        Correo
+      </button>
+      <button type="button" (click)="generarInvitaciones()" [disabled]="trabajando()"
+              class="btn-sec hidden sm:block h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-xs font-semibold text-slate-600 dark:text-slate-300 disabled:opacity-50">
+        Solo el enlace
+      </button>
+
+      <div class="relative ml-auto">
+        <button type="button" (click)="alternarMenuMas()" [disabled]="trabajando()"
+                [attr.aria-expanded]="menuMas()" aria-haspopup="menu" aria-label="Más acciones"
+                class="btn-sec h-11 w-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-400 disabled:opacity-50">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+        </button>
+
+        @if (menuMas()) {
+          <div class="menu absolute bottom-[calc(100%+0.5rem)] right-0 w-56 z-40 rounded-xl border border-slate-100 dark:border-slate-700
+                      bg-white dark:bg-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden py-1" role="menu">
+            <button type="button" role="menuitem" (click)="masSoloEnlace()"
+                    class="op sm:hidden w-full h-11 px-3.5 text-left text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Solo el enlace
+            </button>
+            <button type="button" role="menuitem" (click)="masHabilitar()"
+                    class="op w-full h-11 px-3.5 text-left text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Habilitar acceso
+            </button>
+            <button type="button" role="menuitem" (click)="masNuevoPin()"
+                    class="op w-full h-11 px-3.5 text-left text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Generar nuevo PIN
+            </button>
+
+            <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
+
+            <button type="button" role="menuitem" (click)="masQuitarAcceso()"
+                    class="op w-full h-11 px-3.5 text-left text-xs font-semibold text-rose-600 dark:text-rose-400">
+              Quitar acceso
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══ Confirmación de la acción destructiva ═══════════════════════════════
+     Quitar el acceso a varias personas de golpe no tiene deshacer, así que
+     antes de hacerlo se dice a cuántas afecta. -->
+@if (confirmarQuitar()) {
+  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm"
+       (click)="confirmarQuitar.set(false)" role="dialog" aria-modal="true" aria-labelledby="tit-quitar">
+    <div class="hoja w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 overflow-hidden pb-[env(safe-area-inset-bottom)]"
+         (click)="$event.stopPropagation()">
+      <div class="px-5 pt-5 pb-4">
+        <h3 id="tit-quitar" class="font-display text-base font-bold text-slate-800 dark:text-slate-100">
+          ¿Quitar el acceso a {{ seleccion().size }} publicador{{ seleccion().size === 1 ? '' : 'es' }}?
+        </h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+          No podrán entrar a la app con su PIN y sus invitaciones dejarán de servir.
+          Puedes volver a habilitarlos cuando quieras desde esta misma pantalla.
+        </p>
+      </div>
+      <div class="px-5 pb-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+        <button type="button" (click)="confirmarQuitar.set(false)"
+                class="btn-sec h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-xs font-semibold text-slate-600 dark:text-slate-300">
+          Cancelar
+        </button>
+        <button type="button" (click)="confirmarQuitarAcceso()"
+                class="btn-peligro h-11 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold">
+          Sí, quitar el acceso
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══ Modal: invitación de una persona ════════════════════════════════════ -->
+@if (invitacionAbierta(); as inv) {
+  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm"
+       (click)="cerrarInvitacion()" role="dialog" aria-modal="true" aria-label="Invitación generada">
+    <div class="hoja w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 overflow-hidden pb-[env(safe-area-inset-bottom)]"
+         (click)="$event.stopPropagation()">
+
+      <div class="px-5 pt-5 pb-4">
+        <h3 class="font-display text-base font-bold text-slate-800 dark:text-slate-100 truncate">{{ inv.nombre }}</h3>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
+          Un solo uso · vence el {{ inv.expira_en | date: 'd \'de\' MMMM' }}
+        </p>
+      </div>
+
+      <div class="px-5 pb-5 space-y-3">
+        <!-- QR para mostrarlo en pantalla y que lo escaneen en el salón -->
+        <!-- Fondo blanco fijo a propósito: un QR sobre superficie oscura no se lee. -->
+        <div class="mx-auto w-40 h-40 p-2 rounded-xl bg-white border border-slate-200 dark:border-slate-700 [&>svg]:w-full [&>svg]:h-full"
+             [innerHTML]="qrSeguro(inv.qr_svg)" role="img" [attr.aria-label]="'Código QR de la invitación de ' + inv.nombre"></div>
+
+        <div class="divide-y divide-slate-200 dark:divide-slate-700 border-t border-slate-200 dark:border-slate-700">
+          <button type="button" (click)="copiar(inv.url, 'Enlace')"
+                  class="btn-txt w-full flex items-center gap-3 py-3 text-left">
+            <span class="w-20 shrink-0 text-xs text-slate-400 dark:text-slate-500">Enlace</span>
+            <span class="flex-1 min-w-0 text-xs text-slate-600 dark:text-slate-300 truncate">{{ inv.url }}</span>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">Copiar</span>
+          </button>
+          <button type="button" (click)="copiar(inv.codigo_pin, 'PIN')"
+                  class="btn-txt w-full flex items-center gap-3 py-3 text-left">
+            <span class="w-20 shrink-0 text-xs text-slate-400 dark:text-slate-500">PIN</span>
+            <span class="flex-1 min-w-0 font-mono text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-200 truncate">{{ inv.codigo_pin }}</span>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">Copiar</span>
+          </button>
+          <button type="button" (click)="copiar(codigoSeguridad(), 'Código de congregación')"
+                  class="btn-txt w-full flex items-center gap-3 py-3 text-left">
+            <span class="w-20 shrink-0 text-xs text-slate-400 dark:text-slate-500">Congregación</span>
+            <span class="flex-1 min-w-0 font-mono text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-200 truncate">{{ codigoSeguridad() }}</span>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">Copiar</span>
+          </button>
+        </div>
+
+        <button type="button" (click)="whatsappDesdeModal()"
+                class="btn-pri w-full h-11 rounded-xl bg-brand-orange hover:bg-orange-600 text-white text-sm font-bold shadow-sm shadow-orange-900/10">
+          {{ inv.telefono ? 'Enviar por WhatsApp' : 'Compartir por WhatsApp' }}
+        </button>
+        <button type="button" (click)="cerrarInvitacion()"
+                class="btn-txt w-full h-10 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══ Cola de envíos por WhatsApp ═════════════════════════════════════════ -->
+@if (colaWhatsapp().length) {
+  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm"
+       (click)="cerrarCola()" role="dialog" aria-modal="true" aria-label="Envíos por WhatsApp">
+    <div class="hoja w-full sm:max-w-md max-h-[85dvh] rounded-t-3xl sm:rounded-2xl bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col pb-[env(safe-area-inset-bottom)]"
+         (click)="$event.stopPropagation()">
+
+      <div class="px-5 pt-5 pb-4 shrink-0">
+        <h3 class="font-display text-base font-bold text-slate-800 dark:text-slate-100">Enviar por WhatsApp</h3>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5 leading-relaxed">
+          El navegador bloquea abrir varias ventanas de golpe, así que van de una en una.
+          Quedan <span class="tabular-nums font-semibold">{{ pendientesRestantes() }}</span> por enviar.
+        </p>
+      </div>
+
+      <div class="flex-1 overflow-y-auto border-t border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
+        @for (p of colaWhatsapp(); track p.invitacion.id_invitacion) {
+          <div class="flex items-center gap-3 px-5 py-3">
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ p.invitacion.nombre }}</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                {{ p.invitacion.telefono || 'Sin teléfono — elige el contacto en WhatsApp' }}
+              </p>
+            </div>
+            @if (p.enviado) {
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                Enviado
+              </span>
+            } @else {
+              <button type="button" (click)="abrirWhatsapp(p)"
+                      class="btn-pri h-9 px-3.5 rounded-lg bg-brand-orange hover:bg-orange-600 text-white text-xs font-bold shrink-0">
+                Abrir
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="px-5 py-3 border-t border-slate-200 dark:border-slate-700 shrink-0">
+        <button type="button" (click)="cerrarCola()"
+                class="btn-sec w-full h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-xs font-semibold text-slate-600 dark:text-slate-300">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -31,6 +31,10 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
       line-height: 1.05;
       letter-spacing: -0.035em;
       color: var(--txt-1);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .senas { display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; margin-top: 0.5rem; }
     .sena {
@@ -70,6 +74,11 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
     }
     .control-icono { width: 2.25rem; padding-inline: 0; justify-content: center; }
     .control-icono:active { transform: scale(0.94); }
+    /* En táctil el blanco de 36px se queda corto del mínimo cómodo de 44px;
+       con puntero fino (mouse/trackpad) la densidad actual ya es la correcta. */
+    @media (pointer: coarse) {
+      .control-icono { width: 2.75rem; height: 2.75rem; }
+    }
     .nav-off { opacity: 0.3; pointer-events: none; }
     .nav-contador {
       font-family: var(--font-mono);
@@ -84,6 +93,18 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
     @media (max-width: 480px) {
       .sel-objetivo, .sel-anio { width: 100%; }
     }
+
+    /* ── Fila de KPIs ──────────────────────────────────────────────────
+       El número de tarjetas varía (3 con consideración especial, 5 sin
+       ella), así que columnas fijas dejaban huecos o forzaban un
+       "col-span" manual para la última. "auto-fit" calcula cuántas caben
+       y estira las que hay para llenar el ancho siempre en una sola fila. */
+    .kpis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+      gap: 0.75rem;
+    }
+    @media (min-width: 640px) { .kpis-grid { gap: 1rem; } }
 
     /* ── Paneles ───────────────────────────────────────────────────────
        Un filete, sin sombra: el contenido es lo que separa, no el relieve. */
@@ -184,6 +205,51 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
     }
     .sin-dato { font-size: 0.6875rem; letter-spacing: 0.02em; color: var(--txt-4); }
     .fila-inactiva .mes { color: var(--txt-4); font-weight: 400; }
+
+    /* ── Tabla de actividad mensual en móvil ─────────────────────────────
+       Cinco columnas de cifras + observaciones no caben en 375px sin
+       obligar a un scroll horizontal incómodo para leer un solo mes. En vez
+       de mantener otra plantilla para móvil, la misma tabla se reacomoda:
+       cada fila pasa a ser una tarjeta y cada celda una línea "etiqueta:
+       valor" (la etiqueta sale de data-label, ya presente en el HTML). */
+    @media (max-width: 639.98px) {
+      .tabla-scroll { padding-inline: 0.75rem; padding-bottom: 0.125rem; }
+      .tabla, .tabla thead, .tabla tbody, .tabla tr, .tabla th, .tabla td { display: block; }
+      .tabla thead { position: static; }
+      .tabla thead tr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      .tabla tbody tr {
+        border: 1px solid var(--linea);
+        border-radius: 0.625rem;
+        padding: 0.625rem 0.75rem;
+        margin-block: 0.5rem;
+      }
+      .tabla tbody tr:first-child { margin-top: 0; }
+      .tabla tbody td {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.3125rem 0;
+        text-align: right;
+        box-shadow: inset 0 1px 0 var(--linea-suave);
+      }
+      .tabla tbody td:last-child { box-shadow: none; }
+      .tabla tbody td[data-label]::before {
+        content: attr(data-label);
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--txt-4);
+        text-align: left;
+      }
+      .tabla tbody td.mes { font-size: 0.9375rem; padding-bottom: 0.5rem; }
+      .tabla tbody td.sin-dato { text-align: left; padding-block: 0.25rem; }
+      /* Observaciones ya no compite por una columna angosta: puede
+         envolver en varias líneas en vez de recortarse con "…". */
+      .tabla tbody td[data-label="Observaciones"] { flex-direction: column; align-items: flex-start; gap: 0.1875rem; }
+      .tabla tbody .obs { white-space: normal; overflow: visible; text-overflow: clip; text-align: left; }
+    }
 
     /* ── Histórico de años ─────────────────────────────────────────────
        Rejilla real de tres columnas: el año, las horas y el veredicto se
@@ -287,7 +353,7 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
               </a>
             </div>
             <div class="min-w-0">
-              <h1 class="titulo-persona">{{ d.nombre }}</h1>
+              <h1 class="titulo-persona" [title]="d.nombre">{{ d.nombre }}</h1>
               <div class="senas">
                 <app-estado-badge [estado]="d.resumen.estado" [motivo]="d.resumen.consideracion?.motivo_label" />
                 <span *ngIf="d.grupo" class="sena">{{ d.grupo }}</span>
@@ -326,12 +392,12 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
           </div>
         </header>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+        <div class="kpis-grid">
           <app-kpi-card label="Horas acumuladas" [value]="d.resumen.total_anual" [hint]="metaHint()" />
           <app-kpi-card label="Promedio mensual" [value]="d.resumen.promedio" suffix="h" [hint]="d.resumen.exento ? 'sin requisito' : ('meta ' + ritmoMensual() + ' h/mes')" />
           <app-kpi-card *ngIf="!d.resumen.exento" label="Balance (Acu)" [value]="d.resumen.acu" suffix="h" [hint]="(d.resumen.acu < 0 ? 'atrasado vs ' : 'al día vs ') + ritmoMensual() + ' h/mes'" />
           <app-kpi-card *ngIf="!d.resumen.exento" label="Proyección anual" [value]="d.resumen.proyeccion_anual" suffix="h" [hint]="proyeccionHint()" />
-          <app-kpi-card class="col-span-2 sm:col-span-1" label="Cursos bíblicos" [value]="d.resumen.cursos_total" [hint]="'prom ' + d.resumen.cursos_promedio + '/mes'" />
+          <app-kpi-card label="Cursos bíblicos" [value]="d.resumen.cursos_total" [hint]="'prom ' + d.resumen.cursos_promedio + '/mes'" />
         </div>
 
         <!-- Consideración especial: reemplaza la pauta de horas, no la acompaña -->
@@ -386,13 +452,13 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
                   <tr *ngFor="let m of d.meses" [class.fila-inactiva]="!m.vigente">
                     <td class="mes">{{ m.label }}</td>
                     <ng-container *ngIf="m.vigente && m.informado; else sinDatoTpl">
-                      <td class="text-right celda-num">{{ m.horas }}</td>
-                      <td class="text-right celda-num" [ngClass]="m.horas_credito > 0 ? 'credito' : 'nulo'">
+                      <td class="text-right celda-num" data-label="Horas">{{ m.horas }}</td>
+                      <td class="text-right celda-num" data-label="Crédito" [ngClass]="m.horas_credito > 0 ? 'credito' : 'nulo'">
                         {{ m.horas_credito || '–' }}
                       </td>
-                      <td class="text-right celda-num total">{{ m.total }}</td>
-                      <td class="text-right celda-num" [ngClass]="m.cursos_biblicos ? '' : 'nulo'">{{ m.cursos_biblicos || '–' }}</td>
-                      <td><div class="obs" [title]="m.observaciones ?? ''">{{ m.observaciones ?? '' }}</div></td>
+                      <td class="text-right celda-num total" data-label="Total">{{ m.total }}</td>
+                      <td class="text-right celda-num" data-label="Cursos" [ngClass]="m.cursos_biblicos ? '' : 'nulo'">{{ m.cursos_biblicos || '–' }}</td>
+                      <td data-label="Observaciones"><div class="obs" [title]="m.observaciones ?? ''">{{ m.observaciones ?? '' }}</div></td>
                     </ng-container>
                     <ng-template #sinDatoTpl>
                       <td colspan="5" class="sin-dato">
@@ -439,7 +505,7 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
         <ng-template #skeletonTpl>
           <div class="space-y-5 animate-pulse" aria-label="Cargando detalle" aria-busy="true">
             <div class="h-14 esqueleto w-2/3"></div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+            <div class="kpis-grid">
               <div *ngFor="let i of [1,2,3,4,5]" class="h-[6.5rem] esqueleto"></div>
             </div>
             <div class="rejilla-detalle grid grid-cols-1 lg:grid-cols-2 gap-4">

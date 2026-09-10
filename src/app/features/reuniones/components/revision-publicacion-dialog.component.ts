@@ -2,7 +2,7 @@ import {
   Component, Input, Output, EventEmitter, ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReunionRecargada } from '../models/reuniones.models';
+import { ReunionRecargada, PersonaRecargada } from '../models/reuniones.models';
 
 /**
  * Lo que quedó cargado de más, enseñado justo antes de publicar.
@@ -59,10 +59,20 @@ import { ReunionRecargada } from '../models/reuniones.models';
               </header>
 
               @for (persona of reunion.personas; track persona.id_publicador) {
-                <div class="rev-persona">
+                <div
+                  class="rev-persona rev-persona-clickable"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-label]="'Ir a la semana del ' + formatFecha(reunion.fecha) + ' y ver las partes duplicadas de ' + persona.nombre_completo"
+                  (click)="onPersonaClick(reunion.fecha, persona)"
+                  (keydown.enter)="onPersonaClick(reunion.fecha, persona)"
+                  (keydown.space)="onPersonaClick(reunion.fecha, persona); $event.preventDefault()">
                   <div class="rev-persona-head">
                     <span class="rev-persona-nombre">{{ persona.nombre_completo }}</span>
                     <span class="rev-persona-chip">{{ persona.partes.length }} partes</span>
+                    <svg class="rev-persona-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M9 6l6 6-6 6"/>
+                    </svg>
                   </div>
                   <ul class="rev-lista">
                     @for (parte of persona.partes; track $index) {
@@ -84,6 +94,7 @@ import { ReunionRecargada } from '../models/reuniones.models';
               }
             </section>
           }
+          <p class="rev-hint">Toca a alguien para ir a su semana y revisar las partes repetidas.</p>
 
           <div class="rev-question">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -253,6 +264,25 @@ import { ReunionRecargada } from '../models/reuniones.models';
       border-color: rgba(255,255,255,0.06);
     }
 
+    .rev-persona-clickable {
+      cursor: pointer;
+      transition: background-color 130ms ease, border-color 130ms ease, transform 130ms var(--ease-out-expo);
+    }
+    .rev-persona-clickable:hover {
+      background: rgba(109, 40, 217, 0.06);
+      border-color: rgba(109, 40, 217, 0.16);
+    }
+    .rev-persona-clickable:focus-visible {
+      outline: 2px solid #6D28D9;
+      outline-offset: 2px;
+    }
+    .rev-persona-clickable:active { transform: scale(0.985); }
+    :host-context(.dark) .rev-persona-clickable:hover {
+      background: rgba(167, 139, 250, 0.1);
+      border-color: rgba(167, 139, 250, 0.22);
+    }
+    .rev-persona-clickable:hover .rev-persona-go { transform: translateX(2px); opacity: 1; }
+
     .rev-persona-head {
       display: flex;
       align-items: center;
@@ -267,6 +297,7 @@ import { ReunionRecargada } from '../models/reuniones.models';
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      flex: 1;
     }
     :host-context(.dark) .rev-persona-nombre { color: #f1f5f9; }
 
@@ -284,6 +315,25 @@ import { ReunionRecargada } from '../models/reuniones.models';
       background: rgba(251, 191, 36, 0.14);
       color: #fbbf24;
     }
+
+    .rev-persona-go {
+      flex-shrink: 0;
+      width: 13px; height: 13px;
+      stroke: #6D28D9;
+      opacity: 0.45;
+      transition: transform 160ms var(--ease-out-expo), opacity 160ms ease;
+    }
+    :host-context(.dark) .rev-persona-go { stroke: #a78bfa; }
+
+    .rev-hint {
+      flex-shrink: 0;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-align: center;
+      padding-top: 0.125rem;
+    }
+    :host-context(.dark) .rev-hint { color: #64748b; }
 
     .rev-lista {
       list-style: none;
@@ -421,6 +471,9 @@ import { ReunionRecargada } from '../models/reuniones.models';
 export class RevisionPublicacionDialogComponent {
   @Input() reuniones: ReunionRecargada[] = [];
   @Output() resolved = new EventEmitter<boolean>();
+  /** Se dispara al tocar a una persona: la pantalla detrás debe llevar al
+   *  usuario a esa semana y resaltar las partes de esa persona. */
+  @Output() irASemana = new EventEmitter<{ fecha: string; idPublicador: number; sala: string | null }>();
 
   get totalPersonas(): number {
     return this.reuniones.reduce((n, r) => n + r.personas.length, 0);
@@ -435,6 +488,12 @@ export class RevisionPublicacionDialogComponent {
     } catch {
       return fecha;
     }
+  }
+
+  onPersonaClick(fecha: string, persona: PersonaRecargada): void {
+    const sala = persona.partes.find((p) => p.sala)?.sala ?? null;
+    this.irASemana.emit({ fecha, idPublicador: persona.id_publicador, sala });
+    this.onAction(false);
   }
 
   onAction(accept: boolean): void {

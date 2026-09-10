@@ -7,7 +7,7 @@ import { KpiCardComponent } from '../../shared/kpi-card.component';
 import { lineMetaOption } from '../../shared/chart-options';
 import { MatrizPrecursoresComponent } from './components/matriz-precursores.component';
 import { AuthStore } from '../../../../core/auth/auth.store';
-import { ReportesService, PrecursoresMatriz, PrecursorFila, ObjetivoPrecursor } from '../../services/reportes.service';
+import { ReportesService, PrecursoresMatriz, PrecursorFila, ObjetivoPrecursor, EstadoPrecursor } from '../../services/reportes.service';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 
@@ -88,6 +88,54 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
     .control-busqueda { padding-left: 2.25rem; }
     .control-busqueda::placeholder { color: var(--txt-4); }
 
+    /* ── Filtro rápido por estado ──────────────────────────────────────
+       El estado vive al fondo de una matriz de 12 columnas; sin esto, ver
+       "quién está en riesgo" exige leer fila por fila. Los chips convierten
+       la pregunta más frecuente del secretario en un solo clic, y el
+       contador les da el mismo trabajo que antes hacían las tarjetas KPI
+       pero accionable. Activo = color; inactivo = solo filete, para que la
+       fila de chips no compita con las cifras de abajo cuando no se usa. */
+    .chips-estado {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .chip-estado {
+      height: 1.875rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding-inline: 0.75rem;
+      border-radius: 9999px;
+      border: 1px solid var(--linea);
+      background: var(--superficie);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.005em;
+      color: var(--txt-3);
+      transition: border-color 140ms var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+                  background-color 140ms var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+                  color 140ms var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+                  transform 140ms var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+    }
+    .chip-estado .contador {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 0.6875rem;
+      opacity: 0.8;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .chip-estado:hover:not(.activo) { border-color: var(--txt-4); color: var(--txt-1); }
+    }
+    .chip-estado:active { transform: scale(0.96); }
+    .chip-estado:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+    .chip-estado.activo { border-color: transparent; }
+    .chip-estado.activo.c-todos    { background: color-mix(in oklch, var(--txt-2) 14%, transparent); color: var(--txt-1); }
+    .chip-estado.activo.c-riesgo   { background: color-mix(in oklch, var(--neg) 16%, transparent); color: var(--neg); }
+    .chip-estado.activo.c-atencion { background: color-mix(in oklch, var(--aviso) 20%, transparent); color: var(--aviso); }
+    .chip-estado.activo.c-en_meta  { background: color-mix(in oklch, var(--pos) 16%, transparent); color: var(--pos); }
+    .chip-estado.activo.c-exento   { background: color-mix(in oklch, var(--exento) 20%, transparent); color: var(--exento); }
+
     /* Selectores de cabecera con el componente propio de la app. Ancho fijo
        para que el desplegable no salte al cambiar la etiqueta. */
     .sel-objetivo { display: block; width: 14rem; }
@@ -116,6 +164,21 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
       max-width: 38ch;
       color: var(--txt-3);
     }
+    .vacio-compacto { padding-block: 2.5rem; }
+
+    /* ── Fila de KPIs ──────────────────────────────────────────────────
+       El número de tarjetas varía (4, o 5 si hay consideración especial en
+       la congregación), así que un grid de columnas fijas ("grid-cols-4")
+       manda la quinta a una fila propia en cuanto aparece. "auto-fit" con
+       "minmax" calcula cuántas caben y estira las que hay para llenar el
+       ancho — 4 o 5, siempre en una sola fila mientras el viewport alcance,
+       sin necesidad de un breakpoint por cada conteo posible. */
+    .kpis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+      gap: 0.75rem;
+    }
+    @media (min-width: 640px) { .kpis-grid { gap: 1rem; } }
 
     .esqueleto {
       border-radius: 0.75rem;
@@ -171,28 +234,66 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
       </app-page-header>
 
       <ng-container *ngIf="data() as d; else loadingTpl">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div class="kpis-grid">
           <app-kpi-card *ngFor="let k of d.kpis" [label]="k.label" [value]="k.value" [hint]="k.hint" />
         </div>
 
         <ng-container *ngIf="d.precursores.length; else emptyTpl">
-          <div class="relative w-full sm:w-auto">
-            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none icono-busqueda" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
-            </svg>
-            <input type="search"
-                   placeholder="Buscar precursor…"
-                   class="control control-busqueda w-full sm:w-56"
-                   [value]="filtro()"
-                   (input)="filtro.set($any($event.target).value)" />
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div class="relative w-full sm:w-auto">
+              <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none icono-busqueda" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+              </svg>
+              <input type="search"
+                     placeholder="Buscar precursor…"
+                     class="control control-busqueda w-full sm:w-56"
+                     [value]="filtro()"
+                     (input)="filtro.set($any($event.target).value)" />
+            </div>
+
+            <div class="chips-estado" role="group" aria-label="Filtrar por estado">
+              <button type="button" class="chip-estado c-todos" [class.activo]="estadoFiltro() === 'todos'"
+                      (click)="seleccionarEstado('todos')">
+                Todos <span class="contador">{{ conteoEstados().todos }}</span>
+              </button>
+              <button type="button" class="chip-estado c-riesgo" [class.activo]="estadoFiltro() === 'riesgo'"
+                      *ngIf="conteoEstados().riesgo || estadoFiltro() === 'riesgo'"
+                      (click)="seleccionarEstado('riesgo')">
+                Riesgo <span class="contador">{{ conteoEstados().riesgo }}</span>
+              </button>
+              <button type="button" class="chip-estado c-atencion" [class.activo]="estadoFiltro() === 'atencion'"
+                      *ngIf="conteoEstados().atencion || estadoFiltro() === 'atencion'"
+                      (click)="seleccionarEstado('atencion')">
+                Atención <span class="contador">{{ conteoEstados().atencion }}</span>
+              </button>
+              <button type="button" class="chip-estado c-en_meta" [class.activo]="estadoFiltro() === 'en_meta'"
+                      *ngIf="conteoEstados().en_meta || estadoFiltro() === 'en_meta'"
+                      (click)="seleccionarEstado('en_meta')">
+                En meta <span class="contador">{{ conteoEstados().en_meta }}</span>
+              </button>
+              <button type="button" class="chip-estado c-exento" [class.activo]="estadoFiltro() === 'exento'"
+                      *ngIf="conteoEstados().exento || estadoFiltro() === 'exento'"
+                      (click)="seleccionarEstado('exento')">
+                Consideración especial <span class="contador">{{ conteoEstados().exento }}</span>
+              </button>
+            </div>
           </div>
 
-          <app-matriz-precursores
-            [filasInput]="filasFiltradas()"
-            [meses]="d.meses"
-            [objetivoAnual]="d.objetivo_anual"
-            [clickable]="puedeGestionar"
-            (rowClick)="abrirDetalle($event)" />
+          <ng-container *ngIf="filasFiltradas().length; else sinResultadosTpl">
+            <app-matriz-precursores
+              [filasInput]="filasFiltradas()"
+              [meses]="d.meses"
+              [objetivoAnual]="d.objetivo_anual"
+              [clickable]="puedeGestionar"
+              (rowClick)="abrirDetalle($event)" />
+          </ng-container>
+          <ng-template #sinResultadosTpl>
+            <div class="panel flex flex-col items-start justify-center vacio-compacto px-8 gap-2">
+              <p class="vacio-titulo">Sin coincidencias</p>
+              <p class="vacio-texto">Ningún precursor(a) coincide con los filtros actuales. Prueba con otro nombre o quita el filtro de estado.</p>
+              <button type="button" class="control control-boton mt-1" (click)="limpiarFiltros()">Quitar filtros</button>
+            </div>
+          </ng-template>
 
           <app-chart-card title="Horas de la congregación por mes"
                           [subtitle]="'Predicación + crédito de los precursores regulares vs meta (' + ritmoMensual() + ' h × precursores vigentes)'"
@@ -218,7 +319,7 @@ import { SelectPickerComponent, PickerOption } from '../../../../shared/componen
         </div>
         <ng-template #skeletonTpl>
           <div class="space-y-5 animate-pulse" aria-label="Cargando análisis" aria-busy="true">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div class="kpis-grid">
               <div *ngFor="let i of [1,2,3,4]" class="h-[6.5rem] esqueleto"></div>
             </div>
             <div class="h-[22rem] esqueleto"></div>
@@ -240,6 +341,7 @@ export class PrecursoresPage {
   readonly anioSeleccionado = signal<number>(0);
   readonly objetivo = signal<ObjetivoPrecursor>('publicador');
   readonly filtro = signal('');
+  readonly estadoFiltro = signal<'todos' | EstadoPrecursor>('todos');
 
   /** Objetivo anual activo (600 publicador / 560 comité). */
   readonly objetivoAnual = computed(() => this.data()?.objetivo_anual ?? 600);
@@ -256,11 +358,28 @@ export class PrecursoresPage {
     (this.data()?.anios_disponibles ?? []).map(a => ({ value: a, label: `${a - 1}–${a}` })),
   );
 
-  readonly filasFiltradas = computed(() => {
+  /** Solo el filtro de texto: base de los contadores por estado. */
+  private readonly filasBuscadas = computed(() => {
     const d = this.data();
     if (!d) return [];
     const q = this.filtro().trim().toLowerCase();
     return q ? d.precursores.filter(f => f.nombre.toLowerCase().includes(q)) : d.precursores;
+  });
+
+  /** Cuántas filas de la búsqueda actual caen en cada estado, para los chips. */
+  readonly conteoEstados = computed(() => {
+    const c = { todos: 0, en_meta: 0, atencion: 0, riesgo: 0, exento: 0 };
+    for (const f of this.filasBuscadas()) {
+      c.todos++;
+      c[f.estado]++;
+    }
+    return c;
+  });
+
+  readonly filasFiltradas = computed(() => {
+    const base = this.filasBuscadas();
+    const ef = this.estadoFiltro();
+    return ef === 'todos' ? base : base.filter(f => f.estado === ef);
   });
 
   readonly tendenciaOption = computed(() => {
@@ -311,6 +430,15 @@ export class PrecursoresPage {
       this.objetivo.set(obj);
       this.cargar(this.anioSeleccionado() || undefined);
     }
+  }
+
+  seleccionarEstado(e: 'todos' | EstadoPrecursor): void {
+    this.estadoFiltro.set(this.estadoFiltro() === e ? 'todos' : e);
+  }
+
+  limpiarFiltros(): void {
+    this.filtro.set('');
+    this.estadoFiltro.set('todos');
   }
 
   abrirDetalle(f: PrecursorFila): void {

@@ -200,10 +200,21 @@ export class TimeAgoPipe implements PipeTransform {
                 </div>
               </div>
 
-              <!-- Publicadores -->
-              <a *ngIf="hasPermission('publicadores.ver')" routerLink="/secretario/publicadores" routerLinkActive="text-brand-orange dark:text-orange-300 font-semibold [&_.nav-icon]:!text-brand-orange dark:[&_.nav-icon]:!text-orange-400 bg-brand-orange/10 dark:bg-orange-500/[0.13] nav-active"
-                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
-                [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Publicadores">
+              <!-- Publicadores: una sola entrada. Adentro, la página decide qué
+                   pestañas mostrar según el permiso de cada quien (Listado,
+                   Grupos, Contactos, Acceso app), así que el sidebar solo
+                   necesita saber si a esta persona le corresponde alguna. Sin
+                   'publicadores.ver' pero con 'publicadores.acceso_app'
+                   -p. ej. un superintendente de grupo a quien se le delegó
+                   solo eso- entra igual y ve nada más la pestaña de acceso. -->
+              <a *ngIf="hasPermission('publicadores.ver') || hasPermission('publicadores.acceso_app') || hasRole('Administrador') || hasRole('Secretario') || hasRole('Coordinador')"
+                routerLink="/secretario/publicadores"
+                class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1 focus:outline-none"
+                [ngClass]="{
+                  'justify-center p-3': collapsed(),
+                  'gap-3 px-3 py-2.5': !collapsed(),
+                  'text-brand-orange dark:text-orange-300 font-semibold [&_.nav-icon]:!text-brand-orange dark:[&_.nav-icon]:!text-orange-400 bg-brand-orange/10 dark:bg-orange-500/[0.13] nav-active': isPublicadoresActive()
+                }" title="Publicadores">
                 <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 </div>
@@ -1293,7 +1304,11 @@ export class ShellPage implements OnInit, OnDestroy {
     } else if (url.includes('/secretario/grupos')) {
       this.pageTitle.set({ title: 'Grupos de Predicación', subtitle: 'Organiza los grupos y asignaciones.' });
     } else if (url.includes('/secretario/publicadores')) {
-      this.pageTitle.set({ title: 'Publicadores', subtitle: 'Base de datos de hermanos y publicadores.' });
+      if (url.includes('tab=acceso')) {
+        this.pageTitle.set({ title: 'Acceso a la app', subtitle: 'Invitaciones y credenciales para la app móvil.' });
+      } else {
+        this.pageTitle.set({ title: 'Publicadores', subtitle: 'Base de datos de hermanos y publicadores.' });
+      }
     } else if (url.includes('/horarios')) {
       this.pageTitle.set({ title: 'Horarios de Predicación', subtitle: 'Programa y registra salidas de predicación.' });
     } else if (url.includes('/seguimiento-predicacion')) {
@@ -1387,6 +1402,10 @@ export class ShellPage implements OnInit, OnDestroy {
 
   isSecretarioToolsActive(): boolean {
     return this.router.url.startsWith('/secretario-tools');
+  }
+
+  isPublicadoresActive(): boolean {
+    return this.router.url.startsWith('/secretario/publicadores');
   }
 
   toggleHerramientasMenu() {

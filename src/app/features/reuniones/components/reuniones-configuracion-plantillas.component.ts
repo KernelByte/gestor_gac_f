@@ -11,6 +11,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { SelectPickerComponent, PickerOption } from '../../../shared/components/select-picker/select-picker.component';
 import { CatalogoDiscursosComponent } from './catalogo-discursos.component';
+import { ReportePrivilegiosDialogComponent } from './reporte-privilegios-dialog.component';
 import { inicialesDe, nombreLegal, nombreMostrado } from '../../../core/utils/nombre.util';
 import {
   MWBImportPreviewResponse,
@@ -23,6 +24,8 @@ import {
   AlgoProfile,
   PublicadorMatrizItem,
   ColumnaPermiso,
+  GrupoMatrizOption,
+  ReportePrivilegiosOpciones,
   CambioPermisoPublicador,
   UpdateMatrizRequest,
   AusenciaOut,
@@ -33,7 +36,7 @@ import {
 @Component({
   selector: 'app-reuniones-configuracion-plantillas',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, CatalogoDiscursosComponent],
+  imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, CatalogoDiscursosComponent, ReportePrivilegiosDialogComponent],
   template: `
     <div class="cfg-root flex flex-col gap-5 h-full">
 
@@ -102,7 +105,7 @@ import {
            </div>
 
            <!-- Acciones contextuales (filtros + botones Guardar) -->
-           <div class="flex items-center gap-2 ml-auto flex-wrap justify-end">
+           <div class="flex items-center gap-2 flex-wrap justify-start">
 
             <!-- Perfil del algoritmo (solo indicador de guardado) -->
             @if (activeTab() === 'parametros' && profileSaving()) {
@@ -209,8 +212,18 @@ import {
                    Limpiar
                  </button>
                }
-               <!-- Divisor visual antes del botón de acción -->
+               <!-- Divisor visual antes de las acciones -->
                <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 hidden sm:block"></div>
+
+               <!-- Reporte imprimible de la matriz -->
+               <button
+                 (click)="abrirReporte()"
+                 [disabled]="matrizLoading() || !publicadores().length"
+                 title="Generar el reporte imprimible de permisos"
+                 class="h-9 px-3 flex items-center gap-1.5 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1b26] text-slate-600 dark:text-slate-300 hover:border-[#6D28D9] hover:text-[#6D28D9] dark:hover:text-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-[border-color,color,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap">
+                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                 <span class="hidden sm:inline">Reporte</span>
+               </button>
            }
 
            <!-- Guardar privilegios — al final, como acción principal -->
@@ -1519,6 +1532,19 @@ import {
          <app-catalogo-discursos />
        } <!-- end catalogo tab -->
 
+       <!-- ===== MODAL: REPORTE DE PERMISOS ===== -->
+       @if (reporteAbierto()) {
+         <app-reporte-privilegios-dialog
+           [publicadores]="publicadores()"
+           [columnas]="columnas()"
+           [grupos]="grupos()"
+           [sexoInicial]="filtroSexo()"
+           [privilegioInicial]="filtroPrivilegio()"
+           [descargando]="reporteDescargando()"
+           (cerrar)="reporteAbierto.set(false)"
+           (descargar)="descargarReporte($event)" />
+       }
+
        <!-- ===== MODAL: DUPLICATE DETECTION MWB ===== -->
        @if (mwbShowDuplicateModal()) {
          <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
@@ -2347,28 +2373,15 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   // ── Matriz de Publicadores (Privilegios) ──
   publicadores = signal<PublicadorMatrizItem[]>([]);
   columnas = signal<ColumnaPermiso[]>([]);
+  grupos = signal<GrupoMatrizOption[]>([]);
   regularColumnas = computed(() => this.columnas().filter(c => !c.key.startsWith('no_')));
   restriccionColumnas = computed(() => this.columnas().filter(c => c.key.startsWith('no_')));
 
-  private readonly PERMISO_LABELS: Record<string, string> = {
-    presidente_entre_semana:       'Presidente de la reunión entre semana',
-    presidente_fin_semana:         'Presidente de la reunión fin de semana',
-    orador:                        'Conferenciante / Orador público',
-    lector_libro:                  'Lector del Libro (Estudio de Libro)',
-    lector_atalaya:                'Lector de La Atalaya',
-    oracion:                       'Oración pública',
-    acomodador:                    'Acomodador',
-    microfono:                     'Micrófono',
-    audio:                         'Mesa de audio',
-    video:                         'Mesa de video',
-    vigilancia:                    'Vigilancia',
-    capitan_predicacion:           'Capitán de predicación',
-    plataforma:                    'Plataforma (presentaciones y multimedia)',
-    no_discursa_mejores_maestros:  'No participa en partes de Seamos Mejores Maestros',
-  };
-
+  /** El nombre largo lo manda el backend junto con la columna: era el mismo
+   *  mapa copiado a mano en los dos lados. */
   permisoTooltip(key: string): string {
-    return this.PERMISO_LABELS[key] ?? key.replace(/_/g, ' ');
+    const col = this.columnas().find(c => c.key === key);
+    return col?.nombre_largo || col?.label || key.replace(/_/g, ' ');
   }
   matrizLoading = signal(false);
   matrizSaving = signal(false);
@@ -3096,6 +3109,45 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       }
     });
   }
+  // ── Reporte de permisos (PDF) ──
+  reporteAbierto = signal(false);
+  /** Cuál de los dos archivos está en curso, para que el diálogo sepa qué botón
+   *  poner a girar. */
+  reporteDescargando = signal<'pdf' | 'xlsx' | null>(null);
+
+  abrirReporte(): void {
+    if (!this.publicadores().length) return;
+    this.reporteAbierto.set(true);
+  }
+
+  descargarReporte(
+    evento: { opciones: ReportePrivilegiosOpciones; archivo: 'pdf' | 'xlsx' },
+  ): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong || this.reporteDescargando()) return;
+    const { opciones, archivo } = evento;
+    this.reporteDescargando.set(archivo);
+    this.reunionesSvc.descargarReportePrivilegios(idCong, opciones, archivo).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `permisos_asignacion_${opciones.formato}_${new Date().toISOString().slice(0, 10)}.${archivo}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.reporteDescargando.set(null);
+        this.reporteAbierto.set(false);
+        this.showToast('success', 'Reporte generado');
+      },
+      error: (err) => {
+        this.reporteDescargando.set(null);
+        this.showToast('error', err?.error?.detail ?? 'No se pudo generar el reporte');
+      },
+    });
+  }
+
   // ── Matriz de Publicadores Methods ──
   loadMatriz(): void {
     const idCong = this.congregacionCtx.effectiveCongregacionId();
@@ -3115,6 +3167,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       next: (res) => {
         this.publicadores.set(res.publicadores);
         this.columnas.set(res.columnas);
+        this.grupos.set(res.grupos ?? []);
         this.matrizLoading.set(false);
       },
       error: (err) => {

@@ -17,6 +17,7 @@ import {
   RevisionPublicacionResponse,
   MatrizConfigResponse,
   UpdateMatrizRequest,
+  ReportePrivilegiosOpciones,
   MWBImportPreviewResponse,
   MWBImportConfirmRequest,
   MWBImportConfirmResponse,
@@ -62,6 +63,29 @@ export class ReunionesService {
 
   updateMatrizConfiguracion(payload: UpdateMatrizRequest): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/configuracion/matriz`, payload);
+  }
+
+  /** Reporte de permisos con los filtros que tenga puestos la pantalla.
+   *  Los dos formatos de archivo comparten query params: solo cambia la ruta. */
+  descargarReportePrivilegios(
+    idCong: number,
+    opciones: ReportePrivilegiosOpciones,
+    archivo: 'pdf' | 'xlsx',
+  ): Observable<Blob> {
+    let params = new HttpParams()
+      .set('id_congregacion', idCong)
+      .set('formato', opciones.formato)
+      .set('agrupar_por', opciones.agrupar_por)
+      .set('sexo', opciones.sexo)
+      .set('solo_con_permiso', opciones.solo_con_permiso);
+    if (opciones.privilegio) params = params.set('privilegio', opciones.privilegio);
+    // `append` por cada valor: FastAPI lee las listas como parámetros repetidos.
+    for (const id of opciones.ids_grupo) params = params.append('ids_grupo', id);
+    for (const key of opciones.permisos) params = params.append('permisos', key);
+    return this.http.get(`${this.base}/configuracion/matriz/reporte-${archivo}`, {
+      params,
+      responseType: 'blob',
+    });
   }
 
   // ──────────────────────────────────────────────────
@@ -493,15 +517,28 @@ export class ReunionesService {
     );
   }
 
-  /** `fecha` es opcional y solo sirve para marcar a quien esté ausente ese
-   *  día: los ausentes siguen apareciendo, para poder forzarlos a conciencia. */
+  /**
+   * Búsqueda libre de publicadores para cubrir una ranura.
+   *
+   * `fecha` solo marca a quien esté ausente ese día: los ausentes siguen
+   * apareciendo, para poder forzarlos a conciencia. `idProgramaParte`, en
+   * cambio, sí recorta: si la parte tiene permiso en la matriz de
+   * configuración, el servidor devuelve únicamente a quien lo tiene.
+   */
   buscarPublicadoresCong(
     idCong: number,
     q: string,
     fecha?: string,
+    idProgramaParte?: number,
+    esAyudante = false,
   ): Observable<PublicadorBusqueda[]> {
     let params = new HttpParams().set('id_congregacion', idCong).set('q', q);
     if (fecha) params = params.set('fecha', fecha);
+    if (idProgramaParte != null) {
+      params = params
+        .set('id_programa_parte', idProgramaParte)
+        .set('es_ayudante', esAyudante);
+    }
     return this.http.get<PublicadorBusqueda[]>(
       `${this.base}/asignaciones/buscar-publicadores`,
       { params }

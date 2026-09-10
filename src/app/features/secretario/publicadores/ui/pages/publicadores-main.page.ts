@@ -5,22 +5,26 @@ import { PublicadoresListComponent } from './publicadores.page';
 import { GruposListComponent } from '../../../grupos/pages/grupos.page';
 import { AuthStore } from '../../../../../core/auth/auth.store';
 import { PublicadoresContactosComponent } from './publicadores-contactos.page';
+import { AccesoAppComponent } from './acceso-app.page';
 
-export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
+export type PublicadoresTab = 'listado' | 'grupos' | 'contactos' | 'acceso';
 
 @Component({
   standalone: true,
   selector: 'app-publicadores-main',
-  imports: [CommonModule, PublicadoresListComponent, GruposListComponent, PublicadoresContactosComponent],
+  imports: [CommonModule, PublicadoresListComponent, GruposListComponent, PublicadoresContactosComponent, AccesoAppComponent],
   template: `
     <div class="flex flex-col gap-3 h-full">
 
-      <!-- Tab Navigation (mismo estilo que informes, colores naranja) -->
-      <div class="shrink-0 flex items-center gap-1.5 bg-slate-100 dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200 dark:border-slate-800 transition-colors w-full sm:w-[380px]">
+      <!-- Tab Navigation (mismo estilo que informes, colores naranja).
+           En móvil el contenedor desplaza horizontalmente en vez de encoger
+           los botones: con 4 tabs, encogerlos recorta el texto de la última
+           pestaña ("Acceso app") en pantallas angostas. -->
+      <div class="shrink-0 flex items-center gap-1.5 bg-slate-100 dark:bg-[#1a1b26] rounded-2xl p-1.5 shadow-sm border border-slate-200 dark:border-slate-800 transition-colors w-full sm:w-auto overflow-x-auto no-scrollbar">
         @for (tab of visibleTabs(); track tab.id) {
           <button
             (click)="setTab(tab.id)"
-            class="flex-1 sm:flex-none sm:min-w-[110px] px-4 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] flex items-center justify-center gap-1.5"
+            class="shrink-0 px-4 h-9 rounded-lg text-xs font-bold transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] flex items-center justify-center gap-1.5 whitespace-nowrap"
             [ngClass]="currentTab() === tab.id
               ? 'bg-brand-orange text-white shadow-md shadow-orange-500/20'
               : 'text-slate-500 dark:text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800/80'"
@@ -34,6 +38,9 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
               }
               @if (tab.id === 'contactos') {
                 <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              }
+              @if (tab.id === 'acceso') {
+                <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg>
               }
             </span>
             <span class="truncate">{{ tab.label }}</span>
@@ -56,12 +63,18 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos';
              <app-publicadores-contactos></app-publicadores-contactos>
          }
 
+         @if (currentTab() === 'acceso') {
+             <app-acceso-app></app-acceso-app>
+         }
+
       </div>
 
     </div>
   `,
   styles: [`
     :host { display: block; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .animate-fadeIn { animation: fadeIn 0.2s ease forwards; }
     @keyframes fadeIn {
         from { opacity: 0; }
@@ -80,7 +93,8 @@ export class PublicadoresMainPage implements OnInit {
   tabs: { id: PublicadoresTab, label: string }[] = [
     { id: 'listado', label: 'Listado' },
     { id: 'grupos', label: 'Grupos' },
-    { id: 'contactos', label: 'Contactos' }
+    { id: 'contactos', label: 'Contactos' },
+    { id: 'acceso', label: 'Acceso app' }
   ];
 
   visibleTabs = computed(() => {
@@ -102,6 +116,12 @@ export class PublicadoresMainPage implements OnInit {
     }
     if (isPrivileged || auth.hasPermission('contactos.ver')) {
       result.push({ id: 'contactos', label: 'Contactos' });
+    }
+    // Mismos roles que ROLES_ACCESO_APP en el backend, más el permiso
+    // granular que permite delegarlo (p. ej. a un superintendente de grupo)
+    // sin darle edición de publicadores.
+    if (isPrivileged || roles.includes('coordinador') || auth.hasPermission('publicadores.acceso_app')) {
+      result.push({ id: 'acceso', label: 'Acceso app' });
     }
     return result;
   });

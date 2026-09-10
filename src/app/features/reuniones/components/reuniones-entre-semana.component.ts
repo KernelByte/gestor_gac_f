@@ -48,6 +48,7 @@ import {
   ConservadoGuia,
   ConflictoMes,
   Seguimiento,
+  NOMBRE_RESPONSABLE_SALA_B,
 } from '../models/reuniones.models';
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { ToastService } from '../../../shared/components/toast/toast.service';
@@ -445,8 +446,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             }
 
             <!-- Seguimiento: cuántas veces le ha tocado a cada uno el mismo
-                 papel, con el tiempo, el punto de consejo y las observaciones
-                 de cada vez. Fuera del bloque de "publicado" y del mes activo a
+                 papel, con el tiempo, la asistencia y las observaciones de
+                 cada vez. Fuera del bloque de "publicado" y del mes activo a
                  propósito: mira un rango de meses, no el que esté abierto, así
                  que tiene sentido incluso con la pantalla vacía.
                  Detrás de 'reuniones.seguimiento', un permiso propio y no el
@@ -867,7 +868,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                 [attr.data-pill]="pillKey(asig)"
                                 (click)="onPillClick(asig, seccion)"
                                 [disabled]="!hasEditPermission()"
-                                [class]="assigneeButtonClass(asig)">
+                                [class]="assigneeButtonClass(asig)"
+                                [class.pill-highlight]="highlightPublicadorId() === asig.id_publicador">
                                 @if (grupo.partes.length > 1) {
                                   <span class="text-[0.48rem] font-black uppercase tracking-wide leading-none shrink-0 opacity-60">{{ grupoRoleLabel(grupo, pi) }}</span>
                                   <span class="opacity-30 text-[0.6rem] leading-none shrink-0">·</span>
@@ -1082,7 +1084,17 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       [attr.data-id]="alt.id_publicador"
                       (click)="selectHistorialCandidato(selectedWeekIdx(), asig, alt)"
                       class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-[8px]">
-                      <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
+                      <span class="min-w-0 flex-1 flex flex-col gap-0.5">
+                        <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate">{{ alt.nombre_completo }}</span>
+                        @if (yaOcupadoEsteDia(alt)) {
+                          <!-- El motor lo sigue ofreciendo -doblar es normal en
+                               congregaciones pequeñas- pero quien elige tiene
+                               que verlo antes de hacer clic, no al publicar. -->
+                          <span class="estado-tag self-start" data-estado="conflicto">
+                            <span class="estado-dot"></span>Ya tiene parte ese día
+                          </span>
+                        }
+                      </span>
                       <span class="score-chip text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
                         [style.--sec]="seccion.color">
                         {{ alt.score | number:'1.2-2' }}
@@ -1184,7 +1196,14 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <button
                   (click)="selectHistorialCandidato(selectedWeekIdx(), mobileSheetAsig()!, alt); closeMobileSheet()"
                   class="dropdown-alt-row w-full flex items-center justify-between gap-3 px-3 py-3 text-left rounded-xl">
-                  <span class="dropdown-alt-name text-sm font-semibold truncate flex-1">{{ alt.nombre_completo }}</span>
+                  <span class="min-w-0 flex-1 flex flex-col gap-0.5">
+                    <span class="dropdown-alt-name text-sm font-semibold truncate">{{ alt.nombre_completo }}</span>
+                    @if (yaOcupadoEsteDia(alt)) {
+                      <span class="estado-tag self-start" data-estado="conflicto">
+                        <span class="estado-dot"></span>Ya tiene parte ese día
+                      </span>
+                    }
+                  </span>
                   <span class="score-chip text-[0.6rem] font-black font-mono shrink-0 tabular-nums px-1.5 py-0.5 rounded-[4px]"
                     [style.--sec]="mobileSheetSeccion()?.color">
                     {{ alt.score | number:'1.2-2' }}
@@ -1528,7 +1547,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     @if (revisionPublicacion(); as reuniones) {
       <app-revision-publicacion-dialog
         [reuniones]="reuniones"
-        (resolved)="onRevisionPublicacionAction($event)">
+        (resolved)="onRevisionPublicacionAction($event)"
+        (irASemana)="onIrASemanaDesdeRevision($event)">
       </app-revision-publicacion-dialog>
     }
 
@@ -1868,6 +1888,26 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
     .pill-x:focus-visible { outline: 2px solid #dc2626; outline-offset: 1px; }
     .pill-x:active { transform: scale(0.88); }
 
+    /* ── Resalte al llegar desde "Antes de publicar" ──
+       Vuelve del aviso de duplicados: en vez de dejar al usuario a rastrear
+       la pastilla entre el resto, un aro ámbar (mismo tono que la alerta) la
+       marca por unos segundos y luego se apaga solo. */
+    @keyframes pillHighlightPulse {
+      0%, 100% { box-shadow: 0 0 0 2px rgba(217,119,6,0.55), 0 0 0 5px rgba(217,119,6,0.14); }
+      50%      { box-shadow: 0 0 0 2px rgba(217,119,6,0.85), 0 0 0 8px rgba(217,119,6,0.22); }
+    }
+    .pill-highlight {
+      animation: pillHighlightPulse 1.1s ease-in-out 3;
+      border-radius: 999px;
+    }
+    :host-context(.dark) .pill-highlight {
+      animation-name: pillHighlightPulseDark;
+    }
+    @keyframes pillHighlightPulseDark {
+      0%, 100% { box-shadow: 0 0 0 2px rgba(251,191,36,0.6), 0 0 0 5px rgba(251,191,36,0.16); }
+      50%      { box-shadow: 0 0 0 2px rgba(251,191,36,0.9), 0 0 0 8px rgba(251,191,36,0.26); }
+    }
+
     /* ── Dropdown: origin-aware scale (Emil: never scale from center on popovers) ── */
     @keyframes dropIn {
       from { opacity: 0; transform: scale(0.95) translateY(-4px); }
@@ -2165,7 +2205,8 @@ export class ReunionesProgramacionComponent implements OnInit {
   /** Permiso propio, no una consecuencia de `hasEditPermission()`: quien
    *  programa la reunión no necesariamente da seguimiento a las partes, y
    *  quien lo hace no necesariamente programa. Solo aplica a entre semana —el
-   *  punto de consejo es cosa de esa reunión, no de la de fin de semana. */
+   *  seguimiento del consejero es cosa de esa reunión, no de la de fin de
+   *  semana. */
   hasSeguimientoPermission = computed(() =>
     this.tipoReunionActivo() === 'entre_semana' && this.authStore.hasPermission('reuniones.seguimiento')
   );
@@ -2193,6 +2234,10 @@ export class ReunionesProgramacionComponent implements OnInit {
   // ── Data signals ───────────────────────────────────────────────
   semanas = signal<ProgramaSemana[]>([]);
   selectedWeekIdx = signal(0);
+  /** Publicador a resaltar tras saltar aquí desde el aviso de "Antes de
+   *  publicar": ilumina sus pastillas para no tener que buscarlas a ojo. */
+  highlightPublicadorId = signal<number | null>(null);
+  private highlightPublicadorTimer: ReturnType<typeof setTimeout> | null = null;
   plantillas = signal<PlantillaOption[]>([]);
   /** Mismas plantillas, la más reciente arriba: es como se busca una guía en
    *  este desplegable, no de la más vieja hacia adelante. */
@@ -2461,6 +2506,9 @@ export class ReunionesProgramacionComponent implements OnInit {
   @ViewChild('buscadorDesktop') private buscadorDesktopRef?: ElementRef<HTMLInputElement>;
   historialCandidatos = signal<CandidatoAlternativo[]>([]);
   loadingCandidatos = signal(false);
+  /** La ranura cuyo panel está abierto. La búsqueda libre la necesita para
+   *  pedir solo a quien tiene el permiso de esa parte en la matriz. */
+  private asigEnEdicion = signal<AsignacionDraft | null>(null);
   busquedaCandidato = signal('');
   busquedaResultados = signal<PublicadorBusqueda[]>([]);
   loadingBusqueda = signal(false);
@@ -2559,6 +2607,10 @@ export class ReunionesProgramacionComponent implements OnInit {
   /** La insignia solo tiene sentido sobre una asignación real y en una semana
    *  ya celebrada: el seguimiento se apunta después de la reunión, no antes. */
   mostrarSeguimientoPill(asig: AsignacionDraft): boolean {
+    // El Responsable de Sala B no da una parte: queda a cargo de la sala toda
+    // la reunión, así que no hay tiempo que tomarle ni consejo que darle. El
+    // resumen móvil lo deja fuera por la misma razón (`_es_cronometrable`).
+    if ((asig.nombre_parte || '').trim() === NOMBRE_RESPONSABLE_SALA_B) return false;
     if (!this.hasSeguimientoPermission()) return false;
     if (asig.id_asignacion == null || asig.estado === 'sin_asignar') return false;
     const fecha = this.currentSemana()?.fecha;
@@ -3050,6 +3102,10 @@ export class ReunionesProgramacionComponent implements OnInit {
       if (prev) URL.revokeObjectURL(prev.url);
     });
 
+    this.destroyRef.onDestroy(() => {
+      if (this.highlightPublicadorTimer) clearTimeout(this.highlightPublicadorTimer);
+    });
+
     this.vigilarScrollParaCerrarDropdown();
   }
 
@@ -3480,6 +3536,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   closeMobileSheet(): void {
     this.mobileSheetAsig.set(null);
     this.editingHistorialId.set(null);
+    this.asigEnEdicion.set(null);
     this.busquedaCandidato.set('');
     this.busquedaResultados.set([]);
   }
@@ -3501,6 +3558,32 @@ export class ReunionesProgramacionComponent implements OnInit {
     const resolver = this.resolverRevisionPublicacion;
     this.resolverRevisionPublicacion = null;
     resolver?.(seguir);
+  }
+
+  /** Al tocar a alguien en el aviso de "Antes de publicar": salta a su
+   *  semana, se para en la sala donde está la parte repetida y resalta sus
+   *  pastillas para que no haya que ir a buscarlas a ojo. */
+  onIrASemanaDesdeRevision(evt: { fecha: string; idPublicador: number; sala: string | null }): void {
+    const semanas = this.semanas();
+    const idx = semanas.findIndex((s) => s.fecha?.slice(0, 10) === evt.fecha.slice(0, 10));
+    if (idx === -1) return;
+
+    this.selectedWeekIdx.set(idx);
+    if (evt.sala === 'Principal' || evt.sala === 'Auxiliar') {
+      this.selectedSala.set(evt.sala);
+    }
+
+    if (this.highlightPublicadorTimer) clearTimeout(this.highlightPublicadorTimer);
+    this.highlightPublicadorId.set(evt.idPublicador);
+    this.highlightPublicadorTimer = setTimeout(() => this.highlightPublicadorId.set(null), 3200);
+
+    const semanaIso = semanas[idx].semana_iso;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.querySelector(`[data-testid="tab-semana"][data-iso="${semanaIso}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      document.querySelector(`[data-testid="pill-asignacion"][data-publicador="${evt.idPublicador}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }));
   }
 
   /**
@@ -3738,6 +3821,17 @@ export class ReunionesProgramacionComponent implements OnInit {
       if (!sexo) return true;
       return sexo.toUpperCase().startsWith(filtro);
     });
+  }
+
+  /** Si el motor marcó a este candidato como ya ocupado en la misma reunión.
+   *
+   *  Se lee de las notas del puntaje y no de un campo propio porque el backend
+   *  ya explica ahí cada penalización: añadir una bandera aparte obligaría a
+   *  mantener el mismo hecho en dos sitios. */
+  yaOcupadoEsteDia(alt: CandidatoAlternativo): boolean {
+    const notas = (alt as any).notas_score;
+    const texto = Array.isArray(notas) ? notas.join(' ') : (notas ?? '');
+    return texto.includes('Ya tiene otra parte en esta reunión');
   }
 
   puedeAgregarAyudante(grupo: { partes: AsignacionDraft[] }, seccion: any): boolean {
@@ -4494,11 +4588,13 @@ export class ReunionesProgramacionComponent implements OnInit {
     const toggleKey = this.pillKey(asig);
     if (this.editingHistorialId() === toggleKey) {
       this.editingHistorialId.set(null);
+      this.asigEnEdicion.set(null);
       this.busquedaCandidato.set('');
       this.busquedaResultados.set([]);
       return;
     }
     this.editingHistorialId.set(toggleKey);
+    this.asigEnEdicion.set(asig);
     this.posicionarDropdown(this.pillKey(asig));
     this.historialCandidatos.set([]);
     this.busquedaCandidato.set('');
@@ -4583,10 +4679,15 @@ export class ReunionesProgramacionComponent implements OnInit {
       const idCong = this.congregacionCtx.effectiveCongregacionId();
       if (!idCong) return;
       // Va la fecha de la semana abierta para que el servidor marque a quien
-      // esté ausente ese día. Esta búsqueda se salta al motor a propósito, así
-      // que el ausente sigue en la lista: se avisa, no se esconde.
+      // esté ausente ese día. Esta búsqueda se salta el reparto del motor a
+      // propósito, así que el ausente sigue en la lista: se avisa, no se
+      // esconde. Los permisos de la parte sí los respeta, y para eso viaja la
+      // ranura que se está cubriendo.
       const fecha = this.currentSemana()?.fecha?.slice(0, 10);
-      this.reunionesSvc.buscarPublicadoresCong(idCong, q, fecha).subscribe({
+      const asig = this.asigEnEdicion();
+      this.reunionesSvc.buscarPublicadoresCong(
+        idCong, q, fecha, asig?.id_programa_parte, !!asig?.es_ayudante,
+      ).subscribe({
         next: (res) => {
           this.busquedaResultados.set(res);
           this.loadingBusqueda.set(false);
@@ -4613,8 +4714,8 @@ export class ReunionesProgramacionComponent implements OnInit {
             partes: sem.partes.map((p) =>
               this.pillKey(p) === this.pillKey(asig)
                 // `seguimiento: null` porque el backend lo borra al cambiar de
-                // persona: el tiempo y el punto de consejo eran de quien
-                // estaba antes, no de quien entra.
+                // persona: el tiempo y las notas eran de quien estaba antes,
+                // no de quien entra.
                 ? { ...p, id_asignacion: result.id_asignacion, id_publicador: result.id_publicador, nombre_completo: result.nombre_completo, estado: this.estado() === 'publicado' ? 'publicado' as const : 'borrador' as const, seguimiento: null, _swapped: true }
                 : p
             ),

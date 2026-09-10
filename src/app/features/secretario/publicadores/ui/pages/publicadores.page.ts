@@ -18,6 +18,7 @@ import {
 } from '../../../privilegios/domain/models/precursor-consideracion';
 import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
 import { whatsappUrl } from '../../../../../shared/whatsapp';
+import { AccesoAppService } from '../../services/acceso-app.service';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
 import {
   NuevoPublicadorWizardComponent,
@@ -79,6 +80,7 @@ export class PublicadoresListComponent implements OnInit {
   // Público: la plantilla pasa la congregación en contexto al asistente de alta.
   congregacionContext = inject(CongregacionContextService);
   private http = inject(HttpClient);
+  private accesoApp = inject(AccesoAppService);
   private fb = inject(FormBuilder);
   /** La regla con la que se compone el nombre cuando no hay alias. */
   readonly formatoNombre = inject(FormatoNombreService);
@@ -311,22 +313,20 @@ export class PublicadoresListComponent implements OnInit {
     accion.run();
   }
 
-  // ── Login Simple (PIN) ────────────────────────────────────────────────────
+  // ── Acceso a la app móvil ─────────────────────────────────────────────────
   savingPin = signal(false);
 
   async regenerarPin(idPublicador: number) {
     if (this.savingPin()) return;
     this.savingPin.set(true);
     try {
-      const updated = await lastValueFrom(
-        this.http.patch<any>(`/api/publicadores/${idPublicador}/regenerar-pin`, {})
-      );
+      const [pin] = await lastValueFrom(this.accesoApp.regenerarPines([idPublicador]));
       const current = this.editingPublicador();
       if (current) {
-        this.editingPublicador.set({ ...current, codigo_pin: updated.codigo_pin });
+        this.editingPublicador.set({ ...current, codigo_pin: pin.codigo_pin });
       }
       this.facade.load();
-      this.showToast(`Nuevo PIN: ${updated.codigo_pin}`, 'success');
+      this.showToast(`Nuevo PIN: ${pin.codigo_pin}`, 'success');
     } catch {
       this.showToast('Error al regenerar el PIN', 'error');
     } finally {
@@ -336,41 +336,53 @@ export class PublicadoresListComponent implements OnInit {
 
   sendingWhatsapp = signal(false);
 
-  enviarCredencialesWhatsapp() {
+  /**
+   * Envía el acceso a la app: por WhatsApp con un enlace de invitación si el
+   * publicador usa PIN, o por correo con una contraseña temporal si ya tiene
+   * usuario del sistema — la ficha ya sabe cuál de los dos es (`tiene_usuario_sistema`,
+   * ver `PublicadorOut`), así que aquí no hace falta probar uno y caer al otro.
+   *
+   * Antes esto leía el código de la congregación de `GET /configuracion/`, que
+   * exige ROLES_CONFIG y devolvía 403 a buena parte de quienes sí podían
+   * generar el PIN. Ahora el backend arma el mensaje completo —enlace primero,
+   * credenciales de respaldo debajo— y no hace falta esa llamada.
+   */
+  async enviarCredencialesWhatsapp() {
     const pub = this.editingPublicador();
-    if (!pub || !pub.codigo_pin) return;
-    
+    if (!pub || this.sendingWhatsapp()) return;
+
     this.sendingWhatsapp.set(true);
-    
-    // Obtenemos la configuracion para el codigo de la congregacion
-    this.http.get<any>(`${environment.apiUrl}/configuracion/`).subscribe({
-      next: (config) => {
-        this.sendingWhatsapp.set(false);
-        const codigoCongregacion = config.codigo_seguridad || 'No configurado';
-        const pin = pub.codigo_pin;
-        const nombre = pub.primer_nombre || 'Publicador';
-        
-        let telefono = pub.telefono;
-        if (!telefono) {
-            this.showToast('El publicador no tiene un teléfono registrado.', 'error');
-            return;
+    try {
+      if (pub.tiene_usuario_sistema) {
+        const r = await lastValueFrom(this.accesoApp.enviarCorreo([pub.id_publicador]));
+        if (r.afectados) {
+          this.showToast(`Contraseña temporal enviada por correo a ${pub.nombre_mostrado}.`, 'success');
+        } else {
+          this.showToast(r.detalle.join(' ') || 'No se pudo enviar el correo.', 'error');
         }
-
-        telefono = telefono.replace(/\D/g, '');
-        if (!telefono.startsWith('57') && telefono.length === 10) {
-            telefono = '57' + telefono;
-        }
-
-        const mensaje = `Hola ${nombre},\n\nTus datos de acceso a la App Móvil son:\n\n*Código de Congregación:* ${codigoCongregacion}\n*CÓDIGO PIN:* ${pin}\n\nPuedes ingresar de forma segura usando estos datos.`;
-        
-        window.open(whatsappUrl(mensaje, telefono), '_blank');
-      },
-      error: (err) => {
-        console.error('Error obteniendo código de congregación:', err);
-        this.sendingWhatsapp.set(false);
-        this.showToast('No se pudo obtener el código de congregación.', 'error');
+        return;
       }
-    });
+
+      const { invitaciones } = await lastValueFrom(
+        this.accesoApp.generarInvitaciones([pub.id_publicador], 7, 'whatsapp')
+      );
+      const inv = invitaciones[0];
+      // Sin teléfono WhatsApp pide elegir el contacto, que sigue siendo útil.
+      let telefono = (inv.telefono ?? '').replace(/\D/g, '');
+      if (telefono.length === 10 && !telefono.startsWith('57')) telefono = '57' + telefono;
+
+      window.open(whatsappUrl(inv.mensaje_whatsapp, telefono || null), '_blank');
+      this.accesoApp.marcarEnviada(inv.id_invitacion, 'whatsapp').subscribe({ error: () => {} });
+
+      if (inv.codigo_pin !== pub.codigo_pin) {
+        this.editingPublicador.set({ ...pub, codigo_pin: inv.codigo_pin });
+        this.facade.load();
+      }
+    } catch (e: any) {
+      this.showToast(e?.error?.detail ?? 'No se pudo generar la invitación.', 'error');
+    } finally {
+      this.sendingWhatsapp.set(false);
+    }
   }
 
   copyPin(pin?: string | null) {

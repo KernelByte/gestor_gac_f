@@ -391,6 +391,21 @@ export class HomePage implements OnInit {
   private loadInformesStats(congregacionId: number | null | undefined) {
     if (!congregacionId) return;
 
+    // El periodo activo de informes (normalmente el mes anterior, ver
+    // periodo_informes_scheduler.py) es la fuente de verdad para estas
+    // tarjetas — no el mes calendario en curso, que aún está incompleto.
+    this.http.get<any>('/api/periodos/activo').subscribe({
+      next: (periodoActivo) => {
+        this.tryLoadInformesStatsFromPeriods([periodoActivo], 0, congregacionId);
+      },
+      error: err => {
+        console.error('Error cargando periodo activo de informes, usando fallback', err);
+        this.loadInformesStatsFallback(congregacionId);
+      }
+    });
+  }
+
+  private loadInformesStatsFallback(congregacionId: number) {
     const now = new Date();
     const mesActual = now.getMonth() + 1;
     const anoActual = now.getFullYear();
@@ -410,7 +425,6 @@ export class HomePage implements OnInit {
           });
 
         if (pasados.length === 0) return;
-        // Check up to 3 recent periods to find one with submitted informes
         this.tryLoadInformesStatsFromPeriods(pasados.slice(0, 3), 0, congregacionId);
       },
       error: err => console.error('Error cargando periodos para stats', err)
@@ -449,27 +463,48 @@ export class HomePage implements OnInit {
     const now = new Date();
     const anoServicio = now.getMonth() + 1 >= 9 ? now.getFullYear() + 1 : now.getFullYear();
 
-    this.http.get<any>(`/api/asistencias/resumen-anual?congregacion_id=${congregacionId}&ano_servicio=${anoServicio}`).subscribe({
-      next: (res) => {
-        const conDatos = (res.meses as any[]).filter(
-          m => m.midweek_promedio !== null || m.weekend_promedio !== null
-        );
-        if (conDatos.length === 0) return;
+    this.http.get<any>(`/api/asistencias/resumen-anual?congregacion_id=${congregacionId}&ano_servicio=${anoServicio}`)
+      .subscribe({
+        next: (res) => {
+          const conDatosActual = this.filtrarConDatosAsistencia(res.meses);
+          if (conDatosActual.length >= 6) {
+            this.aplicarAsistenciaStats(conDatosActual);
+            return;
+          }
+          // Año de servicio recién iniciado: completar la ventana de 6 meses
+          // con el año de servicio anterior en vez de dejar la gráfica vacía.
+          this.http.get<any>(`/api/asistencias/resumen-anual?congregacion_id=${congregacionId}&ano_servicio=${anoServicio - 1}`)
+            .subscribe({
+              next: (resPrev) => {
+                const conDatosPrev = this.filtrarConDatosAsistencia(resPrev.meses);
+                const combinados = [...conDatosPrev, ...conDatosActual];
+                if (combinados.length === 0) return;
+                this.aplicarAsistenciaStats(combinados);
+              },
+              error: () => {
+                if (conDatosActual.length > 0) this.aplicarAsistenciaStats(conDatosActual);
+              }
+            });
+        },
+        error: err => console.error('Error asistencia stats', err)
+      });
+  }
 
-        const actual   = conDatos[conDatos.length - 1];
-        const anterior = conDatos.length > 1 ? conDatos[conDatos.length - 2] : null;
+  private filtrarConDatosAsistencia(meses: any[]) {
+    return (meses as any[]).filter(m => m.midweek_promedio !== null || m.weekend_promedio !== null);
+  }
 
-        this.asistenciaMidweekActual.set(actual.midweek_promedio);
-        this.asistenciaWeekendActual.set(actual.weekend_promedio);
-        this.asistenciaMidweekAnterior.set(anterior?.midweek_promedio ?? null);
-        this.asistenciaWeekendAnterior.set(anterior?.weekend_promedio ?? null);
-        this.asistenciaMesNombre.set(actual.nombre_mes);
+  private aplicarAsistenciaStats(conDatos: any[]) {
+    const actual   = conDatos[conDatos.length - 1];
+    const anterior = conDatos.length > 1 ? conDatos[conDatos.length - 2] : null;
 
-        const last6 = conDatos.slice(-6);
-        this.asistenciaChartOption.set(this.buildAsistenciaChart(last6));
-      },
-      error: err => console.error('Error asistencia stats', err)
-    });
+    this.asistenciaMidweekActual.set(actual.midweek_promedio);
+    this.asistenciaWeekendActual.set(actual.weekend_promedio);
+    this.asistenciaMidweekAnterior.set(anterior?.midweek_promedio ?? null);
+    this.asistenciaWeekendAnterior.set(anterior?.weekend_promedio ?? null);
+    this.asistenciaMesNombre.set(actual.nombre_mes);
+
+    this.asistenciaChartOption.set(this.buildAsistenciaChart(conDatos.slice(-6)));
   }
 
   private buildAsistenciaChart(meses: any[]): EChartsOption {
@@ -565,28 +600,25 @@ export class HomePage implements OnInit {
     const now = new Date();
     const mesActual = now.getMonth() + 1;
     const anoActual = now.getFullYear();
-    const anoServicio = mesActual >= 9 ? anoActual + 1 : anoActual;
 
-    // Fetch all periods then filter to current service year (Sep–Aug), excluding future months
+    // Fetch all periods then keep a rolling window of non-future months,
+    // regardless of service year boundary (Sep–Aug is not used here: labels
+    // come from codigo_mes, and this chart should keep showing trailing
+    // months across the year rollover instead of resetting to empty).
     this.http.get<any[]>('/api/periodos/').subscribe({
       next: (periodos) => {
-        // Service year Sep(anoServicio-1) → Aug(anoServicio), up to current month only
-        const startYear = anoServicio - 1;
-        const inYear = periodos.filter(p => {
+        const candidatos = periodos.filter(p => {
           const mes = parseInt(p.codigo_mes, 10);
           const ano = parseInt(p.codigo_ano, 10);
-          const inServiceYear = (ano === startYear && mes >= 9) || (ano === anoServicio && mes <= 8);
-          // Exclude months that haven't arrived yet
-          const notFuture = ano < anoActual || (ano === anoActual && mes <= mesActual);
-          return inServiceYear && notFuture;
+          return ano < anoActual || (ano === anoActual && mes <= mesActual);
         }).sort((a, b) => {
           const dateA = parseInt(a.codigo_ano) * 100 + parseInt(a.codigo_mes);
           const dateB = parseInt(b.codigo_ano) * 100 + parseInt(b.codigo_mes);
           return dateA - dateB;
-        });
+        }).slice(-9); // margen para que, tras descartar meses sin datos, sobrevivan 6
 
         // Fetch resumen for each period in parallel — cap to last 6 with data
-        const requests = inYear.map(p =>
+        const requests = candidatos.map(p =>
           this.http.get<any>(`/api/informes/resumen-mensual?periodo_id=${p.id_periodo}&congregacion_id=${congregacionId}`)
         );
 
@@ -599,7 +631,7 @@ export class HomePage implements OnInit {
                 next: (stats) => {
                   if (!stats.total_publicadores) { resolve(null); return; }
                   const pct = Math.round((stats.informes_recibidos / stats.total_publicadores) * 100);
-                  const p = inYear[i];
+                  const p = candidatos[i];
                   const mesIdx = parseInt(p.codigo_mes, 10) - 1;
                   resolve({ label: MESES_ES[mesIdx], pct, recibidos: stats.informes_recibidos, total: stats.total_publicadores });
                 },

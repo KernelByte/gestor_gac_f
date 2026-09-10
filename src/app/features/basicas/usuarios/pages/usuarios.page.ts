@@ -6,6 +6,8 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
 import { lastValueFrom, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { UsuariosService, Rol, Congregacion, Estado, UsuarioCreatePublicador, PublicadorRapidoCreate } from '../services/usuarios.service';
+import { ToastService } from '../../../../shared/components/toast/toast.service';
+import { HttpClient } from '@angular/common/http';
 import { Usuario } from '../models/usuario.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
@@ -212,6 +214,8 @@ export class UsuariosPage implements OnInit {
    trackByUsuario = (_: number, u: any) => u.id_usuario;
 
    private service = inject(UsuariosService);
+   private toast = inject(ToastService);
+   private http = inject(HttpClient);
    private fb = inject(FormBuilder);
    private route = inject(ActivatedRoute);
    private router = inject(Router);
@@ -329,6 +333,17 @@ export class UsuariosPage implements OnInit {
    showCredentialsDialog = signal(false);
    lastCreatedCredentials = signal<{ nombre: string; correo: string; contrasena: string; telefono?: string } | null>(null);
    sendingWA = signal(false);
+   sendingCredentialsEmail = signal(false);
+
+   /**
+    * Play Store / App Store, para el mensaje de WhatsApp y el correo de
+    * acceso. Se piden una vez al abrir la pantalla (no cambian entre
+    * usuarios) y con fallback silencioso: si la petición falla, los mensajes
+    * simplemente salen sin esa sección en vez de romper el flujo de compartir.
+    */
+   private storeUrls = signal<{ play_store_url: string; app_store_url: string; portal_url: string }>({
+      play_store_url: '', app_store_url: '', portal_url: '',
+   });
 
    // Custom Select States
 
@@ -660,6 +675,9 @@ export class UsuariosPage implements OnInit {
    // -----------------------------
 
    ngOnInit() {
+      this.http.get<{ play_store_url: string; app_store_url: string; portal_url: string }>('/api/configuracion/tiendas-app')
+         .subscribe({ next: (v) => this.storeUrls.set(v), error: () => {} });
+
       // Check for role filter from query params
       this.route.queryParams.subscribe(params => {
          if (params['rol']) {
@@ -1247,8 +1265,9 @@ export class UsuariosPage implements OnInit {
    }
 
    /**
-    * Envía las credenciales del diálogo post-creación por WhatsApp.
-    * Requiere que tengamos la contraseña en texto plano (solo disponible justo después de crear).
+    * Envía las credenciales del diálogo post-creación por WhatsApp. Usa la
+    * contraseña que el admin acaba de teclear (solo existe en claro aquí,
+    * justo después de crear la cuenta) — no llama al backend, no la cambia.
     */
    sendCredentialsByWhatsApp() {
       const creds = this.lastCreatedCredentials();
@@ -1260,18 +1279,97 @@ export class UsuariosPage implements OnInit {
    }
 
    /**
-    * Envía credenciales básicas (solo correo) por WhatsApp directamente desde la tabla.
-    * NO incluye contraseña porque está hasheada en BD.
+    * Envía esa misma contraseña por correo, vía backend (SMTP vive ahí).
+    * Reutiliza la plantilla de "acceso al sistema" con los enlaces de la
+    * tienda — antes este diálogo solo ofrecía WhatsApp.
     */
-   sendWhatsApp(u: Usuario) {
-      if (!u.telefono) return;
-      const telefono = this.normalizePhone(u.telefono);
-      const mensaje = `Hola ${u.nombre}, te informamos que ya tienes acceso al Sistema GAC.\n\n📧 *Usuario (correo):* ${u.correo}\n\nPara iniciar sesión, ingresa a la plataforma con tu correo y la contraseña que te fue asignada.\n\n_Si tienes alguna duda, contacta al administrador._`;
-      this.openWhatsApp(telefono, mensaje);
+   async sendCredentialsByEmail() {
+      const creds = this.lastCreatedCredentials();
+      const usuarioCreado = this.usuarios()[0]; // se acaba de anteponer a la lista, ver save()
+      if (!creds || !usuarioCreado?.id_usuario || this.sendingCredentialsEmail()) return;
+
+      this.sendingCredentialsEmail.set(true);
+      try {
+         await lastValueFrom(this.service.enviarCredencialesCorreo(usuarioCreado.id_usuario, creds.contrasena));
+         this.toast.success('Correo enviado', `Credenciales enviadas a ${creds.correo}`);
+      } catch (e: any) {
+         this.toast.error('No se pudo enviar', e?.error?.detail ?? undefined);
+      } finally {
+         this.sendingCredentialsEmail.set(false);
+      }
+   }
+
+   /**
+    * Fila de la tabla, para una cuenta que ya existe: no hay forma de
+    * recuperar su contraseña (está hasheada), así que esto genera una
+    * temporal en el backend —con cambio obligatorio al primer ingreso— y
+    * abre WhatsApp con ella. Antes este botón enviaba solo el correo, sin
+    * contraseña, precisamente porque no había ninguna que pudiera mandar.
+    */
+   async sendWhatsApp(u: Usuario) {
+      if (!u.id_usuario || this.sendingWA()) return;
+      this.sendingWA.set(true);
+      try {
+         const acceso = await lastValueFrom(this.service.generarAcceso(u.id_usuario, 'whatsapp'));
+         const telefono = this.normalizePhone(acceso.telefono || '');
+         this.openWhatsApp(telefono, acceso.mensaje_whatsapp);
+      } catch (e: any) {
+         this.toast.error('No se pudo generar el acceso', e?.error?.detail ?? undefined);
+      } finally {
+         this.sendingWA.set(false);
+      }
+   }
+
+   /** Misma idea que `sendWhatsApp`, pero por correo — no depende de tener teléfono. */
+   async sendAccesoCorreo(u: Usuario) {
+      if (!u.id_usuario || this.sendingWA()) return;
+      this.sendingWA.set(true);
+      try {
+         const acceso = await lastValueFrom(this.service.generarAcceso(u.id_usuario, 'correo'));
+         this.toast.success('Correo enviado', `Contraseña temporal enviada a ${acceso.correo}`);
+      } catch (e: any) {
+         this.toast.error('No se pudo enviar', e?.error?.detail ?? undefined);
+      } finally {
+         this.sendingWA.set(false);
+      }
+   }
+
+   /**
+    * Rellena los campos de contraseña con una generada al vuelo: mismo
+    * alfabeto que el backend (`utils.security.generar_password_temporal`,
+    * mayúsculas y dígitos, sin 0/O/1/I) para que sea igual de fácil de leer y
+    * teclear si hace falta dictarla. Puramente de conveniencia en el
+    * formulario: la contraseña real la fija el propio POST de creación.
+    */
+   generarPassword() {
+      const alfabeto = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+      let pass = '';
+      for (let i = 0; i < 8; i++) {
+         pass += alfabeto[Math.floor(Math.random() * alfabeto.length)];
+      }
+      this.userForm.patchValue({ contrasena: pass, confirmPassword: pass });
+      this.showPassword.set(true);
    }
 
    private buildCredentialMessage(nombre: string, correo: string, contrasena: string): string {
-      return `Hola ${nombre}, aquí están tus credenciales de acceso al Sistema GAC:\n\n📧 *Usuario (correo):* ${correo}\n🔑 *Contraseña:* ${contrasena}\n\nTe recomendamos cambiar tu contraseña al iniciar sesión por primera vez.\n\n_Accede en: https://gac.kernelbyte.cloud_`;
+      const { play_store_url, app_store_url, portal_url } = this.storeUrls();
+      const lineas = [
+         `Hola ${nombre}, aquí están tus credenciales de acceso al Sistema GAC:`,
+         '',
+         `Usuario (correo): ${correo}`,
+         `Contraseña: ${contrasena}`,
+         '',
+         'Te recomendamos cambiar tu contraseña al iniciar sesión por primera vez.',
+      ];
+      if (portal_url) {
+         lineas.push('', `Portal web: ${portal_url}`);
+      }
+      if (play_store_url || app_store_url) {
+         lineas.push('', '¿Vas a usar la app móvil? Descárgala aquí:');
+         if (play_store_url) lineas.push(`Android: ${play_store_url}`);
+         if (app_store_url) lineas.push(`iPhone: ${app_store_url}`);
+      }
+      return lineas.join('\n');
    }
 
    private normalizePhone(telefono: string): string {

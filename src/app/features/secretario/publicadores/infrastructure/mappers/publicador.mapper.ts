@@ -30,5 +30,6 @@ export function dtoToModel(dto: any): Publicador {
     origen_fecha_inicio_informe: dto.origen_fecha_inicio_informe,
     codigo_pin: dto.codigo_pin,
     permite_login_simple: dto.permite_login_simple ?? true,
+    tiene_usuario_sistema: dto.tiene_usuario_sistema ?? false,
   };
 }

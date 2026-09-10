@@ -20,7 +20,10 @@ const publicadoresPermissionGuard: CanActivateFn = () => {
    const ok = isPrivilegedRole ||
       store.hasPermission('publicadores.ver') ||
       store.hasPermission('grupos.ver') ||
-      store.hasPermission('contactos.ver');
+      store.hasPermission('contactos.ver') ||
+      // Sin esto, delegar solo el reparto de accesos a la app rebotaría al
+      // inicio: la pestaña existe pero la ruta que la contiene no dejaría entrar.
+      store.hasPermission('publicadores.acceso_app');
 
    return ok ? true : router.createUrlTree(['/']);
 };

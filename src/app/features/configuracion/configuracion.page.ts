@@ -30,6 +30,7 @@ interface Configuracion {
    hora_reunion_fin_semana:   string;
    correo_congregacion?: string | null;
    numero_congregacion?: string | null;
+   enlace_zoom?: string | null;
    formato_nombre_visible?: FormatoNombre;
 }
 
@@ -109,6 +110,7 @@ export class ConfiguracionPage implements OnInit {
       hora_reunion_fin_semana:   '',
       correo_congregacion:       null,
       numero_congregacion:       null,
+      enlace_zoom:               null,
    };
 
    periodosDisponibles: any[] = [];
@@ -299,6 +301,10 @@ export class ConfiguracionPage implements OnInit {
 
    save() {
       if (!this.canEdit()) return;
+      if (this.enlaceZoomInvalido()) {
+         this.showNotification('El enlace de la reunión debe empezar por https://', 'error');
+         return;
+      }
       this.saving.set(true);
       const payload = {
          nombre_congregacion:        this.config.nombre_congregacion,
@@ -315,6 +321,7 @@ export class ConfiguracionPage implements OnInit {
          hora_reunion_fin_semana:    this.config.hora_reunion_fin_semana   || null,
          correo_congregacion:        this.config.correo_congregacion       || null,
          numero_congregacion:        this.config.numero_congregacion       || null,
+         enlace_zoom:                this.config.enlace_zoom?.trim()       || null,
          formato_nombre_visible:     this.config.formato_nombre_visible    || 'completo',
       };
 
@@ -381,7 +388,25 @@ export class ConfiguracionPage implements OnInit {
          (this.config.dia_reunion_fin_semana    || '') !== (this.originalConfig.dia_reunion_fin_semana    || '') ||
          (this.config.hora_reunion_fin_semana   || '') !== (this.originalConfig.hora_reunion_fin_semana   || '') ||
          (this.config.correo_congregacion       || '') !== (this.originalConfig.correo_congregacion       || '') ||
-         (this.config.numero_congregacion       || '') !== (this.originalConfig.numero_congregacion       || '');
+         (this.config.numero_congregacion       || '') !== (this.originalConfig.numero_congregacion       || '') ||
+         (this.config.enlace_zoom               || '') !== (this.originalConfig.enlace_zoom               || '') ||
+         // Sin esto, elegir una regla de nombre no habilitaba Guardar: la
+         // tarjeta se marcaba como seleccionada y el cambio se perdía al salir.
+         (this.config.formato_nombre_visible    || 'completo') !== (this.originalConfig.formato_nombre_visible || 'completo');
+   }
+
+   /**
+    * El enlace es inútil si no se puede abrir: la app móvil lo pasa a
+    * Linking.openURL, que solo entiende http/https. Se valida aquí y no solo
+    * en el servidor para que el error se vea junto al campo, no como un toast
+    * genérico después de guardar.
+    *
+    * El host NO se restringe a zoom.us: el ajuste se presenta como "Zoom/Meet".
+    */
+   enlaceZoomInvalido(): boolean {
+      const v = this.config.enlace_zoom?.trim();
+      if (!v) return false;              // vacío = no configurado, es válido
+      return !/^https?:\/\/.+/i.test(v);
    }
 
    canEdit(): boolean {
