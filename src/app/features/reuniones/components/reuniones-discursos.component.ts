@@ -1,33 +1,45 @@
 ﻿import {
-  Component, signal, computed, inject, OnInit, effect, untracked, HostListener,
+  Component, signal, computed, inject, OnInit, effect, untracked, HostListener, type Signal,
+  afterNextRender, Injector,
 } from '@angular/core';
-import { Observable, Subject, debounceTime, distinctUntilChanged, forkJoin, switchMap, EMPTY } from 'rxjs';
+import { Observable, Subject, catchError, debounceTime, distinctUntilChanged, forkJoin, map, of, switchMap, EMPTY } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { TimePickerComponent } from '../../../shared/components/time-picker/time-picker.component';
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { UbicacionPickerComponent } from './ubicacion-picker.component';
 import { DiscursoCatalogoInputComponent } from './discurso-catalogo-input.component';
+import { CanticoCatalogoInputComponent } from './cantico-catalogo-input.component';
 import { CongregacionContactoInputComponent } from './congregacion-contacto-input.component';
+import { DiscursanteConCongregacion, OradorCatalogoInputComponent } from './orador-catalogo-input.component';
 import { HistorialDiscursosComponent } from './historial-discursos.component';
+import { Hora12Pipe } from '../../../shared/pipes/hora12.pipe';
 import { DiscursosService } from '../services/discursos.service';
 import { ConflictosService } from '../services/conflictos.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import {
+  ArchivoCongregacionContacto,
   CatalogoDiscurso,
   CongregacionContacto,
   ContactoPersona,
   CrearTemaRequest,
+  Discursante,
   DiscursoEntranteOut,
   DiscursosMesOut,
   DiscursoSalienteOut,
+  EditarEntranteRequest,
+  EditarOradorLocalRequest,
   EditarTemaRequest,
   GrupoSimple,
   HistorialOcurrenciaEntrante,
   MesDiscursosDisponible,
   MESES_ES,
+  OradorLocal,
+  EstadoOradorLocal,
   PublicadorSimple,
   TemaPublicador,
   UbicacionSaliente,
@@ -540,23 +552,44 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                 </div>
               } @else {
                 @for (grupo of temasAgrupados(); track grupo.nombre) {
-                  <div class="disc-card rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+                  <!-- shrink-0: la lista es un flex column con scroll, y sin esto
+                       las tarjetas se comprimen para caber en la altura visible
+                       en vez de desbordar, recortando su propio contenido. -->
+                  @let orador = oradoresPorId().get(grupo.temas[0].id_publicador);
+                  <div class="disc-card shrink-0 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
                     <div class="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                      <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-2 min-w-0">
                         <div class="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-black text-amber-600 dark:text-amber-400 shrink-0">
                           {{ grupo.nombre.charAt(0).toUpperCase() }}
                         </div>
-                        <span class="text-sm font-black text-slate-800 dark:text-slate-100">{{ grupo.nombre }}</span>
-                        <span class="text-[0.6rem] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">{{ grupo.temas.length }}</span>
+                        <span class="text-sm font-black text-slate-800 dark:text-slate-100 truncate">{{ grupo.nombre }}</span>
+                        <span class="text-[0.6rem] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full shrink-0">{{ grupo.temas.length }}</span>
+                        @if (orador?.estado === 'inhabilitado') {
+                          <span class="shrink-0 inline-flex items-center gap-1 text-[0.6rem] font-bold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-400/10 px-1.5 py-0.5 rounded-full" [title]="orador?.notas || 'Inhabilitado temporalmente'">
+                            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                            Inhabilitado
+                          </span>
+                        }
                       </div>
                       @if (hasEditPermission()) {
-                        <button (click)="abrirModalTema(); nuevoTema.id_publicador = grupo.temas[0].id_publicador"
-                          title="Añadir tema a este publicador"
-                          class="w-9 h-9 rounded-lg flex items-center justify-center text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all active:scale-95">
-                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        </button>
+                        <div class="shrink-0 flex items-center gap-1">
+                          <button (click)="orador && abrirModalOrador(orador)" title="Estado del orador"
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                          </button>
+                          <button (click)="abrirModalTema(); nuevoTema.id_publicador = grupo.temas[0].id_publicador"
+                            title="Añadir tema a este publicador"
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all active:scale-95">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          </button>
+                        </div>
                       }
                     </div>
+                    @if (orador?.notas) {
+                      <div class="flex items-start gap-2 px-3 pt-2.5 -mb-1">
+                        <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 italic leading-snug">{{ orador?.notas }}</p>
+                      </div>
+                    }
                     <div class="flex flex-col">
                       @for (tema of grupo.temas; track tema.id_tema; let last = $last) {
                         <div class="flex items-center gap-2 px-3 py-2.5" [class]="!last ? 'border-b border-slate-100 dark:border-slate-800' : ''">
@@ -1538,6 +1571,50 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
       </div>
     }
 
+    @if (modalOradorVisible() && oradorEditando(); as orador) {
+      <div class="disc-overlay fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarModalOrador()">
+        <div class="disc-sheet bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
+          <div class="flex justify-center pt-3 pb-1 sm:hidden">
+            <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+          </div>
+          <div class="px-5 pt-3 pb-4 sm:pt-5 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center justify-between">
+              <h2 class="text-base font-black text-slate-900 dark:text-white truncate">{{ orador.nombre_completo }}</h2>
+              <button (click)="cerrarModalOrador()"
+                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95] shrink-0">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3 px-5 py-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Estado</label>
+              <select [(ngModel)]="nuevoOrador.estado"
+                class="h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500 transition-[border-color,background-color] duration-150 ease-out w-full">
+                <option value="disponible">Disponible</option>
+                <option value="inhabilitado">Inhabilitado temporalmente</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Notas <span class="normal-case font-normal opacity-60">(opcional)</span></label>
+              <textarea [(ngModel)]="nuevoOrador.notas" rows="3" placeholder="Ej. de vacaciones hasta octubre, en tratamiento médico..."
+                class="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 transition-[border-color,background-color] duration-150 ease-out w-full resize-none"></textarea>
+            </div>
+          </div>
+          <div class="flex gap-2 px-5 pb-6 sm:pb-5 pt-1">
+            <button (click)="cerrarModalOrador()"
+              class="flex-1 h-11 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-[background-color] duration-150 ease-out active:scale-[0.97]">
+              Cancelar
+            </button>
+            <button (click)="guardarOrador()"
+              class="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-md shadow-amber-500/20">
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- ===== MODAL AÑADIR SALIENTE ===== -->
     @if (modalSalienteVisible()) {
       <div class="disc-overlay fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarModalSaliente()">
@@ -1941,9 +2018,28 @@ export class ReunionesDiscursosComponent implements OnInit {
   loadingTemas = signal(false);
   temasLoaded = signal(false);
 
+  oradoresLocales = signal<OradorLocal[]>([]);
+  loadingOradores = signal(false);
+  oradoresLoaded = signal(false);
+  oradoresPorId = computed(() => new Map(this.oradoresLocales().map(o => [o.id_publicador, o])));
+
   congregacionesContacto = signal<CongregacionContacto[]>([]);
   loadingCongregacionesContacto = signal(false);
   congregacionesContactoLoaded = signal(false);
+  /** Acordeón: sólo una congregación de contacto muestra su detalle a la vez. */
+  congregacionContactoExpandidaId = signal<number | null>(null);
+  toggleCongregacionContacto(id: number): void {
+    this.congregacionContactoExpandidaId.set(this.congregacionContactoExpandidaId() === id ? null : id);
+  }
+  /** Adjuntos de cada congregación de contacto, por id, para mostrarlos en la tarjeta sin abrir "Editar". */
+  archivosPorCongregacion = signal<Record<number, ArchivoCongregacionContacto[]>>({});
+  /**
+   * Referencia al directorio compartido del servicio (ver constructor): se
+   * guarda aquí, fuera del ciclo de renderizado, porque `directorioContacto()`
+   * puede escribir un signal la primera vez que se pide y eso no está
+   * permitido desde un método invocado directamente en la plantilla.
+   */
+  private directorioContactoSig: Signal<readonly CongregacionContacto[]> = signal([]);
   temasAgrupados = computed(() => {
     const map = new Map<number, { nombre: string; temas: TemaPublicador[] }>();
     for (const t of this.temas()) {
@@ -1964,13 +2060,22 @@ export class ReunionesDiscursosComponent implements OnInit {
     id_publicador: null, numero_tema: '', titulo: '',
   };
 
+  modalOradorVisible = signal(false);
+  oradorEditando = signal<OradorLocal | null>(null);
+  nuevoOrador: { estado: EstadoOradorLocal; notas: string } = { estado: 'disponible', notas: '' };
+
   modalCongregacionContactoVisible = signal(false);
   editandoCongregacionContacto = signal<CongregacionContacto | null>(null);
   nuevaCongregacionContacto: {
     nombre: string; dia_reunion_fin_semana: string | null;
     hora_reunion_fin_semana: string | null; notas: string | null; ubicacion: UbicacionSaliente | null;
     personas: { id_contacto_persona?: number; nombre: string; cargo: string | null; telefono: string | null }[];
-  } = { nombre: '', dia_reunion_fin_semana: null, hora_reunion_fin_semana: null, notas: null, ubicacion: null, personas: [] };
+    discursantes: { id_discursante?: number; nombre: string; telefono: string | null; bosquejos: string[] }[];
+  } = { nombre: '', dia_reunion_fin_semana: null, hora_reunion_fin_semana: null, notas: null, ubicacion: null, personas: [], discursantes: [] };
+
+  archivosCongregacionContacto = signal<ArchivoCongregacionContacto[]>([]);
+  archivosNuevosCongregacionContacto = signal<File[]>([]);
+  subiendoArchivoCongregacion = signal(false);
 
   modalGenerarVisible = signal(false);
   modalSalienteVisible = signal(false);
@@ -2081,9 +2186,17 @@ export class ReunionesDiscursosComponent implements OnInit {
           this.temasLoaded.set(false);
           this.temas.set([]);
           this.loadTemas();
+          this.oradoresLoaded.set(false);
+          this.oradoresLocales.set([]);
+          this.loadOradoresLocales();
           this.congregacionesContactoLoaded.set(false);
           this.congregacionesContacto.set([]);
           this.loadCongregacionesContacto();
+          // `directorioContacto()` puede escribir un signal la primera vez que
+          // se pide (dispara la carga). Llamarlo aquí, fuera del renderizado
+          // de plantilla, evita el NG0600 que saltaría si se llamara desde un
+          // método enlazado en el template (p. ej. discursantesDeCongregacion).
+          this.directorioContactoSig = this.svc.directorioContacto(id);
         });
       }
     });
@@ -3168,6 +3281,15 @@ export class ReunionesDiscursosComponent implements OnInit {
     });
   }
 
+  loadOradoresLocales(): void {
+    if (this.oradoresLoaded() || !this.idCong) return;
+    this.loadingOradores.set(true);
+    this.svc.getOradoresLocales(this.idCong).subscribe({
+      next: (o) => { this.oradoresLocales.set(o); this.oradoresLoaded.set(true); this.loadingOradores.set(false); },
+      error: () => this.loadingOradores.set(false),
+    });
+  }
+
   // ── Directorio de congregaciones de contacto ──────────────────────────────
 
   loadCongregacionesContacto(): void {
@@ -3635,6 +3757,30 @@ export class ReunionesDiscursosComponent implements OnInit {
         error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al crear'),
       });
     }
+  }
+
+  abrirModalOrador(orador: OradorLocal): void {
+    this.oradorEditando.set(orador);
+    this.nuevoOrador = { estado: orador.estado, notas: orador.notas ?? '' };
+    this.modalOradorVisible.set(true);
+  }
+
+  cerrarModalOrador(): void {
+    this.modalOradorVisible.set(false);
+    this.oradorEditando.set(null);
+  }
+
+  guardarOrador(): void {
+    const orador = this.oradorEditando();
+    if (!orador || !this.idCong) return;
+    const payload: EditarOradorLocalRequest = { estado: this.nuevoOrador.estado, notas: this.nuevoOrador.notas.trim() || null };
+    this.svc.editarOradorLocal(orador.id_publicador, payload, this.idCong).subscribe({
+      next: (actualizado) => {
+        this.oradoresLocales.set(this.oradoresLocales().map(o => o.id_publicador === actualizado.id_publicador ? actualizado : o));
+        this.cerrarModalOrador();
+      },
+      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
+    });
   }
 
   confirmarEliminarTema(tema: TemaPublicador): void {

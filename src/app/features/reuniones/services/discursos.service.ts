@@ -3,21 +3,28 @@ import { HttpClient, HttpEvent, HttpParams, HttpRequest } from '@angular/common/
 import { Observable, shareReplay } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  ArchivoCongregacionContacto,
   CatalogoResponse,
+  CatalogoCanticosResponse,
   ResumenImportacion,
+  ResumenImportacionCanticos,
   CongregacionContacto,
   ConfirmarDiscursosRequest,
   ContactoPersona,
   CrearCongregacionContactoRequest,
+  CrearDiscursanteRequest,
   CrearPersonaRequest,
   CrearSalienteRequest,
   CrearTemaRequest,
+  Discursante,
   DiscursosMesOut,
   DiscursoSalienteOut,
   DiscursoEntranteOut,
   EditarCongregacionContactoRequest,
+  EditarDiscursanteRequest,
   EditarEntranteRequest,
   EditarPersonaRequest,
+  EditarOradorLocalRequest,
   EditarSalienteRequest,
   EditarTemaRequest,
   GenerarDiscursosRequest,
@@ -27,6 +34,7 @@ import {
   HistorialSalientesOut,
   UbicacionSaliente,
   MesDiscursosDisponible,
+  OradorLocal,
   PublicadorSimple,
   TemaPublicador,
   VerificarRepeticionOut,
@@ -184,6 +192,14 @@ export class DiscursosService {
 
   eliminarTema(id: number, idCong: number | null): Observable<void> {
     return this.http.delete<void>(`${this.base}/temas/${id}`, { params: this.congParams(idCong) });
+  }
+
+  getOradoresLocales(idCong: number | null): Observable<OradorLocal[]> {
+    return this.http.get<OradorLocal[]>(`${this.base}/oradores`, { params: this.congParams(idCong) });
+  }
+
+  editarOradorLocal(idPublicador: number, payload: EditarOradorLocalRequest, idCong: number | null): Observable<OradorLocal> {
+    return this.http.put<OradorLocal>(`${this.base}/oradores/${idPublicador}`, payload, { params: this.congParams(idCong) });
   }
 
   // ── Directorio de congregaciones de contacto ──────────────────────────────
