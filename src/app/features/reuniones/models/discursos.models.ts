@@ -50,8 +50,10 @@ export interface EditarSalienteRequest {
 
 export interface EditarEntranteRequest {
   nombre_orador?: string | null;
+  telefono_orador?: string | null;
   congregacion_origen?: string | null;
   titulo_discurso?: string | null;
+  cantico?: string | null;
   id_grupo_hospitalidad?: number | null;
   notas?: string | null;
 }
@@ -158,6 +160,14 @@ export interface ContactoPersona {
   es_principal: boolean;
 }
 
+export interface Discursante {
+  id_discursante: number;
+  nombre: string;
+  telefono: string | null;
+  /** Bosquejos que tiene preparados, en el formato de la programación ("110. Título"). */
+  bosquejos: string[];
+}
+
 export interface CongregacionContacto {
   id_congregacion_contacto: number;
   nombre: string;
@@ -169,6 +179,12 @@ export interface CongregacionContacto {
   lon: number | null;
   notas: string | null;
   personas: ContactoPersona[];
+  discursantes: Discursante[];
+}
+
+export interface ArchivoCongregacionContacto {
+  nombre: string;
+  tamano_bytes: number;
 }
 
 export interface CrearCongregacionContactoRequest {
@@ -207,6 +223,18 @@ export interface EditarPersonaRequest {
   es_principal?: boolean | null;
 }
 
+export interface CrearDiscursanteRequest {
+  nombre: string;
+  telefono?: string | null;
+  bosquejos?: string[];
+}
+
+export interface EditarDiscursanteRequest {
+  nombre?: string | null;
+  telefono?: string | null;
+  bosquejos?: string[];
+}
+
 export const MESES_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -233,12 +261,30 @@ export interface EditarTemaRequest {
   activo?: boolean;
 }
 
+export type EstadoOradorLocal = 'disponible' | 'inhabilitado';
+
+export interface OradorLocal {
+  id_publicador: number;
+  nombre_completo: string;
+  telefono?: string | null;
+  estado: EstadoOradorLocal;
+  notas?: string | null;
+  cantidad_temas: number;
+}
+
+export interface EditarOradorLocalRequest {
+  estado: EstadoOradorLocal;
+  notas?: string | null;
+}
+
 /** Un bosquejo del S-34. El catálogo es global: no depende de la congregación. */
 export interface CatalogoDiscurso {
   numero: number;
   titulo: string;
   idioma: string;
   activo: boolean;
+  /** Id real de docs.jw.org (doc-<meps_document_id>); null si el catálogo se importó antes de tenerlo. */
+  meps_document_id: number | null;
 }
 
 /** Qué edición del S-34 está cargada y cuándo se importó. */

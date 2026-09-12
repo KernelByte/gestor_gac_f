@@ -299,21 +299,53 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                 </div>
               } @else {
                 @for (c of congregacionesContacto(); track c.id_congregacion_contacto) {
-                  <div class="disc-card rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
-                    <div class="bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-                      <div class="w-7 h-7 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-xs font-black text-teal-600 dark:text-teal-400 shrink-0">
+                  <!-- shrink-0: la lista es un flex column con scroll, y sin esto
+                       las tarjetas se comprimen para caber en la altura visible
+                       en vez de desbordar, recortando su propio contenido. -->
+                  <div class="shrink-0 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden transition-shadow duration-150"
+                    [class.shadow-sm]="congregacionContactoExpandidaId() === c.id_congregacion_contacto">
+
+                    <!-- Fila compacta: toda la tarjeta es clicable para expandir,
+                         salvo los botones de acción, que paran la propagación.
+                         div en vez de button porque contiene botones reales
+                         (editar/eliminar) y un button no puede anidar otro. -->
+                    <div role="button" tabindex="0"
+                      [attr.aria-expanded]="congregacionContactoExpandidaId() === c.id_congregacion_contacto"
+                      (click)="toggleCongregacionContacto(c.id_congregacion_contacto)"
+                      (keydown.enter)="toggleCongregacionContacto(c.id_congregacion_contacto)"
+                      (keydown.space)="$event.preventDefault(); toggleCongregacionContacto(c.id_congregacion_contacto)"
+                      class="w-full flex items-center gap-3 px-3 py-3 text-left cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                      <div class="w-9 h-9 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-sm font-black text-teal-600 dark:text-teal-400 shrink-0">
                         {{ c.nombre.charAt(0).toUpperCase() }}
                       </div>
-                      <div class="min-w-0">
-                        <span class="text-sm font-black text-slate-800 dark:text-slate-100 truncate block">{{ c.nombre }}</span>
-                        @if (c.dia_reunion_fin_semana || c.hora_reunion_fin_semana) {
-                          <span class="text-[0.65rem] text-slate-400">
-                            {{ diaLabel(c.dia_reunion_fin_semana) }}{{ c.hora_reunion_fin_semana ? ' ' + c.hora_reunion_fin_semana : '' }}
-                          </span>
-                        }
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-black text-slate-800 dark:text-slate-100 truncate">{{ c.nombre }}</p>
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+                          @if (c.dia_reunion_fin_semana || c.hora_reunion_fin_semana) {
+                            <span class="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                              <svg class="w-3 h-3 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                              {{ diaLabel(c.dia_reunion_fin_semana) }}{{ c.hora_reunion_fin_semana ? ' · ' + (c.hora_reunion_fin_semana | hora12) : '' }}
+                            </span>
+                          }
+                          <!-- Cada chip lleva el color e icono de su sección en el
+                               detalle: lo que se cuenta aquí se encuentra abajo por
+                               el mismo color, sin leer los rótulos. -->
+                          @if (c.discursantes.length) {
+                            <span class="shrink-0 inline-flex items-center gap-1 text-[0.65rem] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-400/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                              <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+                              {{ c.discursantes.length }} discursante{{ c.discursantes.length === 1 ? '' : 's' }}
+                            </span>
+                          }
+                          @if (c.personas.length) {
+                            <span class="shrink-0 inline-flex items-center gap-1 text-[0.65rem] font-bold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-400/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                              <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                              {{ c.personas.length }} contacto{{ c.personas.length === 1 ? '' : 's' }}
+                            </span>
+                          }
+                        </div>
                       </div>
                       @if (hasEditPermission()) {
-                        <div class="ml-auto flex items-center gap-1">
+                        <div class="shrink-0 flex items-center gap-1" (click)="$event.stopPropagation()">
                           <button (click)="abrirModalCongregacionContacto(c)" title="Editar"
                             class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -324,48 +356,167 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                           </button>
                         </div>
                       }
+                      <svg class="shrink-0 w-4 h-4 text-slate-300 dark:text-slate-600 transition-transform duration-200"
+                        [class.rotate-180]="congregacionContactoExpandidaId() === c.id_congregacion_contacto"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                      </svg>
                     </div>
-                    <div class="flex flex-col gap-2.5 p-3">
-                      @if (c.url_mapa) {
-                        <app-ubicacion-picker size="sm" [ngModel]="ubicacionDeContacto(c)" [ngModelOptions]="{ standalone: true }" [disabled]="true"></app-ubicacion-picker>
-                      }
-                      <div class="flex flex-col gap-1">
-                        @for (p of c.personas; track p.id_contacto_persona; let last = $last) {
-                          <div class="flex items-center gap-2 py-1.5" [class]="!last ? 'border-b border-slate-100 dark:border-slate-800' : ''">
-                            <span class="min-w-0 flex-1 text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{{ p.nombre }}</span>
-                            @if (p.cargo) { <span class="min-w-0 flex-1 text-xs text-slate-500 dark:text-slate-400 truncate">{{ p.cargo }}</span> }
-                            @if (p.telefono) { <span class="shrink-0 text-xs text-slate-500 dark:text-slate-400">{{ p.telefono }}</span> }
-                            @if (p.telefono) {
-                              <!-- Enlace y no botón: 'tel:' es cosa del sistema
-                                   operativo, y así se puede abrir en otra
-                                   aplicación o copiar con el menú del ratón.
-                                   Es como enlaza teléfonos el resto de la app. -->
-                              <a [href]="'tel:' + p.telefono"
-                                [title]="'Llamar a ' + p.nombre"
-                                [attr.aria-label]="'Llamar a ' + p.nombre"
-                                class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sky-500 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all active:scale-95">
-                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                              </a>
-                              <button (click)="contactarPersona(p)" [title]="'Escribir a ' + p.nombre + ' por WhatsApp'"
-                                [attr.aria-label]="'Escribir a ' + p.nombre + ' por WhatsApp'"
-                                class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all active:scale-95">
-                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                              </button>
-                            }
-                          </div>
-                        }
-                        @if (c.personas.length === 0) {
-                          <p class="text-xs text-slate-400 py-1">Sin personas de contacto registradas. Edita la congregación para añadir.</p>
-                        }
+
+                    <!-- Detalle: sólo se pinta cuando la tarjeta está abierta, así
+                         una lista larga no obliga a renderizar (ni cargar el
+                         mapa de) cada ubicación a la vez.
+                         Tres secciones que se distinguen por color + icono, no
+                         sólo por un rótulo gris: violeta = dónde se reúnen,
+                         teal = discursantes, azul = contactos. Los mismos
+                         colores que los chips de la fila compacta. -->
+                    @if (congregacionContactoExpandidaId() === c.id_congregacion_contacto) {
+                      <div class="cong-detalle @container flex flex-col gap-4 border-t border-slate-100 dark:border-slate-800 px-3 pt-3 pb-4 sm:px-4">
+
+                        <!-- Dónde se reúnen -->
+                        <section class="flex flex-col gap-2" [attr.aria-label]="'Ubicación de ' + c.nombre">
+                          <h4 class="flex items-center gap-2 text-[0.8rem] font-bold text-violet-700 dark:text-violet-300">
+                            <span class="w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-400/15 flex items-center justify-center shrink-0" aria-hidden="true">
+                              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                            </span>
+                            Dónde se reúnen
+                          </h4>
+                          @if (ubicacionDeContacto(c)) {
+                            <app-ubicacion-picker size="sm" [ngModel]="ubicacionDeContacto(c)" [ngModelOptions]="{ standalone: true }" [disabled]="true"></app-ubicacion-picker>
+                          } @else {
+                            <p class="text-xs text-slate-400 dark:text-slate-500">Sin dirección registrada.</p>
+                          }
+                          @if (c.notas) {
+                            <!-- La nota suele ser una indicación para coordinar
+                                 ("con dos semanas de anticipación"): ámbar para
+                                 que se lea antes de escribirles, no gris de relleno. -->
+                            <div class="flex items-start gap-2.5 rounded-lg bg-amber-50 dark:bg-amber-400/[0.07] ring-1 ring-inset ring-amber-200/70 dark:ring-amber-400/20 px-3 py-2.5">
+                              <svg class="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                              <div class="min-w-0 flex-1">
+                                <p class="text-[0.65rem] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Nota</p>
+                                <p class="text-xs text-amber-900 dark:text-amber-100/90 leading-relaxed whitespace-pre-line max-w-[70ch]">{{ c.notas }}</p>
+                              </div>
+                            </div>
+                          }
+                          @if (archivosDeCongregacion(c).length) {
+                            <!-- Antes era un chip de 28px gris-sobre-gris que se
+                                 perdía debajo de la nota ámbar; ahora lleva su
+                                 propia etiqueta (como las demás secciones) y el
+                                 violeta de "Dónde se reúnen", con más alto y
+                                 el peso del archivo visible, para que se note
+                                 que hay algo que abrir. -->
+                            <div class="flex flex-col gap-1.5">
+                              <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                Archivo{{ archivosDeCongregacion(c).length === 1 ? '' : 's' }} adjunto{{ archivosDeCongregacion(c).length === 1 ? '' : 's' }}
+                              </span>
+                              <div class="flex flex-col gap-1.5">
+                                @for (a of archivosDeCongregacion(c); track a.nombre) {
+                                  <button type="button" (click)="abrirArchivoDeCongregacion(c, a.nombre)" [title]="'Abrir ' + a.nombre"
+                                    class="w-full flex items-center gap-2.5 h-11 pl-2.5 pr-3 rounded-xl border border-violet-200 dark:border-violet-400/25 bg-violet-50/70 dark:bg-violet-400/[0.07] hover:bg-violet-100 dark:hover:bg-violet-400/[0.12] hover:border-violet-300 dark:hover:border-violet-400/40 transition-[background-color,border-color] duration-150 ease-out active:scale-[0.99]">
+                                    <span class="shrink-0 w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-400/15 text-violet-600 dark:text-violet-300 flex items-center justify-center" aria-hidden="true">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                    </span>
+                                    <span class="min-w-0 flex-1 truncate text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{{ a.nombre }}</span>
+                                    <span class="shrink-0 text-[0.65rem] font-medium text-slate-400 dark:text-slate-500">{{ formatoTamanoArchivo(a.tamano_bytes) }}</span>
+                                    <svg class="shrink-0 w-3.5 h-3.5 text-violet-400 dark:text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M7 7h10v10"/></svg>
+                                  </button>
+                                }
+                              </div>
+                            </div>
+                          }
+                        </section>
+
+                        <!-- Personas: lado a lado cuando la tarjeta es ancha, así el
+                             teléfono queda cerca del nombre en vez de al otro
+                             extremo de la pantalla; apiladas en móvil. -->
+                        <div class="grid gap-3 @3xl:grid-cols-2 @3xl:items-start">
+
+                          <section class="@container rounded-xl bg-teal-50/60 dark:bg-teal-400/[0.04] ring-1 ring-inset ring-teal-200/60 dark:ring-teal-400/15" [attr.aria-label]="'Discursantes de ' + c.nombre">
+                            <header class="flex items-center gap-2 px-3 pt-3 pb-2">
+                              <span class="w-6 h-6 rounded-md bg-teal-100 dark:bg-teal-400/15 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0" aria-hidden="true">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+                              </span>
+                              <div class="min-w-0 flex-1">
+                                <h4 class="text-[0.8rem] font-bold text-teal-800 dark:text-teal-200 leading-tight">Discursantes</h4>
+                                <p class="text-[0.7rem] text-teal-700/70 dark:text-teal-300/60 leading-tight">Oradores que envía esta congregación</p>
+                              </div>
+                              <span class="shrink-0 min-w-6 h-6 px-1.5 rounded-full bg-teal-100 dark:bg-teal-400/15 text-[0.7rem] font-bold text-teal-700 dark:text-teal-300 flex items-center justify-center tabular-nums">{{ c.discursantes.length }}</span>
+                            </header>
+                            <ul class="flex flex-col divide-y divide-teal-100 dark:divide-teal-400/10 px-1.5 pb-1.5">
+                              @for (d of c.discursantes; track d.id_discursante) {
+                                <li class="flex flex-col @md:flex-row @md:items-center gap-2 @md:gap-3 rounded-lg px-1.5 py-2 hover:bg-white/70 dark:hover:bg-slate-800/40 transition-colors">
+                                  <div class="min-w-0 flex-1 flex items-start gap-2.5">
+                                    <span class="w-8 h-8 rounded-full bg-teal-600 dark:bg-teal-500/80 text-white text-xs font-black flex items-center justify-center shrink-0" aria-hidden="true">{{ d.nombre.charAt(0).toUpperCase() }}</span>
+                                    <div class="min-w-0 flex-1">
+                                      <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{{ d.nombre }}</p>
+                                      @if (d.bosquejos.length > 0) {
+                                        <!-- Un renglón por bosquejo: son los que se ofrecen al
+                                             programarlo como entrante, así que se leen todos. -->
+                                        <ul class="flex flex-col gap-1 mt-1">
+                                          @for (b of d.bosquejos; track b) {
+                                            @let t = partirTema(b);
+                                            <li class="flex items-baseline gap-1.5 min-w-0" [title]="b">
+                                              <span class="shrink-0 font-mono text-[0.65rem] font-bold text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-400/15 px-1.5 py-px rounded tabular-nums">{{ t.numero ? 'Nº ' + t.numero : 'Sin nº' }}</span>
+                                              <span class="min-w-0 text-xs text-slate-600 dark:text-slate-300 leading-snug line-clamp-2">{{ t.titulo }}</span>
+                                            </li>
+                                          }
+                                        </ul>
+                                      } @else {
+                                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Sin bosquejos registrados</p>
+                                      }
+                                    </div>
+                                  </div>
+                                  <ng-container *ngTemplateOutlet="accionesContacto; context: { $implicit: d }"></ng-container>
+                                </li>
+                              }
+                              @if (c.discursantes.length === 0) {
+                                <li class="px-1.5 pb-2 text-xs text-teal-800/60 dark:text-teal-200/50">Aún no hay discursantes. Edita la congregación para añadirlos.</li>
+                              }
+                            </ul>
+                          </section>
+
+                          <section class="@container rounded-xl bg-sky-50/60 dark:bg-sky-400/[0.04] ring-1 ring-inset ring-sky-200/60 dark:ring-sky-400/15" [attr.aria-label]="'Contactos de ' + c.nombre">
+                            <header class="flex items-center gap-2 px-3 pt-3 pb-2">
+                              <span class="w-6 h-6 rounded-md bg-sky-100 dark:bg-sky-400/15 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0" aria-hidden="true">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                              </span>
+                              <div class="min-w-0 flex-1">
+                                <h4 class="text-[0.8rem] font-bold text-sky-800 dark:text-sky-200 leading-tight">Contactos de la congregación</h4>
+                                <p class="text-[0.7rem] text-sky-700/70 dark:text-sky-300/60 leading-tight">Con quién coordinar el intercambio</p>
+                              </div>
+                              <span class="shrink-0 min-w-6 h-6 px-1.5 rounded-full bg-sky-100 dark:bg-sky-400/15 text-[0.7rem] font-bold text-sky-700 dark:text-sky-300 flex items-center justify-center tabular-nums">{{ c.personas.length }}</span>
+                            </header>
+                            <ul class="flex flex-col divide-y divide-sky-100 dark:divide-sky-400/10 px-1.5 pb-1.5">
+                              @for (p of c.personas; track p.id_contacto_persona) {
+                                <li class="flex flex-col @md:flex-row @md:items-center gap-2 @md:gap-3 rounded-lg px-1.5 py-2 hover:bg-white/70 dark:hover:bg-slate-800/40 transition-colors">
+                                  <div class="min-w-0 flex-1 flex items-start gap-2.5">
+                                    <span class="w-8 h-8 rounded-full bg-sky-600 dark:bg-sky-500/80 text-white text-xs font-black flex items-center justify-center shrink-0" aria-hidden="true">{{ p.nombre.charAt(0).toUpperCase() }}</span>
+                                    <div class="min-w-0 flex-1">
+                                      <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{{ p.nombre }}</p>
+                                      @if (p.cargo) {
+                                        <span class="inline-block max-w-full mt-0.5 text-[0.65rem] font-bold text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-400/15 px-1.5 py-px rounded truncate align-top">{{ p.cargo }}</span>
+                                      }
+                                    </div>
+                                  </div>
+                                  <ng-container *ngTemplateOutlet="accionesContacto; context: { $implicit: p }"></ng-container>
+                                </li>
+                              }
+                              @if (c.personas.length === 0) {
+                                <li class="px-1.5 pb-2 text-xs text-sky-800/60 dark:text-sky-200/50">Aún no hay contactos. Edita la congregación para añadirlos.</li>
+                              }
+                            </ul>
+                          </section>
+                        </div>
                       </div>
-                    </div>
+                    }
                   </div>
                 }
               }
+              </div>
             </div>
           } @else if (subTab() === 'temas') {
             <!-- TEMAS tab -->
-            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar flex flex-col gap-3 p-3 sm:p-4">
+            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar flex flex-col gap-3 p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
               @if (hasEditPermission()) {
                 <button (click)="abrirModalTema()"
                   class="self-start flex items-center gap-2 px-4 h-9 rounded-xl border-2 border-dashed border-amber-400 dark:border-amber-600 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all active:scale-95">
@@ -1071,110 +1222,257 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
       </div>
     }
 
-    <!-- ===== MODAL AÑADIR/EDITAR TEMA ===== -->
+    <!-- ===== MODAL AÑADIR/EDITAR CONGREGACIÓN DE CONTACTO =====
+         Más ancho que los demás modales (max-w-4xl): las filas de discursantes
+         y contactos son tabulares y en 384px cada campo quedaba cortado.
+         Las secciones repiten el color de la tarjeta de detalle (violeta =
+         cuándo y dónde, teal = discursantes, azul = contactos) para que
+         editar sea reconocer lo mismo que se lee. -->
     @if (modalCongregacionContactoVisible()) {
       <div class="disc-overlay fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrarModalCongregacionContacto()">
-        <div class="disc-sheet bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
+        <div class="disc-sheet bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-4xl max-h-[92dvh] sm:max-h-[88vh] flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden"
+          role="dialog" aria-modal="true" aria-labelledby="titulo-modal-cong" (click)="$event.stopPropagation()">
           <div class="flex justify-center pt-3 pb-1 sm:hidden">
             <div class="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></div>
           </div>
-          <div class="px-5 pt-3 pb-4 sm:pt-5 border-b border-slate-100 dark:border-slate-800">
-            <div class="flex items-center justify-between">
-              <h2 class="text-base font-black text-slate-900 dark:text-white">{{ editandoCongregacionContacto() ? 'Editar Congregación' : 'Añadir Congregación' }}</h2>
-              <button (click)="cerrarModalCongregacionContacto()"
-                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+          <div class="shrink-0 flex items-start justify-between gap-3 px-5 sm:px-6 pt-3 pb-4 sm:pt-5 border-b border-slate-100 dark:border-slate-800">
+            <div class="min-w-0">
+              <h2 id="titulo-modal-cong" class="text-base font-black text-slate-900 dark:text-white">{{ editandoCongregacionContacto() ? 'Editar congregación' : 'Añadir congregación' }}</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Solo el nombre es obligatorio. Lo demás autocompleta hora, ubicación y orador al programar un entrante.</p>
             </div>
+            <button type="button" (click)="cerrarModalCongregacionContacto()" aria-label="Cerrar"
+              class="shrink-0 -mr-2 w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
-          <div class="flex flex-col gap-3 px-5 py-4 max-h-[70vh] overflow-y-auto simple-scrollbar">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nombre</label>
-              <input type="text" [(ngModel)]="nuevaCongregacionContacto.nombre" placeholder="Nombre de la congregación"
-                class="h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white dark:focus:bg-slate-800 transition-[border-color,background-color] duration-150 ease-out w-full">
-            </div>
-            <div class="grid grid-cols-2 gap-2.5">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Día de reunión</label>
-                <div class="relative">
-                  @if (diaDropdownAbierto()) {
-                    <div class="fixed inset-0 z-[59]" (click)="diaDropdownAbierto.set(false)"></div>
-                  }
-                  <button type="button" (click)="diaDropdownAbierto.set(!diaDropdownAbierto())"
-                    class="h-11 w-full px-3 rounded-xl border bg-slate-50 dark:bg-slate-800 text-sm text-left flex items-center justify-between gap-2 outline-none transition-[border-color,background-color] duration-150 ease-out"
-                    [class]="diaDropdownAbierto() ? 'border-teal-500 ring-2 ring-teal-500/20' : 'border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-600'">
-                    <span [class]="nuevaCongregacionContacto.dia_reunion_fin_semana ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400'">
-                      {{ nuevaCongregacionContacto.dia_reunion_fin_semana ? diaLabel(nuevaCongregacionContacto.dia_reunion_fin_semana) : '— Sin definir —' }}
-                    </span>
-                    <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="diaDropdownAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                  </button>
-                  @if (diaDropdownAbierto()) {
-                    <div class="disc-dropdown absolute left-0 top-full mt-1.5 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
-                      <button type="button" (click)="seleccionarDiaCongregacionContacto(null)"
-                        class="w-full flex items-center gap-2 px-3.5 py-2 text-sm font-semibold text-left transition-colors duration-100"
-                        [class]="!nuevaCongregacionContacto.dia_reunion_fin_semana ? 'bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
-                        — Sin definir —
+
+          <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar flex flex-col gap-6 px-5 sm:px-6 py-5">
+
+            <!-- 1 · Congregación: cuándo y dónde -->
+            <section class="flex flex-col gap-3">
+              <h3 class="flex items-center gap-2 text-[0.8rem] font-bold text-violet-700 dark:text-violet-300">
+                <span class="w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-400/15 flex items-center justify-center shrink-0" aria-hidden="true">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                </span>
+                Congregación y reunión del fin de semana
+              </h3>
+              <div class="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_auto_minmax(0,0.9fr)]">
+                <div class="flex flex-col gap-1.5">
+                  <label for="cong-nombre" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Nombre <span class="text-red-500" aria-hidden="true">*</span></label>
+                  <input id="cong-nombre" type="text" [(ngModel)]="nuevaCongregacionContacto.nombre" placeholder="Ej. Cañaveral" autocomplete="off" required
+                    [class]="campoModal + ' h-10 text-sm'">
+                </div>
+                <!-- Sólo hay dos días posibles: dos botones se eligen de un
+                     toque; un desplegable pedía dos. Volver a pulsar el día
+                     elegido lo deja sin definir. -->
+                <div class="flex flex-col gap-1.5">
+                  <span id="cong-dia" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Día</span>
+                  <div role="radiogroup" aria-labelledby="cong-dia" class="h-10 grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 sm:w-[12.5rem]">
+                    @for (dia of diasFinSemanaOpciones; track dia) {
+                      <button type="button" role="radio" [attr.aria-checked]="nuevaCongregacionContacto.dia_reunion_fin_semana === dia"
+                        (click)="seleccionarDiaCongregacionContacto(nuevaCongregacionContacto.dia_reunion_fin_semana === dia ? null : dia)"
+                        class="rounded-lg text-sm font-bold transition-[background-color,color,box-shadow] duration-150 ease-out active:scale-[0.97]"
+                        [class]="nuevaCongregacionContacto.dia_reunion_fin_semana === dia
+                          ? 'bg-white dark:bg-slate-700 text-violet-700 dark:text-violet-300 shadow-sm'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                        {{ diaLabel(dia) }}
                       </button>
-                      @for (dia of diasFinSemanaOpciones; track dia) {
-                        <button type="button" (click)="seleccionarDiaCongregacionContacto(dia)"
-                          class="w-full flex items-center gap-2 px-3.5 py-2 text-sm font-semibold text-left transition-colors duration-100"
-                          [class]="nuevaCongregacionContacto.dia_reunion_fin_semana === dia ? 'bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'">
-                          {{ diaLabel(dia) }}
-                        </button>
-                      }
-                    </div>
-                  }
+                    }
+                  </div>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Hora</span>
+                  <app-time-picker [(ngModel)]="nuevaCongregacionContacto.hora_reunion_fin_semana" [ngModelOptions]="{ standalone: true }"
+                    colorScheme="violet" placeholder="Hora"></app-time-picker>
                 </div>
               </div>
               <div class="flex flex-col gap-1.5">
-                <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Hora</label>
-                <app-time-picker [(ngModel)]="nuevaCongregacionContacto.hora_reunion_fin_semana" [ngModelOptions]="{ standalone: true }"
-                  colorScheme="violet" placeholder="Hora"></app-time-picker>
+                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Ubicación del salón</span>
+                <app-ubicacion-picker [ngModel]="nuevaCongregacionContacto.ubicacion" (ngModelChange)="nuevaCongregacionContacto.ubicacion = $event"
+                  [ngModelOptions]="{ standalone: true }"></app-ubicacion-picker>
               </div>
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ubicación del salón</label>
-              <app-ubicacion-picker [ngModel]="nuevaCongregacionContacto.ubicacion" (ngModelChange)="nuevaCongregacionContacto.ubicacion = $event"
-                [ngModelOptions]="{ standalone: true }"></app-ubicacion-picker>
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Personas de contacto <span class="normal-case font-normal opacity-60">(opcional)</span></label>
+            </section>
+
+            <!-- 2 · Discursantes -->
+            <section class="flex flex-col gap-2.5 rounded-2xl bg-teal-50/60 dark:bg-teal-400/[0.04] ring-1 ring-inset ring-teal-200/60 dark:ring-teal-400/15 p-3 sm:p-4">
+              <header class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-md bg-teal-100 dark:bg-teal-400/15 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0" aria-hidden="true">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+                </span>
+                <div class="min-w-0 flex-1">
+                  <h3 class="text-[0.8rem] font-bold text-teal-800 dark:text-teal-200 leading-tight">Discursantes <span class="font-medium text-teal-700/60 dark:text-teal-300/50">· opcional</span></h3>
+                  <p class="text-[0.7rem] text-teal-700/70 dark:text-teal-300/60 leading-tight">Oradores que suelen venir; se ofrecen al programar un entrante.</p>
+                </div>
+              </header>
+
+              @if (nuevaCongregacionContacto.discursantes.length) {
+                <!-- Un bloque por discursante (no una fila de tabla): sus
+                     bosquejos son una lista que crece, y en una columna de
+                     tabla quedaba un solo campo apretado. -->
+                <div class="flex flex-col gap-2">
+                  @for (d of nuevaCongregacionContacto.discursantes; track $index; let i = $index) {
+                    <div class="flex flex-col gap-2 p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/50 ring-1 ring-inset ring-teal-200/60 dark:ring-teal-400/15">
+                      <div class="grid grid-cols-[minmax(0,1fr)_2.25rem] sm:grid-cols-[minmax(0,1fr)_9.5rem_2.25rem] gap-2 items-center">
+                        <input type="text" [(ngModel)]="d.nombre" [ngModelOptions]="{ standalone: true }" placeholder="Nombre del discursante" autocomplete="off"
+                          data-fila-discursante [attr.aria-label]="'Nombre del discursante ' + (i + 1)"
+                          [class]="campoModal + ' h-10 text-sm font-semibold'">
+                        <input type="tel" inputmode="tel" [(ngModel)]="d.telefono" [ngModelOptions]="{ standalone: true }" placeholder="Teléfono" autocomplete="off"
+                          [attr.aria-label]="'Teléfono del discursante ' + (i + 1)"
+                          [class]="campoModal + ' h-10 text-sm tabular-nums max-sm:col-span-1 max-sm:row-start-2'">
+                        <button type="button" (click)="quitarDiscursanteModal(i)" [title]="'Quitar discursante ' + (i + 1)" [attr.aria-label]="'Quitar discursante ' + (i + 1)"
+                          class="max-sm:row-start-1 max-sm:col-start-2 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-[background-color,color,transform] duration-150 ease-out active:scale-95">
+                          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
+
+                      <!-- Bosquejos preparados: se añaden del catálogo (o a mano,
+                           con Enter) y se quitan con la ×. Al programar un
+                           entrante con este orador se ofrecen primero. -->
+                      <div class="flex flex-col gap-1.5">
+                        <span class="text-[0.7rem] font-semibold text-teal-800/70 dark:text-teal-200/60">
+                          Bosquejos preparados
+                          @if (d.bosquejos.length) { <span class="font-normal text-teal-700/60 dark:text-teal-300/50">· {{ d.bosquejos.length }}</span> }
+                        </span>
+                        @if (d.bosquejos.length) {
+                          <ul class="flex flex-wrap gap-1.5">
+                            @for (b of d.bosquejos; track b; let j = $index) {
+                              @let t = partirTema(b);
+                              <li class="max-w-full flex items-center gap-1.5 h-8 pl-1.5 pr-1 rounded-lg bg-teal-50 dark:bg-teal-400/10 ring-1 ring-inset ring-teal-200/70 dark:ring-teal-400/20" [title]="b">
+                                <span class="shrink-0 font-mono text-[0.65rem] font-bold text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-400/15 px-1.5 py-px rounded tabular-nums">{{ t.numero ? 'Nº ' + t.numero : 'Sin nº' }}</span>
+                                <span class="min-w-0 truncate text-xs text-slate-700 dark:text-slate-200 max-w-[16rem]">{{ t.titulo }}</span>
+                                <button type="button" (click)="quitarBosquejoModal(d, j)" [attr.aria-label]="'Quitar bosquejo ' + b"
+                                  class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-teal-700/60 dark:text-teal-300/60 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                              </li>
+                            }
+                          </ul>
+                        }
+                        <app-discurso-catalogo-input #nuevoBosquejo
+                          formato="numerado"
+                          [placeholder]="d.bosquejos.length ? 'Añadir otro: nº o título del bosquejo' : 'Añadir bosquejo: nº o título'"
+                          [inputClass]="campoModal + ' h-9 text-sm'"
+                          (commit)="anadirBosquejoModal(d, $event, nuevoBosquejo)"
+                          (keydown.enter)="$event.preventDefault(); nuevoBosquejo.confirmar()"
+                          class="relative block min-w-0">
+                        </app-discurso-catalogo-input>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+              <button type="button" (click)="anadirDiscursanteModal()"
+                class="flex items-center justify-center gap-1.5 h-10 rounded-xl border border-dashed border-teal-300 dark:border-teal-400/30 text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-teal-100/60 dark:hover:bg-teal-400/10 transition-[background-color,transform] duration-150 ease-out active:scale-[0.99]">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                {{ nuevaCongregacionContacto.discursantes.length ? 'Añadir otro discursante' : 'Añadir discursante' }}
+              </button>
+            </section>
+
+            <!-- 3 · Personas de contacto -->
+            <section class="flex flex-col gap-2.5 rounded-2xl bg-sky-50/60 dark:bg-sky-400/[0.04] ring-1 ring-inset ring-sky-200/60 dark:ring-sky-400/15 p-3 sm:p-4">
+              <header class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-md bg-sky-100 dark:bg-sky-400/15 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0" aria-hidden="true">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </span>
+                <div class="min-w-0 flex-1">
+                  <h3 class="text-[0.8rem] font-bold text-sky-800 dark:text-sky-200 leading-tight">Contactos de la congregación <span class="font-medium text-sky-700/60 dark:text-sky-300/50">· opcional</span></h3>
+                  <p class="text-[0.7rem] text-sky-700/70 dark:text-sky-300/60 leading-tight">Con quién coordinar el intercambio de oradores.</p>
+                </div>
+              </header>
+
+              @if (nuevaCongregacionContacto.personas.length) {
+                <div class="hidden sm:grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_8.5rem_2.25rem] gap-2 px-0.5 text-[0.7rem] font-semibold text-sky-800/70 dark:text-sky-200/60" aria-hidden="true">
+                  <span>Nombre</span><span>Cargo</span><span>Teléfono</span><span></span>
+                </div>
+                <div class="flex flex-col gap-2">
+                  @for (p of nuevaCongregacionContacto.personas; track $index; let i = $index) {
+                    <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.25rem] sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_8.5rem_2.25rem] gap-2 items-center max-sm:p-2 max-sm:rounded-xl max-sm:bg-white/70 max-sm:dark:bg-slate-900/40 max-sm:ring-1 max-sm:ring-sky-200/60 max-sm:dark:ring-sky-400/15">
+                      <input type="text" [(ngModel)]="p.nombre" [ngModelOptions]="{ standalone: true }" placeholder="Nombre" autocomplete="off"
+                        data-fila-persona [attr.aria-label]="'Nombre del contacto ' + (i + 1)"
+                        [class]="campoModal + ' h-10 text-sm max-sm:col-span-2'">
+                      <input type="text" [(ngModel)]="p.cargo" [ngModelOptions]="{ standalone: true }" placeholder="Cargo" autocomplete="off"
+                        list="cargos-contacto" [attr.aria-label]="'Cargo del contacto ' + (i + 1)"
+                        [class]="campoModal + ' h-10 text-sm max-sm:col-span-2'">
+                      <input type="tel" inputmode="tel" [(ngModel)]="p.telefono" [ngModelOptions]="{ standalone: true }" placeholder="Teléfono" autocomplete="off"
+                        [attr.aria-label]="'Teléfono del contacto ' + (i + 1)"
+                        [class]="campoModal + ' h-10 text-sm tabular-nums max-sm:col-span-2'">
+                      <button type="button" (click)="quitarPersonaModal(i)" [title]="'Quitar contacto ' + (i + 1)" [attr.aria-label]="'Quitar contacto ' + (i + 1)"
+                        class="max-sm:row-start-1 max-sm:col-start-3 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-[background-color,color,transform] duration-150 ease-out active:scale-95">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  }
+                </div>
+                <!-- Sugerencias, no una lista cerrada: se puede escribir
+                     cualquier otro cargo. -->
+                <datalist id="cargos-contacto">
+                  @for (cargo of cargosContactoSugeridos; track cargo) { <option [value]="cargo"></option> }
+                </datalist>
+              }
+              <button type="button" (click)="anadirPersonaModal()"
+                class="flex items-center justify-center gap-1.5 h-10 rounded-xl border border-dashed border-sky-300 dark:border-sky-400/30 text-xs font-bold text-sky-700 dark:text-sky-300 hover:bg-sky-100/60 dark:hover:bg-sky-400/10 transition-[background-color,transform] duration-150 ease-out active:scale-[0.99]">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                {{ nuevaCongregacionContacto.personas.length ? 'Añadir otro contacto' : 'Añadir contacto' }}
+              </button>
+            </section>
+
+            <!-- 4 · Notas y archivos -->
+            <section class="grid gap-4 sm:grid-cols-2">
               <div class="flex flex-col gap-1.5">
-                @for (p of nuevaCongregacionContacto.personas; track $index; let i = $index) {
-                  <div class="flex items-center gap-1.5">
-                    <input type="text" [(ngModel)]="p.nombre" [ngModelOptions]="{ standalone: true }" placeholder="Nombre"
-                      class="min-w-0 flex-[1.3] h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white dark:focus:bg-slate-800 transition-[border-color,background-color] duration-150 ease-out">
-                    <input type="text" [(ngModel)]="p.cargo" [ngModelOptions]="{ standalone: true }" placeholder="Cargo"
-                      class="min-w-0 flex-1 h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white dark:focus:bg-slate-800 transition-[border-color,background-color] duration-150 ease-out">
-                    <input type="text" [(ngModel)]="p.telefono" [ngModelOptions]="{ standalone: true }" placeholder="Teléfono"
-                      class="min-w-0 flex-1 h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white dark:focus:bg-slate-800 transition-[border-color,background-color] duration-150 ease-out">
-                    <button type="button" (click)="quitarPersonaModal(i)" title="Quitar"
-                      class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
+                <label for="cong-notas" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Notas <span class="font-normal text-slate-400">· opcional</span></label>
+                <textarea id="cong-notas" rows="3" [(ngModel)]="nuevaCongregacionContacto.notas" placeholder="Ej. Prefieren coordinar con dos semanas de anticipación."
+                  [class]="campoModal + ' py-2.5 text-sm leading-relaxed resize-y min-h-[5.5rem]'"></textarea>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Archivos adjuntos <span class="font-normal text-slate-400">· opcional</span></span>
+                @if (archivosCongregacionContacto().length || archivosNuevosCongregacionContacto().length) {
+                  <div class="flex flex-col gap-1">
+                    @for (a of archivosCongregacionContacto(); track a.nombre) {
+                      <div class="flex items-center gap-1.5 h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                        <svg class="w-3.5 h-3.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                        <button type="button" (click)="abrirArchivoCongregacionContacto(a)" class="flex-1 min-w-0 truncate text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-teal-600 dark:hover:text-teal-400">
+                          {{ a.nombre }}
+                        </button>
+                        <span class="shrink-0 text-[0.65rem] text-slate-400">{{ formatoTamanoArchivo(a.tamano_bytes) }}</span>
+                        <button type="button" (click)="eliminarArchivoCongregacionContactoModal(a.nombre)" title="Quitar"
+                          class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
+                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
+                    }
+                    @for (f of archivosNuevosCongregacionContacto(); track $index; let i = $index) {
+                      <div class="flex items-center gap-1.5 h-9 px-2.5 rounded-lg border border-dashed border-teal-300 dark:border-teal-700 bg-teal-50/50 dark:bg-teal-900/10">
+                        <svg class="w-3.5 h-3.5 shrink-0 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                        <span class="flex-1 min-w-0 truncate text-xs font-semibold text-slate-700 dark:text-slate-200">{{ f.name }}</span>
+                        <span class="shrink-0 text-[0.65rem] text-teal-600 dark:text-teal-400 font-bold">Pendiente</span>
+                        <button type="button" (click)="quitarArchivoNuevoCongregacionContacto(i)" title="Quitar"
+                          class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
+                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
+                    }
                   </div>
                 }
+                <input #archivoCongInput type="file" multiple class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                  (change)="onArchivosCongregacionContactoSeleccionados(archivoCongInput)">
+                <button type="button" (click)="archivoCongInput.click()"
+                  class="flex flex-col items-center justify-center gap-1 min-h-[5.5rem] flex-1 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.99]">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                  <span class="text-xs font-bold">Adjuntar archivo</span>
+                  <span class="text-[0.65rem] text-slate-400">Listado de discursantes en PDF, Word o imagen</span>
+                </button>
               </div>
-              <button type="button" (click)="anadirPersonaModal()"
-                class="self-start flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-[0.7rem] font-bold text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all active:scale-95">
-                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Añadir persona
-              </button>
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Notas <span class="normal-case font-normal opacity-60">(opcional)</span></label>
-              <input type="text" [(ngModel)]="nuevaCongregacionContacto.notas" placeholder="Notas adicionales"
-                class="h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white dark:focus:bg-slate-800 transition-[border-color,background-color] duration-150 ease-out w-full">
-            </div>
+            </section>
           </div>
-          <div class="flex gap-2 px-5 pb-6 sm:pb-5 pt-1">
-            <button (click)="cerrarModalCongregacionContacto()"
-              class="flex-1 h-11 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-[background-color] duration-150 ease-out active:scale-[0.97]">
+
+          <div class="shrink-0 flex gap-2 sm:justify-end px-5 sm:px-6 pt-3 pb-6 sm:pb-4 border-t border-slate-100 dark:border-slate-800">
+            <button type="button" (click)="cerrarModalCongregacionContacto()"
+              class="flex-1 sm:flex-none sm:px-5 h-11 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-[background-color] duration-150 ease-out active:scale-[0.97]">
               Cancelar
             </button>
-            <button (click)="guardarCongregacionContacto()" [disabled]="!nuevaCongregacionContacto.nombre.trim()"
-              class="flex-1 h-11 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-md shadow-teal-500/20">
-              {{ editandoCongregacionContacto() ? 'Guardar cambios' : 'Añadir' }}
+            <button type="button" (click)="guardarCongregacionContacto()" [disabled]="!nuevaCongregacionContacto.nombre.trim()"
+              class="flex-1 sm:flex-none sm:px-6 h-11 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-md shadow-teal-500/20">
+              {{ editandoCongregacionContacto() ? 'Guardar cambios' : 'Añadir congregación' }}
             </button>
           </div>
         </div>
@@ -1755,9 +2053,9 @@ export class ReunionesDiscursosComponent implements OnInit {
 
   nuevoSaliente: {
     fecha: string; id_publicador: number | null; congregacion_destino: string;
-    tema_discurso: string; hora: string; ubicacion: UbicacionSaliente | null;
+    tema_discurso: string; hora: string; ubicacion: UbicacionSaliente | null; notas: string;
   } = {
-    fecha: '', id_publicador: null, congregacion_destino: '', tema_discurso: '', hora: '', ubicacion: null,
+    fecha: '', id_publicador: null, congregacion_destino: '', tema_discurso: '', hora: '', ubicacion: null, notas: '',
   };
 
   /** true cuando la ubicación del modal viene del autorelleno por congregación. */
@@ -2017,6 +2315,233 @@ export class ReunionesDiscursosComponent implements OnInit {
       next: (updated) => {
         this.updateEntrante(updated);
         if (campo === 'titulo_discurso') this.verificarRepetido(updated);
+      },
+      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
+    });
+  }
+
+  private static readonly SIN_BOSQUEJOS: readonly string[] = [];
+
+  /**
+   * El discursante registrado que corresponde al orador escrito en la fila,
+   * buscado por nombre (sin tildes ni mayúsculas) en el directorio compartido.
+   * Si el mismo nombre está en varias congregaciones, gana la de origen de la
+   * fila. Un nombre escrito a mano que no está registrado no da nada.
+   */
+  private discursanteDeLaFila(nombreOrador: string | null, congregacionOrigen: string | null): Discursante | undefined {
+    const nombre = this.normalizarTexto((nombreOrador ?? '').trim());
+    if (!nombre) return undefined;
+    const origen = this.normalizarTexto((congregacionOrigen ?? '').trim());
+    let candidato: Discursante | undefined;
+    for (const c of this.directorioContactoSig()) {
+      const d = c.discursantes.find(x => this.normalizarTexto(x.nombre) === nombre);
+      if (!d) continue;
+      if (origen && this.normalizarTexto(c.nombre) === origen) return d;
+      candidato ??= d;
+    }
+    return candidato;
+  }
+
+  /**
+   * Bosquejos preparados del orador de la fila, para ofrecerlos primero en el
+   * campo Discurso. Devuelve el mismo array del directorio (no una copia) para
+   * que el input del campo no cambie en cada detección de cambios.
+   */
+  bosquejosDelOrador(entrante: DiscursoEntranteOut): readonly string[] {
+    return this.discursanteDeLaFila(entrante.nombre_orador, entrante.congregacion_origen)?.bosquejos
+      ?? ReunionesDiscursosComponent.SIN_BOSQUEJOS;
+  }
+
+  private normalizarTexto(s: string): string {
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  /**
+   * El orador escrito a mano (no elegido de la lista): se guarda solo el
+   * nombre, sin autocompletar nada. La única excepción es el teléfono: si era
+   * el del orador registrado que había antes, ya no corresponde a nadie —los
+   * botones de llamar y WhatsApp marcarían a otra persona— y se quita.
+   */
+  guardarOradorEscrito(entrante: DiscursoEntranteOut, valor: string | null): void {
+    const nombre = (valor ?? '').trim() || null;
+    if (entrante.nombre_orador === nombre) return;
+    const payload: EditarEntranteRequest = { nombre_orador: nombre };
+    const anterior = this.discursanteDeLaFila(entrante.nombre_orador, entrante.congregacion_origen);
+    if (anterior?.telefono && entrante.telefono_orador === anterior.telefono) {
+      payload.telefono_orador = null;
+    }
+    this.svc.editarEntrante(entrante.id_discurso_entrante, payload, this.idCong).subscribe({
+      next: (updated) => this.updateEntrante(updated),
+      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
+    });
+  }
+
+  /**
+   * Si dos textos de discurso son el mismo bosquejo: por número cuando los
+   * dos lo llevan ("120" y "120. Razones…"), y si no, por el texto sin
+   * tildes ni mayúsculas.
+   */
+  private mismoBosquejo(a: string, b: string): boolean {
+    const num = (t: string) => /^\s*(\d{1,3})(?:\s*[.\-–]|\s*$)/.exec(t)?.[1];
+    const na = num(a), nb = num(b);
+    if (na && nb) return na === nb;
+    return this.normalizarTexto(a.trim()) === this.normalizarTexto(b.trim());
+  }
+
+  /** "120. Razones…" → "Nº 120"; sin número, el título recortado. */
+  private etiquetaBosquejo(b: string): string {
+    const m = /^\s*(\d{1,3})\s*[.\-–]/.exec(b);
+    return m ? `Nº ${m[1]}` : (b.length > 30 ? b.slice(0, 30) + '…' : b);
+  }
+
+  /**
+   * Corrección hecha en una fila al elegir de una lista, con lo necesario
+   * para deshacerla de un clic. Una por fila: la última manda.
+   */
+  avisosFila = signal<Record<number, { mensaje: string; detalle: string; accion: string; deshacer: EditarEntranteRequest }>>({});
+  /** Discursos que el usuario decidió mantener aunque no sean del orador (no se vuelve a avisar). */
+  private discursosMantenidos = new Map<number, string>();
+
+  descartarAvisoFila(id: number): void {
+    this.avisosFila.update(m => {
+      if (!(id in m)) return m;
+      const { [id]: _, ...resto } = m;
+      return resto;
+    });
+  }
+
+  /** Deshace la corrección: devuelve la fila a lo que había antes de elegir. */
+  deshacerAvisoFila(entrante: DiscursoEntranteOut): void {
+    const aviso = this.avisosFila()[entrante.id_discurso_entrante];
+    if (!aviso) return;
+    const titulo = aviso.deshacer.titulo_discurso;
+    // Lo devuelto a mano no se vuelve a señalar como "no es suyo".
+    if (titulo) this.discursosMantenidos.set(entrante.id_discurso_entrante, titulo);
+    this.descartarAvisoFila(entrante.id_discurso_entrante);
+    this.svc.editarEntrante(entrante.id_discurso_entrante, aviso.deshacer, this.idCong).subscribe({
+      next: (updated) => {
+        this.updateEntrante(updated);
+        if ('titulo_discurso' in aviso.deshacer) this.verificarRepetido(updated);
+      },
+      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
+    });
+  }
+
+  /**
+   * Al elegir una congregación de la lista: si el orador que había es un
+   * discursante registrado de OTRA congregación, deja de cuadrar con la fila,
+   * así que se quita junto con su teléfono y con el bosquejo suyo que hubiera
+   * puesto. Un orador escrito a mano no se toca: no hay nada que validar.
+   */
+  elegirCongregacionOrigen(entrante: DiscursoEntranteOut, c: CongregacionContacto): void {
+    const payload: EditarEntranteRequest = { congregacion_origen: c.nombre };
+    const anterior = this.discursanteDeLaFila(entrante.nombre_orador, entrante.congregacion_origen);
+    const esDeLaNueva = !!anterior && c.discursantes.some(d => this.normalizarTexto(d.nombre) === this.normalizarTexto(anterior.nombre));
+
+    let aviso: { mensaje: string; detalle: string; accion: string; deshacer: EditarEntranteRequest } | null = null;
+    if (anterior && !esDeLaNueva) {
+      const titulo = (entrante.titulo_discurso ?? '').trim();
+      const eraSuyo = !!titulo && anterior.bosquejos.some(b => this.mismoBosquejo(b, titulo));
+      payload.nombre_orador = null;
+      payload.telefono_orador = null;
+      if (eraSuyo) payload.titulo_discurso = null;
+      aviso = {
+        mensaje: `${anterior.nombre} no es discursante de ${c.nombre}`,
+        detalle: eraSuyo ? 'Se quitaron el orador y su discurso.' : 'Se quitó el orador.',
+        accion: 'Mantener el orador',
+        deshacer: {
+          nombre_orador: entrante.nombre_orador,
+          telefono_orador: entrante.telefono_orador,
+          ...(eraSuyo ? { titulo_discurso: entrante.titulo_discurso } : {}),
+        },
+      };
+    }
+
+    this.svc.editarEntrante(entrante.id_discurso_entrante, payload, this.idCong).subscribe({
+      next: (updated) => {
+        this.updateEntrante(updated);
+        if ('titulo_discurso' in payload) this.verificarRepetido(updated);
+        if (aviso) this.avisosFila.update(m => ({ ...m, [entrante.id_discurso_entrante]: aviso! }));
+        else this.descartarAvisoFila(entrante.id_discurso_entrante);
+      },
+      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
+    });
+  }
+
+  /**
+   * Aviso informativo: el discurso de la fila no está entre los bosquejos del
+   * orador registrado. Nada si el orador no está registrado o no tiene
+   * bosquejos (no hay contra qué comparar), o si ya se decidió mantenerlo.
+   */
+  discursoFueraDeBosquejos(entrante: DiscursoEntranteOut): { orador: string; etiquetas: string } | null {
+    const titulo = (entrante.titulo_discurso ?? '').trim();
+    if (!titulo) return null;
+    const d = this.discursanteDeLaFila(entrante.nombre_orador, entrante.congregacion_origen);
+    if (!d || d.bosquejos.length === 0) return null;
+    if (d.bosquejos.some(b => this.mismoBosquejo(b, titulo))) return null;
+    const mantenido = this.discursosMantenidos.get(entrante.id_discurso_entrante);
+    if (mantenido && this.mismoBosquejo(mantenido, titulo)) return null;
+    return { orador: d.nombre, etiquetas: d.bosquejos.map(b => this.etiquetaBosquejo(b)).join(', ') };
+  }
+
+  /**
+   * Al elegir un discursante desde el campo "Orador": rellena de una vez
+   * nombre, teléfono y congregación de origen, y valida el discurso contra
+   * sus bosquejos. Elegir de la lista es decir "es esta persona", así que el
+   * resto de la fila tiene que cuadrar con ella:
+   *  - Si el discurso ya es uno de sus bosquejos, se deja.
+   *  - Si no lo es (esté vacío, venga de otro orador o se haya escrito
+   *    antes), pasa a su único bosquejo; con varios, se vacía y se abre su
+   *    lista en el campo Discurso para elegir.
+   *  - Si no tiene bosquejos registrados no hay contra qué validar: se deja.
+   * Cuando se sustituye un discurso que ya había, se avisa en la fila con la
+   * opción de mantenerlo (puede que esa vez dé uno distinto).
+   */
+  elegirOradorDelDirectorio(
+    entrante: DiscursoEntranteOut,
+    r: DiscursanteConCongregacion,
+    campoDiscurso?: DiscursoCatalogoInputComponent,
+  ): void {
+    const payload: EditarEntranteRequest = {
+      nombre_orador: r.discursante.nombre,
+      telefono_orador: r.discursante.telefono,
+      congregacion_origen: r.congregacion.nombre,
+    };
+
+    const actual = (entrante.titulo_discurso ?? '').trim();
+    const nuevos = r.discursante.bosquejos;
+    const cuadra = !!actual && nuevos.some(b => this.mismoBosquejo(b, actual));
+
+    let elegirDespues = false;
+    let aviso: { mensaje: string; detalle: string; accion: string; deshacer: EditarEntranteRequest } | null = null;
+    if (nuevos.length > 0 && !cuadra) {
+      const reemplazo = nuevos.length === 1 ? nuevos[0] : null;
+      if (reemplazo !== null || actual) payload.titulo_discurso = reemplazo;
+      elegirDespues = reemplazo === null;
+      if (actual) {
+        aviso = {
+          mensaje: `«${actual}» no está entre los bosquejos de ${r.discursante.nombre}`,
+          detalle: reemplazo
+            ? `Se cambió por su bosquejo «${reemplazo}».`
+            : 'Se quitó: elige uno de sus bosquejos en Discurso / Tema.',
+          accion: 'Mantener el anterior',
+          deshacer: { titulo_discurso: actual },
+        };
+      }
+    }
+
+    this.discursosMantenidos.delete(entrante.id_discurso_entrante);
+    this.svc.editarEntrante(entrante.id_discurso_entrante, payload, this.idCong).subscribe({
+      next: (updated) => {
+        this.updateEntrante(updated);
+        if ('titulo_discurso' in payload) this.verificarRepetido(updated);
+        if (aviso) this.avisosFila.update(m => ({ ...m, [entrante.id_discurso_entrante]: aviso! }));
+        else this.descartarAvisoFila(entrante.id_discurso_entrante);
+        // Con varios bosquejos no se elige por él: se abre su lista en el
+        // campo Discurso, una vez que la fila ya muestra al nuevo orador.
+        if (elegirDespues && campoDiscurso) {
+          afterNextRender(() => campoDiscurso.enfocar(), { injector: this.injector });
+        }
       },
       error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
     });
@@ -2403,7 +2928,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   abrirModalSaliente(): void {
-    this.nuevoSaliente = { fecha: '', id_publicador: null, congregacion_destino: '', tema_discurso: '', hora: '', ubicacion: null };
+    this.nuevoSaliente = { fecha: '', id_publicador: null, congregacion_destino: '', tema_discurso: '', hora: '', ubicacion: null, notas: '' };
     this.ubicacionAutorellenada.set(false);
     this.busquedaPublicador.set('');
     this.resultadosBusqueda.set(this.publicadores());
@@ -2599,7 +3124,7 @@ export class ReunionesDiscursosComponent implements OnInit {
       && (cacheado?.direccion_destino ?? null) === (saliente.direccion_destino ?? null)) {
       return cacheado;
     }
-    const ubic: UbicacionSaliente | null = saliente.url_mapa
+    const ubic: UbicacionSaliente | null = (saliente.url_mapa || saliente.direccion_destino)
       ? {
           direccion_destino: saliente.direccion_destino,
           url_mapa: saliente.url_mapa,
@@ -2621,7 +3146,8 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   onSalienteUbicacionChange(saliente: DiscursoSalienteOut, ubic: UbicacionSaliente | null): void {
-    if ((saliente.url_mapa ?? null) === (ubic?.url_mapa ?? null)) return;
+    if ((saliente.url_mapa ?? null) === (ubic?.url_mapa ?? null)
+      && (saliente.direccion_destino ?? null) === (ubic?.direccion_destino ?? null)) return;
     this.svc.editarSaliente(saliente.id_discurso_saliente, {
       direccion_destino: ubic?.direccion_destino ?? null,
       url_mapa: ubic?.url_mapa ?? null,
@@ -2652,9 +3178,43 @@ export class ReunionesDiscursosComponent implements OnInit {
         this.congregacionesContacto.set(r);
         this.congregacionesContactoLoaded.set(true);
         this.loadingCongregacionesContacto.set(false);
+        this.cargarArchivosDeCongregaciones(r);
       },
       error: () => this.loadingCongregacionesContacto.set(false),
     });
+  }
+
+  /**
+   * Trae de una vez los adjuntos de cada congregación del directorio, para que
+   * la tarjeta los muestre directamente: sin esto, "ver los archivos" exigía
+   * abrir "Editar" en cada una.
+   */
+  private cargarArchivosDeCongregaciones(rows: CongregacionContacto[]): void {
+    const idCong = this.idCong;
+    if (!rows.length || !idCong) return;
+    forkJoin(
+      rows.map((r) =>
+        this.svc.listarArchivosCongregacionContacto(r.id_congregacion_contacto, idCong).pipe(
+          map((a) => [r.id_congregacion_contacto, a] as const),
+          catchError(() => of([r.id_congregacion_contacto, [] as ArchivoCongregacionContacto[]] as const)),
+        ),
+      ),
+    ).subscribe((pares) => {
+      const mapa: Record<number, ArchivoCongregacionContacto[]> = {};
+      for (const [id, a] of pares) mapa[id] = a;
+      this.archivosPorCongregacion.set(mapa);
+    });
+  }
+
+  private refrescarArchivosCongregacion(id: number): void {
+    this.svc.listarArchivosCongregacionContacto(id, this.idCong).subscribe({
+      next: (a) => this.archivosPorCongregacion.update((m) => ({ ...m, [id]: a })),
+      error: () => {},
+    });
+  }
+
+  archivosDeCongregacion(c: CongregacionContacto): ArchivoCongregacionContacto[] {
+    return this.archivosPorCongregacion()[c.id_congregacion_contacto] ?? [];
   }
 
   readonly diaLabelMap: Record<string, string> = { Sabado: 'Sábado', Domingo: 'Domingo' };
@@ -2663,17 +3223,21 @@ export class ReunionesDiscursosComponent implements OnInit {
     return dia ? (this.diaLabelMap[dia] ?? dia) : '';
   }
 
-  diaDropdownAbierto = signal(false);
   seleccionarDiaCongregacionContacto(dia: string | null): void {
     this.nuevaCongregacionContacto.dia_reunion_fin_semana = dia;
-    this.diaDropdownAbierto.set(false);
   }
+
+  /** Estilo común de los campos del modal de congregación de contacto (el alto y el tamaño de letra los pone cada campo). */
+  readonly campoModal = 'min-w-0 w-full px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-[border-color,box-shadow] duration-150 ease-out';
+
+  /** Sugerencias para el cargo de un contacto; se puede escribir cualquier otro. */
+  readonly cargosContactoSugeridos = ['Coordinador del cuerpo de ancianos', 'Secretario', 'Coordinador de discursos', 'Superintendente de servicio'];
 
   private ubicacionContactoCache = new Map<number, UbicacionSaliente | null>();
   ubicacionDeContacto(c: CongregacionContacto): UbicacionSaliente | null {
     const cacheado = this.ubicacionContactoCache.get(c.id_congregacion_contacto);
-    if (cacheado !== undefined && cacheado?.url_mapa === c.url_mapa) return cacheado;
-    const u: UbicacionSaliente | null = c.url_mapa
+    if (cacheado !== undefined && cacheado?.url_mapa === c.url_mapa && cacheado?.direccion_destino === c.direccion) return cacheado;
+    const u: UbicacionSaliente | null = (c.url_mapa || c.direccion)
       ? { direccion_destino: c.direccion, url_mapa: c.url_mapa, lat: c.lat, lon: c.lon }
       : null;
     this.ubicacionContactoCache.set(c.id_congregacion_contacto, u);
@@ -2681,6 +3245,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   abrirModalCongregacionContacto(c?: CongregacionContacto): void {
+    this.archivosNuevosCongregacionContacto.set([]);
     if (c) {
       this.editandoCongregacionContacto.set(c);
       this.nuevaCongregacionContacto = {
@@ -2688,10 +3253,17 @@ export class ReunionesDiscursosComponent implements OnInit {
         hora_reunion_fin_semana: c.hora_reunion_fin_semana, notas: c.notas,
         ubicacion: c.url_mapa ? { direccion_destino: c.direccion, url_mapa: c.url_mapa, lat: c.lat, lon: c.lon } : null,
         personas: c.personas.map(p => ({ id_contacto_persona: p.id_contacto_persona, nombre: p.nombre, cargo: p.cargo, telefono: p.telefono })),
+        discursantes: c.discursantes.map(d => ({ id_discursante: d.id_discursante, nombre: d.nombre, telefono: d.telefono, bosquejos: [...d.bosquejos] })),
       };
+      this.archivosCongregacionContacto.set([]);
+      this.svc.listarArchivosCongregacionContacto(c.id_congregacion_contacto, this.idCong).subscribe({
+        next: (a) => this.archivosCongregacionContacto.set(a),
+        error: () => this.archivosCongregacionContacto.set([]),
+      });
     } else {
       this.editandoCongregacionContacto.set(null);
-      this.nuevaCongregacionContacto = { nombre: '', dia_reunion_fin_semana: null, hora_reunion_fin_semana: null, notas: null, ubicacion: null, personas: [] };
+      this.nuevaCongregacionContacto = { nombre: '', dia_reunion_fin_semana: null, hora_reunion_fin_semana: null, notas: null, ubicacion: null, personas: [], discursantes: [] };
+      this.archivosCongregacionContacto.set([]);
     }
     this.modalCongregacionContactoVisible.set(true);
   }
@@ -2699,15 +3271,111 @@ export class ReunionesDiscursosComponent implements OnInit {
   cerrarModalCongregacionContacto(): void {
     this.modalCongregacionContactoVisible.set(false);
     this.editandoCongregacionContacto.set(null);
-    this.diaDropdownAbierto.set(false);
+    this.archivosCongregacionContacto.set([]);
+    this.archivosNuevosCongregacionContacto.set([]);
+  }
+
+  formatoTamanoArchivo(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  onArchivosCongregacionContactoSeleccionados(input: HTMLInputElement): void {
+    const files = Array.from(input.files ?? []);
+    if (files.length) this.archivosNuevosCongregacionContacto.update(f => [...f, ...files]);
+    input.value = '';
+  }
+
+  quitarArchivoNuevoCongregacionContacto(i: number): void {
+    this.archivosNuevosCongregacionContacto.update(f => f.filter((_, idx) => idx !== i));
+  }
+
+  /** Borra de una un archivo ya subido: no vale la pena una confirmación aparte, igual que "quitar persona". */
+  eliminarArchivoCongregacionContactoModal(nombre: string): void {
+    const actual = this.editandoCongregacionContacto();
+    if (!actual) return;
+    this.svc.eliminarArchivoCongregacionContacto(actual.id_congregacion_contacto, nombre, this.idCong).subscribe({
+      next: () => {
+        this.archivosCongregacionContacto.update(a => a.filter(x => x.nombre !== nombre));
+        this.archivosPorCongregacion.update(m => ({
+          ...m,
+          [actual.id_congregacion_contacto]: (m[actual.id_congregacion_contacto] ?? []).filter(x => x.nombre !== nombre),
+        }));
+      },
+      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al eliminar el archivo'),
+    });
+  }
+
+  abrirArchivoCongregacionContacto(a: ArchivoCongregacionContacto): void {
+    const actual = this.editandoCongregacionContacto();
+    if (!actual) return;
+    this.abrirArchivoBlob(actual.id_congregacion_contacto, a.nombre);
+  }
+
+  /** Igual que abrir un archivo desde el modal, pero llamado desde la tarjeta del directorio. */
+  abrirArchivoDeCongregacion(c: CongregacionContacto, nombre: string): void {
+    this.abrirArchivoBlob(c.id_congregacion_contacto, nombre);
+  }
+
+  private abrirArchivoBlob(idCongContacto: number, nombre: string): void {
+    this.svc.descargarArchivoCongregacionContacto(idCongContacto, nombre, this.idCong).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al abrir el archivo'),
+    });
   }
 
   anadirPersonaModal(): void {
     this.nuevaCongregacionContacto.personas = [...this.nuevaCongregacionContacto.personas, { nombre: '', cargo: null, telefono: null }];
+    this.enfocarUltimaFila('data-fila-persona');
   }
 
   quitarPersonaModal(i: number): void {
     this.nuevaCongregacionContacto.personas = this.nuevaCongregacionContacto.personas.filter((_, idx) => idx !== i);
+  }
+
+  anadirDiscursanteModal(): void {
+    this.nuevaCongregacionContacto.discursantes = [...this.nuevaCongregacionContacto.discursantes, { nombre: '', telefono: null, bosquejos: [] }];
+    this.enfocarUltimaFila('data-fila-discursante');
+  }
+
+  /** Tras añadir una fila, el cursor salta a su nombre: añadir y escribir sin volver al ratón. */
+  private readonly injector = inject(Injector);
+  private enfocarUltimaFila(atributo: string): void {
+    afterNextRender(() => {
+      const campos = document.querySelectorAll<HTMLInputElement>(`[${atributo}]`);
+      campos[campos.length - 1]?.focus();
+    }, { injector: this.injector });
+  }
+
+  quitarDiscursanteModal(i: number): void {
+    this.nuevaCongregacionContacto.discursantes = this.nuevaCongregacionContacto.discursantes.filter((_, idx) => idx !== i);
+  }
+
+  /**
+   * Añade un bosquejo al discursante del modal y deja el campo vacío para el
+   * siguiente. Un bosquejo repetido (sin distinguir tildes ni mayúsculas) se
+   * ignora: el backend también lo descarta, pero así no parpadea en la lista.
+   */
+  anadirBosquejoModal(
+    d: { bosquejos: string[] },
+    texto: string | null,
+    campo: DiscursoCatalogoInputComponent,
+  ): void {
+    const b = (texto ?? '').trim();
+    campo.limpiar();
+    if (!b) return;
+    const nuevo = this.normalizarTexto(b);
+    if (d.bosquejos.some(x => this.normalizarTexto(x) === nuevo)) return;
+    d.bosquejos = [...d.bosquejos, b];
+  }
+
+  quitarBosquejoModal(d: { bosquejos: string[] }, j: number): void {
+    d.bosquejos = d.bosquejos.filter((_, idx) => idx !== j);
   }
 
   guardarCongregacionContacto(): void {
@@ -2729,18 +3397,18 @@ export class ReunionesDiscursosComponent implements OnInit {
       : this.svc.crearCongregacionContacto(payload, this.idCong);
 
     guardarBase$.subscribe({
-      next: (base) => this.guardarPersonasDelModal(base, actual?.personas ?? []),
+      next: (base) => this.guardarPersonasDelModal(base, actual?.personas ?? [], actual?.discursantes ?? []),
       error: (e) => this.errorMsg.set(e?.error?.detail ?? (actual ? 'Error al guardar' : 'Error al crear')),
     });
   }
 
   /**
-   * Reconcilia la lista de personas del modal contra las que tenía la
-   * congregación antes de abrirlo: crea las nuevas (sin id), edita las que ya
-   * existían y borra las que se quitaron de la lista. Al terminar, recarga el
-   * directorio para reflejar los ids reales de las personas recién creadas.
+   * Reconcilia personas y discursantes del modal contra lo que tenía la
+   * congregación antes de abrirlo: crea lo nuevo (sin id), edita lo que ya
+   * existía y borra lo que se quitó de la lista. Al terminar, recarga el
+   * directorio para reflejar los ids reales de lo recién creado.
    */
-  private guardarPersonasDelModal(base: CongregacionContacto, originales: ContactoPersona[]): void {
+  private guardarPersonasDelModal(base: CongregacionContacto, originales: ContactoPersona[], originalesDiscursantes: Discursante[]): void {
     const idCong = this.idCong;
     if (!idCong) { this.cerrarModalCongregacionContacto(); return; }
     const idCongContacto = base.id_congregacion_contacto;
@@ -2763,6 +3431,23 @@ export class ReunionesDiscursosComponent implements OnInit {
       }
     }
 
+    const discursantesActuales = this.nuevaCongregacionContacto.discursantes;
+    const idsDiscursantesConservados = new Set(discursantesActuales.filter(d => d.id_discursante != null).map(d => d.id_discursante));
+    for (const d of discursantesActuales) {
+      if (!d.nombre.trim()) continue;
+      const datos = { nombre: d.nombre.trim(), telefono: d.telefono || null, bosquejos: d.bosquejos };
+      peticiones.push(
+        d.id_discursante != null
+          ? this.svc.editarDiscursante(idCongContacto, d.id_discursante, datos, idCong)
+          : this.svc.crearDiscursante(idCongContacto, datos, idCong)
+      );
+    }
+    for (const orig of originalesDiscursantes) {
+      if (!idsDiscursantesConservados.has(orig.id_discursante)) {
+        peticiones.push(this.svc.eliminarDiscursante(idCongContacto, orig.id_discursante, idCong));
+      }
+    }
+
     const finalizar = () => {
       this.svc.getCongregacionesContacto(idCong).subscribe({
         next: (lista) => this.congregacionesContacto.set(lista),
@@ -2772,12 +3457,22 @@ export class ReunionesDiscursosComponent implements OnInit {
       // servicio: sin invalidarlo, renombrar una congregación aquí la seguiría
       // ofreciendo con el nombre viejo en las tarjetas del mes.
       this.svc.invalidarDirectorioContacto();
+      this.refrescarArchivosCongregacion(idCongContacto);
       this.cerrarModalCongregacionContacto();
     };
 
-    if (peticiones.length === 0) { finalizar(); return; }
+    const subirArchivosYFinalizar = () => {
+      const pendientes = this.archivosNuevosCongregacionContacto();
+      if (!pendientes.length) { finalizar(); return; }
+      forkJoin(pendientes.map(f => this.svc.subirArchivoCongregacionContacto(idCongContacto, f, idCong))).subscribe({
+        next: finalizar,
+        error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al subir los archivos adjuntos'),
+      });
+    };
+
+    if (peticiones.length === 0) { subirArchivosYFinalizar(); return; }
     forkJoin(peticiones).subscribe({
-      next: finalizar,
+      next: subirArchivosYFinalizar,
       error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar los contactos'),
     });
   }
@@ -2791,6 +3486,10 @@ export class ReunionesDiscursosComponent implements OnInit {
         this.svc.eliminarCongregacionContacto(c.id_congregacion_contacto, this.idCong).subscribe({
           next: () => {
             this.congregacionesContacto.set(this.congregacionesContacto().filter(x => x.id_congregacion_contacto !== c.id_congregacion_contacto));
+            this.archivosPorCongregacion.update(m => {
+              const { [c.id_congregacion_contacto]: _eliminado, ...resto } = m;
+              return resto;
+            });
             this.svc.invalidarDirectorioContacto();
           },
           error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al eliminar'),
@@ -2799,8 +3498,8 @@ export class ReunionesDiscursosComponent implements OnInit {
     });
   }
 
-  /** Reutiliza el modal de WhatsApp ya existente para escribir a un contacto. */
-  contactarPersona(p: ContactoPersona): void {
+  /** Reutiliza el modal de WhatsApp ya existente para escribir a un contacto o discursante. */
+  contactarPersona(p: { nombre: string; telefono: string | null }): void {
     this.whatsappPendiente.set({
       nombre: p.nombre,
       telefono: this.normalizarTelefono(p.telefono),

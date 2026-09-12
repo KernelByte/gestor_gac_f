@@ -266,6 +266,37 @@ export class DiscursosService {
     return this.http.delete<void>(`${this.base}/congregaciones-contacto/${idCongContacto}/contactos/${idPersona}`, { params: this.congParams(idCong) });
   }
 
+  crearDiscursante(idCongContacto: number, payload: CrearDiscursanteRequest, idCong: number | null): Observable<Discursante> {
+    return this.http.post<Discursante>(`${this.base}/congregaciones-contacto/${idCongContacto}/discursantes`, payload, { params: this.congParams(idCong) });
+  }
+
+  editarDiscursante(idCongContacto: number, idDiscursante: number, payload: EditarDiscursanteRequest, idCong: number | null): Observable<Discursante> {
+    return this.http.put<Discursante>(`${this.base}/congregaciones-contacto/${idCongContacto}/discursantes/${idDiscursante}`, payload, { params: this.congParams(idCong) });
+  }
+
+  eliminarDiscursante(idCongContacto: number, idDiscursante: number, idCong: number | null): Observable<void> {
+    return this.http.delete<void>(`${this.base}/congregaciones-contacto/${idCongContacto}/discursantes/${idDiscursante}`, { params: this.congParams(idCong) });
+  }
+
+  listarArchivosCongregacionContacto(idCongContacto: number, idCong: number | null): Observable<ArchivoCongregacionContacto[]> {
+    return this.http.get<ArchivoCongregacionContacto[]>(`${this.base}/congregaciones-contacto/${idCongContacto}/archivos`, { params: this.congParams(idCong) });
+  }
+
+  subirArchivoCongregacionContacto(idCongContacto: number, archivo: File, idCong: number | null): Observable<ArchivoCongregacionContacto> {
+    const fd = new FormData();
+    fd.append('archivo', archivo);
+    return this.http.post<ArchivoCongregacionContacto>(`${this.base}/congregaciones-contacto/${idCongContacto}/archivos`, fd, { params: this.congParams(idCong) });
+  }
+
+  eliminarArchivoCongregacionContacto(idCongContacto: number, nombre: string, idCong: number | null): Observable<void> {
+    return this.http.delete<void>(`${this.base}/congregaciones-contacto/${idCongContacto}/archivos/${encodeURIComponent(nombre)}`, { params: this.congParams(idCong) });
+  }
+
+  /** El endpoint exige el token de sesión, así que no sirve un <a href> directo: se trae como blob y se abre con una URL de objeto. */
+  descargarArchivoCongregacionContacto(idCongContacto: number, nombre: string, idCong: number | null): Observable<Blob> {
+    return this.http.get(`${this.base}/congregaciones-contacto/${idCongContacto}/archivos/${encodeURIComponent(nombre)}`, { params: this.congParams(idCong), responseType: 'blob' });
+  }
+
   // ── Historial de discursos ────────────────────────────────────────────────
 
   getHistorialEntrantes(idCong: number | null, desde: string | null, hasta: string | null): Observable<HistorialEntrantesOut> {

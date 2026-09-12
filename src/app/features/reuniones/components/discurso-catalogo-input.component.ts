@@ -73,12 +73,46 @@ import { CatalogoDiscurso } from '../models/discursos.models';
       }
     </div>
 
-    @if (abierto() && sugerencias().length > 0) {
+    @if (abierto() && (sugerencias().length > 0 || propios().length > 0)) {
       <div class="fixed z-[60] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden"
         [style.top.px]="pos().top" [style.left.px]="pos().left" [style.width.px]="pos().width"
-        [id]="listboxId" role="listbox">
-        <div class="flex flex-col p-1.5 gap-0.5 max-h-64 overflow-y-auto simple-scrollbar">
-          @for (d of sugerencias(); track d.numero; let i = $index) {
+        [id]="listboxId" role="listbox" (mousedown)="$event.preventDefault()">
+        <div class="flex flex-col p-1.5 gap-0.5 max-h-72 overflow-y-auto simple-scrollbar">
+          <!-- Bosquejos que el orador tiene preparados: van primero y aparte
+               del catálogo, porque normalmente se elige entre ellos. -->
+          @if (propios().length > 0) {
+            <p role="presentation" class="px-2.5 pt-1.5 pb-1 text-[0.6rem] font-bold uppercase tracking-wider text-teal-700/80 dark:text-teal-300/70">
+              {{ sugeridosTitulo || 'Bosquejos del orador' }}
+            </p>
+            @for (b of propios(); track b.texto; let j = $index) {
+              <button type="button"
+                [id]="listboxId + '-' + j"
+                role="option"
+                [attr.aria-selected]="j === resaltado()"
+                (mousedown)="$event.preventDefault(); elegirTexto(b.texto)"
+                (mouseenter)="resaltado.set(j)"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-[background-color] duration-100 ease-out"
+                [class]="j === resaltado() ? 'bg-teal-50 dark:bg-teal-400/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'">
+                <span class="shrink-0 min-w-[2rem] h-6 px-1.5 rounded-md text-[0.65rem] font-black flex items-center justify-center bg-teal-100 dark:bg-teal-400/15 text-teal-700 dark:text-teal-300">
+                  {{ b.numero ?? '—' }}
+                </span>
+                <span class="flex-1 min-w-0 text-sm font-medium leading-snug"
+                  [class]="j === resaltado() ? 'text-teal-800 dark:text-teal-200' : 'text-slate-700 dark:text-slate-200'">
+                  {{ b.titulo }}
+                </span>
+                @if (b.esActual) {
+                  <span class="shrink-0 text-[0.6rem] font-bold text-teal-700 dark:text-teal-300">Actual</span>
+                }
+              </button>
+            }
+            @if (sugerencias().length > 0) {
+              <p role="presentation" class="mt-1 px-2.5 pt-2 pb-1 border-t border-slate-100 dark:border-slate-800 text-[0.6rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Catálogo
+              </p>
+            }
+          }
+          @for (d of sugerencias(); track d.numero; let k = $index) {
+            @let i = k + propios().length;
             <button type="button"
               [id]="listboxId + '-' + i"
               role="option"
@@ -133,6 +167,17 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
    */
   @Input() formato: 'numerado' | 'titulo' = 'numerado';
 
+  /**
+   * Bosquejos que el orador de la fila tiene preparados ("110. Título").
+   * Se ofrecen arriba, aparte del catálogo, y se enseñan nada más entrar al
+   * campo aunque no se haya escrito nada.
+   */
+  @Input() set sugeridos(v: readonly string[] | null | undefined) {
+    this._sugeridos = v ?? [];
+  }
+  @Input() sugeridosTitulo = '';
+  private _sugeridos: readonly string[] = [];
+
   /** Valor final del campo: al elegir una sugerencia o al salir del campo. */
   @Output() commit = new EventEmitter<string | null>();
   /** El bosquejo elegido, para quien necesite el número por separado. */
@@ -143,6 +188,8 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
   texto = signal('');
   catalogo = signal<CatalogoDiscurso[]>([]);
   sugerencias = signal<CatalogoDiscurso[]>([]);
+  /** Bosquejos del orador que coinciden con lo escrito (van antes del catálogo). */
+  propios = signal<{ texto: string; numero: number | null; titulo: string; esActual: boolean }[]>([]);
   totalCoincidencias = signal(0);
   abierto = signal(false);
   resaltado = signal(-1);
@@ -181,8 +228,39 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
   }
 
   onFocus(): void {
-    // Sin nada escrito no se abre una lista de 194 elementos encima del campo.
-    if (this.texto().trim()) this.filtrar(this.texto());
+    // Sin nada escrito no se abre una lista de 194 elementos encima del campo;
+    // pero si el orador tiene bosquejos preparados, esos sí se enseñan. Si el
+    // texto ya es uno de ellos, se enseñan todos para poder cambiarlo.
+    if (this._sugeridos.length > 0) this.filtrar(this.esPropio(this.texto()) ? '' : this.texto());
+    else if (this.texto().trim()) this.filtrar(this.texto());
+  }
+
+  /** Enfoca el campo desde fuera (p. ej. tras elegir un orador con varios bosquejos) y abre su lista. */
+  enfocar(): void {
+    const el = this.campoRef?.nativeElement;
+    if (!el || this.disabled) return;
+    if (document.activeElement === el) this.onFocus();
+    else el.focus();
+  }
+
+  /** Vacía el campo sin emitir nada (para campos que añaden a una lista y se reutilizan). */
+  limpiar(): void {
+    this.texto.set('');
+    this.ultimoEmitido = null;
+    this.cerrar();
+  }
+
+  /**
+   * Confirma lo escrito como si se saliera del campo (Enter en un campo de
+   * "añadir"). Un número suelto que está en el catálogo se completa con su
+   * título: "72" se guardaría sin decir qué discurso es.
+   */
+  confirmar(): void {
+    this.cerrar();
+    const t = this.texto().trim();
+    const d = /^\d{1,3}$/.test(t) ? this.catalogo().find(c => c.numero === +t) : undefined;
+    if (d) this.elegir(d);
+    else this.emitirSiCambio(this.texto());
   }
 
   onBlur(): void {
@@ -196,22 +274,24 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
       this.cerrar();
       return;
     }
-    if (!this.abierto() || this.sugerencias().length === 0) {
-      if (ev.key === 'ArrowDown' && this.texto().trim()) this.filtrar(this.texto());
+    const total = this.propios().length + this.sugerencias().length;
+    if (!this.abierto() || total === 0) {
+      if (ev.key === 'ArrowDown' && (this.texto().trim() || this._sugeridos.length > 0)) this.filtrar(this.texto());
       return;
     }
     if (ev.key === 'ArrowDown') {
       ev.preventDefault();
-      this.resaltado.set((this.resaltado() + 1) % this.sugerencias().length);
+      this.resaltado.set((this.resaltado() + 1) % total);
     } else if (ev.key === 'ArrowUp') {
       ev.preventDefault();
-      const n = this.sugerencias().length;
-      this.resaltado.set((this.resaltado() - 1 + n) % n);
+      this.resaltado.set((this.resaltado() - 1 + total) % total);
     } else if (ev.key === 'Enter') {
       const i = this.resaltado();
       if (i >= 0) {
         ev.preventDefault();
-        this.elegir(this.sugerencias()[i]);
+        const nPropios = this.propios().length;
+        if (i < nPropios) this.elegirTexto(this.propios()[i].texto);
+        else this.elegir(this.sugerencias()[i - nPropios]);
       }
     } else if (ev.key === 'Tab') {
       this.cerrar();
@@ -225,6 +305,19 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
     this.resaltado.set(-1);
     this.onChange(texto);
     this.seleccion.emit(d);
+    this.emitirSiCambio(texto);
+    this.campoRef?.nativeElement.focus();
+  }
+
+  /** Elige uno de los bosquejos del orador: se escribe tal cual está guardado. */
+  elegirTexto(texto: string): void {
+    this.texto.set(texto);
+    this.cerrar();
+    this.resaltado.set(-1);
+    this.onChange(texto);
+    const m = /^\s*(\d{1,3})\s*[.\-–]/.exec(texto);
+    const d = m ? this.catalogo().find(c => c.numero === +m[1]) : undefined;
+    if (d) this.seleccion.emit(d);
     this.emitirSiCambio(texto);
     this.campoRef?.nativeElement.focus();
   }
@@ -270,9 +363,18 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
   private filtrar(q: string): void {
     const query = q.trim();
     const datos = this.catalogo();
+    const propios = this.propiosQueCoinciden(query);
+    this.propios.set(propios);
     if (!query || datos.length === 0) {
-      this.cerrar();
       this.sugerencias.set([]);
+      this.totalCoincidencias.set(0);
+      if (propios.length > 0) {
+        this.resaltado.set(Math.max(propios.findIndex(p => p.esActual), 0));
+        this.medir();
+        this.abrir();
+      } else {
+        this.cerrar();
+      }
       return;
     }
 
@@ -292,16 +394,44 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
       });
     }
 
+    // Lo que ya está entre los bosquejos del orador no se repite en el catálogo.
+    const numerosPropios = new Set(propios.map(p => p.numero).filter((n): n is number => n != null));
+    coincidencias = coincidencias.filter(d => !numerosPropios.has(d.numero));
+
     this.totalCoincidencias.set(coincidencias.length);
     this.sugerencias.set(coincidencias.slice(0, 8));
-    this.resaltado.set(coincidencias.length > 0 ? 0 : -1);
+    const total = propios.length + Math.min(coincidencias.length, 8);
+    this.resaltado.set(total > 0 ? 0 : -1);
 
-    if (coincidencias.length > 0) {
+    if (total > 0) {
       this.medir();
       this.abrir();
     } else {
       this.cerrar();
     }
+  }
+
+  /** Bosquejos del orador que casan con lo escrito (todos si no hay texto), ya troceados en número y título. */
+  private propiosQueCoinciden(query: string) {
+    const tokens = this.normalizar(query).split(/\s+/).filter(Boolean);
+    const actual = this.normalizar(this.texto().trim());
+    return this._sugeridos
+      .map(texto => {
+        const m = /^\s*(\d{1,3})\s*[.\-–]\s*(.+)$/.exec(texto);
+        return {
+          texto,
+          numero: m ? +m[1] : null,
+          titulo: m ? m[2] : texto,
+          esActual: !!actual && this.normalizar(texto) === actual,
+        };
+      })
+      .filter(b => tokens.every(t => this.normalizar(b.texto).includes(t)));
+  }
+
+  /** Si el texto es exactamente uno de los bosquejos del orador. */
+  private esPropio(texto: string): boolean {
+    const t = this.normalizar(texto.trim());
+    return !!t && this._sugeridos.some(b => this.normalizar(b) === t);
   }
 
   /**
@@ -333,7 +463,8 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
     const left = Math.max(margen, Math.min(r.left, window.innerWidth - ancho - margen));
 
     // Si no cabe debajo, el desplegable sale por encima del campo.
-    const alto = Math.min(264, this.sugerencias().length * 44 + 12);
+    const filas = this.propios().length + this.sugerencias().length;
+    const alto = Math.min(300, filas * 44 + (this.propios().length > 0 ? 60 : 12));
     const cabeDebajo = window.innerHeight - r.bottom > alto + 8;
 
     this.pos.set({
