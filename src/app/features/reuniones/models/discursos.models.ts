@@ -76,6 +76,8 @@ export interface DiscursoSalienteOut {
   publicador: PublicadorSimple | null;
   congregacion_destino: string | null;
   tema_discurso: string | null;
+  /** Copia congelada del id de docs.jw.org al momento de escribir tema_discurso; null si no matcheó el catálogo. */
+  meps_document_id: number | null;
   hora: string | null;
   direccion_destino: string | null;
   url_mapa: string | null;
@@ -249,6 +251,31 @@ export interface CatalogoPublicacion {
 export interface CatalogoResponse {
   publicacion: CatalogoPublicacion | null;
   discursos: CatalogoDiscurso[];
+}
+
+/** Un cántico de "Cantemos con gozo a Jehová". Himnario fijo, catálogo global. */
+export interface CatalogoCantico {
+  numero: number;
+  titulo: string;
+}
+
+/** Qué archivo se cargó por última vez y cuándo. */
+export interface CatalogoCanticosPublicacion {
+  archivo: string | null;
+  total: number;
+  importado_en: string | null;
+}
+
+export interface CatalogoCanticosResponse {
+  publicacion: CatalogoCanticosPublicacion | null;
+  canticos: CatalogoCantico[];
+}
+
+export interface ResumenImportacionCanticos extends CatalogoCanticosResponse {
+  total: number;
+  insertados: number;
+  actualizados: number;
+  desactivados: number;
 }
 
 export interface ResumenImportacion extends CatalogoResponse {

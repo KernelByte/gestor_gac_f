@@ -39,7 +39,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
 @Component({
   selector: 'app-reuniones-discursos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePickerComponent, TimePickerComponent, UbicacionPickerComponent, DiscursoCatalogoInputComponent, CongregacionContactoInputComponent, HistorialDiscursosComponent],
+  imports: [CommonModule, FormsModule, DatePickerComponent, TimePickerComponent, UbicacionPickerComponent, DiscursoCatalogoInputComponent, CanticoCatalogoInputComponent, CongregacionContactoInputComponent, OradorCatalogoInputComponent, HistorialDiscursosComponent, Hora12Pipe],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -720,31 +720,83 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                             [idCong]="idCongActual()"
                             [permitirCrear]="hasEditPermission()"
                             (commit)="guardarCampoEntrante(entrante, 'congregacion_origen', $event)"
+                            (seleccion)="elegirCongregacionOrigen(entrante, $event)"
                             placeholder="Congregación"
-                            inputClass="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full"></app-congregacion-contacto-input>
+                            inputClass="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-slate-300 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full"></app-congregacion-contacto-input>
                         </div>
                         <div class="flex flex-col gap-1">
-                          <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Hospitalidad</label>
+                          <label class="flex items-center gap-1 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19a3 3 0 11-6 0 3 3 0 016 0zm12-3a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            Cántico
+                          </label>
+                          <app-cantico-catalogo-input
+                            [value]="entrante.cantico ?? ''"
+                            [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
+                            (commit)="guardarCampoEntrante(entrante, 'cantico', $event)"
+                            placeholder="Nº o título del cántico"
+                            inputClass="h-10 pl-3 pr-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-slate-300 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full"></app-cantico-catalogo-input>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                          <label class="flex items-center gap-1 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            Hospitalidad
+                          </label>
                           <select
                             [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
                             (change)="onEntranteGrupoChange(entrante, $event)"
-                            class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full">
+                            class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-slate-300 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full">
                             <option value="" [selected]="!entrante.id_grupo_hospitalidad">— Sin asignar —</option>
                             @for (g of grupos(); track g.id_grupo) {
                               <option [value]="g.id_grupo + ''" [selected]="entrante.id_grupo_hospitalidad === g.id_grupo">{{ g.nombre_grupo }}</option>
                             }
                           </select>
                         </div>
-                        <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3 xl:col-span-4">
+                        <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3 xl:col-span-5">
                           <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Notas</label>
                           <input type="text"
                             [value]="entrante.notas ?? ''"
                             [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
                             (blur)="onEntranteChange(entrante, 'notas', $event)"
                             placeholder="Notas adicionales"
-                            class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full">
+                            class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-slate-300 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full">
                         </div>
                       </div>
+                      </div>
+                      }
+
+                      <!-- Algo de la fila dejó de cuadrar al elegir de una lista
+                           (un discurso que no es del orador, un orador que no es
+                           de la congregación) y se corrigió. Se ofrece deshacerlo
+                           por si esa vez es realmente así. -->
+                      @if (avisosFila()[entrante.id_discurso_entrante]; as cambio) {
+                        <div class="flex items-start gap-2.5 px-3 sm:px-4 py-2.5 border-t border-amber-200/60 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/15" role="status">
+                          <svg class="w-4 h-4 mt-0.5 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                          <div class="flex-1 min-w-0">
+                            <p class="text-[0.7rem] font-bold text-amber-700 dark:text-amber-400">{{ cambio.mensaje }}</p>
+                            <p class="text-[0.65rem] text-amber-600/90 dark:text-amber-400/80">{{ cambio.detalle }}</p>
+                          </div>
+                          <div class="shrink-0 flex items-center gap-1">
+                            <button type="button" (click)="deshacerAvisoFila(entrante)"
+                              class="px-2.5 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/60 text-[0.65rem] font-bold text-amber-800 dark:text-amber-300 transition-colors active:scale-95">
+                              {{ cambio.accion }}
+                            </button>
+                            <button type="button" (click)="descartarAvisoFila(entrante.id_discurso_entrante)" aria-label="Cerrar aviso"
+                              class="w-7 h-7 rounded-lg flex items-center justify-center text-amber-600/70 dark:text-amber-400/70 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors">
+                              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                          </div>
+                        </div>
+                      } @else if (discursoFueraDeBosquejos(entrante); as fuera) {
+                        <!-- Discurso puesto a mano que no es de los bosquejos del
+                             orador registrado: se permite, solo se avisa. -->
+                        <div class="flex items-start gap-2.5 px-3 sm:px-4 py-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
+                          <svg class="w-4 h-4 mt-0.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 16v-4M12 8h.01"/></svg>
+                          <p class="flex-1 min-w-0 text-[0.7rem] text-slate-500 dark:text-slate-400">
+                            Este discurso no está entre los bosquejos registrados de <span class="font-semibold text-slate-700 dark:text-slate-200">{{ fuera.orador }}</span>
+                            ({{ fuera.etiquetas }}).
+                          </p>
+                        </div>
+                      }
 
                       <!-- Aviso de discurso repetido: solo informa, nunca bloquea. -->
                       @if ((repeticiones()[entrante.id_discurso_entrante] ?? []).length > 0) {

@@ -329,4 +329,38 @@ export class DiscursosService {
   borrarCatalogo(): Observable<{ borrados: number }> {
     return this.http.delete<{ borrados: number }>(`${this.base}/catalogo`);
   }
+
+  // ── Catálogo de cánticos ("Cantemos con gozo a Jehová") ────────────────────
+  // Himnario fijo, 151 registros: igual que el catálogo de discursos, se
+  // descarga entero una vez y se filtra en cliente.
+
+  private catalogoCanticos$?: Observable<CatalogoCanticosResponse>;
+
+  getCatalogoCanticos(): Observable<CatalogoCanticosResponse> {
+    if (!this.catalogoCanticos$) {
+      this.catalogoCanticos$ = this.http
+        .get<CatalogoCanticosResponse>(`${this.base}/canticos/catalogo`)
+        .pipe(shareReplay({ bufferSize: 1, refCount: false }));
+    }
+    return this.catalogoCanticos$;
+  }
+
+  /** Invalida la caché tras importar o vaciar, para que la próxima lectura sea fresca. */
+  invalidarCatalogoCanticos(): void {
+    this.catalogoCanticos$ = undefined;
+  }
+
+  /** Sube el PDF "sin partitura" del himnario. Pesa unos pocos MB: sin barra de progreso. */
+  importarCanticos(file: File): Observable<HttpEvent<ResumenImportacionCanticos>> {
+    const form = new FormData();
+    form.append('archivo', file, file.name);
+    const req = new HttpRequest<FormData>('POST', `${this.base}/canticos/catalogo/importar`, form, {
+      reportProgress: true,
+    });
+    return this.http.request<ResumenImportacionCanticos>(req);
+  }
+
+  borrarCanticos(): Observable<{ borrados: number }> {
+    return this.http.delete<{ borrados: number }>(`${this.base}/canticos/catalogo`);
+  }
 }

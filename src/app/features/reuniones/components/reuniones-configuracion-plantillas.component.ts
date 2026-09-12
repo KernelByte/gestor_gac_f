@@ -11,6 +11,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
 import { DatePickerComponent } from '../../../shared/components/date-picker/date-picker.component';
 import { SelectPickerComponent, PickerOption } from '../../../shared/components/select-picker/select-picker.component';
 import { CatalogoDiscursosComponent } from './catalogo-discursos.component';
+import { CatalogoCanticosComponent } from './catalogo-canticos.component';
 import { ReportePrivilegiosDialogComponent } from './reporte-privilegios-dialog.component';
 import { inicialesDe, nombreLegal, nombreMostrado } from '../../../core/utils/nombre.util';
 import {
@@ -36,7 +37,7 @@ import {
 @Component({
   selector: 'app-reuniones-configuracion-plantillas',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, CatalogoDiscursosComponent, ReportePrivilegiosDialogComponent],
+  imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, CatalogoDiscursosComponent, CatalogoCanticosComponent, ReportePrivilegiosDialogComponent],
   template: `
     <div class="cfg-root flex flex-col gap-5 h-full">
 
@@ -1532,6 +1533,10 @@ import {
          <app-catalogo-discursos />
        } <!-- end catalogo tab -->
 
+       @if (activeTab() === 'catalogo-canticos') {
+         <app-catalogo-canticos />
+       } <!-- end catalogo-canticos tab -->
+
        <!-- ===== MODAL: REPORTE DE PERMISOS ===== -->
        @if (reporteAbierto()) {
          <app-reporte-privilegios-dialog
@@ -2215,7 +2220,8 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     { id: 'sin-reunion', label: 'Semanas sin reunión' },
     { id: 'parametros', label: 'Parámetros del Algoritmo' },
     { id: 'plantillas', label: 'Plantillas de Reunión' },
-    { id: 'catalogo', label: 'Catálogo de Discursos' }
+    { id: 'catalogo', label: 'Catálogo de Discursos' },
+    { id: 'catalogo-canticos', label: 'Catálogo de Cánticos' }
   ];
 
   puedeGestionarPlantillas = computed(() => {
@@ -2226,7 +2232,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   visibleTabs = computed(() => {
     return this.puedeGestionarPlantillas()
       ? this.allTabs
-      : this.allTabs.filter(t => t.id !== 'plantillas' && t.id !== 'parametros' && t.id !== 'catalogo');
+      : this.allTabs.filter(t => t.id !== 'plantillas' && t.id !== 'parametros' && t.id !== 'catalogo' && t.id !== 'catalogo-canticos');
   });
 
   activeTab = signal('privilegios');
