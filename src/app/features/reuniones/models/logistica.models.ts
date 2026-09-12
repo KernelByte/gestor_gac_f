@@ -82,6 +82,8 @@ export interface ConfirmarLogisticaRequest {
 export interface PublicadorBase {
   id_publicador: number;
   nombre_completo: string;
+  /** Última fecha (ISO) en que hizo este mismo puesto en esta congregación, o null si nunca. */
+  ultima_vez?: string | null;
 }
 
 export interface LogisticaItemOut {

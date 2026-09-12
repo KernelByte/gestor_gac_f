@@ -7,6 +7,7 @@ import { RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { whatsappUrl } from '../../../shared/whatsapp';
+import { SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { LogisticaService } from '../services/logistica.service';
 import { ConflictosService } from '../services/conflictos.service';
 import { ReunionesService } from '../services/reuniones.service';
@@ -92,7 +93,7 @@ function normalizarTexto(s: string): string {
 @Component({
   selector: 'app-reuniones-logistica',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, SelectPickerComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -116,9 +117,6 @@ function normalizarTexto(s: string): string {
         <span class="hidden md:block md:flex-1" aria-hidden="true"></span>
 
         @if (mesDatos() && estado() !== 'loading') {
-          <!-- Filete: separa el título del resto de la barra. -->
-          <span class="hidden md:block w-px h-7 bg-slate-200 dark:bg-slate-700 shrink-0" aria-hidden="true"></span>
-
           <!-- ===== BANDEJA DE CONTROL DEL MES ===== -->
           <!-- Antes cada control era su propia píldora suelta sobre el fondo
                de la página: mes y estado a un lado sin chrome propio, y las
@@ -1056,7 +1054,7 @@ function normalizarTexto(s: string): string {
 
     <!-- ===== MODAL CONFIRMACIÓN ===== -->
     @if (confirmPendiente()) {
-      <div data-testid="log-modal-confirm" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div data-testid="log-modal-confirm" class="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 border border-slate-200 dark:border-slate-700">
           <div class="flex items-start gap-3">
             <div
@@ -1121,7 +1119,7 @@ function normalizarTexto(s: string): string {
                 <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 007.07 0l1.93-1.93a5 5 0 00-7.07-7.07L10.5 5.5"/><path d="M14 11a5 5 0 00-7.07 0l-1.93 1.93a5 5 0 007.07 7.07L13.5 18.5"/></svg>
                 <span class="text-[0.65rem] font-black uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Enlace público</span>
               </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Cualquier publicador puede abrirlo sin iniciar sesión. Expira solo.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Compártelo con el ayudante de cartelera: desde ahí puede enviar las asignaciones por WhatsApp antes de cada reunión, sin iniciar sesión. Expira solo.</p>
 
               @if (cargandoEnlace()) {
                 <p class="text-xs text-slate-400">Cargando…</p>
@@ -1172,11 +1170,13 @@ function normalizarTexto(s: string): string {
               @if (mesDatos()?.fechas?.length) {
                 <label class="block mb-2">
                   <span class="block text-[0.6rem] font-bold uppercase tracking-wide text-slate-400 mb-1">Fecha</span>
-                  <select [(ngModel)]="whatsappFechaSeleccionada" class="w-full h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200">
-                    @for (f of mesDatos()!.fechas; track f.fecha) {
-                      <option [value]="f.fecha">{{ formatFecha(f.fecha) }} · {{ f.dia_semana }}</option>
-                    }
-                  </select>
+                  <app-select-picker
+                    [(ngModel)]="whatsappFechaSeleccionada"
+                    [options]="whatsappFechaOptions()"
+                    [clearable]="false"
+                    colorScheme="violet"
+                    ariaLabel="Fecha">
+                  </app-select-picker>
                 </label>
                 <button
                   (click)="abrirWhatsapp()"
@@ -1791,7 +1791,10 @@ function normalizarTexto(s: string): string {
               type="button"
               (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
               [class]="'w-full text-left text-xs px-3 py-2 transition-colors ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800')">
-              {{ c.nombre_completo }}
+              <span class="block">{{ c.nombre_completo }}</span>
+              @if (c.ultima_vez) {
+                <span class="block text-[0.6rem] font-normal text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
+              }
             </button>
           }
         }
@@ -1808,7 +1811,12 @@ function normalizarTexto(s: string): string {
               type="button"
               (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
               [class]="'w-full text-left px-3 py-2 transition-colors flex items-baseline gap-2 ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800')">
-              <span class="flex-1 min-w-0 truncate text-xs text-slate-500 dark:text-slate-400">{{ c.nombre_completo }}</span>
+              <span class="flex-1 min-w-0">
+                <span class="block truncate text-xs text-slate-500 dark:text-slate-400">{{ c.nombre_completo }}</span>
+                @if (c.ultima_vez) {
+                  <span class="block text-[0.55rem] text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
+                }
+              </span>
               <span class="shrink-0 text-[0.55rem] font-semibold text-amber-600 dark:text-amber-500">{{ motivoOcupado(c.id_publicador) }}</span>
             </button>
           }
@@ -1919,7 +1927,10 @@ function normalizarTexto(s: string): string {
                   type="button"
                   (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
                   [class]="'w-full text-left text-sm px-3 py-3 rounded-xl transition-colors ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800')">
-                  {{ c.nombre_completo }}
+                  <span class="block">{{ c.nombre_completo }}</span>
+                  @if (c.ultima_vez) {
+                    <span class="block text-xs font-normal text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
+                  }
                 </button>
               }
             }
@@ -1933,7 +1944,12 @@ function normalizarTexto(s: string): string {
                   type="button"
                   (mousedown)="$event.preventDefault(); seleccionarCandidatoActiva(c.id_publicador)"
                   [class]="'w-full text-left px-3 py-3 rounded-xl transition-colors flex items-baseline gap-2 ' + (activeCellAsignacion()?.publicador?.id_publicador === c.id_publicador ? 'bg-violet-50 dark:bg-violet-900/20 font-semibold text-violet-700 dark:text-violet-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800')">
-                  <span class="flex-1 min-w-0 truncate text-sm text-slate-500 dark:text-slate-400">{{ c.nombre_completo }}</span>
+                  <span class="flex-1 min-w-0">
+                    <span class="block truncate text-sm text-slate-500 dark:text-slate-400">{{ c.nombre_completo }}</span>
+                    @if (c.ultima_vez) {
+                      <span class="block text-xs text-slate-400 dark:text-slate-500">Últ. vez: {{ c.ultima_vez | date:'d MMM y':'':'es' }}</span>
+                    }
+                  </span>
                   <span class="shrink-0 text-[0.6rem] font-semibold text-amber-600 dark:text-amber-500">{{ motivoOcupado(c.id_publicador) }}</span>
                 </button>
               }
@@ -2281,6 +2297,13 @@ export class ReunionesLogisticaComponent implements OnInit {
   whatsappAbierto = signal(false);
   whatsappMensaje = signal('');
   cargandoWhatsapp = signal(false);
+
+  whatsappFechaOptions = computed(() =>
+    (this.mesDatos()?.fechas ?? []).map((f) => ({
+      value: f.fecha,
+      label: `${this.formatFecha(f.fecha)} · ${f.dia_semana}`,
+    })),
+  );
 
   abrirWhatsapp(): void {
     if (!this.whatsappFechaSeleccionada) return;
