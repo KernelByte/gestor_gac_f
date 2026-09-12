@@ -61,27 +61,48 @@ type SubTab = 'entrantes' | 'salientes';
             </div>
           </div>
 
-          <!-- Sub-tabs -->
-          <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1 self-start" role="tablist">
-            <button (click)="subTab.set('entrantes')" role="tab" [attr.aria-selected]="subTab() === 'entrantes'"
-              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color] duration-150 ease-out active:scale-[0.97]"
-              [class]="subTab() === 'entrantes' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
-              Entrantes
-              @if (historialEntrantes()) {
-                <span class="min-w-[1.1rem] h-[1.1rem] px-1 rounded-full text-[0.6rem] font-bold flex items-center justify-center"
-                  [class]="subTab() === 'entrantes' ? 'bg-white/20' : 'bg-slate-200 dark:bg-slate-700'">{{ historialEntrantes()!.items.length }}</span>
+          <!-- Sub-tabs: si el modal se abrió desde Entrantes o Salientes, el
+               historial queda fijo a ese tipo (no tiene sentido mezclar
+               ambos ahí) y el interruptor ni se muestra. Solo aparece
+               cuando el modal se abre sin ese contexto. -->
+          @if (bloquearSubTab) {
+            <div class="self-start flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-bold text-white"
+              [class]="subTab() === 'entrantes' ? 'bg-blue-600' : 'bg-violet-600'">
+              @if (subTab() === 'entrantes') {
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h13M10 6l-6 6 6 6"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 5v14" opacity=".4"/>
+                </svg>
+              } @else {
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 12H8M14 6l6 6-6 6"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 5v14" opacity=".4"/>
+                </svg>
               }
-            </button>
-            <button (click)="subTab.set('salientes')" role="tab" [attr.aria-selected]="subTab() === 'salientes'"
-              class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color] duration-150 ease-out active:scale-[0.97]"
-              [class]="subTab() === 'salientes' ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
-              Salientes
-              @if (historialSalientes()) {
-                <span class="min-w-[1.1rem] h-[1.1rem] px-1 rounded-full text-[0.6rem] font-bold flex items-center justify-center"
-                  [class]="subTab() === 'salientes' ? 'bg-white/20' : 'bg-slate-200 dark:bg-slate-700'">{{ historialSalientes()!.items.length }}</span>
-              }
-            </button>
-          </div>
+              <span>{{ subTab() === 'entrantes' ? 'Entrantes' : 'Salientes' }}</span>
+            </div>
+          } @else {
+            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1 self-start" role="tablist">
+              <button (click)="subTab.set('entrantes')" role="tab" [attr.aria-selected]="subTab() === 'entrantes'"
+                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color] duration-150 ease-out active:scale-[0.97]"
+                [class]="subTab() === 'entrantes' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                Entrantes
+                @if (historialEntrantes()) {
+                  <span class="min-w-[1.1rem] h-[1.1rem] px-1 rounded-full text-[0.6rem] font-bold flex items-center justify-center"
+                    [class]="subTab() === 'entrantes' ? 'bg-white/20' : 'bg-slate-200 dark:bg-slate-700'">{{ historialEntrantes()!.items.length }}</span>
+                }
+              </button>
+              <button (click)="subTab.set('salientes')" role="tab" [attr.aria-selected]="subTab() === 'salientes'"
+                class="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color] duration-150 ease-out active:scale-[0.97]"
+                [class]="subTab() === 'salientes' ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                Salientes
+                @if (historialSalientes()) {
+                  <span class="min-w-[1.1rem] h-[1.1rem] px-1 rounded-full text-[0.6rem] font-bold flex items-center justify-center"
+                    [class]="subTab() === 'salientes' ? 'bg-white/20' : 'bg-slate-200 dark:bg-slate-700'">{{ historialSalientes()!.items.length }}</span>
+                }
+              </button>
+            </div>
+          }
         </div>
 
         <!-- Body -->
@@ -228,6 +249,8 @@ export class HistorialDiscursosComponent implements OnInit {
   @Input() idCong: number | null = null;
   @Input() desdeInicial: string | null = null;
   @Input() hastaInicial: string | null = null;
+  @Input() subTabInicial: SubTab = 'entrantes';
+  @Input() bloquearSubTab = false;
   @Output() cerrar = new EventEmitter<void>();
 
   constructor(private svc: DiscursosService) {}
@@ -274,6 +297,7 @@ export class HistorialDiscursosComponent implements OnInit {
   ngOnInit(): void {
     this.rangoDesde = this.desdeInicial;
     this.rangoHasta = this.hastaInicial;
+    this.subTab.set(this.subTabInicial);
     this.cargar();
   }
 
@@ -290,19 +314,25 @@ export class HistorialDiscursosComponent implements OnInit {
   cargar(): void {
     this.cargando.set(true);
     this.error.set('');
-    let pendientes = 2;
+    const cargarEntrantes = !this.bloquearSubTab || this.subTab() === 'entrantes';
+    const cargarSalientes = !this.bloquearSubTab || this.subTab() === 'salientes';
+    let pendientes = (cargarEntrantes ? 1 : 0) + (cargarSalientes ? 1 : 0);
     const listo = () => {
       pendientes -= 1;
       if (pendientes === 0) this.cargando.set(false);
     };
-    this.svc.getHistorialEntrantes(this.idCong, this.rangoDesde, this.rangoHasta).subscribe({
-      next: (h) => { this.historialEntrantes.set(h); listo(); },
-      error: () => { this.error.set('No se pudo cargar el historial de entrantes.'); listo(); },
-    });
-    this.svc.getHistorialSalientes(this.idCong, this.rangoDesde, this.rangoHasta).subscribe({
-      next: (h) => { this.historialSalientes.set(h); listo(); },
-      error: () => { this.error.set('No se pudo cargar el historial de salientes.'); listo(); },
-    });
+    if (cargarEntrantes) {
+      this.svc.getHistorialEntrantes(this.idCong, this.rangoDesde, this.rangoHasta).subscribe({
+        next: (h) => { this.historialEntrantes.set(h); listo(); },
+        error: () => { this.error.set('No se pudo cargar el historial de entrantes.'); listo(); },
+      });
+    }
+    if (cargarSalientes) {
+      this.svc.getHistorialSalientes(this.idCong, this.rangoDesde, this.rangoHasta).subscribe({
+        next: (h) => { this.historialSalientes.set(h); listo(); },
+        error: () => { this.error.set('No se pudo cargar el historial de salientes.'); listo(); },
+      });
+    }
   }
 
   formatFecha(fechaStr: string): string {

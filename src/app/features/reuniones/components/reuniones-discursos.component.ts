@@ -1888,6 +1888,8 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
         [idCong]="idCongActual()"
         [desdeInicial]="rangoHistorialPorDefecto().desde"
         [hastaInicial]="rangoHistorialPorDefecto().hasta"
+        [subTabInicial]="subTab() === 'salientes' ? 'salientes' : 'entrantes'"
+        [bloquearSubTab]="true"
         (cerrar)="modalHistorialVisible.set(false)">
       </app-historial-discursos>
     }
