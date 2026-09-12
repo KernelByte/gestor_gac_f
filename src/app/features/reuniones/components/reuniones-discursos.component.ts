@@ -69,15 +69,23 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
              extremo derecho, sin hueco entre ellos. -->
         <span class="hidden md:block md:flex-1" aria-hidden="true"></span>
 
-        <!-- Filete: separa la píldora del resto de la barra. Sólo con un mes
-             abierto: sin él la bandeja se va al otro extremo y el filete
-             quedaba suelto a media fila. -->
-        @if (mesDatos() && estado() !== 'loading') {
-          <span class="hidden md:block w-px h-7 bg-slate-200 dark:bg-slate-700 shrink-0" aria-hidden="true"></span>
-        }
-
         <!-- ===== BANDEJA DE CONTROL ===== -->
         <div class="flex flex-wrap items-center gap-0.5 min-w-0 w-full md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+
+          <!-- Volver desde Congregaciones/Temas cuando no hay mes abierto:
+               el interruptor Entrantes/Salientes (con su propio "Volver")
+               vive dentro de la barra del mes, así que sin un mes cargado
+               desaparece y Congregaciones se quedaba como una puerta sin
+               picaporte de vuelta. -->
+          @if ((subTab() === 'congregaciones' || subTab() === 'temas') && !mesDatos()) {
+            <button type="button" (click)="volverAProgramacion()"
+              title="Volver a la programación" aria-label="Volver a la programación"
+              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors active:scale-[0.97]">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              <span class="hidden sm:inline">Programación</span>
+            </button>
+            <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
+          }
 
           <!-- El selector de mes sólo con un mes abierto: sin él, la lista
                vive centrada en la tarjeta del panel. -->
@@ -96,6 +104,16 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                   : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'">
                 <svg class="w-3.5 h-3.5 shrink-0 text-violet-500/80 dark:text-violet-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 3v3M16 3v3"/></svg>
                 <span class="text-sm font-bold whitespace-nowrap">{{ mesLabel(mesDatos()!.ano, mesDatos()!.mes) }}</span>
+                <!-- Estado del mes, una sola vez aquí y no repetido en cada
+                     fecha: misma píldora y misma paleta que Entre semana y
+                     Logística (Publicado/Borrador), con el vocabulario propio
+                     de Discursos (Confirmar/Confirmado). -->
+                <span class="shrink-0 px-2 h-5 flex items-center rounded-full text-[0.6rem] font-bold"
+                  [class]="mesDatos()!.confirmado
+                    ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'">
+                  {{ mesDatos()!.confirmado ? 'Confirmado' : 'Borrador' }}
+                </span>
                 <svg class="w-3.5 h-3.5 shrink-0 opacity-50 transition-transform duration-200" [class.rotate-180]="menuMesesAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
               </button>
 
@@ -153,36 +171,23 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
             <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
           }
 
-            <!-- Historial / Temas / Congregaciones: catálogos que no dependen
-                 del mes abierto, así que están siempre. -->
-            <button (click)="abrirModalHistorial()"
-              title="Historial de discursos" aria-label="Historial de discursos"
-              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors active:scale-[0.97]">
-              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="9"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/>
-              </svg>
-              <span class="hidden sm:inline">Historial</span>
-            </button>
-            <button (click)="subTab.set('temas')"
-              role="tab" [attr.aria-selected]="subTab() === 'temas'"
-              title="Portafolio de temas"
-              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold transition-colors active:scale-[0.97]"
-              [class]="subTab() === 'temas'
-                ? 'bg-amber-500 text-white shadow-sm'
-                : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'">
-              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-              </svg>
-              <span>Temas</span>
-            </button>
-            <button (click)="subTab.set('congregaciones')"
+            <!-- Temas / Congregaciones: catálogos que no dependen del mes
+                 abierto, así que están siempre. El historial bajó al nivel de
+                 Entrantes/Salientes porque su contenido depende de cuál de
+                 las dos pantallas está abierta. -->
+            <!-- Antes el estado activo era un bloque teal-500 sólido con
+                 sombra: al lado de la píldora "Discursos" (que ya lleva ese
+                 tratamiento sólido para marcar la pantalla activa) competía
+                 por la misma atención siendo sólo un catálogo secundario. Un
+                 tinte plano + borde de 1px lo deja igual de legible como
+                 "encendido" sin subir el volumen visual. -->
+            <button (click)="abrirCatalogo('congregaciones')"
               role="tab" [attr.aria-selected]="subTab() === 'congregaciones'"
               title="Congregaciones de contacto"
-              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold transition-colors active:scale-[0.97]"
+              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold border transition-colors active:scale-[0.97]"
               [class]="subTab() === 'congregaciones'
-                ? 'bg-teal-500 text-white shadow-sm'
-                : 'text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20'">
+                ? 'bg-teal-50 dark:bg-teal-400/10 border-teal-200 dark:border-teal-400/25 text-teal-700 dark:text-teal-300'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-teal-600 dark:hover:text-teal-400'">
               <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 <circle cx="12" cy="12" r="2"/>
@@ -253,7 +258,16 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                del mes (Historial, Temas, Congregaciones) viven arriba, en la
                bandeja de control. -->
           @if (mesDatos()) {
-            <div class="shrink-0 flex items-center gap-2 px-1.5 py-1.5 border-b border-slate-100 dark:border-slate-800">
+            <div class="shrink-0 flex flex-wrap items-center gap-2 px-1.5 py-1.5 border-b border-slate-100 dark:border-slate-800">
+              @if (subTab() === 'entrantes' || subTab() === 'salientes') {
+                <!-- Volver — solo móvil -->
+                <button (click)="mesDatos.set(null); estado.set('idle')"
+                  class="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors active:scale-[0.95]"
+                  title="Volver"
+                  aria-label="Volver">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+              }
               <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1" role="tablist">
                 <button (click)="subTab.set('entrantes')"
                   role="tab" [attr.aria-selected]="subTab() === 'entrantes'"
@@ -282,19 +296,134 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                   <span>Salientes</span>
                 </button>
               </div>
+
+              <div class="ml-auto flex items-center gap-1.5 shrink-0">
+                @if (subTab() === 'entrantes' || subTab() === 'salientes') {
+                  <button (click)="abrirModalHistorial()"
+                    title="Historial de discursos" aria-label="Historial de discursos"
+                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-sky-50 dark:hover:bg-sky-900/25 hover:text-sky-600 dark:hover:text-sky-400 text-xs font-bold transition-all active:scale-95">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="9"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/>
+                    </svg>
+                    <span class="hidden sm:inline">Historial</span>
+                  </button>
+                }
+                @if ((subTab() === 'entrantes' || subTab() === 'salientes') && hasEditPermission()) {
+                  @if (!mesDatos()!.confirmado) {
+                    <button (click)="confirmarMes()" [disabled]="estado() === 'loading'"
+                      title="Confirmar" aria-label="Confirmar"
+                      class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-xs font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.96]">
+                      <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round"/></svg>
+                      <span class="hidden sm:inline">Confirmar</span>
+                    </button>
+                  }
+                  <!-- Mismo botón icono-solo que usa Logística (rounded-xl,
+                       gris neutro, tinte de color sólo al pasar por encima):
+                       las acciones de mes se ven igual en todas las pestañas.
+                       Estas dos conservan una etiqueta corta en pantallas
+                       anchas porque, a diferencia de las demás pestañas, aquí
+                       hay dos PDF distintos que un solo icono no distingue. -->
+                  <button (click)="descargarPdf('entrantes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
+                    title="PDF Entrantes" aria-label="PDF Entrantes"
+                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/25 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span class="hidden sm:inline">Entrantes</span>
+                  </button>
+                  <button (click)="descargarPdf('salientes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
+                    title="PDF Salientes" aria-label="PDF Salientes"
+                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-violet-600 dark:hover:text-violet-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span class="hidden sm:inline">Salientes</span>
+                  </button>
+                  <button (click)="borrarMes()" [disabled]="estado() === 'loading'"
+                    title="Borrar mes" aria-label="Borrar mes"
+                    class="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/25 hover:text-red-600 dark:hover:text-red-400 transition-all active:scale-95 disabled:opacity-40">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                }
+                <!-- El portafolio de temas es propio de Salientes (los oradores
+                     que salen a otras congregaciones llevan un tema del
+                     repertorio local): solo tiene sentido ofrecerlo junto a esa
+                     pestaña, no sobre Entrantes. Relleno sólido siempre (no solo
+                     en estado activo) para que se lea como una acción aparte,
+                     no como una tercera opción del interruptor Entrantes/Salientes. -->
+                @if (subTab() === 'salientes' || subTab() === 'temas') {
+                  <button (click)="abrirCatalogo('temas')"
+                    role="tab" [attr.aria-selected]="subTab() === 'temas'"
+                    title="Oradores locales"
+                    class="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-lg text-xs font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]"
+                    [class]="subTab() === 'temas'
+                      ? 'bg-amber-600 shadow-md shadow-amber-500/30 ring-2 ring-amber-300 dark:ring-amber-500/40'
+                      : 'bg-amber-500 shadow-sm shadow-amber-500/20 hover:bg-amber-600'">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    <span>Oradores locales</span>
+                  </button>
+                }
+              </div>
             </div>
           }
 
           @if (subTab() === 'congregaciones') {
-            <!-- CONGREGACIONES DE CONTACTO tab -->
-            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar flex flex-col gap-3 p-3 sm:p-4">
-              @if (hasEditPermission()) {
-                <button (click)="abrirModalCongregacionContacto()"
-                  class="self-start flex items-center gap-2 px-4 h-9 rounded-xl border-2 border-dashed border-teal-400 dark:border-teal-600 text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all active:scale-95">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Añadir congregación
-                </button>
-              }
+            <!-- CONGREGACIONES DE CONTACTO tab.
+                 La cabecera queda fuera del contenedor con scroll: así el
+                 total y "Añadir congregación" se ven siempre, sin bajar hasta
+                 arriba de una lista larga para volver a encontrarlos. -->
+            <div class="flex-1 min-h-0 flex flex-col">
+
+              <!-- Cabecera: cuenta + acción principal, en una barra propia en vez
+                   de un botón punteado suelto flotando sobre la lista. -->
+              <div class="shrink-0 flex flex-col sm:flex-row sm:items-center gap-2.5 px-3 sm:px-4 pt-3 sm:pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div class="min-w-0">
+                  <p class="text-sm font-black text-slate-800 dark:text-slate-100">Congregaciones de contacto</p>
+                  <p class="text-xs text-slate-400">
+                    {{ congregacionesContacto().length }} congregaci{{ congregacionesContacto().length === 1 ? 'ón' : 'ones' }} registrada{{ congregacionesContacto().length === 1 ? '' : 's' }}
+                  </p>
+                </div>
+                @if (hasEditPermission()) {
+                  <button (click)="abrirModalCongregacionContacto()"
+                    class="sm:ml-auto shrink-0 flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-teal-500 hover:bg-teal-600 text-xs font-bold text-white shadow-sm shadow-teal-500/25 transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Añadir congregación
+                  </button>
+                }
+              </div>
+
+              <!-- Teléfono + llamar + WhatsApp: idéntico para discursantes y
+                   contactos, así que vive una sola vez. La llamada es enlace
+                   'tel:' y no botón: es cosa del sistema operativo, y así se
+                   puede abrir en otra aplicación o copiar con el menú del
+                   ratón, como enlaza teléfonos el resto de la app. -->
+              <ng-template #accionesContacto let-p>
+                @if (p.telefono) {
+                  <div class="shrink-0 flex items-center gap-1.5 pl-[2.625rem] @md:pl-0">
+                    <span class="font-mono text-xs text-slate-600 dark:text-slate-300 tabular-nums whitespace-nowrap mr-1">{{ telefonoLegible(p.telefono) }}</span>
+                    <a [href]="'tel:' + p.telefono"
+                      [title]="'Llamar a ' + p.nombre"
+                      [attr.aria-label]="'Llamar a ' + p.nombre"
+                      class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sky-600 dark:text-sky-400 bg-white dark:bg-slate-800/70 ring-1 ring-inset ring-sky-200/70 dark:ring-sky-400/20 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-[background-color,transform] duration-150 ease-out active:scale-95">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </a>
+                    <button type="button" (click)="contactarPersona(p)" [title]="'Escribir a ' + p.nombre + ' por WhatsApp'"
+                      [attr.aria-label]="'Escribir a ' + p.nombre + ' por WhatsApp'"
+                      class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-800/70 ring-1 ring-inset ring-emerald-200/70 dark:ring-emerald-400/20 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-[background-color,transform] duration-150 ease-out active:scale-95">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                    </button>
+                  </div>
+                } @else {
+                  <span class="shrink-0 pl-[2.625rem] @md:pl-0 text-[0.7rem] text-slate-400 dark:text-slate-500">Sin teléfono</span>
+                }
+              </ng-template>
+
+              <!-- Fondo ligeramente hundido respecto al panel: antes las
+                   tarjetas (bg-white/slate-900) eran del mismo color que el
+                   panel que las contiene y sólo se notaban por un borde de
+                   1px, casi invisible en oscuro. Este tono de fondo hace que
+                   las tarjetas se lean como superficies elevadas encima de
+                   la zona de lista, en vez de fundirse con ella. -->
+              <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar flex flex-col gap-3 p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
               @if (loadingCongregacionesContacto()) {
                 <div class="flex items-center justify-center py-12">
                   <div class="w-7 h-7 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-teal-500 animate-spin"></div>
@@ -765,14 +894,24 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                     </div>
                   }
                   @for (entrante of mesDatos()!.entrantes; track entrante.id_discurso_entrante) {
-                    <div class="disc-card rounded-xl border bg-white dark:bg-slate-900 overflow-hidden transition-colors"
+                    <div class="disc-card rounded-xl border bg-white dark:bg-slate-900 overflow-hidden shadow-sm transition-colors"
                       [class]="isEditandoEntrante(entrante.id_discurso_entrante)
-                        ? 'border-amber-400 dark:border-amber-500'
-                        : 'border-slate-200 dark:border-slate-700'">
+                        ? 'border-violet-400 dark:border-violet-500'
+                        : 'border-slate-300 dark:border-slate-600'">
                       <!-- Cabecera de fecha: lleva el estado de la tarjeta, que
-                           es lo que permite recorrer el mes sin abrir cada una. -->
-                      <div class="px-3 py-2.5 flex items-center gap-2 border-b transition-colors duration-200"
-                        [class]="cabeceraEntranteClass(entrante)">
+                           es lo que permite recorrer el mes sin abrir cada una.
+                           Con el mes confirmado, la propia fila es el
+                           interruptor para abrir o cerrar el detalle —igual
+                           que el resumen de abajo—, no sólo el lápiz: los
+                           botones de estado (Sin confirmar/Presentado) paran
+                           la propagación para no alternar la edición al
+                           usarlos. Sin línea divisoria dura: el tinte de la
+                           cabecera ya la separa del resumen; una regla sólida
+                           encima de un fondo oscuro se veía como un corte
+                           blanco ajeno al resto del diseño. -->
+                      <div class="px-3 py-2.5 flex items-center gap-2 transition-colors duration-200"
+                        [class]="cabeceraEntranteClass(entrante) + (entrante.confirmado && hasEditPermission() ? ' cursor-pointer active:brightness-95' : '')"
+                        (click)="entrante.confirmado && hasEditPermission() && toggleEditEntrante(entrante.id_discurso_entrante)">
                         <svg class="w-3.5 h-3.5 shrink-0 transition-colors duration-200"
                           [class]="iconoEntranteClass(entrante)"
                           fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -788,7 +927,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                           </span>
                         }
 
-                        <div class="ml-auto flex items-center gap-2">
+                        <div class="ml-auto flex items-center gap-2" (click)="$event.stopPropagation()">
                           <!-- Confirmación del orador: seguimiento del organizador.
                                Sigue disponible con el mes cerrado, porque la llamada a
                                la congregación de origen se hace casi siempre después. -->
@@ -797,21 +936,21 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                               (click)="toggleOradorConfirmado(entrante)"
                               [disabled]="confirmandoOrador().has(entrante.id_discurso_entrante)"
                               [title]="tituloConfirmacion(entrante)"
-                              class="flex items-center gap-1.5 pl-1.5 pr-2.5 h-7 rounded-full border text-[0.65rem] font-bold transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                              class="flex items-center gap-1.5 px-2.5 h-7 rounded-lg border text-[0.65rem] font-bold transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                               [class]="entrante.orador_confirmado
-                                ? 'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600 hover:border-emerald-600'
-                                : 'bg-white dark:bg-slate-900 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400'">
+                                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-300 hover:text-emerald-600 dark:hover:border-emerald-700 dark:hover:text-emerald-400'">
                               @if (entrante.orador_confirmado) {
-                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 <span>Orador confirmado</span>
                               } @else {
-                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
                                 <span>Sin confirmar</span>
                               }
                             </button>
                           } @else if (entrante.orador_confirmado) {
-                            <span class="flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[0.65rem] font-bold">
-                              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span class="flex items-center gap-1.5 px-2.5 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-[0.65rem] font-bold">
+                              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                               Orador confirmado
                             </span>
                           }
@@ -824,19 +963,20 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                               (click)="togglePresentado(entrante)"
                               [disabled]="marcandoPresentado().has(entrante.id_discurso_entrante)"
                               [title]="tituloPresentado(entrante)"
-                              class="flex items-center gap-1.5 pl-1.5 pr-2.5 h-7 rounded-full border text-[0.65rem] font-bold transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                              class="flex items-center gap-1.5 px-2.5 h-7 rounded-lg border text-[0.65rem] font-bold transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                               [class]="entrante.presentado
-                                ? 'bg-violet-500 border-violet-500 text-white hover:bg-violet-600 hover:border-violet-600'
-                                : 'bg-white dark:bg-slate-900 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400'">
-                              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/>
-                              </svg>
+                                ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800/40 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/30'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-700 dark:hover:text-violet-400'">
+                              @if (entrante.presentado) {
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                              } @else {
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+                              }
                               <span>{{ entrante.presentado ? 'Presentado' : 'Sin presentar' }}</span>
                             </button>
                           } @else if (entrante.presentado) {
-                            <span class="flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 text-[0.65rem] font-bold">
-                              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span class="flex items-center gap-1.5 px-2.5 h-7 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-[0.65rem] font-bold">
+                              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                               Presentado
                             </span>
                           }
@@ -844,44 +984,133 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                           @if (entrante.confirmado) {
                             @if (isEditandoEntrante(entrante.id_discurso_entrante)) {
                               <button (click)="toggleEditEntrante(entrante.id_discurso_entrante)"
-                                class="flex items-center gap-1.5 px-3 h-6 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[0.65rem] font-bold transition-all active:scale-95">
-                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                class="flex items-center gap-1.5 px-3 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[0.65rem] font-bold transition-[background-color,transform] duration-150 ease-out active:scale-95">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 Guardar
                               </button>
-                            } @else {
-                              <span class="text-[0.6rem] font-bold text-slate-500 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-700/70 px-2 py-0.5 rounded-full" title="El mes está cerrado: para cambiar los datos usa el lápiz.">Mes cerrado</span>
-                              @if (hasEditPermission()) {
-                                <button (click)="toggleEditEntrante(entrante.id_discurso_entrante)" title="Editar"
-                                  class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-500 transition-all active:scale-95">
-                                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                </button>
-                              }
+                            } @else if (hasEditPermission()) {
+                              <!-- El mes ya dice "Confirmado" arriba, junto al
+                                   selector: repetirlo en cada fecha era el
+                                   mismo dato 8 veces seguidas. El lápiz basta
+                                   para saber que hay que tocarlo para editar. -->
+                              <button (click)="toggleEditEntrante(entrante.id_discurso_entrante)" title="Editar"
+                                class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-500 transition-all active:scale-95">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                              </button>
                             }
                           }
                         </div>
+
+                        <!-- Único indicador de abierto/cerrado, siempre en la
+                             cabecera (no duplicado abajo): gira al alternar el
+                             detalle en vez de depender de una línea o de un
+                             segundo ícono en el resumen. -->
+                        @if (entrante.confirmado && hasEditPermission()) {
+                          <svg class="shrink-0 w-3.5 h-3.5 ml-0.5 text-slate-300 dark:text-slate-600 transition-transform duration-300 ease-out"
+                            [class.rotate-90]="isEditandoEntrante(entrante.id_discurso_entrante)"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                        }
                       </div>
+                      <!-- Con el mes cerrado y sin editar, un resumen de una
+                           línea basta para reconocer la fecha de un vistazo al
+                           recorrer la lista; el formulario completo (con
+                           llamar/WhatsApp y los avisos de validación) vuelve
+                           al pulsar aquí o el lápiz de la cabecera. Sin línea
+                           ni chevron propios: el tinte compartido con la
+                           cabecera ya dice que es un mismo bloque clicable. -->
+                      @if (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante)) {
+                        @if (hasEditPermission()) {
+                          <!-- div con role="button", no <button>: la fila anida el botón
+                               "Ver bosquejo" (y anidar <button> dentro de <button> es HTML
+                               inválido y rompe el click del hijo). -->
+                          <div role="button" tabindex="0" (click)="toggleEditEntrante(entrante.id_discurso_entrante)"
+                            (keydown.enter)="toggleEditEntrante(entrante.id_discurso_entrante)"
+                            (keydown.space)="$event.preventDefault(); toggleEditEntrante(entrante.id_discurso_entrante)"
+                            [attr.aria-label]="'Editar ' + formatFecha(entrante.fecha)"
+                            class="w-full flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 px-3 sm:px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors duration-150 cursor-pointer">
+                            <ng-container *ngTemplateOutlet="resumenEntrante; context: { $implicit: entrante }"></ng-container>
+                          </div>
+                        } @else {
+                          <div class="w-full flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 px-3 sm:px-4 py-3">
+                            <ng-container *ngTemplateOutlet="resumenEntrante; context: { $implicit: entrante }"></ng-container>
+                          </div>
+                        }
+                      } @else {
                       <!-- fields -->
-                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 p-3 sm:p-4">
+                      <div class="disc-detalle-abrir">
+                      <!-- Anchos desiguales en la fila completa (xl): Discurso /
+                           Tema es el campo que más se lee y trunca títulos
+                           largos, así que se lleva más espacio; Hospitalidad
+                           solo elige entre unos pocos grupos cortos y le sobraba. -->
+                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1.4fr_1fr_1fr_0.8fr_0.6fr] gap-2.5 p-3 sm:p-4">
                         <div class="flex flex-col gap-1">
-                          <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Discurso / Tema</label>
+                          <label class="flex items-center gap-1 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                            Discurso / Tema
+                          </label>
                           <app-discurso-catalogo-input
                             [value]="entrante.titulo_discurso ?? ''"
                             [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
                             (commit)="guardarCampoEntrante(entrante, 'titulo_discurso', $event)"
+                            #campoDiscurso
+                            [sugeridos]="bosquejosDelOrador(entrante)"
+                            [sugeridosTitulo]="'Bosquejos de ' + (entrante.nombre_orador ?? '')"
                             placeholder="Nº o palabra del discurso"
-                            inputClass="h-10 pl-3 pr-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full"></app-discurso-catalogo-input>
+                            inputClass="h-10 pl-3 pr-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-slate-300 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full"></app-discurso-catalogo-input>
                         </div>
                         <div class="flex flex-col gap-1">
-                          <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Orador</label>
-                          <input type="text"
-                            [value]="entrante.nombre_orador ?? ''"
-                            [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
-                            (blur)="onEntranteChange(entrante, 'nombre_orador', $event)"
-                            placeholder="Nombre del orador"
-                            class="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out w-full">
+                          <label class="flex items-center gap-1 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+                            Orador
+                          </label>
+                          <div class="flex items-center gap-1.5">
+                            <!-- Sugiere discursantes ya guardados en Congregaciones
+                                 de contacto: con la congregación de origen
+                                 registrada, los suyos nada más entrar; si no,
+                                 los que coincidan con lo escrito en cualquiera.
+                                 Elegir uno rellena su congregación y su
+                                 bosquejo (ver elegirOradorDelDirectorio). Con
+                                 texto libre no se autocompleta nada. -->
+                            <app-orador-catalogo-input
+                              [value]="entrante.nombre_orador ?? ''"
+                              [disabled]="!hasEditPermission() || (entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante))"
+                              [idCong]="idCongActual()"
+                              [congregacion]="entrante.congregacion_origen"
+                              (commit)="guardarOradorEscrito(entrante, $event)"
+                              (seleccion)="elegirOradorDelDirectorio(entrante, $event, campoDiscurso)"
+                              placeholder="Nombre del orador"
+                              inputClass="min-w-0 w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:bg-slate-50 dark:disabled:bg-slate-800/50 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-slate-300 disabled:cursor-default transition-[border-color,background-color] duration-150 ease-out"
+                              class="relative min-w-0 flex-1">
+                            </app-orador-catalogo-input>
+                            @if (entrante.telefono_orador) {
+                              <!-- Igual que los teléfonos de contacto de la pestaña Congregaciones: enlace 'tel:', no botón. -->
+                              <a [href]="'tel:' + entrante.telefono_orador"
+                                [title]="'Llamar a ' + (entrante.nombre_orador || 'el orador')"
+                                [attr.aria-label]="'Llamar a ' + (entrante.nombre_orador || 'el orador')"
+                                class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sky-500 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all active:scale-95">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                              </a>
+                              <button (click)="contactarPersona({ nombre: entrante.nombre_orador || '', telefono: entrante.telefono_orador })"
+                                [title]="'Escribir por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
+                                [attr.aria-label]="'Escribir por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
+                                class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all active:scale-95">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                              </button>
+                              <!-- Recordatorio con los datos de la asignación (discurso, cántico, fecha, hora, hospitalidad), a diferencia del WhatsApp genérico de arriba. -->
+                              <button (click)="enviarRecordatorioEntrante(entrante)"
+                                title="Enviar recordatorio de la asignación por WhatsApp"
+                                aria-label="Enviar recordatorio de la asignación por WhatsApp"
+                                class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-violet-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                              </button>
+                            }
+                          </div>
                         </div>
                         <div class="flex flex-col gap-1">
-                          <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Congregación Origen</label>
+                          <label class="flex items-center gap-1 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            Congregación Origen
+                          </label>
                           <!-- Mismo campo del directorio que usa Salientes: la
                                congregación de la que viene un orador es una
                                congregación del circuito, igual que aquella a la
@@ -1051,14 +1280,14 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                               Guardar
                             </button>
-                          } @else {
-                            <span class="ml-auto text-[0.6rem] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">Confirmado</span>
-                            @if (hasEditPermission()) {
-                              <button (click)="toggleEditSaliente(saliente.id_discurso_saliente)" title="Editar"
-                                class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-500 transition-all active:scale-95">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                              </button>
-                            }
+                          } @else if (hasEditPermission()) {
+                            <!-- El mes ya dice "Confirmado" arriba, junto al
+                                 selector: repetirlo en cada fecha era el
+                                 mismo dato varias veces seguidas. -->
+                            <button (click)="toggleEditSaliente(saliente.id_discurso_saliente)" title="Editar"
+                              class="ml-auto w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-500 transition-all active:scale-95">
+                              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
                           }
                         }
                         <div class="ml-auto flex items-center gap-2">
@@ -1805,6 +2034,12 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                 }
               }
             </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Notas <span class="font-normal normal-case text-slate-400">· opcional</span></label>
+              <textarea rows="2" [(ngModel)]="nuevoSaliente.notas" [ngModelOptions]="{ standalone: true }"
+                placeholder="Notas adicionales"
+                class="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm leading-relaxed text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 focus:bg-white dark:focus:bg-slate-800 transition-[border-color,background-color] duration-150 ease-out w-full resize-y min-h-[4.5rem]"></textarea>
+            </div>
           </div>
 
           <!-- Actions -->
@@ -1920,6 +2155,31 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
     .disc-card:nth-child(6)  { animation-delay: 140ms; }
     .disc-card:nth-child(n+7){ animation-delay: 160ms; }
 
+    /* ── Apertura del detalle de un entrante: al hacer clic en la fila la
+          fecha se vuelve resumen→formulario; sin esto el cambio era un salto
+          seco, con esto se siente como abrir un cajón. ── */
+    @keyframes detalleIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .disc-detalle-abrir {
+      animation: detalleIn 200ms var(--ease-out-expo);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .disc-detalle-abrir { animation: none; }
+    }
+
+    /* ── Detalle de congregación de contacto: las secciones entran en cascada
+          al abrir, así se ve el orden de lectura (dónde → quién da el discurso
+          → con quién coordinar) en vez de aparecer todo de golpe. ── */
+    .cong-detalle > * {
+      animation: cardIn 240ms var(--ease-out-expo) backwards;
+    }
+    .cong-detalle > :nth-child(2) { animation-delay: 50ms; }
+    @media (prefers-reduced-motion: reduce) {
+      .cong-detalle > * { animation: none; }
+    }
+
     /* ── Dropdown origin-aware (Emil: never scale from center on popovers) ── */
     @keyframes dropIn {
       from { opacity: 0; transform: scale(0.95) translateY(-4px); }
@@ -1967,6 +2227,10 @@ export class ReunionesDiscursosComponent implements OnInit {
   private conflictosSvc = inject(ConflictosService);
   private congCtx = inject(CongregacionContextService);
   private auth = inject(AuthStore);
+  private http = inject(HttpClient);
+
+  /** Nombre y hora del fin de semana de la propia congregación, para el recordatorio al orador entrante. */
+  private configuracionPropia = signal<{ nombre_congregacion: string; hora_reunion_fin_semana: string } | null>(null);
 
   readonly mesesOpciones = MESES_ES.map((label, i) => ({ value: i + 1, label }));
 
@@ -1997,6 +2261,22 @@ export class ReunionesDiscursosComponent implements OnInit {
   publicadores = signal<PublicadorSimple[]>([]);
   descargandoPdf = signal(false);
   subTab = signal<SubTab>('entrantes');
+
+  /** Última pantalla principal (Entrantes o Salientes) antes de entrar a un
+   *  catálogo (Congregaciones/Temas), para que "Volver" sepa a dónde —
+   *  incluso sin mes abierto, donde el interruptor Entrantes/Salientes no se
+   *  pinta y Congregaciones se quedaría sin cómo regresar. */
+  private subTabPrincipal = signal<'entrantes' | 'salientes'>('entrantes');
+
+  abrirCatalogo(tab: 'congregaciones' | 'temas'): void {
+    const actual = this.subTab();
+    if (actual === 'entrantes' || actual === 'salientes') this.subTabPrincipal.set(actual);
+    this.subTab.set(tab);
+  }
+
+  volverAProgramacion(): void {
+    this.subTab.set(this.subTabPrincipal());
+  }
 
   // Selector de mes de la barra de pestañas. Sustituye a la barra lateral
   // fija: la lista de meses y el botón de generar sólo ocupan ancho mientras
@@ -2425,6 +2705,7 @@ export class ReunionesDiscursosComponent implements OnInit {
    */
   guardarCampoEntrante(entrante: DiscursoEntranteOut, campo: string, valor: string | null): void {
     const val = (valor ?? '').trim() || null;
+    if (campo === 'titulo_discurso') this.descartarAvisoFila(entrante.id_discurso_entrante);
     if ((entrante as any)[campo] === val) return;
     this.svc.editarEntrante(entrante.id_discurso_entrante, { [campo]: val }, this.idCong).subscribe({
       next: (updated) => {
@@ -2705,6 +2986,12 @@ export class ReunionesDiscursosComponent implements OnInit {
     });
   }
 
+  /** Nombre del grupo de hospitalidad asignado, para el resumen compacto de una fecha ya cerrada. */
+  nombreGrupoHospitalidad(entrante: DiscursoEntranteOut): string | null {
+    if (entrante.id_grupo_hospitalidad == null) return null;
+    return this.grupos().find(g => g.id_grupo === entrante.id_grupo_hospitalidad)?.nombre_grupo ?? null;
+  }
+
   private updateEntrante(updated: DiscursoEntranteOut): void {
     const d = this.mesDatos();
     if (!d) return;
@@ -2756,35 +3043,20 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   /**
-   * Fondo de la cabecera de fecha según su estado.
-   *
-   * Tintes muy bajos (de 40 a 60 de saturación en claro, /20 en oscuro): la
-   * cabecera tiene que distinguirse al recorrer la lista, no competir con el
-   * contenido de la tarjeta. El color reutiliza el significado que ya tiene en
-   * el resto del módulo —ámbar avisa, esmeralda confirma, violeta es Reuniones—
-   * en vez de estrenar una paleta propia.
+   * Cabecera de fecha: mismo morado para las cuatro (pedido explícito), ya
+   * sin distinguir estado por color. "Falta orador" sigue como chip de texto
+   * aparte para no perder ese aviso.
    */
-  cabeceraEntranteClass(e: DiscursoEntranteOut): string {
-    switch (this.estadoEntrante(e)) {
-      case 'pendiente':
-        return 'bg-amber-50/80 dark:bg-amber-950/25 border-amber-100 dark:border-amber-900/40';
-      case 'confirmado':
-        return 'bg-emerald-50/80 dark:bg-emerald-950/25 border-emerald-100 dark:border-emerald-900/40';
-      case 'presentado':
-        return 'bg-violet-50/70 dark:bg-violet-950/20 border-violet-100 dark:border-violet-900/40';
-      default:
-        return 'bg-slate-50 dark:bg-slate-800/80 border-slate-100 dark:border-slate-800';
-    }
+  private static readonly ESTILO_ENTRANTE_CABECERA =
+    'bg-violet-100 dark:bg-violet-900/30 border-b border-violet-200/80 dark:border-violet-800/40';
+
+  cabeceraEntranteClass(_e: DiscursoEntranteOut): string {
+    return ReunionesDiscursosComponent.ESTILO_ENTRANTE_CABECERA;
   }
 
-  /** Color del icono de calendario, del mismo estado que la cabecera. */
-  iconoEntranteClass(e: DiscursoEntranteOut): string {
-    switch (this.estadoEntrante(e)) {
-      case 'pendiente':   return 'text-amber-500';
-      case 'confirmado':  return 'text-emerald-500';
-      case 'presentado':  return 'text-violet-400 dark:text-violet-500';
-      default:            return 'text-violet-500';
-    }
+  /** Color del icono de calendario, mismo morado que la cabecera. */
+  iconoEntranteClass(_e: DiscursoEntranteOut): string {
+    return 'text-violet-600 dark:text-violet-400';
   }
 
   toggleOradorConfirmado(entrante: DiscursoEntranteOut): void {
@@ -3816,6 +4088,7 @@ export class ReunionesDiscursosComponent implements OnInit {
         url_mapa: this.nuevoSaliente.ubicacion?.url_mapa ?? null,
         lat: this.nuevoSaliente.ubicacion?.lat ?? null,
         lon: this.nuevoSaliente.ubicacion?.lon ?? null,
+        notas: this.nuevoSaliente.notas || null,
       }, idCong).subscribe({
         next: (nuevo) => {
           const d = this.mesDatos();
