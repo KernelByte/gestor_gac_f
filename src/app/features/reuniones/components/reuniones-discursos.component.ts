@@ -491,62 +491,51 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
               </div>
             </div>
           } @else {
-            <!-- MES header -->
-            <div class="shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-              <div class="flex items-center gap-2 min-w-0">
-                <!-- Volver — solo móvil -->
-                <button (click)="mesDatos.set(null); estado.set('idle')"
-                  class="md:hidden shrink-0 w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors active:scale-[0.95]"
-                  title="Volver"
-                  aria-label="Volver">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                </button>
-                <div class="min-w-0">
-                  <p class="text-sm font-black text-slate-900 dark:text-white">{{ mesLabel(mesDatos()!.ano, mesDatos()!.mes) }}</p>
-                  <p class="text-[0.65rem] text-slate-400 mt-0.5">{{ mesDatos()!.fechas.length }} fecha(s) de fin de semana</p>
-                </div>
-              </div>
-              @if (hasEditPermission()) {
-                <div class="flex items-center gap-1.5 shrink-0">
-                  @if (!mesDatos()!.confirmado) {
-                    <button (click)="confirmarMes()" [disabled]="estado() === 'loading'"
-                      title="Confirmar" aria-label="Confirmar"
-                      class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-xs font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.96]">
-                      <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round"/></svg>
-                      <span class="hidden sm:inline">Confirmar</span>
-                    </button>
-                  }
-                  <!-- Mismo botón icono-solo que usa Logística (rounded-xl,
-                       gris neutro, tinte de color sólo al pasar por encima):
-                       las acciones de mes se ven igual en todas las pestañas.
-                       Estas dos conservan una etiqueta corta en pantallas
-                       anchas porque, a diferencia de las demás pestañas, aquí
-                       hay dos PDF distintos que un solo icono no distingue. -->
-                  <button (click)="descargarPdf('entrantes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
-                    title="PDF Entrantes" aria-label="PDF Entrantes"
-                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/25 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                    <span class="hidden sm:inline">Entrantes</span>
-                  </button>
-                  <button (click)="descargarPdf('salientes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
-                    title="PDF Salientes" aria-label="PDF Salientes"
-                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-violet-600 dark:hover:text-violet-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                    <span class="hidden sm:inline">Salientes</span>
-                  </button>
-                  <button (click)="borrarMes()" [disabled]="estado() === 'loading'"
-                    title="Borrar mes" aria-label="Borrar mes"
-                    class="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/25 hover:text-red-600 dark:hover:text-red-400 transition-all active:scale-95 disabled:opacity-40">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                  </button>
-                </div>
-              }
-            </div>
-
             <!-- CONTENT area -->
-            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar p-3 sm:p-4">
+            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
 
               <!-- ENTRANTES -->
+              <!-- Resumen de una fecha ya confirmada: discurso, orador,
+                   congregación y hospitalidad en una sola línea, en vez del
+                   formulario completo deshabilitado. Con 8 fechas seguidas
+                   cerradas, cuatro campos grises por fecha eran ruido para
+                   reconocer "quién viene y con qué" de un vistazo; el
+                   formulario sigue a un clic (fila o lápiz) para quien
+                   necesite tocar algo. -->
+              <ng-template #resumenEntrante let-entrante>
+                <div class="min-w-0 flex-1 basis-full sm:basis-0 flex items-baseline gap-x-2 gap-y-0.5 flex-wrap">
+                  @if (entrante.titulo_discurso) {
+                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ entrante.titulo_discurso }}</span>
+                  } @else {
+                    <span class="text-sm text-slate-400 dark:text-slate-500 italic">Sin discurso registrado</span>
+                  }
+                  @if (urlBosquejo(entrante.meps_document_id); as urlBosq) {
+                    <button type="button" (click)="abrirBosquejo($event, urlBosq)" title="Ver bosquejo en jw.org" aria-label="Ver bosquejo en jw.org"
+                      class="shrink-0 w-5 h-5 rounded flex items-center justify-center text-slate-300 hover:text-violet-600 dark:text-slate-600 dark:hover:text-violet-400 transition-colors">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    </button>
+                  }
+                  @if (entrante.notas) {
+                    <svg class="shrink-0 w-3.5 h-3.5 text-slate-300 dark:text-slate-600" [attr.aria-label]="'Nota: ' + entrante.notas" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  }
+                </div>
+                <div class="shrink-0 w-full sm:w-40 flex items-center gap-1.5">
+                  <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+                  @if (entrante.nombre_orador) {
+                    <span class="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{{ entrante.nombre_orador }}</span>
+                  } @else {
+                    <span class="text-xs font-semibold text-amber-600 dark:text-amber-400">Sin orador</span>
+                  }
+                </div>
+                <div class="shrink-0 w-full sm:w-40 flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                  <svg class="shrink-0 w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                  <span class="text-xs text-slate-600 dark:text-slate-400 truncate">{{ entrante.congregacion_origen || '—' }}</span>
+                </div>
+                @if (nombreGrupoHospitalidad(entrante); as grupo) {
+                  <span class="shrink-0 text-[0.65rem] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">{{ grupo }}</span>
+                }
+              </ng-template>
+
               <div [hidden]="subTab() !== 'entrantes'" class="flex flex-col gap-3">
                   <!-- Cuántas llamadas quedan por hacer este mes -->
                   @if (mesDatos()!.entrantes.length > 0) {
@@ -986,7 +975,15 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                             colorScheme="violet" placeholder="Hora"></app-time-picker>
                         </div>
                         <div class="flex flex-col gap-1">
-                          <label class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">Tema del Discurso</label>
+                          <label class="flex items-center gap-1 text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">
+                            Tema del Discurso
+                            @if (urlBosquejo(saliente.meps_document_id); as urlBosq) {
+                              <button type="button" (click)="abrirBosquejo($event, urlBosq)" title="Ver bosquejo en jw.org" aria-label="Ver bosquejo en jw.org"
+                                class="shrink-0 w-4 h-4 rounded flex items-center justify-center normal-case text-slate-300 hover:text-violet-600 dark:text-slate-600 dark:hover:text-violet-400 transition-colors">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                              </button>
+                            }
+                          </label>
                           <app-discurso-catalogo-input
                             [value]="saliente.tema_discurso ?? ''"
                             [disabled]="!hasEditPermission() || (saliente.confirmado && !isEditandoSaliente(saliente.id_discurso_saliente))"
@@ -2809,6 +2806,97 @@ export class ReunionesDiscursosComponent implements OnInit {
       telefono: this.normalizarTelefono(p.telefono),
       mensaje: `Hola${p.nombre ? ' ' + p.nombre : ''}, te escribo para coordinar un discurso público.`,
     });
+  }
+
+  /**
+   * Recordatorio con los datos completos de la asignación para un orador
+   * entrante (discurso, cántico, fecha, hora y hospitalidad si aplica). Usa
+   * el nombre/hora del fin de semana de la propia congregación desde
+   * /configuracion/, que se carga una sola vez y se cachea.
+   */
+  enviarRecordatorioEntrante(entrante: DiscursoEntranteOut): void {
+    const cfg = this.configuracionPropia();
+    if (cfg) {
+      this.abrirRecordatorioEntrante(entrante);
+      return;
+    }
+    this.http.get<{ nombre_congregacion: string; hora_reunion_fin_semana: string }>(`${environment.apiUrl}/configuracion/`).subscribe({
+      next: (c) => {
+        this.configuracionPropia.set({ nombre_congregacion: c.nombre_congregacion, hora_reunion_fin_semana: c.hora_reunion_fin_semana });
+        this.abrirRecordatorioEntrante(entrante);
+      },
+      error: () => this.abrirRecordatorioEntrante(entrante),
+    });
+  }
+
+  private abrirRecordatorioEntrante(entrante: DiscursoEntranteOut): void {
+    this.whatsappPendiente.set({
+      nombre: entrante.nombre_orador || 'Orador',
+      telefono: this.normalizarTelefono(entrante.telefono_orador),
+      mensaje: this.mensajeWhatsappEntrante(entrante),
+    });
+  }
+
+  private mensajeWhatsappEntrante(e: DiscursoEntranteOut): string {
+    const primerNombre = (e.nombre_orador ?? '').split(' ')[0] || 'hermano';
+    const cfg = this.configuracionPropia();
+    const lineas = [
+      `Hola, ${primerNombre} 👋`,
+      '',
+      'Esperamos que estés muy bien.',
+      '',
+      'Te recordamos que estás programado para visitarnos y presentar el discurso:',
+      '',
+    ];
+    if (e.titulo_discurso) lineas.push(`📖 ${e.titulo_discurso}`);
+    if (e.cantico) lineas.push(`🎵 Cántico: ${e.cantico}`);
+    lineas.push('');
+    if (cfg?.nombre_congregacion) lineas.push(`📍 Congregación: ${cfg.nombre_congregacion}`);
+    lineas.push(`📅 Fecha: ${this.fechaLarga(e.fecha)}`);
+    if (cfg?.hora_reunion_fin_semana) lineas.push(`🕕 Hora: ${this.formatHora(cfg.hora_reunion_fin_semana)}`);
+    const grupo = this.nombreGrupoHospitalidad(e);
+    if (grupo) {
+      lineas.push(
+        '',
+        `Además, el ${grupo} quisiera compartir con ustedes al finalizar la reunión.`,
+        '¿Nos confirmas si se quedarán durante toda la reunión y cuántas personas serían?',
+      );
+    }
+    lineas.push('', 'Por favor, avísanos si surge algún cambio.', '', 'Muchas gracias. Quedamos atentos.');
+    return lineas.join('\n');
+  }
+
+  /**
+   * Separa "110. La familia feliz…" (formato del catálogo) en número y título
+   * para pintar el número como etiqueta. Un tema escrito a mano sin número
+   * se muestra tal cual.
+   */
+  partirTema(tema: string): { numero: string | null; titulo: string } {
+    const m = /^\s*(\d{1,3})\s*[.\-–]\s*(.+)$/.exec(tema);
+    return m ? { numero: m[1], titulo: m[2] } : { numero: null, titulo: tema };
+  }
+
+  /**
+   * URL del bosquejo en docs.jw.org a partir del meps_document_id ya
+   * congelado en la fila al momento de escribir el título/tema (no se
+   * recalcula contra el catálogo vigente): null si esa fila no tiene id
+   * (título sin número, discurso fuera de catálogo, o fila anterior a esta
+   * columna que aún no pasó por el backfill).
+   */
+  urlBosquejo(mepsDocumentId: number | null | undefined): string | null {
+    return mepsDocumentId ? `https://docs.jw.org/es/-/doc-${mepsDocumentId}` : null;
+  }
+
+  /** Para el botón "Ver bosquejo": para la propagación (la fila es clicable) y abre en pestaña nueva. */
+  abrirBosquejo(event: Event, url: string): void {
+    event.stopPropagation();
+    window.open(url, '_blank', 'noopener');
+  }
+
+  /** 3145678902 → "314 567 8902": un celular de 10 dígitos se lee y dicta mejor en grupos. */
+  telefonoLegible(tel: string): string {
+    const d = tel.replace(/\D/g, '');
+    return d.length === 10 ? `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}` : tel;
   }
 
   abrirModalTema(tema?: TemaPublicador): void {

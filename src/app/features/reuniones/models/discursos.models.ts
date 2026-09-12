@@ -106,8 +106,12 @@ export interface DiscursoEntranteOut {
   id_discurso_entrante: number;
   fecha: string;
   nombre_orador: string | null;
+  telefono_orador: string | null;
   congregacion_origen: string | null;
   titulo_discurso: string | null;
+  /** Copia congelada del id de docs.jw.org al momento de escribir titulo_discurso; null si no matcheó el catálogo. */
+  meps_document_id: number | null;
+  cantico: string | null;
   id_grupo_hospitalidad: number | null;
   grupo_hospitalidad: GrupoSimple | null;
   notas: string | null;
