@@ -333,7 +333,17 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
     if (this.abierto()) this.cerrar();
   }
 
-  private readonly cerrarPorScroll = () => this.onViewportChange();
+  /**
+   * El desplegable es `fixed` y se mide contra el campo, así que al moverse
+   * la página se cierra para no quedar flotando desalineado. Pero el scroll
+   * de la propia lista no mueve el campo: sin esta excepción, desplazarse por
+   * las sugerencias cerraba el desplegable al primer movimiento.
+   */
+  private readonly cerrarPorScroll = (ev: Event) => {
+    const lista = document.getElementById(this.listboxId);
+    if (lista && ev.target instanceof Node && lista.contains(ev.target)) return;
+    this.onViewportChange();
+  };
 
   private abrir(): void {
     if (!this.abierto()) {

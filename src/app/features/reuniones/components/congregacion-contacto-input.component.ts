@@ -62,7 +62,7 @@ import { CongregacionContacto } from '../models/discursos.models';
     @if (abierto() && sugerencias().length > 0) {
       <div class="fixed z-[60] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden"
         [style.top.px]="pos().top" [style.left.px]="pos().left" [style.width.px]="pos().width"
-        [id]="listboxId" role="listbox">
+        [id]="listboxId" role="listbox" (mousedown)="$event.preventDefault()">
         <div class="flex flex-col p-1.5 gap-0.5 max-h-64 overflow-y-auto simple-scrollbar">
           @for (c of sugerencias(); track c.id_congregacion_contacto; let i = $index) {
             <button type="button"
@@ -255,7 +255,17 @@ export class CongregacionContactoInputComponent implements ControlValueAccessor,
     if (this.abierto()) this.cerrar();
   }
 
-  private readonly cerrarPorScroll = () => this.onViewportChange();
+  /**
+   * El desplegable es `fixed` y se mide contra el campo, así que al moverse
+   * la página se cierra para no quedar flotando desalineado. Pero el scroll
+   * de la propia lista no mueve el campo: sin esta excepción, desplazarse por
+   * las sugerencias cerraba el desplegable al primer movimiento.
+   */
+  private readonly cerrarPorScroll = (ev: Event) => {
+    const lista = document.getElementById(this.listboxId);
+    if (lista && ev.target instanceof Node && lista.contains(ev.target)) return;
+    this.onViewportChange();
+  };
 
   private abrir(): void {
     if (!this.abierto()) {
