@@ -279,9 +279,6 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
         <span class="hidden md:block md:flex-1" aria-hidden="true"></span>
 
         @if (semanas().length > 0 && estado() !== 'loading') {
-          <!-- Filete: separa la píldora del resto de la barra. -->
-          <span class="hidden md:block w-px h-7 bg-slate-200 dark:bg-slate-700 shrink-0" aria-hidden="true"></span>
-
           <!-- ===== BANDEJA DE CONTROL DEL MES ===== -->
           <!-- Una sola superficie con su fondo y su borde, como una barra de
                herramientas real; los filetes finos marcan dónde empieza cada
