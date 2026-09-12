@@ -174,6 +174,10 @@ export class DiscursosService {
     return this.http.get(`${this.base}/pdf/salientes`, { params, responseType: 'blob' });
   }
 
+  descargarPdfOradores(idCong: number | null): Observable<Blob> {
+    return this.http.get(`${this.base}/pdf/oradores`, { params: this.congParams(idCong), responseType: 'blob' });
+  }
+
   getTemas(idCong: number | null): Observable<TemaPublicador[]> {
     return this.http.get<TemaPublicador[]>(`${this.base}/temas`, { params: this.congParams(idCong) });
   }

@@ -178,6 +178,9 @@ export interface CongregacionContacto {
   lat: number | null;
   lon: number | null;
   notas: string | null;
+  /** Intercambio futuro ya acordado con esta congregación. Solo mes/año: día fijo en 1. */
+  proximo_arreglo_fecha: string | null;
+  proximo_arreglo_nota: string | null;
   personas: ContactoPersona[];
   discursantes: Discursante[];
 }
@@ -196,6 +199,8 @@ export interface CrearCongregacionContactoRequest {
   lat?: number | null;
   lon?: number | null;
   notas?: string | null;
+  proximo_arreglo_fecha?: string | null;
+  proximo_arreglo_nota?: string | null;
 }
 
 export interface EditarCongregacionContactoRequest {
@@ -207,6 +212,8 @@ export interface EditarCongregacionContactoRequest {
   lat?: number | null;
   lon?: number | null;
   notas?: string | null;
+  proximo_arreglo_fecha?: string | null;
+  proximo_arreglo_nota?: string | null;
 }
 
 export interface CrearPersonaRequest {
