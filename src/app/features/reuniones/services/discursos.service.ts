@@ -36,6 +36,7 @@ import {
   MesDiscursosDisponible,
   OradorLocal,
   PublicadorSimple,
+  RecordatorioSalienteConfig,
   TemaPublicador,
   VerificarRepeticionOut,
 } from '../models/discursos.models';
@@ -94,6 +95,25 @@ export class DiscursosService {
     return this.http.put<DiscursoSalienteOut>(
       `${this.base}/salientes/${id}/cancelar`,
       { cancelado },
+      { params: this.congParams(idCong) },
+    );
+  }
+
+  /** Hora a la que se avisa por la app al orador la víspera de su salida. */
+  getRecordatorioConfig(idCong: number | null): Observable<RecordatorioSalienteConfig> {
+    return this.http.get<RecordatorioSalienteConfig>(
+      `${this.base}/salientes/recordatorio-config`,
+      { params: this.congParams(idCong) },
+    );
+  }
+
+  actualizarRecordatorioConfig(
+    payload: { habilitado: boolean; hora: string; dias_antes: number },
+    idCong: number | null,
+  ): Observable<RecordatorioSalienteConfig> {
+    return this.http.put<RecordatorioSalienteConfig>(
+      `${this.base}/salientes/recordatorio-config`,
+      payload,
       { params: this.congParams(idCong) },
     );
   }

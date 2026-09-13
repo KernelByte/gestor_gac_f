@@ -284,6 +284,18 @@ export interface EditarOradorLocalRequest {
   notas?: string | null;
 }
 
+/**
+ * Aviso por la app móvil al orador antes de su salida a discursar.
+ * `hora` es "HH:MM" en hora de Colombia, como la de los respaldos.
+ * `dias_antes` va de 1 (la víspera) a 7.
+ */
+export interface RecordatorioSalienteConfig {
+  habilitado: boolean;
+  hora: string;
+  dias_antes: number;
+  ultima_ejecucion_en?: string | null;
+}
+
 /** Un bosquejo del S-34. El catálogo es global: no depende de la congregación. */
 export interface CatalogoDiscurso {
   numero: number;
