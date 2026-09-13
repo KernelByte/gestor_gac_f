@@ -14,7 +14,7 @@
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, of, firstValueFrom, Observable } from 'rxjs'; // 'of' used in tryLoadDrafts catchError
 import { ReunionesLogisticaComponent } from './reuniones-logistica.component';
 import { ReunionesDiscursosComponent } from './reuniones-discursos.component';
@@ -2192,6 +2192,8 @@ export class ReunionesProgramacionComponent implements OnInit {
   private zone = inject(NgZone);
   private destroyRef = inject(DestroyRef);
   private toast = inject(ToastService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   hasEditPermission = computed(() => {
     const tipo = this.tipoReunionActivo();
@@ -3107,8 +3109,17 @@ export class ReunionesProgramacionComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Seleccionar el primer tab al que el usuario tiene acceso
-    if (this.canViewEntreSemana()) {
+    // La pestaña activa vive en la URL (?tab=...): si el enlace con el que
+    // se llegó (o un refresco de la propia página) ya trae una válida, se
+    // respeta esa; si no, se cae al primer tab al que el usuario tiene
+    // acceso. Antes cualquier refresco ignoraba dónde estaba el usuario y
+    // aterrizaba siempre en el primero —normalmente "Entre semana"—, así que
+    // recargar la página mientras se trabajaba en Discursos, por ejemplo, lo
+    // sacaba de ahí sin aviso.
+    const tabDeUrl = this.tabValidoYVisible(this.route.snapshot.queryParamMap.get('tab'));
+    if (tabDeUrl) {
+      this.tipoReunionActivo.set(tabDeUrl);
+    } else if (this.canViewEntreSemana()) {
       this.tipoReunionActivo.set('entre_semana');
     } else if (this.canViewFinSemana()) {
       this.tipoReunionActivo.set('fin_semana');
@@ -3118,6 +3129,19 @@ export class ReunionesProgramacionComponent implements OnInit {
       this.tipoReunionActivo.set('discursos');
     }
     this.loadSemanasSinReunion();
+  }
+
+  /** Valida el `tab` de la URL contra los permisos reales del usuario: un
+   *  enlace viejo o manipulado no debe colar una pestaña a la que ya no
+   *  tiene acceso. */
+  private tabValidoYVisible(tab: string | null): 'entre_semana' | 'fin_semana' | 'logistica' | 'discursos' | null {
+    switch (tab) {
+      case 'entre_semana': return this.canViewEntreSemana() ? tab : null;
+      case 'fin_semana':    return this.canViewFinSemana() ? tab : null;
+      case 'logistica':     return this.canViewLogistica() ? tab : null;
+      case 'discursos':     return this.canViewDiscursos() ? tab : null;
+      default: return null;
+    }
   }
 
   // ── Semanas sin reunión (asamblea, congreso, Conmemoración) ──
@@ -4894,6 +4918,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   onTipoChange(tipo: 'entre_semana' | 'fin_semana' | 'logistica' | 'discursos'): void {
     if (tipo === this.tipoReunionActivo()) return;
     this.tipoReunionActivo.set(tipo);
+    this.reflejarTabEnUrl(tipo);
     if (tipo === 'logistica' || tipo === 'discursos') return;
     // Reset state for new type
     this.semanas.set([]);
@@ -4906,6 +4931,19 @@ export class ReunionesProgramacionComponent implements OnInit {
     // Reload for the new type
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (idCong) this.loadPeriodos(idCong, { abrirBorrador: tipo === 'entre_semana' });
+  }
+
+  /** Refleja la pestaña activa en `?tab=` sin apilar historial de navegación
+   *  -cada clic entre pestañas no debe ser un paso más para el botón
+   *  "atrás"-, para que un refresco (o un enlace compartido) vuelva a la
+   *  misma pestaña en vez de caer siempre en la primera. */
+  private reflejarTabEnUrl(tipo: string): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: tipo },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 }
 
