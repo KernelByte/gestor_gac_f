@@ -72,6 +72,7 @@ export interface AsignacionDraft {
 
 export interface EditarAsignacionRequest {
   id_publicador_nuevo: number;
+  confirmar_conflicto?: boolean;
 }
 
 export interface ProgramaSemana {

@@ -3853,7 +3853,7 @@ export class ReunionesDiscursosComponent implements OnInit {
     const idCong = this.idCong;
 
     const doEditar = () => {
-      this.svc.editarSaliente(saliente.id_discurso_saliente, { id_publicador: id }, this.idCong).subscribe({
+      this.svc.editarSaliente(saliente.id_discurso_saliente, { id_publicador: id, confirmar_conflicto: true }, this.idCong).subscribe({
         next: (updated) => this.updateSaliente(updated),
         error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
       });
@@ -4946,6 +4946,7 @@ export class ReunionesDiscursosComponent implements OnInit {
         lat: this.nuevoSaliente.ubicacion?.lat ?? null,
         lon: this.nuevoSaliente.ubicacion?.lon ?? null,
         notas: this.nuevoSaliente.notas || null,
+        confirmar_conflicto: true,
       }, idCong).subscribe({
         next: (nuevo) => {
           const d = this.mesDatos();

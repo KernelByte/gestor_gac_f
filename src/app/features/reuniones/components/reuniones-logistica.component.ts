@@ -3982,7 +3982,7 @@ export class ReunionesLogisticaComponent implements OnInit {
     if (!asig) return;
 
     const guardar = () => {
-      this.logisticaSvc.editarItem(asig.id_logistica, { id_publicador: idPublicador }).subscribe({
+      this.logisticaSvc.editarItem(asig.id_logistica, { id_publicador: idPublicador, confirmar_conflicto: true }).subscribe({
         next: (updated) => {
           this.mesDatos.update((d) => {
             if (!d) return d;

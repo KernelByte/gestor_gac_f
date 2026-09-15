@@ -36,7 +36,7 @@ import {
   <!-- Sin padding horizontal propio: el margen exterior lo pone el shell una
        sola vez (px-4 md:px-8). Se conserva pb-10 para que el scroll no corte
        la última tarjeta contra el borde. -->
-  <div class="flex flex-col gap-4 overflow-y-auto overflow-x-hidden custom-scrollbar pb-10">
+  <div @staggerIn [@.disabled]="prefersReducedMotion" class="mx-auto flex w-full max-w-[1400px] flex-col gap-4 overflow-y-auto overflow-x-hidden custom-scrollbar pb-10">
 
     <!-- 1. Hero Banner -->
     <div class="relative bg-gradient-to-br from-violet-600 via-violet-700 to-violet-800 rounded-2xl px-6 py-10 sm:px-8 md:px-10 md:py-12">
@@ -49,9 +49,12 @@ import {
           <h1 class="font-display font-bold text-3xl sm:text-4xl text-white leading-tight">Hola, {{ userName() }}! 👋</h1>
           <p class="text-xs sm:text-sm text-white/70 mt-2 leading-snug font-medium">Aquí tienes el resumen de actividad del {{ currentDate() }}.</p>
         </div>
-        <button class="hidden sm:flex p-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transform rotate-3 shadow-xl items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] shrink-0 mt-0.5">
+        <!-- /impeccable: era un <button> sin manejador de clic — un elemento
+             interactivo que no hacía nada. Se conserva el acento visual pero
+             como elemento decorativo, no como una promesa de acción vacía. -->
+        <div aria-hidden="true" class="hidden sm:flex p-3 bg-white/10 rounded-xl border border-white/10 transform rotate-3 shadow-xl items-center justify-center shrink-0 mt-0.5">
           <svg class="w-8 h-8 text-purple-50" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-        </button>
+        </div>
       </div>
     </div>
 
@@ -63,7 +66,11 @@ import {
         <div class="mb-3">
           <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Publicadores Activos</p>
         </div>
-        <p class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">{{ totalPublicadores() }}</p>
+        @if (publicadoresListo()) {
+          <p class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight animate-fadeIn">{{ totalPublicadores() }}</p>
+        } @else {
+          <div class="skeleton h-8 sm:h-9 md:h-10 w-16"></div>
+        }
       </div>
 
       <!-- Informes % -->
@@ -75,10 +82,15 @@ import {
             <span title="{{ informesPendientes() }} publicadores aún no han enviado su informe" class="px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-[9px] font-bold text-red-600 dark:text-red-400">{{ informesPendientes() }} pend.</span>
           }
         </div>
-        <p class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">{{ porcentajeInformes() }}<span class="text-sm font-semibold text-gray-400 dark:text-slate-500 ml-0.5">%</span></p>
-        <div class="h-1.5 w-full bg-gray-100 dark:bg-slate-700/70 rounded-full mt-3 overflow-hidden">
-          <div class="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]" [style.width.%]="porcentajeInformes() || 2"></div>
-        </div>
+        @if (statsListo()) {
+          <p class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight animate-fadeIn">{{ porcentajeInformes() }}<span class="text-sm font-semibold text-gray-400 dark:text-slate-500 ml-0.5">%</span></p>
+          <div class="h-1.5 w-full bg-gray-100 dark:bg-slate-700/70 rounded-full mt-3 overflow-hidden">
+            <div class="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]" [style.width.%]="porcentajeInformes() || 2"></div>
+          </div>
+        } @else {
+          <div class="skeleton h-8 sm:h-9 md:h-10 w-14"></div>
+          <div class="skeleton h-1.5 w-full rounded-full mt-3"></div>
+        }
       </div>
 
       <!-- Cursos Bíblicos -->
@@ -87,7 +99,11 @@ import {
         <div class="mb-3">
           <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Cursos Bíblicos</p>
         </div>
-        <p class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">{{ totalCursos() }}</p>
+        @if (statsListo()) {
+          <p class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight animate-fadeIn">{{ totalCursos() }}</p>
+        } @else {
+          <div class="skeleton h-8 sm:h-9 md:h-10 w-12"></div>
+        }
       </div>
 
       <!-- Horas Precursores (solo si hay datos) -->
@@ -97,22 +113,26 @@ import {
           <div class="mb-3">
             <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Horas Precursores</p>
           </div>
-          <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            @if (horasPrecursoresRegulares() === 0 && horasPrecursoresAuxiliares() === 0) {
-              <span class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">0</span>
-            }
-            @if (horasPrecursoresRegulares() > 0) {
-              <span class="text-xl sm:text-3xl font-bold text-violet-600 dark:text-violet-400 tabular-nums tracking-tight">{{ horasPrecursoresRegulares() }}</span>
-              <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">Hrs Reg.</span>
-            }
-            @if (horasPrecursoresRegulares() > 0 && horasPrecursoresAuxiliares() > 0) {
-              <span class="text-gray-200 dark:text-slate-600 hidden sm:inline">·</span>
-            }
-            @if (horasPrecursoresAuxiliares() > 0) {
-              <span class="text-lg sm:text-2xl font-bold text-violet-500 dark:text-violet-400 tabular-nums tracking-tight">{{ horasPrecursoresAuxiliares() }}</span>
-              <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">Hrs Aux.</span>
-            }
-          </div>
+          @if (statsListo()) {
+            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 animate-fadeIn">
+              @if (horasPrecursoresRegulares() === 0 && horasPrecursoresAuxiliares() === 0) {
+                <span class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">0</span>
+              }
+              @if (horasPrecursoresRegulares() > 0) {
+                <span class="text-xl sm:text-3xl font-bold text-violet-600 dark:text-violet-400 tabular-nums tracking-tight">{{ horasPrecursoresRegulares() }}</span>
+                <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">Hrs Reg.</span>
+              }
+              @if (horasPrecursoresRegulares() > 0 && horasPrecursoresAuxiliares() > 0) {
+                <span class="text-gray-200 dark:text-slate-600 hidden sm:inline">·</span>
+              }
+              @if (horasPrecursoresAuxiliares() > 0) {
+                <span class="text-lg sm:text-2xl font-bold text-violet-500 dark:text-violet-400 tabular-nums tracking-tight">{{ horasPrecursoresAuxiliares() }}</span>
+                <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">Hrs Aux.</span>
+              }
+            </div>
+          } @else {
+            <div class="skeleton h-8 sm:h-9 md:h-10 w-20"></div>
+          }
         </div>
       }
 
@@ -138,7 +158,7 @@ import {
               <p class="text-xl sm:text-2xl font-bold text-violet-600 dark:text-violet-400 tabular-nums leading-none">{{ proximaVisita()!.diasRestantes }}</p>
               <p class="text-[9px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider mt-0.5">{{ proximaVisita()!.diasRestantes === 1 ? 'día' : 'días' }}</p>
             </div>
-            <a [routerLink]="proximaVisita()!.link" class="hidden sm:flex items-center justify-center w-9 h-9 rounded-lg bg-violet-50 dark:bg-violet-500/10 hover:bg-violet-600 dark:hover:bg-violet-600 border border-violet-100 dark:border-violet-500/20 hover:border-violet-600 transition-all duration-300 group">
+            <a [routerLink]="proximaVisita()!.link" aria-label="Ver detalles de la visita" class="hidden sm:flex items-center justify-center w-9 h-9 rounded-lg bg-violet-50 dark:bg-violet-500/10 hover:bg-violet-600 dark:hover:bg-violet-600 border border-violet-100 dark:border-violet-500/20 hover:border-violet-600 transition-all duration-300 active:scale-90 group">
               <svg class="w-4 h-4 text-violet-600 dark:text-violet-400 group-hover:text-white transition-colors duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
             </a>
           </div>
@@ -150,8 +170,10 @@ import {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
       <!-- Asistencia — Trend Chart -->
-      @if (asistenciaChartOption() !== null) {
-        <div class="hidden sm:block bg-white dark:bg-slate-800/95 rounded-2xl border border-gray-100 dark:border-slate-700/50 p-5 shadow-sm shadow-black/[0.04] dark:shadow-black/30">
+      @if (!asistenciaListo()) {
+        <div class="skeleton rounded-2xl h-64 md:h-72"></div>
+      } @else if (asistenciaChartOption() !== null) {
+        <div class="bg-white dark:bg-slate-800/95 rounded-2xl border border-gray-100 dark:border-slate-700/50 p-5 shadow-sm shadow-black/[0.04] dark:shadow-black/30 animate-fadeIn">
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
             <div>
               <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Asistencia a Reuniones</p>
@@ -205,8 +227,10 @@ import {
       }
 
       <!-- Informes — Bar Chart -->
-      @if (informesChartOption() !== null) {
-        <div class="bg-white dark:bg-slate-800/95 rounded-2xl border border-gray-100 dark:border-slate-700/50 p-5 shadow-sm shadow-black/[0.04] dark:shadow-black/30">
+      @if (!informesChartListo()) {
+        <div class="skeleton rounded-2xl h-64 md:h-72"></div>
+      } @else if (informesChartOption() !== null) {
+        <div class="bg-white dark:bg-slate-800/95 rounded-2xl border border-gray-100 dark:border-slate-700/50 p-5 shadow-sm shadow-black/[0.04] dark:shadow-black/30 animate-fadeIn">
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
             <div>
               <p class="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.07em] sm:tracking-[0.14em] text-gray-400 dark:text-slate-500">Informes Recibidos</p>
@@ -288,6 +312,17 @@ import {
   :host-context(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #475569;
   }
+  /* /animate: además de apagar la coreografía de Angular Animations
+     ([@.disabled] en la plantilla), respeta reduced-motion para las
+     transiciones CSS declaradas en este componente (hover, shimmer, fade). */
+  @media (prefers-reduced-motion: reduce) {
+    :host * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
   :host-context(.dark) .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #64748b;
   }
@@ -298,6 +333,11 @@ export class HomePage implements OnInit {
   private http = inject(HttpClient);
   private congregacionContext = inject(CongregacionContextService);
   private visitaService = inject(VisitaService);
+
+  /* /animate exige respetar prefers-reduced-motion: apaga la coreografía de
+     entrada (Angular Animations) para quien lo pida en el sistema. */
+  readonly prefersReducedMotion =
+    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   userName = signal('Usuario');
   currentDate = signal('');
@@ -329,6 +369,13 @@ export class HomePage implements OnInit {
   canViewReuniones = signal(false);
   canManageVisitaSC = signal(false);
 
+  /* /animate: "Loading states: show skeleton... don't just jump from 0 to
+     the real value" — evita el salto brusco mientras responde la API. */
+  publicadoresListo  = signal(false);
+  statsListo         = signal(false);
+  asistenciaListo    = signal(false);
+  informesChartListo = signal(false);
+
   ngOnInit() {
    const user = this.store.user();
    if (user) {
@@ -353,11 +400,17 @@ export class HomePage implements OnInit {
 
      if (this.canViewPublicadores()) {
         this.loadPublicadoresCount();
+     } else {
+        this.publicadoresListo.set(true);
      }
      if (this.canViewInformes()) {
         this.loadInformesStats(congregacionId);
         this.loadAsistenciaStats(congregacionId);
         this.loadInformesChart(congregacionId);
+     } else {
+        this.statsListo.set(true);
+        this.asistenciaListo.set(true);
+        this.informesChartListo.set(true);
      }
      if (this.canManageVisitaSC()) {
         this.loadProximaVisita(congregacionId);
@@ -381,15 +434,17 @@ export class HomePage implements OnInit {
    this.http.get<any[]>('/api/publicadores/?limit=1000').subscribe({
      next: (publicadores) => {
       this.totalPublicadores.set(publicadores.length);
+      this.publicadoresListo.set(true);
      },
      error: (err) => {
       console.error('Error cargando publicadores:', err);
+      this.publicadoresListo.set(true);
      }
    });
   }
 
   private loadInformesStats(congregacionId: number | null | undefined) {
-    if (!congregacionId) return;
+    if (!congregacionId) { this.statsListo.set(true); return; }
 
     // El periodo activo de informes (normalmente el mes anterior, ver
     // periodo_informes_scheduler.py) es la fuente de verdad para estas
@@ -424,15 +479,18 @@ export class HomePage implements OnInit {
             return db - da;
           });
 
-        if (pasados.length === 0) return;
+        if (pasados.length === 0) { this.statsListo.set(true); return; }
         this.tryLoadInformesStatsFromPeriods(pasados.slice(0, 3), 0, congregacionId);
       },
-      error: err => console.error('Error cargando periodos para stats', err)
+      error: err => {
+        console.error('Error cargando periodos para stats', err);
+        this.statsListo.set(true);
+      }
     });
   }
 
   private tryLoadInformesStatsFromPeriods(periods: any[], index: number, congregacionId: number) {
-    if (index >= periods.length) return;
+    if (index >= periods.length) { this.statsListo.set(true); return; }
     const p = periods[index];
 
     this.http.get<any>(`/api/informes/resumen-mensual?periodo_id=${p.id_periodo}&congregacion_id=${congregacionId}`).subscribe({
@@ -453,13 +511,17 @@ export class HomePage implements OnInit {
         if (stats.total_publicadores > 0) {
           this.totalPublicadores.set(stats.total_publicadores);
         }
+        this.statsListo.set(true);
       },
-      error: err => console.error('Error loading resumen', err)
+      error: err => {
+        console.error('Error loading resumen', err);
+        this.statsListo.set(true);
+      }
     });
   }
 
   private loadAsistenciaStats(congregacionId: number | null | undefined) {
-    if (!congregacionId) return;
+    if (!congregacionId) { this.asistenciaListo.set(true); return; }
     const now = new Date();
     const anoServicio = now.getMonth() + 1 >= 9 ? now.getFullYear() + 1 : now.getFullYear();
 
@@ -478,15 +540,19 @@ export class HomePage implements OnInit {
               next: (resPrev) => {
                 const conDatosPrev = this.filtrarConDatosAsistencia(resPrev.meses);
                 const combinados = [...conDatosPrev, ...conDatosActual];
-                if (combinados.length === 0) return;
+                if (combinados.length === 0) { this.asistenciaListo.set(true); return; }
                 this.aplicarAsistenciaStats(combinados);
               },
               error: () => {
                 if (conDatosActual.length > 0) this.aplicarAsistenciaStats(conDatosActual);
+                else this.asistenciaListo.set(true);
               }
             });
         },
-        error: err => console.error('Error asistencia stats', err)
+        error: err => {
+          console.error('Error asistencia stats', err);
+          this.asistenciaListo.set(true);
+        }
       });
   }
 
@@ -505,6 +571,7 @@ export class HomePage implements OnInit {
     this.asistenciaMesNombre.set(actual.nombre_mes);
 
     this.asistenciaChartOption.set(this.buildAsistenciaChart(conDatos.slice(-6)));
+    this.asistenciaListo.set(true);
   }
 
   private buildAsistenciaChart(meses: any[]): EChartsOption {
@@ -596,7 +663,7 @@ export class HomePage implements OnInit {
   }
 
   private loadInformesChart(congregacionId: number | null | undefined) {
-    if (!congregacionId) return;
+    if (!congregacionId) { this.informesChartListo.set(true); return; }
     const now = new Date();
     const mesActual = now.getMonth() + 1;
     const anoActual = now.getFullYear();
@@ -641,12 +708,16 @@ export class HomePage implements OnInit {
           )
         ).then(results => {
           const conDatos = results.filter(Boolean) as {label: string; pct: number; recibidos: number; total: number}[];
-          if (conDatos.length === 0) return;
+          if (conDatos.length === 0) { this.informesChartListo.set(true); return; }
           const last6 = conDatos.slice(-6);
           this.informesChartOption.set(this.buildInformesChart(last6));
+          this.informesChartListo.set(true);
         });
       },
-      error: err => console.error('Error cargando periodos para chart', err)
+      error: err => {
+        console.error('Error cargando periodos para chart', err);
+        this.informesChartListo.set(true);
+      }
     });
   }
 

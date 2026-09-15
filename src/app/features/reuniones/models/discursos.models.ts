@@ -34,6 +34,7 @@ export interface CrearSalienteRequest {
   lat?: number | null;
   lon?: number | null;
   notas?: string | null;
+  confirmar_conflicto?: boolean;
 }
 
 export interface EditarSalienteRequest {
@@ -46,6 +47,7 @@ export interface EditarSalienteRequest {
   lat?: number | null;
   lon?: number | null;
   notas?: string | null;
+  confirmar_conflicto?: boolean;
 }
 
 export interface EditarEntranteRequest {

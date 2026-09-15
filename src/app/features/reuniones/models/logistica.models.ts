@@ -8,6 +8,7 @@ export interface GenerarLogisticaRequest {
 
 export interface EditarLogisticaItemRequest {
   id_publicador: number | null;
+  confirmar_conflicto?: boolean;
 }
 
 export interface FechaTipoIn {

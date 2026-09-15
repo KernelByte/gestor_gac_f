@@ -59,6 +59,11 @@ interface LogisticaGrupo {
   items: LogisticaRow[];
 }
 
+interface MiAsignacion {
+  label: string;
+  tipo: 'parte' | 'logistica';
+}
+
 interface LogisticaData {
   asignaciones: LogisticaItemOut[];
   aseo: LogisticaAseoOut[];
@@ -138,87 +143,90 @@ const SECCION_LABELS: Record<string, string> = {
   standalone: true,
   selector: 'app-reuniones-resumen',
   imports: [CommonModule, NgStyle],
-  template: `
-<div class="resumen-host">
+  template: `<div class="resumen-host">
   <div class="resumen-layout">
   <div class="resumen-container">
 
     <!-- ══════════ SKELETON ══════════ -->
     <ng-container *ngIf="loading()">
-      <div class="skeleton-wrap">
+      <div class="skeleton-wrap" aria-busy="true" aria-live="polite">
+        <span class="sr-only">Cargando el resumen de la próxima reunión…</span>
         <!-- Header card -->
         <div class="skel-card">
           <div class="skel-row">
-            <div class="skel h-5 w-32 rounded-full"></div>
-            <div class="skel h-5 w-16 rounded-full"></div>
+            <div class="skel h-4 w-40 rounded-full"></div>
+            <div class="skel h-5 w-24 rounded-lg"></div>
           </div>
-          <div class="skel h-8 w-3/4 rounded-lg mt-3"></div>
-          <div class="skel h-4 w-24 rounded mt-2"></div>
-          <div class="skel h-7 w-48 rounded-lg mt-3"></div>
+          <div class="skel h-8 w-3/4 rounded-lg mt-4"></div>
+          <div class="skel h-4 w-32 rounded mt-3"></div>
         </div>
-        <!-- Section -->
-        <div class="skel h-10 w-full rounded-xl mt-1"></div>
+        <!-- Banner -->
         <div class="skel-card">
           <div class="skel-row">
-            <div class="skel h-9 w-9 rounded-full shrink-0"></div>
+            <div class="skel h-9 w-9 rounded-xl shrink-0"></div>
+            <div class="flex-1 space-y-2">
+              <div class="skel h-4 w-1/2 rounded"></div>
+              <div class="skel h-4 w-2/5 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Secciones -->
+        <div class="skel-card">
+          <div class="skel h-4 w-44 rounded"></div>
+          <div class="skel-row mt-4">
+            <div class="skel h-7 w-7 rounded-full shrink-0"></div>
             <div class="flex-1 space-y-2">
               <div class="skel h-4 w-3/4 rounded"></div>
-              <div class="skel h-3 w-1/2 rounded"></div>
               <div class="skel h-3 w-2/5 rounded"></div>
             </div>
-            <div class="skel h-7 w-12 rounded-lg shrink-0"></div>
           </div>
-        </div>
-        <div class="skel-card">
-          <div class="skel-row">
-            <div class="skel h-9 w-9 rounded-full shrink-0"></div>
+          <div class="skel-row mt-4">
+            <div class="skel h-7 w-7 rounded-full shrink-0"></div>
             <div class="flex-1 space-y-2">
               <div class="skel h-4 w-2/3 rounded"></div>
               <div class="skel h-3 w-1/3 rounded"></div>
             </div>
-            <div class="skel h-7 w-12 rounded-lg shrink-0"></div>
           </div>
         </div>
-        <div class="skel h-10 w-full rounded-xl mt-1"></div>
         <div class="skel-card">
-          <div class="skel-row">
-            <div class="skel h-9 w-9 rounded-full shrink-0"></div>
+          <div class="skel h-4 w-36 rounded"></div>
+          <div class="skel-row mt-4">
+            <div class="skel h-7 w-7 rounded-full shrink-0"></div>
             <div class="flex-1 space-y-2">
               <div class="skel h-4 w-5/6 rounded"></div>
               <div class="skel h-3 w-2/5 rounded"></div>
             </div>
-            <div class="skel h-7 w-12 rounded-lg shrink-0"></div>
           </div>
         </div>
       </div>
     </ng-container>
 
     <!-- ══════════ ERROR ══════════ -->
-    <div *ngIf="!loading() && error()" class="flex flex-col items-center justify-center py-16 gap-3 text-center fade-in">
-      <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-1">
-        <svg class="w-6 h-6 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <div *ngIf="!loading() && error()" class="empty-state fade-in" role="alert">
+      <div class="empty-icon-wrap empty-icon-neg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round"
             d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
         </svg>
       </div>
-      <p class="text-base font-semibold text-gray-700">Algo salió mal</p>
-      <p class="text-sm text-gray-600 max-w-xs">{{ error() }}</p>
+      <p class="empty-title">No pudimos cargar el resumen</p>
+      <p class="empty-body">{{ error() }}</p>
+      <button type="button" class="empty-action" (click)="reintentar()">Reintentar</button>
     </div>
 
     <!-- ══════════ NO PUBLICADO ══════════ -->
-    <div *ngIf="!loading() && !error() && noPublicado()" class="flex flex-col items-center justify-center py-16 gap-3 text-center fade-in">
-      <div class="w-14 h-14 rounded-full bg-violet-50 flex items-center justify-center mb-1">
-        <svg class="w-6 h-6 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <div *ngIf="!loading() && !error() && noPublicado()" class="empty-state fade-in">
+      <div class="empty-icon-wrap empty-icon-brand">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round"
             d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
         </svg>
       </div>
-      <p class="text-base font-semibold text-gray-700">Programa no publicado</p>
-      <p class="text-sm text-gray-600 max-w-xs">
-        El programa de la próxima reunión aún no ha sido publicado por tu congregación.
+      <p class="empty-title">El programa todavía no está publicado</p>
+      <p class="empty-body">
+        Aquí verás las partes, quién las tiene y la logística en cuanto la congregación publique el programa.
         <ng-container *ngIf="nextMeeting()">
-          Vuelve a consultar más cerca del
-          <strong class="font-semibold text-gray-600">{{ nextMeeting()!.dateFormatted }}</strong>.
+          Vuelve a consultar más cerca del <span class="empty-date">{{ nextMeeting()!.dateFormatted }}</span>.
         </ng-container>
       </p>
     </div>
@@ -227,11 +235,11 @@ const SECCION_LABELS: Record<string, string> = {
     <ng-container *ngIf="!loading() && !error() && !noPublicado() && programa()">
 
       <!-- ── Header: info de la reunión ── -->
-      <div class="header-card fade-in">
+      <header class="header-card fade-in">
         <!-- Row 1: tipo (eyebrow) + badge fecha -->
         <div class="header-top-row">
           <p class="tipo-eyebrow">
-            <svg class="tipo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg class="tipo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <ng-container *ngIf="nextMeeting()!.tipo === 'entre_semana'">
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
@@ -250,35 +258,35 @@ const SECCION_LABELS: Record<string, string> = {
           </span>
         </div>
 
-        <!-- Fecha larga -->
-        <p class="header-date">{{ nextMeeting()!.dateFormatted }}</p>
+        <!-- Fecha larga + hora -->
+        <div class="header-main">
+          <h1 class="header-date">
+            <time [attr.datetime]="isoNextMeeting()">{{ nextMeeting()!.dateFormatted }}</time>
+          </h1>
 
-        <!-- Hora + duración -->
-        <div class="header-hora-row">
-          <div *ngIf="nextMeeting()!.hora" class="header-hora">
-            <svg class="header-hora-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <span>{{ formatHora12(nextMeeting()!.hora) }}</span>
+          <div class="header-hora-row">
+            <p *ngIf="nextMeeting()!.hora" class="header-hora">
+              <svg class="header-hora-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span>{{ formatHora12(nextMeeting()!.hora) }}</span>
+            </p>
+            <span *ngIf="getDuracionTotal() > 0" class="duracion-inline">
+              {{ formatDuracion(getDuracionTotal()) }} de programa
+            </span>
           </div>
-          <span *ngIf="getDuracionTotal() > 0" class="duracion-inline">
-            <svg class="duracion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"/>
-            </svg>
-            ~{{ getDuracionTotal() }} min
-          </span>
         </div>
-      </div>
+      </header>
 
       <!-- ── Discurso público (solo fin de semana) ── -->
-      <section *ngIf="discursoInvitado() as disc" class="discurso-card fade-in">
-        <p class="discurso-eyebrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <section *ngIf="discursoInvitado() as disc" class="discurso-card fade-in" aria-labelledby="resumen-discurso">
+        <p class="discurso-eyebrow" id="resumen-discurso">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
           </svg>
-          <span>Discurso Público</span>
+          <span>Discurso público</span>
         </p>
-        <h3 class="discurso-tema">{{ disc.titulo_discurso || 'Tema por confirmar' }}</h3>
+        <h2 class="discurso-tema">{{ disc.titulo_discurso || 'Tema por confirmar' }}</h2>
         <p class="discurso-meta">
           <span class="discurso-orador">{{ disc.nombre_orador || 'Orador por confirmar' }}</span>
           <ng-container *ngIf="disc.congregacion_origen">
@@ -288,19 +296,19 @@ const SECCION_LABELS: Record<string, string> = {
         </p>
       </section>
 
-      <!-- ── Banner: mis partes / sin partes ── -->
-      <div *ngIf="misPartes().length === 0" class="banner-sin-partes fade-in">
-        <svg class="banner-sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+      <!-- ── Banner: mis asignaciones / sin asignaciones ── -->
+      <div *ngIf="misAsignaciones().length === 0" class="banner-sin-partes fade-in">
+        <svg class="banner-sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
         </svg>
         <div class="banner-sp-body">
-          <p class="banner-sp-title">No tienes partes asignadas</p>
-          <p class="banner-sp-sub">Puedes asistir como oyente.</p>
+          <p class="banner-sp-title">Esta semana no tienes asignaciones</p>
+          <p class="banner-sp-sub">Abajo está el programa completo por si quieres prepararte.</p>
         </div>
       </div>
 
-      <div *ngIf="misPartes().length > 0" class="banner-mis-partes">
-        <div class="banner-icon-wrap">
+      <div *ngIf="misAsignaciones().length > 0" class="banner-mis-partes">
+        <div class="banner-icon-wrap" aria-hidden="true">
           <svg class="banner-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -308,135 +316,148 @@ const SECCION_LABELS: Record<string, string> = {
         </div>
         <div class="banner-body">
           <p class="banner-title">
-            {{ misPartes().length === 1 ? 'Tienes una parte asignada' : 'Tienes ' + misPartes().length + ' partes asignadas' }}
+            {{ misAsignaciones().length === 1 ? 'Tienes una asignación' : 'Tienes ' + misAsignaciones().length + ' asignaciones' }}
           </p>
-          <div class="banner-partes-list">
-            <span *ngFor="let p of misPartes(); let last = last" class="banner-parte-chip">
-              {{ p.nombre_parte }}
-            </span>
-          </div>
+          <ul class="banner-partes-list">
+            <li *ngFor="let a of misAsignaciones()" class="banner-parte-chip"
+                [class.chip-logistica]="a.tipo === 'logistica'">
+              {{ a.label }}
+            </li>
+          </ul>
         </div>
       </div>
 
       <!-- ── Secciones ── -->
       <ng-container *ngFor="let grupo of partesAgrupadas(); let gi = index">
-        <section class="seccion-card" [style.animation-delay]="(gi * 50 + 40) + 'ms'">
+        <section class="seccion-card"
+                 [ngStyle]="{ '--sec': grupo.color }"
+                 [style.animation-delay]="(gi * 50 + 40) + 'ms'">
 
-          <!-- Cabecera de sección -->
-          <header class="seccion-header"
-                  [style.background]="getSectionHeaderBg(grupo.color)"
-                  [style.border-bottom-color]="hexToRgba(grupo.color, 0.22)">
+          <!-- Cabecera de sección (sticky mientras se recorre la sección) -->
+          <header class="seccion-header">
             <div class="seccion-header-left">
               <svg class="seccion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                   [style.color]="grupo.color">
+                   aria-hidden="true">
                 <path [attr.d]="grupo.iconPath"/>
               </svg>
-              <h3 class="seccion-titulo" [style.color]="grupo.color">{{ humanizeSeccion(grupo.seccion) }}</h3>
+              <h2 class="seccion-titulo">{{ humanizeSeccion(grupo.seccion) }}</h2>
             </div>
+            <span *ngIf="duracionSeccion(grupo) > 0" class="seccion-meta">{{ duracionSeccion(grupo) }} min</span>
           </header>
 
           <!-- Partes -->
-          <div class="partes-list">
+          <ol class="partes-list">
             <ng-container *ngFor="let parte of grupo.partes; let pi = index">
-              <article class="parte-card"
-                   [class.parte-mia]="parte.esMia || parte.esMiaAyudante || parte.esMiaSalaB || parte.esMiaAyudanteB"
-                   [attr.data-mi-parte]="(parte.esMia || parte.esMiaAyudante || parte.esMiaSalaB || parte.esMiaAyudanteB) ? 'true' : null"
+              <li class="parte-card"
+                   [class.parte-mia]="esMiaLaParte(parte)"
+                   [attr.data-mi-parte]="esMiaLaParte(parte) ? 'true' : null"
                    [style.animation-delay]="(gi * 50 + pi * 30 + 80) + 'ms'">
 
-                <!-- Círculo de número -->
-                <div *ngIf="extraerNumero(parte.principal.nombre_parte)"
-                     class="orden-num"
-                     [ngStyle]="getOrdenStyle(grupo.color, parte.esMia, grupo.seccion)">
-                  {{ extraerNumero(parte.principal.nombre_parte) }}
+                <!-- Ranura de orden: número, nota musical (cánticos) o vacío -->
+                <div class="orden-slot" aria-hidden="true">
+                  <span *ngIf="extraerNumero(parte.principal.nombre_parte)"
+                        class="orden-num"
+                        [ngStyle]="getOrdenStyle(grupo.color, esMiaLaParte(parte), grupo.seccion)">
+                    {{ extraerNumero(parte.principal.nombre_parte) }}
+                  </span>
+                  <svg *ngIf="!extraerNumero(parte.principal.nombre_parte) && esCanticoParte(parte)"
+                       class="orden-cantico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                  </svg>
                 </div>
 
                 <div class="parte-body">
-                  <!-- Título + duración -->
-                  <div class="parte-title-row">
-                    <h4 class="parte-name">{{ quitarPrefijoNumero(formatNombreParte(parte.principal.nombre_parte ?? '')) }}</h4>
-                    <span *ngIf="parte.principal.duracion_minutos" class="duracion-text">
-                      {{ parte.principal.duracion_minutos }}m
-                    </span>
+                  <div class="parte-main">
+                    <!-- Título + duración -->
+                    <div class="parte-title-row">
+                      <h3 class="parte-name">{{ tituloParte(parte) }}</h3>
+                      <span *ngIf="parte.principal.duracion_minutos" class="duracion-text">
+                        {{ parte.principal.duracion_minutos }} min
+                      </span>
+                    </div>
+
+                    <!-- Etiquetas: reemplazo / sala (cuando no hay bloque de salas) -->
+                    <div *ngIf="parte.principal.es_reemplazo || (!parte.salaB && salaTagLabel(parte))"
+                         class="parte-tags-row">
+                      <span *ngIf="parte.principal.es_reemplazo" class="badge-reemplazo">Reemplazo</span>
+                      <span *ngIf="!parte.salaB && salaTagLabel(parte)" class="sala-tag">{{ salaTagLabel(parte) }}</span>
+                    </div>
+
+                    <!-- Fuente de información (referencia bíblica, o el tema
+                         de La Atalaya cuando el PDF ya se importó para esa
+                         semana) -->
+                    <p *ngIf="parte.principal.fuente_informacion" class="fuente-info">
+                      {{ parte.principal.fuente_informacion }}
+                    </p>
+                    <p *ngIf="parte.principal.cantico" class="parte-cantico">
+                      {{ parte.principal.cantico }}
+                    </p>
                   </div>
 
-                  <!-- Badge Reemplazo -->
-                  <div *ngIf="parte.principal.es_reemplazo" class="parte-badges-row">
-                    <span class="badge-reemplazo">Reemplazo</span>
-                  </div>
+                  <div class="parte-asig"
+                       *ngIf="parte.salaB || parte.principal.nombre_completo || parte.ayudante">
 
-
-                  <!-- ── Caso 1: Sin Sala B (layout simple) ── -->
-                  <ng-container *ngIf="!parte.salaB">
-                    <div *ngIf="requiereEtiquetaSala(parte.principal.nombre_parte)" class="sala-tag-row">
-                      <span class="sala-tag">Sala Principal</span>
-                    </div>
-                    <div *ngIf="parte.principal.nombre_completo || parte.ayudante" class="asignado-row">
-                      <span class="asignado-dot"
-                            [style.background]="(parte.esMia || parte.esMiaAyudante) ? '#8b5cf6' : grupo.color"></span>
-                      <p class="asignado-text">
-                        <span *ngIf="parte.principal.nombre_completo" [class.asignado-mio]="parte.esMia">{{ parte.principal.nombre_completo }}</span>
-                        <ng-container *ngIf="parte.ayudante">
-                          <span class="ayudante-sep">{{ esEstudioBiblico(parte.principal.nombre_parte) ? 'Lector:' : 'con' }}</span>
-                          <span [class.asignado-mio]="parte.esMiaAyudante">{{ parte.ayudante.nombre_completo }}</span>
-                        </ng-container>
-                      </p>
-                      <span *ngIf="parte.esMia || parte.esMiaAyudante" class="badge-tu">Tú</span>
-                    </div>
-                  </ng-container>
-
-                  <!-- ── Caso 2: Con Sala B (layout stacked) ── -->
-                  <ng-container *ngIf="parte.salaB">
-                    <div class="salas-stack">
-                      <!-- Sala Principal -->
-                      <div class="sala-block">
-                        <div class="sala-block-header">
-                          <span class="sala-letter sala-letter-p"
-                                [style.color]="grupo.color"
-                                [style.background]="hexToRgba(grupo.color, 0.12)"
-                                [style.border-color]="hexToRgba(grupo.color, 0.3)">P</span>
-                          <span class="sala-block-label">Sala Principal</span>
-                        </div>
-                        <p class="asignado-text sala-block-text">
-                          <span [class.asignado-mio]="parte.esMia">{{ parte.principal.nombre_completo || 'Sin asignar' }}</span>
+                    <!-- ── Caso 1: Sin Sala B (layout simple) ── -->
+                    <ng-container *ngIf="!parte.salaB">
+                      <p class="asignado-row">
+                        <span class="asignado-dot" aria-hidden="true"
+                              [style.background]="(parte.esMia || parte.esMiaAyudante) ? '#8b5cf6' : grupo.color"></span>
+                        <span class="asignado-text">
+                          <span *ngIf="parte.principal.nombre_completo" [class.asignado-mio]="parte.esMia">{{ parte.principal.nombre_completo }}</span>
                           <ng-container *ngIf="parte.ayudante">
-                            <span class="ayudante-sep">con</span>
+                            <span class="ayudante-sep">{{ esEstudioBiblico(parte.principal.nombre_parte) ? 'lector' : 'con' }}</span>
                             <span [class.asignado-mio]="parte.esMiaAyudante">{{ parte.ayudante.nombre_completo }}</span>
                           </ng-container>
                           <span *ngIf="parte.esMia || parte.esMiaAyudante" class="badge-tu inline-badge">Tú</span>
-                        </p>
-                      </div>
+                        </span>
+                      </p>
+                    </ng-container>
 
-                      <!-- Sala B -->
-                      <div class="sala-block">
-                        <div class="sala-block-header">
-                          <span class="sala-letter sala-letter-b">B</span>
-                          <span class="sala-block-label">Sala B</span>
+                    <!-- ── Caso 2: Con Sala B (dos bloques) ── -->
+                    <ng-container *ngIf="parte.salaB">
+                      <div class="salas-stack">
+                        <!-- Sala Principal -->
+                        <div class="sala-block">
+                          <span class="sala-letter sala-letter-p"
+                                [style.color]="grupo.color"
+                                [style.background]="hexToRgba(grupo.color, 0.12)"
+                                [style.border-color]="hexToRgba(grupo.color, 0.3)"
+                                aria-hidden="true">P</span>
+                          <span class="sala-block-body">
+                            <span class="sala-block-label">Sala principal</span>
+                            <span class="asignado-text">
+                              <span [class.asignado-mio]="parte.esMia">{{ parte.principal.nombre_completo || 'Sin asignar' }}</span>
+                              <ng-container *ngIf="parte.ayudante">
+                                <span class="ayudante-sep">con</span>
+                                <span [class.asignado-mio]="parte.esMiaAyudante">{{ parte.ayudante.nombre_completo }}</span>
+                              </ng-container>
+                              <span *ngIf="parte.esMia || parte.esMiaAyudante" class="badge-tu inline-badge">Tú</span>
+                            </span>
+                          </span>
                         </div>
-                        <p class="asignado-text sala-block-text">
-                          <span [class.asignado-mio]="parte.esMiaSalaB">{{ parte.salaB!.nombre_completo || 'Sin asignar' }}</span>
-                          <ng-container *ngIf="parte.ayudanteB">
-                            <span class="ayudante-sep">con</span>
-                            <span [class.asignado-mio]="parte.esMiaAyudanteB">{{ parte.ayudanteB!.nombre_completo }}</span>
-                          </ng-container>
-                          <span *ngIf="parte.esMiaSalaB || parte.esMiaAyudanteB" class="badge-tu inline-badge">Tú</span>
-                        </p>
-                      </div>
-                    </div>
-                  </ng-container>
 
-                  <!-- Fuente de información (referencia bíblica, o el tema
-                       de La Atalaya cuando el PDF ya se importó para esa
-                       semana) -->
-                  <p *ngIf="parte.principal.fuente_informacion" class="fuente-info">
-                    {{ parte.principal.fuente_informacion }}
-                  </p>
-                  <p *ngIf="parte.principal.cantico" class="parte-cantico">
-                    {{ parte.principal.cantico }}
-                  </p>
+                        <!-- Sala B -->
+                        <div class="sala-block">
+                          <span class="sala-letter sala-letter-b" aria-hidden="true">B</span>
+                          <span class="sala-block-body">
+                            <span class="sala-block-label">Sala B</span>
+                            <span class="asignado-text">
+                              <span [class.asignado-mio]="parte.esMiaSalaB">{{ parte.salaB!.nombre_completo || 'Sin asignar' }}</span>
+                              <ng-container *ngIf="parte.ayudanteB">
+                                <span class="ayudante-sep">con</span>
+                                <span [class.asignado-mio]="parte.esMiaAyudanteB">{{ parte.ayudanteB!.nombre_completo }}</span>
+                              </ng-container>
+                              <span *ngIf="parte.esMiaSalaB || parte.esMiaAyudanteB" class="badge-tu inline-badge">Tú</span>
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </ng-container>
+                  </div>
                 </div>
-              </article>
+              </li>
             </ng-container>
-          </div>
+          </ol>
 
         </section><!-- /seccion-card -->
       </ng-container>
@@ -444,55 +465,52 @@ const SECCION_LABELS: Record<string, string> = {
       <!-- ── Logística de la reunión ── -->
       <section class="seccion-card logistica-card"
                [style.animation-delay]="(partesAgrupadas().length * 50 + 120) + 'ms'">
-        <header class="seccion-header logistica-header">
+        <header class="seccion-header">
           <div class="seccion-header-left">
-            <svg class="seccion-icon logistica-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg class="seccion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
             </svg>
-            <h3 class="seccion-titulo logistica-titulo">Logística de la reunión</h3>
+            <h2 class="seccion-titulo">Logística de la reunión</h2>
           </div>
         </header>
 
         <!-- No publicado -->
         <div *ngIf="logisticaNoPublicada()" class="logistica-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
             <circle cx="12" cy="12" r="9"/>
             <path d="M12 8v4M12 16h.01"/>
           </svg>
-          <p>La logística aún no está publicada para este mes.</p>
+          <p>La logística de este mes aún no está publicada.</p>
         </div>
 
         <!-- Contenido -->
         <div *ngIf="!logisticaNoPublicada() && logisticaGrupos().length"
              class="logistica-groups">
-          <div *ngFor="let grupo of logisticaGrupos(); let gi = index"
-               class="logistica-group">
+          <div *ngFor="let grupo of logisticaGrupos()" class="logistica-group">
             <p *ngIf="grupo.titulo" class="logistica-group-title">{{ grupo.titulo }}</p>
-            <div class="logistica-rows">
-              <div *ngFor="let row of grupo.items"
-                   class="logistica-row"
-                   [class.logistica-row-mia]="row.esMia">
-                <span class="logistica-row-label">{{ row.label }}</span>
-                <span class="logistica-row-value">
+            <ul class="logistica-grid">
+              <li *ngFor="let row of grupo.items"
+                  class="logistica-item"
+                  [class.logistica-item-mia]="row.esMia">
+                <span class="logistica-item-label">{{ row.label }}</span>
+                <span class="logistica-item-value" [class.sin-asignar]="!row.valor">
                   <span [class.asignado-mio]="row.esMia">{{ row.valor || 'Sin asignar' }}</span>
                   <span *ngIf="row.esMia" class="badge-tu inline-badge">Tú</span>
                 </span>
-              </div>
-            </div>
+              </li>
+            </ul>
           </div>
         </div>
       </section><!-- /logistica-card -->
-
-      <!-- Pie -->
 
     </ng-container>
   </div><!-- /resumen-container -->
 
   </div><!-- /resumen-layout -->
 </div><!-- /resumen-host -->
+  
   `,
-  styles: [`
-    /* ──────────────────────────────────────────
+  styles: [`    /* ──────────────────────────────────────────
        TOKENS
     ────────────────────────────────────────── */
     :host {
@@ -509,7 +527,9 @@ const SECCION_LABELS: Record<string, string> = {
       --border-soft: rgba(15, 23, 42, 0.05);
       --text: #0d1322;
       --text-2: #3d4966;
-      --text-3: #8490a8;
+      /* #8490a8 se quedaba en 3.2:1 sobre blanco y casi todo lo que lo usa es
+         texto de 10-11px (duraciones, fuentes, etiquetas de sala). */
+      --text-3: #6b7590;
       --brand: #6D28D9;
       --brand-2: #7c3aed;
       --radius-card: 16px;
@@ -527,6 +547,12 @@ const SECCION_LABELS: Record<string, string> = {
       --text-3: #8490a8;
     }
 
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+
     /* ──────────────────────────────────────────
        HOST & LAYOUT (mobile-first)
     ────────────────────────────────────────── */
@@ -541,11 +567,12 @@ const SECCION_LABELS: Record<string, string> = {
 
     .resumen-layout {
       width: 100%;
-      /* 760px hasta que sobra ancho de verdad (~927px de viewport): antes de
-         eso es exactamente el mismo ancho que ya tenía, para no mover nada en
-         móvil ni tablet. De ahí crece con la ventana hasta 960px, en vez de
-         quedarse angosto en medio de una pantalla de escritorio. */
-      max-width: clamp(760px, 82vw, 960px);
+      /* 760px hasta que sobra ancho de verdad: por debajo de eso el ancho es
+         el mismo de siempre, para no mover nada en móvil ni tablet. De ahí
+         crece con la ventana hasta 1120px, que es donde cada parte ya puede
+         partirse en dos columnas (qué se hace | quién lo hace) sin que el
+         título pase de ~60 caracteres por línea. */
+      max-width: clamp(760px, 86vw, 1120px);
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -562,9 +589,6 @@ const SECCION_LABELS: Record<string, string> = {
     /* 320px — pantallas muy pequeñas */
     @media (max-width: 359px) {
       .header-date { font-size: 1.25rem; }
-      .logistica-row {
-        grid-template-columns: minmax(80px, 0.7fr) minmax(0, 1.6fr);
-      }
     }
 
     /* ≥ sm — tablet */
@@ -618,7 +642,7 @@ const SECCION_LABELS: Record<string, string> = {
     }
     @media (min-width: 640px) { .skel-card { padding: 18px; } }
 
-    .skel-row { display: flex; align-items: center; gap: 8px; }
+    .skel-row { display: flex; align-items: center; gap: 10px; }
     .space-y-2 > * + * { margin-top: 8px; }
 
     /* ──────────────────────────────────────────
@@ -628,30 +652,82 @@ const SECCION_LABELS: Record<string, string> = {
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       text-align: center;
-      padding: 48px 20px;
+      padding: 56px 20px;
       gap: 10px;
+      /* Centrado en el alto disponible: si no hay programa, la pantalla es
+         solo este mensaje y colgarlo del borde superior se ve inacabado. */
+      min-height: min(62vh, 460px);
     }
-    @media (min-width: 640px) { .empty-state { padding: 72px 24px; } }
+    @media (min-width: 640px) { .empty-state { padding: 64px 24px; } }
     .empty-icon-wrap {
-      width: 56px; height: 56px;
-      border-radius: 18px;
+      width: 52px; height: 52px;
+      border-radius: 16px;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
+    }
+    .empty-icon-wrap svg { width: 24px; height: 24px; }
+    .empty-icon-brand {
+      background: rgba(109, 40, 217, 0.08);
+      border: 1px solid rgba(109, 40, 217, 0.16);
+      color: var(--brand-2);
+    }
+    :host-context(.dark) .empty-icon-brand {
+      background: rgba(167, 139, 250, 0.12);
+      border-color: rgba(167, 139, 250, 0.2);
+      color: #c4b5fd;
+    }
+    .empty-icon-neg {
+      background: rgba(220, 38, 38, 0.07);
+      border: 1px solid rgba(220, 38, 38, 0.16);
+      color: #dc2626;
+    }
+    :host-context(.dark) .empty-icon-neg {
+      background: rgba(248, 113, 113, 0.12);
+      border-color: rgba(248, 113, 113, 0.2);
+      color: #f87171;
     }
     .empty-title {
-      font-size: 1rem; font-weight: 800;
+      font-size: 1.0625rem; font-weight: 800;
       color: var(--text); margin: 0;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.015em;
+      font-family: var(--font-display);
     }
     .empty-body {
       font-size: 0.875rem;
       color: var(--text-2);
-      line-height: 1.55;
-      max-width: 300px;
+      line-height: 1.6;
+      max-width: 42ch;
       margin: 0;
+      text-wrap: pretty;
     }
-    .empty-date { color: var(--text); font-weight: 600; }
+    .empty-date { color: var(--text); font-weight: 700; white-space: nowrap; }
+
+    .empty-action {
+      margin-top: 6px;
+      padding: 8px 18px;
+      border-radius: var(--radius-soft);
+      border: 1px solid rgba(109, 40, 217, 0.28);
+      background: transparent;
+      color: var(--brand);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+      cursor: pointer;
+      transition: background 160ms var(--ease-out), transform 120ms var(--ease-out);
+    }
+    .empty-action:hover { background: rgba(109, 40, 217, 0.07); }
+    .empty-action:active { transform: scale(0.98); }
+    .empty-action:focus-visible {
+      outline: 2px solid var(--brand-2);
+      outline-offset: 2px;
+    }
+    :host-context(.dark) .empty-action {
+      border-color: rgba(167, 139, 250, 0.3);
+      color: #c4b5fd;
+    }
+    :host-context(.dark) .empty-action:hover { background: rgba(167, 139, 250, 0.12); }
 
     /* ──────────────────────────────────────────
        HEADER CARD
@@ -660,8 +736,7 @@ const SECCION_LABELS: Record<string, string> = {
       background: rgba(109, 40, 217, 0.026);
       border: 1px solid rgba(109, 40, 217, 0.16);
       border-radius: var(--radius-card);
-      padding: 16px 16px 14px;
-      box-shadow: 0 1px 4px rgba(109, 40, 217, 0.07), 0 1px 2px rgba(0,0,0,0.03);
+      padding: 16px 16px 15px;
     }
     .header-card.fade-in {
       animation: fadeUpHero 420ms var(--ease-expo) both;
@@ -669,17 +744,16 @@ const SECCION_LABELS: Record<string, string> = {
     :host-context(.dark) .header-card {
       background: rgba(109, 40, 217, 0.08);
       border-color: rgba(167, 139, 250, 0.18);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.28);
     }
     @media (min-width: 640px) {
-      .header-card { padding: 22px 22px 18px; }
+      .header-card { padding: 22px 24px 20px; }
     }
 
     .header-top-row {
       display: flex; align-items: center;
       justify-content: space-between;
       flex-wrap: wrap; gap: 6px 12px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .tipo-eyebrow {
@@ -711,76 +785,57 @@ const SECCION_LABELS: Record<string, string> = {
     :host-context(.dark) .date-manana { background: rgba(245, 158, 11, 0.16); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
     :host-context(.dark) .date-pronto { background: rgba(59, 130, 246, 0.16); color: #60a5fa; border-color: rgba(59, 130, 246, 0.25); }
 
+    /* En escritorio la fecha y la hora comparten línea base: la fecha manda,
+       la hora queda al otro extremo como dato de apoyo. */
+    .header-main {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    @media (min-width: 720px) {
+      .header-main {
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px 24px;
+        flex-wrap: wrap;
+      }
+    }
+
     .header-date {
       font-size: 1.5625rem;
       font-weight: 900;
       color: var(--text);
-      margin: 0 0 10px;
+      margin: 0;
       line-height: 1.12;
       letter-spacing: -0.03em;
       font-family: var(--font-display);
+      text-wrap: balance;
     }
     @media (min-width: 640px) {
       .header-date { font-size: 2rem; }
     }
 
     .header-hora-row {
-      display: flex; align-items: center; gap: 14px;
+      display: flex; align-items: baseline; gap: 6px 12px;
       flex-wrap: wrap;
     }
     .header-hora {
       display: inline-flex; align-items: center; gap: 7px;
+      margin: 0;
       color: var(--text);
       font-size: 1.0625rem;
       font-weight: 700;
+      font-family: var(--font-mono);
       font-variant-numeric: tabular-nums;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
     }
     .header-hora-icon { width: 15px; height: 15px; color: var(--brand); flex-shrink: 0; }
+    :host-context(.dark) .header-hora-icon { color: #a78bfa; }
     .duracion-inline {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.875rem;
-      color: var(--text-2);
-      font-variant-numeric: tabular-nums;
-    }
-    .duracion-icon { width: 13px; height: 13px; flex-shrink: 0; }
-
-    .titulo-guia {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 10px;
-      border-radius: 8px;
-      background: rgba(15, 23, 42, 0.04);
-      color: var(--text-2);
-      font-size: 0.75rem;
-      font-style: italic;
-      margin-bottom: 10px;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    :host-context(.dark) .titulo-guia {
-      background: rgba(255, 255, 255, 0.05);
+      font-size: 0.8125rem;
       color: var(--text-3);
-    }
-
-    .header-meta {
-      display: flex; flex-wrap: wrap; gap: 6px;
-      margin-top: 2px;
-    }
-    .meta-pill {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 9px;
-      border-radius: var(--radius-pill);
-      background: rgba(15, 23, 42, 0.05);
-      color: var(--text-2);
-      font-size: 0.7rem;
-      font-weight: 600;
       font-variant-numeric: tabular-nums;
-    }
-    :host-context(.dark) .meta-pill {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text-3);
     }
 
     /* ──────────────────────────────────────────
@@ -820,6 +875,8 @@ const SECCION_LABELS: Record<string, string> = {
       letter-spacing: -0.018em;
       font-family: var(--font-display);
       overflow-wrap: break-word;
+      text-wrap: balance;
+      max-width: 46ch;
     }
     @media (min-width: 640px) { .discurso-tema { font-size: 1.375rem; } }
 
@@ -841,11 +898,11 @@ const SECCION_LABELS: Record<string, string> = {
     }
 
     /* ──────────────────────────────────────────
-       BANNER SIN PARTES
+       BANNER SIN ASIGNACIONES
     ────────────────────────────────────────── */
     .banner-sin-partes {
       display: flex; align-items: flex-start; gap: 10px;
-      background: rgba(15,23,42,0.04);
+      background: rgba(15,23,42,0.035);
       border: 1px solid var(--border);
       border-radius: var(--radius-card);
       padding: 12px 14px;
@@ -862,7 +919,7 @@ const SECCION_LABELS: Record<string, string> = {
     .banner-sp-body { flex: 1; min-width: 0; }
     .banner-sp-title {
       font-size: 0.8125rem;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-2);
       margin: 0 0 2px;
     }
@@ -872,10 +929,9 @@ const SECCION_LABELS: Record<string, string> = {
       margin: 0;
       line-height: 1.45;
     }
-    .banner-sp-sub strong { color: var(--text-2); font-weight: 600; }
 
     /* ──────────────────────────────────────────
-       BANNER MIS PARTES
+       BANNER MIS ASIGNACIONES
     ────────────────────────────────────────── */
     .banner-mis-partes {
       display: flex; align-items: flex-start; gap: 12px;
@@ -884,12 +940,10 @@ const SECCION_LABELS: Record<string, string> = {
       border-radius: var(--radius-card);
       padding: 14px 16px;
       animation: slideDown 220ms var(--ease-out) 40ms both;
-      box-shadow: 0 1px 6px rgba(109, 40, 217, 0.08);
     }
     :host-context(.dark) .banner-mis-partes {
       background: rgba(167, 139, 250, 0.10);
       border-color: rgba(167, 139, 250, 0.22);
-      box-shadow: 0 2px 12px rgba(109, 40, 217, 0.2);
     }
     @media (min-width: 640px) {
       .banner-mis-partes { padding: 16px 18px; gap: 14px; }
@@ -918,7 +972,7 @@ const SECCION_LABELS: Record<string, string> = {
       color: #5b21b6;
       font-size: 0.9375rem;
       font-weight: 800;
-      margin: 0 0 6px;
+      margin: 0 0 7px;
       line-height: 1.3;
       letter-spacing: -0.005em;
       font-family: var(--font-display);
@@ -927,6 +981,7 @@ const SECCION_LABELS: Record<string, string> = {
     @media (min-width: 640px) { .banner-title { font-size: 1.0625rem; } }
     .banner-partes-list {
       display: flex; flex-wrap: wrap; gap: 5px;
+      list-style: none; margin: 0; padding: 0;
     }
     .banner-parte-chip {
       display: inline-block;
@@ -943,6 +998,12 @@ const SECCION_LABELS: Record<string, string> = {
       color: #c4b5fd;
       border-color: rgba(167, 139, 250, 0.25);
     }
+    /* Los puestos de logística son asignaciones de otro tipo: mismo chip,
+       relleno vacío, para que se distingan de las partes del programa. */
+    .banner-parte-chip.chip-logistica {
+      background: transparent;
+      border-style: dashed;
+    }
 
     /* ──────────────────────────────────────────
        SECCIÓN (card unificada)
@@ -951,13 +1012,14 @@ const SECCION_LABELS: Record<string, string> = {
       background: var(--surface);
       border: 1px solid var(--border-std);
       border-radius: var(--radius-card);
-      overflow: hidden;
+      /* clip en vez de hidden: recorta las esquinas igual, pero no crea un
+         contenedor de scroll y deja que la cabecera se quede fija. */
+      overflow: clip;
       animation: fadeUp 240ms var(--ease-out) both;
-      will-change: transform, opacity;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.03);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
     }
     :host-context(.dark) .seccion-card {
-      box-shadow: 0 4px 16px rgba(0,0,0,0.24);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(6px); }
@@ -980,10 +1042,21 @@ const SECCION_LABELS: Record<string, string> = {
 
     .seccion-header {
       display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
       padding: 11px 16px;
-      border-bottom: 1px solid;
-      border-bottom-color: var(--border-soft);
+      /* El color de la sección se mezcla con la superficie en vez de ir
+         traslúcido: la cabecera es opaca (se queda fija al hacer scroll) y el
+         texto se oscurece o aclara lo justo para pasar AA en los dos temas —
+         el ámbar y el teal puros no llegaban sobre fondo claro. */
+      background: color-mix(in oklab, var(--sec, var(--brand)) 7%, var(--surface));
+      border-bottom: 1px solid color-mix(in oklab, var(--sec, var(--brand)) 22%, transparent);
+      /* Se queda pegada arriba mientras se recorre su sección: en un programa
+         de ~10 partes siempre se sabe en qué parte de la reunión vas. */
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
+    @media (min-width: 640px) { .seccion-header { padding: 12px 20px; } }
 
     .seccion-header-left {
       display: flex; align-items: center; gap: 9px;
@@ -992,8 +1065,10 @@ const SECCION_LABELS: Record<string, string> = {
     .seccion-icon {
       width: 17px; height: 17px;
       flex-shrink: 0;
+      color: color-mix(in oklab, var(--sec, var(--brand)) 80%, #0b1020);
     }
     .seccion-titulo {
+      color: color-mix(in oklab, var(--sec, var(--brand)) 72%, #0b1020);
       font-size: 0.8125rem;
       font-weight: 800;
       text-transform: uppercase;
@@ -1006,25 +1081,28 @@ const SECCION_LABELS: Record<string, string> = {
       -webkit-font-smoothing: antialiased;
       font-family: var(--font-display);
     }
+    /* En móvil el título se parte en dos líneas antes que recortarse:
+       "Seamos Mejores Maestros" no cabe de una sola en 320-400px. */
+    @media (max-width: 480px) {
+      .seccion-titulo {
+        white-space: normal;
+        overflow: visible;
+        line-height: 1.25;
+      }
+    }
+    :host-context(.dark) .seccion-icon {
+      color: color-mix(in oklab, var(--sec, var(--brand)) 74%, #ffffff);
+    }
     :host-context(.dark) .seccion-titulo {
-      opacity: 0.9;
+      color: color-mix(in oklab, var(--sec, var(--brand)) 68%, #ffffff);
     }
-    .seccion-count {
-      min-width: 22px;
-      padding: 2px 8px;
-      border-radius: var(--radius-pill);
-      background: rgba(15, 23, 42, 0.06);
-      color: var(--text-2);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      font-weight: 600;
+    .seccion-meta {
+      font-size: 0.6875rem;
+      font-family: var(--font-mono);
       font-variant-numeric: tabular-nums;
-    }
-    :host-context(.dark) .seccion-count {
-      background: rgba(30, 41, 59, 0.6);
       color: var(--text-3);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     /* ──────────────────────────────────────────
@@ -1033,37 +1111,46 @@ const SECCION_LABELS: Record<string, string> = {
     .partes-list {
       display: flex;
       flex-direction: column;
-      padding: 0 10px;
+      padding: 4px 10px;
+      margin: 0;
+      list-style: none;
     }
+    @media (min-width: 640px) { .partes-list { padding: 6px 14px; } }
 
     /* ──────────────────────────────────────────
-       PARTE CARD
+       PARTE
     ────────────────────────────────────────── */
     .parte-card {
-      display: flex; gap: 12px;
-      padding: 14px 8px;
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      column-gap: 12px;
+      padding: 13px 8px;
       border-bottom: 1px solid var(--border-soft);
       border-radius: 8px;
-      margin: 2px 0;
       animation: fadeUp 200ms var(--ease-out) both;
       transition: background 180ms var(--ease-out);
-      will-change: transform, opacity;
     }
     .parte-card:last-child { border-bottom: none; }
     .parte-card:hover { background: rgba(109, 40, 217, 0.025); }
-    .parte-card:hover .orden-num { transform: scale(1.1); }
+    .parte-card:hover .orden-num { transform: scale(1.08); }
     :host-context(.dark) .parte-card:hover { background: rgba(109, 40, 217, 0.06); }
     .parte-card.parte-mia { background: rgba(139, 92, 246, 0.07); }
     :host-context(.dark) .parte-card.parte-mia { background: rgba(139, 92, 246, 0.09); }
 
-    /* Círculo de número */
+    /* Ranura de orden: reserva siempre el ancho, tenga número o no, para que
+       los cánticos y las oraciones queden alineados con las partes numeradas. */
+    .orden-slot {
+      width: 28px; min-width: 28px;
+      display: flex; align-items: flex-start; justify-content: center;
+      padding-top: 1px;
+    }
     .orden-num {
-      width: 28px; height: 28px; min-width: 28px;
+      width: 28px; height: 28px;
       border-radius: 999px;
       display: flex; align-items: center; justify-content: center;
       font-size: 0.75rem;
       font-weight: 600;
-      flex-shrink: 0;
+      font-family: var(--font-mono);
       font-variant-numeric: tabular-nums;
       border-width: 1px;
       border-style: solid;
@@ -1071,21 +1158,33 @@ const SECCION_LABELS: Record<string, string> = {
       transform-origin: center;
       transition: transform 180ms var(--ease-expo);
     }
-
-    .orden-spacer {
-      width: 28px; min-width: 28px;
-      flex-shrink: 0;
+    .orden-cantico {
+      width: 15px; height: 15px;
+      color: var(--text-3);
+      opacity: 0.75;
+      margin-top: 6px;
     }
 
-    /* Cuerpo */
+    /* Cuerpo: en escritorio, qué se hace a la izquierda y quién lo hace a la
+       derecha; así el nombre no queda a media pantalla del título. */
     .parte-body {
-      flex: 1; min-width: 0;
+      min-width: 0;
+      display: grid;
+      gap: 6px;
     }
+    @media (min-width: 900px) {
+      .parte-body {
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        column-gap: 28px;
+        align-items: start;
+      }
+    }
+    .parte-main { min-width: 0; }
 
     .parte-title-row {
-      display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 4px;
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 3px;
     }
     .parte-name {
       font-size: 0.9375rem;
@@ -1094,53 +1193,39 @@ const SECCION_LABELS: Record<string, string> = {
       line-height: 1.35;
       margin: 0;
       letter-spacing: -0.008em;
+      text-wrap: pretty;
     }
     .duracion-text {
       font-size: 0.6875rem;
       color: var(--text-3);
       white-space: nowrap;
-      margin-top: 2px;
+      font-family: var(--font-mono);
       font-variant-numeric: tabular-nums;
       flex-shrink: 0;
     }
 
-    /* Badge Reemplazo */
-    .parte-badges-row {
-      display: flex; gap: 4px;
-      margin-bottom: 6px;
+    /* Etiquetas de la parte */
+    .parte-tags-row {
+      display: flex; gap: 5px; flex-wrap: wrap;
+      margin: 5px 0 0;
     }
     .badge-reemplazo {
       display: inline-flex; align-items: center;
-      padding: 1px 6px;
+      padding: 1px 7px;
       border-radius: var(--radius-pill);
       background: rgba(245, 158, 11, 0.12);
       color: #b45309;
-      font-size: 0.6rem;
+      font-size: 0.625rem;
       font-weight: 700;
     }
     :host-context(.dark) .badge-reemplazo { background: rgba(245, 158, 11, 0.16); color: #fbbf24; }
 
-    /* Cántico del Estudio de La Atalaya: junto a .fuente-info (el tema),
-       mismo tono discreto pero un peldaño más tenue. */
-    .parte-cantico {
-      font-size: 0.7rem;
-      font-style: italic;
-      color: var(--text-3);
-      margin: 2px 0 0;
-      line-height: 1.4;
-    }
-
-    /* "Sala Principal" tag (caso simple) */
-    .sala-tag-row {
-      display: flex; gap: 6px;
-      margin-bottom: 6px;
-    }
     .sala-tag {
-      font-size: 0.6rem;
-      font-weight: 500;
+      font-size: 0.625rem;
+      font-weight: 600;
       line-height: 1;
-      padding: 3px 6px;
-      border-radius: 4px;
+      padding: 3px 7px;
+      border-radius: 5px;
       background: rgba(15, 23, 42, 0.05);
       color: var(--text-2);
       border: 1px solid var(--border);
@@ -1151,23 +1236,42 @@ const SECCION_LABELS: Record<string, string> = {
       border-color: rgba(51, 65, 85, 0.6);
     }
 
-    /* Asignado */
+    /* Cántico y fuente: metadatos de la parte, un peldaño por debajo */
+    .fuente-info,
+    .parte-cantico {
+      font-size: 0.7rem;
+      color: var(--text-3);
+      margin: 5px 0 0;
+      line-height: 1.45;
+    }
+    .fuente-info { font-family: var(--font-mono); letter-spacing: -0.01em; }
+    .parte-cantico { font-style: italic; }
+
+    /* ──────────────────────────────────────────
+       ASIGNADOS
+    ────────────────────────────────────────── */
+    .parte-asig { min-width: 0; }
+    @media (min-width: 900px) {
+      .parte-asig { padding-top: 1px; }
+    }
+
     .asignado-row {
-      display: flex; align-items: center; gap: 6px;
-      flex-wrap: wrap;
+      display: flex; align-items: baseline; gap: 7px;
+      margin: 0;
     }
     .asignado-dot {
       width: 6px; height: 6px; min-width: 6px;
       border-radius: 999px;
       flex-shrink: 0;
       display: inline-block;
+      transform: translateY(-1px);
     }
     .asignado-text {
       font-size: 0.8125rem;
       font-weight: 500;
       color: var(--text-2);
       margin: 0;
-      line-height: 1.4;
+      line-height: 1.45;
       overflow-wrap: break-word;
       word-break: break-word;
     }
@@ -1177,14 +1281,14 @@ const SECCION_LABELS: Record<string, string> = {
       color: var(--text-3);
     }
     .asignado-mio {
-      color: #6d28d9 !important;
+      color: #6d28d9;
       font-weight: 700;
     }
-    :host-context(.dark) .asignado-mio { color: #c4b5fd !important; }
+    :host-context(.dark) .asignado-mio { color: #c4b5fd; }
     .ayudante-sep {
       color: var(--text-3);
-      margin: 0 4px;
-      font-size: 0.7rem;
+      margin: 0 5px;
+      font-size: 0.6875rem;
     }
 
     /* Badge Tú */
@@ -1194,77 +1298,55 @@ const SECCION_LABELS: Record<string, string> = {
       border-radius: var(--radius-pill);
       background: rgba(109, 40, 217, 0.14);
       color: #6d28d9;
-      font-size: 0.6rem;
+      font-size: 0.625rem;
       font-weight: 700;
       letter-spacing: 0.02em;
       animation: popIn 280ms var(--ease-expo) both;
       transform-origin: center;
     }
     :host-context(.dark) .badge-tu { background: rgba(167, 139, 250, 0.18); color: #c4b5fd; }
-    .inline-badge { margin-left: 4px; }
+    .inline-badge { margin-left: 5px; }
 
-    /* Salas stack (Sala Principal + Sala B) */
+    /* Salas (Sala Principal + Sala B) */
     .salas-stack {
-      display: flex; flex-direction: column; gap: 10px;
-      margin-top: 4px;
+      display: flex; flex-direction: column; gap: 8px;
     }
     .sala-block {
-      display: flex; flex-direction: column; gap: 4px;
-    }
-    .sala-block-header {
-      display: flex; align-items: center; gap: 6px;
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      column-gap: 8px;
+      align-items: start;
     }
     .sala-letter {
       width: 18px; height: 18px;
-      border-radius: 4px;
+      border-radius: 5px;
       display: inline-flex; align-items: center; justify-content: center;
-      font-size: 0.6rem;
+      font-size: 0.625rem;
       font-weight: 700;
+      font-family: var(--font-mono);
       border: 1px solid;
       flex-shrink: 0;
-    }
-    .sala-letter-p {
-      /* colores definidos inline desde la sección */
+      margin-top: 1px;
     }
     .sala-letter-b {
       background: rgba(45, 212, 191, 0.12);
-      color: #14b8a6;
+      color: #0f766e;
       border-color: rgba(45, 212, 191, 0.3);
     }
     :host-context(.dark) .sala-letter-b {
       background: rgba(45, 212, 191, 0.14);
       color: #2dd4bf;
     }
+    .sala-block-body {
+      display: flex; flex-direction: column; gap: 1px;
+      min-width: 0;
+    }
     .sala-block-label {
-      font-size: 0.6875rem;
+      font-size: 0.625rem;
       color: var(--text-3);
-      font-weight: 500;
-    }
-    .sala-block-text {
-      padding-left: 24px;
-      overflow-wrap: break-word;
-      word-break: break-word;
-    }
-
-    /* Fuente */
-    .fuente-info {
-      font-size: 0.7rem;
-      font-style: italic;
-      color: var(--text-3);
-      margin: 6px 0 0;
-      line-height: 1.4;
-    }
-
-    /* ──────────────────────────────────────────
-       PIE
-    ────────────────────────────────────────── */
-    .footer-note {
-      text-align: center;
-      font-size: 0.6875rem;
-      color: var(--text-3);
-      opacity: 0.65;
-      margin: 6px 0 0;
-      letter-spacing: 0.01em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
 
     /* ──────────────────────────────────────────
@@ -1277,34 +1359,22 @@ const SECCION_LABELS: Record<string, string> = {
       .logistica-card { margin-top: 10px; }
     }
 
-    .logistica-header {
-      background: rgba(28, 92, 102, 0.07);
-      border-bottom-color: rgba(28, 92, 102, 0.22);
-    }
-    :host-context(.dark) .logistica-header {
-      background: rgba(94, 181, 194, 0.13);
-      border-bottom-color: rgba(94, 181, 194, 0.22);
-    }
-    .logistica-icon { color: #1c5c66; }
-    .logistica-titulo { color: #1c5c66; }
-    :host-context(.dark) .logistica-icon,
-    :host-context(.dark) .logistica-titulo { color: #7dd3df; }
+    /* La logística es una sección más: hereda el mismo mecanismo de color. */
+    .logistica-card { --sec: #1c5c66; }
+    :host-context(.dark) .logistica-card { --sec: #7dd3df; }
 
     .logistica-groups {
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 12px 16px 14px;
+      gap: 16px;
+      padding: 14px 16px 16px;
     }
     @media (min-width: 640px) {
-      .logistica-groups { padding: 14px 20px 16px; }
+      .logistica-groups { padding: 16px 20px 18px; }
     }
     .logistica-group + .logistica-group {
-      padding-top: 14px;
-      border-top: 1px dashed #cbd5e1;
-    }
-    :host-context(.dark) .logistica-group + .logistica-group {
-      border-top-color: var(--border);
+      padding-top: 16px;
+      border-top: 1px solid var(--border-soft);
     }
     .logistica-group-title {
       margin: 0 0 10px;
@@ -1312,65 +1382,57 @@ const SECCION_LABELS: Record<string, string> = {
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.09em;
-      color: #475569;
+      color: var(--text-3);
+      font-family: var(--font-display);
     }
-    :host-context(.dark) .logistica-group-title { color: #94a3b8; }
 
-    .logistica-rows {
+    /* Rejilla en vez de filas etiqueta···valor: en escritorio la etiqueta y el
+       nombre quedan juntos, sin 600px de vacío entre uno y otro. */
+    .logistica-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2px;
+      list-style: none;
+      margin: 0; padding: 0;
+    }
+    @media (min-width: 600px) {
+      .logistica-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; }
+    }
+    @media (min-width: 1000px) {
+      .logistica-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .logistica-item {
       display: flex;
       flex-direction: column;
-    }
-    .logistica-row {
-      display: grid;
-      grid-template-columns: minmax(96px, 0.85fr) minmax(0, 1.4fr);
-      align-items: baseline;
-      gap: 12px;
-      padding: 10px 6px;
+      gap: 2px;
+      padding: 8px 10px;
       border-radius: 8px;
-      transition: background 160ms var(--ease-out);
+      min-width: 0;
     }
-    .logistica-row + .logistica-row {
-      border-top: 1px solid #e2e8f0;
-    }
-    :host-context(.dark) .logistica-row + .logistica-row {
-      border-top-color: var(--border);
-    }
-    .logistica-row-label {
-      font-size: 0.6875rem;
+    .logistica-item-label {
+      font-size: 0.625rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #475569;
-      line-height: 1.4;
+      letter-spacing: 0.07em;
+      color: var(--text-3);
+      line-height: 1.3;
     }
-    :host-context(.dark) .logistica-row-label { color: #94a3b8; }
-    .logistica-row-value {
+    .logistica-item-value {
       font-size: 0.875rem;
       font-weight: 600;
       color: var(--text);
-      text-align: right;
-      line-height: 1.45;
+      line-height: 1.4;
       word-break: break-word;
       overflow-wrap: break-word;
-      display: inline-flex;
-      align-items: flex-start;
-      gap: 6px;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-      min-width: 0;
     }
-    .logistica-row-mia {
-      background: rgba(139, 92, 246, 0.07);
-      border-radius: 8px;
-      padding-left: 10px;
-      padding-right: 10px;
+    .logistica-item-value.sin-asignar { font-weight: 500; }
+    .logistica-item-mia {
+      background: rgba(139, 92, 246, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.18);
     }
-    .logistica-row-mia + .logistica-row,
-    .logistica-row + .logistica-row-mia {
-      border-top-color: transparent;
-    }
-    :host-context(.dark) .logistica-row-mia {
+    :host-context(.dark) .logistica-item-mia {
       background: rgba(167, 139, 250, 0.10);
+      box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.2);
     }
 
     .logistica-empty {
@@ -1418,6 +1480,8 @@ const SECCION_LABELS: Record<string, string> = {
       from { opacity: 0; }
       to   { opacity: 1; }
     }
+  
+
   `],
 })
 export class ReunionesResumenComponent {
@@ -1451,6 +1515,22 @@ export class ReunionesResumenComponent {
     if (!userId) return [];
     return (this.programa()?.partes ?? [])
       .filter(p => p.id_publicador === userId);
+  });
+
+  // Lo que le toca al usuario esta semana, venga del programa o de la
+  // logística: antes el banner solo contaba partes, así que quien únicamente
+  // tenía micrófonos o plataforma leía "no tienes partes asignadas" y se le
+  // pasaba su puesto, que estaba doce pantallas más abajo.
+  misAsignaciones = computed((): MiAsignacion[] => {
+    const partes: MiAsignacion[] = this.misPartes().map(p => ({
+      label: this.quitarPrefijoNumero(this.formatNombreParte(p.nombre_parte ?? '')),
+      tipo: 'parte',
+    }));
+    const logistica: MiAsignacion[] = this.logisticaGrupos()
+      .flatMap(g => g.items)
+      .filter(item => item.esMia)
+      .map(item => ({ label: item.label, tipo: 'logistica' as const }));
+    return [...partes, ...logistica];
   });
 
   partesAgrupadas = computed((): SeccionGroup[] => {
@@ -1588,18 +1668,18 @@ export class ReunionesResumenComponent {
     ].filter((x): x is LogisticaRow => x !== null);
 
     const tecnica: LogisticaRow[] = [
-      single('Encargado de Audio', 'audio'),
-      single('Encargado de Video', 'video'),
+      single('Audio', 'audio'),
+      single('Video', 'video'),
     ].filter((x): x is LogisticaRow => x !== null);
 
     const aseoNombres = data.aseo.map(s => s.grupo.nombre_grupo).filter(Boolean);
     const grupos: LogisticaGrupo[] = [];
-    if (apoyo.length)   grupos.push({ titulo: 'Apoyo en auditorio', items: apoyo });
-    if (tecnica.length) grupos.push({ titulo: '', items: tecnica });
+    if (apoyo.length)   grupos.push({ titulo: 'Apoyo en el auditorio', items: apoyo });
+    if (tecnica.length) grupos.push({ titulo: 'Sonido y video', items: tecnica });
     if (aseoNombres.length) {
       grupos.push({
-        titulo: '',
-        items: [{ label: 'Aseo del salón', valor: aseoNombres.join(' · '), esMia: false }],
+        titulo: 'Aseo del salón',
+        items: [{ label: 'Grupo encargado', valor: aseoNombres.join(' · '), esMia: false }],
       });
     }
     return grupos;
@@ -1629,14 +1709,63 @@ export class ReunionesResumenComponent {
 
   // ─── Template helpers ────────────────────
 
-  getPartesPrincipales(): number {
-    return (this.programa()?.partes ?? []).filter(p => !p.es_ayudante).length;
-  }
-
   getDuracionTotal(): number {
     return (this.programa()?.partes ?? [])
       .filter(p => !p.es_ayudante)
       .reduce((acc, p) => acc + (p.duracion_minutos ?? 0), 0);
+  }
+
+  reintentar(): void {
+    this.scrollDone = false;
+    this.loadData(this.congregacionCtx.effectiveCongregacionId());
+  }
+
+  formatDuracion(min: number): string {
+    if (min < 60) return `${min} min`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m ? `${h} h ${m} min` : `${h} h`;
+  }
+
+  duracionSeccion(grupo: SeccionGroup): number {
+    return grupo.partes.reduce((acc, r) => acc + (r.principal.duracion_minutos ?? 0), 0);
+  }
+
+  esMiaLaParte(parte: ParteRow): boolean {
+    return parte.esMia || parte.esMiaAyudante || parte.esMiaSalaB || parte.esMiaAyudanteB;
+  }
+
+  esCanticoParte(parte: ParteRow): boolean {
+    return /^\s*(c[áa]ntico|canci[óo]n)/i.test(parte.principal.nombre_parte ?? '');
+  }
+
+  isoNextMeeting(): string | null {
+    const next = this.nextMeeting();
+    if (!next) return null;
+    return next.hora ? `${this.toIsoDate(next.fecha)}T${next.hora}` : this.toIsoDate(next.fecha);
+  }
+
+  /**
+   * Título de la parte tal como se lee en la tarjeta. El bloque de salas (o la
+   * etiqueta de sala) ya dice dónde ocurre, así que dejar "(Sala B)" colgando
+   * del título duplicaba el dato —y en las partes que se dan en las dos salas
+   * lo contradecía.
+   */
+  tituloParte(parte: ParteRow): string {
+    const nombre = this.quitarPrefijoNumero(this.formatNombreParte(parte.principal.nombre_parte ?? ''));
+    return nombre.replace(/\s*\(\s*sala\s*(b|principal|auxiliar)\s*\)\s*$/i, '').trim();
+  }
+
+  /** Etiqueta de sala para las partes que no traen bloque de Sala B. */
+  salaTagLabel(parte: ParteRow): string | null {
+    const nombre = parte.principal.nombre_parte ?? '';
+    const sala = parte.principal.sala ?? '';
+    // Si el título ya nombra la sala (p. ej. "Responsable de Sala B"), la
+    // etiqueta sobra.
+    if (/sala\s*b/i.test(this.tituloParte(parte))) return null;
+    if (/\(\s*sala\s*b\s*\)/i.test(nombre) || sala === 'Auxiliar' || sala === 'B') return 'Sala B';
+    if (this.requiereEtiquetaSala(nombre)) return 'Sala Principal';
+    return null;
   }
 
   getDateBadgeClass(label: string): string {
@@ -1720,14 +1849,6 @@ export class ReunionesResumenComponent {
       color,
       borderColor: this.hexToRgba(color, 0.3),
     };
-  }
-
-  getDuracionStyle(color: string): Record<string, string> {
-    return { background: this.hexToRgba(color, 0.1), color };
-  }
-
-  getSectionHeaderBg(color: string): string {
-    return this.hexToRgba(color, this.isDarkMode ? 0.13 : 0.07);
   }
 
   hexToRgba(hex: string, alpha: number): string {

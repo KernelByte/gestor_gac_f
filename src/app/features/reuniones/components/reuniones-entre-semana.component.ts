@@ -4766,10 +4766,14 @@ export class ReunionesProgramacionComponent implements OnInit {
           idCong,
           asig.sala === 'Auxiliar' ? 'Auxiliar' : 'Principal',
           !!asig.es_ayudante,
+          true,
         ).subscribe({ next: applyResult, error: alFallar });
         return;
       }
-      const payload: EditarAsignacionRequest = { id_publicador_nuevo: candidato.id_publicador };
+      const payload: EditarAsignacionRequest = {
+        id_publicador_nuevo: candidato.id_publicador,
+        confirmar_conflicto: true,
+      };
       this.reunionesSvc.editarAsignacion(asig.id_asignacion, payload, idCong).subscribe({
         next: applyResult,
         error: alFallar,

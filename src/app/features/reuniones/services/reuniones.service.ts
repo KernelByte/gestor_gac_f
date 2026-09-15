@@ -578,11 +578,12 @@ export class ReunionesService {
     idCong: number,
     sala: 'Principal' | 'Auxiliar' = 'Principal',
     esAyudante = false,
+    confirmarConflicto = false,
   ): Observable<{ id_asignacion: number; id_publicador: number; nombre_completo: string }> {
     const params = new HttpParams().set('id_congregacion', idCong);
     return this.http.post<{ id_asignacion: number; id_publicador: number; nombre_completo: string }>(
       `${this.base}/partes/${idProgramaParte}/asignacion`,
-      { id_publicador: idPublicador, sala, es_ayudante: esAyudante },
+      { id_publicador: idPublicador, sala, es_ayudante: esAyudante, confirmar_conflicto: confirmarConflicto },
       { params }
     );
   }
