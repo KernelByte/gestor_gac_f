@@ -329,7 +329,9 @@ export class GruposListComponent implements OnInit, OnDestroy {
       this.grupoForm = this.fb.group({
          nombre_grupo: ['', [Validators.required]],
          capitan_grupo: [''],
-         auxiliar_grupo: ['']
+         auxiliar_grupo: [''],
+         id_capitan: [null as number | null],
+         id_auxiliar: [null as number | null]
       });
 
       // Recargar datos autom?ticamente cuando el admin cambia de congregaci?n en el header
@@ -419,24 +421,27 @@ export class GruposListComponent implements OnInit, OnDestroy {
       const value = (event.target as HTMLInputElement).value;
       this.capitanSearch.set(value);
       this.capitanDropdownOpen.set(true);
+      // Escribir a mano rompe el vínculo: solo vale lo elegido de la lista.
+      this.grupoForm.patchValue({ id_capitan: null });
    }
 
    onAuxiliarInput(event: Event) {
       const value = (event.target as HTMLInputElement).value;
       this.auxiliarSearch.set(value);
       this.auxiliarDropdownOpen.set(true);
+      this.grupoForm.patchValue({ id_auxiliar: null });
    }
 
    selectCapitan(pub: any) {
       const fullName = this.getFullName(pub);
-      this.grupoForm.patchValue({ capitan_grupo: fullName });
+      this.grupoForm.patchValue({ capitan_grupo: fullName, id_capitan: pub.id_publicador });
       this.capitanDropdownOpen.set(false);
       this.capitanSearch.set('');
    }
 
    selectAuxiliar(pub: any) {
       const fullName = this.getFullName(pub);
-      this.grupoForm.patchValue({ auxiliar_grupo: fullName });
+      this.grupoForm.patchValue({ auxiliar_grupo: fullName, id_auxiliar: pub.id_publicador });
       this.auxiliarDropdownOpen.set(false);
       this.auxiliarSearch.set('');
    }
@@ -467,7 +472,9 @@ export class GruposListComponent implements OnInit, OnDestroy {
       this.grupoForm.patchValue({
          nombre_grupo: grupo.nombre_grupo,
          capitan_grupo: grupo.capitan_grupo,
-         auxiliar_grupo: grupo.auxiliar_grupo
+         auxiliar_grupo: grupo.auxiliar_grupo,
+         id_capitan: grupo.id_capitan ?? null,
+         id_auxiliar: grupo.id_auxiliar ?? null
       });
       this.capitanSearch.set('');
       this.auxiliarSearch.set('');

@@ -649,6 +649,10 @@
                            </div>
                         </div>
                      </div>
+                     <p *ngIf="grupoForm.value.capitan_grupo && !grupoForm.value.id_capitan"
+                        class="text-xs text-amber-700 dark:text-amber-400">
+                        Elige a la persona de la lista para vincularla: sin ese vínculo no tendrá acceso al seguimiento de pastoreo.
+                     </p>
                   </div>
 
                   <!-- Auxiliar -->
@@ -702,6 +706,10 @@
                            </div>
                         </div>
                      </div>
+                     <p *ngIf="grupoForm.value.auxiliar_grupo && !grupoForm.value.id_auxiliar"
+                        class="text-xs text-amber-700 dark:text-amber-400">
+                        Elige a la persona de la lista para vincularla.
+                     </p>
                   </div>
 
                </form>

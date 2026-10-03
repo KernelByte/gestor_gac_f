@@ -28,6 +28,7 @@ import { catchError, switchMap, tap } from 'rxjs/operators';
 import { ReunionesService, PublicadorBusqueda } from '../services/reuniones.service';
 import { ConflictosService } from '../services/conflictos.service';
 import { AsistenciaService } from '../services/asistencia.service';
+import { DiscursosService } from '../services/discursos.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import {
@@ -2186,6 +2187,7 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   private reunionesSvc = inject(ReunionesService);
   private asistenciaSvc = inject(AsistenciaService);
+  private discursosSvc = inject(DiscursosService);
   private conflictosSvc = inject(ConflictosService);
   congregacionCtx = inject(CongregacionContextService);
   private authStore = inject(AuthStore);
@@ -2687,6 +2689,9 @@ export class ReunionesProgramacionComponent implements OnInit {
    * recargar la página entera.
    */
   onAjustesCambiaron(): void {
+    // Discursos (hijo proyectado) recarga su mes: ahí la semana marcada se
+    // muestra como tarjeta «sin reunión» con su motivo.
+    this.discursosSvc.notificarCambioSemanasSinReunion();
     this.loadSemanasSinReunion();
     const activo = this.periodoActivoCompleto();
     if (activo) this.abrirPeriodo(activo);
@@ -4944,7 +4949,9 @@ export class ReunionesProgramacionComponent implements OnInit {
   private reflejarTabEnUrl(tipo: string): void {
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { tab: tipo },
+      // `sub` es la sub-pestaña de Discursos: fuera de ella solo ensucia la
+      // URL (?tab=logistica&sub=entrantes) y confunde al compartir el enlace.
+      queryParams: { tab: tipo, ...(tipo !== 'discursos' ? { sub: null } : {}) },
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });

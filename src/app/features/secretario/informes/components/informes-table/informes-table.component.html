@@ -38,23 +38,20 @@
           <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Prueba cambiando el mes, el año o el filtro de grupo.</p>
         </td>
       </tr>
-      <tr *ngFor="let pub of resumen?.publicadores_list || []; let i = index; let odd = odd; let even = even; trackBy: trackByPub"
-        class="row-enter group transition-colors hover:bg-purple-50/30 dark:hover:bg-slate-800/60 border-l-4 border-l-transparent hover:border-l-brand-purple/20 transition-[colors,border-color]"
-        [style.animation-delay]="(i < 15 ? i * 18 : 250) + 'ms'"
-        [ngClass]="[
-          highlightedPubs.has(pub.id_publicador) ? 'highlight-flash !border-l-amber-400' : (even ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/70 dark:bg-slate-800/30'),
-          !getInformeValue(pub, 'participo') ? 'opacity-70' : ''
-        ]">
+      <tr *ngFor="let pub of resumen?.publicadores_list || []; let i = index; let even = even; trackBy: trackByPub"
+        class="stagger-item group transition-colors duration-150 hover:bg-purple-50/40 dark:hover:bg-slate-800/60"
+        [style.--i]="i < 12 ? i : 12"
+        [ngClass]="even ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/70 dark:bg-slate-800/30'">
         <!-- Publicador -->
         <td class="px-2 py-2.5">
           <div class="flex items-center gap-3 min-w-0">
             <div class="relative shrink-0">
               <div
                 class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm"
-                [ngClass]="getAvatarStyle(pub.nombre_completo)">
+                [ngClass]="getAvatarStyle(pub.nombre_completo)" aria-hidden="true">
                 {{ getInitials(pub.nombre_completo) }}
               </div>
-              <div *ngIf="getInformeValue(pub, 'participo')"
+              <div *ngIf="getInformeValue(pub, 'participo')" aria-hidden="true"
                 class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 flex items-center justify-center">
                 <svg class="w-1.5 h-1.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                   stroke-width="4">
@@ -63,33 +60,35 @@
               </div>
             </div>
             <div class="min-w-0 flex-1">
-              <p class="font-bold text-slate-900 dark:text-slate-50 text-sm truncate">{{ pub.nombre_completo }}</p>
-              <div class="flex flex-wrap gap-1 items-center mt-0.5">
-                <ng-container *ngFor="let role of getRoles(pub)">
-                  <span *ngIf="role.type === 'pill'"
-                    class="inline-flex px-1.5 py-0.5 rounded-md text-[9px] font-medium uppercase tracking-wide bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                    [ngClass]="role.class">
-                    {{ role.label }}
-                  </span>
-                  <span *ngIf="role.type === 'text'" class="text-[9px] text-slate-400 dark:text-slate-500">
-                    {{ role.label }}
-                  </span>
-                </ng-container>
+              <p class="font-bold text-slate-900 dark:text-slate-50 text-sm truncate" [title]="pub.nombre_completo">{{ pub.nombre_completo }}</p>
+              <div *ngIf="getRoles(pub).length" class="flex flex-wrap gap-1 items-center mt-0.5">
+                <span *ngFor="let role of getRoles(pub)"
+                  class="inline-flex px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide"
+                  [ngClass]="role.class">
+                  {{ role.label }}
+                </span>
               </div>
             </div>
             <button *ngIf="canEdit" type="button"
               [title]="(pub.notificaciones_enviadas ?? 0) > 0 ? 'Notificado ' + pub.notificaciones_enviadas + ' veces. Volver a notificar.' : 'Solicitar informe mediante WhatsApp'"
+              [attr.aria-label]="'Solicitar informe por WhatsApp a ' + pub.nombre_completo"
               (click)="notifyWhatsApp.emit(pub)"
-              class="relative transition-opacity ml-1 shrink-0 w-8 h-8 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-full flex items-center justify-center border border-[#25D366]/30 shadow-sm focus:opacity-100"
-              [ngClass]="!getInformeValue(pub, 'participo') || (pub.notificaciones_enviadas ?? 0) > 0
-                ? 'opacity-100'
-                : 'opacity-0 group-hover:opacity-100'">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              class="relative ml-1 shrink-0 w-8 h-8 rounded-full flex items-center justify-center border transition-[opacity,color,background-color,border-color] duration-150 focus:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]/50"
+              [ngClass]="[
+                (pub.notificaciones_enviadas ?? 0) > 0
+                  ? 'bg-[#25D366]/10 text-[#1a9e4b] dark:text-[#25D366] border-[#25D366]/30 hover:bg-[#25D366]/20'
+                  : 'bg-transparent text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:text-[#1a9e4b] dark:hover:text-[#25D366] hover:bg-[#25D366]/10 hover:border-[#25D366]/30',
+                !getInformeValue(pub, 'participo') || (pub.notificaciones_enviadas ?? 0) > 0
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100'
+              ]">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M12.031 0C5.385 0 0 5.385 0 12.031a12.022 12.022 0 001.624 6.075L.036 24l6.095-1.597a11.979 11.979 0 005.9 1.547h.005c6.643 0 12.028-5.385 12.028-12.03S18.674 0 12.031 0zm0 22.012c-1.898 0-3.755-.51-5.385-1.474l-.387-.228-4 1.05.105-3.899-.25-.398A9.998 9.998 0 012.053 12.03 c0-5.525 4.498-10.024 10.025-10.024A10.022 10.022 0 0122.067 12a9.998 9.998 0 01-10.036 10.012zM17.5 14.537c-.3-.15-1.782-.878-2.057-.978-.276-.1-.476-.15-.676.15-.2.3-.778.978-.95 1.178-.173.2-.348.225-.648.075-.3-.15-1.272-.468-2.42-1.5-.89-.8-1.49-1.79-1.664-2.09-.175-.3 0-.46.15-.61.135-.133.3-.346.45-.52.15-.173.2-.296.3-.496.1-.2.05-.375-.025-.525-.075-.15-.675-1.63-.925-2.23-.243-.591-.49-.51-.675-.519-.175-.01-.375-.01-.575-.01a1.1 1.1 0 00-.792.368c-.276.3-.1.5 0 .6-.1 0 0 0 0 0 .1.1 0 .3.5.076.223.328.775 1.408 1.9 2.5 1.468 1.417 2.483 1.84 2.83 2.013.35.174.55.15.75-.025.2-.175.875-.85 1.125-1.15.25-.3.475-.25.775-.15.3.1 1.9 2.7.228 3.1z" />
               </svg>
               <div *ngIf="(pub.notificaciones_enviadas ?? 0) > 0"
-                class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#25D366] text-[9px] font-black text-white shadow-sm ring-2 ring-white dark:ring-slate-900 border border-white/20 animate-[bounce_1s_ease-in-out_3]">
+                aria-hidden="true"
+                class="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 px-0.5 items-center justify-center rounded-full bg-[#1a9e4b] text-[9px] font-black text-white shadow-sm ring-2 ring-white dark:ring-slate-900 tabular-num">
                 {{ (pub.notificaciones_enviadas ?? 0) > 9 ? '9+' : pub.notificaciones_enviadas }}
               </div>
             </button>
@@ -98,20 +97,20 @@
 
         <!-- Participó -->
         <td class="px-3 py-2 text-center align-middle">
-          <button type="button"
+          <button type="button" role="switch"
             [disabled]="!canEdit"
             (click)="onUpdateInforme(pub, 'participo', $any({ target: { checked: !getInformeValue(pub, 'participo') } })); triggerConfirm(pub.id_publicador)"
-            class="shrink-0 p-1 select-none disabled:cursor-not-allowed disabled:opacity-40"
+            class="shrink-0 p-1 rounded-full select-none disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
             [class.toggle-confirm]="confirmingPubs.has(pub.id_publicador)"
-            [attr.aria-label]="getInformeValue(pub, 'participo') ? 'Reportado' : 'Sin reporte'"
-            [attr.aria-checked]="getInformeValue(pub, 'participo')">
+            [attr.aria-label]="'Reportó ' + pub.nombre_completo"
+            [attr.aria-checked]="getInformeValue(pub, 'participo') ? 'true' : 'false'">
             <div class="w-12 h-[26px] rounded-full transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center px-[3px] shadow-inner"
               [ngClass]="getInformeValue(pub, 'participo')
                 ? 'bg-emerald-500 shadow-emerald-500/30'
                 : 'bg-slate-200 dark:bg-slate-700'">
               <div class="w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center justify-center"
                 [class.translate-x-[22px]]="getInformeValue(pub, 'participo')">
-                <svg *ngIf="getInformeValue(pub, 'participo')" class="w-2.5 h-2.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5">
+                <svg *ngIf="getInformeValue(pub, 'participo')" class="w-2.5 h-2.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -119,24 +118,28 @@
           </button>
         </td>
 
-        <!-- Auxiliar (oculto si es precursor regular) -->
+        <!-- Auxiliar (no aplica a precursores regulares) -->
         <td class="px-3 py-2 text-center align-middle">
-          <label *ngIf="!isRegular(pub)" class="inline-flex items-center justify-center cursor-pointer relative p-3 -m-3"
-            title="Precursor auxiliar este mes">
-            <input type="checkbox" [checked]="getInformeValue(pub, 'es_paux')"
-              [disabled]="!canEdit || !getInformeValue(pub, 'participo')" (change)="togglePaux(pub)"
-              class="sr-only disabled:cursor-not-allowed" tabindex="-1" />
-            <div class="w-9 h-5 rounded-full flex items-center px-0.5 transition-colors"
+          <button *ngIf="!isRegular(pub)" type="button" role="switch"
+            [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
+            (click)="togglePaux(pub)"
+            title="Precursor auxiliar este mes"
+            [attr.aria-label]="'Precursor auxiliar este mes: ' + pub.nombre_completo"
+            [attr.aria-checked]="getInformeValue(pub, 'es_paux') ? 'true' : 'false'"
+            class="inline-flex items-center justify-center p-2 -m-1 rounded-full select-none disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
+            <div class="w-9 h-5 rounded-full flex items-center px-0.5 transition-colors duration-200"
               [ngClass]="getInformeValue(pub, 'es_paux') ? 'bg-amber-400' : 'bg-slate-200 dark:bg-slate-700'">
               <div
                 class="w-3.5 h-3.5 rounded-full bg-white shadow-sm toggle-thumb flex items-center justify-center"
                 [class.translate-x-4]="getInformeValue(pub, 'es_paux')">
-                <span class="text-[8px] font-bold text-amber-600" [class.opacity-0]="!getInformeValue(pub, 'es_paux')"
-                  [class.opacity-100]="getInformeValue(pub, 'es_paux')">P</span>
+                <span class="text-[8px] font-bold text-amber-600 transition-opacity" aria-hidden="true"
+                  [class.opacity-0]="!getInformeValue(pub, 'es_paux')">P</span>
               </div>
             </div>
-          </label>
-          <span *ngIf="isRegular(pub)" class="text-slate-300 dark:text-slate-600 text-xs">—</span>
+          </button>
+          <ng-container *ngIf="isRegular(pub)">
+            <ng-container *ngTemplateOutlet="noAplica"></ng-container>
+          </ng-container>
         </td>
 
         <!-- Horas -->
@@ -145,36 +148,39 @@
             class="flex items-center justify-center gap-3">
             <input type="number" min="0" placeholder="0" [value]="getInformeValue(pub, 'horas') || ''"
               [id]="'horas-' + pub.id_publicador" [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
+              [attr.aria-label]="'Horas de ' + pub.nombre_completo"
               (input)="onUpdateInforme(pub, 'horas', $event)"
               inputmode="numeric"
-            class="w-14 px-1.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple disabled:opacity-40 disabled:cursor-not-allowed" />
+            class="w-14 px-1.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold tabular-num text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple disabled:opacity-40 disabled:cursor-not-allowed" />
 
-            <!-- Bonus Pill (Static) -->
+            <!-- Horas de crédito que completan la meta (sale de las observaciones) -->
             <div *ngIf="getBonusHours(pub) as bonus"
-              class="hidden xl:flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm">
-              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              [title]="bonus + ' horas de crédito tomadas de las observaciones'"
+              class="hidden xl:flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span class="text-[0.625rem] font-extrabold whitespace-nowrap">{{ bonus }}</span>
+              <span class="text-[0.625rem] font-extrabold whitespace-nowrap tabular-num">{{ bonus }}</span>
             </div>
           </div>
-          <div *ngIf="!pub.requiere_horas && !getInformeValue(pub, 'es_paux') && !isRegular(pub)"
-            class="flex justify-center opacity-30">
-            <div class="h-0.5 w-4 bg-slate-400 rounded-full"></div>
-          </div>
+          <ng-container *ngIf="!pub.requiere_horas && !getInformeValue(pub, 'es_paux') && !isRegular(pub)">
+            <ng-container *ngTemplateOutlet="noAplica"></ng-container>
+          </ng-container>
         </td>
 
         <!-- Estudios -->
         <td class="px-2 py-2 text-center">
           <input type="number" min="0" placeholder="0" [value]="getInformeValue(pub, 'cursos') || ''"
             [disabled]="!canEdit || !getInformeValue(pub, 'participo')" (input)="onUpdateInforme(pub, 'cursos', $event)"
+            [attr.aria-label]="'Estudios bíblicos de ' + pub.nombre_completo"
             inputmode="numeric"
-            class="w-14 px-1.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple disabled:opacity-40 disabled:cursor-not-allowed" />
+            class="w-14 px-1.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm font-semibold tabular-num text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple disabled:opacity-40 disabled:cursor-not-allowed" />
         </td>
 
         <!-- Observaciones (compacto, truncado visualmente) -->
         <td class="hidden xl:table-cell px-4 py-2 max-w-[180px]">
-          <input type="text" placeholder="Nota..." [value]="getInformeValue(pub, 'notas') || ''"
+          <input type="text" placeholder="Nota…" [value]="getInformeValue(pub, 'notas') || ''"
+            [attr.aria-label]="'Observaciones de ' + pub.nombre_completo"
             [disabled]="!canEdit || !getInformeValue(pub, 'participo')" (input)="onUpdateInforme(pub, 'notas', $event)"
             class="w-full min-w-0 px-2.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple disabled:opacity-40 disabled:cursor-not-allowed"
             title="{{ getInformeValue(pub, 'notas') || '' }}" />
@@ -183,14 +189,19 @@
     </tbody>
   </table>
 
+  <ng-template #noAplica>
+    <span class="text-sm text-slate-300 dark:text-slate-600" aria-hidden="true">—</span>
+    <span class="sr-only">No aplica</span>
+  </ng-template>
+
   <!-- Vista móvil: cards rediseñadas, mobile-first -->
-  <div class="lg:hidden flex flex-col gap-3 pb-28 px-3 pt-2">
+  <div class="lg:hidden flex flex-col gap-3 pb-4 px-3 pt-2">
 
     <!-- Estado vacío -->
     <div *ngIf="(resumen?.publicadores_list?.length ?? 0) === 0 && resumen !== null"
       class="flex items-center justify-center px-4 py-16 mx-1">
       <div class="text-center">
-        <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3 icon-float">
+        <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3" aria-hidden="true">
           <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
           </svg>
@@ -210,17 +221,22 @@
 
       <!-- ── Header: siempre visible ─────────────────────────────────────── -->
       <div
+        role="button" tabindex="0"
+        [attr.aria-expanded]="isCardExpanded(pub.id_publicador)"
+        [attr.aria-controls]="'panel-' + pub.id_publicador"
         (click)="toggleCard(pub.id_publicador, $event)"
-        class="px-4 py-4 flex items-center gap-3 cursor-pointer select-none transition-colors active:bg-slate-50 dark:active:bg-slate-800/50"
+        (keydown.enter)="toggleCard(pub.id_publicador, $event)"
+        (keydown.space)="$event.preventDefault(); toggleCard(pub.id_publicador, $event)"
+        class="px-4 py-4 flex items-center gap-3 cursor-pointer select-none transition-colors active:bg-slate-50 dark:active:bg-slate-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-purple/40"
         [ngClass]="getInformeValue(pub, 'participo')
           ? 'bg-white dark:bg-slate-900'
           : 'bg-slate-50/80 dark:bg-slate-900/50'">
 
         <!-- Avatar con badge de participación -->
-        <div class="relative shrink-0">
+        <div class="relative shrink-0" aria-hidden="true">
           <div
             class="w-10 h-10 rounded-xl flex items-center justify-center font-semibold text-sm shadow-sm"
-            [ngClass]="[getAvatarStyle(pub.nombre_completo), getInformeValue(pub, 'participo') ? '' : 'opacity-60']">
+            [ngClass]="getAvatarStyle(pub.nombre_completo)">
             {{ getInitials(pub.nombre_completo) }}
           </div>
           <!-- Badge verde cuando participó -->
@@ -233,34 +249,33 @@
         </div>
 
         <!-- Nombre + rol -->
-        <div class="flex-1 min-w-0 overflow-hidden"
-          [ngClass]="getInformeValue(pub, 'participo') ? '' : 'opacity-55'">
+        <div class="flex-1 min-w-0 overflow-hidden">
           <p class="font-bold text-slate-900 dark:text-white text-sm line-clamp-2 leading-tight">
             {{ pub.nombre_completo }}
           </p>
           <!-- Fila de badges -->
           <div class="flex flex-wrap gap-1 mt-0.5" *ngIf="getPioneerRoles(pub).length > 0">
-            <ng-container *ngFor="let role of getPioneerRoles(pub)">
-              <span *ngIf="role.type === 'pill'"
-                class="inline-block text-[9px] px-1.5 py-0.5 rounded-md uppercase font-bold tracking-wide whitespace-nowrap"
-                [ngClass]="role.class">
-                {{ role.label }}
-              </span>
-            </ng-container>
+            <span *ngFor="let role of getPioneerRoles(pub)"
+              class="inline-block text-[10px] px-1.5 py-0.5 rounded-md uppercase font-bold tracking-wide whitespace-nowrap"
+              [ngClass]="role.class">
+              {{ role.label }}
+            </span>
           </div>
         </div>
 
-        <!-- Controles derechos: WhatsApp (si no reportó) + Toggle + Chevron -->
+        <!-- Controles derechos: Toggle + Chevron -->
         <div class="flex items-center gap-1 shrink-0">
 
           <!-- Toggle switch Reportó — mobile-native, compacto -->
-          <button type="button"
+          <button type="button" role="switch"
             [disabled]="!canEdit"
             (click)="onUpdateInforme(pub, 'participo', $any({ target: { checked: !getInformeValue(pub, 'participo') } })); triggerConfirm(pub.id_publicador); $event.stopPropagation()"
-            class="shrink-0 p-2.5 -m-1.5 select-none disabled:cursor-not-allowed disabled:opacity-40"
+            (keydown.enter)="$event.stopPropagation()"
+            (keydown.space)="$event.stopPropagation()"
+            class="shrink-0 p-2.5 -m-1.5 rounded-full select-none disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
             [class.toggle-confirm]="confirmingPubs.has(pub.id_publicador)"
-            [attr.aria-label]="getInformeValue(pub, 'participo') ? 'Reportado' : 'Sin reporte'"
-            [attr.aria-checked]="getInformeValue(pub, 'participo')">
+            [attr.aria-label]="'Reportó ' + pub.nombre_completo"
+            [attr.aria-checked]="getInformeValue(pub, 'participo') ? 'true' : 'false'">
             <!-- Track -->
             <div class="w-12 h-[26px] rounded-full transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center px-[3px] shadow-inner"
               [ngClass]="getInformeValue(pub, 'participo')
@@ -279,16 +294,19 @@
           <!-- Chevron -->
           <svg class="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 transition-transform duration-200"
             [class.-rotate-180]="isCardExpanded(pub.id_publicador)"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </div>
 
-      <!-- ── Panel expandible ────────────────────────────────────────────── -->
-      <div class="overflow-hidden transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-        [style.max-height]="isCardExpanded(pub.id_publicador) ? '480px' : '0'"
-        [style.opacity]="isCardExpanded(pub.id_publicador) ? '1' : '0'">
+      <!-- ── Panel expandible (grid-rows 0fr→1fr: anima sin medir alturas) ── -->
+      <div [id]="'panel-' + pub.id_publicador"
+        class="grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+        [style.grid-template-rows]="isCardExpanded(pub.id_publicador) ? '1fr' : '0fr'"
+        [style.opacity]="isCardExpanded(pub.id_publicador) ? '1' : '0'"
+        [attr.inert]="isCardExpanded(pub.id_publicador) ? null : ''">
+       <div class="overflow-hidden min-h-0">
 
         <div class="px-4 pt-3 pb-4 flex flex-col gap-3 border-t border-slate-100 dark:border-slate-800/80"
           [ngClass]="getInformeValue(pub, 'participo')
@@ -301,14 +319,15 @@
             [class.opacity-45]="!canEdit || !getInformeValue(pub, 'participo')"
             [class.pointer-events-none]="!canEdit || !getInformeValue(pub, 'participo')">
             <div class="flex items-center gap-2.5">
-              <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-500 flex items-center justify-center font-extrabold text-xs shrink-0">P</div>
-              <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">Precursor Auxiliar</span>
+              <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-500 flex items-center justify-center font-extrabold text-xs shrink-0" aria-hidden="true">P</div>
+              <span [id]="'paux-lbl-' + pub.id_publicador" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Precursor auxiliar este mes</span>
             </div>
-            <button type="button"
+            <button type="button" role="switch"
+              [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
               (click)="togglePaux(pub)"
-              class="shrink-0 p-1 -m-1 select-none"
-              [attr.aria-checked]="getInformeValue(pub, 'es_paux')"
-              aria-label="Precursor Auxiliar">
+              class="shrink-0 p-1 -m-1 rounded-full select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+              [attr.aria-checked]="getInformeValue(pub, 'es_paux') ? 'true' : 'false'"
+              [attr.aria-labelledby]="'paux-lbl-' + pub.id_publicador">
               <div class="w-12 h-[26px] rounded-full transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center px-[3px] shadow-inner"
                 [ngClass]="getInformeValue(pub, 'es_paux')
                   ? 'bg-amber-400 shadow-amber-400/30'
@@ -326,8 +345,8 @@
             class="flex flex-col gap-1.5"
             [class.opacity-45]="!canEdit || !getInformeValue(pub, 'participo')"
             [class.pointer-events-none]="!canEdit || !getInformeValue(pub, 'participo')">
-            <label class="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider px-0.5">Horas</label>
-            <input type="number" min="0" inputmode="numeric"
+            <label [for]="'horas-m-' + pub.id_publicador" class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-0.5">Horas</label>
+            <input type="number" min="0" inputmode="numeric" [id]="'horas-m-' + pub.id_publicador"
               [value]="getInformeValue(pub, 'horas') || ''"
               [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
               (input)="onUpdateInforme(pub, 'horas', $event)"
@@ -345,8 +364,8 @@
           <div class="flex flex-col gap-1.5"
             [class.opacity-45]="!canEdit || !getInformeValue(pub, 'participo')"
             [class.pointer-events-none]="!canEdit || !getInformeValue(pub, 'participo')">
-            <label class="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider px-0.5">Estudios Bíblicos</label>
-            <input type="number" min="0" inputmode="numeric"
+            <label [for]="'cursos-m-' + pub.id_publicador" class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-0.5">Estudios bíblicos</label>
+            <input type="number" min="0" inputmode="numeric" [id]="'cursos-m-' + pub.id_publicador"
               [value]="getInformeValue(pub, 'cursos') || ''"
               [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
               (input)="onUpdateInforme(pub, 'cursos', $event)"
@@ -363,8 +382,8 @@
           <div class="flex flex-col gap-1.5"
             [class.opacity-45]="!canEdit || !getInformeValue(pub, 'participo')"
             [class.pointer-events-none]="!canEdit || !getInformeValue(pub, 'participo')">
-            <label class="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider px-0.5">Observaciones</label>
-            <textarea rows="2"
+            <label [for]="'notas-m-' + pub.id_publicador" class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-0.5">Observaciones</label>
+            <textarea rows="2" [id]="'notas-m-' + pub.id_publicador"
               [value]="getInformeValue(pub, 'notas') || ''"
               [disabled]="!canEdit || !getInformeValue(pub, 'participo')"
               (input)="onUpdateInforme(pub, 'notas', $event)"
@@ -378,6 +397,7 @@
           </div>
 
         </div>
+       </div>
       </div>
 
     </div>
@@ -388,12 +408,12 @@
 <div *ngIf="canEdit; else readOnlyFooter"
   class="sticky bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 px-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] dark:shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.4)]"
   style="padding-top: 0.5rem; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom))">
-  <div class="flex items-center justify-between gap-3 max-w-4xl mx-auto">
+  <div class="flex items-center justify-between gap-3">
 
     <!-- Indicador de auto-guardado — siempre presente, cambia de estado -->
-    <div class="autosave-status flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all duration-300"
+    <div role="status" aria-live="polite" class="autosave-status flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors duration-300"
       [ngClass]="{
-        'bg-slate-50 border-slate-200 dark:bg-white/5 dark:border-white/10':       autoSaveStatus === 'idle' && localChanges.size === 0,
+        'bg-slate-50 border-slate-200 dark:bg-white/5 dark:border-white/10':       autoSaveStatus === 'idle' && !hasPendingChanges,
         'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800/30': autoSaveStatus === 'idle' && hasPendingChanges,
         'bg-blue-50  border-blue-200  dark:bg-blue-900/20  dark:border-blue-800/30':  autoSaveStatus === 'saving',
         'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/30': autoSaveStatus === 'saved',
@@ -430,7 +450,7 @@
       <!-- Texto según estado -->
       <span class="text-xs font-semibold leading-none transition-colors duration-300 whitespace-nowrap"
         [ngClass]="{
-          'text-slate-400 dark:text-slate-500':                  autoSaveStatus === 'idle' && !hasPendingChanges,
+          'text-slate-500 dark:text-slate-400':                  autoSaveStatus === 'idle' && !hasPendingChanges,
           'text-amber-700 dark:text-amber-400':                  autoSaveStatus === 'idle' && hasPendingChanges,
           'text-blue-700  dark:text-blue-400':                   autoSaveStatus === 'saving',
           'text-emerald-700 dark:text-emerald-400':              autoSaveStatus === 'saved',
@@ -453,12 +473,8 @@
       </span>
     </div>
 
-    <!-- Conteo -->
-    <div class="flex items-center gap-3 shrink-0">
-      <span class="hidden sm:inline text-xs font-medium text-slate-400 dark:text-slate-500">
-        {{ resumen?.publicadores_list?.length || 0 }} publicadores
-      </span>
-    </div>
+    <!-- Progreso del mes: cuántos han informado -->
+    <ng-container *ngTemplateOutlet="progreso"></ng-container>
 
   </div>
 </div>
@@ -467,85 +483,32 @@
   <div
     class="sticky bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 px-4 pt-2.5"
     style="padding-bottom: calc(0.625rem + env(safe-area-inset-bottom))">
-    <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
+    <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
           <path d="M12 17v.01" />
           <path d="M7 10V7a5 5 0 0110 0v3" />
           <rect x="5" y="10" width="14" height="12" rx="2" />
         </svg>
         <span class="text-sm font-semibold">Modo solo lectura</span>
-        <span class="text-sm text-slate-400 dark:text-slate-500 hidden sm:inline">No tienes permiso para editar
+        <span class="text-sm text-slate-500 dark:text-slate-400 hidden sm:inline">No tienes permiso para editar
           informes.</span>
       </div>
-      <span class="text-xs text-slate-500 dark:text-slate-400">Mostrando {{ resumen?.publicadores_list?.length || 0 }}
-        publicadores</span>
+      <ng-container *ngTemplateOutlet="progreso"></ng-container>
     </div>
   </div>
 </ng-template>
 
-<!-- Validation Warning Modal -->
-<div *ngIf="showValidationModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog"
-  aria-modal="true">
-  <!-- Backdrop -->
-  <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closeValidationModal()">
-  </div>
-
-  <!-- Modal Panel -->
-  <div
-    class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden transform animate-in fade-in zoom-in-95 duration-150">
-
-    <!-- Header -->
-    <div
-      class="px-6 py-5 border-b border-slate-100 dark:border-slate-800 dark:border-amber-800/30 flex items-start gap-4 bg-amber-50/50 dark:bg-amber-900/20">
-      <div
-        class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center shrink-0 shadow-sm border border-amber-200/50 dark:border-amber-800/30">
-        <svg class="w-6 h-6 text-amber-600 dark:text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      </div>
-      <div class="flex-1 pt-0.5">
-        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 leading-tight">Precursores auxiliares sin horas</h3>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-          Los siguientes publicadores están marcados como <strong>Auxiliar</strong> pero no tienen horas registradas.
-        </p>
-      </div>
-      <button (click)="closeValidationModal()"
-        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-
-    <!-- Body: List of Names -->
-    <div class="p-6 bg-slate-50/50 dark:bg-slate-800/20">
-      <div class="flex items-center justify-between mb-2">
-        <p class="text-[0.625rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Publicadores
-          ({{ validationModalPublicadores.length }})</p>
-      </div>
-      <ul
-        class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800 max-h-48 overflow-y-auto shadow-sm">
-        <li *ngFor="let name of validationModalPublicadores"
-          class="px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-          <span class="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[10px] font-black flex items-center justify-center shrink-0">
-            {{ name.charAt(0).toUpperCase() }}
-          </span>
-          {{ name }}
-        </li>
-      </ul>
-    </div>
-
-    <!-- Footer -->
-    <div class="px-6 py-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-      <button (click)="closeValidationModal()"
-        class="px-5 py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-200 text-white dark:text-slate-900 text-sm font-bold rounded-xl shadow-lg shadow-slate-900/20 active:scale-[0.97] transition-colors flex items-center gap-2">
-        <span>Corregir</span>
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-      </button>
+<ng-template #progreso>
+  <div *ngIf="totalPublicadores > 0" class="flex items-center gap-2.5 shrink-0">
+    <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 tabular-num whitespace-nowrap">
+      <span class="text-slate-900 dark:text-white">{{ totalReportados }}</span>
+      <span class="text-slate-400 dark:text-slate-500"> de {{ totalPublicadores }}</span>
+      <span> informaron</span>
+    </span>
+    <div class="hidden sm:block w-24 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/70 overflow-hidden" aria-hidden="true">
+      <div class="h-full rounded-full bg-emerald-500 origin-left transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
+        [style.transform]="'scaleX(' + (totalReportados / totalPublicadores) + ')'"></div>
     </div>
   </div>
-</div>
+</ng-template>

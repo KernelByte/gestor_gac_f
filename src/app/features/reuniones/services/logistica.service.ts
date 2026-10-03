@@ -21,6 +21,11 @@ import {
   PublicadorBase,
   RebalanceoPropuesta,
 } from '../models/logistica.models';
+import {
+  EstiloImpresion,
+  EstiloImpresionOut,
+  VistaImprimibleOut,
+} from '../models/logistica-impresion.models';
 
 @Injectable({ providedIn: 'root' })
 export class LogisticaService {
@@ -201,5 +206,33 @@ export class LogisticaService {
   resumenDia(fecha: string, idCong: number | null): Observable<{ mensaje: string }> {
     const params = this.congParams(idCong).set('fecha', fecha);
     return this.http.get<{ mensaje: string }>(`${this.base}/resumen-dia`, { params });
+  }
+
+  // ── Estudio de impresión ────────────────────────────────────
+
+  getEstiloImpresion(idCong: number | null): Observable<EstiloImpresionOut> {
+    return this.http.get<EstiloImpresionOut>(`${this.base}/configuracion/impresion`, {
+      params: this.congParams(idCong),
+    });
+  }
+
+  guardarEstiloImpresion(estilo: EstiloImpresion, idCong: number | null): Observable<EstiloImpresionOut> {
+    return this.http.put<EstiloImpresionOut>(`${this.base}/configuracion/impresion`, estilo, {
+      params: this.congParams(idCong),
+    });
+  }
+
+  restablecerEstiloImpresion(idCong: number | null): Observable<EstiloImpresionOut> {
+    return this.http.delete<EstiloImpresionOut>(`${this.base}/configuracion/impresion`, {
+      params: this.congParams(idCong),
+    });
+  }
+
+  getVistaImprimible(
+    ano: number, mes: number, idCong: number | null, incluirMesSiguiente = false,
+  ): Observable<VistaImprimibleOut> {
+    let params = this.congParams(idCong).set('ano', ano).set('mes', mes);
+    if (incluirMesSiguiente) params = params.set('incluir_mes_siguiente', 'true');
+    return this.http.get<VistaImprimibleOut>(`${this.base}/vista-imprimible`, { params });
   }
 }

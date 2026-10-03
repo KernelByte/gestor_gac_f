@@ -8,7 +8,6 @@ import { AuthStore } from '../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { ResumenMensual, InformeConPublicador, InformeLoteItem, Periodo, HistorialAnual, ResumenSucursal } from './models/informe.model';
-import { InformesStatsComponent } from './components/informes-stats/informes-stats.component';
 import { InformesFiltersComponent } from './components/informes-filters/informes-filters.component';
 import { InformesTableComponent } from './components/informes-table/informes-table.component';
 import { InformesHistorialComponent } from './components/informes-historial/informes-historial.component';

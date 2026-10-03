@@ -79,11 +79,18 @@ import { CongregacionContacto } from '../models/discursos.models';
                 [class]="i === resaltado() ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400'">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
               </svg>
-              <span class="flex-1 min-w-0 text-sm font-medium truncate transition-colors duration-100"
-                [class]="i === resaltado()
-                  ? 'text-teal-700 dark:text-teal-300'
-                  : 'text-slate-700 dark:text-slate-200'">
-                {{ c.nombre }}
+              <!-- La ciudad va debajo: distingue homónimas ("Norte - Cali"
+                   / "Norte - Candelaria") sin tener que abrir el directorio. -->
+              <span class="flex-1 min-w-0 flex flex-col" [class.opacity-60]="!c.activo">
+                <span class="text-sm font-medium truncate transition-colors duration-100"
+                  [class]="i === resaltado()
+                    ? 'text-teal-700 dark:text-teal-300'
+                    : 'text-slate-700 dark:text-slate-200'">
+                  {{ c.nombre }}{{ c.activo ? '' : ' · inactiva' }}
+                </span>
+                @if (c.ciudad || c.departamento) {
+                  <span class="text-[0.65rem] text-slate-400 truncate">{{ ubicacion(c) }}</span>
+                }
               </span>
               @if (c.hora_reunion_fin_semana) {
                 <span class="shrink-0 text-[0.65rem] text-slate-400">{{ c.dia_reunion_fin_semana || '' }} {{ c.hora_reunion_fin_semana }}</span>
@@ -350,7 +357,11 @@ export class CongregacionContactoInputComponent implements ControlValueAccessor,
       return;
     }
 
-    const coincidencias = datos.filter(c => this.normalizar(c.nombre).includes(query));
+    // También por ciudad ("palmira" encuentra Jardin, Bolo…). Las inactivas
+    // van al final aunque coincidan: se conservan, pero no se programa con ellas.
+    const coincidencias = datos
+      .filter(c => this.normalizar(`${c.nombre} ${c.ciudad ?? ''}`).includes(query))
+      .sort((a, b) => Number(b.activo) - Number(a.activo));
     this.sugerencias.set(coincidencias.slice(0, 8));
     this.resaltado.set(coincidencias.length > 0 ? 0 : -1);
 
@@ -360,6 +371,10 @@ export class CongregacionContactoInputComponent implements ControlValueAccessor,
     } else {
       this.cerrar();
     }
+  }
+
+  ubicacion(c: CongregacionContacto): string {
+    return [c.ciudad, c.departamento].filter(v => !!v?.trim()).join(' · ');
   }
 
   private normalizar(s: string): string {

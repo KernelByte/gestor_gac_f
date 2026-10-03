@@ -5,7 +5,16 @@ import { ResumenMensual, InformeConPublicador, InformeLoteItem } from '../../mod
 import { Privilegio } from '../../../privilegios/domain/models/privilegio';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
 
-type RolEtiqueta = { label: string, type: 'pill' | 'text', class: string };
+type RolEtiqueta = { label: string, class: string };
+
+/** Colores de las etiquetas de privilegio, con su variante oscura. */
+const ROL_CLASES = {
+   regular:  'bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300',
+   auxiliar: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
+   especial: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
+   anciano:  'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
+   siervo:   'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-300',
+};
 
 @Component({
    selector: 'app-informes-table',
@@ -16,46 +25,6 @@ type RolEtiqueta = { label: string, type: 'pill' | 'text', class: string };
       'class': 'flex-1 min-h-0 bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex flex-col overflow-hidden'
    },
    styles: [`
-      @keyframes rowIn {
-         from { opacity: 0; transform: translateY(6px); }
-         to   { opacity: 1; transform: translateY(0); }
-      }
-      tbody tr:nth-child(1)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 0ms; }
-      tbody tr:nth-child(2)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 25ms; }
-      tbody tr:nth-child(3)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 50ms; }
-      tbody tr:nth-child(4)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 75ms; }
-      tbody tr:nth-child(5)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 100ms; }
-      tbody tr:nth-child(6)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 125ms; }
-      tbody tr:nth-child(7)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 150ms; }
-      tbody tr:nth-child(8)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 175ms; }
-      tbody tr:nth-child(9)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 200ms; }
-      tbody tr:nth-child(10) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 225ms; }
-      tbody tr:nth-child(11) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 250ms; }
-      tbody tr:nth-child(12) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 275ms; }
-      tbody tr:nth-child(13) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 300ms; }
-      tbody tr:nth-child(14) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 325ms; }
-      tbody tr:nth-child(15) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 350ms; }
-      tbody tr:nth-child(16) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 375ms; }
-      tbody tr:nth-child(17) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 400ms; }
-      tbody tr:nth-child(18) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 425ms; }
-      tbody tr:nth-child(19) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 450ms; }
-      tbody tr:nth-child(20) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 475ms; }
-      tbody tr:nth-child(n+21) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 475ms; }
-      .mobile-cards > *:nth-child(1)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 0ms; }
-      .mobile-cards > *:nth-child(2)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 25ms; }
-      .mobile-cards > *:nth-child(3)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 50ms; }
-      .mobile-cards > *:nth-child(4)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 75ms; }
-      .mobile-cards > *:nth-child(5)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 100ms; }
-      .mobile-cards > *:nth-child(6)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 125ms; }
-      .mobile-cards > *:nth-child(7)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 150ms; }
-      .mobile-cards > *:nth-child(8)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 175ms; }
-      .mobile-cards > *:nth-child(9)  { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 200ms; }
-      .mobile-cards > *:nth-child(10) { animation: rowIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: 225ms; }
-      @media (prefers-reduced-motion: reduce) {
-         tbody tr { animation: none !important; opacity: 1; }
-         .mobile-cards > * { animation: none !important; opacity: 1; }
-      }
-
       /* Auto-save status pill: fade text in on state change */
       @keyframes statusIn {
          from { opacity: 0; transform: translateY(3px); }
@@ -138,19 +107,19 @@ export class InformesTableComponent implements OnChanges {
          const roleNames = assignedIds.map(id => catalog.find(pr => pr.id_privilegio === id)?.nombre_privilegio?.toLowerCase() || '').filter(Boolean);
 
          if (roleNames.some(r => r.includes('regular'))) {
-            roles.push({ label: 'PRECURSOR REGULAR', type: 'pill', class: 'bg-purple-100 text-purple-700' });
+            roles.push({ label: 'PRECURSOR REGULAR', class: ROL_CLASES.regular });
          }
          if (roleNames.some(r => r.includes('auxiliar'))) {
-            roles.push({ label: 'PRECURSOR AUXILIAR', type: 'pill', class: 'bg-amber-100 text-amber-700' });
+            roles.push({ label: 'PRECURSOR AUXILIAR', class: ROL_CLASES.auxiliar });
          }
          if (roleNames.some(r => r.includes('especial'))) {
-            roles.push({ label: 'PRECURSOR ESPECIAL', type: 'pill', class: 'bg-rose-100 text-rose-700' });
+            roles.push({ label: 'PRECURSOR ESPECIAL', class: ROL_CLASES.especial });
          }
          if (roleNames.some(r => r.includes('anciano'))) {
-            roles.push({ label: 'ANCIANO', type: 'pill', class: 'bg-indigo-100 text-indigo-700' });
+            roles.push({ label: 'ANCIANO', class: ROL_CLASES.anciano });
          }
          if (roleNames.some(r => r.includes('siervo') || r.includes('ministerial'))) {
-            roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-yellow-100 text-yellow-800' });
+            roles.push({ label: 'SIERVO MINISTERIAL', class: ROL_CLASES.siervo });
          }
 
       } else {
@@ -158,26 +127,24 @@ export class InformesTableComponent implements OnChanges {
          const p = pub.privilegio_activo?.toLowerCase() || '';
 
          if (p.includes('regular')) {
-            roles.push({ label: 'PRECURSOR REGULAR', type: 'pill', class: 'bg-purple-100 text-purple-700' });
+            roles.push({ label: 'PRECURSOR REGULAR', class: ROL_CLASES.regular });
          }
          if (p.includes('auxiliar')) {
-            roles.push({ label: 'PRECURSOR AUXILIAR', type: 'pill', class: 'bg-amber-100 text-amber-700' });
+            roles.push({ label: 'PRECURSOR AUXILIAR', class: ROL_CLASES.auxiliar });
          }
          if (p.includes('anciano')) {
-            roles.push({ label: 'ANCIANO', type: 'pill', class: 'bg-indigo-100 text-indigo-700' });
+            roles.push({ label: 'ANCIANO', class: ROL_CLASES.anciano });
          }
          if (p.includes('siervo') || p.includes('ministerial')) {
-            roles.push({ label: 'SIERVO MINISTERIAL', type: 'pill', class: 'bg-yellow-100 text-yellow-800' });
+            roles.push({ label: 'SIERVO MINISTERIAL', class: ROL_CLASES.siervo });
          }
          if (p.includes('especial')) {
-            roles.push({ label: 'PRECURSOR ESPECIAL', type: 'pill', class: 'bg-rose-100 text-rose-700' });
+            roles.push({ label: 'PRECURSOR ESPECIAL', class: ROL_CLASES.especial });
          }
       }
 
-      if (roles.length === 0) {
-         roles.push({ label: 'PUBLICADOR', type: 'text', class: 'text-slate-400 font-medium text-[0.625rem] uppercase tracking-wide' });
-      }
-
+      // Sin etiqueta para el publicador sin privilegio: es el caso por defecto
+      // y repetir "PUBLICADOR" en cada fila solo añadía ruido.
       return roles;
    }
 
@@ -273,11 +240,6 @@ export class InformesTableComponent implements OnChanges {
       }
    }
 
-   // Modal State
-   showValidationModal = false;
-   validationModalPublicadores: string[] = [];
-   highlightedPubs = new Set<number>();
-
    // Animation state
    confirmingPubs = new Set<number>();
 
@@ -286,25 +248,25 @@ export class InformesTableComponent implements OnChanges {
      setTimeout(() => this.confirmingPubs.delete(pubId), 300);
    }
 
-   closeValidationModal() {
-      this.showValidationModal = false;
-      // Resaltar las filas problemáticas para guiar al usuario
-      const problematicos = (this.resumen?.publicadores_list || [])
-        .filter(p => this.validationModalPublicadores.includes(p.nombre_completo));
-      problematicos.forEach(p => this.highlightedPubs.add(p.id_publicador));
-      this.validationModalPublicadores = [];
-      // Quitar el resaltado a los 4 segundos
-      setTimeout(() => this.highlightedPubs.clear(), 4000);
+   get totalPublicadores(): number {
+      return this.resumen?.publicadores_list?.length ?? 0;
    }
 
+   /** Cuenta con los cambios locales, para que el progreso responda al instante. */
+   get totalReportados(): number {
+      return (this.resumen?.publicadores_list ?? []).filter(p => this.getInformeValue(p, 'participo')).length;
+   }
 
    isRegular(pub: InformeConPublicador): boolean {
       const roles = this.getRoles(pub);
       return roles.some(r => r.label === 'PRECURSOR REGULAR' || r.label.includes('REGULAR'));
    }
 
+   /** Enfoca el campo de horas visible: la tabla (escritorio) o la tarjeta (móvil). */
    private focusHours(id: number) {
-      const el = document.getElementById(`horas-${id}`);
+      const el = [`horas-${id}`, `horas-m-${id}`]
+         .map(i => document.getElementById(i))
+         .find(e => !!e && e.offsetParent !== null);
       if (el) {
          el.focus({ preventScroll: true });
          (el as HTMLInputElement).select?.();

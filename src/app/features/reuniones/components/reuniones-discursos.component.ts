@@ -52,6 +52,11 @@ import {
 type Estado = 'idle' | 'loading' | 'ready' | 'error';
 type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
 
+/** Una tarjeta de la lista de Entrantes: un discurso por programar, o una semana sin reunión. */
+type ItemEntrante =
+  | { tipo: 'fila'; clave: string; fecha: string; entrante: DiscursoEntranteOut }
+  | { tipo: 'sin_reunion'; clave: string; fecha: string; motivo: string | null };
+
 @Component({
   selector: 'app-reuniones-discursos',
   standalone: true,
@@ -74,7 +79,10 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
         <span class="hidden md:block md:flex-1" aria-hidden="true"></span>
 
         <!-- ===== BANDEJA DE CONTROL ===== -->
-        <div class="flex flex-wrap items-center gap-0.5 min-w-0 w-full md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+        <!-- A todo el ancho en móvil sólo con un mes abierto (lleva el
+             selector de mes); sin él queda sólo Congregaciones y una barra
+             entera con un icono suelto se leía como un campo vacío. -->
+        <div [class.w-full]="!!mesDatos()" class="flex flex-wrap items-center gap-0.5 min-w-0 md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
 
           <!-- Volver desde Congregaciones/Temas cuando no hay mes abierto:
                el interruptor Entrantes/Salientes (con su propio "Volver")
@@ -196,7 +204,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 <circle cx="12" cy="12" r="2"/>
               </svg>
-              <span class="hidden sm:inline">Congregaciones</span>
+              <span [class]="mesDatos() ? 'hidden sm:inline' : ''">Congregaciones</span>
             </button>
         </div>
 
@@ -264,12 +272,15 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
           @if (mesDatos()) {
             <div class="shrink-0 flex flex-wrap items-center gap-2 px-1.5 py-1.5 border-b border-slate-100 dark:border-slate-800">
               @if (subTab() === 'entrantes' || subTab() === 'salientes') {
-                <!-- Volver — solo móvil -->
-                <button (click)="mesDatos.set(null); estado.set('idle')"
-                  class="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors active:scale-[0.95]"
-                  title="Volver"
-                  aria-label="Volver">
+                <!-- Vuelve a la vista general de meses (la cuadrícula por año). El
+                     selector de la cabecera sólo salta entre meses ya
+                     programados; esto es lo que lleva a ver todos los años. -->
+                <button (click)="mesDatos.set(null); estado.set('idle'); menuMesesAbierto.set(false)"
+                  class="shrink-0 h-9 px-2.5 flex items-center gap-1.5 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors active:scale-95"
+                  title="Volver a todos los meses"
+                  aria-label="Volver a todos los meses">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                  <span class="hidden sm:inline">Todos los meses</span>
                 </button>
               }
               <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1" role="tablist">
@@ -465,7 +476,8 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                        las tarjetas se comprimen para caber en la altura visible
                        en vez de desbordar, recortando su propio contenido. -->
                   <div class="shrink-0 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden transition-shadow duration-150"
-                    [class.shadow-sm]="congregacionContactoExpandidaId() === c.id_congregacion_contacto">
+                    [class.shadow-sm]="congregacionContactoExpandidaId() === c.id_congregacion_contacto"
+                    [class.opacity-60]="!c.activo">
 
                     <!-- Fila compacta: toda la tarjeta es clicable para expandir,
                          salvo los botones de acción, que paran la propagación.
@@ -481,7 +493,17 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                         {{ c.nombre.charAt(0).toUpperCase() }}
                       </div>
                       <div class="min-w-0 flex-1">
-                        <p class="text-sm font-black text-slate-800 dark:text-slate-100 truncate">{{ c.nombre }}</p>
+                        <div class="flex items-center gap-2 min-w-0">
+                          <p class="text-sm font-black text-slate-800 dark:text-slate-100 truncate">{{ c.nombre }}</p>
+                          @if (!c.activo) {
+                            <span class="shrink-0 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">Inactiva</span>
+                          }
+                        </div>
+                        <!-- Ciudad y departamento: distinguen homónimas
+                             ("Norte - Cali" / "Norte - Candelaria"). -->
+                        @if (ubicacionGeografica(c)) {
+                          <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 truncate">{{ ubicacionGeografica(c) }}</p>
+                        }
                         <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
                           @if (c.dia_reunion_fin_semana || c.hora_reunion_fin_semana) {
                             <span class="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
@@ -670,14 +692,24 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                             </header>
                             <ul class="flex flex-col divide-y divide-sky-100 dark:divide-sky-400/10 px-1.5 pb-1.5">
                               @for (p of c.personas; track p.id_contacto_persona) {
-                                <li class="flex flex-col @md:flex-row @md:items-center gap-2 @md:gap-3 rounded-lg px-1.5 py-2 hover:bg-white/70 dark:hover:bg-slate-800/40 transition-colors">
+                                <li class="flex flex-col @md:flex-row @md:items-center gap-2 @md:gap-3 rounded-lg px-1.5 py-2 hover:bg-white/70 dark:hover:bg-slate-800/40 transition-colors"
+                                  [class.opacity-55]="!p.activo">
                                   <div class="min-w-0 flex-1 flex items-start gap-2.5">
-                                    <span class="w-8 h-8 rounded-full bg-sky-600 dark:bg-sky-500/80 text-white text-xs font-black flex items-center justify-center shrink-0" aria-hidden="true">{{ p.nombre.charAt(0).toUpperCase() }}</span>
+                                    <span class="w-8 h-8 rounded-full text-white text-xs font-black flex items-center justify-center shrink-0" aria-hidden="true"
+                                      [class]="p.activo ? 'bg-sky-600 dark:bg-sky-500/80' : 'bg-slate-400 dark:bg-slate-600'">{{ p.nombre.charAt(0).toUpperCase() }}</span>
                                     <div class="min-w-0 flex-1">
                                       <p class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{{ p.nombre }}</p>
-                                      @if (p.cargo) {
-                                        <span class="inline-block max-w-full mt-0.5 text-[0.65rem] font-bold text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-400/15 px-1.5 py-px rounded truncate align-top">{{ p.cargo }}</span>
-                                      }
+                                      <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                                        @if (p.cargo) {
+                                          <span class="inline-block max-w-full text-[0.65rem] font-bold text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-400/15 px-1.5 py-px rounded truncate align-top">{{ p.cargo }}</span>
+                                        }
+                                        @if (p.es_principal && p.activo) {
+                                          <span class="text-[0.65rem] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-400/10 px-1.5 py-px rounded">Principal</span>
+                                        }
+                                        @if (!p.activo) {
+                                          <span class="text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-px rounded">Inactivo</span>
+                                        }
+                                      </div>
                                     </div>
                                   </div>
                                   <ng-container *ngTemplateOutlet="accionesContacto; context: { $implicit: p }"></ng-container>
@@ -806,56 +838,144 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
               <div class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-violet-500 animate-spin"></div>
             </div>
           } @else if (!mesDatos()) {
-            <!-- Es el único momento sin barra de mes, así que la lista y el
+            <!-- Es el único momento sin barra de mes, así que el selector y el
                  botón de generar viven aquí: sin ellos no habría forma de
-                 entrar a la pantalla (mismo criterio que Logística). -->
-            <div class="flex-1 flex items-center justify-center p-6 overflow-y-auto simple-scrollbar">
-              <div class="w-full max-w-sm flex flex-col items-center text-center gap-1.5">
+                 entrar a la pantalla (mismo criterio que Logística).
+                 Antes era una lista vertical de un mes por fila centrada con
+                 items-center dentro de un contenedor con scroll: con dos años
+                 de datos la lista desbordaba por arriba y por abajo, y lo que
+                 desbordaba por arriba (los meses más recientes, justo los que
+                 se buscan) quedaba recortado y fuera del alcance del scroll.
+                 Ahora es un calendario de año por fila: doce casillas por año
+                 caben en una sola pantalla, y el centrado vertical va con
+                 min-h-full + my-auto, que nunca recorta el contenido. -->
+            <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain simple-scrollbar bg-slate-50 dark:bg-slate-950/40">
+              <div class="min-h-full flex flex-col">
+                <div class="w-full max-w-5xl mx-auto my-auto px-4 py-5 sm:px-6 sm:py-8 flex flex-col gap-5">
 
-                <div class="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mb-2.5">
-                  <svg class="w-6 h-6 text-violet-500 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                </div>
-
-                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Ninguna programación abierta</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-[15rem]">
                   @if (mesesDisponibles().length > 0) {
-                    Elige un mes para verlo y editarlo.
-                  } @else if (hasEditPermission()) {
-                    Genera una nueva programación para comenzar.
+                    <!-- Cabecera: qué es esto + acción principal a la derecha. -->
+                    <header class="disc-sel-in flex flex-col sm:flex-row sm:items-end gap-3">
+                      <div class="min-w-0 flex-1">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Elige un mes</h3>
+                        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                          <span class="data-num">{{ resumenMeses().total }}</span> {{ resumenMeses().total === 1 ? 'mes programado' : 'meses programados' }}
+                          @if (resumenMeses().borradores > 0) {
+                            · <span class="text-amber-600 dark:text-amber-400 font-semibold"><span class="data-num">{{ resumenMeses().borradores }}</span> sin confirmar</span>
+                          }
+                        </p>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                        @if (mesActualProgramado(); as actual) {
+                          <!-- Atajo al mes en curso: es el que se abre casi
+                               siempre, así que no hay que buscarlo. -->
+                          <button type="button" (click)="cargarMes(actual.ano, actual.mes)"
+                            [disabled]="estado() === 'loading'"
+                            class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 h-10 px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-violet-300 dark:hover:border-violet-500/50 hover:text-violet-700 dark:hover:text-violet-300 disabled:opacity-50 transition-[border-color,color,transform] duration-150 ease-out active:scale-[0.97]">
+                            <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="actual.confirmado ? 'bg-emerald-500' : 'bg-amber-400'" aria-hidden="true"></span>
+                            Abrir {{ mesSoloLabel(actual.mes).toLowerCase() }}
+                          </button>
+                        }
+                        @if (hasEditPermission()) {
+                          <button data-testid="disc-btn-generar-mes" (click)="abrirModalGenerar()"
+                            [disabled]="estado() === 'loading'"
+                            class="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 text-xs font-bold text-white shadow-sm shadow-violet-900/20 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Generar mes
+                          </button>
+                        }
+                      </div>
+                    </header>
+
+                    <!-- Un año por bloque, el más reciente arriba. Las casillas
+                         vacías también se dibujan: así el año se lee como un
+                         calendario (qué falta, qué viene) y no como una lista
+                         de la que hay que deducir los huecos. -->
+                    <div class="flex flex-col gap-3">
+                      @for (fila of calendarioMeses(); track fila.ano; let i = $index) {
+                        <section class="disc-sel-in rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-3"
+                          [style.animation-delay.ms]="40 + i * 50"
+                          [attr.aria-label]="'Año ' + fila.ano">
+                          <h4 class="md:w-12 shrink-0 px-1 text-sm font-bold text-slate-800 dark:text-slate-100 data-num">{{ fila.ano }}</h4>
+                          <div class="flex-1 grid grid-cols-6 lg:grid-cols-12 gap-1 sm:gap-1.5">
+                            @for (c of fila.celdas; track c.mes) {
+                              @if (c.info; as m) {
+                                <button
+                                  type="button"
+                                  data-testid="disc-fila-mes"
+                                  [attr.data-ano]="m.ano"
+                                  [attr.data-mes]="m.mes"
+                                  (click)="cargarMes(m.ano, m.mes)"
+                                  [disabled]="estado() === 'loading'"
+                                  [title]="mesLabel(m.ano, m.mes) + ' · ' + (m.confirmado ? 'Confirmado' : 'Borrador')"
+                                  [attr.aria-label]="mesLabel(m.ano, m.mes) + ', ' + (m.confirmado ? 'confirmado' : 'borrador')"
+                                  class="group relative h-11 sm:h-12 rounded-lg sm:rounded-xl flex flex-col items-center justify-center gap-1 text-xs font-semibold border transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.96] disabled:opacity-40"
+                                  [class]="m.confirmado
+                                    ? 'bg-emerald-50/70 dark:bg-emerald-400/[0.07] border-emerald-200/80 dark:border-emerald-400/20 text-slate-800 dark:text-slate-100 hover:bg-emerald-100/80 dark:hover:bg-emerald-400/15 hover:border-emerald-300 dark:hover:border-emerald-400/40'
+                                    : 'bg-amber-50/70 dark:bg-amber-400/[0.07] border-amber-200/80 dark:border-amber-400/20 text-slate-800 dark:text-slate-100 hover:bg-amber-100/80 dark:hover:bg-amber-400/15 hover:border-amber-300 dark:hover:border-amber-400/40'"
+                                  [class.disc-sel-hoy]="c.esActual">
+                                  <span>{{ c.corto }}</span>
+                                  <span class="w-1.5 h-1.5 rounded-full" [class]="m.confirmado ? 'bg-emerald-500' : 'bg-amber-400'" aria-hidden="true"></span>
+                                </button>
+                              } @else if (hasEditPermission()) {
+                                <!-- Hueco: un clic abre "Generar" ya en ese mes. -->
+                                <button
+                                  type="button"
+                                  (click)="abrirModalGenerarPara(fila.ano, c.mes)"
+                                  [disabled]="estado() === 'loading'"
+                                  [title]="'Generar ' + mesLabel(fila.ano, c.mes)"
+                                  [attr.aria-label]="'Generar ' + mesLabel(fila.ano, c.mes)"
+                                  class="group h-11 sm:h-12 rounded-lg sm:rounded-xl flex flex-col items-center justify-center gap-0.5 text-xs font-medium border border-dashed border-slate-200 dark:border-slate-700/80 text-slate-400 dark:text-slate-500 hover:border-violet-300 dark:hover:border-violet-500/50 hover:text-violet-600 dark:hover:text-violet-300 hover:bg-violet-50/60 dark:hover:bg-violet-500/[0.06] transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.96] disabled:opacity-40"
+                                  [class.disc-sel-hoy]="c.esActual">
+                                  <span>{{ c.corto }}</span>
+                                  <svg class="w-3 h-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                </button>
+                              } @else {
+                                <div class="h-11 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center text-xs text-slate-300 dark:text-slate-600 border border-dashed border-slate-100 dark:border-slate-800"
+                                  [class.disc-sel-hoy]="c.esActual" aria-hidden="true">{{ c.corto }}</div>
+                              }
+                            }
+                          </div>
+                        </section>
+                      }
+                    </div>
+
+                    <!-- Leyenda: una sola vez, no repetida en cada casilla. -->
+                    <div class="disc-sel-in flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1 text-[0.7rem] text-slate-500 dark:text-slate-400" style="animation-delay: 120ms">
+                      <span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Confirmado</span>
+                      <span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Borrador</span>
+                      <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-[4px] ring-2 ring-violet-500/70"></span>Mes actual</span>
+                      @if (hasEditPermission()) {
+                        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-[4px] border border-dashed border-slate-300 dark:border-slate-600"></span>Sin programar · clic para generar</span>
+                      }
+                    </div>
+
                   } @else {
-                    No hay discursos programados. Consulta con el secretario.
+                    <!-- Sin ningún mes todavía: estado vacío clásico. -->
+                    <div class="disc-sel-in w-full max-w-sm mx-auto flex flex-col items-center text-center gap-1.5">
+                      <div class="w-12 h-12 rounded-2xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mb-2.5">
+                        <svg class="w-6 h-6 text-violet-500 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                      </div>
+                      <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Ninguna programación abierta</h3>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 max-w-[15rem]">
+                        @if (hasEditPermission()) {
+                          Genera una nueva programación para comenzar.
+                        } @else {
+                          No hay discursos programados. Consulta con el secretario.
+                        }
+                      </p>
+                      @if (hasEditPermission()) {
+                        <button data-testid="disc-btn-generar-mes" (click)="abrirModalGenerar()"
+                          [disabled]="estado() === 'loading'"
+                          class="w-full mt-4 flex items-center justify-center gap-2 px-4 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 text-xs font-bold text-white transition-all shadow-sm active:scale-[0.98]">
+                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                          Generar mes
+                        </button>
+                      }
+                    </div>
                   }
-                </p>
 
-                @if (mesesDisponibles().length > 0) {
-                  <!-- Lista en tarjeta y no chips sueltos: filas del mismo
-                       ancho, una debajo de otra, se leen como un solo bloque. -->
-                  <div class="w-full mt-4 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden bg-white dark:bg-slate-900">
-                    @for (m of mesesDisponibles(); track m.ano + '-' + m.mes) {
-                      <button
-                        data-testid="disc-fila-mes"
-                        [attr.data-ano]="m.ano"
-                        [attr.data-mes]="m.mes"
-                        (click)="cargarMes(m.ano, m.mes)"
-                        [disabled]="estado() === 'loading'"
-                        class="w-full flex items-center gap-2.5 px-3.5 h-11 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors active:bg-violet-100 dark:active:bg-violet-900/30 disabled:opacity-40">
-                        <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="m.confirmado ? 'bg-emerald-500' : 'bg-amber-400'" [title]="m.confirmado ? 'Confirmado' : 'Borrador'"></span>
-                        <span class="min-w-0 truncate text-left flex-1">{{ mesLabel(m.ano, m.mes) }}</span>
-                        <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-                      </button>
-                    }
-                  </div>
-                }
-
-                @if (hasEditPermission()) {
-                  <button data-testid="disc-btn-generar-mes" (click)="abrirModalGenerar()"
-                    [disabled]="estado() === 'loading'"
-                    class="w-full mt-4 flex items-center justify-center gap-2 px-4 h-11 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 text-xs font-bold text-white transition-all shadow-sm active:scale-[0.98]">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    Generar mes
-                  </button>
-                }
-
+                </div>
               </div>
             </div>
           } @else {
@@ -925,22 +1045,22 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
 
               <div [hidden]="subTab() !== 'entrantes'" class="flex flex-col gap-3">
                   <!-- Cuántas llamadas quedan por hacer este mes -->
-                  @if (mesDatos()!.entrantes.length > 0) {
+                  @if (entrantesActivos().length > 0) {
                     <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 px-3 py-2 rounded-xl border"
-                      [class]="entrantesConfirmados() === mesDatos()!.entrantes.length
+                      [class]="entrantesConfirmados() === entrantesActivos().length
                         ? 'bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200/70 dark:border-emerald-800/40'
                         : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200/70 dark:border-slate-700/60'">
                       <svg class="w-3.5 h-3.5 shrink-0"
-                        [class]="entrantesConfirmados() === mesDatos()!.entrantes.length ? 'text-emerald-500' : 'text-slate-400'"
+                        [class]="entrantesConfirmados() === entrantesActivos().length ? 'text-emerald-500' : 'text-slate-400'"
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
                       </svg>
                       <span class="text-[0.7rem] font-bold text-slate-600 dark:text-slate-300">
-                        Oradores confirmados: {{ entrantesConfirmados() }} de {{ mesDatos()!.entrantes.length }}
+                        Oradores confirmados: {{ entrantesConfirmados() }} de {{ entrantesActivos().length }}
                       </span>
-                      @if (mesDatos()!.entrantes.length > entrantesConfirmados()) {
+                      @if (entrantesActivos().length > entrantesConfirmados()) {
                         <span class="text-[0.65rem] text-slate-400">
-                          Faltan {{ mesDatos()!.entrantes.length - entrantesConfirmados() }} por llamar
+                          Faltan {{ entrantesActivos().length - entrantesConfirmados() }} por llamar
                         </span>
                       }
                       <!-- Antes de llamar hay que tener a quién: sin este dato,
@@ -967,7 +1087,31 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                       }
                     </div>
                   }
-                  @for (entrante of mesDatos()!.entrantes; track entrante.id_discurso_entrante) {
+                  @for (item of itemsEntrantes(); track item.clave) {
+                    @if (item.tipo === 'sin_reunion') {
+                      <!-- Semana marcada «sin reunión» (asamblea, congreso): no
+                           se programa a nadie y se dice por qué. Misma tarjeta
+                           ámbar que usa Entre semana. -->
+                      <div class="rounded-xl border border-amber-200/70 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 overflow-hidden">
+                        <div class="flex items-stretch">
+                          <div class="shrink-0 w-14 sm:w-16 flex flex-col items-center gap-0.5 pt-3 pb-3 border-r border-amber-200/70 dark:border-amber-800/50">
+                            <span class="text-[0.6rem] font-bold uppercase tracking-[0.12em] text-amber-600 dark:text-amber-400">{{ diaSemanaCorto(item.fecha) }}</span>
+                            <span class="text-xl leading-none font-black tabular-nums text-amber-700 dark:text-amber-300">{{ diaMes(item.fecha) }}</span>
+                          </div>
+                          <div class="flex-1 min-w-0 flex items-start gap-3 px-3 sm:px-4 py-3">
+                            <svg class="w-4 h-4 mt-0.5 shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <div class="min-w-0">
+                              <p class="text-sm font-bold text-amber-800 dark:text-amber-200">Sin reunión esta semana</p>
+                              @if (item.motivo) {
+                                <p class="text-xs text-amber-700 dark:text-amber-300/90 mt-0.5">{{ item.motivo }}</p>
+                              }
+                              <p class="text-xs text-amber-700/80 dark:text-amber-300/70 mt-0.5">No se programa a nadie. Puedes quitar la marca en el engranaje → Semanas sin reunión.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    } @else {
+                    @let entrante = item.entrante;
                     <!-- Una fecha, una tarjeta, y un solo riel de fecha a la
                          izquierda que la recorre entera —resumen y formulario
                          incluidos—: ese riel es lo que dice de dónde a dónde
@@ -1322,6 +1466,7 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                           </div>
                         </div>
                       </div>
+                    }
                   }
               </div>
 
@@ -1387,6 +1532,16 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
               </ng-template>
 
               <div [hidden]="subTab() !== 'salientes'" class="flex flex-col gap-3">
+                  <!-- Las salidas a otras congregaciones siguen siendo válidas:
+                       sólo se informa de que la propia no se reúne esa semana. -->
+                  @for (x of mesDatos()!.sin_reunion ?? []; track x.fecha) {
+                    <div class="flex items-start gap-2.5 rounded-xl border border-amber-200/70 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5">
+                      <svg class="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      <p class="text-xs text-amber-800 dark:text-amber-200">
+                        <span class="font-bold">{{ formatFecha(x.fecha) }}: sin reunión en nuestra congregación</span>{{ x.motivo ? ' · ' + x.motivo : '' }}
+                      </p>
+                    </div>
+                  }
                   @if (hasEditPermission()) {
                     <button (click)="abrirModalSaliente()"
                       class="self-start flex items-center gap-2 px-4 h-9 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-xs font-bold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95">
@@ -1617,7 +1772,28 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                            se cortaban al meterlos en columnas (tema, dirección
                            del salón y notas). -->
                       <div class="flex flex-col gap-2.5 p-3 sm:p-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_0.8fr] gap-x-5 gap-y-2.5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[0.9fr_1.2fr_1.2fr_0.8fr] gap-x-5 gap-y-2.5">
+                          <!-- Mover la salida de fecha sin borrarla y volver a
+                               crearla. Se limita al mes que se está viendo, igual
+                               que al añadir: si cayera en otro mes la tarjeta
+                               desaparecería de esta lista sin avisar. -->
+                          <div class="flex flex-col gap-1">
+                            <label class="flex items-center gap-1 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                              <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18"/></svg>
+                              Fecha
+                            </label>
+                            <app-date-picker
+                              [ngModel]="saliente.fecha"
+                              (ngModelChange)="onSalienteFechaChange(saliente, $event)"
+                              [ngModelOptions]="{ standalone: true }"
+                              [minDate]="mesMinDate()"
+                              [maxDate]="mesMaxDate()"
+                              [disabled]="!hasEditPermission() || (saliente.confirmado && !isEditandoSaliente(saliente.id_discurso_saliente))"
+                              [fieldLike]="true"
+                              colorScheme="violet"
+                              placeholder="Seleccionar fecha">
+                            </app-date-picker>
+                          </div>
                           <div class="flex flex-col gap-1">
                             <label class="flex items-center gap-1 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                               <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
@@ -1889,6 +2065,26 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                     colorScheme="violet" placeholder="Hora"></app-time-picker>
                 </div>
               </div>
+              <!-- Ciudad/departamento distinguen congregaciones homónimas
+                   ("Norte - Cali" / "Norte - Candelaria") en el autocompletado. -->
+              <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                <div class="flex flex-col gap-1.5">
+                  <label for="cong-ciudad" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Ciudad</label>
+                  <input id="cong-ciudad" type="text" [(ngModel)]="nuevaCongregacionContacto.ciudad" [ngModelOptions]="{ standalone: true }"
+                    placeholder="Ej. Palmira" autocomplete="off" [class]="campoModal + ' h-10 text-sm'">
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label for="cong-departamento" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Departamento</label>
+                  <input id="cong-departamento" type="text" [(ngModel)]="nuevaCongregacionContacto.departamento" [ngModelOptions]="{ standalone: true }"
+                    placeholder="Ej. Valle del Cauca" autocomplete="off" [class]="campoModal + ' h-10 text-sm'">
+                </div>
+                <label class="h-10 flex items-center gap-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                  title="Las inactivas se conservan como referencia pero quedan al final de la lista">
+                  <input type="checkbox" [(ngModel)]="nuevaCongregacionContacto.activo" [ngModelOptions]="{ standalone: true }"
+                    class="w-4 h-4 rounded accent-violet-600 cursor-pointer">
+                  <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Activa</span>
+                </label>
+              </div>
               <div class="flex flex-col gap-1.5">
                 <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Ubicación del salón</span>
                 <app-ubicacion-picker [ngModel]="nuevaCongregacionContacto.ubicacion" (ngModelChange)="nuevaCongregacionContacto.ubicacion = $event"
@@ -2013,12 +2209,12 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
               </header>
 
               @if (nuevaCongregacionContacto.personas.length) {
-                <div class="hidden sm:grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_8.5rem_2.25rem] gap-2 px-0.5 text-[0.7rem] font-semibold text-sky-800/70 dark:text-sky-200/60" aria-hidden="true">
-                  <span>Nombre</span><span>Cargo</span><span>Teléfono</span><span></span>
+                <div class="hidden sm:grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_8.5rem_5.5rem_2.25rem] gap-2 px-0.5 text-[0.7rem] font-semibold text-sky-800/70 dark:text-sky-200/60" aria-hidden="true">
+                  <span>Nombre</span><span>Cargo</span><span>Teléfono</span><span>Estado</span><span></span>
                 </div>
                 <div class="flex flex-col gap-2">
                   @for (p of nuevaCongregacionContacto.personas; track $index; let i = $index) {
-                    <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.25rem] sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_8.5rem_2.25rem] gap-2 items-center max-sm:p-2 max-sm:rounded-xl max-sm:bg-white/70 max-sm:dark:bg-slate-900/40 max-sm:ring-1 max-sm:ring-sky-200/60 max-sm:dark:ring-sky-400/15">
+                    <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.25rem] sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_8.5rem_5.5rem_2.25rem] gap-2 items-center max-sm:p-2 max-sm:rounded-xl max-sm:bg-white/70 max-sm:dark:bg-slate-900/40 max-sm:ring-1 max-sm:ring-sky-200/60 max-sm:dark:ring-sky-400/15">
                       <input type="text" [(ngModel)]="p.nombre" [ngModelOptions]="{ standalone: true }" placeholder="Nombre" autocomplete="off"
                         data-fila-persona [attr.aria-label]="'Nombre del contacto ' + (i + 1)"
                         [class]="campoModal + ' h-10 text-sm max-sm:col-span-2'">
@@ -2028,6 +2224,14 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
                       <input type="tel" inputmode="tel" [(ngModel)]="p.telefono" [ngModelOptions]="{ standalone: true }" placeholder="Teléfono" autocomplete="off"
                         [attr.aria-label]="'Teléfono del contacto ' + (i + 1)"
                         [class]="campoModal + ' h-10 text-sm tabular-nums max-sm:col-span-2'">
+                      <!-- Un contacto que ya no atiende se conserva como referencia. -->
+                      <button type="button" (click)="p.activo = !p.activo" [attr.aria-pressed]="p.activo"
+                        [title]="p.activo ? 'Marcar como inactivo' : 'Marcar como activo'"
+                        [class]="'h-10 rounded-xl text-xs font-bold transition-colors max-sm:col-span-2 ' + (p.activo
+                          ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/20'
+                          : 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700')">
+                        {{ p.activo ? 'Activo' : 'Inactivo' }}
+                      </button>
                       <button type="button" (click)="quitarPersonaModal(i)" [title]="'Quitar contacto ' + (i + 1)" [attr.aria-label]="'Quitar contacto ' + (i + 1)"
                         class="max-sm:row-start-1 max-sm:col-start-3 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-[background-color,color,transform] duration-150 ease-out active:scale-95">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -2723,8 +2927,16 @@ type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
       .disc-sheet { animation: dialogIn 200ms var(--ease-out-expo) backwards; }
     }
 
+    /* ── Selector de meses (sin mes abierto) ──
+       Bloques de año que entran escalonados; el mes en curso lleva un anillo
+       violeta (el acento de Discursos) para encontrarlo sin leer. */
+    .disc-sel-in { animation: cardIn 260ms var(--ease-out-expo) backwards; }
+    .disc-sel-hoy {
+      box-shadow: 0 0 0 2px rgb(139 92 246 / 0.7);
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      .disc-card, .disc-dropdown, .disc-overlay, .disc-dialog, .disc-sheet {
+      .disc-card, .disc-dropdown, .disc-overlay, .disc-dialog, .disc-sheet, .disc-sel-in {
         animation: none !important;
       }
     }
@@ -2767,6 +2979,42 @@ export class ReunionesDiscursosComponent implements OnInit {
       }
     }
     return grupos;
+  });
+
+  /**
+   * Calendario del selector de meses (estado sin mes abierto): un año por
+   * fila, del más reciente al más antiguo, con las doce casillas aunque el
+   * mes no esté programado. Incluye siempre el año en curso para poder
+   * generar sus meses aunque todavía no tenga ninguno.
+   */
+  calendarioMeses = computed(() => {
+    const hoy = new Date();
+    const anoHoy = hoy.getFullYear();
+    const mesHoy = hoy.getMonth() + 1;
+    const porClave = new Map(this.mesesDisponibles().map((m) => [`${m.ano}-${m.mes}`, m]));
+    const anos = new Set(this.mesesDisponibles().map((m) => m.ano));
+    anos.add(anoHoy);
+    return [...anos].sort((a, b) => b - a).map((ano) => ({
+      ano,
+      celdas: MESES_ES.map((nombre, i) => ({
+        mes: i + 1,
+        corto: nombre.slice(0, 3),
+        info: porClave.get(`${ano}-${i + 1}`) ?? null,
+        esActual: ano === anoHoy && i + 1 === mesHoy,
+      })),
+    }));
+  });
+
+  /** Totales para la línea de resumen del selector. */
+  resumenMeses = computed(() => {
+    const meses = this.mesesDisponibles();
+    return { total: meses.length, borradores: meses.filter((m) => !m.confirmado).length };
+  });
+
+  /** El mes en curso, si ya está programado: atajo directo en el selector. */
+  mesActualProgramado = computed<MesDiscursosDisponible | null>(() => {
+    const hoy = new Date();
+    return this.mesesDisponibles().find((m) => m.ano === hoy.getFullYear() && m.mes === hoy.getMonth() + 1) ?? null;
   });
   grupos = signal<GrupoSimple[]>([]);
   publicadores = signal<PublicadorSimple[]>([]);
@@ -2878,14 +3126,16 @@ export class ReunionesDiscursosComponent implements OnInit {
   modalCongregacionContactoVisible = signal(false);
   editandoCongregacionContacto = signal<CongregacionContacto | null>(null);
   nuevaCongregacionContacto: {
-    nombre: string; dia_reunion_fin_semana: string | null;
+    nombre: string; ciudad: string | null; departamento: string | null; activo: boolean;
+    dia_reunion_fin_semana: string | null;
     hora_reunion_fin_semana: string | null; notas: string | null; ubicacion: UbicacionSaliente | null;
     /** Formato "YYYY-MM" (el que produce/consume <input type="month">), no la fecha completa. */
     proximo_arreglo_mes: string | null; proximo_arreglo_nota: string | null;
-    personas: { id_contacto_persona?: number; nombre: string; cargo: string | null; telefono: string | null }[];
+    personas: { id_contacto_persona?: number; nombre: string; cargo: string | null; telefono: string | null; activo: boolean }[];
     discursantes: { id_discursante?: number; nombre: string; telefono: string | null; bosquejos: string[] }[];
   } = {
-    nombre: '', dia_reunion_fin_semana: null, hora_reunion_fin_semana: null, notas: null, ubicacion: null,
+    nombre: '', ciudad: null, departamento: null, activo: true,
+    dia_reunion_fin_semana: null, hora_reunion_fin_semana: null, notas: null, ubicacion: null,
     proximo_arreglo_mes: null, proximo_arreglo_nota: null, personas: [], discursantes: [],
   };
 
@@ -3081,6 +3331,17 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   constructor() {
+    // El diálogo de ajustes (en el padre) marcó o desmarcó una semana sin
+    // reunión: se recarga el mes abierto para que se vea el aviso con su motivo.
+    // El primer valor (0) es el de arranque, no un cambio.
+    effect(() => {
+      const version = this.svc.cambioSemanasSinReunion();
+      untracked(() => {
+        const mes = this.mesDatos();
+        if (version > 0 && mes) this.cargarMes(mes.ano, mes.mes);
+      });
+    });
+
     // Refleja la sub-pestaña activa en `?sub=`, sin apilar historial de
     // navegación (replaceUrl), para que un refresco -o volver a esta pestaña
     // tras pasar por otra, que remonta el componente- vuelva a Salientes,
@@ -3259,6 +3520,13 @@ export class ReunionesDiscursosComponent implements OnInit {
 
   abrirModalGenerar(): void {
     this.modalGenerarVisible.set(true);
+  }
+
+  /** Desde una casilla vacía del selector: el modal ya llega en ese mes. */
+  abrirModalGenerarPara(ano: number, mes: number): void {
+    this.genAno = ano;
+    this.genMes = mes;
+    this.abrirModalGenerar();
   }
 
   cerrarModalGenerar(): void {
@@ -3676,14 +3944,43 @@ export class ReunionesDiscursosComponent implements OnInit {
   /** Ids con una petición en vuelo, para no permitir doble clic. */
   confirmandoOrador = signal<Set<number>>(new Set());
 
+  /** Entrantes de fechas con reunión: las de semanas «sin reunión» no cuentan en ningún total. */
+  entrantesActivos = computed(() =>
+    (this.mesDatos()?.entrantes ?? []).filter(e => !e.sin_reunion)
+  );
+
+  /**
+   * Lista de la pestaña Entrantes: una tarjeta por fecha. Las fechas de
+   * semanas sin reunión salen como aviso (con o sin fila de entrante detrás,
+   * porque los meses generados antes de marcar la semana no tienen fila).
+   */
+  itemsEntrantes = computed<ItemEntrante[]>(() => {
+    const mes = this.mesDatos();
+    if (!mes) return [];
+    const items: ItemEntrante[] = [];
+    const conFila = new Set<string>();
+    for (const e of mes.entrantes) {
+      conFila.add(e.fecha);
+      items.push(e.sin_reunion
+        ? { tipo: 'sin_reunion', clave: `sr-${e.fecha}`, fecha: e.fecha, motivo: e.motivo_sin_reunion }
+        : { tipo: 'fila', clave: `e-${e.id_discurso_entrante}`, fecha: e.fecha, entrante: e });
+    }
+    for (const x of mes.sin_reunion ?? []) {
+      if (!conFila.has(x.fecha)) {
+        items.push({ tipo: 'sin_reunion', clave: `sr-${x.fecha}`, fecha: x.fecha, motivo: x.motivo });
+      }
+    }
+    return items.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  });
+
   /** Cuántos entrantes del mes tienen ya confirmado el orador. */
   entrantesConfirmados = computed(() =>
-    (this.mesDatos()?.entrantes ?? []).filter(e => e.orador_confirmado).length
+    this.entrantesActivos().filter(e => e.orador_confirmado).length
   );
 
   /** Fechas del mes que todavía no tienen a nadie asignado. */
   entrantesSinOrador = computed(() =>
-    (this.mesDatos()?.entrantes ?? []).filter(e => !e.nombre_orador?.trim()).length
+    this.entrantesActivos().filter(e => !e.nombre_orador?.trim()).length
   );
 
   // ── Estado de cada fecha, para poder leer el mes de un vistazo ─────────────
@@ -3789,7 +4086,7 @@ export class ReunionesDiscursosComponent implements OnInit {
 
   /** Cuántos discursos del mes ya se dieron. */
   entrantesPresentados = computed(() =>
-    (this.mesDatos()?.entrantes ?? []).filter(e => e.presentado).length
+    this.entrantesActivos().filter(e => e.presentado).length
   );
 
   /**
@@ -3798,7 +4095,7 @@ export class ReunionesDiscursosComponent implements OnInit {
    * puede conservar entradas de meses vistos antes en la misma sesión.
    */
   entrantesRepetidos = computed(() =>
-    (this.mesDatos()?.entrantes ?? []).filter(e => (this.repeticiones()[e.id_discurso_entrante] ?? []).length > 0).length
+    this.entrantesActivos().filter(e => (this.repeticiones()[e.id_discurso_entrante] ?? []).length > 0).length
   );
 
   togglePresentado(entrante: DiscursoEntranteOut): void {
@@ -3875,12 +4172,44 @@ export class ReunionesDiscursosComponent implements OnInit {
       .subscribe((proceder) => { if (proceder) doEditar(); });
   }
 
+  /**
+   * Cambia la fecha de una salida ya programada. Si ya hay un publicador
+   * asignado, avisa antes si ese día choca con otra asignación suya.
+   */
+  onSalienteFechaChange(saliente: DiscursoSalienteOut, fecha: string | null): void {
+    if (!fecha || fecha === saliente.fecha) return;
+    const idCong = this.idCong;
+
+    const doEditar = () => {
+      this.svc.editarSaliente(saliente.id_discurso_saliente, { fecha, confirmar_conflicto: true }, idCong).subscribe({
+        next: (updated) => this.updateSaliente(updated),
+        error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al cambiar la fecha'),
+      });
+    };
+
+    if (!saliente.id_publicador || !idCong) {
+      doEditar();
+      return;
+    }
+
+    const nombre = saliente.publicador?.nombre_completo ?? 'Este publicador';
+    this.conflictosSvc
+      .confirmarSiHayConflicto(
+        saliente.id_publicador, fecha, idCong, nombre,
+        { tipo: 'discurso_saliente', id: saliente.id_discurso_saliente },
+      )
+      .subscribe((proceder) => { if (proceder) doEditar(); });
+  }
+
   private updateSaliente(updated: DiscursoSalienteOut): void {
     const d = this.mesDatos();
     if (!d) return;
+    // Si cambió la fecha, la lista se reordena para que la tarjeta quede en su sitio.
     this.mesDatos.set({
       ...d,
-      salientes: d.salientes.map(s => s.id_discurso_saliente === updated.id_discurso_saliente ? updated : s),
+      salientes: d.salientes
+        .map(s => s.id_discurso_saliente === updated.id_discurso_saliente ? updated : s)
+        .sort((a, b) => a.fecha.localeCompare(b.fecha)),
     });
   }
 
@@ -4167,12 +4496,18 @@ export class ReunionesDiscursosComponent implements OnInit {
     });
   }
 
-  /** El contacto marcado "es_principal" del directorio; a falta de uno, el primero registrado. */
+  /** "Ciudad · Departamento" de una congregación del directorio, o '' si no hay. */
+  ubicacionGeografica(c: { ciudad?: string | null; departamento?: string | null }): string {
+    return [c.ciudad, c.departamento].filter(v => !!v?.trim()).join(' · ');
+  }
+
+  /** El contacto activo marcado "es_principal"; a falta de uno, el primer contacto activo. */
   private contactoPrincipalDeCongregacion(nombreCongregacion: string): ContactoPersona | null {
     const buscado = nombreCongregacion.trim().toLowerCase();
     const cong = this.congregacionesContacto().find(c => c.nombre.trim().toLowerCase() === buscado);
-    if (!cong || cong.personas.length === 0) return null;
-    return cong.personas.find(p => p.es_principal) ?? cong.personas[0];
+    const activos = cong?.personas.filter(p => p.activo) ?? [];
+    if (activos.length === 0) return null;
+    return activos.find(p => p.es_principal) ?? activos[0];
   }
 
   cerrarWhatsapp(): void {
@@ -4479,12 +4814,15 @@ export class ReunionesDiscursosComponent implements OnInit {
     if (c) {
       this.editandoCongregacionContacto.set(c);
       this.nuevaCongregacionContacto = {
-        nombre: c.nombre, dia_reunion_fin_semana: c.dia_reunion_fin_semana,
+        nombre: c.nombre, ciudad: c.ciudad, departamento: c.departamento, activo: c.activo,
+        dia_reunion_fin_semana: c.dia_reunion_fin_semana,
         hora_reunion_fin_semana: c.hora_reunion_fin_semana, notas: c.notas,
-        ubicacion: c.url_mapa ? { direccion_destino: c.direccion, url_mapa: c.url_mapa, lat: c.lat, lon: c.lon } : null,
+        // Con dirección y sin enlace de mapa también: si no, guardar el modal
+        // borraba la dirección (payload.direccion sale de aquí).
+        ubicacion: (c.url_mapa || c.direccion) ? { direccion_destino: c.direccion, url_mapa: c.url_mapa, lat: c.lat, lon: c.lon } : null,
         proximo_arreglo_mes: c.proximo_arreglo_fecha ? c.proximo_arreglo_fecha.slice(0, 7) : null,
         proximo_arreglo_nota: c.proximo_arreglo_nota,
-        personas: c.personas.map(p => ({ id_contacto_persona: p.id_contacto_persona, nombre: p.nombre, cargo: p.cargo, telefono: p.telefono })),
+        personas: c.personas.map(p => ({ id_contacto_persona: p.id_contacto_persona, nombre: p.nombre, cargo: p.cargo, telefono: p.telefono, activo: p.activo })),
         discursantes: c.discursantes.map(d => ({ id_discursante: d.id_discursante, nombre: d.nombre, telefono: d.telefono, bosquejos: [...d.bosquejos] })),
       };
       this.archivosCongregacionContacto.set([]);
@@ -4495,7 +4833,8 @@ export class ReunionesDiscursosComponent implements OnInit {
     } else {
       this.editandoCongregacionContacto.set(null);
       this.nuevaCongregacionContacto = {
-        nombre: '', dia_reunion_fin_semana: null, hora_reunion_fin_semana: null, notas: null, ubicacion: null,
+        nombre: '', ciudad: null, departamento: null, activo: true,
+        dia_reunion_fin_semana: null, hora_reunion_fin_semana: null, notas: null, ubicacion: null,
         proximo_arreglo_mes: null, proximo_arreglo_nota: null, personas: [], discursantes: [],
       };
       this.archivosCongregacionContacto.set([]);
@@ -4565,7 +4904,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   anadirPersonaModal(): void {
-    this.nuevaCongregacionContacto.personas = [...this.nuevaCongregacionContacto.personas, { nombre: '', cargo: null, telefono: null }];
+    this.nuevaCongregacionContacto.personas = [...this.nuevaCongregacionContacto.personas, { nombre: '', cargo: null, telefono: null, activo: true }];
     this.enfocarUltimaFila('data-fila-persona');
   }
 
@@ -4618,6 +4957,9 @@ export class ReunionesDiscursosComponent implements OnInit {
     const n = this.nuevaCongregacionContacto;
     const payload = {
       nombre: n.nombre.trim(),
+      ciudad: n.ciudad?.trim() || null,
+      departamento: n.departamento?.trim() || null,
+      activo: n.activo,
       dia_reunion_fin_semana: n.dia_reunion_fin_semana || null,
       hora_reunion_fin_semana: n.hora_reunion_fin_semana || null,
       direccion: n.ubicacion?.direccion_destino ?? null,
@@ -4655,7 +4997,7 @@ export class ReunionesDiscursosComponent implements OnInit {
     const peticiones: Observable<unknown>[] = [];
     for (const p of actuales) {
       if (!p.nombre.trim()) continue;
-      const datos = { nombre: p.nombre.trim(), cargo: p.cargo || null, telefono: p.telefono || null };
+      const datos = { nombre: p.nombre.trim(), cargo: p.cargo || null, telefono: p.telefono || null, activo: p.activo };
       peticiones.push(
         p.id_contacto_persona != null
           ? this.svc.editarContactoPersona(idCongContacto, p.id_contacto_persona, datos, idCong)

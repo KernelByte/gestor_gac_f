@@ -964,8 +964,9 @@ import {
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                   Para asambleas, congresos o la Conmemoración. No se programará a nadie esa semana,
                   ni en las reuniones ni en la logística.
-                  <span class="font-bold text-rose-600 dark:text-rose-400">Se borra lo ya programado de esa semana, incluso lo confirmado</span>,
-                  para que esos publicadores queden libres para otras partes.
+                  <span class="font-bold text-rose-600 dark:text-rose-400">Se borra la programación de reuniones y logística de esa semana, incluso lo confirmado</span>,
+                  para que esos publicadores queden libres para otras partes. Los discursos públicos
+                  se conservan y se ven como «sin reunión».
                 </p>
               </div>
             </div>

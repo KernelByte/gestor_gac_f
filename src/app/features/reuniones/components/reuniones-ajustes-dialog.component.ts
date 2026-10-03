@@ -141,7 +141,8 @@ type AjustesTab = 'semanas' | 'ausencias';
                 <svg class="w-4 h-4 shrink-0 mt-px text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 <p class="text-[0.7rem] leading-relaxed text-amber-800 dark:text-amber-200">
                   Para asambleas o la Conmemoración. No se programará a nadie esa semana.
-                  <span class="font-bold text-rose-600 dark:text-rose-400">Se borra lo ya programado, incluso lo confirmado.</span>
+                  <span class="font-bold text-rose-600 dark:text-rose-400">Se borra la programación de reuniones y logística, incluso lo confirmado.</span>
+                  Los discursos públicos se conservan y se ven como «sin reunión».
                 </p>
               </div>
 

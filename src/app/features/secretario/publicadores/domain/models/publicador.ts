@@ -34,12 +34,20 @@ export interface Publicador {
   tiene_usuario_sistema?: boolean;
 }
 
-export interface UsuarioVinculado {
-  tiene_usuario_vinculado: boolean;
-  id_usuario?: number;
-  nombre_usuario?: string;
-  correo_usuario?: string;
-  rol_usuario?: string;
+/** Lo principal que dejará de ver (o perderá) la persona al eliminar al publicador. */
+export interface ImpactoEliminacion {
+  usuario: {
+    id_usuario: number;
+    nombre_usuario?: string | null;
+    correo_usuario?: string | null;
+    rol_usuario?: string | null;
+    /** false en Administrador / Gestor: la cuenta se conserva y solo se desvincula. */
+    se_elimina: boolean;
+  } | null;
+  grupo: { id_grupo: number; nombre_grupo: string } | null;
+  roles_grupo: { id_grupo: number; nombre_grupo: string; rol: 'capitan' | 'auxiliar' }[];
+  privilegios_activos: string[];
+  informes: number;
+  /** Territorios, visitas, cobertura o exhibidor: se conserva el historial sin el nombre. */
+  conserva_historial: boolean;
 }
-
-export type DeleteOpcion = 'sin_usuario' | 'eliminar_con_usuario' | 'reasignar_usuario';

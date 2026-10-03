@@ -266,6 +266,18 @@ export class DiscursosService {
     return this._directorio.asReadonly();
   }
 
+  /**
+   * Contador que sube cada vez que se marca o desmarca una semana sin reunión
+   * (el diálogo de ajustes vive en el padre, no en Discursos). Discursos lo
+   * observa con un effect y recarga el mes abierto.
+   */
+  private _cambioSemanasSinReunion = signal(0);
+  readonly cambioSemanasSinReunion = this._cambioSemanasSinReunion.asReadonly();
+
+  notificarCambioSemanasSinReunion(): void {
+    this._cambioSemanasSinReunion.update(n => n + 1);
+  }
+
   /** Añade al directorio compartido una congregación recién creada. */
   anadirADirectorio(c: CongregacionContacto): void {
     this._directorio.update(d => [...d, c]);

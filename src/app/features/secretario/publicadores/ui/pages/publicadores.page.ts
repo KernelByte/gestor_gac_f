@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal, computed, effect, untracked } from '
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PublicadoresFacade } from '../../application/publicadores.facade';
-import { DeleteOpcion, Publicador, UsuarioVinculado } from '../../domain/models/publicador';
+import { ImpactoEliminacion, Publicador } from '../../domain/models/publicador';
 import { AuthStore } from '../../../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../../../core/congregacion-context/congregacion-context.service';
 import { HttpClient } from '@angular/common/http';
@@ -1706,38 +1706,22 @@ export class PublicadoresListComponent implements OnInit {
 
   // Delete
   isDeleting = signal(false);
-  checkingUsuarioVinculado = signal(false);
-  deleteStep = signal<'checking' | 'simple' | 'linked-choice' | 'confirm-delete-both' | 'reassign-picker'>('checking');
-  usuarioVinculado = signal<UsuarioVinculado | null>(null);
-  deleteOpcionElegida = signal<DeleteOpcion | null>(null);
-  publicadoresParaReasignar = signal<Publicador[]>([]);
-  publicadorReasignadoId = signal<number | null>(null);
-  busquedaReasignar = signal('');
-  publicadoresFiltradosReasignar = computed(() => {
-    const q = this.busquedaReasignar().toLowerCase().trim();
-    if (!q) return this.publicadoresParaReasignar();
-    return this.publicadoresParaReasignar().filter(p => {
-      // Alias y nombre de la ficha: se encuentra a la persona escribiendo
-      // cualquiera de los dos.
-      const nombre = (nombreMostrado(p) + ' ' + nombreLegal(p)).toLowerCase();
-      return nombre.includes(q);
-    });
-  });
+  deleteStep = signal<'checking' | 'resumen'>('checking');
+  impactoEliminacion = signal<ImpactoEliminacion | null>(null);
 
   async confirmDelete(p: Publicador) {
     this.publicadorToDelete.set(p);
     this.deleteModalOpen.set(true);
     this.deleteStep.set('checking');
-    this.checkingUsuarioVinculado.set(true);
     try {
-      const info = await this.facade.checkUsuarioVinculado(p.id_publicador);
-      this.usuarioVinculado.set(info);
-      this.deleteStep.set(info.tiene_usuario_vinculado ? 'linked-choice' : 'simple');
+      const impacto = await this.facade.getImpactoEliminacion(p.id_publicador);
+      // Si se cerró (o se abrió otro publicador) mientras cargaba, se descarta.
+      if (this.publicadorToDelete()?.id_publicador !== p.id_publicador) return;
+      this.impactoEliminacion.set(impacto);
+      this.deleteStep.set('resumen');
     } catch {
-      this.showToast('Error al verificar usuario vinculado', 'error');
+      this.showToast('Error al comprobar dónde se usa este publicador', 'error');
       this.closeDeleteModal();
-    } finally {
-      this.checkingUsuarioVinculado.set(false);
     }
   }
 
@@ -1745,68 +1729,24 @@ export class PublicadoresListComponent implements OnInit {
     if (this.isDeleting()) return;
     this.deleteModalOpen.set(false);
     this.publicadorToDelete.set(null);
-    this.usuarioVinculado.set(null);
+    this.impactoEliminacion.set(null);
     this.deleteStep.set('checking');
-    this.deleteOpcionElegida.set(null);
-    this.publicadoresParaReasignar.set([]);
-    this.publicadorReasignadoId.set(null);
-    this.busquedaReasignar.set('');
-  }
-
-  selectDeleteOpcion(opcion: DeleteOpcion) {
-    if (opcion === 'eliminar_con_usuario') {
-      this.deleteStep.set('confirm-delete-both');
-    } else if (opcion === 'reasignar_usuario') {
-      const pub = this.publicadorToDelete();
-      const todos = this.facade.vm().list.filter(
-        p => p.id_publicador !== pub?.id_publicador
-      );
-      this.publicadoresParaReasignar.set(todos);
-      this.deleteStep.set('reassign-picker');
-    } else {
-      this.deleteOpcionElegida.set(opcion);
-    }
   }
 
   async executeDelete() {
     const p = this.publicadorToDelete();
-    if (!p) return;
-
-    const step = this.deleteStep();
-    const opcion: DeleteOpcion = step === 'simple' || !this.usuarioVinculado()?.tiene_usuario_vinculado
-      ? 'sin_usuario'
-      : step === 'confirm-delete-both'
-        ? 'eliminar_con_usuario'
-        : (this.deleteOpcionElegida() ?? 'eliminar_con_usuario');
-
-    if (opcion === 'reasignar_usuario') {
-      const nuevoId = this.publicadorReasignadoId();
-      if (!nuevoId) {
-        this.showToast('Debes seleccionar un publicador para reasignar el usuario', 'error');
-        return;
-      }
-      this.isDeleting.set(true);
-      try {
-        await this.facade.removeWithOpcion(p.id_publicador, opcion, nuevoId);
-        this.showToast('Publicador eliminado y usuario reasignado correctamente', 'success');
-        this.closeDeleteModal();
-      } catch (err: any) {
-        this.showToast(err?.error?.detail || 'No se pudo eliminar el publicador', 'error');
-      } finally {
-        this.isDeleting.set(false);
-      }
-      return;
-    }
+    if (!p || this.deleteStep() !== 'resumen') return;
 
     this.isDeleting.set(true);
     try {
-      await this.facade.removeWithOpcion(p.id_publicador, opcion);
-      this.showToast('Publicador eliminado correctamente', 'success');
+      await this.facade.remove(p.id_publicador);
+      // closeDeleteModal() no cierra mientras isDeleting() sea true.
+      this.isDeleting.set(false);
       this.closeDeleteModal();
+      this.showToast('Publicador eliminado correctamente', 'success');
     } catch (err: any) {
       console.error('Error deleting publicador:', err);
-      const msg = err?.error?.detail || 'No se pudo eliminar el publicador';
-      this.showToast(msg, 'error');
+      this.showToast(err?.error?.detail || 'No se pudo eliminar el publicador', 'error');
     } finally {
       this.isDeleting.set(false);
     }

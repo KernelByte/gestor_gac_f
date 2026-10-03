@@ -3,12 +3,13 @@
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { LogisticaService } from '../services/logistica.service';
+import { LogisticaImpresionEstudioComponent } from './logistica-impresion-estudio.component';
 import { ConflictosService } from '../services/conflictos.service';
 import { ReunionesService } from '../services/reuniones.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
@@ -30,8 +31,6 @@ import {
   LogisticaMesOut,
   MesDisponible,
   MESES_ES,
-  OpcionesPdfLogistica,
-  OrientacionPagina,
   PERMISO_LABEL,
   PreferenciaLogistica,
   PUESTO_A_PERMISO,
@@ -39,7 +38,6 @@ import {
   PUESTOS_LABEL,
   PublicadorBase,
   RebalanceoPropuesta,
-  TamanoPagina,
 } from '../models/logistica.models';
 
 type Estado = 'idle' | 'loading' | 'ready' | 'error';
@@ -93,7 +91,7 @@ function normalizarTexto(s: string): string {
 @Component({
   selector: 'app-reuniones-logistica',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SelectPickerComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SelectPickerComponent, LogisticaImpresionEstudioComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -326,6 +324,21 @@ function normalizarTexto(s: string): string {
               </button>
             }
 
+            <!-- Imprimir: a la vista, no dentro del menú. Es lo que más se
+                 hace con un mes ya publicado y abre el estudio de impresión
+                 (vista previa real + estilo guardado por congregación). -->
+            <button
+              type="button"
+              data-testid="log-btn-imprimir"
+              (click)="abrirEstudioImpresion()"
+              [disabled]="!puedeImprimir()"
+              [title]="motivoNoImprimir() || 'Imprimir o guardar como PDF'"
+              [attr.aria-label]="motivoNoImprimir() ? 'Imprimir. ' + motivoNoImprimir() : 'Imprimir'"
+              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-600 transition-colors active:scale-[0.97]">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+              Imprimir
+            </button>
+
             <!-- PDF, Compartir y Eliminar viven detrás de un menú: las tres
                  son sobre el mes ya cerrado -exportarlo, difundirlo o
                  borrarlo-, no sobre editarlo, así que se agrupan aparte de
@@ -376,22 +389,21 @@ function normalizarTexto(s: string): string {
                     </div>
                     <span class="h-px bg-slate-100 dark:bg-slate-800 mx-1 my-0.5" aria-hidden="true"></span>
 
-                    <!-- PDF — necesita que exista una versión publicada -->
+                    <!-- Imprimir o guardar como PDF — abre el estudio.
+                         Necesita el mes publicado: la hoja se reparte a la
+                         congregación y debe ser la versión que ella ve. -->
                     <button
                       type="button"
                       role="menuitem"
-                      (click)="menuAccionesAbierto.set(false); descargarPdf()"
-                      [disabled]="!tienePublicacion() || descargandoPdf()"
-                      class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-40">
-                      @if (descargandoPdf()) {
-                        <div class="w-4 h-4 shrink-0 mt-px rounded-full border-2 border-emerald-200 border-t-emerald-500 animate-spin"></div>
-                      } @else {
-                        <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-                      }
+                      data-testid="log-menu-imprimir"
+                      (click)="menuAccionesAbierto.set(false); abrirEstudioImpresion()"
+                      [disabled]="!puedeImprimir()"
+                      class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors disabled:opacity-40">
+                      <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
                       <span class="min-w-0 flex-1">
-                        <span class="block text-xs font-bold leading-tight">Descargar PDF</span>
+                        <span class="block text-xs font-bold leading-tight">Imprimir o guardar PDF</span>
                         <span class="block text-[0.65rem] text-slate-400 dark:text-slate-500 leading-snug mt-0.5">
-                          {{ tienePublicacion() ? 'La programación de este mes.' : 'Publica el mes primero.' }}
+                          {{ motivoNoImprimir() || 'Vista previa con el estilo de tu congregación.' }}
                         </span>
                       </span>
                     </button>
@@ -1195,11 +1207,12 @@ function normalizarTexto(s: string): string {
                 <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
                 <span class="text-[0.65rem] font-black uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Imprimir</span>
               </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Vista lista para imprimir o guardar como PDF.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{{ motivoNoImprimir() || 'Vista previa, estilo y PDF en un solo lugar.' }}</p>
               <button
-                (click)="abrirOpcionesImpresion()"
-                class="w-full h-9 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-                Opciones de impresión
+                (click)="cerrarPanelCompartir(); abrirEstudioImpresion()"
+                [disabled]="!puedeImprimir()"
+                class="w-full h-9 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-all">
+                Abrir vista de impresión
               </button>
             </div>
 
@@ -1233,41 +1246,13 @@ function normalizarTexto(s: string): string {
       </div>
     }
 
-    <!-- ===== MODAL OPCIONES DE IMPRESIÓN ===== -->
-    @if (imprimirOpcionesAbierto()) {
-      <div class="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" (click)="cerrarOpcionesImpresion()">
-        <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-4" (click)="$event.stopPropagation()">
-          <h2 class="text-sm font-black text-slate-800 dark:text-white">Opciones de impresión</h2>
-
-          <label class="flex items-center gap-2.5 cursor-pointer">
-            <input type="checkbox" [ngModel]="opcionIncluirDiscursos()" (ngModelChange)="opcionIncluirDiscursos.set($event)" class="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500" />
-            <span class="text-xs text-slate-700 dark:text-slate-200">Incluir discursos públicos del mes siguiente</span>
-          </label>
-
-          <div>
-            <span class="block text-[0.65rem] font-bold uppercase tracking-wide text-slate-400 mb-1.5">Tamaño de página</span>
-            <div class="flex gap-2">
-              <button type="button" (click)="opcionTamanoPagina.set('carta')" class="flex-1 h-9 rounded-lg border text-xs font-bold transition-all" [class]="opcionTamanoPagina()==='carta' ? 'bg-violet-600 border-violet-600 text-white' : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300'">Carta</button>
-              <button type="button" (click)="opcionTamanoPagina.set('a4')" class="flex-1 h-9 rounded-lg border text-xs font-bold transition-all" [class]="opcionTamanoPagina()==='a4' ? 'bg-violet-600 border-violet-600 text-white' : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300'">A4</button>
-            </div>
-          </div>
-
-          <div>
-            <span class="block text-[0.65rem] font-bold uppercase tracking-wide text-slate-400 mb-1.5">Orientación</span>
-            <div class="flex gap-2">
-              <button type="button" (click)="opcionOrientacion.set('vertical')" class="flex-1 h-9 rounded-lg border text-xs font-bold transition-all" [class]="opcionOrientacion()==='vertical' ? 'bg-violet-600 border-violet-600 text-white' : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300'">Vertical</button>
-              <button type="button" (click)="opcionOrientacion.set('horizontal')" class="flex-1 h-9 rounded-lg border text-xs font-bold transition-all" [class]="opcionOrientacion()==='horizontal' ? 'bg-violet-600 border-violet-600 text-white' : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300'">Horizontal</button>
-            </div>
-          </div>
-
-          <div class="flex gap-2 justify-end mt-1">
-            <button (click)="cerrarOpcionesImpresion()" class="px-4 h-9 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Cancelar</button>
-            <button (click)="confirmarImpresion()" [disabled]="descargandoPdf()" class="px-4 h-9 rounded-xl text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 transition-all active:scale-95 disabled:opacity-50">
-              {{ descargandoPdf() ? 'Generando…' : 'Descargar PDF' }}
-            </button>
-          </div>
-        </div>
-      </div>
+    <!-- ===== ESTUDIO DE IMPRESIÓN ===== -->
+    @if (estudioImpresion(); as m) {
+      <app-logistica-impresion-estudio
+        [ano]="m.ano"
+        [mes]="m.mes"
+        [meses]="mesesDisponibles()"
+        (cerrado)="cerrarEstudioImpresion()" />
     }
 
     <!-- ===== MODAL GENERAR MES ===== -->
@@ -2174,8 +2159,6 @@ export class ReunionesLogisticaComponent implements OnInit {
     return grupos;
   });
 
-  descargandoPdf = signal(false);
-
   // ── Compartir y publicar ────────────────────────────────────
   // Enlace público, WhatsApp e impresión con opciones, agrupados en un solo
   // panel. Sólo se abre con el mes ya publicado (gateado en el botón que lo
@@ -2334,35 +2317,6 @@ export class ReunionesLogisticaComponent implements OnInit {
     this.cerrarWhatsapp();
   }
 
-  // — Imprimir con opciones —
-
-  imprimirOpcionesAbierto = signal(false);
-  opcionIncluirDiscursos = signal(false);
-  opcionTamanoPagina = signal<TamanoPagina>('carta');
-  opcionOrientacion = signal<OrientacionPagina>('vertical');
-
-  abrirOpcionesImpresion(): void {
-    this.imprimirOpcionesAbierto.set(true);
-  }
-
-  cerrarOpcionesImpresion(): void {
-    this.imprimirOpcionesAbierto.set(false);
-  }
-
-  confirmarImpresion(): void {
-    const datos = this.mesDatos();
-    if (!datos) return;
-    this.descargarPdfMes(
-      { ano: datos.ano, mes: datos.mes },
-      {
-        incluir_discursos: this.opcionIncluirDiscursos(),
-        tamano_pagina: this.opcionTamanoPagina(),
-        orientacion: this.opcionOrientacion(),
-      },
-    );
-    this.imprimirOpcionesAbierto.set(false);
-  }
-
   // Candidatos cacheados por clave `${puesto}::${incluirHermanas}` (para auto-asignación)
   private candidatosCache = signal<Record<string, PublicadorBase[]>>({});
   cargandoCandidatos = signal(false);
@@ -2470,6 +2424,8 @@ export class ReunionesLogisticaComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    // El estudio de impresión gestiona su propio Escape.
+    if (this.estudioImpresion()) return;
     // Lo desplegado primero: cerrar el panel de carga teniendo abierto el
     // selector de mes encima sería responder a algo que no se ve.
     if (this.modalConfigAbierto()) this.cerrarModalConfig();
@@ -3069,6 +3025,7 @@ export class ReunionesLogisticaComponent implements OnInit {
     this.cargarGrupos(cong);
     this.precargarCandidatos(cong);
     this.vigilarScrollParaCerrarCombobox();
+    this.abrirEstudioDesdeUrl();
 
     // Debounce para el buscador de publicadores
     this.searchSubject.pipe(
@@ -4087,33 +4044,54 @@ export class ReunionesLogisticaComponent implements OnInit {
       });
   }
 
-  // ── PDF ───────────────────────────────────────────────────────
+  // ── Estudio de impresión ──────────────────────────────────
+  // Sustituye al modal de opciones + PDF del servidor: vista previa real,
+  // estilo guardado por congregación e impresión directa. Se puede enlazar
+  // con ?imprimir=AAAA-M para abrirlo ya sobre un mes.
 
-  descargarPdf(): void {
-    const datos = this.mesDatos();
-    if (!datos) return;
-    this.descargarPdfMes({ ano: datos.ano, mes: datos.mes });
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  estudioImpresion = signal<MesDisponible | null>(null);
+
+  /** Solo lo publicado se reparte en papel. */
+  puedeImprimir = computed(() => this.estadoMes() === 'publicado');
+
+  motivoNoImprimir = computed(() => {
+    switch (this.estadoMes()) {
+      case 'publicado':            return '';
+      case 'cambios_sin_publicar': return 'Publica los cambios para imprimir.';
+      default:                     return 'Publica el mes para imprimirlo.';
+    }
+  });
+
+  abrirEstudioImpresion(m?: MesDisponible): void {
+    const destino = m ?? (this.mesDatos() ? { ano: this.mesDatos()!.ano, mes: this.mesDatos()!.mes } : null);
+    if (!destino) return;
+    if (!m && !this.puedeImprimir()) return;
+    this.cerrarCombobox();
+    this.estudioImpresion.set(destino);
+    this.reflejarEstudioEnUrl(`${destino.ano}-${destino.mes}`);
   }
 
-  descargarPdfMes(m: MesDisponible, opciones: OpcionesPdfLogistica = {}): void {
-    const cong = this.congregacionCtx.effectiveCongregacionId();
-    this.descargandoPdf.set(true);
-    this.logisticaSvc.descargarPdf(m.ano, m.mes, cong, opciones).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `logistica_${MESES_ES[m.mes - 1]}_${m.ano}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.descargandoPdf.set(false);
-      },
-      error: () => {
-        this.descargandoPdf.set(false);
-        this.errorMsg.set('Error al generar el PDF');
-        this.estado.set('error');
-      },
+  cerrarEstudioImpresion(): void {
+    this.estudioImpresion.set(null);
+    this.reflejarEstudioEnUrl(null);
+  }
+
+  private reflejarEstudioEnUrl(valor: string | null): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { imprimir: valor },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
     });
   }
-}
 
+  /** ?imprimir=2026-10 abre el estudio sobre ese mes al entrar. */
+  private abrirEstudioDesdeUrl(): void {
+    const valor = this.route.snapshot.queryParamMap.get('imprimir');
+    const [ano, mes] = (valor ?? '').split('-').map(Number);
+    if (ano > 2000 && mes >= 1 && mes <= 12) this.abrirEstudioImpresion({ ano, mes });
+  }
+}

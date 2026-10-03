@@ -38,6 +38,8 @@ export interface CrearSalienteRequest {
 }
 
 export interface EditarSalienteRequest {
+  /** Mover la salida a otra fecha; el backend recalcula mes y año. */
+  fecha?: string;
   id_publicador?: number | null;
   congregacion_destino?: string | null;
   tema_discurso?: string | null;
@@ -134,6 +136,15 @@ export interface DiscursoEntranteOut {
   presentado_por: string | null;
   mes: number;
   ano: number;
+  /** La semana está marcada «sin reunión» (asamblea, congreso): no se programa a nadie. */
+  sin_reunion: boolean;
+  motivo_sin_reunion: string | null;
+}
+
+/** Fecha del mes que cae en una semana sin reunión; puede no tener fila de entrante. */
+export interface FechaSinReunion {
+  fecha: string;
+  motivo: string | null;
 }
 
 export interface DiscursosMesOut {
@@ -142,6 +153,7 @@ export interface DiscursosMesOut {
   id_congregacion: number;
   confirmado: boolean;
   fechas: string[];
+  sin_reunion: FechaSinReunion[];
   salientes: DiscursoSalienteOut[];
   entrantes: DiscursoEntranteOut[];
 }
@@ -160,6 +172,8 @@ export interface ContactoPersona {
   cargo: string | null;
   telefono: string | null;
   es_principal: boolean;
+  /** Un contacto que ya no atiende se conserva como referencia. */
+  activo: boolean;
 }
 
 export interface Discursante {
@@ -173,6 +187,11 @@ export interface Discursante {
 export interface CongregacionContacto {
   id_congregacion_contacto: number;
   nombre: string;
+  /** Ciudad/departamento: distinguen homónimas ("Norte - Cali" / "Norte - Candelaria"). */
+  ciudad: string | null;
+  departamento: string | null;
+  /** Las inactivas se conservan como referencia, al final de la lista. */
+  activo: boolean;
   dia_reunion_fin_semana: string | null;
   hora_reunion_fin_semana: string | null;
   direccion: string | null;
@@ -194,6 +213,9 @@ export interface ArchivoCongregacionContacto {
 
 export interface CrearCongregacionContactoRequest {
   nombre: string;
+  ciudad?: string | null;
+  departamento?: string | null;
+  activo?: boolean;
   dia_reunion_fin_semana?: string | null;
   hora_reunion_fin_semana?: string | null;
   direccion?: string | null;
@@ -207,6 +229,9 @@ export interface CrearCongregacionContactoRequest {
 
 export interface EditarCongregacionContactoRequest {
   nombre?: string | null;
+  ciudad?: string | null;
+  departamento?: string | null;
+  activo?: boolean;
   dia_reunion_fin_semana?: string | null;
   hora_reunion_fin_semana?: string | null;
   direccion?: string | null;
@@ -223,6 +248,7 @@ export interface CrearPersonaRequest {
   cargo?: string | null;
   telefono?: string | null;
   es_principal?: boolean;
+  activo?: boolean;
 }
 
 export interface EditarPersonaRequest {
@@ -230,6 +256,7 @@ export interface EditarPersonaRequest {
   cargo?: string | null;
   telefono?: string | null;
   es_principal?: boolean | null;
+  activo?: boolean | null;
 }
 
 export interface CrearDiscursanteRequest {
