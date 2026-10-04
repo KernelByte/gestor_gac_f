@@ -1,789 +1,744 @@
 import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ActaService } from '../../../secretario-tools/services/acta.service';
 import { AuthStore } from '../../../../core/auth/auth.store';
 import { Tarea } from '../../../secretario-tools/models/acta.model';
 import { TareaDetailPanelComponent } from '../../../secretario-tools/tareas/components/tarea-detail-panel.component';
+import { TareaCrearModalComponent } from '../components/tarea-crear-modal.component';
+import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
+import { ToastService } from '../../../../shared/components/toast/toast.service';
 
-type FiltroEstado = 'todas' | 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
-type FiltroPrioridad = 'todas' | 'alta' | 'media' | 'baja';
+/** Qué parte de "mis tareas" mirar. El backend ya solo devuelve creadas + asignadas. */
+type Vista = 'todas' | 'asignadas' | 'creadas';
+/** Filtro de situación. "Abiertas" = pendientes + en progreso: lo que queda por hacer. */
+type Filtro = 'abiertas' | 'vencidas' | 'hoy' | 'completadas' | 'todas';
+type FiltroPrioridad = 'todas' | Tarea['prioridad'];
+type Grupo = 'vencidas' | 'hoy' | 'semana' | 'despues' | 'sinfecha' | 'cerradas';
+
+const GRUPOS: { key: Grupo; label: string }[] = [
+  { key: 'vencidas', label: 'Vencidas' },
+  { key: 'hoy',      label: 'Hoy' },
+  { key: 'semana',   label: 'Próximos 7 días' },
+  { key: 'despues',  label: 'Más adelante' },
+  { key: 'sinfecha', label: 'Sin fecha límite' },
+  { key: 'cerradas', label: 'Completadas y canceladas' },
+];
+const ORDEN_PRIORIDAD: Record<Tarea['prioridad'], number> = { alta: 0, media: 1, baja: 2 };
 
 @Component({
   standalone: true,
   selector: 'app-mis-tareas',
-  imports: [CommonModule, FormsModule, TareaDetailPanelComponent],
+  imports: [CommonModule, FormsModule, TareaDetailPanelComponent, TareaCrearModalComponent, SelectPickerComponent],
   template: `
     <div class="h-full rounded-2xl overflow-x-hidden overflow-y-auto bg-gray-50/50 dark:bg-slate-900">
 
-      <!-- Page Header -->
-      <div class="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
+      <!-- ── Cabecera ── -->
+      <header class="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="header-icon w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500 flex items-center justify-center shadow-sm shadow-rose-500/20 shrink-0">
-            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-500 flex items-center justify-center shadow-sm shadow-rose-500/20 shrink-0">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
             </svg>
           </div>
-          <div class="header-text min-w-0">
+          <div class="min-w-0">
             <h1 class="font-display font-bold text-sm sm:text-base leading-tight text-gray-900 dark:text-white">Mis Tareas</h1>
-            <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5 hidden sm:block">Asignaciones y recordatorios personales</p>
-          </div>
-        </div>
-        <!-- Mobile: icon-only, Desktop: icon + text -->
-        <button
-          (click)="recargar()"
-          [disabled]="loading()"
-          title="Actualizar"
-          class="header-action inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-600 disabled:opacity-50 transition-all duration-200 shrink-0 w-8 h-8 justify-center sm:w-auto sm:h-auto sm:px-3 sm:py-1.5">
-          <svg class="w-3.5 h-3.5 shrink-0" [class.animate-spin]="loading()" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-          <span class="hidden sm:inline text-xs font-medium">{{ loading() ? 'Cargando...' : 'Actualizar' }}</span>
-        </button>
-      </div>
-
-      <!-- Content -->
-      <div class="p-4 sm:p-5 lg:p-6 space-y-4">
-
-        <!-- Stats: iconos compactos en móvil -->
-        <div class="flex gap-2 sm:hidden">
-
-          <button (click)="setFiltroEstado('pendiente')" title="Pendientes"
-            class="stat-chip relative shrink-0 w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border flex items-center justify-center transition-all duration-200 active:scale-95"
-            [ngClass]="filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy()
-              ? 'border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/20'
-              : 'border-gray-100 dark:border-slate-700'">
-            <svg class="w-4 h-4 text-rose-500 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-            </svg>
-            <span *ngIf="statsPendientes() > 0"
-              class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold tabular-nums flex items-center justify-center leading-none">
-              {{ statsPendientes() }}
-            </span>
-          </button>
-
-          <button (click)="setFiltroEstado('en_progreso')" title="En progreso"
-            class="stat-chip relative shrink-0 w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border flex items-center justify-center transition-all duration-200 active:scale-95"
-            [ngClass]="filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy()
-              ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
-              : 'border-gray-100 dark:border-slate-700'">
-            <svg class="w-4 h-4 text-amber-500 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-            <span *ngIf="statsEnProgreso() > 0"
-              class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[9px] font-bold tabular-nums flex items-center justify-center leading-none">
-              {{ statsEnProgreso() }}
-            </span>
-          </button>
-
-          <button (click)="setFiltroVencidas()" title="Vencidas"
-            class="stat-chip relative shrink-0 w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border flex items-center justify-center transition-all duration-200 active:scale-95"
-            [ngClass]="mostrandoVencidas()
-              ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'
-              : 'border-gray-100 dark:border-slate-700'">
-            <svg class="w-4 h-4 text-red-500 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-            <span *ngIf="statsVencidas() > 0"
-              class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold tabular-nums flex items-center justify-center leading-none">
-              {{ statsVencidas() }}
-            </span>
-          </button>
-
-          <button (click)="setFiltroHoy()" title="Para hoy"
-            class="stat-chip relative shrink-0 w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border flex items-center justify-center transition-all duration-200 active:scale-95"
-            [ngClass]="mostrandoHoy()
-              ? 'border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20'
-              : 'border-gray-100 dark:border-slate-700'">
-            <svg class="w-4 h-4 text-orange-500 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            <span *ngIf="statsParaHoy() > 0"
-              class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-orange-500 text-white text-[9px] font-bold tabular-nums flex items-center justify-center leading-none">
-              {{ statsParaHoy() }}
-            </span>
-          </button>
-
-        </div>
-
-        <!-- Stats: grilla 2×2 / 4 columnas en sm+ -->
-        <div class="hidden sm:grid sm:grid-cols-4 gap-3">
-
-          <button (click)="setFiltroEstado('pendiente')"
-            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-4 flex items-center gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
-            [class.border-rose-200]="filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy()"
-            [class.dark:border-rose-800]="filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy()"
-            [class.shadow-sm]="filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy()"
-            [class.border-gray-100]="!(filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy())"
-            [class.dark:border-slate-700]="!(filtroEstado() === 'pendiente' && !mostrandoVencidas() && !mostrandoHoy())"
-            style="animation-delay:0s">
-            <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
-              <svg class="w-5 h-5 text-rose-500 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-              </svg>
-            </div>
-            <div class="min-w-0">
-              <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsPendientes() }}</p>
-              <p class="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">Pendientes</p>
-            </div>
-          </button>
-
-          <button (click)="setFiltroEstado('en_progreso')"
-            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-4 flex items-center gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
-            [class.border-amber-200]="filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy()"
-            [class.dark:border-amber-800]="filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy()"
-            [class.shadow-sm]="filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy()"
-            [class.border-gray-100]="!(filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy())"
-            [class.dark:border-slate-700]="!(filtroEstado() === 'en_progreso' && !mostrandoVencidas() && !mostrandoHoy())"
-            style="animation-delay:0.07s">
-            <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
-              <svg class="w-5 h-5 text-amber-500 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-              </svg>
-            </div>
-            <div class="min-w-0">
-              <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsEnProgreso() }}</p>
-              <p class="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">En progreso</p>
-            </div>
-          </button>
-
-          <button (click)="setFiltroVencidas()"
-            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-4 flex items-center gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
-            [class.border-red-200]="mostrandoVencidas()"
-            [class.dark:border-red-800]="mostrandoVencidas()"
-            [class.shadow-sm]="mostrandoVencidas()"
-            [class.border-gray-100]="!mostrandoVencidas()"
-            [class.dark:border-slate-700]="!mostrandoVencidas()"
-            style="animation-delay:0.14s">
-            <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 group-hover:bg-red-100 dark:group-hover:bg-red-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
-              <svg class="w-5 h-5 text-red-500 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-              </svg>
-            </div>
-            <div class="min-w-0">
-              <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsVencidas() }}</p>
-              <p class="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">Vencidas</p>
-            </div>
-          </button>
-
-          <button (click)="setFiltroHoy()"
-            class="stat-card group bg-white dark:bg-slate-800 rounded-xl border p-4 flex items-center gap-3 text-left transition-all duration-200 hover:shadow-md hover:-translate-y-px"
-            [class.border-orange-200]="mostrandoHoy()"
-            [class.dark:border-orange-800]="mostrandoHoy()"
-            [class.shadow-sm]="mostrandoHoy()"
-            [class.border-gray-100]="!mostrandoHoy()"
-            [class.dark:border-slate-700]="!mostrandoHoy()"
-            style="animation-delay:0.21s">
-            <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/30 flex items-center justify-center shrink-0 transition-colors duration-200">
-              <svg class="w-5 h-5 text-orange-500 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-            </div>
-            <div class="min-w-0">
-              <p class="text-2xl font-bold text-gray-900 dark:text-white leading-none tabular-nums">{{ statsParaHoy() }}</p>
-              <p class="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest mt-1">Para hoy</p>
-            </div>
-          </button>
-
-        </div>
-
-        <!-- Toolbar -->
-        <div class="toolbar relative z-10 bg-white dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700 p-2 flex flex-col gap-2">
-          <!-- Row 1: Search -->
-          <div class="relative">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-slate-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <input
-              type="text"
-              [(ngModel)]="searchQueryModel"
-              (ngModelChange)="onSearchChange($event)"
-              placeholder="Buscar tarea..."
-              class="w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-slate-700/50 border border-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-gray-200 dark:focus:border-slate-600 focus:ring-2 focus:ring-rose-500/10 transition-all duration-200"/>
-          </div>
-
-          <!-- Row 2: Filters + Priority (same row on mobile) -->
-          <div class="flex items-center gap-1.5">
-            <div class="hidden sm:flex gap-0.5 overflow-x-auto flex-1 min-w-0">
-              <button
-                *ngFor="let tab of estadoTabs"
-                (click)="setFiltroEstado(tab.value)"
-                class="shrink-0 px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all duration-200"
-                [ngClass]="filtroEstado() === tab.value && !mostrandoVencidas() && !mostrandoHoy()
-                  ? 'bg-rose-500 text-white shadow-sm'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-gray-300'">
-                {{ tab.label }}
-              </button>
-            </div>
-
-            <div class="hidden sm:block h-5 w-px bg-gray-100 dark:bg-slate-700 shrink-0"></div>
-
-            <!-- Custom priority dropdown -->
-            <div class="relative shrink-0" (click)="$event.stopPropagation()">
-            <button
-              (click)="togglePrioridadOpen()"
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border"
-              [ngClass]="prioridadOpen()
-                ? 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 shadow-sm'
-                : 'bg-gray-50 dark:bg-slate-700/50 border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'">
-              <!-- Dot indicator for active filter -->
-              <span class="w-2 h-2 rounded-full shrink-0 transition-colors duration-200"
-                [ngClass]="getPrioridadDotClass(filtroPrioridad())"></span>
-              {{ getPrioridadLabel2(filtroPrioridad()) }}
-              <svg class="w-3 h-3 text-gray-400 dark:text-slate-500 transition-transform duration-200"
-                [class.rotate-180]="prioridadOpen()"
-                viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-
-            <!-- Dropdown panel -->
-            <div *ngIf="prioridadOpen()"
-              class="prio-dropdown absolute right-0 top-[calc(100%+6px)] w-44 bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-lg dark:shadow-black/30 overflow-hidden z-50 py-1">
-              <button *ngFor="let opt of prioridadOpts"
-                (click)="seleccionarPrioridad(opt.value)"
-                class="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors duration-150"
-                [ngClass]="filtroPrioridad() === opt.value
-                  ? 'bg-gray-50 dark:bg-slate-700/60 text-gray-900 dark:text-white font-semibold'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700/40 hover:text-gray-900 dark:hover:text-white'">
-                <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="opt.dotClass"></span>
-                <span>{{ opt.label }}</span>
-                <!-- Check for selected -->
-                <svg *ngIf="filtroPrioridad() === opt.value"
-                  class="w-3 h-3 ml-auto shrink-0 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-          </div>
-        </div>
-
-        <!-- Loading -->
-        <div *ngIf="loading()" class="flex flex-col items-center justify-center py-20 gap-3">
-          <div class="w-7 h-7 rounded-full border-2 border-rose-500 border-t-transparent animate-spin"></div>
-          <p class="text-sm text-gray-400 dark:text-slate-500">Cargando tareas...</p>
-        </div>
-
-        <!-- Error -->
-        <div *ngIf="!loading() && error()" class="bg-white dark:bg-slate-800 rounded-xl border border-red-100 dark:border-red-900/30 p-10 flex flex-col items-center gap-3 text-center">
-          <div class="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
-            <svg class="w-5 h-5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-          </div>
-          <div>
-            <p class="font-semibold text-gray-800 dark:text-gray-200 text-sm">Error al cargar</p>
-            <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5 max-w-xs">{{ error() }}</p>
-          </div>
-          <button (click)="recargar()" class="px-4 py-2 rounded-lg bg-rose-500 text-white text-xs font-medium hover:bg-rose-600 transition">
-            Reintentar
-          </button>
-        </div>
-
-        <!-- Task list -->
-        <div *ngIf="!loading() && !error()">
-
-          <!-- Empty state -->
-          <div *ngIf="tareasFiltradas().length === 0" class="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 py-16 sm:py-20 flex flex-col items-center justify-center gap-4 text-center">
-            <div class="w-16 h-16 rounded-2xl bg-gray-50 dark:bg-slate-700 flex items-center justify-center">
-              <svg class="w-7 h-7 text-gray-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-              </svg>
-            </div>
-            <div>
-              <p class="font-semibold text-gray-700 dark:text-gray-300 text-sm">Sin tareas</p>
-              <p class="text-xs text-gray-400 dark:text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
-                <ng-container *ngIf="searchQuery() || filtroEstado() !== 'todas' || filtroPrioridad() !== 'todas' || mostrandoVencidas() || mostrandoHoy()">
-                  No hay tareas que coincidan con los filtros aplicados.
-                </ng-container>
-                <ng-container *ngIf="!searchQuery() && filtroEstado() === 'todas' && filtroPrioridad() === 'todas' && !mostrandoVencidas() && !mostrandoHoy()">
-                  Aquí aparecerán las tareas asignadas desde las actas de reunión.
-                </ng-container>
-              </p>
-            </div>
-            <button
-              *ngIf="searchQuery() || filtroEstado() !== 'todas' || filtroPrioridad() !== 'todas' || mostrandoVencidas() || mostrandoHoy()"
-              (click)="limpiarFiltros()"
-              class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
-              Limpiar filtros
-            </button>
-          </div>
-
-          <!-- Count bar -->
-          <div *ngIf="tareasFiltradas().length > 0" class="flex items-center justify-between mb-3 px-1">
-            <p class="text-xs text-gray-500 dark:text-slate-400">
-              <span class="font-semibold text-gray-700 dark:text-gray-300">{{ tareasFiltradas().length }}</span>
-              {{ tareasFiltradas().length === 1 ? 'tarea' : 'tareas' }}
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 truncate">
+              @if (!loading() && resumenCabecera()) { {{ resumenCabecera() }} } @else { Las que creaste y las que te asignaron }
             </p>
-            <p class="text-xs text-gray-500 dark:text-slate-400">Ordenado por urgencia</p>
           </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" (click)="cargarTareas()" [disabled]="loading()" title="Actualizar" aria-label="Actualizar lista"
+            class="pressable w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors">
+            <svg class="w-4 h-4" [class.animate-spin]="loading()" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
+          <button type="button" (click)="modalCrear.set(true)" data-testid="btn-nueva-tarea"
+            class="pressable inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold shadow-sm shadow-rose-600/25 transition-colors">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-width="2.5" d="M12 5v14m-7-7h14"/></svg>
+            Nueva<span class="hidden sm:inline"> tarea</span>
+          </button>
+        </div>
+      </header>
 
-          <!-- Cards -->
-          <div class="space-y-2">
-            <div
-              *ngFor="let tarea of tareasFiltradas(); let i = index; trackBy: trackTarea"
-              class="task-card group bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 flex overflow-hidden hover:shadow-md dark:hover:shadow-black/20 hover:-translate-y-px transition-all duration-200"
-              [ngClass]="getCardClass(tarea)"
-              [style.animation-delay]="(i * 0.045) + 's'">
+      <main class="p-4 sm:p-5 lg:p-6 space-y-4">
 
-              <!-- Main content — clickeable para abrir detalle -->
-              <div class="flex-1 p-3 sm:p-4 min-w-0 cursor-pointer" (click)="abrirDetalle(tarea)">
+        <!-- ── Resumen: cada tarjeta es también un filtro ── -->
+        <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3" aria-label="Resumen">
+          @for (c of tarjetas; track c.value) {
+            <button type="button" class="resumen pressable" [attr.data-tono]="c.tono" [class.resumen--on]="filtro() === c.value"
+              [attr.aria-pressed]="filtro() === c.value" [attr.data-testid]="'filtro-' + c.value"
+              (click)="filtro.set(filtro() === c.value ? 'todas' : c.value)">
+              <span class="resumen-icono" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" [attr.d]="c.icono"/></svg>
+              </span>
+              <span class="min-w-0 text-left">
+                <span class="resumen-num">{{ c.value === 'completadas' ? conteoCompletadas() : conteo()[c.value] }}</span>
+                <span class="resumen-label">{{ c.label }}</span>
+              </span>
+            </button>
+          }
+        </section>
 
-                <!-- Title row -->
-                <div class="flex items-start gap-3">
-                  <div class="flex items-center gap-2 flex-1 min-w-0">
-                    <span
-                      class="w-2.5 h-2.5 rounded-full shrink-0 mt-px"
-                      [class.animate-pulse]="isVencida(tarea)"
-                      [ngClass]="getDotClass(tarea)">
-                    </span>
-                    <p class="font-semibold text-sm text-gray-900 dark:text-white leading-snug truncate" [title]="tarea.titulo">
-                      {{ tarea.titulo }}
-                    </p>
+        <!-- ── Barra de herramientas ── -->
+        <section class="barra" aria-label="Filtros">
+          <div class="grid grid-cols-3 sm:inline-flex p-1 rounded-lg bg-gray-100 dark:bg-slate-900/60 shrink-0" role="tablist" aria-label="Qué tareas ver">
+            @for (v of vistas; track v.value) {
+              <button type="button" role="tab" [attr.aria-selected]="vista() === v.value" (click)="vista.set(v.value)"
+                class="seg min-h-8 px-3 rounded-md text-xs font-semibold whitespace-nowrap" [class.seg--on]="vista() === v.value">
+                <span class="sm:hidden">{{ v.corto }}</span><span class="hidden sm:inline">{{ v.label }}</span>
+              </button>
+            }
+          </div>
+          <label class="barra-buscar relative min-w-0 block">
+            <span class="sr-only">Buscar tarea</span>
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-slate-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+            </svg>
+            <input type="search" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)" placeholder="Buscar tarea…"
+              class="w-full h-10 pl-9 pr-3 rounded-lg text-sm bg-gray-50 dark:bg-slate-700/50 border border-transparent text-gray-700 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-gray-200 dark:focus:border-slate-600 focus:ring-2 focus:ring-rose-500/10 transition-[background-color,border-color,box-shadow]"/>
+          </label>
+          <div class="barra-prio w-full sm:w-52 shrink-0">
+            <app-select-picker [options]="opcionesPrioridad" [ngModel]="prioridad()" (ngModelChange)="prioridad.set($event)"
+              [clearable]="false" [searchable]="false" colorScheme="rose" ariaLabel="Filtrar por prioridad"/>
+          </div>
+        </section>
+
+        <!-- Qué se está viendo -->
+        @if (!loading() && !error()) {
+          <div class="flex items-center justify-between gap-3 px-1 text-xs text-gray-500 dark:text-slate-400">
+            <p>
+              <span class="font-semibold text-gray-700 dark:text-gray-300 tabular-nums">{{ totalVisible() }}</span>
+              {{ totalVisible() === 1 ? 'tarea' : 'tareas' }} · {{ etiquetaFiltro() }}
+            </p>
+            @if (filtro() !== 'abiertas') {
+              <button type="button" class="font-semibold text-rose-600 dark:text-rose-400 hover:underline underline-offset-2" (click)="filtro.set('abiertas')">Ver por hacer</button>
+            }
+          </div>
+        }
+
+        <!-- ── Contenido ── -->
+        <section aria-live="polite" [attr.aria-busy]="loading()">
+          @if (loading()) {
+            <div class="lista" aria-hidden="true">
+              @for (i of [1,2,3,4,5]; track i) {
+                <div class="flex items-start gap-3 px-4 py-4">
+                  <div class="skel w-5 h-5 rounded-full mt-0.5"></div>
+                  <div class="flex-1 space-y-2">
+                    <div class="skel h-4 rounded" [style.width.%]="40 + (i * 9) % 45"></div>
+                    <div class="skel h-3 w-40 rounded"></div>
                   </div>
-                  <span class="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide" [ngClass]="getPrioridadBadge(tarea.prioridad)">
-                    {{ getPrioridadLabel(tarea.prioridad) }}
-                  </span>
                 </div>
-
-                <!-- Description -->
-                <p *ngIf="tarea.descripcion" class="text-xs text-gray-500 dark:text-slate-400 mt-1.5 line-clamp-1 ml-3.5">
-                  {{ tarea.descripcion }}
-                </p>
-
-                <!-- Meta chips -->
-                <div class="flex items-center gap-2 mt-2.5 ml-3.5 flex-wrap">
-
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold" [ngClass]="getEstadoBadge(tarea.estado)">
-                    {{ getEstadoLabel(tarea.estado) }}
-                  </span>
-
-                  <span *ngIf="esCoordinadorOSuperior"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium"
-                    [ngClass]="tarea.asignado_a_nombre
-                      ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                      : 'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500'">
-                    <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                    {{ tarea.asignado_a_nombre ?? 'Sin asignar' }}
-                  </span>
-
-                  <button
-                    *ngIf="tarea.origen_tipo === 'acta_reunion' && tarea.origen_id"
-                    (click)="irAActa(tarea); $event.stopPropagation()"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors duration-150">
-                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    Acta #{{ tarea.origen_id }}
-                  </button>
-
-                  <span
-                    *ngIf="tarea.origen_tipo && tarea.origen_tipo !== 'acta_reunion'"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
-                    {{ getOrigenLabel(tarea.origen_tipo) }}
-                  </span>
-
-                  <span *ngIf="tarea.fecha_limite" class="inline-flex items-center gap-1 text-[10px] font-medium" [ngClass]="getFechaClass(tarea)">
-                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    {{ formatFecha(tarea.fecha_limite) }}
-                  </span>
-
-                </div>
+              }
+            </div>
+          } @else if (error()) {
+            <div class="vacio">
+              <p class="vacio-titulo">No se pudieron cargar tus tareas</p>
+              <p class="vacio-texto">{{ error() }}</p>
+              <button type="button" class="btn-rosa pressable mt-4" (click)="cargarTareas()">Reintentar</button>
+            </div>
+          } @else if (grupos().length === 0) {
+            <div class="vacio">
+              <div class="vacio-icono" aria-hidden="true">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
               </div>
-
-              <!-- Actions -->
-              <div class="flex flex-col items-center justify-center gap-2 px-3.5 border-l border-gray-100 dark:border-slate-700 shrink-0">
-
-                <button
-                  *ngIf="tarea.estado !== 'completada' && tarea.estado !== 'cancelada'"
-                  (click)="toggleCompletada(tarea); $event.stopPropagation()"
-                  [disabled]="updatingIds().has(tarea.id_tarea)"
-                  class="w-8 h-8 rounded-lg border border-gray-200 dark:border-slate-600 flex items-center justify-center hover:border-green-300 dark:hover:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 disabled:opacity-50 transition-all duration-200 group/btn"
-                  title="Marcar como completada">
-                  <svg
-                    class="w-3.5 h-3.5 text-gray-300 dark:text-slate-600 group-hover/btn:text-green-500 dark:group-hover/btn:text-green-400 transition-colors duration-150"
-                    [class.animate-spin]="updatingIds().has(tarea.id_tarea)"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                  </svg>
-                </button>
-
-                <div
-                  *ngIf="tarea.estado === 'completada'"
-                  class="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center" title="Completada">
-                  <svg class="w-3.5 h-3.5 text-green-500 dark:text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                  </svg>
-                </div>
-
-                <button
-                  (click)="abrirDetalle(tarea); $event.stopPropagation()"
-                  class="w-8 h-8 rounded-lg border border-gray-200 dark:border-slate-600 flex items-center justify-center hover:border-rose-300 dark:hover:border-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all duration-200 group/view"
-                  title="Ver detalle">
-                  <svg class="w-3.5 h-3.5 text-gray-300 dark:text-slate-600 group-hover/view:text-rose-500 dark:group-hover/view:text-rose-400 transition-colors duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                  </svg>
-                </button>
-
+              <p class="vacio-titulo">{{ vacio().titulo }}</p>
+              <p class="vacio-texto">{{ vacio().texto }}</p>
+              <div class="flex flex-wrap justify-center gap-2 mt-4">
+                @if (vacio().accion === 'limpiar') {
+                  <button type="button" class="btn-sec pressable" (click)="limpiarFiltros()">Quitar filtros</button>
+                }
+                @if (vacio().accion === 'completadas') {
+                  <button type="button" class="btn-sec pressable" (click)="filtro.set('completadas')">Ver completadas</button>
+                }
+                @if (vacio().accion === 'crear') {
+                  <button type="button" class="btn-rosa pressable" (click)="modalCrear.set(true)">Crear tarea</button>
+                }
               </div>
             </div>
-          </div>
+          } @else {
+            <div class="space-y-6">
+              @for (g of grupos(); track g.key) {
+                <section [attr.aria-labelledby]="'grupo-' + g.key">
+                  <h2 [id]="'grupo-' + g.key" class="grupo-titulo" [class.grupo-titulo--alerta]="g.key === 'vencidas'">
+                    {{ g.label }} <span class="grupo-num">{{ g.tareas.length }}</span>
+                  </h2>
+                  <ul class="lista">
+                    @for (t of g.tareas; track t.id_tarea; let i = $index) {
+                      <li class="fila" [class.fila--hecha]="cerrada(t)" [style.--i]="i < 12 ? i : 12" data-testid="tarea-row">
+                        <button type="button" class="check" role="checkbox" [attr.aria-checked]="t.estado === 'completada'"
+                          [disabled]="t.estado === 'cancelada' || actualizando().has(t.id_tarea)"
+                          [attr.aria-label]="(t.estado === 'completada' ? 'Reabrir: ' : 'Completar: ') + t.titulo"
+                          (click)="alternarCompletada(t)">
+                          <span class="check-caja" [class.check-caja--on]="t.estado === 'completada'" [class.check-caja--alta]="t.prioridad === 'alta' && !cerrada(t)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path class="check-trazo" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                          </span>
+                        </button>
 
-        </div>
+                        <div class="fila-cuerpo" role="button" tabindex="0" data-testid="tarea-abrir"
+                          [attr.aria-label]="'Abrir ' + t.titulo" (click)="abrirDetalle(t)" (keydown.enter)="abrirDetalle(t)" (keydown.space)="abrirDetalle(t); $event.preventDefault()">
+                          <div class="flex items-start gap-2">
+                            <p class="fila-titulo">{{ t.titulo }}</p>
+                            @if (t.prioridad === 'alta' && !cerrada(t)) {
+                              <span class="prio-alta" title="Prioridad alta">
+                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3a1 1 0 011 1v.5l11.4-.9a1 1 0 01.9 1.5L16.5 8l1.8 2.9a1 1 0 01-.9 1.5L6 13.3V20a1 1 0 11-2 0V4a1 1 0 011-1z"/></svg>
+                                Alta
+                              </span>
+                            }
+                          </div>
+                          @if (t.descripcion) {
+                            <p class="fila-desc">{{ t.descripcion }}</p>
+                          }
+                          <div class="fila-meta">
+                            @if (t.estado === 'en_progreso') {
+                              <span class="meta meta--progreso"><span class="punto"></span>En progreso</span>
+                            }
+                            @if (t.estado === 'cancelada') {
+                              <span class="meta">Cancelada</span>
+                            }
+                            @if (t.fecha_limite) {
+                              <span class="meta" [ngClass]="claseFecha(t)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                {{ textoFecha(t) }}
+                              </span>
+                            }
+                            @if (relacion(t); as rel) {
+                              <span class="meta" [title]="rel.texto">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                  @if (rel.tipo === 'para') {
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                  } @else if (rel.tipo === 'sin') {
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke-dasharray="2 3" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                  } @else {
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+                                  }
+                                </svg>
+                                <span class="truncate max-w-[11rem]">{{ rel.texto }}</span>
+                              </span>
+                            }
+                            @if (t.subtareas_total) {
+                              <span class="meta" [title]="t.subtareas_completadas + ' de ' + t.subtareas_total + ' pasos hechos'">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>
+                                <span class="tabular-nums">{{ t.subtareas_completadas }}/{{ t.subtareas_total }}</span>
+                              </span>
+                            }
+                            @if (t.origen_tipo === 'acta_reunion' && t.origen_id) {
+                              <button type="button" class="meta meta--enlace" (click)="irAActa(t); $event.stopPropagation()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                Acta #{{ t.origen_id }}
+                              </button>
+                            }
+                          </div>
+                        </div>
 
-      </div>
+                        <svg class="fila-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
+            </div>
+          }
+        </section>
+      </main>
 
-      <!-- Drawer de detalle de tarea -->
-      @if (tareaDrawerId()) {
-        <div class="fixed inset-0 z-[200] bg-black/30" (click)="tareaDrawerId.set(null)"></div>
-        <div class="tarea-drawer fixed top-0 right-0 bottom-0 z-[201] overflow-y-auto"
-             style="width:min(480px,100vw);padding:1.25rem;background:#fff;border-left:1px solid #e5e7eb;">
+      <app-tarea-crear-modal [open]="modalCrear()" (openChange)="modalCrear.set($event)" (creada)="onTareaCreada($event)"/>
+
+      <!-- ── Detalle: panel lateral (hoja inferior en móvil) ── -->
+      @if (tareaDrawerId(); as idDrawer) {
+        <div class="drawer-fondo" [class.drawer-fondo--sale]="cerrandoDrawer()" (click)="cerrarDetalle()"></div>
+        <aside class="drawer" [class.drawer--sale]="cerrandoDrawer()" role="dialog" aria-modal="true" aria-label="Detalle de la tarea">
           <app-tarea-detail-panel
-            [tareaId]="tareaDrawerId()!"
+            [tareaId]="idDrawer"
             [modoDrawer]="true"
-            (cerrar)="tareaDrawerId.set(null)"
-            (tareaActualizada)="onTareaActualizadaEnDrawer($event)"
-            (tareaEliminada)="onTareaEliminadaEnDrawer($event)"
+            (cerrar)="cerrarDetalle()"
+            (tareaActualizada)="onTareaActualizada($event)"
+            (tareaEliminada)="onTareaEliminada($event)"
           />
-        </div>
+        </aside>
       }
-
     </div>
   `,
   styles: [`
-    :host { display: block; height: 100%; }
-    @keyframes headerIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
+    :host { display: block; height: 100%; --ease: cubic-bezier(0.23, 1, 0.32, 1); }
+
+    .pressable { transition-property: transform, background-color, color, border-color, box-shadow; transition-duration: 160ms; transition-timing-function: var(--ease); }
+    .pressable:active:not(:disabled) { transform: scale(0.97); }
+    .pressable:focus-visible, .seg:focus-visible, .fila-cuerpo:focus-visible, .check:focus-visible, .meta--enlace:focus-visible {
+      outline: 2px solid rgb(244 63 94); outline-offset: 2px;
     }
-    @keyframes statIn {
-      from { opacity: 0; transform: scale(0.96) translateY(8px); }
-      to   { opacity: 1; transform: scale(1) translateY(0); }
+
+    /* Segmentado de vista */
+    .seg { color: rgb(107 114 128); transition: background-color 160ms var(--ease), color 160ms var(--ease), box-shadow 160ms var(--ease); }
+    .seg:hover { color: rgb(55 65 81); }
+    .seg--on { background: #fff; color: rgb(17 24 39); box-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 1px 3px rgb(15 23 42 / 0.08); }
+    :host-context(.dark) .seg { color: rgb(148 163 184); }
+    :host-context(.dark) .seg:hover { color: rgb(226 232 240); }
+    :host-context(.dark) .seg--on { background: rgb(51 65 85); color: #fff; box-shadow: none; }
+
+    /* Tarjetas de resumen (mismo idioma que el resto del portal) */
+    .resumen {
+      display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; text-align: left;
+      background: #fff; border: 1px solid rgb(243 244 246);
     }
-    @keyframes toolbarIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to   { opacity: 1; transform: translateY(0); }
+    @media (hover: hover) and (pointer: fine) { .resumen:hover { box-shadow: 0 6px 16px -8px rgb(15 23 42 / 0.15); } }
+    :host-context(.dark) .resumen { background: rgb(30 41 59); border-color: rgb(51 65 85); }
+    .resumen-icono { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .resumen-icono svg { width: 20px; height: 20px; }
+    .resumen-num { display: block; font-family: var(--font-display); font-size: 24px; font-weight: 700; line-height: 1; color: rgb(17 24 39); font-variant-numeric: tabular-nums; }
+    .resumen-label { display: block; margin-top: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgb(107 114 128); white-space: nowrap; }
+    :host-context(.dark) .resumen-num { color: #fff; }
+    :host-context(.dark) .resumen-label { color: rgb(148 163 184); }
+    .resumen[data-tono="rosa"] .resumen-icono { background: rgb(255 241 242); color: rgb(244 63 94); }
+    .resumen[data-tono="rojo"] .resumen-icono { background: rgb(254 242 242); color: rgb(239 68 68); }
+    .resumen[data-tono="ambar"] .resumen-icono { background: rgb(255 247 237); color: rgb(249 115 22); }
+    .resumen[data-tono="verde"] .resumen-icono { background: rgb(236 253 245); color: rgb(16 185 129); }
+    :host-context(.dark) .resumen .resumen-icono { background: rgb(255 255 255 / 0.06); }
+    .resumen--on[data-tono="rosa"] { border-color: rgb(253 164 175); box-shadow: 0 0 0 3px rgb(244 63 94 / 0.08); }
+    .resumen--on[data-tono="rojo"] { border-color: rgb(252 165 165); box-shadow: 0 0 0 3px rgb(239 68 68 / 0.08); }
+    .resumen--on[data-tono="ambar"] { border-color: rgb(253 186 116); box-shadow: 0 0 0 3px rgb(249 115 22 / 0.08); }
+    .resumen--on[data-tono="verde"] { border-color: rgb(110 231 183); box-shadow: 0 0 0 3px rgb(16 185 129 / 0.08); }
+    /* Entre 640 y 1023 px van 4 en fila: más compactas para que quepan las etiquetas. */
+    @media (max-width: 1023px) {
+      .resumen { padding: 12px; gap: 10px; }
+      .resumen-icono { width: 34px; height: 34px; border-radius: 10px; }
+      .resumen-icono svg { width: 18px; height: 18px; }
+      .resumen-num { font-size: 20px; }
     }
-    @keyframes taskIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
+
+    /* Barra de herramientas */
+    .barra {
+      position: relative; z-index: 10; display: flex; flex-direction: column; gap: 8px; padding: 8px; border-radius: 12px;
+      background: #fff; border: 1px solid rgb(243 244 246);
     }
-    .header-icon { animation: headerIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
-    .header-text { animation: headerIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
-    .header-action { animation: headerIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
-    .stat-card { animation: statIn 0.45s cubic-bezier(0.16,1,0.3,1) both; }
-    .stat-chip { animation: statIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
-    .stat-chips-scroll::-webkit-scrollbar { display: none; }
-    .toolbar { animation: toolbarIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
-    .task-card { opacity: 0; animation: taskIn 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
-    @keyframes dropIn {
-      from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
+    .barra-buscar { flex: 1 1 auto; }
+    /* 640–1023 px: vista + prioridad arriba, buscador a todo el ancho debajo. */
+    @media (min-width: 640px) {
+      .barra { flex-direction: row; flex-wrap: wrap; align-items: center; }
+      .barra-prio { margin-left: auto; }
+      .barra-buscar { order: 3; flex-basis: 100%; }
     }
-    .prio-dropdown { animation: dropIn 0.15s cubic-bezier(0.16,1,0.3,1) both; }
+    @media (min-width: 1024px) {
+      .barra { flex-wrap: nowrap; }
+      .barra-prio { margin-left: 0; }
+      .barra-buscar { order: 0; flex-basis: auto; }
+    }
+    :host-context(.dark) .barra { background: rgb(30 41 59 / 0.8); border-color: rgb(51 65 85); }
+
+    /* Grupos */
+    .grupo-titulo {
+      display: flex; align-items: baseline; gap: 8px; margin: 0 0 8px 4px;
+      font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 0.01em;
+      color: rgb(55 65 81);
+    }
+    .grupo-titulo--alerta { color: rgb(185 28 28); }
+    .grupo-num { font-family: var(--font-sans); font-size: 12px; font-weight: 600; color: rgb(156 163 175); font-variant-numeric: tabular-nums; }
+    :host-context(.dark) .grupo-titulo { color: rgb(203 213 225); }
+    :host-context(.dark) .grupo-titulo--alerta { color: rgb(252 165 165); }
+
+    /* Lista */
+    .lista {
+      list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid rgb(229 231 235);
+      border-radius: 14px; overflow: hidden;
+    }
+    :host-context(.dark) .lista { background: rgb(30 41 59 / 0.6); border-color: rgb(51 65 85); }
+    .fila {
+      position: relative; display: grid; grid-template-columns: 44px 1fr auto; align-items: start;
+      padding: 6px 12px 6px 4px; border-top: 1px solid rgb(243 244 246);
+      animation: filaEntra 260ms var(--ease) both; animation-delay: calc(var(--i, 0) * 28ms);
+      transition: background-color 160ms ease;
+    }
+    .fila:first-child { border-top: none; }
+    :host-context(.dark) .fila { border-top-color: rgb(51 65 85 / 0.7); }
+    @media (hover: hover) and (pointer: fine) {
+      .fila:hover { background: rgb(249 250 251); }
+      :host-context(.dark) .fila:hover { background: rgb(51 65 85 / 0.35); }
+      .fila:hover .fila-chevron { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes filaEntra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .check { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; }
+    .check:disabled { cursor: default; }
+    .check-caja {
+      width: 20px; height: 20px; border-radius: 999px; border: 1.75px solid rgb(209 213 219);
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      transition: background-color 180ms var(--ease), border-color 180ms var(--ease), transform 180ms var(--ease);
+    }
+    .check-caja--alta { border-color: rgb(248 113 113); }
+    .check:hover:not(:disabled) .check-caja:not(.check-caja--on) { border-color: rgb(16 185 129); background: rgb(16 185 129 / 0.08); }
+    .check:active:not(:disabled) .check-caja { transform: scale(0.88); }
+    .check-caja svg { width: 12px; height: 12px; }
+    .check-trazo { stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset 220ms var(--ease) 60ms; }
+    .check-caja--on { background: rgb(16 185 129); border-color: rgb(16 185 129); }
+    .check-caja--on .check-trazo { stroke-dashoffset: 0; }
+    :host-context(.dark) .check-caja:not(.check-caja--on):not(.check-caja--alta) { border-color: rgb(100 116 139); }
+
+    .fila-cuerpo { min-width: 0; padding: 10px 0 10px 2px; cursor: pointer; border-radius: 8px; }
+    .fila-titulo {
+      font-size: 15px; font-weight: 600; line-height: 1.35; color: rgb(17 24 39);
+      overflow-wrap: anywhere; transition: color 200ms ease;
+    }
+    :host-context(.dark) .fila-titulo { color: rgb(241 245 249); }
+    .fila-desc {
+      margin-top: 2px; font-size: 13px; line-height: 1.45; color: rgb(107 114 128);
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; max-width: 70ch;
+    }
+    :host-context(.dark) .fila-desc { color: rgb(148 163 184); }
+    .fila--hecha .fila-titulo { color: rgb(156 163 175); text-decoration: line-through; text-decoration-color: rgb(209 213 219); }
+    .fila--hecha .fila-desc { display: none; }
+    :host-context(.dark) .fila--hecha .fila-titulo { color: rgb(100 116 139); text-decoration-color: rgb(71 85 105); }
+
+    .fila-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 6px; }
+    .fila-meta:empty { display: none; }
+    .meta { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: rgb(107 114 128); }
+    .meta svg { width: 13px; height: 13px; flex-shrink: 0; }
+    :host-context(.dark) .meta { color: rgb(148 163 184); }
+    .meta--vencida { color: rgb(220 38 38); font-weight: 600; }
+    .meta--hoy { color: rgb(217 119 6); font-weight: 600; }
+    :host-context(.dark) .meta--vencida { color: rgb(248 113 113); }
+    :host-context(.dark) .meta--hoy { color: rgb(251 191 36); }
+    .meta--progreso { color: rgb(180 83 9); }
+    :host-context(.dark) .meta--progreso { color: rgb(252 211 77); }
+    .punto { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+    .meta--enlace { color: rgb(190 18 60); border-radius: 4px; }
+    .meta--enlace:hover { text-decoration: underline; text-underline-offset: 2px; }
+    :host-context(.dark) .meta--enlace { color: rgb(251 113 133); }
+
+    .prio-alta {
+      display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; margin-top: 2px;
+      padding: 1px 6px; border-radius: 6px; font-size: 11px; font-weight: 700;
+      color: rgb(185 28 28); background: rgb(254 242 242);
+    }
+    :host-context(.dark) .prio-alta { color: rgb(252 165 165); background: rgb(127 29 29 / 0.35); }
+
+    .fila-chevron {
+      width: 16px; height: 16px; margin: 22px 0 0 8px; color: rgb(209 213 219); opacity: 0;
+      transform: translateX(-4px); transition: opacity 160ms ease, transform 200ms var(--ease);
+    }
+    @media (hover: none) { .fila-chevron { display: none; } .fila { grid-template-columns: 44px 1fr; } }
+
+    /* Estados vacío / error */
+    .vacio {
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      padding: 56px 24px; border: 1px dashed rgb(229 231 235); border-radius: 16px; background: #fff;
+    }
+    :host-context(.dark) .vacio { background: rgb(30 41 59 / 0.4); border-color: rgb(51 65 85); }
+    .vacio-icono { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; color: rgb(225 29 72); background: rgb(255 241 242); }
+    :host-context(.dark) .vacio-icono { color: rgb(251 113 133); background: rgb(136 19 55 / 0.3); }
+    .vacio-titulo { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: rgb(17 24 39); }
+    .vacio-texto { margin-top: 4px; font-size: 14px; line-height: 1.5; color: rgb(107 114 128); max-width: 44ch; }
+    :host-context(.dark) .vacio-titulo { color: rgb(241 245 249); }
+    :host-context(.dark) .vacio-texto { color: rgb(148 163 184); }
+
+    .btn-rosa { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 10px; background: rgb(225 29 72); color: #fff; font-size: 14px; font-weight: 600; }
+    .btn-rosa:hover { background: rgb(190 18 60); }
+    .btn-sec { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 10px; border: 1px solid rgb(229 231 235); background: #fff; color: rgb(55 65 81); font-size: 14px; font-weight: 600; }
+    .btn-sec:hover { background: rgb(249 250 251); }
+    :host-context(.dark) .btn-sec { background: rgb(30 41 59); border-color: rgb(51 65 85); color: rgb(226 232 240); }
+
+    /* Esqueleto */
+    .skel { background: linear-gradient(90deg, rgb(243 244 246) 0%, rgb(249 250 251) 50%, rgb(243 244 246) 100%); background-size: 200% 100%; animation: brillo 1.4s linear infinite; }
+    :host-context(.dark) .skel { background: linear-gradient(90deg, rgb(51 65 85 / 0.5) 0%, rgb(71 85 105 / 0.5) 50%, rgb(51 65 85 / 0.5) 100%); background-size: 200% 100%; }
+    @keyframes brillo { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+    /* Panel de detalle */
+    .drawer-fondo {
+      position: fixed; inset: 0; z-index: var(--z-modal-backdrop, 50); background: rgb(15 23 42 / 0.4);
+      animation: fundido 200ms ease-out both;
+    }
+    .drawer {
+      position: fixed; z-index: var(--z-modal, 60); top: 0; right: 0; bottom: 0; width: min(520px, 100vw);
+      background: #fff; border-left: 1px solid rgb(229 231 235); overflow: hidden;
+      box-shadow: -16px 0 40px -12px rgb(15 23 42 / 0.18);
+      animation: entraLado 280ms var(--ease) both;
+    }
+    :host-context(.dark) .drawer { background: rgb(15 23 42); border-color: rgb(30 41 59); }
+    .drawer-fondo--sale { animation: fundidoSale 160ms ease-in both; }
+    .drawer--sale { animation: saleLado 180ms ease-in both; }
+    @keyframes fundido { from { opacity: 0; } }
+    @keyframes fundidoSale { to { opacity: 0; } }
+    @keyframes entraLado { from { transform: translateX(100%); } }
+    @keyframes saleLado { to { transform: translateX(100%); } }
     @media (prefers-reduced-motion: reduce) {
-      .header-icon, .header-text, .header-action,
-      .stat-card, .toolbar, .task-card {
-        animation: none !important;
-        transition: none !important;
-      }
-      .task-card { opacity: 1 !important; }
+      .fila, .drawer, .drawer-fondo, .drawer--sale, .drawer-fondo--sale { animation: none !important; }
+      .check-trazo, .check-caja, .fila-chevron { transition: none !important; }
+      .skel { animation: none; }
     }
-    .tarea-drawer { animation: drawerSlideIn 240ms cubic-bezier(0.23, 1, 0.32, 1); }
-    @keyframes drawerSlideIn {
-      from { transform: translateX(100%); opacity: 0.4; }
-      to   { transform: translateX(0);    opacity: 1; }
-    }
-    :host-context(.dark) .tarea-drawer { background: #0a1120 !important; border-color: #1e2d45 !important; }
-  `]
+  `],
 })
 export class MisTareasPage implements OnInit {
   private svc = inject(ActaService);
   private store = inject(AuthStore);
   private router = inject(Router);
+  private toast = inject(ToastService);
 
   tareas = signal<Tarea[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
-  filtroEstado = signal<FiltroEstado>('pendiente');
-  filtroPrioridad = signal<FiltroPrioridad>('todas');
-  searchQuery = signal('');
-  updatingIds = signal<Set<number>>(new Set());
-  mostrandoVencidas = signal(false);
-  mostrandoHoy = signal(false);
+  vista = signal<Vista>('todas');
+  filtro = signal<Filtro>('abiertas');
+  prioridad = signal<FiltroPrioridad>('todas');
+  busqueda = signal('');
+  actualizando = signal<Set<number>>(new Set());
+  /** Completadas en esta visita: siguen a la vista para que el check se vea y se pueda deshacer. */
+  recientes = signal<Set<number>>(new Set());
   tareaDrawerId = signal<number | null>(null);
+  cerrandoDrawer = signal(false);
+  modalCrear = signal(false);
 
-  searchQueryModel = '';
-  prioridadOpen = signal(false);
-
-  prioridadOpts: { value: FiltroPrioridad; label: string; dotClass: string }[] = [
-    { value: 'todas', label: 'Toda prioridad', dotClass: 'bg-gray-300 dark:bg-slate-600' },
-    { value: 'alta',  label: 'Alta prioridad',  dotClass: 'bg-red-500' },
-    { value: 'media', label: 'Media prioridad', dotClass: 'bg-amber-400' },
-    { value: 'baja',  label: 'Baja prioridad',  dotClass: 'bg-gray-400 dark:bg-slate-500' },
+  readonly vistas: { value: Vista; label: string; corto: string }[] = [
+    { value: 'todas',     label: 'Todas',          corto: 'Todas' },
+    { value: 'asignadas', label: 'Asignadas a mí', corto: 'Para mí' },
+    { value: 'creadas',   label: 'Creadas por mí', corto: 'Creadas' },
+  ];
+  readonly tarjetas: { value: Exclude<Filtro, 'todas'>; label: string; tono: string; icono: string }[] = [
+    { value: 'abiertas',    label: 'Por hacer',   tono: 'rosa',  icono: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+    { value: 'vencidas',    label: 'Vencidas',    tono: 'rojo',  icono: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
+    { value: 'hoy',         label: 'Para hoy',    tono: 'ambar', icono: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    { value: 'completadas', label: 'Completadas', tono: 'verde', icono: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+  ];
+  private readonly etiquetas: Record<Filtro, string> = {
+    abiertas: 'por hacer', vencidas: 'vencidas', hoy: 'para hoy', completadas: 'completadas o canceladas', todas: 'todas',
+  };
+  readonly opcionesPrioridad: PickerOption[] = [
+    { value: 'todas', label: 'Cualquier prioridad' },
+    { value: 'alta',  label: 'Prioridad alta' },
+    { value: 'media', label: 'Prioridad media' },
+    { value: 'baja',  label: 'Prioridad baja' },
   ];
 
-  estadoTabs = [
-    { label: 'Todas',       value: 'todas'       as FiltroEstado },
-    { label: 'Pendientes',  value: 'pendiente'   as FiltroEstado },
-    { label: 'En progreso', value: 'en_progreso' as FiltroEstado },
-    { label: 'Completadas', value: 'completada'  as FiltroEstado },
-  ];
-
-  statsPendientes = computed(() => this.tareas().filter(t => t.estado === 'pendiente').length);
-  statsEnProgreso = computed(() => this.tareas().filter(t => t.estado === 'en_progreso').length);
-
-  statsVencidas = computed(() => {
-    const hoy = this.hoyStr();
-    return this.tareas().filter(t =>
-      t.fecha_limite && t.fecha_limite < hoy &&
-      t.estado !== 'completada' && t.estado !== 'cancelada'
-    ).length;
-  });
-
-  statsParaHoy = computed(() => {
-    const hoy = this.hoyStr();
-    return this.tareas().filter(t =>
-      t.fecha_limite && t.fecha_limite.startsWith(hoy) &&
-      t.estado !== 'completada' && t.estado !== 'cancelada'
-    ).length;
-  });
-
-  tareasFiltradas = computed(() => {
-    const hoy = this.hoyStr();
-    let lista = [...this.tareas()];
-
-    if (this.mostrandoVencidas()) {
-      lista = lista.filter(t =>
-        t.fecha_limite && t.fecha_limite < hoy &&
-        t.estado !== 'completada' && t.estado !== 'cancelada'
-      );
-    } else if (this.mostrandoHoy()) {
-      lista = lista.filter(t =>
-        t.fecha_limite && t.fecha_limite.startsWith(hoy) &&
-        t.estado !== 'completada' && t.estado !== 'cancelada'
-      );
-    } else if (this.filtroEstado() !== 'todas') {
-      lista = lista.filter(t => t.estado === this.filtroEstado());
-    }
-
-    if (this.filtroPrioridad() !== 'todas') {
-      lista = lista.filter(t => t.prioridad === this.filtroPrioridad());
-    }
-
-    const q = this.searchQuery().toLowerCase().trim();
-    if (q) {
-      lista = lista.filter(t =>
-        t.titulo.toLowerCase().includes(q) ||
-        (t.descripcion ?? '').toLowerCase().includes(q)
-      );
-    }
-
-    return lista.sort((a, b) => {
-      const aV = this.isVencida(a) ? 0 : 1;
-      const bV = this.isVencida(b) ? 0 : 1;
-      if (aV !== bV) return aV - bV;
-      const prioOrd: Record<string, number> = { alta: 0, media: 1, baja: 2 };
-      const pDiff = (prioOrd[a.prioridad] ?? 1) - (prioOrd[b.prioridad] ?? 1);
-      if (pDiff !== 0) return pDiff;
-      if (a.fecha_limite && b.fecha_limite) return a.fecha_limite.localeCompare(b.fecha_limite);
-      if (a.fecha_limite) return -1;
-      if (b.fecha_limite) return 1;
-      return b.creado_en.localeCompare(a.creado_en);
-    });
-  });
-
-  get esCoordinadorOSuperior(): boolean {
-    const u = this.store.user();
-    const roles = (u?.roles ?? (u?.rol ? [u.rol] : [])).map(r => r.toLowerCase());
-    return roles.some(r => ['administrador', 'coordinador', 'secretario', 'gestor aplicación'].includes(r));
+  private get miId(): number | null {
+    const id = this.store.user()?.id;
+    return id != null ? Number(id) : null;
   }
+
+  /** YYYY-MM-DD en hora local (toISOString daría el día siguiente por la noche en Colombia). */
+  private hoy(): string { return new Date().toLocaleDateString('en-CA'); }
+  private enDias(n: number): string { const d = new Date(); d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA'); }
+
+  cerrada(t: Tarea): boolean { return t.estado === 'completada' || t.estado === 'cancelada'; }
+  private vencida(t: Tarea): boolean { return !!t.fecha_limite && !this.cerrada(t) && t.fecha_limite < this.hoy(); }
+  private esHoy(t: Tarea): boolean { return !!t.fecha_limite && !this.cerrada(t) && t.fecha_limite === this.hoy(); }
+
+  private tareasVista = computed(() => {
+    const yo = this.miId;
+    const v = this.vista();
+    const lista = this.tareas();
+    if (v === 'asignadas') return lista.filter(t => t.asignado_a === yo);
+    if (v === 'creadas') return lista.filter(t => t.creado_por === yo);
+    return lista;
+  });
+
+  conteo = computed(() => {
+    const l = this.tareasVista();
+    return {
+      abiertas: l.filter(t => !this.cerrada(t)).length,
+      vencidas: l.filter(t => this.vencida(t)).length,
+      hoy: l.filter(t => this.esHoy(t)).length,
+    } as Record<Filtro, number>;
+  });
+
+  conteoCompletadas = computed(() => this.tareasVista().filter(t => this.cerrada(t)).length);
+  totalVisible = computed(() => this.grupos().reduce((n, g) => n + g.tareas.length, 0));
+  etiquetaFiltro = computed(() => this.etiquetas[this.filtro()]);
+
+  resumenCabecera = computed(() => {
+    const c = this.conteo();
+    if (!this.tareas().length) return '';
+    if (!c['abiertas']) return 'Estás al día: no tienes tareas por hacer';
+    const partes = [`${c['abiertas']} por hacer`];
+    if (c['vencidas']) partes.push(`${c['vencidas']} vencida${c['vencidas'] === 1 ? '' : 's'}`);
+    if (c['hoy']) partes.push(`${c['hoy']} para hoy`);
+    return partes.join(' · ');
+  });
+
+  private filtradas = computed(() => {
+    const f = this.filtro();
+    const rec = this.recientes();
+    let lista = this.tareasVista().filter(t => {
+      switch (f) {
+        case 'abiertas':    return !this.cerrada(t) || rec.has(t.id_tarea);
+        case 'vencidas':    return this.vencida(t) || (rec.has(t.id_tarea) && !!t.fecha_limite && t.fecha_limite < this.hoy());
+        case 'hoy':         return this.esHoy(t) || (rec.has(t.id_tarea) && t.fecha_limite === this.hoy());
+        case 'completadas': return this.cerrada(t);
+        default:            return true;
+      }
+    });
+    const p = this.prioridad();
+    if (p !== 'todas') lista = lista.filter(t => t.prioridad === p);
+    const q = this.busqueda().trim().toLowerCase();
+    if (q) lista = lista.filter(t => t.titulo.toLowerCase().includes(q) || (t.descripcion ?? '').toLowerCase().includes(q));
+    return lista;
+  });
+
+  grupos = computed(() => {
+    const hoy = this.hoy();
+    const semana = this.enDias(7);
+    const rec = this.recientes();
+    const f = this.filtro();
+    const porGrupo = new Map<Grupo, Tarea[]>();
+    for (const t of this.filtradas()) {
+      // Las recién completadas se quedan en su sitio para no "saltar" bajo el dedo.
+      const comoAbierta = !this.cerrada(t) || (rec.has(t.id_tarea) && f !== 'completadas' && f !== 'todas');
+      let g: Grupo;
+      if (!comoAbierta) g = 'cerradas';
+      else if (!t.fecha_limite) g = 'sinfecha';
+      else if (t.fecha_limite < hoy) g = 'vencidas';
+      else if (t.fecha_limite === hoy) g = 'hoy';
+      else if (t.fecha_limite <= semana) g = 'semana';
+      else g = 'despues';
+      if (!porGrupo.has(g)) porGrupo.set(g, []);
+      porGrupo.get(g)!.push(t);
+    }
+    return GRUPOS.filter(g => porGrupo.has(g.key)).map(g => ({
+      ...g,
+      tareas: porGrupo.get(g.key)!.sort((a, b) =>
+        g.key === 'cerradas'
+          ? (b.completado_en ?? b.actualizado_en).localeCompare(a.completado_en ?? a.actualizado_en)
+          : (ORDEN_PRIORIDAD[a.prioridad] - ORDEN_PRIORIDAD[b.prioridad])
+            || (a.fecha_limite ?? '9999').localeCompare(b.fecha_limite ?? '9999')
+            || b.creado_en.localeCompare(a.creado_en)),
+    }));
+  });
+
+  vacio = computed((): { titulo: string; texto: string; accion: 'crear' | 'limpiar' | 'completadas' | null } => {
+    if (this.busqueda().trim() || this.prioridad() !== 'todas') {
+      return { titulo: 'Ninguna tarea coincide', texto: 'Prueba con otra palabra o quita el filtro de prioridad.', accion: 'limpiar' };
+    }
+    if (!this.tareasVista().length) {
+      if (this.vista() === 'asignadas') return { titulo: 'Nadie te ha asignado tareas', texto: 'Cuando alguien te asigne una, aparecerá aquí y recibirás un aviso.', accion: null };
+      if (this.vista() === 'creadas') return { titulo: 'Aún no has creado tareas', texto: 'Crea una para ti o asígnala a alguien de tu congregación.', accion: 'crear' };
+      return { titulo: 'Aún no tienes tareas', texto: 'Crea una para ti o asígnala a alguien. Las que te asignen también aparecerán aquí.', accion: 'crear' };
+    }
+    switch (this.filtro()) {
+      case 'abiertas':    return { titulo: 'Estás al día', texto: 'No tienes nada por hacer en este momento.', accion: 'completadas' };
+      case 'vencidas':    return { titulo: 'Nada vencido', texto: 'Ninguna tarea abierta ha pasado su fecha límite.', accion: null };
+      case 'hoy':         return { titulo: 'Nada para hoy', texto: 'Ninguna tarea abierta vence hoy.', accion: null };
+      case 'completadas': return { titulo: 'Aún no hay tareas completadas', texto: 'Las que marques como hechas se guardarán aquí.', accion: null };
+      default:            return { titulo: 'Sin tareas', texto: '', accion: 'crear' };
+    }
+  });
 
   ngOnInit() { this.cargarTareas(); }
 
   cargarTareas() {
     this.loading.set(true);
     this.error.set(null);
-    const userId = this.store.user()?.id;
-    const params = this.esCoordinadorOSuperior ? {} : (userId != null ? { asignado_a: userId } : {});
-    this.svc.listarTareasGlobal(params).subscribe({
+    this.recientes.set(new Set());
+    this.svc.listarTareasGlobal().subscribe({
       next: (data) => { this.tareas.set(data); this.loading.set(false); },
       error: (err) => {
-        this.error.set(err?.error?.detail ?? 'No se pudo cargar las tareas.');
+        this.error.set(err?.error?.detail ?? 'Revisa tu conexión e inténtalo de nuevo.');
         this.loading.set(false);
-      }
+      },
     });
-  }
-
-  recargar() { this.cargarTareas(); }
-
-  trackTarea(_: number, tarea: Tarea) { return tarea.id_tarea; }
-
-  setFiltroEstado(v: FiltroEstado) {
-    this.mostrandoVencidas.set(false);
-    this.mostrandoHoy.set(false);
-    this.filtroEstado.set(v);
-  }
-
-  setFiltroVencidas() {
-    this.mostrandoVencidas.update(v => !v);
-    this.mostrandoHoy.set(false);
-    this.filtroEstado.set('todas');
-  }
-
-  setFiltroHoy() {
-    this.mostrandoHoy.update(v => !v);
-    this.mostrandoVencidas.set(false);
-    this.filtroEstado.set('todas');
   }
 
   limpiarFiltros() {
-    this.mostrandoVencidas.set(false);
-    this.mostrandoHoy.set(false);
-    this.filtroEstado.set('todas');
-    this.filtroPrioridad.set('todas');
-    this.searchQuery.set('');
-    this.searchQueryModel = '';
+    this.busqueda.set('');
+    this.prioridad.set('todas');
   }
 
-  onSearchChange(v: string) { this.searchQuery.set(v); }
+  /** "Para X" si la delegué; "De X" si me la asignó otra persona. Nada si es mía para mí. */
+  relacion(t: Tarea): { tipo: 'para' | 'de' | 'sin'; texto: string } | null {
+    const yo = this.miId;
+    if (t.creado_por === yo && t.asignado_a !== yo) {
+      return t.asignado_a_nombre ? { tipo: 'para', texto: `Para ${t.asignado_a_nombre}` } : { tipo: 'sin', texto: 'Sin asignar' };
+    }
+    if (t.asignado_a === yo && t.creado_por !== yo && t.creado_por_nombre) {
+      return { tipo: 'de', texto: `De ${t.creado_por_nombre}` };
+    }
+    return null;
+  }
 
-  toggleCompletada(tarea: Tarea) {
-    const ids = new Set(this.updatingIds());
-    ids.add(tarea.id_tarea);
-    this.updatingIds.set(ids);
-    const prev = tarea.estado;
-    this.tareas.update(list =>
-      list.map(t => t.id_tarea === tarea.id_tarea ? { ...t, estado: 'completada' as const } : t)
-    );
-    this.svc.actualizarEstadoTarea(tarea.id_tarea, 'completada').subscribe({
-      next: (updated) => {
-        this.tareas.update(list => list.map(t => t.id_tarea === updated.id_tarea ? updated : t));
-        const s = new Set(this.updatingIds()); s.delete(tarea.id_tarea); this.updatingIds.set(s);
+  textoFecha(t: Tarea): string {
+    const d = new Date(t.fecha_limite + 'T00:00:00');
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const dias = Math.round((d.getTime() - hoy.getTime()) / 86400000);
+    if (!this.cerrada(t)) {
+      if (dias < 0) return dias === -1 ? 'Venció ayer' : `Venció hace ${-dias} días`;
+      if (dias === 0) return 'Vence hoy';
+      if (dias === 1) return 'Mañana';
+      if (dias < 7) return d.toLocaleDateString('es', { weekday: 'long' });
+    }
+    return d.toLocaleDateString('es', { day: 'numeric', month: 'short', year: d.getFullYear() !== hoy.getFullYear() ? 'numeric' : undefined });
+  }
+
+  claseFecha(t: Tarea): string {
+    if (this.vencida(t)) return 'meta--vencida';
+    if (this.esHoy(t)) return 'meta--hoy';
+    return '';
+  }
+
+  alternarCompletada(t: Tarea) {
+    if (this.actualizando().has(t.id_tarea)) return;
+    const nuevo: Tarea['estado'] = t.estado === 'completada' ? 'pendiente' : 'completada';
+    const previo = t.estado;
+    this.marcarActualizando(t.id_tarea, true);
+    if (nuevo === 'completada') this.recientes.update(s => new Set(s).add(t.id_tarea));
+    this.reemplazar({ ...t, estado: nuevo });
+    this.svc.actualizarEstadoTarea(t.id_tarea, nuevo).subscribe({
+      next: (u) => { this.reemplazar(u); this.marcarActualizando(t.id_tarea, false); },
+      error: (err) => {
+        this.reemplazar({ ...t, estado: previo });
+        this.marcarActualizando(t.id_tarea, false);
+        this.toast.error('No se pudo actualizar la tarea', err?.error?.detail ?? 'Inténtalo de nuevo.');
       },
-      error: () => {
-        this.tareas.update(list =>
-          list.map(t => t.id_tarea === tarea.id_tarea ? { ...t, estado: prev } : t)
-        );
-        const s = new Set(this.updatingIds()); s.delete(tarea.id_tarea); this.updatingIds.set(s);
-      }
     });
   }
 
-  abrirDetalle(tarea: Tarea) {
-    if (window.innerWidth >= 768) {
-      this.tareaDrawerId.set(tarea.id_tarea);
-    } else {
-      const qp: Record<string, any> = { desde: 'mis-tareas' };
-      if (tarea.origen_tipo === 'acta_reunion' && tarea.origen_id) qp['origen_acta'] = tarea.origen_id;
-      this.router.navigate(['/herramientas/tareas', tarea.id_tarea], { queryParams: qp });
-    }
+  private marcarActualizando(id: number, on: boolean) {
+    this.actualizando.update(s => { const n = new Set(s); on ? n.add(id) : n.delete(id); return n; });
   }
 
-  onTareaActualizadaEnDrawer(updated: Tarea) {
-    this.tareas.update(list => list.map(t => t.id_tarea === updated.id_tarea ? updated : t));
+  private reemplazar(t: Tarea) {
+    this.tareas.update(list => list.map(x => x.id_tarea === t.id_tarea ? t : x));
   }
 
-  onTareaEliminadaEnDrawer(id: number) {
+  abrirDetalle(t: Tarea) {
+    this.cerrandoDrawer.set(false);
+    this.tareaDrawerId.set(t.id_tarea);
+  }
+
+  cerrarDetalle() {
+    if (!this.tareaDrawerId() || this.cerrandoDrawer()) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { this.tareaDrawerId.set(null); return; }
+    this.cerrandoDrawer.set(true);
+    setTimeout(() => { this.tareaDrawerId.set(null); this.cerrandoDrawer.set(false); }, 170);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    // Si hay un diálogo encima (confirmar borrado), Esc lo cierra a él, no al panel.
+    if (this.modalCrear() || document.querySelector('app-confirm-dialog [aria-modal="true"], app-confirm-dialog [role="alertdialog"]')) return;
+    this.cerrarDetalle();
+  }
+
+  onTareaCreada(t: Tarea) {
+    this.tareas.update(list => [t, ...list]);
+    // Que se vea la recién creada aunque un filtro la ocultara.
+    this.limpiarFiltros();
+    this.filtro.set('abiertas');
+    if (this.vista() === 'asignadas' && t.asignado_a !== this.miId) this.vista.set('creadas');
+  }
+
+  onTareaActualizada(updated: Tarea) {
+    if (updated.estado === 'completada') this.recientes.update(s => new Set(s).add(updated.id_tarea));
+    this.reemplazar(updated);
+  }
+
+  onTareaEliminada(id: number) {
     this.tareas.update(list => list.filter(t => t.id_tarea !== id));
     this.tareaDrawerId.set(null);
+    this.cerrandoDrawer.set(false);
   }
 
-  irAActa(tarea: Tarea) {
-    if (tarea.origen_tipo === 'acta_reunion' && tarea.origen_id)
-      this.router.navigate(['/secretario-tools/actas-reunion', tarea.origen_id]);
-  }
-
-  private hoyStr(): string { return new Date().toISOString().split('T')[0]; }
-
-  isVencida(t: Tarea): boolean {
-    if (!t.fecha_limite || t.estado === 'completada' || t.estado === 'cancelada') return false;
-    return t.fecha_limite < this.hoyStr();
-  }
-
-  isParaHoy(t: Tarea): boolean {
-    return !!t.fecha_limite && t.fecha_limite.startsWith(this.hoyStr());
-  }
-
-  getCardClass(t: Tarea): string {
-    return t.estado === 'completada' ? 'opacity-60' : '';
-  }
-
-  getDotClass(t: Tarea): string {
-    if (this.isVencida(t)) return 'bg-red-500';
-    if (this.isParaHoy(t)) return 'bg-amber-500';
-    if (t.prioridad === 'alta') return 'bg-rose-500';
-    if (t.estado === 'completada') return 'bg-green-500';
-    if (t.estado === 'en_progreso') return 'bg-amber-500';
-    return 'bg-gray-400 dark:bg-slate-500';
-  }
-
-  getPrioridadBadge(p: Tarea['prioridad']): string {
-    switch (p) {
-      case 'alta':  return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
-      case 'media': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400';
-      case 'baja':  return 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400';
+  irAActa(t: Tarea) {
+    if (t.origen_tipo === 'acta_reunion' && t.origen_id) {
+      this.router.navigate(['/secretario-tools/actas-reunion', t.origen_id]);
     }
   }
-
-  getPrioridadLabel(p: Tarea['prioridad']): string {
-    return { alta: 'Alta', media: 'Media', baja: 'Baja' }[p];
-  }
-
-  getEstadoBadge(e: Tarea['estado']): string {
-    switch (e) {
-      case 'pendiente':   return 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400';
-      case 'en_progreso': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400';
-      case 'completada':  return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
-      case 'cancelada':   return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
-    }
-  }
-
-  getEstadoLabel(e: Tarea['estado']): string {
-    return { pendiente: 'Pendiente', en_progreso: 'En progreso', completada: 'Completada', cancelada: 'Cancelada' }[e];
-  }
-
-  getFechaClass(t: Tarea): string {
-    if (this.isVencida(t)) return 'text-red-500 dark:text-red-400 font-semibold';
-    if (this.isParaHoy(t)) return 'text-amber-500 dark:text-amber-400 font-semibold';
-    return 'text-gray-400 dark:text-slate-500';
-  }
-
-  formatFecha(fecha: string): string {
-    const d = new Date(fecha + 'T00:00:00');
-    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-    const diff = Math.round((d.getTime() - hoy.getTime()) / 86400000);
-    if (diff < 0)  return `Venció hace ${Math.abs(diff)} día${Math.abs(diff) !== 1 ? 's' : ''}`;
-    if (diff === 0) return 'Hoy';
-    if (diff === 1) return 'Mañana';
-    return d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
-  }
-
-  getOrigenLabel(tipo: string): string {
-    return { visita_sc: 'Visita SC', transferencia: 'Transferencia', manual: 'Manual' }[tipo] ?? tipo;
-  }
-
-  togglePrioridadOpen() { this.prioridadOpen.update(v => !v); }
-
-  seleccionarPrioridad(v: FiltroPrioridad) {
-    this.filtroPrioridad.set(v);
-    this.prioridadOpen.set(false);
-  }
-
-  getPrioridadLabel2(v: FiltroPrioridad): string {
-    return this.prioridadOpts.find(o => o.value === v)?.label ?? 'Prioridad';
-  }
-
-  getPrioridadDotClass(v: FiltroPrioridad): string {
-    return this.prioridadOpts.find(o => o.value === v)?.dotClass ?? 'bg-gray-300';
-  }
-
-  @HostListener('document:click')
-  onDocumentClick() { this.prioridadOpen.set(false); }
 }

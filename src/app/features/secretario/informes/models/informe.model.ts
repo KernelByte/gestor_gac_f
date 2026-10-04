@@ -206,6 +206,8 @@ export interface InformeHistorialEdit {
    cursos_biblicos: number;
    observaciones: string | null;
    privilegio: string | null;
+   /** false = el privilegio no se tocó; el backend no modifica los períodos. */
+   actualizar_privilegio?: boolean;
 }
 
 export interface NotificarRequest {

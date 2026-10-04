@@ -709,3 +709,12 @@
    [initialMes]="editInitialMes()"
    (close)="onEditorClosed($event)">
 </app-informes-historial-edit>
+
+<!-- Toast de confirmación -->
+<div *ngIf="toastMessage()"
+   class="fixed top-5 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl shadow-lg flex items-center gap-2 pointer-events-none">
+   <svg class="w-4 h-4 text-emerald-400 dark:text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+   </svg>
+   {{ toastMessage() }}
+</div>

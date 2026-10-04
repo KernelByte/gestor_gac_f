@@ -283,7 +283,7 @@ export class FormularioAsignacionPage implements OnInit {
    async loadAllPublicadorPrivilegios(publicadores: Publicador[]) {
       try {
          const allPrivilegios = await lastValueFrom(
-            this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/')
+            this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/', { params: { limit: 500, activos: true } })
          );
 
          const today = new Date().toISOString().split('T')[0];

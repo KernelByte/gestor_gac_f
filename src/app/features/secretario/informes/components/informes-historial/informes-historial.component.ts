@@ -278,7 +278,17 @@ export class InformesHistorialComponent implements OnChanges {
       this.showEditModal.set(false);
       if (saved) {
          this.loadData();
+         this.mostrarToast('Historial actualizado correctamente');
       }
+   }
+
+   toastMessage = signal<string | null>(null);
+   private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+   private mostrarToast(msg: string) {
+      if (this.toastTimer) clearTimeout(this.toastTimer);
+      this.toastMessage.set(msg);
+      this.toastTimer = setTimeout(() => this.toastMessage.set(null), 3500);
    }
 
    getAvatarStyle(nombre: string): string {

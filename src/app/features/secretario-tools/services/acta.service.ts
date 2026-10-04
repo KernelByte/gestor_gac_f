@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { Acta, ActaCreate, ActaUpdate, RedactarIARequest, RedactarIAResponse, Tarea } from '../models/acta.model';
+import { Acta, ActaCreate, ActaUpdate, RedactarIARequest, RedactarIAResponse, RolTarea, Subtarea, Tarea, TareaCreate, UsuarioAsignable } from '../models/acta.model';
 
 @Injectable({ providedIn: 'root' })
 export class ActaService {
@@ -63,11 +63,32 @@ export class ActaService {
     return this.http.delete<void>(`${this.urlTareas}/${idTarea}`);
   }
 
-  listarTareasGlobal(params: { asignado_a?: number | string; estado?: string; prioridad?: string } = {}): Observable<Tarea[]> {
+  /** Tareas que el usuario creó o tiene asignadas (el backend no devuelve otras). */
+  listarTareasGlobal(params: { rol_tarea?: RolTarea; estado?: string } = {}): Observable<Tarea[]> {
     const filtros: Record<string, string> = {};
-    if (params.asignado_a != null) filtros['asignado_a'] = String(params.asignado_a);
+    if (params.rol_tarea) filtros['rol_tarea'] = params.rol_tarea;
     if (params.estado) filtros['estado'] = params.estado;
-    if (params.prioridad) filtros['prioridad'] = params.prioridad;
     return this.http.get<Tarea[]>(`${this.urlTareas}/`, { params: filtros });
+  }
+
+  crearTareaGlobal(data: TareaCreate): Observable<Tarea> {
+    return this.http.post<Tarea>(`${this.urlTareas}/`, data);
+  }
+
+  /** Usuarios activos de mi congregación a quienes puedo asignar (cualquier rol). */
+  listarAsignables(): Observable<UsuarioAsignable[]> {
+    return this.http.get<UsuarioAsignable[]>(`${this.urlTareas}/asignables`);
+  }
+
+  crearSubtarea(idTarea: number, titulo: string): Observable<Subtarea> {
+    return this.http.post<Subtarea>(`${this.urlTareas}/${idTarea}/subtareas`, { titulo });
+  }
+
+  actualizarSubtarea(idTarea: number, idSubtarea: number, data: Partial<Pick<Subtarea, 'titulo' | 'completada' | 'orden'>>): Observable<Subtarea> {
+    return this.http.patch<Subtarea>(`${this.urlTareas}/${idTarea}/subtareas/${idSubtarea}`, data);
+  }
+
+  eliminarSubtarea(idTarea: number, idSubtarea: number): Observable<void> {
+    return this.http.delete<void>(`${this.urlTareas}/${idTarea}/subtareas/${idSubtarea}`);
   }
 }

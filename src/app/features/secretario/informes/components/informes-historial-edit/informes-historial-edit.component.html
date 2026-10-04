@@ -646,6 +646,7 @@
                     class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50">
                     Cancelar
                 </button>
+                <p *ngIf="saveError()" class="text-xs font-medium text-rose-500 self-center">{{ saveError() }}</p>
                 <button (click)="guardar()" [disabled]="saving() || loading()"
                     class="px-5 py-2 text-sm font-semibold text-white bg-violet-600 rounded-xl hover:bg-violet-700 active:scale-[0.97] active:bg-violet-800 transition-all duration-150 disabled:opacity-60 flex items-center gap-2 shadow-sm">
                     <svg *ngIf="saving()" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

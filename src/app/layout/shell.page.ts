@@ -86,7 +86,7 @@ export class TimeAgoPipe implements PipeTransform {
 
         <!-- Navigation (Scrollable) -->
         <div class="sidebar-nav flex-1 min-h-0 overflow-y-auto py-6 custom-scrollbar" [ngClass]="{ 'px-5': !collapsed(), 'px-3': collapsed() }"
-             (mouseover)="onNavHover($event)" (mouseleave)="hideNavTooltip()" (scroll)="hideNavTooltip()">
+             (mouseover)="onNavHover($event)" (mouseleave)="hideNavTooltip()" (scroll)="hideNavTooltip(); closeFlyout()">
           <nav class="space-y-1.5">
             <!-- Main Section -->
             <div class="mb-8">
@@ -147,7 +147,8 @@ export class TimeAgoPipe implements PipeTransform {
               
               <!-- Reuniones Accordion -->
               <div *ngIf="hasAnyReunionesPermission()" class="relative mt-1">
-                <button (click)="toggleReunionesMenu()"
+                <button (click)="toggleReunionesMenu($event)" data-flyout-trigger
+                  [attr.aria-haspopup]="collapsed() ? 'menu' : null"
                   [attr.aria-expanded]="reunionesMenuOpen()"
                   aria-controls="reuniones-submenu"
                   class="w-full group flex items-center justify-between text-sm transition-all duration-200 relative rounded-lg"
@@ -168,7 +169,10 @@ export class TimeAgoPipe implements PipeTransform {
                 </button>
                 
                 <!-- Submenu -->
-                <div *ngIf="!collapsed() && reunionesMenuOpen()" id="reuniones-submenu" class="relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800">
+                <div *ngIf="collapsed() ? flyout()?.menu === 'reuniones' : reunionesMenuOpen()" id="reuniones-submenu"
+                     [ngClass]="collapsed() ? 'nav-flyout fixed z-[70] w-60 p-1.5 space-y-0.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/10 dark:shadow-black/40' : 'relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800'"
+                     [style.top.px]="collapsed() ? flyout()?.top : null" [style.left.px]="collapsed() ? flyout()?.left : null"
+                     [attr.data-title]="collapsed() ? 'Reuniones' : null" [attr.role]="collapsed() ? 'menu' : null">
                    <a *ngIf="hasPermission('reuniones.ver')" routerLink="/reuniones/resumen" routerLinkActive="sub-active" #rlaResumen="routerLinkActive"
                       class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                       [ngClass]="rlaResumen.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
@@ -233,7 +237,8 @@ export class TimeAgoPipe implements PipeTransform {
 
               <!-- Secretario Tools Accordion — exclusivo de Secretario/Administrador -->
               <div *ngIf="hasRole('Secretario') || hasRole('Administrador')" class="relative mt-1">
-                <button (click)="toggleSecretarioToolsMenu()"
+                <button (click)="toggleSecretarioToolsMenu($event)" data-flyout-trigger
+                  [attr.aria-haspopup]="collapsed() ? 'menu' : null"
                   class="w-full group flex items-center justify-between text-sm transition-all duration-200 relative rounded-lg"
                   [ngClass]="{
                     'p-3': collapsed(),
@@ -251,7 +256,10 @@ export class TimeAgoPipe implements PipeTransform {
                   <svg *ngIf="!collapsed()" class="w-4 h-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]" [ngClass]="{ 'rotate-180': secretarioToolsMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
 
-                <div *ngIf="!collapsed() && secretarioToolsMenuOpen()" class="relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800">
+                <div *ngIf="collapsed() ? flyout()?.menu === 'secretario' : secretarioToolsMenuOpen()"
+                     [ngClass]="collapsed() ? 'nav-flyout fixed z-[70] w-60 p-1.5 space-y-0.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/10 dark:shadow-black/40' : 'relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800'"
+                     [style.top.px]="collapsed() ? flyout()?.top : null" [style.left.px]="collapsed() ? flyout()?.left : null"
+                     [attr.data-title]="collapsed() ? 'Secretario' : null" [attr.role]="collapsed() ? 'menu' : null">
                   <a routerLink="/secretario-tools/visita-superintendente" routerLinkActive="sub-active" #rlaVS="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                      [ngClass]="rlaVS.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
@@ -288,7 +296,8 @@ export class TimeAgoPipe implements PipeTransform {
 
               <!-- Territorios Accordion -->
               <div *ngIf="hasPermission('territorios.ver')" class="relative mt-1">
-                <button (click)="toggleTerritoriosMenu()"
+                <button (click)="toggleTerritoriosMenu($event)" data-flyout-trigger
+                  [attr.aria-haspopup]="collapsed() ? 'menu' : null"
                   class="w-full group flex items-center justify-between text-sm transition-all duration-200 relative rounded-lg"
                   [ngClass]="{
                     'p-3': collapsed(),
@@ -307,7 +316,10 @@ export class TimeAgoPipe implements PipeTransform {
                 </button>
 
                 <!-- Submenu -->
-                <div *ngIf="!collapsed() && territoriosMenuOpen()" class="relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800">
+                <div *ngIf="collapsed() ? flyout()?.menu === 'territorios' : territoriosMenuOpen()"
+                     [ngClass]="collapsed() ? 'nav-flyout fixed z-[70] w-60 p-1.5 space-y-0.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/10 dark:shadow-black/40' : 'relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800'"
+                     [style.top.px]="collapsed() ? flyout()?.top : null" [style.left.px]="collapsed() ? flyout()?.left : null"
+                     [attr.data-title]="collapsed() ? 'Territorios' : null" [attr.role]="collapsed() ? 'menu' : null">
                   <a routerLink="/territorios" routerLinkActive="sub-active" #rlaTerr="routerLinkActive" [routerLinkActiveOptions]="{exact: true}"
                      class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                      [ngClass]="rlaTerr.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
@@ -334,7 +346,8 @@ export class TimeAgoPipe implements PipeTransform {
 
               <!-- Reportes Accordion -->
               <div *ngIf="hasAnyReportesPermission()" class="relative mt-1">
-                <button (click)="toggleReportesMenu()"
+                <button (click)="toggleReportesMenu($event)" data-flyout-trigger
+                  [attr.aria-haspopup]="collapsed() ? 'menu' : null"
                   class="w-full group flex items-center justify-between text-sm transition-all duration-200 relative rounded-lg"
                   [ngClass]="{
                     'p-3': collapsed(),
@@ -353,7 +366,10 @@ export class TimeAgoPipe implements PipeTransform {
                 </button>
 
                 <!-- Submenu -->
-                <div *ngIf="!collapsed() && reportesMenuOpen()" class="relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800">
+                <div *ngIf="collapsed() ? flyout()?.menu === 'reportes' : reportesMenuOpen()"
+                     [ngClass]="collapsed() ? 'nav-flyout fixed z-[70] w-60 p-1.5 space-y-0.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/10 dark:shadow-black/40' : 'relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800'"
+                     [style.top.px]="collapsed() ? flyout()?.top : null" [style.left.px]="collapsed() ? flyout()?.left : null"
+                     [attr.data-title]="collapsed() ? 'Reportes' : null" [attr.role]="collapsed() ? 'menu' : null">
                   <a *ngIf="hasPermission('reportes.precursores')" routerLink="/reportes/precursores" routerLinkActive="sub-active" #rlaRepPrec="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                      [ngClass]="rlaRepPrec.isActive ? '!text-brand-blue dark:!text-blue-400 font-medium bg-brand-blue/[0.03] dark:bg-blue-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
@@ -1096,6 +1112,32 @@ export class TimeAgoPipe implements PipeTransform {
       overflow-y: auto;
       overflow-x: hidden;
     }
+    /* Submenú flotante (sidebar comprimido) */
+    .nav-flyout {
+      animation: flyoutIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: left top;
+    }
+    .nav-flyout::before {
+      content: attr(data-title);
+      display: block;
+      padding: 0.5rem 0.75rem 0.5rem;
+      margin-bottom: 0.25rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    :host-context(.dark) .nav-flyout::before { color: #64748b; border-bottom-color: rgba(255,255,255,0.06); }
+    .nav-flyout > a { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .nav-flyout > a > span:first-child { display: none; }
+    .nav-flyout > a.sub-active { background: rgba(148, 163, 184, 0.14); }
+    :host-context(.dark) .nav-flyout > a.sub-active { background: rgba(255, 255, 255, 0.06); }
+    @keyframes flyoutIn {
+      from { opacity: 0; transform: translateX(-4px) scale(0.98); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
+    }
     /* Reuniones submenu slide animation */
     .reuniones-submenu {
       animation: submenuSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1168,7 +1210,7 @@ export class ShellPage implements OnInit, OnDestroy {
   navTooltip = signal<{ text: string; top: number; left: number } | null>(null);
 
   onNavHover(event: MouseEvent) {
-    if (!this.collapsed()) { this.navTooltip.set(null); return; }
+    if (!this.collapsed() || this.flyout()) { this.navTooltip.set(null); return; }
     const el = (event.target as HTMLElement | null)?.closest('a[title], button[title]') as HTMLElement | null;
     if (!el) { this.navTooltip.set(null); return; }
     const text = el.getAttribute('title');
@@ -1186,9 +1228,51 @@ export class ShellPage implements OnInit, OnDestroy {
     if (this.navTooltip()) this.navTooltip.set(null);
   }
 
+  // Con el sidebar comprimido los submenús no caben en línea: se abren como
+  // panel flotante a la derecha del icono. El <aside> tiene transform, así que
+  // las coordenadas de un hijo `fixed` son relativas a él, no a la ventana.
+  flyout = signal<{ menu: 'reuniones' | 'secretario' | 'territorios' | 'reportes'; top: number; left: number } | null>(null);
+
+  private toggleFlyout(menu: 'reuniones' | 'secretario' | 'territorios' | 'reportes', event?: MouseEvent) {
+    if (this.flyout()?.menu === menu) { this.closeFlyout(); return; }
+    const btn = event?.currentTarget as HTMLElement | null;
+    const aside = btn?.closest('aside');
+    if (!btn || !aside) return;
+    const rect = btn.getBoundingClientRect();
+    const asideRect = aside.getBoundingClientRect();
+    this.hideNavTooltip();
+    this.flyout.set({ menu, top: rect.top - asideRect.top - 6, left: asideRect.width + 10 });
+    // Si el panel no cabe hacia abajo, se sube lo justo para que quede visible.
+    setTimeout(() => {
+      const panel = aside.querySelector('.nav-flyout') as HTMLElement | null;
+      const actual = this.flyout();
+      if (!panel || !actual || actual.menu !== menu) return;
+      const sobrante = asideRect.top + actual.top + panel.offsetHeight - (window.innerHeight - 12);
+      if (sobrante > 0) this.flyout.set({ ...actual, top: Math.max(8 - asideRect.top, actual.top - sobrante) });
+    });
+  }
+
+  closeFlyout() {
+    if (this.flyout()) this.flyout.set(null);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClickFlyout(event: MouseEvent) {
+    if (!this.flyout()) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.nav-flyout, [data-flyout-trigger]')) return;
+    this.closeFlyout();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeFlyout() {
+    this.closeFlyout();
+  }
+
   @HostListener('window:resize')
   onWindowResize() {
     this.hideNavTooltip();
+    this.closeFlyout();
   }
 
   // Search Shortcut
@@ -1228,6 +1312,7 @@ export class ShellPage implements OnInit, OnDestroy {
           .some(id => document.getElementById(id)?.contains(target));
         if (!inside) {
           this.closeNotifications();
+        this.closeFlyout();
         }
       }
     } catch (err) { }
@@ -1371,7 +1456,8 @@ export class ShellPage implements OnInit, OnDestroy {
 
   logout() { this.auth.logout(); }
 
-  toggleReunionesMenu() {
+  toggleReunionesMenu(event?: MouseEvent) {
+    if (this.collapsed()) { this.toggleFlyout('reuniones', event); return; }
     this.reunionesMenuOpen.update(v => !v);
   }
 
@@ -1379,7 +1465,8 @@ export class ShellPage implements OnInit, OnDestroy {
     return this.router.url.startsWith('/reuniones');
   }
 
-  toggleTerritoriosMenu() {
+  toggleTerritoriosMenu(event?: MouseEvent) {
+    if (this.collapsed()) { this.toggleFlyout('territorios', event); return; }
     this.territoriosMenuOpen.update(v => !v);
   }
 
@@ -1388,7 +1475,8 @@ export class ShellPage implements OnInit, OnDestroy {
     return url.startsWith('/territorios') || url.startsWith('/horarios') || url.startsWith('/seguimiento-predicacion');
   }
 
-  toggleReportesMenu() {
+  toggleReportesMenu(event?: MouseEvent) {
+    if (this.collapsed()) { this.toggleFlyout('reportes', event); return; }
     this.reportesMenuOpen.update(v => !v);
   }
 
@@ -1396,7 +1484,8 @@ export class ShellPage implements OnInit, OnDestroy {
     return this.router.url.startsWith('/reportes');
   }
 
-  toggleSecretarioToolsMenu() {
+  toggleSecretarioToolsMenu(event?: MouseEvent) {
+    if (this.collapsed()) { this.toggleFlyout('secretario', event); return; }
     this.secretarioToolsMenuOpen.update(v => !v);
   }
 
@@ -1456,6 +1545,7 @@ export class ShellPage implements OnInit, OnDestroy {
   toggleSidebar() {
     this.collapsed.update(v => !v);
     this.hideNavTooltip();
+    this.closeFlyout();
   }
 
   openMobileMenu() { this.mobileMenuOpen.set(true); }
@@ -1499,7 +1589,7 @@ export class ShellPage implements OnInit, OnDestroy {
     if (n.tipo === 'solicitud_acceso') {
       this.notificationsOpen.set(false);
       this.router.navigate(['/admin/configuracion'], { queryParams: { tab: 'solicitudes' } });
-    } else if (n.tipo === 'tarea_asignada' && n.payload?.['id_tarea']) {
+    } else if ((n.tipo === 'tarea_asignada' || n.tipo === 'tarea_completada') && n.payload?.['id_tarea']) {
       this.notificationsOpen.set(false);
       this.router.navigate(
         ['/herramientas/tareas', n.payload['id_tarea']],
@@ -1524,7 +1614,8 @@ export class ShellPage implements OnInit, OnDestroy {
       case 'solicitud_acceso':    return 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400';
       case 'usuario_activado':   return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400';
       case 'backup_completado':  return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
-      case 'tarea_asignada':     return 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400';
+      case 'tarea_asignada':
+      case 'tarea_completada':   return 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400';
       case 'visita_colaborador': return 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400';
       case 'transferencia_recibida': return 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400';
       default: return 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';

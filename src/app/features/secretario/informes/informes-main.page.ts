@@ -370,7 +370,7 @@ export class InformesMainPage implements OnInit {
       // Load catalog and assignments in parallel
       const [catalog, allPrivilegios] = await Promise.all([
         lastValueFrom(this.privilegiosService.getPrivilegios()),
-        lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/')),
+        lastValueFrom(this.http.get<PublicadorPrivilegio[]>('/api/publicador-privilegios/', { params: { limit: 500 } })),
       ]);
       this.privilegios.set(catalog);
 

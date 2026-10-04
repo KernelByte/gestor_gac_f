@@ -105,6 +105,9 @@ export class InformesHistorialEditComponent implements OnInit {
    });
 
    showValidationError = signal<boolean>(false);
+   saveError = signal<string | null>(null);
+   /** True si se creó/editó/eliminó algún privilegio: el padre debe recargar al cerrar. */
+   private huboCambiosExternos = false;
 
    // Tab navigation
    activeTab = signal<'informe' | 'privilegios'>('informe');
@@ -452,21 +455,28 @@ export class InformesHistorialEditComponent implements OnInit {
 
       if (updates.length === 0) {
          this.saving.set(false);
-         this.close.emit(false);
+         this.showToast('No hay cambios para guardar');
          return;
       }
 
-      const requests = updates.map(u => this.informesService.editarHistorial(u));
+      this.saveError.set(null);
+      // El privilegio solo viaja como cambio si el usuario lo modificó en este mes.
+      const requests = updates.map(u => {
+         const orig = this.originalValues.get(`${u.ano}-${u.mes}`);
+         const actualizar_privilegio = !orig || (u.privilegio ?? null) !== (orig.privilegio ?? null);
+         return this.informesService.editarHistorial({ ...u, actualizar_privilegio });
+      });
       
       forkJoin(requests).subscribe({
          next: () => {
             this.saving.set(false);
-            this.showToast('Informe guardado correctamente');
-            setTimeout(() => this.close.emit(true), 800);
+            this.close.emit(true);
          },
          error: (err) => {
             console.error('Error saving all historial updates', err);
             this.saving.set(false);
+            const detalle = err?.error?.detail;
+            this.saveError.set(typeof detalle === 'string' ? detalle : 'No se pudo guardar el informe. Intenta de nuevo.');
          }
       });
    }
@@ -526,6 +536,7 @@ export class InformesHistorialEditComponent implements OnInit {
             this.savingPrivilegio.set(false);
             this.cancelarEdicionPrivilegio();
             this.cargarPrivilegiosPrecursor();
+            this.huboCambiosExternos = true;
             this.showToast('Fechas actualizadas correctamente');
          },
          error: () => this.savingPrivilegio.set(false)
@@ -557,6 +568,7 @@ export class InformesHistorialEditComponent implements OnInit {
          next: () => {
             this.deletingPrivilegioId.set(null);
             this.cargarPrivilegiosPrecursor();
+            this.huboCambiosExternos = true;
             this.showToast('Privilegio eliminado');
          }
       });
@@ -630,6 +642,7 @@ export class InformesHistorialEditComponent implements OnInit {
             this.savingNewPrivilegio.set(false);
             this.cancelarNuevoPrivilegio();
             this.cargarPrivilegiosPrecursor();
+            this.huboCambiosExternos = true;
             this.showToast('Privilegio registrado correctamente');
          },
          error: () => this.savingNewPrivilegio.set(false)
@@ -677,6 +690,7 @@ export class InformesHistorialEditComponent implements OnInit {
             this.esRegular.set(false);
             this.esEspecial.set(false);
             this.cargarPrivilegiosPrecursor();
+            this.huboCambiosExternos = true;
             this.showToast('Privilegio de Auxiliar registrado');
          },
          error: () => this.savingQuickAuxiliar.set(false)
@@ -718,6 +732,7 @@ export class InformesHistorialEditComponent implements OnInit {
             this.savingQuickPriv.set(false);
             this.cancelarQuickPriv();
             this.cargarPrivilegiosPrecursor();
+            this.huboCambiosExternos = true;
             this.showToast(`Privilegio de ${tipo} registrado`);
          },
          error: () => this.savingQuickPriv.set(false)
@@ -725,6 +740,6 @@ export class InformesHistorialEditComponent implements OnInit {
    }
 
    cancelar() {
-      this.close.emit(false);
+      this.close.emit(this.huboCambiosExternos);
    }
 }

@@ -29,6 +29,10 @@
      mide", y no debe competir con pos/aviso/neg en la misma columna. */
   --exento: oklch(55% 0.07 195);
 
+  /* Velo bajo diálogos y hojas: oscuro en ambos temas (aísla el primer
+     plano sin "apagar" la pantalla del todo). */
+  --velo: oklch(22% 0.02 295 / 0.45);
+
   display: block;
 }
 
@@ -49,4 +53,6 @@
   --aviso:  oklch(80% 0.13 75);
   --neg:    oklch(71% 0.14 25);
   --exento: oklch(75% 0.06 195);
+
+  --velo: oklch(8% 0.02 265 / 0.62);
 }

@@ -66,7 +66,14 @@ export class NuevoPublicadorWizardComponent {
     if (value && !wasOpen) this.reset();
   }
 
-  @Input() grupos: WizardGrupo[] = [];
+  /**
+   * Con señal detrás: `grupoOptions` es un computed y, con un campo plano, se
+   * quedaba con la primera lista que veía (la pantalla de Asignación agrega
+   * grupos mientras el asistente sigue montado).
+   */
+  @Input() set grupos(value: WizardGrupo[]) { this.gruposSig.set(value ?? []); }
+  get grupos(): WizardGrupo[] { return this.gruposSig(); }
+  private readonly gruposSig = signal<WizardGrupo[]>([]);
   @Input() privilegios: Privilegio[] = [];
   @Input() estadoActivoId: number | null = null;
   @Input() congregacionId: number | null = null;
@@ -230,7 +237,7 @@ export class NuevoPublicadorWizardComponent {
   // ── Paso 3: grupo y fecha de informe ─────────────────────────────────────
 
   grupoOptions = computed<PickerOption[]>(() =>
-    this.grupos.map(g => ({
+    this.gruposSig().map(g => ({
       value: g.id_grupo,
       label: g.nombre_grupo,
       hint: g.capitan_grupo ?? undefined,

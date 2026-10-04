@@ -71,7 +71,9 @@ export const SECRETARIO_ROUTES: Routes = [
    {
       path: 'grupos/asignacion',
       title: 'Asignación Grupos',
-      loadComponent: () => import('./grupos/pages/asignacion-grupos.page').then(m => m.AsignacionGruposPage)
+      loadComponent: () => import('./grupos/pages/asignacion-grupos.page').then(m => m.AsignacionGruposPage),
+      // Cambios sin guardar: pregunta antes de salir por cualquier vía (Volver, menú, enlaces).
+      canDeactivate: [(c: { puedeSalir?: () => boolean | Promise<boolean> }) => c.puedeSalir ? c.puedeSalir() : true]
    },
    {
       path: 'grupos/detalle-asignacion/:id',
