@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, booleanAttribute } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
@@ -78,6 +78,12 @@ import { CommonModule } from '@angular/common';
       padding-top: 0.375rem;
     }
 
+    /* Compacta: rótulo arriba; cifra y apostilla comparten línea. */
+    .kpi.compacta { display: grid; grid-template-columns: auto 1fr; align-items: baseline; column-gap: 0.5rem; row-gap: 0.125rem; padding: 0.625rem 0.875rem; }
+    .compacta .rotulo { grid-column: 1 / -1; min-height: 0; }
+    .compacta .cifra { font-size: 1.5rem; padding-top: 0; }
+    .compacta .apostilla { margin-top: 0; padding-top: 0; line-height: 1.3; }
+
     /* En portátil la cabecera compite con la matriz por el alto. */
     @media (min-width: 1440px) {
       .kpi { padding: 0.875rem 1rem 1rem; gap: 0.25rem; }
@@ -85,7 +91,7 @@ import { CommonModule } from '@angular/common';
     }
   `],
   template: `
-    <div class="kpi">
+    <div class="kpi" [class.compacta]="compacta">
       <span class="rotulo">{{ label }}</span>
       <span class="cifra">
         {{ value | number:'1.0-1' }}<span *ngIf="suffix" class="sufijo">{{ suffix }}</span>
@@ -99,4 +105,5 @@ export class KpiCardComponent {
   @Input() value: number = 0;
   @Input() hint?: string | null;
   @Input() suffix?: string;
+  @Input({ transform: booleanAttribute }) compacta = false;
 }

@@ -1023,17 +1023,17 @@ export class ReunionesAsistenciaComponent implements OnInit {
   }
 
   private loadCongregacionConfig(congId: number): void {
-    const user = this.store.user();
-    const rol = user?.rol ?? '';
-    const roles = user?.roles ?? [];
-    const hasRole = (r: string) => rol === r || roles.includes(r);
+    // Mismo acceso que GET /configuracion/ en el backend (ROLES_CONFIG o
+    // 'configuracion.ver'): antes solo Secretario/Coordinador, y un Gestor u
+    // otro usuario con el permiso se quedaba con el cálculo de respaldo.
+    const hasRole = (r: string) => this.store.hasRole(r);
 
-    if (hasRole('Administrador') || hasRole('Gestor Aplicación')) {
+    if (hasRole('Administrador')) {
       this.asistenciaService.getCongregacionConfigById(congId).subscribe({
         next: (cfg) => this.congregacionConfig.set(cfg),
         error: () => {},
       });
-    } else if (hasRole('Secretario') || hasRole('Coordinador')) {
+    } else if (hasRole('Secretario') || hasRole('Coordinador') || this.store.hasPermission('configuracion.ver')) {
       this.asistenciaService.getCongregacionConfig().subscribe({
         next: (cfg) => this.congregacionConfig.set(cfg),
         error: () => {},

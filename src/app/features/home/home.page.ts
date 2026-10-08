@@ -118,7 +118,7 @@ export class CountUpDirective implements OnChanges, OnDestroy {
             <p class="stat-label">Publicadores</p>
             @if (publicadoresListo() && (!esGrupo() || statsListo())) {
               <p class="stat-value" [countUp]="esGrupo() ? informesTotal() : totalPublicadores()">0</p>
-              <p class="stat-meta">{{ esGrupo() ? 'Activos en tu grupo' : 'Activos en la congregación' }}</p>
+              <p class="stat-meta">{{ esGrupo() || publicadoresDeSuGrupo() ? 'Activos en tu grupo' : 'Activos en la congregación' }}</p>
             } @else {
               <div class="skeleton h-9 w-16 rounded-md"></div>
               <div class="skeleton mt-2 h-3 w-24 rounded"></div>
@@ -625,7 +625,7 @@ export class HomePage implements OnInit {
 
   /**
    * Hasta dónde llegan los informes de este usuario. Espeja informe_router.py
-   * (resumen-mensual): Administrador, Gestor y Secretario ven la congregación;
+   * (resumen-mensual): Administrador y Secretario ven la congregación;
    * quien tiene informes.editar_todos también. Con informes.ver / informes.editar
    * a secas el backend fuerza su propio grupo. Sin ninguno, no hay informes.
    */
@@ -667,6 +667,8 @@ export class HomePage implements OnInit {
       : null
   );
   totalPublicadores = signal(0);
+  /** El total de publicadores recibido es solo el de su grupo (alcance del backend). */
+  publicadoresDeSuGrupo = signal(false);
   informesPendientes = signal(0);
   informesRecibidos = signal(0);
   porcentajeInformes = signal(0);
@@ -704,27 +706,30 @@ export class HomePage implements OnInit {
    if (user) {
      this.userName.set(user.nombre || user.username);
 
-     const rolesPublicadores = ['Administrador', 'Gestor Aplicación', 'Coordinador', 'Secretario', 'Superintendente de servicio', 'Gestor', 'Publicador'];
-     const rolesManagePublicadores = ['Administrador', 'Gestor Aplicación', 'Secretario', 'Coordinador'];
-     const rolesGestionVisitaSC = ['Administrador', 'Secretario'];
-
-     const currentRole = user.rol || '';
-     const rolesTotal = ['Administrador', 'Gestor Aplicación', 'Secretario'];
-     const esRolTotal = [currentRole, ...(user.roles ?? [])].some(r => rolesTotal.includes(r));
+     // Roles efectivos (store.hasRole): el Gestor de Aplicación cuenta también
+     // como Publicador, así que ve la tarjeta como publicador.
+     const algunRol = (roles: string[]) => roles.some(r => this.store.hasRole(r));
+     const esRolTotal = algunRol(['Administrador', 'Secretario']);
      if (esRolTotal || this.store.hasPermission('informes.editar_todos')) {
        this.alcanceInformes.set('congregacion');
      } else if (this.store.hasPermission('informes.ver') || this.store.hasPermission('informes.editar')) {
        this.alcanceInformes.set('grupo');
      }
 
-     this.canViewPublicadores.set(rolesPublicadores.includes(currentRole));
-     this.canManagePublicadores.set(rolesManagePublicadores.includes(currentRole));
+     this.canViewPublicadores.set(
+       algunRol(['Administrador', 'Coordinador', 'Secretario', 'Superintendente de servicio', 'Publicador'])
+     );
+     // Acceso rápido a la gestión de publicadores: rol de mando o el permiso
+     // de ver el listado (el Gestor lo trae por defecto).
+     this.canManagePublicadores.set(
+       algunRol(['Administrador', 'Secretario', 'Coordinador']) || this.store.hasPermission('publicadores.ver')
+     );
      this.puedeVerAsistencia.set(
-       ['Administrador', 'Gestor Aplicación', 'Secretario', 'Coordinador'].includes(currentRole) ||
+       algunRol(['Administrador', 'Secretario', 'Coordinador']) ||
        this.store.hasPermission('reuniones.ver') || this.store.hasPermission('reuniones.asistencia')
      );
      this.canViewReuniones.set(this.store.hasPermission('reuniones.ver'));
-     this.canManageVisitaSC.set(rolesGestionVisitaSC.includes(currentRole));
+     this.canManageVisitaSC.set(algunRol(['Administrador', 'Secretario']));
 
      const congregacionId = this.congregacionContext.effectiveCongregacionId();
 
@@ -760,6 +765,12 @@ export class HomePage implements OnInit {
    this.http.get<any[]>('/api/publicadores/?limit=1000').subscribe({
      next: (publicadores) => {
       this.totalPublicadores.set(publicadores.length);
+      // El backend recorta a "su grupo" a quien no tiene permiso de ver a
+      // todos: si todo lo recibido es de su grupo, se rotula así.
+      const miGrupo = this.store.user()?.id_grupo_publicador;
+      this.publicadoresDeSuGrupo.set(
+        !!miGrupo && publicadores.length > 0 && publicadores.every(p => p.id_grupo_publicador === miGrupo)
+      );
       this.publicadoresListo.set(true);
      },
      error: (err) => {

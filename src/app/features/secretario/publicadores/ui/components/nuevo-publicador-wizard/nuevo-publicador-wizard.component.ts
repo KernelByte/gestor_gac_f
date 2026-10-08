@@ -9,6 +9,7 @@ import { SimpleDateFieldComponent } from './simple-date-field/simple-date-field.
 import { Privilegio } from '../../../../privilegios/domain/models/privilegio';
 import { formatearNombre, nombreMostrado } from '../../../../../../core/utils/nombre.util';
 import { FormatoNombreService } from '../../../../../../core/utils/formato-nombre.service';
+import { hoyIso } from '../../../../../../core/utils/fecha.util';
 
 export interface WizardGrupo {
   id_grupo: number;
@@ -29,11 +30,6 @@ export interface NuevoPublicadorResult {
 }
 
 type StepId = 'nombre' | 'personal' | 'congregacion' | 'privilegios';
-
-/** Fecha de hoy en el formato ISO corto que usan el date-picker y la API. */
-function hoyIso(): string {
-  return new Date().toISOString().split('T')[0];
-}
 
 /**
  * Asistente de alta rápida de publicadores.
@@ -249,7 +245,8 @@ export class NuevoPublicadorWizardComponent {
   /** id_privilegio → fechas. Vacío = "ninguno por ahora". */
   seleccion = signal<Map<number, { fecha_inicio: string; fecha_fin: string | null }>>(new Map());
 
-  avisoPrecursor = signal(false);
+  /** Nombre del privilegio que se desmarcó por compartir grupo exclusivo con el elegido. */
+  avisoGrupo = signal<string | null>(null);
 
   /** ids de privilegio cuyo campo "Hasta" está desplegado. Se abre solo al
    *  pedirlo o si ya trae una fecha de fin cargada. */
@@ -293,13 +290,9 @@ export class NuevoPublicadorWizardComponent {
     return p.nombre_privilegio.toLowerCase().includes('auxiliar');
   }
 
-  private esPrecursor(p: Privilegio): boolean {
-    return p.nombre_privilegio.toLowerCase().includes('precursor');
-  }
-
   togglePrivilegio(p: Privilegio) {
     const mapa = new Map(this.seleccion());
-    this.avisoPrecursor.set(false);
+    this.avisoGrupo.set(null);
 
     if (mapa.has(p.id_privilegio)) {
       mapa.delete(p.id_privilegio);
@@ -310,18 +303,17 @@ export class NuevoPublicadorWizardComponent {
       return;
     }
 
-    // Un publicador sólo puede tener un tipo de precursor activo a la vez. En
-    // vez de dejar que choque contra el error del backend, el anterior se
-    // desmarca solo y se explica por qué.
-    if (this.esPrecursor(p)) {
-      let habiaOtro = false;
+    // Dentro de un grupo exclusivo del catálogo (un tipo de precursor; Anciano o
+    // Siervo Ministerial) sólo cabe uno a la vez: la BD rechazaría el segundo.
+    // En vez de dejar que choque, el anterior se desmarca solo y se explica.
+    if (p.grupo_exclusivo) {
       for (const otro of this.privilegios) {
-        if (otro.id_privilegio !== p.id_privilegio && this.esPrecursor(otro) && mapa.has(otro.id_privilegio)) {
+        if (otro.id_privilegio !== p.id_privilegio && otro.grupo_exclusivo === p.grupo_exclusivo
+            && mapa.has(otro.id_privilegio)) {
           mapa.delete(otro.id_privilegio);
-          habiaOtro = true;
+          this.avisoGrupo.set(otro.nombre_privilegio);
         }
       }
-      this.avisoPrecursor.set(habiaOtro);
     }
 
     mapa.set(p.id_privilegio, { fecha_inicio: hoyIso(), fecha_fin: null });
@@ -330,7 +322,7 @@ export class NuevoPublicadorWizardComponent {
 
   limpiarPrivilegios() {
     this.seleccion.set(new Map());
-    this.avisoPrecursor.set(false);
+    this.avisoGrupo.set(null);
     this.finExpandido.set(new Set());
   }
 
@@ -446,7 +438,7 @@ export class NuevoPublicadorWizardComponent {
     });
     this.formValue.set(this.form.value);
     this.seleccion.set(new Map());
-    this.avisoPrecursor.set(false);
+    this.avisoGrupo.set(null);
     this.confirmarDescarte.set(false);
     this.activeStep.set('nombre');
     this.maxStepReached.set(0);

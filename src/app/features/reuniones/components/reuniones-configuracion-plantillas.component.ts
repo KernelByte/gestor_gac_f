@@ -2226,8 +2226,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   ];
 
   puedeGestionarPlantillas = computed(() => {
-    const roles = this.authStore.user()?.roles ?? [];
-    return roles.includes('Administrador') || roles.includes('Gestor Aplicación');
+    return this.authStore.isAdministrador();
   });
 
   visibleTabs = computed(() => {

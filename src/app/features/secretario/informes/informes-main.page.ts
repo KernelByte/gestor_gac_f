@@ -232,8 +232,7 @@ export class InformesMainPage implements OnInit {
     const roles = user.roles ?? (user.rol ? [user.rol] : []);
     const rolesLower = roles.map(r => (r || '').toLowerCase());
     if (rolesLower.includes('superintendente de servicio') ||
-      rolesLower.includes('administrador') ||
-      rolesLower.includes('gestor aplicación')) {
+      rolesLower.includes('administrador')) {
       return true;
     }
     if (rolesLower.includes('secretario') || rolesLower.includes('coordinador')) {

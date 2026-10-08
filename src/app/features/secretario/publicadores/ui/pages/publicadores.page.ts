@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { PublicadoresFacade } from '../../application/publicadores.facade';
 import { ImpactoEliminacion, Publicador } from '../../domain/models/publicador';
 import { AuthStore } from '../../../../../core/auth/auth.store';
+import { etiquetaRol } from '../../../../../core/auth/rol-label';
 import { CongregacionContextService } from '../../../../../core/congregacion-context/congregacion-context.service';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, lastValueFrom, of } from 'rxjs';
@@ -18,6 +19,7 @@ import {
 } from '../../../privilegios/domain/models/precursor-consideracion';
 import { DatePickerComponent } from '../../../../../shared/components/date-picker/date-picker.component';
 import { whatsappUrl } from '../../../../../shared/whatsapp';
+import { hoyIso } from '../../../../../core/utils/fecha.util';
 import { AccesoAppService } from '../../services/acceso-app.service';
 import { getInitialAvatarStyle } from '../../../../../core/utils/avatar-style.util';
 import {
@@ -75,6 +77,9 @@ interface TableColumn {
   styleUrl: './publicadores.page.scss',
 })
 export class PublicadoresListComponent implements OnInit {
+  /** Texto visible del rol (el nombre real es un identificador). */
+  etiquetaRol = etiquetaRol;
+
   private facade = inject(PublicadoresFacade);
   private authStore = inject(AuthStore);
   // Público: la plantilla pasa la congregación en contexto al asistente de alta.
@@ -201,12 +206,12 @@ export class PublicadoresListComponent implements OnInit {
   ];
 
   visibleMoveableColumns = computed(() => {
-    const isAdmin = this.isAdminOrGestor();
+    const isAdmin = this.isAdministrador();
     return this.columnConfig().filter(col => col.visible && (!col.adminOnly || isAdmin));
   });
 
   columnManagerList = computed(() => {
-    const isAdmin = this.isAdminOrGestor();
+    const isAdmin = this.isAdministrador();
     return this.columnConfig().filter(col => !col.adminOnly || isAdmin);
   });
 
@@ -394,11 +399,11 @@ export class PublicadoresListComponent implements OnInit {
     });
   }
 
-  // Role Check - Solo admin y gestor pueden ver el ID
-  isAdminOrGestor = computed(() => {
-    const user = this.authStore.user();
-    const rol = user?.rol?.toLowerCase() || '';
-    return rol.includes('admin') || rol.includes('gestor');
+  // Solo el Administrador (rol global) ve el ID y elige congregación. El
+  // nombre se conserva por las plantillas; el Gestor Aplicación ya no entra.
+  isAdministrador = computed(() => {
+    this.authStore.user();
+    return this.authStore.isAdministrador();
   });
 
   isSecretario = computed(() => {
@@ -408,17 +413,17 @@ export class PublicadoresListComponent implements OnInit {
   });
 
   canEditPublicadores = computed(() =>
-    this.isAdminOrGestor() || this.isSecretario() || this.authStore.hasPermission('publicadores.editar')
+    this.isAdministrador() || this.isSecretario() || this.authStore.hasPermission('publicadores.editar')
   );
 
   canExportPublicadores = computed(() => {
     const user = this.authStore.user();
     const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
-    return roles.some(r => ['administrador', 'gestor aplicación', 'coordinador', 'secretario', 'superintendente de servicio', 'publicador'].includes(r));
+    return this.authStore.rolesEfectivos().some(r => ['administrador', 'coordinador', 'secretario', 'superintendente de servicio', 'publicador'].includes(r));
   });
 
   isScopedToGroup = computed(() =>
-    !this.isAdminOrGestor() && !this.isSecretario() && !this.authStore.hasPermission('publicadores.ver_todos')
+    !this.isAdministrador() && !this.isSecretario() && !this.authStore.hasPermission('publicadores.ver_todos')
   );
 
   // Form
@@ -462,6 +467,14 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   publicadorPrivilegios = signal<PublicadorPrivilegio[]>([]);
+  /**
+   * Historial completo (todos los rangos) del publicador en edición.
+   * `publicadorPrivilegios` muestra uno por privilegio; para validar un rango
+   * nuevo hay que mirarlos todos, igual que hace el backend.
+   */
+  historialPrivilegios = signal<PublicadorPrivilegio[]>([]);
+  /** true mientras viaja el POST de "Asignar Privilegio" (evita el doble envío). */
+  asignandoPrivilegio = signal(false);
   /** Privilegios de la Vista Rápida: signal aparte para no pisar los del panel de edición. */
   quickViewPrivilegios = signal<PublicadorPrivilegio[]>([]);
   /** true mientras se cargan los privilegios del publicador en edición. */
@@ -482,44 +495,61 @@ export class PublicadoresListComponent implements OnInit {
   }
   newPrivilegio = signal<{ id_privilegio: number | null, fecha_inicio: string, fecha_fin: string | null }>({
     id_privilegio: null,
-    fecha_inicio: new Date().toISOString().split('T')[0],
+    fecha_inicio: hoyIso(),
     fecha_fin: null
   });
 
-  // Grupos de privilegios mutuamente excluyentes. Debe coincidir con el backend:
-  // publicador_privilegio_service.GRUPOS_EXCLUSIVOS (solo uno activo por grupo).
-  private readonly GRUPOS_EXCLUSIVOS_PRIVILEGIOS: string[][] = [
-    ['precursor regular', 'precursor auxiliar'],
-    ['anciano', 'siervo ministerial'],
-  ];
+  /** Grupo exclusivo de un privilegio según el catálogo (columna grupo_exclusivo). */
+  private grupoDe(idPrivilegio: number): string | null {
+    return this.privilegios().find(p => p.id_privilegio === idPrivilegio)?.grupo_exclusivo ?? null;
+  }
 
   privilegioConflictoMsg = computed<string | null>(() => {
     const nuevo = this.newPrivilegio();
     const id = nuevo.id_privilegio;
     if (!id) return null;
 
+    // Solo el Auxiliar lleva fecha de fin; en el resto addPrivilegio la manda nula.
+    const fin = this.isAuxiliarySelected() ? nuevo.fecha_fin : null;
+    const inicio = nuevo.fecha_inicio;
+
     // Rango invertido. El backend lo rechaza, pero avisamos antes de enviar.
-    if (nuevo.fecha_inicio && nuevo.fecha_fin && nuevo.fecha_fin < nuevo.fecha_inicio) {
+    if (inicio && fin && fin < inicio) {
       return 'La fecha de fin no puede ser anterior a la fecha de inicio.';
     }
 
-    const nombre = this.getPrivilegioNombre(Number(id)).toLowerCase();
-    const activos = this.publicadorPrivilegios().filter(p => !p.fecha_fin);
+    // El grupo viene del catálogo, la misma columna que usa la constraint de la BD.
+    const grupo = this.grupoDe(Number(id));
+    const historial = this.historialPrivilegios();
 
+    // Caso más común: ya tiene ese privilegio (o uno de su grupo) abierto.
+    const activos = historial.filter(p => !p.fecha_fin);
     if (activos.some(p => p.id_privilegio === Number(id))) {
       return `El publicador ya tiene "${this.getPrivilegioNombre(Number(id))}" activo. Usá "Finalizar" si querés cerrarlo.`;
     }
+    const activoDelGrupo = grupo && activos.find(p =>
+      p.id_privilegio !== Number(id) && this.grupoDe(p.id_privilegio) === grupo
+    );
+    if (activoDelGrupo) {
+      const nombreConflicto = this.getPrivilegioNombre(activoDelGrupo.id_privilegio);
+      return `El publicador ya tiene "${nombreConflicto}" activo. Cerralo primero (botón "Finalizar").`;
+    }
 
-    const grupo = this.GRUPOS_EXCLUSIVOS_PRIVILEGIOS.find(g => g.includes(nombre));
-    if (grupo) {
-      const enConflicto = activos.find(p =>
-        p.id_privilegio !== Number(id) &&
-        grupo.includes(this.getPrivilegioNombre(p.id_privilegio).toLowerCase())
-      );
-      if (enConflicto) {
-        const nombreConflicto = this.getPrivilegioNombre(enConflicto.id_privilegio);
-        return `El publicador ya tiene "${nombreConflicto}" activo. Cerralo primero (botón "Finalizar").`;
-      }
+    // Cruce con un rango ya cerrado. Misma regla que el backend (_cond_solape):
+    // extremos incluyentes y fin vacío = sin límite. Las fechas ISO se comparan
+    // como texto.
+    if (!inicio) return null;
+    const cruce = historial.find(p => {
+      const mismoTipo = p.id_privilegio === Number(id) ||
+        (!!grupo && this.grupoDe(p.id_privilegio) === grupo);
+      if (!mismoTipo) return false;
+      const filaNoTerminaAntes = !p.fecha_fin || p.fecha_fin >= inicio;
+      const filaNoEmpiezaDespues = !fin || p.fecha_inicio <= fin;
+      return filaNoTerminaAntes && filaNoEmpiezaDespues;
+    });
+    if (cruce) {
+      const hasta = cruce.fecha_fin ? ` al ${this.formatDate(cruce.fecha_fin)}` : '';
+      return `Se cruza con "${this.getPrivilegioNombre(cruce.id_privilegio)}" registrado del ${this.formatDate(cruce.fecha_inicio)}${hasta}. Ajustá las fechas.`;
     }
 
     return null;
@@ -534,7 +564,7 @@ export class PublicadoresListComponent implements OnInit {
   consideraciones = signal<PrecursorConsideracion[]>([]);
   newConsideracion = signal<{ motivo: MotivoConsideracion; fecha_inicio: string; descripcion: string }>({
     motivo: 'salud',
-    fecha_inicio: new Date().toISOString().split('T')[0],
+    fecha_inicio: hoyIso(),
     descripcion: ''
   });
   motivoDropdownOpen = signal(false);
@@ -594,7 +624,7 @@ export class PublicadoresListComponent implements OnInit {
         this.loadConsideraciones(pub.id_publicador);
         this.newConsideracion.set({
           motivo: 'salud',
-          fecha_inicio: new Date().toISOString().split('T')[0],
+          fecha_inicio: hoyIso(),
           descripcion: ''
         });
         this.showToast('Consideración especial otorgada', 'success');
@@ -1167,7 +1197,7 @@ export class PublicadoresListComponent implements OnInit {
         this.fetchPrivilegiosActivos(effectiveId)
       ];
 
-      if (this.isAdminOrGestor()) {
+      if (this.isAdministrador()) {
         requests.push(lastValueFrom(this.http.get<Congregacion[]>('/api/congregaciones/')));
       }
 
@@ -1177,7 +1207,7 @@ export class PublicadoresListComponent implements OnInit {
       const grupos = results[1];
       const allPrivilegios = results[2];
 
-      if (this.isAdminOrGestor() && results[3]) {
+      if (this.isAdministrador() && results[3]) {
         this.congregaciones.set(results[3]);
       }
 
@@ -1275,6 +1305,7 @@ export class PublicadoresListComponent implements OnInit {
         
         const filteredData = Array.from(latestPrivsMap.values());
         this.publicadorPrivilegios.set(filteredData);
+        this.historialPrivilegios.set(data);
 
         // Update GLOBAL MAP so the list updates immediately.
         // Vigente = sin fecha de fin, el mismo criterio que usa el backend y que
@@ -1490,10 +1521,11 @@ export class PublicadoresListComponent implements OnInit {
    */
   private resetPrivilegiosPanelState() {
     this.publicadorPrivilegios.set([]);
+    this.historialPrivilegios.set([]);
     this.eliminableMap.set(new Map());
     this.newPrivilegio.set({
       id_privilegio: null,
-      fecha_inicio: new Date().toISOString().split('T')[0],
+      fecha_inicio: hoyIso(),
       fecha_fin: null
     });
     this.privilegeDropdownOpen.set(false);
@@ -1508,7 +1540,7 @@ export class PublicadoresListComponent implements OnInit {
     this.cancelClosingConsideracion();
     this.newConsideracion.set({
       motivo: 'salud',
-      fecha_inicio: new Date().toISOString().split('T')[0],
+      fecha_inicio: hoyIso(),
       descripcion: ''
     });
   }
@@ -1666,7 +1698,7 @@ export class PublicadoresListComponent implements OnInit {
 
     let fechaInactividad: string | null | undefined = undefined;
     if (nuevoEstadoNombre.includes('inactivo') && !estadoAnteriorNombre.includes('inactivo')) {
-      fechaInactividad = new Date().toISOString().split('T')[0];
+      fechaInactividad = hoyIso();
     } else if (!nuevoEstadoNombre.includes('inactivo') && estadoAnteriorNombre.includes('inactivo')) {
       fechaInactividad = null;
     }
@@ -1868,6 +1900,12 @@ export class PublicadoresListComponent implements OnInit {
 
   selectNewPrivilege(p: Privilegio) {
     this.updateNewPrivilegio('id_privilegio', p.id_privilegio);
+    // El campo Fin solo existe para el Auxiliar: si se cambia a otro, la fecha
+    // que quedó cargada se descarta para que no dispare avisos sobre un campo
+    // deshabilitado.
+    if (!this.isAuxiliarySelected()) {
+      this.updateNewPrivilegio('fecha_fin', null);
+    }
     this.privilegeDropdownOpen.set(false);
   }
 
@@ -2045,7 +2083,7 @@ export class PublicadoresListComponent implements OnInit {
     const p = this.newPrivilegio();
     // Mientras cargan los privilegios del publicador no validamos contra datos
     // frescos: bloqueamos para no enviar una asignación que el backend rechazará.
-    if (this.privilegiosLoading()) return false;
+    if (this.privilegiosLoading() || this.asignandoPrivilegio()) return false;
     return !!p.id_privilegio && !!p.fecha_inicio && !this.privilegioConflictoMsg();
   }
 
@@ -2067,19 +2105,22 @@ export class PublicadoresListComponent implements OnInit {
       payload.fecha_fin = null;
     }
 
+    this.asignandoPrivilegio.set(true);
     this.privilegiosService.createPublicadorPrivilegio(payload).subscribe({
       next: () => {
+        this.asignandoPrivilegio.set(false);
         this.loadPublicadorPrivilegios(pub.id_publicador);
         // Reset form
         this.newPrivilegio.set({
           id_privilegio: null,
-          fecha_inicio: new Date().toISOString().split('T')[0],
+          fecha_inicio: hoyIso(),
           fecha_fin: null
         });
         this.privilegeDropdownOpen.set(false);
         this.showToast('Privilegio asignado correctamente', 'success');
       },
       error: (err) => {
+        this.asignandoPrivilegio.set(false);
         this.showToast('Error: ' + (err.error?.detail || 'No se pudo asignar el privilegio'), 'error');
       }
     });

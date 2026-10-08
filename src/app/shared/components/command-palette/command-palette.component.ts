@@ -1,6 +1,11 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { AuthStore } from '../../../core/auth/auth.store';
+import {
+  puedeVerConfiguracion, puedeVerExhibidores, puedeVerPublicadores, puedeVerReportes,
+  puedeVerReuniones, puedeVerTerritorios,
+} from '../../../core/auth/acceso-modulos';
 import { LucideAngularModule } from 'lucide-angular';
 
 export interface CommandItem {
@@ -11,16 +16,18 @@ export interface CommandItem {
   route?: string | any[];
   action?: () => void;
   shortcut?: string;
+  /** Si existe y devuelve false, el comando no se ofrece (misma regla que el menú). */
+  visible?: (s: AuthStore) => boolean;
 }
 
 const DEFAULT_COMMANDS: CommandItem[] = [
   { key: 'home',         label: 'Ir al Dashboard',           group: 'Navegación', route: '/' },
-  { key: 'publicadores', label: 'Ver Publicadores',          group: 'Navegación', route: '/secretario/publicadores' },
-  { key: 'territorios',  label: 'Ver Territorios',           group: 'Navegación', route: '/territorios' },
-  { key: 'exhibidores',  label: 'Ver Exhibidores',           group: 'Navegación', route: '/exhibidores' },
-  { key: 'reuniones',    label: 'Ver Reuniones',             group: 'Navegación', route: '/reuniones' },
-  { key: 'reportes',     label: 'Ver Reportes',              group: 'Navegación', route: '/reportes' },
-  { key: 'config',       label: 'Configuración',             group: 'Sistema',    route: '/configuracion' },
+  { key: 'publicadores', label: 'Ver Publicadores',          group: 'Navegación', route: '/secretario/publicadores', visible: puedeVerPublicadores },
+  { key: 'territorios',  label: 'Ver Territorios',           group: 'Navegación', route: '/territorios', visible: puedeVerTerritorios },
+  { key: 'exhibidores',  label: 'Ver Exhibidores',           group: 'Navegación', route: '/exhibidores', visible: puedeVerExhibidores },
+  { key: 'reuniones',    label: 'Ver Reuniones',             group: 'Navegación', route: '/reuniones', visible: puedeVerReuniones },
+  { key: 'reportes',     label: 'Ver Reportes',              group: 'Navegación', route: '/reportes', visible: puedeVerReportes },
+  { key: 'config',       label: 'Configuración',             group: 'Sistema',    route: '/configuracion', visible: puedeVerConfiguracion },
   { key: 'perfil',       label: 'Mi Perfil',                 group: 'Sistema',    route: '/perfil' },
   { key: 'design',       label: 'Sistema de Diseño',         group: 'Sistema',    route: '/design-system' },
 ];
@@ -106,12 +113,19 @@ export class CommandPaletteComponent {
   open = signal(false);
   query = signal('');
   active = signal(0);
+  private store = inject(AuthStore);
   commands = signal<CommandItem[]>(DEFAULT_COMMANDS);
+
+  /** Solo los comandos a los que este usuario puede entrar. */
+  private disponibles = computed(() => {
+    this.store.user();
+    return this.commands().filter(c => !c.visible || c.visible(this.store));
+  });
 
   filtered = computed(() => {
     const q = this.query().trim().toLowerCase();
-    if (!q) return this.commands();
-    return this.commands().filter(c => c.label.toLowerCase().includes(q) || c.hint?.toLowerCase().includes(q));
+    if (!q) return this.disponibles();
+    return this.disponibles().filter(c => c.label.toLowerCase().includes(q) || c.hint?.toLowerCase().includes(q));
   });
 
   grouped = computed(() => {

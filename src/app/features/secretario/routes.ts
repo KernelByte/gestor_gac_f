@@ -2,6 +2,7 @@ import { CanActivateFn, Router, Routes } from '@angular/router';
 import { PUBLICADORES_PROVIDERS } from './publicadores/providers';
 import { inject } from '@angular/core';
 import { AuthStore } from '../../core/auth/auth.store';
+import { rolOPermisoGuard } from '../../core/auth/rol-o-permiso.guard';
 
 const publicadoresPermissionGuard: CanActivateFn = () => {
    const store = inject(AuthStore);
@@ -10,12 +11,13 @@ const publicadoresPermissionGuard: CanActivateFn = () => {
    const user = store.user();
    if (!user) return router.createUrlTree(['/login']);
 
-   const roles = (user.roles ?? (user.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
-   const isPrivilegedRole = roles.includes('administrador') ||
-      roles.includes('secretario') ||
-      roles.includes('coordinador') ||
-      roles.includes('superintendente de servicio') ||
-      roles.includes('gestor aplicación');
+   const isPrivilegedRole = store.hasRole('administrador') ||
+      store.hasRole('secretario') ||
+      store.hasRole('coordinador') ||
+      store.hasRole('superintendente de servicio') ||
+      // El Gestor entra por la pestaña "Acceso app" (ROLES_ACCESO_APP en el
+      // backend); el resto de pestañas, solo con su permiso.
+      store.hasRole('gestor aplicación');
 
    const ok = isPrivilegedRole ||
       store.hasPermission('publicadores.ver') ||
@@ -71,6 +73,9 @@ export const SECRETARIO_ROUTES: Routes = [
    {
       path: 'grupos/asignacion',
       title: 'Asignación Grupos',
+      // Escribe grupos: Administrador/Secretario o 'grupos.editar', como el backend.
+      canActivate: [rolOPermisoGuard],
+      data: { roles: ['Administrador', 'Secretario'], permissions: ['grupos.editar'] },
       loadComponent: () => import('./grupos/pages/asignacion-grupos.page').then(m => m.AsignacionGruposPage),
       // Cambios sin guardar: pregunta antes de salir por cualquier vía (Volver, menú, enlaces).
       canDeactivate: [(c: { puedeSalir?: () => boolean | Promise<boolean> }) => c.puedeSalir ? c.puedeSalir() : true]
@@ -78,6 +83,9 @@ export const SECRETARIO_ROUTES: Routes = [
    {
       path: 'grupos/detalle-asignacion/:id',
       title: 'Detalle Asignación',
+      // Escribe grupos: Administrador/Secretario o 'grupos.editar', como el backend.
+      canActivate: [rolOPermisoGuard],
+      data: { roles: ['Administrador', 'Secretario'], permissions: ['grupos.editar'] },
       loadComponent: () => import('./grupos/pages/formulario-asignacion.page').then(m => m.FormularioAsignacionPage)
    },
    {

@@ -10,6 +10,7 @@ import { ToastService } from '../../../../shared/components/toast/toast.service'
 import { HttpClient } from '@angular/common/http';
 import { Usuario } from '../models/usuario.model';
 import { AuthStore } from '../../../../core/auth/auth.store';
+import { etiquetaRol } from '../../../../core/auth/rol-label';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
 import { getInitialAvatarStyle } from '../../../../core/utils/avatar-style.util';
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
@@ -235,31 +236,61 @@ export class UsuariosPage implements OnInit {
    estadosTeocraticos = signal<Estado[]>([]);
 
    // Modo restringido para Coordinador/Secretario
+   // Único rol global: ve todas las congregaciones y asigna cualquier rol.
    isAdmin = computed(() => {
-      const user = this.authStore.user();
-      const roles = user?.roles ?? (user?.rol ? [user.rol] : []);
-      return roles.map(r => (r || '').toLowerCase()).includes('administrador');
+      this.authStore.user();
+      return this.authStore.isAdministrador();
    });
 
+   // Gestor de la congregación: gestiona usuarios y permisos de la suya, como
+   // Coordinador/Secretario (mismo modo restringido), y además sus propios
+   // permisos. Solo el Administrador lo nombra.
    isGestor = computed(() => {
-      const user = this.authStore.user();
-      const roles = user?.roles ?? (user?.rol ? [user.rol] : []);
-      return roles.map(r => (r || '').toLowerCase()).includes('gestor aplicación');
+      this.authStore.user();
+      return this.authStore.isGestor();
    });
 
+   /** Modo restringido a la propia congregación (Gestor, Coordinador, Secretario). */
    isCoordSecretario = computed(() => {
-      if (this.isAdmin() || this.isGestor()) return false;
+      if (this.isAdmin()) return false;
+      if (this.isGestor()) return true;
       const user = this.authStore.user();
       const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
       return roles.some(r => ['secretario', 'coordinador'].includes(r));
    });
 
+   /** Puede dar de alta cuentas: los mismos roles que el backend acepta en
+    *  POST /usuarios/ y /usuarios/crear-publicador (Superintendente de
+    *  servicio no: ni la ruta /usuarios ni el backend lo admiten). */
    isPrivilegedRole = computed(() => {
-      if (this.isAdmin()) return true;
+      if (this.isAdmin() || this.isGestor()) return true;
       const user = this.authStore.user();
       const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
-      return roles.some(r => ['secretario', 'coordinador', 'superintendente de servicio'].includes(r));
+      return roles.some(r => ['secretario', 'coordinador'].includes(r));
    });
+
+   /** Rol de un usuario de la lista que solo el Administrador gestiona. */
+   private esRolReservado(u: Usuario): boolean {
+      const roles = (u.roles ?? (u.rol ? [u.rol] : [])).map(r => (r || '').trim().toLowerCase());
+      return roles.some(r => r === 'administrador' || r === 'gestor aplicación');
+   }
+
+   /** Editar, eliminar o reenviar acceso a esta fila. Espejo del backend:
+    *  quien no es Administrador no toca a un Administrador ni a un Gestor. */
+   puedeGestionarFila(u: Usuario): boolean {
+      return this.isAdmin() || !this.esRolReservado(u);
+   }
+
+   /** Permisos de esta fila: además, el Gestor gestiona los suyos propios. */
+   puedeVerPermisosDe(u: Usuario): boolean {
+      if (!this.canManagePermisos()) return false;
+      if (this.puedeGestionarFila(u)) return true;
+      return this.isGestor() && u.id_usuario === Number(this.authStore.user()?.id);
+   }
+
+   puedeEliminarFila(u: Usuario): boolean {
+      return this.canDeleteUser() && this.puedeGestionarFila(u);
+   }
 
    canManagePermisos = computed(() => {
       const user = this.authStore.user();
@@ -279,31 +310,27 @@ export class UsuariosPage implements OnInit {
 
    /** Espeja ROLES_ESCRITURA_PUBLICADORES del backend (publicador_router.py):
     *  quién puede dar de alta un publicador. Coordinador queda fuera a
-    *  propósito, igual que en el servidor. `hasPermission` ya trata a
-    *  Administrador y Gestor Aplicación como autorizados. */
+    *  propósito, igual que en el servidor. `hasPermission` ya trata al
+    *  Administrador como autorizado; el Gestor necesita el permiso. */
    canCreatePublicador = computed(() => {
       const user = this.authStore.user();
       const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
-      if (roles.some(r => ['administrador', 'gestor aplicación', 'gestor', 'secretario'].includes(r))) return true;
+      if (roles.some(r => ['administrador', 'secretario'].includes(r))) return true;
       return this.authStore.hasPermission('publicadores.editar');
    });
 
    /** Congregación a la que se daría de alta el publicador rápido: la elegida
-    *  en el formulario (Admin/Gestor) o la propia del usuario (Secretario).
+    *  en el formulario (Administrador) o la propia del usuario (el resto).
     *  Es un método y no un computed porque depende de un FormControl, que no
     *  es una señal y no invalidaría la caché de un computed. */
    quickPubCongregacionId(): number | null {
-      if (this.isAdmin() || this.isGestor()) {
+      if (this.isAdmin()) {
          return this.userForm.get('id_congregacion')?.value ?? null;
       }
       return this.currentUserCongregacion();
    }
 
-   showCongregacionCol = computed(() => {
-      const user = this.authStore.user();
-      const roles = user?.roles ?? (user?.rol ? [user.rol] : []);
-      return roles.map(r => (r || '').toLowerCase()).some(r => r.includes('administrador') || r.includes('gestor'));
-   });
+   showCongregacionCol = computed(() => this.isAdmin());
 
    // Nota: aquí había un filtro por IDs fijos [2, 3, 6] documentado como
    // "2=Coordinador, 3=Secretario", pero los IDs reales del seed son
@@ -314,7 +341,7 @@ export class UsuariosPage implements OnInit {
 
    getCongregacionNameForUser(u: Usuario): string {
       const roles = u.roles ?? (u.rol ? [u.rol] : []);
-      const isGlobal = roles.map(r => (r || '').toLowerCase()).some(r => r.includes('administrador') || r.includes('gestor'));
+      const isGlobal = roles.map(r => (r || '').toLowerCase()).some(r => r.includes('administrador'));
       if (isGlobal) return 'Sistema Central';
 
       if (!u.id_congregacion) return 'Sin asignación';
@@ -326,6 +353,7 @@ export class UsuariosPage implements OnInit {
    saving = signal(false);
    showDeleteDialog = signal(false);
    userToDelete = signal<Usuario | null>(null);
+   userToMail = signal<Usuario | null>(null);
    showPassword = signal(false);
    editingUser = signal<Usuario | null>(null);
 
@@ -505,9 +533,10 @@ export class UsuariosPage implements OnInit {
       const selectedRole = this.roles().find(r => r.id_rol === roleId);
       if (!selectedRole) return;
 
-      // Usar nombre_rol o descripcion_rol para identificar si el rol es global
-      const roleName = (selectedRole.nombre_rol || selectedRole.descripcion_rol || '').toLowerCase();
-      const isGlobal = roleName.includes('administrador') || roleName.includes('gestor');
+      // Solo el Administrador es global (sin congregación ni publicador). El
+      // Gestor Aplicación es de congregación: publicador obligatorio.
+      const roleName = (selectedRole.nombre_rol || '').trim().toLowerCase();
+      const isGlobal = roleName === 'administrador';
 
       const congControl = this.userForm.get('id_congregacion');
       const pubControl = this.userForm.get('id_usuario_publicador');
@@ -803,8 +832,8 @@ export class UsuariosPage implements OnInit {
       try {
          // Usar endpoint apropiado según rol del usuario
          let data: Usuario[];
-         if (this.isAdmin() || this.isGestor()) {
-            // Admin/Gestor: ver todos los usuarios
+         if (this.isAdmin()) {
+            // Administrador: ver todos los usuarios
             data = await lastValueFrom(this.service.getUsuarios());
          } else {
             // Coordinador/Secretario: solo usuarios de su congregación
@@ -819,8 +848,8 @@ export class UsuariosPage implements OnInit {
    async loadAuxData() {
       // Intentar cargar cada uno por separado para que el fallo de uno no bloquee los demás
 
-      if (this.isAdmin() || this.isGestor()) {
-         // Admin/Gestor: cargar todos los roles desde el API
+      if (this.isAdmin()) {
+         // Administrador: cargar todos los roles desde el API
          try {
             const roles = await lastValueFrom(this.service.getRoles());
             this.roles.set(roles || []);
@@ -919,8 +948,8 @@ export class UsuariosPage implements OnInit {
       this.userForm.get('confirmPassword')?.setValidators([Validators.required]);
 
       try {
-         if (this.isAdmin() || this.isGestor()) {
-            // Admin/Gestor: opcional hasta que seleccione rol que lo requiera
+         if (this.isAdmin()) {
+            // Administrador: opcional hasta que seleccione rol que lo requiera
             this.userForm.get('id_congregacion')?.clearValidators();
             this.userForm.get('id_usuario_publicador')?.clearValidators();
             this.userForm.get('id_rol_usuario')?.setValidators([Validators.required]);
@@ -957,6 +986,9 @@ export class UsuariosPage implements OnInit {
    }
 
    editUsuario(u: Usuario) {
+      // Administrador y Gestores solo los edita el Administrador (el backend
+      // respondería 403 al guardar).
+      if (!this.puedeGestionarFila(u)) return;
       this.closeFloatingDropdowns();
       this.resetQuickPubForm();
       this.activeTab.set('datos');
@@ -1022,6 +1054,24 @@ export class UsuariosPage implements OnInit {
       input.setSelectionRange(inicio, fin);
    }
 
+   /** El rol es único: nombrar Gestor a un Secretario, Coordinador o
+    *  Superintendente le quita ese rol. Se avisa antes de guardar. */
+   private confirmarCambioAGestor(u: Usuario, idRolNuevo: number | null | undefined): boolean {
+      const nuevo = this.roles().find(r => r.id_rol === idRolNuevo);
+      if ((nuevo?.nombre_rol || '').trim().toLowerCase() !== 'gestor aplicación') return true;
+      if (u.id_rol_usuario === idRolNuevo) return true;
+      const actual = (u.rol || this.roles().find(r => r.id_rol === u.id_rol_usuario)?.nombre_rol || '').trim();
+      const conMando = ['coordinador', 'secretario', 'superintendente de servicio']
+         .some(r => actual.toLowerCase().includes(r));
+      if (!conMando) return true;
+      return confirm(
+         `${u.nombre} dejará de tener el rol ${actual}.\n\n` +
+         'Como Gestor de la congregación seguirá siendo publicador y podrá gestionar ' +
+         'usuarios y permisos, pero lo demás que hacía como ' + actual +
+         ' pasará a depender de los permisos que tenga asignados.\n\n¿Continuar?'
+      );
+   }
+
    async save() {
       this.userForm.markAllAsTouched();
       if (this.userForm.invalid) {
@@ -1063,9 +1113,13 @@ export class UsuariosPage implements OnInit {
                id_identificacion: formValue.id_identificacion
             };
 
-            // Admin/Gestor: pueden editar cualquier campo crítico
+            // Administrador: puede editar cualquier campo crítico
             // Coordinador/Secretario: pueden cambiar rol entre 2, 3 o 6 (validado en servidor)
-            if (this.isAdmin() || this.isGestor()) {
+            if (this.isAdmin()) {
+               if (!this.confirmarCambioAGestor(this.editingUser()!, formValue.id_rol_usuario)) {
+                  this.saving.set(false);
+                  return;
+               }
                updatePayload.id_rol_usuario = formValue.id_rol_usuario;
                updatePayload.id_usuario_publicador = formValue.id_usuario_publicador;
             } else if (this.isCoordSecretario()) {
@@ -1085,8 +1139,8 @@ export class UsuariosPage implements OnInit {
             // --- Modo creación ---
             let newUser: Usuario;
 
-            if (this.isAdmin() || this.isGestor()) {
-               // Admin/Gestor: crear usuario con cualquier rol
+            if (this.isAdmin()) {
+               // Administrador: crear usuario con cualquier rol
                const createPayload = {
                   nombre: formValue.nombre,
                   correo: formValue.correo,
@@ -1159,13 +1213,13 @@ export class UsuariosPage implements OnInit {
 
    getRolName(u: Usuario): string {
       // Priority 1: Direct role name if available
-      if (u.rol) return u.rol;
+      if (u.rol) return etiquetaRol(u.rol);
       // Priority 2: Roles array
-      if (u.roles && u.roles.length > 0) return u.roles[0];
+      if (u.roles && u.roles.length > 0) return etiquetaRol(u.roles[0]);
       // Priority 3: Lookup by ID in loaded roles
       if (u.id_rol_usuario) {
          const r = this.roles().find(r => r.id_rol === u.id_rol_usuario);
-         if (r) return r.nombre_rol;
+         if (r) return etiquetaRol(r.nombre_rol);
 
          // Fallback: Si el rol es 6 (Usuario Publicador) y no tenemos roles cargados
          if (u.id_rol_usuario === 6) return 'Usuario Publicador';
@@ -1318,6 +1372,23 @@ export class UsuariosPage implements OnInit {
       } finally {
          this.sendingWA.set(false);
       }
+   }
+
+   /** Abre la confirmación: enviar el acceso regenera la contraseña temporal. */
+   pedirConfirmacionCorreo(u: Usuario) {
+      if (!u.id_usuario) return;
+      this.userToMail.set(u);
+   }
+
+   cancelarEnvioCorreo() {
+      this.userToMail.set(null);
+   }
+
+   async confirmarEnvioCorreo() {
+      const u = this.userToMail();
+      if (!u) return;
+      this.userToMail.set(null);
+      await this.sendAccesoCorreo(u);
    }
 
    /** Misma idea que `sendWhatsApp`, pero por correo — no depende de tener teléfono. */

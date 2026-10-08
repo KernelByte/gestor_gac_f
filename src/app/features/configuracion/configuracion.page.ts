@@ -137,7 +137,7 @@ export class ConfiguracionPage implements OnInit {
    /** Controla visibilidad del modal de importación. */
    showImportModal = signal(false);
 
-   /** True cuando el rol es global (Admin/Gestor) y NO debe importar desde esta pantalla. */
+   /** True cuando el rol es global (Administrador) y NO debe importar desde esta pantalla. */
    isGlobalRole = signal(false);
 
    readonly diasEntreSemana = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
@@ -264,7 +264,7 @@ export class ConfiguracionPage implements OnInit {
       const user = this.auth.user();
       if (!user) return;
       const rol = (user.rol || '').trim().toLowerCase();
-      this.isGlobalRole.set(rol === 'administrador' || rol === 'gestor aplicación');
+      this.isGlobalRole.set(rol === 'administrador');
    }
 
    loadPeriodos() {
@@ -412,7 +412,7 @@ export class ConfiguracionPage implements OnInit {
    canEdit(): boolean {
       const user = this.auth.user();
       if (!user) return false;
-      const allowedRoles = ['Administrador', 'Gestor Aplicación', 'Coordinador', 'Secretario'];
+      const allowedRoles = ['Administrador', 'Coordinador', 'Secretario'];
       if (user.rol && allowedRoles.includes(user.rol)) return true;
       return this.auth.hasPermission('configuracion.editar');
    }

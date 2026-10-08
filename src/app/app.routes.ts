@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { roleGuard } from './core/auth/role.guard';
+import { permissionGuard } from './core/auth/permission.guard';
+import { rolOPermisoGuard } from './core/auth/rol-o-permiso.guard';
 
 export const routes: Routes = [
   { path: 'login', title: 'Iniciar Sesión', loadComponent: () => import('./features/auth/login.page').then(m => m.LoginPage) },
@@ -31,34 +33,42 @@ export const routes: Routes = [
         path: 'usuarios',
         title: 'Usuarios',
         canActivate: [roleGuard],
-        data: { roles: ['Administrador', 'Coordinador', 'Secretario'] },
+        data: { roles: ['Administrador', 'Gestor Aplicación', 'Coordinador', 'Secretario'] },
         loadComponent: () => import('./features/basicas/usuarios/pages/usuarios.page').then(m => m.UsuariosPage),
       },
       {
         path: 'usuarios/:id/permisos',
         title: 'Permisos de Usuario',
         canActivate: [roleGuard],
-        data: { roles: ['Administrador', 'Coordinador', 'Secretario'] },
+        data: { roles: ['Administrador', 'Gestor Aplicación', 'Coordinador', 'Secretario'] },
         loadComponent: () => import('./features/basicas/usuarios/pages/usuario-permisos/usuario-permisos.page').then(m => m.UsuarioPermisosPage),
       },
       {
         path: 'territorios/mapa',
         title: 'Mapa General de Territorios',
+        canActivate: [permissionGuard],
+        data: { permissions: ['territorios.ver'] },
         loadComponent: () => import('./features/territorios/pages/mapa-general.page').then(m => m.MapaGeneralPage),
       },
       {
         path: 'territorios',
         title: 'Territorios',
+        canActivate: [permissionGuard],
+        data: { permissions: ['territorios.ver'] },
         loadComponent: () => import('./features/territorios/pages/territorios.page').then(m => m.TerritoriosPage),
       },
       {
         path: 'horarios',
         title: 'Horarios de Predicación',
+        canActivate: [permissionGuard],
+        data: { permissions: ['territorios.ver'] },
         loadComponent: () => import('./features/territorios/pages/horarios.page').then(m => m.HorariosPage),
       },
       {
         path: 'seguimiento-predicacion',
         title: 'Predicación',
+        canActivate: [permissionGuard],
+        data: { permissions: ['territorios.ver'] },
         loadComponent: () => import('./features/territorios/pages/seguimiento-predicacion.page').then(m => m.SeguimientoPredicacionPage),
       },
       {
@@ -100,8 +110,10 @@ export const routes: Routes = [
       {
         path: 'configuracion',
         title: 'Configuración',
-        canActivate: [roleGuard],
-        data: { roles: ['Administrador', 'Secretario', 'Coordinador'] },
+        // Rol o permiso, igual que el backend (ROLES_CONFIG o configuracion.ver):
+        // el menú ya mostraba el enlace con el permiso y la ruta lo rechazaba.
+        canActivate: [rolOPermisoGuard],
+        data: { roles: ['Administrador', 'Secretario', 'Coordinador'], permissions: ['configuracion.ver'] },
         loadComponent: () => import('./features/configuracion/configuracion.page').then(m => m.ConfiguracionPage),
       },
       {

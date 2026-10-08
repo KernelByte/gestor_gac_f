@@ -41,7 +41,8 @@ export interface ImpactoEliminacion {
     nombre_usuario?: string | null;
     correo_usuario?: string | null;
     rol_usuario?: string | null;
-    /** false en Administrador / Gestor: la cuenta se conserva y solo se desvincula. */
+    /** false en Administrador / Gestor: la cuenta se conserva y solo se desvincula
+     *  (al Gestor solo lo gestiona el Administrador). */
     se_elimina: boolean;
   } | null;
   grupo: { id_grupo: number; nombre_grupo: string } | null;

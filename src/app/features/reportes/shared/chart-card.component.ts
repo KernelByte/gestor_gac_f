@@ -9,7 +9,10 @@ import type { EChartsOption } from 'echarts';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, NgxEchartsDirective],
   styles: [`
-    :host { display: block; }
+    :host { display: flex; flex-direction: column; }
+    .grafica { flex: 1 1 auto; min-height: 0; }
+    /* Sin alto fijo, la gráfica ocupa lo que le deja la tarjeta. */
+    .cuerpo-fluido { flex: 1 1 0; min-height: 8rem; }
 
     /* Mismo idioma que la cifra de cabecera: rótulo en versalitas, filete
        en vez de sombra. El gráfico es el contenido; la tarjeta se calla. */
@@ -54,7 +57,8 @@ import type { EChartsOption } from 'echarts';
            [options]="option"
            [autoResize]="true"
            class="w-full"
-           [style.height.px]="height"></div>
+           [class.cuerpo-fluido]="!height"
+           [style.height.px]="height || null"></div>
       <ng-template #emptyTpl>
         <div class="flex items-center justify-center text-sm text-slate-400 dark:text-slate-500"
              [style.height.px]="height">
@@ -68,5 +72,6 @@ export class ChartCardComponent {
   @Input() title = '';
   @Input() subtitle?: string;
   @Input() option: EChartsOption | null = null;
-  @Input() height = 280;
+  /** Alto en px; sin valor, la gráfica rellena la tarjeta. */
+  @Input() height: number | null = 280;
 }

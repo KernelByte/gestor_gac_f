@@ -11,7 +11,7 @@ import { CatalogoDiscurso, CatalogoPublicacion } from '../models/discursos.model
  *
  * Carga los bosquejos del S-34 desde el archivo .jwpub. El catálogo es global —
  * la misma publicación para todas las congregaciones—, así que la pestaña sólo
- * se muestra a Administrador y Gestor de Aplicación, igual que Plantillas. Lo
+ * se muestra al Administrador, igual que Plantillas. Lo
  * que se importa aquí es lo que autocompleta los títulos en la programación de
  * discursos públicos.
  */

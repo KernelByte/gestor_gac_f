@@ -734,7 +734,7 @@
                                                   {{ role.label }}
                                               </span>
                                          </ng-container>
-                                         <span *ngIf="isAdminOrGestor()" class="text-[0.625rem] text-slate-300 dark:text-slate-600 font-medium">#{{ p.id_publicador }}</span>
+                                         <span *ngIf="isAdministrador()" class="text-[0.625rem] text-slate-300 dark:text-slate-600 font-medium">#{{ p.id_publicador }}</span>
                                       </div>
                                   </div>
                             </div>
@@ -1396,7 +1396,7 @@
                            </div>
 
                            <div class="grid grid-cols-2 gap-4">
-                               <div *ngIf="isAdminOrGestor()" class="col-span-2 sm:col-span-1 space-y-2">
+                               <div *ngIf="isAdministrador()" class="col-span-2 sm:col-span-1 space-y-2">
                                     <label class="flex items-center gap-2 text-[0.6875rem] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                                        <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
                                        Congregación
@@ -1618,10 +1618,10 @@
                                        </div>
                                    </div>
                                </div>
-                               <div *ngIf="privilegiosLoading()" class="text-center py-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                               <div *ngIf="privilegiosLoading()" class="text-center py-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                                    <p class="text-xs text-slate-400">Cargando privilegios…</p>
                                </div>
-                               <div *ngIf="!privilegiosLoading() && publicadorPrivilegios().length === 0" class="text-center py-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                               <div *ngIf="!privilegiosLoading() && publicadorPrivilegios().length === 0" class="text-center py-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                                    <p class="text-xs text-slate-400">Sin privilegios asignados</p>
                                </div>
                            </div>
@@ -2414,11 +2414,11 @@
                   <span *ngIf="u.se_elimina">
                     Usuario del sistema: <strong>{{ u.nombre_usuario }}</strong>
                     <span *ngIf="u.correo_usuario"> ({{ u.correo_usuario }})</span>
-                    <span *ngIf="u.rol_usuario"> · {{ u.rol_usuario }}</span>
+                    <span *ngIf="u.rol_usuario"> · {{ etiquetaRol(u.rol_usuario) }}</span>
                     — se elimina la cuenta y perderá el acceso.
                   </span>
                   <span *ngIf="!u.se_elimina">
-                    Cuenta de <strong>{{ u.nombre_usuario }}</strong> ({{ u.rol_usuario }}): se conserva y solo se desvincula de este publicador.
+                    Cuenta de <strong>{{ u.nombre_usuario }}</strong> ({{ etiquetaRol(u.rol_usuario) }}): se conserva y solo se desvincula de este publicador.
                   </span>
                 </li>
                 <li *ngIf="imp.grupo as g" class="flex items-start gap-2">

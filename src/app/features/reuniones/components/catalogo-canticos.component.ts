@@ -11,8 +11,8 @@ import { CatalogoCantico, CatalogoCanticosPublicacion } from '../models/discurso
  *
  * Carga los cánticos de "Cantemos con gozo a Jehová" desde el PDF "sin
  * partitura" (se descarga de jw.org). Igual que el catálogo de discursos: es
- * global, no depende de la congregación, así que sólo lo ve Administrador y
- * Gestor de Aplicación. Lo que se importa aquí es lo que autocompleta el
+ * global, no depende de la congregación, así que sólo lo ve el Administrador.
+ * Lo que se importa aquí es lo que autocompleta el
  * campo Cántico al programar un discurso entrante.
  */
 @Component({

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed, OnDestroy, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, Subscription, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { TokenService } from '../auth/token.service';
 import { Notificacion } from './notificacion.model';
@@ -32,6 +32,8 @@ export class NotificacionesService implements OnDestroy {
   private reconnectTimer: any = null;
   private visibilityHandler: (() => void) | null = null;
   private connected = false;
+  /** Petición de ticket en vuelo: se cancela al cerrar para no abrir un stream huérfano. */
+  private ticketSub: Subscription | null = null;
 
   /**
    * Inicia la conexión SSE y suscribe a eventos de visibilidad.
@@ -43,7 +45,33 @@ export class NotificacionesService implements OnDestroy {
 
     this._closeExisting();
 
-    const url = `${environment.apiUrl}/notificaciones/stream?token=${encodeURIComponent(token)}`;
+    // EventSource no admite cabeceras: en vez de poner el JWT en la URL (queda
+    // en los logs de acceso) se pide un ticket de un solo uso con el token en
+    // la cabecera, vía el interceptor. Cada reconexión pide uno nuevo.
+    this.ticketSub = this.http
+      .post<{ ticket: string }>(`${environment.apiUrl}/notificaciones/stream-ticket`, {})
+      .subscribe({
+        next: ({ ticket }) => this._abrirStream(ticket),
+        error: () => this._programarReconexion(),
+      });
+
+    // Suscribir al visibilitychange para pausar/reanudar
+    if (!this.visibilityHandler) {
+      this.visibilityHandler = () => this._onVisibilityChange();
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
+  }
+
+  private _programarReconexion(): void {
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = setTimeout(() => {
+      this.connectSSE();
+    }, this.reconnectDelay);
+    this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.maxReconnectDelay);
+  }
+
+  private _abrirStream(ticket: string): void {
+    const url = `${environment.apiUrl}/notificaciones/stream?ticket=${encodeURIComponent(ticket)}`;
 
     // Ejecutar fuera de la zona de Angular para evitar innecesarios
     // ciclos de detección de cambios en cada evento SSE
@@ -67,12 +95,10 @@ export class NotificacionesService implements OnDestroy {
       });
 
       this.eventSource.onerror = () => {
+        // El ticket ya se gastó: reconectar pidiendo uno nuevo (con backoff),
+        // no dejar que EventSource reintente la misma URL.
         this._closeExisting();
-        // Reconexión con exponential backoff
-        this.reconnectTimer = setTimeout(() => {
-          this.connectSSE();
-        }, this.reconnectDelay);
-        this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.maxReconnectDelay);
+        this._programarReconexion();
       };
 
       this.eventSource.onopen = () => {
@@ -80,12 +106,6 @@ export class NotificacionesService implements OnDestroy {
         this.reconnectDelay = 1000; // reset
       };
     });
-
-    // Suscribir al visibilitychange para pausar/reanudar
-    if (!this.visibilityHandler) {
-      this.visibilityHandler = () => this._onVisibilityChange();
-      document.addEventListener('visibilitychange', this.visibilityHandler);
-    }
   }
 
   /**
@@ -133,6 +153,8 @@ export class NotificacionesService implements OnDestroy {
   // ── Privados ────────────────────────────────────────────────
 
   private _closeExisting(): void {
+    this.ticketSub?.unsubscribe();
+    this.ticketSub = null;
     if (this.eventSource) {
       this.eventSource.close();
       this.eventSource = null;

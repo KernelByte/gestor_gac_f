@@ -8,6 +8,7 @@ import { Rol } from './models/rol.model';
 import { lastValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
+import { etiquetaRol } from '../../../core/auth/rol-label';
 
 @Component({
   standalone: true,
@@ -201,7 +202,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
                         {{ rol.nombre_rol.charAt(0).toUpperCase() }}
                       </div>
                       <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-tight break-words">{{ rol.nombre_rol }}</p>
+                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-tight break-words">{{ etiquetaRol(rol.nombre_rol) }}</p>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 break-words">{{ rol.descripcion_rol || 'Sin descripción' }}</p>
                       </div>
                     </div>
@@ -324,7 +325,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
                           {{ rol.nombre_rol.charAt(0).toUpperCase() }}
                         </div>
                         <div>
-                          <p class="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ rol.nombre_rol }}</p>
+                          <p class="text-sm font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ etiquetaRol(rol.nombre_rol) }}</p>
                           <p class="text-[0.6875rem] font-medium text-slate-500 dark:text-slate-500 mt-0.5">ID: {{ rol.id_rol }}</p>
                         </div>
                       </div>
@@ -568,7 +569,7 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
            <h3 id="delete-modal-title" class="text-2xl font-display font-black text-slate-900 dark:text-white mb-3">Eliminar Rol</h3>
 
            <p class="text-[0.9375rem] leading-relaxed text-slate-500 dark:text-slate-400 mb-8 px-2">
-              ¿Estás seguro de eliminar el rol <strong class="text-slate-800 dark:text-white font-bold">"{{ rolToDelete()?.nombre_rol }}"</strong>? Esta acción no se puede deshacer.
+              ¿Estás seguro de eliminar el rol <strong class="text-slate-800 dark:text-white font-bold">"{{ etiquetaRol(rolToDelete()?.nombre_rol) }}"</strong>? Esta acción no se puede deshacer.
            </p>
 
            <div class="flex gap-3 w-full">
@@ -588,6 +589,9 @@ import { getInitialAvatarStyle } from '../../../core/utils/avatar-style.util';
   `
 })
 export class RolesPage implements OnInit {
+  /** Texto visible del rol (el nombre real es un identificador). */
+  etiquetaRol = etiquetaRol;
+
   private rolesService = inject(RolesService);
   private fb = inject(FormBuilder);
   private router = inject(Router);

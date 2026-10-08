@@ -21,9 +21,8 @@ export class CongregacionContextService {
   effectiveCongregacionId = computed(() => {
     const user = this.authStore.user();
     if (!user) return null;
-    const isGlobalRole = user.rol === 'Administrador' || user.rol === 'Gestor Aplicación'
-      || user.roles?.includes('Administrador') || user.roles?.includes('Gestor Aplicación');
-    if (!isGlobalRole) return user.id_congregacion ?? null;
+    // Solo el Administrador elige congregación; el Gestor usa la suya.
+    if (!this.authStore.isAdministrador()) return user.id_congregacion ?? null;
     return this.selectedCongregacionId();
   });
 
@@ -64,10 +63,7 @@ export class CongregacionContextService {
   }
 
   isAdmin(): boolean {
-    const user = this.authStore.user();
-    if (!user) return false;
-    return !!(user.rol === 'Administrador' || user.rol === 'Gestor Aplicación'
-      || user.roles?.includes('Administrador') || user.roles?.includes('Gestor Aplicación'));
+    return this.authStore.isAdministrador();
   }
 
   listCongregaciones() {

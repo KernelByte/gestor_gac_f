@@ -28,6 +28,16 @@
      saturado de los cuatro — no es un logro ni una alarma, es "aquí no se
      mide", y no debe competir con pos/aviso/neg en la misma columna. */
   --exento: oklch(55% 0.07 195);
+  /* Horas de crédito y meta reducida por nombramiento a mitad de año: el
+     violeta de marca en versión dato (mismo valor que la matriz de
+     precursores, que lo declaraba solo para sí). */
+  --credito: oklch(52% 0.17 295);
+  /* Acento del módulo Publicadores: el naranja de marca de toda la app
+     (--color-brand-orange, #f97316 = bg-orange-500), el MISMO en claro y en
+     oscuro. Una pantalla del módulo lo adopta con
+     `--acento: var(--acento-publicadores)` en su :host. Sobre blanco da
+     ≈2,8:1: vale para rellenos, filetes e iconos, no para texto pequeño. */
+  --acento-publicadores: var(--color-brand-orange, #f97316);
 
   /* Velo bajo diálogos y hojas: oscuro en ambos temas (aísla el primer
      plano sin "apagar" la pantalla del todo). */
@@ -53,6 +63,8 @@
   --aviso:  oklch(80% 0.13 75);
   --neg:    oklch(71% 0.14 25);
   --exento: oklch(75% 0.06 195);
+  --credito: oklch(73% 0.12 295);
+  --acento-publicadores: var(--color-brand-orange, #f97316);
 
   --velo: oklch(8% 0.02 265 / 0.62);
 }

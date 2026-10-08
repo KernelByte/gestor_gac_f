@@ -8,6 +8,7 @@ import {
   lineOption,
   multiBarOption,
   multiLineOption,
+  pieOption,
   pyramidOption,
 } from '../../shared/chart-options';
 import { EstadoBadgeComponent } from '../precursores/components/estado-badge.component';
@@ -48,7 +49,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
 
       <ng-container *ngIf="data() as d; else loadingTpl">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <app-kpi-card *ngFor="let k of d.kpis" [label]="k.label" [value]="k.value" [hint]="k.hint" />
+          <app-kpi-card *ngFor="let k of d.kpis" compacta [label]="k.label" [value]="k.value" [hint]="k.hint" />
         </div>
 
         <!-- ── Actividad y riesgo ─────────────────────────────────────── -->
@@ -197,21 +198,24 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
         </h2>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <app-chart-card title="Etapas de vida"
+                          subtitle="Niños (0-12), jóvenes (13-29), adultos (30-59) y mayores (60+)"
+                          [option]="etapasOption()"
+                          [height]="320" />
           <app-chart-card title="Pirámide de edad y género"
                           subtitle="Hombres a la izquierda, mujeres a la derecha"
                           [option]="piramideOption()"
                           [height]="320" />
-          <app-chart-card title="Publicadores por grupo"
-                          subtitle="Cantidad de publicadores activos"
-                          [option]="grupoOption()"
-                          [height]="320" />
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <app-chart-card title="Publicadores por grupo"
+                          subtitle="Cantidad de publicadores activos"
+                          [option]="grupoOption()" />
           <app-chart-card title="Edad promedio por grupo"
                           subtitle="Grupos que envejecen y podrían necesitar ayuda práctica"
                           [option]="edadGrupoOption()" />
-          <app-chart-card title="Horas promedio por rango de edad"
+          <app-chart-card class="lg:col-span-2" title="Horas promedio por rango de edad"
                           subtitle="Promedio de horas por informe con participación (año de servicio)"
                           [option]="horasEdadOption()" />
         </div>
@@ -289,6 +293,21 @@ export class PublicadoresPage {
 
   // ── Demografía ─────────────────────────────────────────────────────
   readonly piramideOption = computed(() => pyramidOption(this.data()?.piramide_edad ?? []));
+  readonly etapasOption = computed(() => {
+    const etapas = [
+      { label: 'Niños', rangos: ['0-12'] },
+      { label: 'Jóvenes', rangos: ['13-17', '18-29'] },
+      { label: 'Adultos', rangos: ['30-44', '45-59'] },
+      { label: 'Mayores', rangos: ['60+'] },
+    ];
+    const piramide = this.data()?.piramide_edad ?? [];
+    return pieOption(etapas.map(e => ({
+      label: e.label,
+      value: piramide
+        .filter(p => e.rangos.includes(p.rango))
+        .reduce((t, p) => t + p.masculino + p.femenino, 0),
+    })).filter(e => e.value > 0));
+  });
   readonly grupoOption = computed(() =>
     barOption(this.data()?.distribucion_grupo ?? [], { horizontal: true }));
   readonly edadGrupoOption = computed(() =>

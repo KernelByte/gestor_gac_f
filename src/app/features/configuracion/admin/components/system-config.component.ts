@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
+import { etiquetaRol } from '../../../../core/auth/rol-label';
 
 interface SesionActiva {
   user_id: string;
@@ -160,7 +161,7 @@ interface SesionesResponse {
                   </span>
                 </div>
                 <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                  <span *ngIf="s.rol" class="text-[0.6875rem] font-semibold text-slate-500 dark:text-slate-400">{{ s.rol }}</span>
+                  <span *ngIf="s.rol" class="text-[0.6875rem] font-semibold text-slate-500 dark:text-slate-400">{{ etiquetaRol(s.rol) }}</span>
                   <span *ngIf="s.rol && s.congregacion" class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
                   <span *ngIf="s.congregacion" class="text-[0.6875rem] text-slate-400 dark:text-slate-500">{{ s.congregacion }}</span>
                 </div>
@@ -251,6 +252,9 @@ interface SesionesResponse {
   `
 })
 export class SystemConfigComponent implements OnInit, OnDestroy {
+  /** Texto visible del rol (el nombre real es un identificador). */
+  etiquetaRol = etiquetaRol;
+
   private http = inject(HttpClient);
   private pollInterval: ReturnType<typeof setInterval> | null = null;
 

@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { forkJoin, timeout } from 'rxjs';
 import { TerritoriosService } from '../services/territorios.service';
+import { AuthStore } from '../../../core/auth/auth.store';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
 import { TerritorioCardComponent } from '../components/territorio-card.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -48,7 +49,7 @@ import {
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
           Ver Mapa General
         </button>
-        <button (click)="openCreateModal()" class="btn-primary-green focus-ring-green whitespace-nowrap">
+        <button *ngIf="puedeEditar()" (click)="openCreateModal()" class="btn-primary-green focus-ring-green whitespace-nowrap">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nuevo Territorio
         </button>
@@ -167,7 +168,7 @@ import {
                     }
                   </div>
                   @if (!searchQuery && !estadoFilter) {
-                    <button (click)="openCreateModal()" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm flex items-center gap-1.5">
+                    <button *ngIf="puedeEditar()" (click)="openCreateModal()" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm flex items-center gap-1.5">
                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       Nuevo Territorio
                     </button>
@@ -355,7 +356,7 @@ import {
                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate leading-tight">{{ p.nombre }}</p>
                            <p class="text-[9px] text-slate-400 uppercase font-semibold tracking-wide">{{ p.tipo }}</p>
                          </div>
-                         <button (click)="deletePunto(p.id_punto)" class="p-1 text-slate-200 hover:text-red-500 dark:text-slate-600 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                         <button *ngIf="puedeEditar()" (click)="deletePunto(p.id_punto)" class="p-1 text-slate-200 hover:text-red-500 dark:text-slate-600 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                          </button>
                        </div>
@@ -439,12 +440,12 @@ import {
                            }
                          </div>
                          <!-- Edit pencil button -->
-                         <button (click)="startEditManzana(m)"
+                         <button *ngIf="puedeEditar()" (click)="startEditManzana(m)"
                            class="p-1.5 text-slate-300 hover:text-blue-500 dark:text-slate-600 dark:hover:text-blue-400 rounded-lg transition-colors shrink-0">
                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                          </button>
                          <!-- Delete button -->
-                         <button (click)="deleteManzana(m.id_manzana)"
+                         <button *ngIf="puedeEditar()" (click)="deleteManzana(m.id_manzana)"
                            [disabled]="manzanaDeleting() === m.id_manzana"
                            class="p-1.5 text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 rounded-lg transition-colors shrink-0 disabled:opacity-50">
                            @if (manzanaDeleting() === m.id_manzana) {
@@ -499,7 +500,7 @@ import {
                  <div class="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-6 text-center">
                    <svg class="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Disponible para asignar</p>
-                   <button (click)="openAsignarModal()" class="w-full py-2.5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm shadow-emerald-900/10 flex items-center justify-center gap-2">
+                   <button *ngIf="puedeEditar()" (click)="openAsignarModal()" class="w-full py-2.5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm shadow-emerald-900/10 flex items-center justify-center gap-2">
                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                      Asignar Territorio
                    </button>
@@ -535,12 +536,12 @@ import {
 
            <!-- Footer Actions -->
            <div class="p-4 border-t border-slate-100 dark:border-slate-700/50 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm grid grid-cols-3 gap-2">
-              <button (click)="openEditInfoModal()"
+              <button *ngIf="puedeEditar()" (click)="openEditInfoModal()"
                 class="py-2.5 bg-slate-50 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-all flex flex-col items-center justify-center gap-1 hover:border-slate-300 dark:hover:border-slate-500">
                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                  Editar
               </button>
-              <button (click)="openMapEditor()"
+              <button *ngIf="puedeEditar()" (click)="openMapEditor()"
                 class="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm shadow-emerald-900/15 transition-all flex flex-col items-center justify-center gap-1 active:scale-95">
                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                  Dibujar
@@ -858,6 +859,13 @@ import {
 })
 export class TerritoriosPage implements OnInit {
    private territoriosService = inject(TerritoriosService);
+   private authStore = inject(AuthStore);
+   /** Crear, editar o borrar del catálogo exige 'territorios.editar' (el
+    *  backend también). Registrar la predicación y devolver solo 'ver'. */
+   puedeEditar = computed(() => {
+      this.authStore.user();
+      return this.authStore.hasPermission('territorios.editar');
+   });
    private router = inject(Router);
 
    searchQuery = '';

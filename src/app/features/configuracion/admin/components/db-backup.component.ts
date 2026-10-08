@@ -319,7 +319,7 @@ interface CongregacionOption {
                         <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Respaldo autom&aacute;tico</h3>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Programar respaldos peri&oacute;dicos de la base de datos</p>
                      </div>
-                     <button (click)="scheduleHabilitado.set(!scheduleHabilitado())" type="button"
+                     <button (click)="toggleHabilitado()" type="button"
                         class="relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none"
                         [ngClass]="scheduleHabilitado() ? 'bg-brand-purple' : 'bg-slate-300 dark:bg-slate-600'">
                         <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
@@ -863,6 +863,13 @@ export class DbBackupComponent implements OnInit {
             this.showNotification('Error al eliminar el respaldo', 'error');
          }
       });
+   }
+
+   toggleHabilitado() {
+      const nuevo = !this.scheduleHabilitado();
+      this.scheduleHabilitado.set(nuevo);
+      // Al apagar no queda formulario ni botón "Guardar": persistir de inmediato.
+      if (!nuevo) this.guardarProgramacion();
    }
 
    guardarProgramacion() {

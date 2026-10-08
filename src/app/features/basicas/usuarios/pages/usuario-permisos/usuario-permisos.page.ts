@@ -10,9 +10,12 @@ import { PermisosService, PermisoConEstado } from '../../services/permisos.servi
 import { UsuariosService } from '../../services/usuarios.service';
 import { Usuario } from '../../models/usuario.model';
 import { AuthStore } from '../../../../../core/auth/auth.store';
+import { etiquetaRol } from '../../../../../core/auth/rol-label';
 
-// Permisos que Coordinador/Secretario no pueden otorgar
+// Permisos que Coordinador/Secretario no pueden otorgar (mismo criterio que
+// permiso_router.py: los 'admin.*' tienen alcance sobre todas las congregaciones)
 const PERMISOS_RESTRINGIDOS_CONG = new Set(['publicadores.editar']);
+const PREFIJOS_RESTRINGIDOS_CONG = ['admin.'];
 
 type Tema = 'amber' | 'purple' | 'emerald' | 'blue' | 'slate';
 
@@ -252,9 +255,19 @@ export class UsuarioPermisosPage implements OnInit {
       return roles.some(r => ['coordinador', 'secretario'].includes(r));
    });
 
-   /** Devuelve true si el permiso NO puede ser modificado por el usuario actual */
+   /** Gestor de la congregación: reparte permisos en su congregación (incluido
+    *  publicadores.editar) pero nunca los de administración del sistema. */
+   readonly esGestor = computed(() => {
+      this.authStore.user();
+      return this.authStore.isGestor();
+   });
+
+   /** Devuelve true si el permiso NO puede ser modificado por el usuario actual.
+    *  Espejo de _es_restringido_para_cong (backend, permiso_router.py). */
    isPermisoRestringido(codigo: string): boolean {
-      return this.esCongRole() && PERMISOS_RESTRINGIDOS_CONG.has(codigo);
+      const esAdminPrefijo = PREFIJOS_RESTRINGIDOS_CONG.some(p => codigo.startsWith(p));
+      if (this.esGestor()) return esAdminPrefijo;
+      return this.esCongRole() && (PERMISOS_RESTRINGIDOS_CONG.has(codigo) || esAdminPrefijo);
    }
 
    loading = signal(true);
@@ -471,34 +484,29 @@ export class UsuarioPermisosPage implements OnInit {
    }
 
    togglePermiso(permiso: PermisoConEstado) {
-      if (this.isPermisoRestringido(permiso.codigo)) return;
+      // Un permiso restringido se puede quitar, pero no dar: el backend solo
+      // valida lo que se AÑADE (permiso_router.update_usuario_permisos).
+      if (this.isPermisoRestringido(permiso.codigo) && !permiso.asignado) return;
       this.setAsignado(new Set([permiso.id_permiso]), !permiso.asignado);
    }
 
    /**
-    * Un interruptor del bloque está bloqueado si su propio permiso es de los que
-    * este rol no puede otorgar, o —en el caso de Ver— si apagarlo dejaría
-    * encendido un Editar que tampoco puede volver a encender. Quitar la lectura
-    * en ese caso apagaría la edición sin vuelta atrás, y dejarla encendida sin
-    * lectura describiría un acceso que la app no concede.
+    * Un interruptor está bloqueado solo si ENCENDERLO otorgaría un permiso que
+    * este rol no puede dar. Quitar sí se puede: el backend solo valida lo que
+    * se añade, y bloquear también el apagado impedía, por ejemplo, que un
+    * Gestor retirara un permiso de administración que alguien tenía de antes.
     */
    estaBloqueado(pan: PantallaPermisos, accion: 'ver' | 'editar'): boolean {
       const objetivo = accion === 'ver' ? pan.ver : pan.editar;
       if (!objetivo) return false;
-      if (this.isPermisoRestringido(objetivo.codigo)) return true;
-
-      return accion === 'ver'
-         && !!objetivo.asignado
-         && !!pan.editar?.asignado
-         && this.isPermisoRestringido(pan.editar.codigo);
+      return this.isPermisoRestringido(objetivo.codigo) && !objetivo.asignado;
    }
 
    tituloFila(permiso: PermisoConEstado, pan?: PantallaPermisos, accion?: 'ver' | 'editar'): string {
       if (this.isPermisoRestringido(permiso.codigo)) {
-         return 'No tienes permiso para otorgar este acceso';
-      }
-      if (pan && accion && this.estaBloqueado(pan, accion)) {
-         return 'Este usuario tiene un permiso de edición que tú no puedes modificar; quitarle la lectura lo dejaría en un estado que no podrías deshacer';
+         return permiso.asignado
+            ? 'Puedes quitar este acceso, pero no podrás volver a darlo'
+            : 'No tienes permiso para otorgar este acceso';
       }
       return permiso.descripcion || permiso.nombre;
    }
@@ -637,7 +645,7 @@ export class UsuarioPermisosPage implements OnInit {
    }
 
    getRolName(u: Usuario): string {
-      if (u.rol) return u.rol;
+      if (u.rol) return etiquetaRol(u.rol);
       if (u.id_rol_usuario === 6) return 'Usuario Publicador';
       return 'Sin Rol';
    }
@@ -771,7 +779,7 @@ export class UsuarioPermisosPage implements OnInit {
 
    filaBloqueada(permiso: PermisoConEstado, pan?: PantallaPermisos, accion?: 'ver' | 'editar'): boolean {
       if (pan && accion) return this.estaBloqueado(pan, accion);
-      return this.isPermisoRestringido(permiso.codigo);
+      return this.isPermisoRestringido(permiso.codigo) && !permiso.asignado;
    }
 
    /**

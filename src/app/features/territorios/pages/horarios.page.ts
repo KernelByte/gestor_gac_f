@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { TerritoriosService } from '../services/territorios.service';
+import { AuthStore } from '../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { Territorio } from '../models/territorio.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -44,7 +45,7 @@ interface Publicador {
       <app-page-header
         title="Horarios de Predicación"
         subtitle="Programa y registra salidas de predicación">
-        <button (click)="openNuevoHorarioModal()" class="btn-primary-green focus-ring-green whitespace-nowrap">
+        <button *ngIf="puedeEditar()" (click)="openNuevoHorarioModal()" class="btn-primary-green focus-ring-green whitespace-nowrap">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nuevo Horario
         </button>
@@ -91,17 +92,17 @@ interface Publicador {
                 </span>
                 <div class="flex gap-1">
                   @if (!h.id_salida) {
-                    <button (click)="ejecutar(h)" [disabled]="ejecutandoId() === h.id_horario"
+                    <button *ngIf="puedeEditar()" (click)="ejecutar(h)" [disabled]="ejecutandoId() === h.id_horario"
                       class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors disabled:opacity-40"
                       title="Ejecutar → crear salida">
                       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     </button>
                   }
-                  <button (click)="openEditHorarioModal(h)"
+                  <button *ngIf="puedeEditar()" (click)="openEditHorarioModal(h)"
                     class="p-1.5 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                   </button>
-                  <button (click)="deleteHorario(h.id_horario)"
+                  <button *ngIf="puedeEditar()" (click)="deleteHorario(h.id_horario)"
                     class="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
                   </button>
@@ -220,6 +221,12 @@ export class HorariosPage implements OnInit {
 
   private http = inject(HttpClient);
   private territoriosService = inject(TerritoriosService);
+  private authStore = inject(AuthStore);
+  /** Programar, editar, ejecutar o borrar horarios exige 'territorios.editar'. */
+  puedeEditar = computed(() => {
+    this.authStore.user();
+    return this.authStore.hasPermission('territorios.editar');
+  });
   private congregacionCtx = inject(CongregacionContextService);
 
   horarios = signal<Horario[]>([]);

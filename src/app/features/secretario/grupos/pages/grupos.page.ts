@@ -167,26 +167,26 @@ export class GruposListComponent implements OnInit, OnDestroy {
 
    totalAsignados = computed(() => this.grupos().reduce((acc, g) => acc + (g.cantidad_publicadores || 0), 0));
 
-   // Check if current user is Admin or Gestor Aplicaci?n
-   isAdminOrGestor = computed(() => {
-      const user = this.authStore.user();
-      const rol = user?.rol?.toLowerCase() || '';
-      return rol.includes('admin') || rol.includes('gestor');
+   // Solo el Administrador (rol global). El Gestor Aplicación es de
+   // congregación y entra a grupos por sus permisos.
+   isAdministrador = computed(() => {
+      this.authStore.user();
+      return this.authStore.isAdministrador();
    });
 
-   // Admin/Gestor/Secretario siempre tienen acceso completo a grupos.
+   // Administrador/Secretario siempre tienen acceso completo a grupos.
    // Coordinador NO está incluido aquí — su acceso se controla por permisos.
    isFullyPrivilegedForGrupos = computed(() => {
       const user = this.authStore.user();
       const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
-      return this.isAdminOrGestor() || roles.includes('secretario');
+      return this.isAdministrador() || roles.includes('secretario');
    });
 
    // Mantener isPrivilegedRole para compatibilidad con otras partes del template
    isPrivilegedRole = computed(() => {
       const user = this.authStore.user();
       const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
-      return this.isAdminOrGestor() ||
+      return this.isAdministrador() ||
              roles.includes('secretario') ||
              roles.includes('coordinador');
    });
@@ -347,6 +347,7 @@ export class GruposListComponent implements OnInit, OnDestroy {
    }
 
    loadSinAsignar() {
+      if (this.isScopedToGroup()) return;
       const params: any = { limit: 1000 };
       const idCongregacion = this.congregacionContext.effectiveCongregacionId();
       if (idCongregacion) {
@@ -500,9 +501,9 @@ export class GruposListComponent implements OnInit, OnDestroy {
       // ID de congregaci?n efectivo (respeta la selecci?n del admin en el header)
       const effectiveId = this.congregacionContext.effectiveCongregacionId() ?? user?.id_congregacion;
 
-      const isAdminOrGestor = user?.rol?.toLowerCase().includes('admin') || user?.rol?.toLowerCase().includes('gestor');
+      const isAdministrador = this.authStore.isAdministrador();
 
-      if (!effectiveId && !isAdminOrGestor) {
+      if (!effectiveId && !isAdministrador) {
          alert('Error: No se ha detectado tu congregaci?n.');
          return;
       }

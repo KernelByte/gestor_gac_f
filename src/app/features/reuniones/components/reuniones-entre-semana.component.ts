@@ -254,7 +254,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               </a>
             } @else {
               <p class="text-amber-700/90 dark:text-amber-400/90 text-[0.7rem] mt-0.5">
-                No puedes crear una programación porque aún no hay una guía de actividades cargada. Contacta al administrador o gestor de la aplicación para que cargue la guía correspondiente.
+                No puedes crear una programación porque aún no hay una guía de actividades cargada. Contacta al administrador del sistema para que cargue la guía correspondiente.
               </p>
             }
           </div>
@@ -1072,10 +1072,12 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <div class="flex items-center justify-center py-3">
                     <div class="w-4 h-4 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
                   </div>
-                } @else if (candidatosPanel(asig).length === 0) {
+                } @else if (candidatosPanel(asig).length === 0 && otrosPanel(asig).length === 0) {
                   <p class="text-[0.65rem] text-slate-400 text-center py-3">Sin candidatos disponibles</p>
                 } @else {
+                  @if (candidatosPanel(asig).length > 0) {
                   <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5">Sugeridos</p>
+                  }
                   @for (alt of candidatosPanel(asig); track alt.id_publicador) {
                     <button
                       data-testid="candidato"
@@ -1098,6 +1100,20 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                         {{ alt.score | number:'1.2-2' }}
                       </span>
                     </button>
+                  }
+                  @if (otrosPanel(asig).length > 0) {
+                    <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-2">Otros con permiso</p>
+                    @for (pub of otrosPanel(asig); track pub.id_publicador) {
+                      <button
+                        (click)="selectHistorialCandidato(selectedWeekIdx(), asig, { id_publicador: pub.id_publicador, nombre_completo: pub.nombre_completo, score: 0, notas_score: [], sexo: pub.sexo })"
+                        class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-[8px]">
+                        <span class="dropdown-alt-name text-[0.75rem] font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
+                        @if (pub.ausente) {
+                          <span class="shrink-0 px-1.5 py-0.5 rounded text-[0.6rem] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                                [title]="pub.ausencia_motivo || 'Ausente esta fecha'">Ausente</span>
+                        }
+                      </button>
+                    }
                   }
                 }
               }
@@ -1186,7 +1202,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               <div class="flex items-center justify-center py-5">
                 <div class="w-5 h-5 rounded-full border-2 border-slate-200 border-t-[#6D28D9] animate-spin"></div>
               </div>
-            } @else if (candidatosPanel(mobileSheetAsig()!).length === 0) {
+            } @else if (candidatosPanel(mobileSheetAsig()!).length === 0 && otrosPanel(mobileSheetAsig()!).length === 0) {
               <p class="text-xs text-slate-400 text-center py-5">Sin candidatos disponibles</p>
             } @else {
               <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-1">Sugeridos</p>
@@ -1207,6 +1223,20 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                     {{ alt.score | number:'1.2-2' }}
                   </span>
                 </button>
+              }
+              @if (otrosPanel(mobileSheetAsig()!).length > 0) {
+              <p class="text-[0.58rem] text-slate-400 uppercase tracking-widest px-2 pb-0.5 pt-2">Otros con permiso</p>
+              @for (pub of otrosPanel(mobileSheetAsig()!); track pub.id_publicador) {
+                <button
+                  (click)="selectHistorialCandidato(selectedWeekIdx(), mobileSheetAsig()!, { id_publicador: pub.id_publicador, nombre_completo: pub.nombre_completo, score: 0, notas_score: [], sexo: pub.sexo }); closeMobileSheet()"
+                  class="dropdown-alt-row w-full flex items-center gap-3 px-3 py-3 text-left rounded-xl">
+                  <span class="dropdown-alt-name text-sm font-semibold truncate flex-1">{{ pub.nombre_completo }}</span>
+                  @if (pub.ausente) {
+                    <span class="shrink-0 px-1.5 py-0.5 rounded text-[0.6rem] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                          [title]="pub.ausencia_motivo || 'Ausente esta fecha'">Ausente</span>
+                  }
+                </button>
+              }
               }
             }
           }
@@ -2213,8 +2243,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   );
 
   puedeCargarGuia = computed(() => {
-    const roles = this.authStore.user()?.roles ?? [];
-    return roles.includes('Administrador') || roles.includes('Gestor Aplicación');
+    return this.authStore.isAdministrador();
   });
 
   // ── State machine ──────────────────────────────────────────────
@@ -2513,6 +2542,8 @@ export class ReunionesProgramacionComponent implements OnInit {
   busquedaCandidato = signal('');
   busquedaResultados = signal<PublicadorBusqueda[]>([]);
   loadingBusqueda = signal(false);
+  /** Todos los habilitados para la ranura abierta; "Otros" es esto menos los sugeridos. */
+  habilitadosPanel = signal<PublicadorBusqueda[]>([]);
   private _busquedaTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── Modal ──────────────────────────────────────────────────────
@@ -3246,9 +3277,14 @@ export class ReunionesProgramacionComponent implements OnInit {
     }
     this.showModal.set(true);
     this.loadingPlantillas.set(true);
-    const configReq = this.congregacionCtx.isAdmin() 
-      ? this.asistenciaSvc.getCongregacionConfigById(idCong).pipe(catchError(() => of(null)))
-      : this.asistenciaSvc.getCongregacionConfig().pipe(catchError(() => of(null)));
+    // Sin acceso a la configuración (403: quien programa no siempre tiene
+    // 'configuracion.ver') no se sabe el día, pero tampoco está "sin
+    // configurar": ese aviso solo se muestra si la configuración se leyó.
+    let configSinAcceso = false;
+    const sinAcceso = () => { configSinAcceso = true; return of(null); };
+    const configReq = this.congregacionCtx.isAdmin()
+      ? this.asistenciaSvc.getCongregacionConfigById(idCong).pipe(catchError(sinAcceso))
+      : this.asistenciaSvc.getCongregacionConfig().pipe(catchError(sinAcceso));
 
     forkJoin({
       plantillas: this.reunionesSvc.getPlantillas(this.tipoReunionActivo(), idCong),
@@ -3258,7 +3294,7 @@ export class ReunionesProgramacionComponent implements OnInit {
         const configKey = this.tipoReunionActivo() === 'entre_semana' ? 'dia_reunion_entre_semana' : 'dia_reunion_fin_semana';
         const diaRaw = config?.[configKey as keyof typeof config] as string | null ?? null;
         const diaReunion = this.diaReunionToNumber(diaRaw);
-        this.diaReunionSinConfigurar.set(diaReunion === null);
+        this.diaReunionSinConfigurar.set(diaReunion === null && !configSinAcceso);
         this.plantillas.set(plantillas);
         this.modalForm.update((f) => ({ ...f, dia_reunion: diaReunion }));
         if (plantillas.length > 0) {
@@ -4623,9 +4659,11 @@ export class ReunionesProgramacionComponent implements OnInit {
     this.asigEnEdicion.set(asig);
     this.posicionarDropdown(this.pillKey(asig));
     this.historialCandidatos.set([]);
+    this.habilitadosPanel.set([]);
     this.busquedaCandidato.set('');
     this.busquedaResultados.set([]);
     this.enfocarBuscadorAsignado();
+    this.cargarHabilitadosPanel(asig, idCong);
     // La semana recién generada ya trae los candidatos que calculó el motor.
     if (asig.alternativos?.length) return;
     // Si no, se piden. Por ranura y no por asignación: una casilla vacía no
@@ -4690,6 +4728,24 @@ export class ReunionesProgramacionComponent implements OnInit {
     return asig.alternativos?.length
       ? this.filteredAlternativos(asig)
       : this.historialCandidatos();
+  }
+
+  /** Los habilitados que el motor no sugirió, para listarlos tras los sugeridos. */
+  otrosPanel(asig: AsignacionDraft): PublicadorBusqueda[] {
+    const sugeridos = new Set(this.candidatosPanel(asig).map(c => c.id_publicador));
+    return this.habilitadosPanel().filter(p => !sugeridos.has(p.id_publicador));
+  }
+
+  private cargarHabilitadosPanel(asig: AsignacionDraft, idCong: number): void {
+    const fecha = this.currentSemana()?.fecha?.slice(0, 10);
+    this.reunionesSvc.buscarPublicadoresCong(
+      idCong, '', fecha, asig.id_programa_parte, !!asig.es_ayudante,
+    ).subscribe({
+      next: (res) => {
+        // Si ya se cerró o se abrió otra ranura, la respuesta llega tarde.
+        if (this.asigEnEdicion() === asig) this.habilitadosPanel.set(res);
+      },
+    });
   }
 
   onBusquedaCandidatoChange(q: string): void {

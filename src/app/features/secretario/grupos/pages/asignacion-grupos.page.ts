@@ -1849,7 +1849,7 @@ export class AsignacionGruposPage implements AfterViewInit, OnDestroy {
   puedeCrearPublicadores = computed(() => {
     const user = this.authStore.user();
     const roles = (user?.roles ?? (user?.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
-    const porRol = roles.some(r => ['administrador', 'gestor aplicación', 'gestor', 'secretario'].includes(r));
+    const porRol = roles.some(r => ['administrador', 'secretario'].includes(r));
     return porRol || this.authStore.hasPermission('publicadores.editar');
   });
 

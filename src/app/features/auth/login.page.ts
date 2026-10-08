@@ -30,9 +30,9 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   showPassword = signal(false);
 
   // Hacker / AI text animation
-  displayTitle    = signal('·······');
-  displayGAC      = signal('···');
-  displaySubtitle = signal('··············');
+  displayTitle    = signal('···');
+  displayGAC      = signal('·····');
+  displaySubtitle = signal('·························');
   private hackerInterval: any = null;
 
   form = this.fb.nonNullable.group({
@@ -112,9 +112,9 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   triggerHackerText(): void {
     if (this.hackerInterval) return;
 
-    const title = 'Sistema';
-    const gac   = 'GAC';
-    const sub   = 'Administración';
+    const title = 'GAC';
+    const gac   = 'Suite';
+    const sub   = 'Gestión de Congregaciones';
 
     // Frames × 45ms:
     // F1-12  : reveal title left-to-right (540ms)
@@ -136,7 +136,7 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
         if (f <= TITLE) {
           const t = ease(f / TITLE);
           this.displayTitle.set(lock(title, Math.floor(t * title.length)));
-          this.displayGAC.set('···');
+          this.displayGAC.set('·'.repeat(gac.length));
 
         } else if (f <= GAC) {
           const t = ease((f - TITLE) / (GAC - TITLE));

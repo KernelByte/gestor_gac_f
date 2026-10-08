@@ -12,7 +12,7 @@ import { ConfirmDialogComponent } from '../../../../shared/components/confirm-di
 type Guardado = 'idle' | 'guardando' | 'guardado' | 'error';
 
 /** Quien puede abrir actas (acta_router.ROLES) gestiona también las tareas que salen de ellas. */
-const ROLES_ACTAS = ['administrador', 'gestor aplicación', 'secretario', 'anciano'];
+const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
 
 /**
  * Detalle de una tarea. Cada campo se guarda al cambiarlo (sin modo "Editar").

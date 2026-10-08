@@ -104,7 +104,7 @@ export class PublicadoresMainPage implements OnInit {
 
     const roles = (user.roles ?? (user.rol ? [user.rol] : [])).map(r => (r || '').toLowerCase());
     const isPrivileged = roles.some(r =>
-      ['administrador', 'secretario', 'gestor aplicación'].includes(r)
+      ['administrador', 'secretario'].includes(r)
     );
 
     const result: { id: PublicadoresTab, label: string }[] = [];
@@ -120,7 +120,7 @@ export class PublicadoresMainPage implements OnInit {
     // Mismos roles que ROLES_ACCESO_APP en el backend, más el permiso
     // granular que permite delegarlo (p. ej. a un superintendente de grupo)
     // sin darle edición de publicadores.
-    if (isPrivileged || roles.includes('coordinador') || auth.hasPermission('publicadores.acceso_app')) {
+    if (isPrivileged || roles.includes('coordinador') || auth.isGestor() || auth.hasPermission('publicadores.acceso_app')) {
       result.push({ id: 'acceso', label: 'Acceso app' });
     }
     return result;

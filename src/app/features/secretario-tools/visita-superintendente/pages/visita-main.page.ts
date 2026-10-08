@@ -1715,8 +1715,8 @@ export class VisitaMainPage implements OnInit {
     this.buscandoColab.set(true);
     this.colabSearchTimer = setTimeout(() => {
       // Se pasa la congregación de la VISITA (no la del secretario) para que
-      // también funcione cuando quien invita es Administrador/Gestor Aplicación,
-      // que no tienen congregación propia vinculada.
+      // también funcione cuando quien invita es el Administrador, que no tiene
+      // congregación propia vinculada.
       this.usuariosSvc.getUsuariosMiCongregacion(q, v.id_congregacion).subscribe({
         next: (us: any[]) => {
           const yaInvitados = new Set(this.colaboradores().map(c => c.id_usuario));

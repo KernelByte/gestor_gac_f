@@ -139,9 +139,9 @@ export class UsuariosService {
 
    /**
     * Obtiene usuarios de una congregación.
-    * Coordinador/Secretario quedan limitados a la suya (el backend ignora
-    * idCongregacion para ellos); Administrador/Gestor Aplicación deben
-    * indicar idCongregacion explícitamente (no tienen congregación propia).
+    * Gestor/Coordinador/Secretario quedan limitados a la suya (el backend
+    * ignora idCongregacion para ellos); el Administrador debe indicar
+    * idCongregacion explícitamente (no tiene congregación propia).
     */
    getUsuariosMiCongregacion(q?: string, idCongregacion?: number): Observable<Usuario[]> {
       let params: any = {};

@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthStore } from '../../core/auth/auth.store';
+import { etiquetaRol } from '../../core/auth/rol-label';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
@@ -10,6 +11,9 @@ import { HttpClient } from '@angular/common/http';
   templateUrl: './perfil.page.html'
 })
 export class PerfilPage implements OnInit {
+  /** Texto visible del rol (el nombre real es un identificador). */
+  etiquetaRol = etiquetaRol;
+
   private store = inject(AuthStore);
   private http = inject(HttpClient);
 

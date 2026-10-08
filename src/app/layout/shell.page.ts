@@ -2,6 +2,11 @@ import { Component, computed, inject, signal, OnInit, OnDestroy, ViewChild, Elem
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { AuthStore } from '../core/auth/auth.store';
+import { etiquetaRol } from '../core/auth/rol-label';
+import {
+  puedeVerConfiguracion, puedeVerExhibidores, puedeVerInformes, puedeVerPublicadores,
+  puedeVerReportes, puedeVerReuniones, puedeVerTerritorios,
+} from '../core/auth/acceso-modulos';
 import { AuthService } from '../core/auth/auth.service';
 import { ThemeService } from '../core/services/theme.service';
 import { CongregacionContextService } from '../core/congregacion-context/congregacion-context.service';
@@ -141,7 +146,7 @@ export class TimeAgoPipe implements PipeTransform {
             </div>
 
             <!-- Modules Section -->
-            <div *ngIf="hasAnyReunionesPermission() || hasPermission('publicadores.ver') || hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar') || hasPermission('territorios.ver') || hasAnyExhibidoresPermission() || hasAnyReportesPermission() || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Administrador')">
+            <div *ngIf="hasAnyModulo()">
               <div class="h-px bg-slate-100 dark:bg-slate-800/60 mx-2 mb-4 mt-2"></div>
               <p *ngIf="!collapsed()" class="px-3 mb-2 text-[0.6875rem] font-bold tracking-[0.08em] uppercase text-slate-400/70 dark:text-slate-600">Módulos</p>
               
@@ -211,7 +216,7 @@ export class TimeAgoPipe implements PipeTransform {
                    'publicadores.ver' pero con 'publicadores.acceso_app'
                    -p. ej. un superintendente de grupo a quien se le delegó
                    solo eso- entra igual y ve nada más la pestaña de acceso. -->
-              <a *ngIf="hasPermission('publicadores.ver') || hasPermission('publicadores.acceso_app') || hasRole('Administrador') || hasRole('Secretario') || hasRole('Coordinador')"
+              <a *ngIf="puedeVerPublicadores()"
                 routerLink="/secretario/publicadores"
                 class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1 focus:outline-none"
                 [ngClass]="{
@@ -226,7 +231,7 @@ export class TimeAgoPipe implements PipeTransform {
               </a>
 
               <!-- Informes -->
-              <a *ngIf="hasPermission('informes.ver') || hasPermission('informes.editar') || hasPermission('informes.historial') || hasPermission('informes.enviar')" routerLink="/secretario/informes" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
+              <a *ngIf="hasAnyInformesPermission()" routerLink="/secretario/informes" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
                 class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Informes">
                 <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
@@ -413,12 +418,12 @@ export class TimeAgoPipe implements PipeTransform {
             </div>
 
             <!-- Extras Section -->
-            <div *ngIf="hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador') || hasRole('Administrador')" class="mt-4">
+            <div *ngIf="puedeVerConfiguracion()" class="mt-4">
               <div class="h-px bg-slate-100 dark:bg-slate-800/60 mx-2 mb-4"></div>
               <p *ngIf="!collapsed()" class="px-3 mb-2 text-[0.6875rem] font-bold tracking-[0.08em] uppercase text-slate-400/70 dark:text-slate-600">Extras</p>
               
               <!-- Configuracion Normal -->
-              <a *ngIf="!hasRole('Administrador') && (hasPermission('configuracion.ver') || hasRole('Secretario') || hasRole('Coordinador'))" routerLink="/configuracion" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
+              <a *ngIf="!hasRole('Administrador') && puedeVerConfiguracion()" routerLink="/configuracion" routerLinkActive="text-brand-purple dark:text-purple-300 font-semibold [&_.nav-icon]:!text-brand-purple dark:[&_.nav-icon]:!text-purple-400 bg-brand-purple/10 dark:bg-purple-500/[0.13] nav-active"
                 class="group flex items-center text-sm text-slate-500 dark:text-slate-400 hover:!text-slate-900 dark:hover:!text-white transition-all duration-200 relative rounded-lg hover:bg-slate-100/70 dark:hover:bg-white/[0.04] mt-1"
                 [ngClass]="{'justify-center p-3': collapsed(), 'gap-3 px-3 py-2.5': !collapsed()}" title="Configuración">
                 <div class="nav-icon w-5 h-5 flex items-center justify-center shrink-0 transition duration-200 text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 group-hover:-translate-y-[1px]">
@@ -564,7 +569,7 @@ export class TimeAgoPipe implements PipeTransform {
                   </div>
                   <div *ngIf="!collapsed()" class="flex flex-col items-start min-w-0 text-left">
                      <span class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate w-[140px] leading-tight">{{ u.nombre || u.username }}</span>
-                     <span class="text-[0.625rem] font-semibold text-slate-400 uppercase tracking-widest leading-none mt-1">{{ u.roles?.[0] || 'User' }}</span>
+                     <span class="text-[0.625rem] font-semibold text-slate-400 uppercase tracking-widest leading-none mt-1">{{ etiquetaRol(u.roles?.[0]) || 'User' }}</span>
                   </div>
                 </div>
                 <svg *ngIf="!collapsed()" class="w-4 h-4 text-slate-400 transition-transform group-hover:text-slate-600 mr-1 shrink-0" [ngClass]="{ 'rotate-180': userMenuOpen() }" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
@@ -1446,13 +1451,12 @@ export class ShellPage implements OnInit, OnDestroy {
     this.notifService.disconnectSSE();
   }
 
-  hasRole = (r: string) => {
-    const u = this.store.user();
-    const roles = u?.roles ?? (u?.rol ? [u.rol] : []);
-    return roles.map(x => (x || '').toLowerCase()).includes(r.toLowerCase());
-  };
+  // Roles efectivos: el Gestor Aplicación cuenta también como Publicador.
+  hasRole = (r: string) => this.store.hasRole(r);
 
   hasPermission = (p: string) => this.store.hasPermission(p);
+
+  etiquetaRol = etiquetaRol;
 
   logout() { this.auth.logout(); }
 
@@ -1505,40 +1509,24 @@ export class ShellPage implements OnInit, OnDestroy {
     return this.router.url.startsWith('/herramientas');
   }
 
-  hasAnyReunionesPermission(): boolean {
-    return (
-      this.hasPermission('reuniones.ver') ||
-      this.hasPermission('reuniones.entre_semana') ||
-      this.hasPermission('reuniones.fin_semana') ||
-      this.hasPermission('reuniones.logistica') ||
-      this.hasPermission('reuniones.discursos') ||
-      this.hasPermission('reuniones.asistencia') ||
-      this.hasPermission('reuniones.configuracion') ||
-      (this.store.user()?.roles?.includes('Secretario') ?? false)
-    );
-  }
+  // Reglas de acceso por módulo: core/auth/acceso-modulos.ts (las comparte
+  // la paleta de comandos).
+  hasAnyReunionesPermission(): boolean { return puedeVerReuniones(this.store); }
+  hasAnyInformesPermission(): boolean { return puedeVerInformes(this.store); }
+  puedeVerPublicadores(): boolean { return puedeVerPublicadores(this.store); }
+  hasAnyExhibidoresPermission(): boolean { return puedeVerExhibidores(this.store); }
+  hasAnyReportesPermission(): boolean { return puedeVerReportes(this.store); }
+  puedeVerConfiguracion(): boolean { return puedeVerConfiguracion(this.store); }
 
-  /**
-   * Exhibidores tiene un permiso por pestaña: el enlace del menú debe aparecer
-   * si el usuario puede entrar a cualquiera de ellas, no solo con el de lectura.
-   */
-  hasAnyExhibidoresPermission(): boolean {
+  hasAnyModulo(): boolean {
     return (
-      this.hasPermission('exhibidores.ver') ||
-      this.hasPermission('exhibidores.programacion') ||
-      this.hasPermission('exhibidores.ubicaciones') ||
-      this.hasPermission('exhibidores.participantes') ||
-      this.hasPermission('exhibidores.configuracion')
-    );
-  }
-
-  hasAnyReportesPermission(): boolean {
-    return (
-      this.hasPermission('reportes.ver') ||
-      this.hasPermission('reportes.precursores') ||
-      this.hasPermission('reportes.publicadores') ||
-      this.hasPermission('reportes.predicacion') ||
-      this.hasPermission('reportes.logistica')
+      this.hasAnyReunionesPermission() ||
+      this.puedeVerPublicadores() ||
+      this.hasAnyInformesPermission() ||
+      this.hasPermission('tareas.ver') ||
+      puedeVerTerritorios(this.store) ||
+      this.hasAnyExhibidoresPermission() ||
+      this.hasAnyReportesPermission()
     );
   }
 
