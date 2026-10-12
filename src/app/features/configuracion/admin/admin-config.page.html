@@ -1,293 +1,191 @@
-<div class="w-full flex flex-col h-full bg-app-bg dark:bg-slate-950 pt-4 sm:pt-6 animate-fadeIn overflow-hidden transition-colors duration-300">
-   <!-- Header Section -->
-   <div class="mb-3 sm:mb-4 shrink-0">
-      <h1 class="text-2xl sm:text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight">
+<div class="w-full flex flex-col h-full bg-app-bg dark:bg-slate-950 pt-3 lg:pt-5 animate-fadeIn overflow-hidden transition-colors duration-300">
+   <!-- Encabezado: en móvil/tablet la barra superior del shell ya muestra el título,
+        así que aquí solo queda para lectores de pantalla y se recupera desde lg. -->
+   <header class="sr-only lg:not-sr-only lg:mb-3 lg:shrink-0">
+      <h1 class="text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight leading-tight">
          Administración del Sistema
       </h1>
-      <p class="text-slate-500 dark:text-slate-400 font-medium mt-1.5 sm:mt-2 text-sm sm:text-base md:text-lg max-w-2xl">
+      <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
          Gestión global de congregaciones y parámetros de la plataforma.
       </p>
-   </div>
+   </header>
 
-   <!-- Navigation Tabs (scroll on mobile, consistent spacing) -->
-   <div class="flex items-center gap-6 sm:gap-8 border-b border-slate-200 dark:border-slate-700 mb-3 sm:mb-4 overflow-x-auto shrink-0 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth transition-colors duration-300" style="scrollbar-width: none; -ms-overflow-style: none;">
-      <button (click)="setTab('congregaciones')" type="button"
-         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'congregaciones' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+   <!-- Pestañas: barra segmentada; en pantallas estrechas hace scroll horizontal con desvanecido en los bordes -->
+   <nav class="admin-tabs relative shrink-0 mb-3 lg:mb-4 -mx-4 px-4 sm:mx-0 sm:px-0"
+      [class.fade-start]="tabFade().start" [class.fade-end]="tabFade().end">
+      <div #tabsScroller role="tablist" aria-label="Secciones de administración"
+         (keydown)="onTabKeydown($event)" (scroll)="updateTabFade()"
+         class="flex items-center gap-1 w-max max-w-full overflow-x-auto scrollbar-hide scroll-smooth p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm transition-colors duration-300">
+         <button *ngFor="let t of tabs" type="button" role="tab"
+            [id]="'admin-tab-' + t.id"
+            [attr.aria-selected]="activeTab() === t.id"
+            [attr.tabindex]="activeTab() === t.id ? 0 : -1"
+            (click)="setTab(t.id)"
+            class="shrink-0 inline-flex items-center gap-2 h-10 px-3 rounded-lg text-sm font-bold whitespace-nowrap transition-colors duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+            [ngClass]="activeTab() === t.id
+               ? (t.danger ? 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300' : 'bg-brand-purple/10 text-brand-purple dark:bg-brand-purple/25 dark:text-purple-200')
+               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800'">
+            <svg class="w-[1.125rem] h-[1.125rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+               <path *ngFor="let d of t.paths" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="d" />
             </svg>
-            Congregaciones
-         </div>
-      </button>
-
-      <button (click)="setTab('auditoria')" type="button"
-         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'auditoria' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-            Auditoría
-         </div>
-      </button>
-
-      <button (click)="setTab('solicitudes')" type="button"
-         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'solicitudes' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-            Solicitudes
-         </div>
-      </button>
-
-      <button (click)="setTab('ai')" type="button"
-         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'ai' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            Motores IA
-         </div>
-      </button>
-
-      <button (click)="setTab('base-datos')" type="button"
-         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'base-datos' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-            </svg>
-            Base de Datos
-         </div>
-      </button>
-
-      <button (click)="setTab('sistema')" type="button"
-         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'sistema' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-            Sistema
-         </div>
-      </button>
-
-      <button (click)="setTab('apis')" type="button"
-         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'apis' ? 'border-brand-purple text-brand-purple border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-            </svg>
-            APIs
-         </div>
-      </button>
-
-      <button (click)="setTab('seguridad')" type="button"
-         class="pb-3 pt-1 px-1 min-h-[44px] flex items-center text-sm font-bold border-b-2 transition-all whitespace-nowrap touch-manipulation"
-         [ngClass]="activeTab() === 'seguridad' ? 'border-red-500 text-red-500 border-b-[3px]' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'">
-         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Seguridad
-         </div>
-      </button>
-   </div>
-
-   <!-- Toolbar Section (Congregaciones) -->
-   <div *ngIf="activeTab() === 'congregaciones'" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-3 sm:mb-4 shrink-0">
-
-      <!-- Search -->
-      <div class="relative flex-1 w-full min-w-0">
-         <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-         </div>
-         <input [(ngModel)]="searchTerm" type="text"
-            class="w-full pl-10 sm:pl-11 pr-4 py-2.5 sm:py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100 text-sm sm:text-base font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors shadow-sm"
-            placeholder="Buscar por nombre, ciudad o circuito...">
-      </div>
-
-      <!-- Actions -->
-      <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto shrink-0">
-         <button (click)="openCreatePanel()" type="button"
-            class="bg-brand-purple hover:bg-purple-700 active:bg-purple-800 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-sm shadow-md shadow-brand-purple/20 transition-all flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px] touch-manipulation">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Nueva
-         </button>
-         <button (click)="openImportModal()" type="button"
-            class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-sm shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 flex-1 sm:flex-none min-h-[44px] touch-manipulation">
-            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            Importar
+            {{ t.label }}
          </button>
       </div>
-   </div>
+   </nav>
 
    <!-- Content Card -->
-   <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-0 overflow-hidden transition-colors duration-300">
+   <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col flex-1 min-h-0 overflow-hidden transition-colors duration-300">
 
       <!-- TAB: CONGREGACIONES -->
       <div *ngIf="activeTab() === 'congregaciones'" class="flex flex-col flex-1 min-h-0 animate-fadeIn">
-         <div class="flex-1 min-h-0 overflow-auto bg-slate-50/30 dark:bg-slate-800/30 transition-colors duration-300">
 
-            <!-- MOBILE LIST VIEW -->
-            <div class="md:hidden p-3 sm:p-4 space-y-3 sm:space-y-4 pb-4">
-               <div *ngFor="let cong of filteredCongregations(); trackBy: trackByCongregacion"
-                  class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 dark:border-slate-700 relative overflow-hidden transition-colors duration-300">
+         <!-- Barra de herramientas: dentro de la tarjeta para no gastar una fila aparte -->
+         <div class="flex items-center gap-2 sm:gap-3 p-3 sm:px-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <div class="relative flex-1 min-w-0">
+               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                  <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+               </div>
+               <input [(ngModel)]="searchTerm" type="search" aria-label="Buscar congregaciones"
+                  class="w-full h-11 pl-10 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple focus:bg-white dark:focus:bg-slate-800 transition-colors"
+                  placeholder="Buscar por nombre, ciudad o circuito...">
+            </div>
 
-                  <!-- Card Header -->
-                  <div class="flex items-start justify-between mb-4">
-                     <div class="flex items-center gap-3">
-                        <div
-                           class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-lg shrink-0 border-4 border-white dark:border-slate-800 shadow-sm">
-                           {{ cong.nombre_congregacion.charAt(0) }}
-                        </div>
-                        <div>
-                           <h3 class="font-bold text-slate-900 dark:text-white leading-tight text-lg">{{ cong.nombre_congregacion }}
-                           </h3>
-                           <span
-                              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-brand-purple/5 dark:bg-brand-purple/20 border border-brand-purple/10 dark:border-brand-purple/30 mt-1">
-                              <span class="w-1 h-1 rounded-full bg-brand-purple"></span>
-                              <span class="text-[0.625rem] font-bold text-brand-purple dark:text-purple-300 uppercase tracking-wider">ID #{{
-                                 cong.id_congregacion }}</span>
-                           </span>
-                        </div>
+            <span class="hidden md:inline text-xs font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap tabular-nums">
+               {{ filteredCongregations().length }} de {{ totalCount }}
+            </span>
+
+            <button (click)="openCreatePanel()" type="button" aria-label="Nueva congregación" title="Nueva congregación"
+               class="shrink-0 inline-flex items-center justify-center gap-2 h-11 w-11 sm:w-auto sm:px-4 bg-brand-purple hover:bg-purple-700 active:bg-purple-800 text-white rounded-xl font-bold text-sm shadow-sm shadow-brand-purple/20 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+               <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+               </svg>
+               <span class="hidden sm:inline">Nueva</span>
+            </button>
+            <button (click)="openImportModal()" type="button" aria-label="Importar publicadores" title="Importar publicadores"
+               class="shrink-0 inline-flex items-center justify-center gap-2 h-11 w-11 sm:w-auto sm:px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-200 dark:hover:bg-emerald-900/30 dark:hover:border-emerald-800 rounded-xl font-bold text-sm transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">
+               <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+               </svg>
+               <span class="hidden sm:inline">Importar</span>
+            </button>
+         </div>
+
+         <div class="flex-1 min-h-0 overflow-auto overscroll-contain transition-colors duration-300">
+
+            <!-- MOBILE LIST VIEW: filas en lista (no tarjetas dentro de la tarjeta) -->
+            <ul class="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+               <li *ngFor="let cong of filteredCongregations(); trackBy: trackByCongregacion" class="p-4 flex flex-col gap-3">
+                  <div class="flex items-start gap-3 min-w-0">
+                     <div [ngClass]="getCongregacionAvatarStyle(cong.nombre_congregacion)"
+                        class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm shadow-sm ring-1 ring-white dark:ring-slate-800">
+                        {{ cong.nombre_congregacion.charAt(0).toUpperCase() }}
                      </div>
-                  </div>
-
-                  <!-- Info Rows -->
-                  <div class="space-y-3 mb-6 bg-slate-50/50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-100/50 dark:border-slate-600/50 transition-colors duration-300">
-                     <!-- Address -->
-                     <div class="flex items-start gap-3">
-                        <svg class="w-5 h-5 text-slate-400 dark:text-slate-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
-                           stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">{{ cong.direccion || 'Sin
-                           dirección registrada' }}</span>
-                     </div>
-
-                     <!-- Circuit & Stats Row -->
-                     <div class="flex items-center justify-between pt-3 border-t border-slate-200/60 dark:border-slate-600/60">
-                        <div class="flex items-center gap-2">
-                           <svg class="w-4 h-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <div class="min-w-0 flex-1">
+                        <h3 class="font-bold text-base text-slate-900 dark:text-white leading-snug">{{ cong.nombre_congregacion }}</h3>
+                        <p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                           <span class="text-brand-purple dark:text-purple-300">ID #{{ cong.id_congregacion }}</span>
+                           <span aria-hidden="true" class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                           <span>{{ cong.circuito || 'Sin circuito' }}</span>
+                           <span aria-hidden="true" class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                           <span><b class="text-slate-800 dark:text-slate-100 tabular-nums">{{ cong.miembros }}</b> publicadores</span>
+                        </p>
+                        <p class="mt-1.5 flex items-start gap-1.5 text-sm text-slate-600 dark:text-slate-300 leading-snug">
+                           <svg class="w-4 h-4 mt-0.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                 d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                            </svg>
-                           <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{{ cong.circuito ||
-                              'N/A' }}</span>
-                        </div>
-                        <div
-                           class="flex items-center gap-1.5 bg-white dark:bg-slate-700/50 px-2 py-1 rounded-lg border border-slate-100 dark:border-slate-600 shadow-sm">
-                           <span class="font-black text-slate-900 dark:text-white">{{ cong.miembros }}</span>
-                           <span class="text-[0.625rem] text-slate-400 dark:text-slate-500 font-bold uppercase">Pubs</span>
-                        </div>
+                           <span class="min-w-0">{{ cong.direccion || 'Sin dirección registrada' }}</span>
+                        </p>
                      </div>
                   </div>
 
-                  <!-- Actions Grid (touch-friendly) -->
-                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <!-- Acciones: icono + etiqueta visibles, objetivo táctil ≥44px -->
+                  <div class="grid grid-cols-4 gap-2">
                      <button (click)="editCongregation(cong.id_congregacion)" type="button"
-                        class="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-3 min-h-[44px] rounded-xl bg-white dark:bg-slate-700/50 border-2 border-slate-100 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-bold text-xs sm:text-sm hover:border-brand-purple hover:text-brand-purple active:bg-slate-50 dark:active:bg-slate-600/50 transition-colors touch-manipulation">
-                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="flex flex-col items-center justify-center gap-0.5 min-h-[3.25rem] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:border-brand-purple hover:text-brand-purple active:bg-slate-50 dark:active:bg-slate-800 transition-colors touch-manipulation">
+                        <svg class="w-[1.125rem] h-[1.125rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
-                        <span class="hidden sm:inline">Editar</span>
+                        Editar
                      </button>
                      <button (click)="openImportModalForCongregacion(cong.id_congregacion, cong.nombre_congregacion)" type="button"
-                        class="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-3 min-h-[44px] rounded-xl bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-100 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-bold text-xs sm:text-sm hover:bg-blue-100 dark:hover:bg-blue-900/50 active:scale-[0.98] transition-all touch-manipulation">
-                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="flex flex-col items-center justify-center gap-0.5 min-h-[3.25rem] rounded-xl border border-slate-200 dark:border-slate-700 text-blue-700 dark:text-blue-300 text-xs font-bold hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-900/30 active:bg-blue-50 transition-colors touch-manipulation">
+                        <svg class="w-[1.125rem] h-[1.125rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
-                        <span class="hidden sm:inline">Cargar</span>
+                        Cargar
                      </button>
                      <button (click)="exportCongregation(cong.id_congregacion, cong.nombre_congregacion)" type="button"
-                        class="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-3 min-h-[44px] rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border-2 border-emerald-100 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold text-xs sm:text-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/50 active:scale-[0.98] transition-all touch-manipulation">
-                        <svg *ngIf="exportingId() !== cong.id_congregacion" class="w-4 h-4" fill="none"
-                           viewBox="0 0 24 24" stroke="currentColor">
+                        [disabled]="exportingId() === cong.id_congregacion"
+                        class="flex flex-col items-center justify-center gap-0.5 min-h-[3.25rem] rounded-xl border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-50 hover:border-emerald-200 dark:hover:bg-emerald-900/30 active:bg-emerald-50 disabled:opacity-60 transition-colors touch-manipulation">
+                        <svg *ngIf="exportingId() !== cong.id_congregacion" class="w-[1.125rem] h-[1.125rem] shrink-0" fill="none"
+                           viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        <svg *ngIf="exportingId() === cong.id_congregacion" class="animate-spin w-4 h-4 shrink-0" fill="none"
-                           viewBox="0 0 24 24">
-                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                           </circle>
+                        <svg *ngIf="exportingId() === cong.id_congregacion" class="animate-spin w-[1.125rem] h-[1.125rem] shrink-0" fill="none"
+                           viewBox="0 0 24 24" aria-hidden="true">
+                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                            <path class="opacity-75" fill="currentColor"
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                            </path>
                         </svg>
-                        <span class="hidden sm:inline">Exportar</span>
+                        Exportar
                      </button>
                      <button (click)="confirmDeleteCongregation(cong)" type="button"
-                        class="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-3 min-h-[44px] rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 font-bold text-xs sm:text-sm hover:bg-red-100 dark:hover:bg-red-900/40 active:scale-[0.98] transition-all touch-manipulation">
-                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="flex flex-col items-center justify-center gap-0.5 min-h-[3.25rem] rounded-xl border border-red-100 dark:border-red-900/60 text-red-600 dark:text-red-400 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/30 active:bg-red-50 transition-colors touch-manipulation">
+                        <svg class="w-[1.125rem] h-[1.125rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        <span class="hidden sm:inline">Eliminar</span>
+                        Eliminar
                      </button>
                   </div>
-               </div>
-            </div>
+               </li>
+               <li *ngIf="filteredCongregations().length > 0" class="px-4 py-3 text-center text-xs font-bold text-slate-400 dark:text-slate-500">
+                  Mostrando {{ filteredCongregations().length }} de {{ totalCount }} registros
+               </li>
+            </ul>
 
             <!-- DESKTOP TABLE -->
             <table class="hidden md:table w-full text-left border-collapse">
                <thead>
-                  <tr class="bg-white dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700 transition-colors duration-300">
-                     <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nombre</th>
-                     <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Ubicación y circuito</th>
-                     <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Estadísticas</th>
-                     <th class="px-6 py-4 text-[0.6875rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right">Acciones</th>
+                  <tr class="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-[inset_0_-1px_0] shadow-slate-100 dark:shadow-slate-800 transition-colors duration-300">
+                     <th scope="col" class="px-4 xl:px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nombre</th>
+                     <th scope="col" class="px-4 xl:px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ubicación y circuito</th>
+                     <th scope="col" class="hidden xl:table-cell px-4 xl:px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Estadísticas</th>
+                     <th scope="col" class="px-4 xl:px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Acciones</th>
                   </tr>
                </thead>
                <tbody class="divide-y divide-slate-200 dark:divide-slate-700 transition-colors duration-300">
                   <tr *ngFor="let cong of filteredCongregations(); trackBy: trackByCongregacion"
                      class="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors duration-150">
 
-                     <td class="px-6 py-4 min-w-0">
+                     <td class="px-4 xl:px-6 py-3 min-w-0">
                         <div class="flex items-center gap-3 sm:gap-4 min-w-0">
                            <div [ngClass]="getCongregacionAvatarStyle(cong.nombre_congregacion)"
                               class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50">
                               {{ cong.nombre_congregacion.charAt(0).toUpperCase() }}
                            </div>
                            <div class="min-w-0">
-                              <p class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-brand-purple dark:group-hover:text-purple-300 transition-colors truncate max-w-[200px] sm:max-w-[280px]">
+                              <p class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-brand-purple dark:group-hover:text-purple-300 transition-colors truncate max-w-[11rem] xl:max-w-[22rem]">
                                  {{ cong.nombre_congregacion }}
                               </p>
-                              <p class="text-[0.625rem] font-bold text-brand-purple/60 dark:text-purple-400/80 uppercase tracking-wide mt-0.5">
-                                 ID #{{ cong.id_congregacion }}
+                              <p class="text-xs font-semibold text-brand-purple/70 dark:text-purple-300/80 mt-0.5 tabular-nums">
+                                 ID #{{ cong.id_congregacion }}<span class="xl:hidden text-slate-500 dark:text-slate-400"> · <b class="text-slate-700 dark:text-slate-200">{{ cong.miembros }}</b> publicadores</span>
                               </p>
                            </div>
                         </div>
                      </td>
 
-                     <td class="px-6 py-4">
+                     <td class="px-4 xl:px-6 py-3">
                         <div class="flex flex-col gap-1">
                            <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300 text-sm font-medium">
                               <svg class="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -296,7 +194,7 @@
                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                               </svg>
-                              <span class="min-w-0 truncate max-w-[240px]">{{ cong.direccion || 'Sin dirección' }}</span>
+                              <span class="min-w-0 truncate max-w-[10rem] lg:max-w-[11rem] xl:max-w-[26rem]" [title]="cong.direccion || ''">{{ cong.direccion || 'Sin dirección' }}</span>
                            </div>
                            <div class="flex items-center gap-2 pl-[2px]">
                               <span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-500 shrink-0"></span>
@@ -305,42 +203,42 @@
                         </div>
                      </td>
 
-                     <td class="px-6 py-4">
+                     <td class="hidden xl:table-cell px-4 xl:px-6 py-3">
                         <div class="flex items-center gap-2">
                            <span class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ cong.miembros }}</span>
                            <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">publicadores</span>
                         </div>
                      </td>
 
-                     <td class="px-6 py-4 text-right align-middle">
-                        <div class="flex items-center justify-end gap-1 sm:gap-2 opacity-70 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                     <td class="px-4 xl:px-6 py-3 text-right align-middle">
+                        <div class="flex items-center justify-end gap-0.5 xl:gap-1 opacity-80 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                            <button (click)="editCongregation(cong.id_congregacion)" type="button"
-                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-brand-purple hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:hover:text-purple-300 transition-all touch-manipulation"
-                              title="Editar">
+                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand-purple hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:hover:text-purple-300 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                              title="Editar" [attr.aria-label]="'Editar: ' + cong.nombre_congregacion">
                               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
                            </button>
                            <button (click)="openImportModalForCongregacion(cong.id_congregacion, cong.nombre_congregacion)" type="button"
-                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-300 transition-all touch-manipulation"
-                              title="Cargar plantilla Excel">
+                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-300 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                              title="Cargar plantilla Excel" [attr.aria-label]="'Cargar plantilla Excel: ' + cong.nombre_congregacion">
                               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                               </svg>
                            </button>
                            <button (click)="exportCongregation(cong.id_congregacion, cong.nombre_congregacion)" type="button"
-                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-300 transition-all touch-manipulation"
-                              [class.animate-pulse]="exportingId() === cong.id_congregacion" title="Exportar Excel">
+                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-300 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                              [class.animate-pulse]="exportingId() === cong.id_congregacion" title="Exportar Excel" [attr.aria-label]="'Exportar Excel: ' + cong.nombre_congregacion">
                               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                               </svg>
                            </button>
                            <button (click)="confirmDeleteCongregation(cong)" type="button"
-                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 dark:hover:text-red-300 transition-all touch-manipulation"
-                              title="Eliminar">
+                              class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 dark:hover:text-red-300 transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/40"
+                              title="Eliminar" [attr.aria-label]="'Eliminar: ' + cong.nombre_congregacion">
                               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -354,7 +252,7 @@
 
             <!-- Empty State -->
             <div *ngIf="filteredCongregations().length === 0"
-               class="py-20 flex flex-col items-center justify-center text-center">
+               class="py-16 flex flex-col items-center justify-center text-center">
                <div class="w-20 h-20 bg-slate-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mb-4">
                   <svg class="w-10 h-10 text-slate-200 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -369,32 +267,11 @@
             </div>
          </div>
 
-         <!-- Pagination footer -->
-         <div *ngIf="filteredCongregations().length > 0"
-            class="px-4 sm:px-6 md:px-8 py-4 sm:py-5 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 mt-auto bg-slate-50/50 dark:bg-slate-800/50 shrink-0 transition-colors duration-300">
-            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide order-2 sm:order-1 text-center sm:text-left">
-               Mostrando {{ filteredCongregations().length }} de {{ totalCount }} registros
-            </span>
-            <div class="flex items-center gap-2 order-1 sm:order-2">
-               <button type="button" disabled
-                  class="w-9 h-9 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-600 text-slate-300 dark:text-slate-500 cursor-not-allowed touch-manipulation">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                  </svg>
-               </button>
-               <button type="button" disabled
-                  class="w-9 h-9 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-600 text-slate-300 dark:text-slate-500 cursor-not-allowed touch-manipulation">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                  </svg>
-               </button>
-            </div>
-         </div>
       </div>
 
       <!-- Other Tabs placeholders -->
       <div *ngIf="activeTab() === 'auditoria'"
-         class="py-20 flex flex-col items-center justify-center text-center animate-fadeIn">
+         class="flex-1 py-16 flex flex-col items-center justify-center text-center animate-fadeIn">
          <div class="w-20 h-20 bg-slate-50 dark:bg-slate-700/50 rounded-2xl flex items-center justify-center mb-6">
             <svg class="w-10 h-10 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -406,7 +283,7 @@
       </div>
 
       <div *ngIf="activeTab() === 'seguridad'"
-         class="py-20 flex flex-col items-center justify-center text-center animate-fadeIn">
+         class="flex-1 py-16 flex flex-col items-center justify-center text-center animate-fadeIn">
          <div class="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mb-6">
             <svg class="w-10 h-10 text-red-300 dark:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -427,7 +304,7 @@
                <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
                   <button *ngFor="let f of [{val:'todas', label:'Todas'},{val:'pendiente', label:'Pendientes'},{val:'aprobada', label:'Aprobadas'},{val:'rechazada', label:'Rechazadas'}]"
                      (click)="setSolicitudFilter(f.val)" type="button"
-                     class="px-3.5 py-1.5 rounded-lg text-[0.6875rem] font-bold transition-all whitespace-nowrap active:scale-95"
+                     class="px-3.5 min-h-[2.25rem] rounded-lg text-xs font-bold transition-colors whitespace-nowrap active:scale-[0.97]"
                      [ngClass]="solicitudFilter() === f.val 
                         ? 'bg-brand-purple text-white shadow-md shadow-purple-500/20' 
                         : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'">
@@ -436,7 +313,7 @@
                </div>
 
                <!-- Stats Badges -->
-               <div class="flex items-center gap-3 text-[0.625rem] font-bold">
+               <div class="flex items-center gap-3 text-xs font-bold">
                   <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100/50 dark:border-amber-900/30">
                     <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                     {{ solicitudStats().pendientes }} pendientes
@@ -466,16 +343,16 @@
                   </div>
                   <div class="min-w-0 flex-1">
                      <div class="flex items-center gap-2">
-                        <p class="text-[0.8125rem] font-bold text-slate-800 dark:text-white truncate">{{ s.nombre }}</p>
+                        <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{{ s.nombre }}</p>
                         <span class="hidden sm:inline w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
-                        <span class="hidden sm:inline text-[0.6875rem] text-slate-400 dark:text-slate-500">{{ s.email }}</span>
+                        <span class="hidden sm:inline text-xs text-slate-400 dark:text-slate-500 truncate">{{ s.email }}</span>
                      </div>
                      <div class="flex items-center gap-2 mt-0.5 opacity-80">
-                        <span class="text-[0.6875rem] text-slate-500 dark:text-slate-400">{{ s.congregacion }}</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ s.congregacion }}</span>
                         <span class="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-800"></span>
-                        <span class="text-[0.6875rem] text-slate-400 dark:text-slate-500">{{ s.telefono }}</span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500">{{ s.telefono }}</span>
                      </div>
-                     <p *ngIf="s.observaciones" class="text-[0.625rem] text-slate-400 dark:text-slate-500 mt-1 italic line-clamp-1 border-s-2 border-slate-100 dark:border-slate-800 ps-2">
+                     <p *ngIf="s.observaciones" class="text-xs text-slate-400 dark:text-slate-500 mt-1 italic line-clamp-1 border-s-2 border-slate-100 dark:border-slate-800 ps-2">
                         "{{ s.observaciones }}"
                      </p>
                   </div>
@@ -484,7 +361,7 @@
                <!-- Status and Actions -->
                <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                   <div class="flex flex-col items-end gap-1">
-                    <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border shadow-sm"
+                    <span class="px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border shadow-sm"
                        [ngClass]="{
                           'bg-amber-50/50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800': s.estado === 'pendiente',
                           'bg-emerald-50/50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800': s.estado === 'aprobada',
@@ -492,14 +369,15 @@
                        }">
                        {{ s.estado }}
                     </span>
-                    <span class="text-[9px] text-slate-400 dark:text-slate-600 font-medium">{{ s.creado_en ? (s.creado_en | date:'dd MMM yyyy, HH:mm':'-0500':'es') : '' }}</span>
+                    <span class="text-xs text-slate-400 dark:text-slate-600 font-medium">{{ s.creado_en ? (s.creado_en | date:'dd MMM yyyy, HH:mm':'-0500':'es') : '' }}</span>
                   </div>
 
                   <!-- Action Buttons -->
                   <div *ngIf="s.estado === 'pendiente'" class="flex items-center gap-1.5 ms-2 ps-3 border-s border-slate-100 dark:border-slate-800/60">
                      <button (click)="cambiarEstadoSolicitud(s.id_solicitud, 'aprobada')" type="button"
                         [disabled]="updatingSolicitudId() === s.id_solicitud"
-                        class="w-8 h-8 rounded-lg flex items-center justify-center text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all active:scale-90 disabled:opacity-50"
+                        [attr.aria-label]="'Aprobar solicitud de ' + s.nombre"
+                        class="w-10 h-10 rounded-lg flex items-center justify-center text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all active:scale-90 disabled:opacity-50"
                         title="Aprobar">
                         <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
@@ -507,7 +385,8 @@
                      </button>
                      <button (click)="cambiarEstadoSolicitud(s.id_solicitud, 'rechazada')" type="button"
                         [disabled]="updatingSolicitudId() === s.id_solicitud"
-                        class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500/70 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all active:scale-90 disabled:opacity-50"
+                        [attr.aria-label]="'Rechazar solicitud de ' + s.nombre"
+                        class="w-10 h-10 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all active:scale-90 disabled:opacity-50"
                         title="Rechazar">
                         <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />

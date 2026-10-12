@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, AfterViewInit, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -23,6 +23,18 @@ export const ADMIN_TABS = [
 ] as const;
 
 export type AdminTab = typeof ADMIN_TABS[number];
+
+/** Etiqueta e icono (paths SVG 24x24, trazo) de cada pestaña, en el orden de ADMIN_TABS. */
+const ADMIN_TAB_META: Record<AdminTab, { label: string; paths: string[]; danger?: boolean }> = {
+   congregaciones: { label: 'Congregaciones', paths: ['M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'] },
+   auditoria: { label: 'Auditoría', paths: ['M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'] },
+   solicitudes: { label: 'Solicitudes', paths: ['M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z'] },
+   ai: { label: 'Motores IA', paths: ['M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'] },
+   'base-datos': { label: 'Base de Datos', paths: ['M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4'] },
+   sistema: { label: 'Sistema', paths: ['M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z'] },
+   apis: { label: 'APIs', paths: ['M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244'] },
+   seguridad: { label: 'Seguridad', paths: ['M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'], danger: true },
+};
 
 interface CongregacionUrl {
    id_url: number;
@@ -88,6 +100,13 @@ interface SolicitudAcceso {
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }
+     .scrollbar-hide { scrollbar-width: none; }
+     /* Desvanecido en el borde por el que quedan pestañas ocultas */
+     .admin-tabs [role=tablist] { --fs: 0px; --fe: 0px;
+       -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fs), #000 calc(100% - var(--fe)), transparent);
+               mask-image: linear-gradient(to right, transparent, #000 var(--fs), #000 calc(100% - var(--fe)), transparent); }
+     .admin-tabs.fade-start [role=tablist] { --fs: 2rem; }
+     .admin-tabs.fade-end [role=tablist] { --fe: 2rem; }
    `],
    animations: [
       trigger('slidePanel', [
@@ -107,7 +126,7 @@ interface SolicitudAcceso {
       ])
    ]
 })
-export class AdminConfigPage implements OnInit {
+export class AdminConfigPage implements OnInit, AfterViewInit {
 
    /** trackBy: evita recrear el DOM de toda la lista en cada cambio. */
    trackByCongregacion = (_: number, c: any) => c.id_congregacion;
@@ -119,6 +138,9 @@ export class AdminConfigPage implements OnInit {
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
    activeTab = signal<AdminTab>('congregaciones');
+   readonly tabs = ADMIN_TABS.map(id => ({ id, ...ADMIN_TAB_META[id] }));
+   tabFade = signal({ start: false, end: false });
+   @ViewChild('tabsScroller') private tabsScroller?: ElementRef<HTMLElement>;
    loading = signal(false);
 
    // Data Signals
@@ -177,6 +199,9 @@ export class AdminConfigPage implements OnInit {
          if (tabToSet && (ADMIN_TABS as readonly string[]).includes(tabToSet)) {
             this.activeTab.set(tabToSet);
             localStorage.setItem('admin_active_tab', tabToSet);
+            // En pantallas estrechas la barra de pestañas hace scroll: que la activa quede a la vista.
+            setTimeout(() => document.getElementById(`admin-tab-${tabToSet}`)
+               ?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
             
             // Load specific data based on tab
             if (tabToSet === 'solicitudes') {
@@ -223,6 +248,35 @@ export class AdminConfigPage implements OnInit {
 
       if (tab === 'congregaciones') this.loadCongregaciones();
       if (tab === 'solicitudes') this.loadSolicitudes();
+   }
+
+   ngAfterViewInit() {
+      // Tras el primer render: medir si la barra de pestañas desborda.
+      setTimeout(() => this.updateTabFade());
+   }
+
+   @HostListener('window:resize')
+   updateTabFade() {
+      const el = this.tabsScroller?.nativeElement;
+      if (!el) return;
+      const start = el.scrollLeft > 4;
+      const end = el.scrollLeft + el.clientWidth < el.scrollWidth - 4;
+      const prev = this.tabFade();
+      if (prev.start !== start || prev.end !== end) this.tabFade.set({ start, end });
+   }
+
+   /** Flechas/Inicio/Fin entre pestañas (patrón WAI-ARIA tablist). */
+   onTabKeydown(event: KeyboardEvent) {
+      const i = ADMIN_TABS.indexOf(this.activeTab());
+      const n = ADMIN_TABS.length;
+      const next = ({ ArrowRight: (i + 1) % n, ArrowLeft: (i - 1 + n) % n, Home: 0, End: n - 1 } as Record<string, number>)[event.key];
+      if (next === undefined) return;
+      event.preventDefault();
+      this.setTab(ADMIN_TABS[next]);
+      const tablist = (event.currentTarget as HTMLElement);
+      const btn = tablist.querySelector<HTMLElement>(`#admin-tab-${ADMIN_TABS[next]}`);
+      btn?.focus();
+      btn?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
    }
 
    loadCongregaciones() {
