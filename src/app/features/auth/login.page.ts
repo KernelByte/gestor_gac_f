@@ -27,6 +27,10 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
 
   loading = signal(false);
   error = signal<string | null>(null);
+  /** Desafío del segundo paso (verificación en dos pasos); null = primer paso. */
+  desafio = signal<string | null>(null);
+  codigo = signal('');
+  usarRecuperacion = signal(false);
   showPassword = signal(false);
 
   // Hacker / AI text animation
@@ -427,24 +431,61 @@ export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
     this.loading.set(true); this.error.set(null);
     const { username, password, remember } = this.form.getRawValue() as { username: string; password: string; remember: boolean };
     this.auth.login({ username, password }).subscribe({
-      next: () => {
-        try {
-          if (remember) {
-            localStorage.setItem(this.EMAIL_KEY, JSON.stringify({ email: username, ts: Date.now() }));
-          } else {
-            localStorage.removeItem(this.EMAIL_KEY);
-          }
-        } catch { }
-        this.auth.me().subscribe({
-          next: () => { this.loading.set(false); this.router.navigateByUrl('/'); },
-          error: () => { this.loading.set(false); this.router.navigateByUrl('/'); }
-        });
+      next: (res) => {
+        this.recordarCorreo(username, remember);
+        if (res.requiere_2fa && res.desafio) {
+          this.loading.set(false);
+          this.desafio.set(res.desafio);
+          this.codigo.set('');
+          return;
+        }
+        this.entrar();
       },
       error: (err) => {
         this.loading.set(false);
         this.error.set(err?.error?.detail ?? 'No se pudo iniciar sesión');
       }
     });
+  }
+
+  onVerificar() {
+    const desafio = this.desafio();
+    if (!desafio || this.codigo().trim().length < 6) return;
+    this.loading.set(true); this.error.set(null);
+    this.auth.verificarDosPasos(desafio, this.codigo().trim()).subscribe({
+      next: () => this.entrar(),
+      error: (err) => {
+        this.loading.set(false);
+        this.codigo.set('');
+        this.error.set(err?.error?.detail ?? 'No se pudo verificar el código');
+        // Desafío vencido o agotado: de vuelta al primer paso.
+        if (err?.status === 401) this.cancelarDosPasos(err?.error?.detail);
+      }
+    });
+  }
+
+  cancelarDosPasos(mensaje?: string) {
+    this.desafio.set(null);
+    this.codigo.set('');
+    this.usarRecuperacion.set(false);
+    this.error.set(mensaje ?? null);
+  }
+
+  private entrar() {
+    this.auth.me().subscribe({
+      next: () => { this.loading.set(false); this.router.navigateByUrl('/'); },
+      error: () => { this.loading.set(false); this.router.navigateByUrl('/'); }
+    });
+  }
+
+  private recordarCorreo(username: string, remember: boolean) {
+    try {
+      if (remember) {
+        localStorage.setItem(this.EMAIL_KEY, JSON.stringify({ email: username, ts: Date.now() }));
+      } else {
+        localStorage.removeItem(this.EMAIL_KEY);
+      }
+    } catch { }
   }
 }
  

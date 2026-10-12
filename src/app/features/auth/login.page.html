@@ -69,7 +69,53 @@
         </p>
       </div>
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 sm:space-y-5 relative z-10">
+      <!-- Segundo paso: verificación en dos pasos -->
+      <form *ngIf="desafio()" (submit)="$event.preventDefault(); onVerificar()" class="space-y-4 sm:space-y-5 relative z-10 animate-fadeIn">
+        <div class="rounded-xl bg-slate-950/40 border border-slate-700/60 p-4 text-sm text-slate-300 leading-relaxed">
+          <ng-container *ngIf="!usarRecuperacion(); else textoRecuperacion">
+            Abre la aplicación de verificación en tu teléfono (por ejemplo, Google Authenticator)
+            y escribe el código de 6 números que aparece para <b class="text-white">GAC</b>.
+          </ng-container>
+          <ng-template #textoRecuperacion>
+            Escribe uno de los códigos de recuperación que guardaste al activar la verificación.
+            Cada código sirve una sola vez.
+          </ng-template>
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="codigo2fa" class="block text-sm font-semibold text-slate-300 ml-1">
+            {{ usarRecuperacion() ? 'Código de recuperación' : 'Código de verificación' }}
+          </label>
+          <input id="codigo2fa" #codigoInput [value]="codigo()" (input)="codigo.set(codigoInput.value)"
+            [attr.inputmode]="usarRecuperacion() ? 'text' : 'numeric'"
+            [attr.maxlength]="usarRecuperacion() ? 11 : 6"
+            autocomplete="one-time-code" autofocus
+            class="w-full h-12 sm:h-14 bg-slate-950/50 border border-slate-700/60 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-[#6D28D9] block px-4 placeholder-slate-600 transition-all duration-200 text-center tracking-[0.4em] font-mono text-xl"
+            [placeholder]="usarRecuperacion() ? 'XXXXX-XXXXX' : '000000'">
+        </div>
+
+        <button type="submit" [disabled]="loading() || codigo().trim().length < 6"
+          class="w-full flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-purple to-violet-600 hover:to-brand-purple focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-brand-purple disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.97]">
+          {{ loading() ? 'Verificando…' : 'Verificar y entrar' }}
+        </button>
+
+        <div class="flex flex-col sm:flex-row sm:justify-between gap-2 text-sm">
+          <button type="button" (click)="usarRecuperacion.set(!usarRecuperacion()); codigo.set('')"
+            class="font-semibold text-purple-400 hover:text-violet-300 transition-colors text-left">
+            {{ usarRecuperacion() ? 'Usar el código del teléfono' : 'No tengo el teléfono: usar código de recuperación' }}
+          </button>
+          <button type="button" (click)="cancelarDosPasos()" class="font-semibold text-slate-400 hover:text-white transition-colors text-left">
+            Volver
+          </button>
+        </div>
+
+        <div *ngIf="error()" role="alert"
+          class="text-center text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl animate-fadeIn font-medium">
+          {{ error() }}
+        </div>
+      </form>
+
+      <form *ngIf="!desafio()" [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 sm:space-y-5 relative z-10">
 
         <!-- Username Input -->
         <div class="space-y-1.5 login-form-item" style="--i:1">

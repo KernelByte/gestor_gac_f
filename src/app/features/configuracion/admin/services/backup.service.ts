@@ -15,6 +15,8 @@ export interface BackupHistorial {
    iniciado_por: string | null;
    enviado_por_email: boolean;
    email_destino: string | null;
+   /** true = .bin cifrado: restaurarlo pide el archivo .gacllave y su frase. */
+   cifrado?: boolean;
    fecha_creacion: string;
 }
 
@@ -93,14 +95,21 @@ export class BackupService {
       );
    }
 
-   restaurarBackup(id: number): Observable<RestaurarResponse> {
-      return this.http.post<RestaurarResponse>(`${this.apiUrl}/restaurar/${id}`, {});
+   restaurarBackup(id: number, llave?: File | null, frase?: string): Observable<RestaurarResponse> {
+      return this.http.post<RestaurarResponse>(`${this.apiUrl}/restaurar/${id}`, this.conLlave(new FormData(), llave, frase));
    }
 
-   restaurarDesdeArchivo(archivo: File): Observable<RestaurarResponse> {
+   restaurarDesdeArchivo(archivo: File, llave?: File | null, frase?: string): Observable<RestaurarResponse> {
       const form = new FormData();
       form.append('archivo', archivo, archivo.name);
-      return this.http.post<RestaurarResponse>(`${this.apiUrl}/restaurar/upload`, form);
+      return this.http.post<RestaurarResponse>(`${this.apiUrl}/restaurar/upload`, this.conLlave(form, llave, frase));
+   }
+
+   /** Llave .gacllave + frase para respaldos cifrados; la frase nunca se guarda. */
+   private conLlave(form: FormData, llave?: File | null, frase?: string): FormData {
+      if (llave) form.append('llave', llave, llave.name);
+      if (frase) form.append('frase', frase);
+      return form;
    }
 
    actualizarProgramacion(config: ProgramacionUpdate): Observable<BackupProgramacion> {

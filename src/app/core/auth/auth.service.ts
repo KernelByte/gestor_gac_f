@@ -8,6 +8,14 @@ import { Router } from '@angular/router';
 
 const API = environment.apiUrl;
 
+/** Con la verificación en dos pasos activa, el login devuelve un desafío en vez de la sesión. */
+export interface RespuestaLogin {
+  access_token?: string;
+  token_type?: string;
+  requiere_2fa?: boolean;
+  desafio?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
@@ -20,13 +28,22 @@ export class AuthService {
     body.set('username', data.username);
     body.set('password', data.password);
 
-    return this.http.post<{ access_token: string; token_type: string }>(
+    return this.http.post<RespuestaLogin>(
       `${API}/auth/login`,
       body.toString(),
       {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         withCredentials: true, // necesario para recibir la cookie refresh_token
       }
+    ).pipe(tap(res => { if (res.access_token) this.tokens.setAccess(res.access_token); }));
+  }
+
+  /** Segundo paso del login: código de la app de verificación o de recuperación. */
+  verificarDosPasos(desafio: string, codigo: string) {
+    return this.http.post<{ access_token: string }>(
+      `${API}/auth/2fa/verificar`,
+      { desafio, codigo },
+      { withCredentials: true },
     ).pipe(tap(res => this.tokens.setAccess(res.access_token)));
   }
 

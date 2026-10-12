@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { AuthStore } from '../../core/auth/auth.store';
 import { etiquetaRol } from '../../core/auth/rol-label';
 import { HttpClient } from '@angular/common/http';
+import { PerfilDosPasosComponent } from './perfil-dos-pasos.component';
 
 @Component({
   selector: 'app-perfil',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PerfilDosPasosComponent],
   templateUrl: './perfil.page.html'
 })
 export class PerfilPage implements OnInit {

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -179,10 +179,14 @@ interface CongregacionOption {
                      </button>
                   </div>
 
+                  <datalist id="correos-admin">
+                     <option *ngFor="let c of correosAdmin()" [value]="c"></option>
+                  </datalist>
                   <div *ngIf="enviarEmail()" class="mt-4 animate-slideIn">
                      <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Correo electr&oacute;nico</label>
-                     <input [(ngModel)]="emailDestino" type="email" placeholder="ejemplo@correo.com"
+                     <input [(ngModel)]="emailDestino" type="email" placeholder="correo de un administrador" list="correos-admin"
                         class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
+                     <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Por seguridad, solo se puede enviar al correo de un administrador del sistema.</p>
                   </div>
                </div>
 
@@ -281,6 +285,8 @@ interface CongregacionOption {
                               : 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400'">
                            {{ backup.tipo === 'completo' ? 'Completo' : backup.nombre_congregacion || 'Congregaci\u00f3n' }}
                         </span>
+                        <span *ngIf="backup.cifrado" class="px-2 py-0.5 rounded-full text-xs font-bold shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                           title="Cifrado: para restaurarlo se necesita el archivo de llave y su frase">Cifrado</span>
                      </div>
                      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         {{ formatFecha(backup.fecha_creacion) }}
@@ -454,13 +460,13 @@ interface CongregacionOption {
                <!-- Upload from file -->
                <div class="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5">
                   <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white mb-1">Subir archivo de respaldo</h3>
-                  <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Acepta archivos <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.dump</code> (backup completo) o <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.sql</code> (backup por congregaci&oacute;n)</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Acepta archivos <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.bin</code> (cifrado), <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.dump</code> (backup completo) o <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">.sql</code> (backup por congregaci&oacute;n)</p>
 
                   <label class="flex flex-col items-center justify-center gap-2 w-full rounded-xl border-2 border-dashed cursor-pointer transition-colors"
                      [ngClass]="archivoSubir()
                         ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 py-4'
                         : 'border-slate-300 dark:border-slate-600 hover:border-brand-purple hover:bg-brand-purple/5 dark:hover:bg-brand-purple/10 py-6'">
-                     <input type="file" accept=".dump,.sql" class="hidden" (change)="onArchivoSeleccionado($event)" [disabled]="subiendoArchivo()">
+                     <input type="file" accept=".bin,.dump,.sql" class="hidden" (change)="onArchivoSeleccionado($event)" [disabled]="subiendoArchivo()">
 
                      <ng-container *ngIf="!archivoSubir()">
                         <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -542,6 +548,8 @@ interface CongregacionOption {
                               : 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400'">
                            {{ backup.tipo === 'completo' ? 'Completo' : backup.nombre_congregacion || 'Congregaci\u00f3n' }}
                         </span>
+                        <span *ngIf="backup.cifrado" class="px-2 py-0.5 rounded-full text-xs font-bold shrink-0 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                           title="Cifrado: para restaurarlo se necesita el archivo de llave y su frase">Cifrado</span>
                      </div>
                      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         {{ formatFecha(backup.fecha_creacion) }}
@@ -628,13 +636,25 @@ interface CongregacionOption {
                   Se sobrescribir&aacute;n los datos de la congregaci&oacute;n <strong>{{ showRestoreConfirm()!.nombre_congregacion }}</strong> con los del respaldo.
                </span>
             </p>
+            <div *ngIf="showRestoreConfirm()!.cifrado" class="mb-5 space-y-3 text-left">
+               <p class="text-xs text-slate-600 dark:text-slate-300">Este respaldo est&aacute; cifrado. Sube el archivo de llave y escribe su frase.</p>
+               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Archivo de llave (.gacllave)
+                  <input type="file" accept=".gacllave,application/json" (change)="onLlaveSeleccionada($event)"
+                     class="mt-1 block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-slate-100 dark:file:bg-slate-700 file:font-bold">
+               </label>
+               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Frase
+                  <input type="password" [value]="fraseRestaurar()" (input)="fraseRestaurar.set($any($event.target).value)" autocomplete="off"
+                     class="mt-1 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple">
+               </label>
+            </div>
             <div class="flex gap-3">
                <button (click)="showRestoreConfirm.set(null)" type="button"
                   class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                   Cancelar
                </button>
                <button (click)="ejecutarRestaurar(showRestoreConfirm()!)" type="button"
-                  class="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-sm transition-colors">
+                  [disabled]="showRestoreConfirm()!.cifrado && !llaveLista()"
+                  class="disabled:opacity-50 disabled:cursor-not-allowed flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-sm transition-colors">
                   S&iacute;, restaurar
                </button>
             </div>
@@ -663,14 +683,29 @@ interface CongregacionOption {
                <span *ngIf="archivoSubir()?.name?.endsWith('.sql')">
                   Se sobrescribir&aacute;n los datos de la congregaci&oacute;n contenidos en este archivo.
                </span>
+               <span *ngIf="archivoSubir()?.name?.endsWith('.bin')">
+                  Si es un respaldo completo, reemplazar&aacute; <strong>toda</strong> la base de datos.
+               </span>
             </p>
+            <div *ngIf="archivoSubir()?.name?.endsWith('.bin')" class="mb-5 space-y-3 text-left">
+               <p class="text-xs text-slate-600 dark:text-slate-300">Este respaldo est&aacute; cifrado. Sube el archivo de llave y escribe su frase.</p>
+               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Archivo de llave (.gacllave)
+                  <input type="file" accept=".gacllave,application/json" (change)="onLlaveSeleccionada($event)"
+                     class="mt-1 block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-slate-100 dark:file:bg-slate-700 file:font-bold">
+               </label>
+               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Frase
+                  <input type="password" [value]="fraseRestaurar()" (input)="fraseRestaurar.set($any($event.target).value)" autocomplete="off"
+                     class="mt-1 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple">
+               </label>
+            </div>
             <div class="flex gap-3">
                <button (click)="showRestoreArchivoConfirm.set(false)" type="button"
                   class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                   Cancelar
                </button>
                <button (click)="ejecutarRestaurarArchivo()" type="button"
-                  class="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-sm transition-colors">
+                  [disabled]="!!archivoSubir()?.name?.endsWith('.bin') && !llaveLista()"
+                  class="disabled:opacity-50 disabled:cursor-not-allowed flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-sm transition-colors">
                   S&iacute;, restaurar
                </button>
             </div>
@@ -728,6 +763,11 @@ export class DbBackupComponent implements OnInit {
    backupsRestaurables = () => this.historial().filter(b => b.estado === 'completado');
 
    ngOnInit() {
+      // Correos permitidos para enviar respaldos (el backend rechaza cualquier otro).
+      this.http.get<{ correo: string; rol: string }[]>(`${environment.apiUrl}/seguridad/usuarios`).subscribe({
+         next: us => this.correosAdmin.set(us.filter(u => u.rol?.toLowerCase() === 'administrador').map(u => u.correo)),
+         error: () => { },
+      });
       // Restore active section from localStorage
       const savedSection = localStorage.getItem('db_backup_active_section');
       if (savedSection && ['backup', 'historial', 'programacion', 'restaurar'].includes(savedSection)) {
@@ -903,7 +943,24 @@ export class DbBackupComponent implements OnInit {
    }
 
    confirmarRestaurar(backup: BackupHistorial) {
+      this.limpiarLlave();
       this.showRestoreConfirm.set(backup);
+   }
+
+   // Llave de respaldos cifrados: solo en memoria mientras dura el modal.
+   llaveRestaurar = signal<File | null>(null);
+   fraseRestaurar = signal('');
+   llaveLista = computed(() => !!this.llaveRestaurar() && this.fraseRestaurar().length > 0);
+   correosAdmin = signal<string[]>([]);
+
+   onLlaveSeleccionada(event: Event) {
+      const input = event.target as HTMLInputElement;
+      this.llaveRestaurar.set(input.files?.[0] ?? null);
+   }
+
+   private limpiarLlave() {
+      this.llaveRestaurar.set(null);
+      this.fraseRestaurar.set('');
    }
 
    ejecutarRestaurar(backup: BackupHistorial) {
@@ -911,7 +968,9 @@ export class DbBackupComponent implements OnInit {
       this.restoringId.set(backup.id_backup);
       this.notification.set(null);
 
-      this.backupService.restaurarBackup(backup.id_backup).subscribe({
+      const llave = this.llaveRestaurar(), frase = this.fraseRestaurar();
+      this.limpiarLlave();
+      this.backupService.restaurarBackup(backup.id_backup, llave, frase).subscribe({
          next: result => {
             this.restoringId.set(null);
             this.showNotification(result.mensaje, 'success');
@@ -933,6 +992,7 @@ export class DbBackupComponent implements OnInit {
 
    confirmarRestaurarArchivo() {
       if (!this.archivoSubir()) return;
+      this.limpiarLlave();
       this.showRestoreArchivoConfirm.set(true);
    }
 
@@ -943,7 +1003,9 @@ export class DbBackupComponent implements OnInit {
       this.subiendoArchivo.set(true);
       this.notification.set(null);
 
-      this.backupService.restaurarDesdeArchivo(archivo).subscribe({
+      const llave = this.llaveRestaurar(), frase = this.fraseRestaurar();
+      this.limpiarLlave();
+      this.backupService.restaurarDesdeArchivo(archivo, llave, frase).subscribe({
          next: result => {
             this.subiendoArchivo.set(false);
             this.archivoSubir.set(null);

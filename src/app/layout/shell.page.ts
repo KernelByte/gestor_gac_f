@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef, HostListener, Pipe, PipeTransform } from '@angular/core';
+import { Component, computed, effect, untracked, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef, HostListener, Pipe, PipeTransform } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { AuthStore } from '../core/auth/auth.store';
@@ -13,6 +13,7 @@ import { CongregacionContextService } from '../core/congregacion-context/congreg
 import { NotificacionesService } from '../core/notificaciones/notificaciones.service';
 import { Notificacion } from '../core/notificaciones/notificacion.model';
 import { ForcePasswordChangeComponent } from '../core/components/force-password-change.component';
+import { ForceTwoFactorComponent } from '../core/components/force-two-factor.component';
 import { ModalBackdropService } from '../core/services/modal-backdrop.service';
 import { ToastContainerComponent } from '../shared/components/toast/toast-container.component';
 import { CommandPaletteComponent } from '../shared/components/command-palette/command-palette.component';
@@ -39,12 +40,13 @@ export class TimeAgoPipe implements PipeTransform {
 @Component({
   standalone: true,
   selector: 'app-shell',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TimeAgoPipe, ForcePasswordChangeComponent, ToastContainerComponent, CommandPaletteComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, TimeAgoPipe, ForcePasswordChangeComponent, ForceTwoFactorComponent, ToastContainerComponent, CommandPaletteComponent],
   template: `
     <div class="flex h-screen overflow-hidden bg-app-bg dark:bg-slate-950 transition-colors duration-300" [class.dark]="themeService.darkMode()">
 
       <!-- Cambio de Contraseña Obligatorio (Overlay) -->
       <app-force-password-change *ngIf="mustChangePassword()"></app-force-password-change>
+      <app-force-two-factor *ngIf="!mustChangePassword() && mustEnableTwoFactor()"></app-force-two-factor>
       
       <!-- Mobile Overlay -->
       <div 
@@ -1325,14 +1327,21 @@ export class ShellPage implements OnInit, OnDestroy {
 
   user = computed(() => this.store.user());
   mustChangePassword = computed(() => this.store.user()?.debe_cambiar_contrasena === true);
+  mustEnableTwoFactor = computed(() => this.store.user()?.mfa_pendiente === true);
+
+  // SSE de notificaciones: con la verificación en dos pasos pendiente el
+  // backend lo rechaza (403) y reintentaría en bucle; se abre al activarla.
+  private conectarNotificaciones = effect(() => {
+    if (this.mustEnableTwoFactor()) return;
+    untracked(() => this.notifService.connectSSE());
+  });
 
   router = inject(Router); // Re-injecting Router as it might be missing or private
 
   ngOnInit(): void {
     document.addEventListener('click', this.outsideClickHandler);
     
-    // Conectar SSE para notificaciones en tiempo real
-    this.notifService.connectSSE();
+    // El SSE de notificaciones lo abre `conectarNotificaciones`.
 
     // ¿El usuario colabora en alguna visita del SC? (ítem del menú Herramientas)
     this.visitaService.misColaboraciones().subscribe({

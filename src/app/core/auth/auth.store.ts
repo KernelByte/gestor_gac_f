@@ -12,6 +12,10 @@ export interface SessionUser {
   id_grupo_publicador?: number | null;
   permisos?: string[];
   debe_cambiar_contrasena?: boolean;
+  /** Verificación en dos pasos activa. */
+  totp_activo?: boolean;
+  /** Administrador que debe activar la verificación en dos pasos antes de seguir. */
+  mfa_pendiente?: boolean;
 }
 
 export const ROL_ADMINISTRADOR = 'Administrador';

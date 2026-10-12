@@ -10,6 +10,7 @@ import { AIConfigComponent } from './components/ai-config.component';
 import { DbBackupComponent } from './components/db-backup.component';
 import { SystemConfigComponent } from './components/system-config.component';
 import { ApiConfigComponent } from './components/api-config.component';
+import { SeguridadComponent } from './components/seguridad.component';
 import { ImportPublicadoresModalComponent } from '../../../shared/components/import-publicadores/import-publicadores-modal.component';
 
 /**
@@ -96,7 +97,7 @@ interface SolicitudAcceso {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ApiConfigComponent, ImportPublicadoresModalComponent],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ApiConfigComponent, SeguridadComponent, ImportPublicadoresModalComponent],
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }
