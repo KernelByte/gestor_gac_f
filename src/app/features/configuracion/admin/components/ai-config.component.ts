@@ -97,7 +97,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
             </div>
 
             <div class="divide-y divide-slate-100 dark:divide-slate-800/80">
-              <div *ngFor="let provider of objectKeys(config()!.providers)"
+              <div *ngFor="let provider of proveedoresNube()"
                 class="provider-card p-3 space-y-3">
 
                 <div class="flex items-center gap-2.5">
@@ -143,7 +143,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                   </div>
                   <div class="flex-1 min-w-0">
                     <span class="text-sm font-bold text-slate-800 dark:text-slate-100 capitalize block truncate">
-                      {{ provider === 'open_source' ? 'Open Source' : provider }}
+                      {{ providerLabel(provider) }}
                     </span>
                     <div class="flex items-center gap-1.5 mt-0.5">
                       <div class="w-1.5 h-1.5 rounded-full shrink-0"
@@ -184,6 +184,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                       class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-medium text-[0.6875rem] focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all"
                       placeholder="https://api.provider.ai/v1">
                   </div>
+
                 </div>
 
               </div>
@@ -283,27 +284,90 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 </p>
               </div>
 
-              <!-- Provider select -->
-              <div class="flex flex-col gap-1 w-36">
-                <label class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Proveedor</label>
-                <select [(ngModel)]="config()!.processes[selectedProcessKey()!].provider"
-                  class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-bold text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
-                  <option *ngFor="let p of objectKeys(config()!.providers)" [value]="p">
-                    {{ p === 'open_source' ? 'Open Source' : (p | titlecase) }}
-                  </option>
-                </select>
+              <!-- Motor: nube o IA local (solo procesos de redacción) -->
+              <div *ngIf="admiteLocal(selectedProcessKey()!)" class="flex flex-col gap-1">
+                <span class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Motor</span>
+                <div class="inline-flex p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold" role="group" aria-label="Motor de IA">
+                  <button type="button" (click)="usarLocal(false)"
+                    class="px-3 py-1.5 rounded-md transition-[background-color,color,box-shadow] duration-200"
+                    [ngClass]="!esLocal() ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                    En la nube
+                  </button>
+                  <button type="button" (click)="usarLocal(true)"
+                    class="px-3 py-1.5 rounded-md transition-[background-color,color,box-shadow] duration-200"
+                    [ngClass]="esLocal() ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                    IA local
+                  </button>
+                </div>
               </div>
 
-              <!-- Model select -->
-              <div class="flex flex-col gap-1 w-52">
-                <label class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Modelo</label>
-                <select [(ngModel)]="config()!.processes[selectedProcessKey()!].model"
-                  class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-bold text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
-                  <option *ngFor="let m of getModelsForProvider(config()!.processes[selectedProcessKey()!].provider)" [value]="m.id">
-                    {{ m.label }}
-                  </option>
-                </select>
+              <ng-container *ngIf="!esLocal()">
+                <!-- Provider select -->
+                <div class="flex flex-col gap-1 w-36">
+                  <label class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Proveedor</label>
+                  <select [(ngModel)]="config()!.processes[selectedProcessKey()!].provider"
+                    class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-bold text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
+                    <option *ngFor="let p of proveedoresNube()" [value]="p">{{ providerLabel(p) }}</option>
+                  </select>
+                </div>
+
+                <!-- Model select -->
+                <div class="flex flex-col gap-1 w-52">
+                  <label class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Modelo</label>
+                  <select [(ngModel)]="config()!.processes[selectedProcessKey()!].model"
+                    class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-bold text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
+                    <option *ngFor="let m of getModelsForProvider(config()!.processes[selectedProcessKey()!].provider)" [value]="m.id">
+                      {{ m.label }}
+                    </option>
+                  </select>
+                </div>
+              </ng-container>
+            </div>
+
+            <!-- Estado de la IA local: qué pasa si no responde -->
+            <div *ngIf="esLocal()" class="shrink-0 px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-x-5 gap-y-2 animate-slideIn">
+              <div class="basis-full grid gap-3 sm:grid-cols-[1fr_1.4fr]">
+                <div class="min-w-0">
+                  <label class="block text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Token de acceso</label>
+                  <div class="relative">
+                    <input [type]="isKeyVisible('gpu_local') ? 'text' : 'password'" [(ngModel)]="getProvider('gpu_local').api_key" autocomplete="off"
+                      class="w-full pl-3 pr-9 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-mono text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      placeholder="rk_app_…">
+                    <button type="button" (click)="toggleKeyVisibility('gpu_local')" [attr.aria-label]="isKeyVisible('gpu_local') ? 'Ocultar token' : 'Mostrar token'"
+                      class="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="min-w-0">
+                  <label class="block text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Dirección del servicio</label>
+                  <input type="text" [(ngModel)]="getProvider('gpu_local').base_url" autocomplete="off"
+                    class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-mono text-xs focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    placeholder="https://su-dominio/api/v1/text-vision/chat">
+                </div>
               </div>
+
+              <div class="basis-full flex flex-wrap items-center gap-x-3 gap-y-2">
+                <button type="button" (click)="probarLocal()" [disabled]="probando() || !getProvider('gpu_local').api_key"
+                  class="px-3.5 py-2 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-[background-color,transform] duration-150 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2">
+                  <span *ngIf="probando()" class="animate-spin h-3.5 w-3.5 border-2 border-slate-300 border-t-brand-purple rounded-full"></span>
+                  {{ probando() ? 'Probando...' : 'Probar conexión' }}
+                </button>
+                <input type="text" (input)="pegarConexion($any($event.target).value); $any($event.target).value = ''" autocomplete="off"
+                  class="flex-1 min-w-[14rem] px-3 py-2 bg-transparent border border-dashed border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-700 dark:text-slate-200 focus:border-brand-purple outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  placeholder="O pegue aquí el ejemplo de uso completo y se rellenan los dos campos">
+                <p *ngIf="pruebaLocal() as r" class="basis-full text-xs font-semibold leading-snug animate-slideIn"
+                  [ngClass]="r.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+                  {{ r.ok ? 'Conectada · respondió en ' + (r.ms! / 1000 | number:'1.1-1') + ' s. Recuerde pulsar Guardar.' : r.detalle }}
+                </p>
+              </div>
+
+              <label *ngIf="respaldoDisponible()" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer select-none">
+                <input type="checkbox" class="w-4 h-4 accent-[#6d28d9]" [checked]="!!selectedProcess()!.fallback_provider" (change)="alternarRespaldo($any($event.target).checked)">
+                Si no responde, usar {{ providerLabel(respaldoNube()!.provider) }}
+              </label>
             </div>
 
             <!-- Prompt editor (fills remaining height) -->
@@ -320,8 +384,8 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
                 placeholder="Defina el comportamiento y formato esperado del modelo...">
               </textarea>
               <p class="shrink-0 text-[0.625rem] text-slate-400 dark:text-slate-500 font-medium px-1">
-                Optimizado para <span class="text-brand-purple font-bold">{{ config()!.processes[selectedProcessKey()!].provider === 'open_source' ? 'Open Source' : (config()!.processes[selectedProcessKey()!].provider | titlecase) }}</span>
-                · {{ config()!.processes[selectedProcessKey()!].model || '—' }}
+                Optimizado para <span class="text-brand-purple font-bold">{{ providerLabel(config()!.processes[selectedProcessKey()!].provider) }}</span>
+                <ng-container *ngIf="!esLocal()"> · {{ config()!.processes[selectedProcessKey()!].model || '—' }}</ng-container>
               </p>
             </div>
 
@@ -408,9 +472,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
           <div>
             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Proveedor</label>
             <select [(ngModel)]="newProvider" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/70 rounded-lg text-slate-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-brand-purple/15 focus:border-brand-purple outline-none transition-all appearance-none cursor-pointer">
-              <option *ngFor="let p of objectKeys(config()!.providers)" [value]="p">
-                {{ p === 'open_source' ? 'Open Source' : (p | titlecase) }}
-              </option>
+              <option *ngFor="let p of proveedoresNube()" [value]="p">{{ providerLabel(p) }}</option>
             </select>
           </div>
 
@@ -572,6 +634,110 @@ export class AIConfigComponent implements OnInit, OnDestroy {
     ],
   };
 
+  // ── IA local ──────────────────────────────────────────────
+  readonly PROVEEDOR_LOCAL = 'gpu_local';
+  /** Procesos que redactan con ai_redactor y por tanto pueden usar la IA local. */
+  private readonly procesosConLocal = ['carta_transferencia', 'acta_redactor', 'tarea_extractor'];
+
+  probando = signal(false);
+  pruebaLocal = signal<{ ok: boolean; ms?: number; detalle?: string } | null>(null);
+
+  providerLabel(p: string): string {
+    return ({ open_source: 'Open Source', gpu_local: 'IA local (mi GPU)', openai: 'OpenAI', google: 'Google', anthropic: 'Anthropic' } as Record<string, string>)[p] ?? p;
+  }
+
+  proveedoresNube(): string[] {
+    return this.objectKeys(this.config()?.providers).filter(p => p !== this.PROVEEDOR_LOCAL);
+  }
+
+  admiteLocal(key: string): boolean {
+    return this.procesosConLocal.includes(key) && !!this.config()?.providers[this.PROVEEDOR_LOCAL];
+  }
+
+  esLocal(): boolean {
+    return this.selectedProcess()?.provider === this.PROVEEDOR_LOCAL;
+  }
+
+  /** Nube que se usaría como respaldo (la guardada, o el motor actual si está en nube). */
+  respaldoNube(): { provider: string; model: string } | null {
+    const p = this.selectedProcess();
+    if (!p) return null;
+    if (p.provider !== this.PROVEEDOR_LOCAL) return { provider: p.provider, model: p.model };
+    if (p.fallback_provider) return { provider: p.fallback_provider, model: p.fallback_model ?? '' };
+    return this.ultimaNube.get(this.selectedProcessKey()!) ?? null;
+  }
+
+  respaldoDisponible(): boolean {
+    return !!this.respaldoNube();
+  }
+
+  private ultimaNube = new Map<string, { provider: string; model: string }>();
+
+  usarLocal(activar: boolean) {
+    const p = this.selectedProcess();
+    const key = this.selectedProcessKey();
+    if (!p || !key || this.esLocal() === activar) return;
+    if (activar) {
+      // Recuerda la nube actual: sirve de respaldo y para volver sin perder la elección
+      this.ultimaNube.set(key, { provider: p.provider, model: p.model });
+      p.fallback_provider = p.provider;
+      p.fallback_model = p.model;
+      p.provider = this.PROVEEDOR_LOCAL;
+    } else {
+      const nube = this.respaldoNube() ?? { provider: this.proveedoresNube()[0], model: '' };
+      p.provider = nube.provider;
+      p.model = nube.model || this.getModelsForProvider(nube.provider)[0]?.id || '';
+      p.fallback_provider = null;
+      p.fallback_model = null;
+    }
+    this.service.config.set({ ...this.config()! });
+  }
+
+  alternarRespaldo(activo: boolean) {
+    const p = this.selectedProcess();
+    const nube = this.respaldoNube();
+    if (!p) return;
+    if (activo && nube) {
+      p.fallback_provider = nube.provider;
+      p.fallback_model = nube.model;
+    } else {
+      p.fallback_provider = null;
+      p.fallback_model = null;
+    }
+  }
+
+  /** Rellena dirección y token a partir de un texto pegado (token suelto o ejemplo curl completo). */
+  pegarConexion(texto: string) {
+    if (!texto?.trim()) return;
+    const local = this.config()?.providers[this.PROVEEDOR_LOCAL];
+    if (!local) return;
+    const url = texto.match(/https?:\/\/[^\s"'\\]+/);
+    const token = texto.match(/\brk_[A-Za-z0-9_]{12,}/);
+    if (url) {
+      // El ejemplo trae TU-DOMINIO como marcador: solo se acepta si ya es una dirección real
+      if (!/TU-DOMINIO/i.test(url[0])) local.base_url = url[0];
+      else if (!local.base_url) local.base_url = url[0];
+    }
+    if (token) local.api_key = token[0];
+    this.pruebaLocal.set(null);
+    this.showToast(token || url ? 'success' : 'error',
+      token || url ? 'Datos de conexión cargados. Falta guardar.' : 'No encontré un token ni una dirección en ese texto.');
+  }
+
+  probarLocal() {
+    const local = this.config()?.providers[this.PROVEEDOR_LOCAL];
+    if (!local) return;
+    this.probando.set(true);
+    this.pruebaLocal.set(null);
+    this.service.probarConexionLocal(local.api_key, local.base_url ?? '').subscribe({
+      next: r => { this.pruebaLocal.set(r); this.probando.set(false); },
+      error: (err: any) => {
+        this.pruebaLocal.set({ ok: false, detalle: err.error?.detail || 'No se pudo hacer la prueba.' });
+        this.probando.set(false);
+      }
+    });
+  }
+
   getModelsForProvider(provider: string): { id: string; label: string }[] {
     return this.providerModels[provider] ?? [];
   }
@@ -591,7 +757,7 @@ export class AIConfigComponent implements OnInit, OnDestroy {
     this.newPrompt = '';
     this.addError.set(null);
     const cfg = this.config();
-    this.newProvider = cfg ? Object.keys(cfg.providers)[0] : '';
+    this.newProvider = this.proveedoresNube()[0] ?? '';
     this.showAddModal.set(true);
   }
 
@@ -604,7 +770,7 @@ export class AIConfigComponent implements OnInit, OnDestroy {
     if (cfg.processes[key]) { this.addError.set('Ya existe un proceso con ese identificador.'); return; }
 
     const newProcess: ProcessConfig = {
-      provider: this.newProvider || Object.keys(cfg.providers)[0],
+      provider: this.newProvider || this.proveedoresNube()[0],
       model: this.newModel.trim(),
       prompt: this.newPrompt.trim(),
       ...(this.newDescription.trim() && { description: this.newDescription.trim() })

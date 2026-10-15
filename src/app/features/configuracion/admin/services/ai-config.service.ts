@@ -13,6 +13,8 @@ export interface ProcessConfig {
   model: string;
   prompt: string;
   description?: string;
+  fallback_provider?: string | null;
+  fallback_model?: string | null;
 }
 
 export interface AIConfig {
@@ -35,6 +37,12 @@ export class AIConfigService {
     return this.http.get<AIConfig>(this.apiUrl).pipe(
       tap(cfg => this.config.set(cfg)),
       finalize(() => this.loading.set(false))
+    );
+  }
+
+  probarConexionLocal(api_key: string, base_url: string): Observable<{ ok: boolean; ms?: number; muestra?: string; detalle?: string }> {
+    return this.http.post<{ ok: boolean; ms?: number; muestra?: string; detalle?: string }>(
+      `${this.apiUrl}/probar-conexion`, { api_key, base_url }
     );
   }
 
