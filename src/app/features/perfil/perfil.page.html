@@ -205,12 +205,8 @@
               </div>
             </div>
 
-            <div class="border-t border-slate-100 dark:border-white/5 my-4"></div>
+            <div *ngIf="publicadorData()" class="border-t border-slate-100 dark:border-white/5 my-4"></div>
 
-            <app-perfil-dos-pasos></app-perfil-dos-pasos>
-
-            <div class="border-t border-slate-100 dark:border-white/5 my-4"></div>
-            
             <ng-container *ngIf="publicadorData() as pubData">
               <!-- PIN de acceso rapido -->
               <div *ngIf="pubData.codigo_pin">
@@ -244,7 +240,10 @@
           </div>
         </div>
       </div>
-      
+
+      <!-- Verificación en dos pasos: ancho completo para que respire -->
+      <app-perfil-dos-pasos class="md:col-span-2 xl:col-span-3"></app-perfil-dos-pasos>
+
     </div>
   </div>
 </div>

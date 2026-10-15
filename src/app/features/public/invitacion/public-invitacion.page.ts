@@ -104,7 +104,11 @@ type Plataforma = 'android' | 'ios' | 'otro';
               <span>No se abrió nada: parece que aún no tienes la app. Instálala aquí abajo y vuelve a este enlace.</span>
               </p>
             } @else {
-              <p class="mt-3.5 md:max-w-xs text-center text-[13px] apagado">Si aún no la tienes, te lleva a la tienda.</p>
+              <p class="mt-3.5 md:max-w-xs text-center text-[13px] apagado">
+                {{ plataforma() === 'android'
+                    ? 'Si aún no la tienes, te lleva a la tienda. Al instalarla y abrirla, entras sin escribir nada.'
+                    : 'Si aún no la tienes, te lleva a la tienda.' }}
+              </p>
             }
           } @else {
             <button type="button" (click)="abrirApp()" class="btn btn--sobrio mt-8 md:max-w-xs">
@@ -188,7 +192,7 @@ type Plataforma = 'android' | 'ios' | 'otro';
   <h2 class="rotulo">Instalar la app</h2>
 
   <div class="mt-4 grid gap-2">
-    <a [href]="data()?.play_store_url || ''" target="_blank" rel="noopener" class="tarjeta tienda">
+    <a [href]="playStoreUrl()" target="_blank" rel="noopener" class="tarjeta tienda">
       <span class="glifo glifo--play">
         <svg class="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594zM1.337.924a1.486 1.486 0 0 0-.112.568v21.017c0 .217.045.419.124.6l11.155-11.087L1.337.924zm12.207 10.065l3.258-3.238L3.45.195a1.466 1.466 0 0 0-.946-.179l11.04 10.973zm0 2.067l-11 10.933c.298.036.612-.016.906-.183l13.324-7.54-3.23-3.21z"/></svg>
       </span>
@@ -504,6 +508,18 @@ export class PublicInvitacionPage implements OnInit {
   esValida = computed(() => this.data()?.estado === 'valida');
   esMovil = computed(() => this.plataforma() !== 'otro');
 
+  /**
+   * Enlace a Play Store. Con un enlace válido lleva el token como `referrer`:
+   * Play se lo entrega a la app recién instalada (Install Referrer) y la app
+   * canjea la invitación al abrirse por primera vez, sin volver al WhatsApp.
+   */
+  playStoreUrl = computed(() => {
+    const base = this.data()?.play_store_url || '';
+    if (!base || !this.esValida() || !this.token) return base;
+    const referrer = encodeURIComponent(`invitacion=${this.token}`);
+    return `${base}${base.includes('?') ? '&' : '?'}referrer=${referrer}`;
+  });
+
   /** El saludo usa solo el primer nombre: el nombre completo se lee como un oficio. */
   primerNombre = computed(() => (this.data()?.nombre_publicador ?? '').trim().split(/\s+/)[0] || '');
 
@@ -544,7 +560,14 @@ export class PublicInvitacionPage implements OnInit {
     this.http
       .get<InvitacionPublicaOut>(`${environment.apiUrl}/publicadores/acceso-app/public/${this.token}`)
       .subscribe({
-        next: (d) => { this.data.set(d); this.cargando.set(false); },
+        next: (d) => {
+          this.data.set(d);
+          this.cargando.set(false);
+          // En Android se intenta abrir la app sin esperar al botón: si está
+          // instalada entra directo y, si no, el intent lleva a Play Store. El
+          // botón sigue ahí por si Chrome bloquea el salto automático.
+          if (d.estado === 'valida' && this.plataforma() === 'android') this.abrirApp();
+        },
         error: () => {
           // Un enlace muerto responde 200 con su estado, así que llegar aquí
           // es un fallo de red o un 429. Se pinta como "no encontrada" para
@@ -575,7 +598,7 @@ export class PublicInvitacionPage implements OnInit {
     if (this.plataforma() === 'android') {
       // intent:// con browser_fallback_url: Chrome abre la app si está y, si
       // no, va solo a Play Store. Sin temporizadores ni adivinanzas.
-      const fallback = encodeURIComponent(this.data()!.play_store_url);
+      const fallback = encodeURIComponent(this.playStoreUrl());
       const scheme = deepLink.split('://')[0];
       const ruta = deepLink.split('://')[1];
       window.location.href =
