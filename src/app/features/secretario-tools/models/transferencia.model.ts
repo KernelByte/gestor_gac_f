@@ -29,6 +29,9 @@ export interface Transferencia {
   accion_realizada?:           AccionRealizada | null;
   procesada_en?:               string | null;
   miembros:                    TransferenciaMiembro[];
+  /** 'ingreso': la recibió esta congregación por un traslado en GAC (solo lectura). */
+  direccion?:                  'salida' | 'ingreso';
+  congregacion_origen_nombre?: string | null;
   creado_en:                   string;
   actualizado_en:              string;
 }
@@ -37,6 +40,50 @@ export interface CompletarTransferenciaRequest {
   accion:               AccionTransferencia;
   numero_congregacion?: string | null;
   opcion_usuario?:      OpcionUsuarioBorrado;
+  /** Trasladar: privilegios (id_publicador_privilegio) que conserva en la destino. */
+  privilegios_conservar?: number[];
+}
+
+/** Familiares que faltaron en un traslado ya hecho: van a la misma congregación. */
+export interface AgregarMiembrosRequest {
+  id_publicadores: number[];
+  privilegios_conservar?: number[];
+}
+
+/** Lo que tocará el traslado de cada miembro (vista previa antes de completar). */
+export interface PrivilegioVigente {
+  id_publicador_privilegio: number;
+  nombre_privilegio:        string;
+  fecha_inicio:             string;
+  fecha_fin:                string | null;
+}
+
+export interface ImpactoMiembro {
+  id_publicador:            number;
+  nombre_completo:          string;
+  rol_usuario:              string | null;
+  rol_cambiara:             boolean;
+  privilegios:              PrivilegioVigente[];
+  asignaciones_futuras:     Record<string, number>;
+  territorios_sin_devolver: number;
+}
+
+export interface ImpactoTraslado {
+  miembros: ImpactoMiembro[];
+}
+
+/** Resultado de buscar una congregación por nombre o número. */
+export interface CongregacionBuscada {
+  id_congregacion:     number;
+  nombre_congregacion: string;
+  numero_congregacion: string;
+}
+
+export interface CongregacionDestino {
+  id_congregacion:     number;
+  nombre_congregacion: string;
+  numero_congregacion: string | null;
+  es_la_misma:         boolean;
 }
 
 export interface TransferenciaCreate {

@@ -1598,7 +1598,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.router.navigate(['/herramientas/visita-colaborador']);
     } else if (n.tipo === 'transferencia_recibida') {
       this.notificationsOpen.set(false);
-      this.router.navigate(['/secretario/publicadores']);
+      const id = n.payload?.['id_transferencia'];
+      this.router.navigate(['/secretario-tools/transferencias'], id ? { queryParams: { id } } : {});
     }
   }
 

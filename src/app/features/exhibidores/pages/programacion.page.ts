@@ -1,4 +1,7 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  VacanteTraslado, VacantesTrasladoService, textoVacante, textoVacanteCorto, vacantesPor,
+} from '../../../shared/vacantes-traslado';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
@@ -266,8 +269,9 @@ interface GrupoFecha {
                           : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">
                     {{ a.publicador ? iniciales(a.publicador.nombre_completo) : '?' }}
                   </span>
-                  <span class="truncate max-w-40">
-                    {{ a.publicador?.nombre_completo ?? 'Sin asignar' }}
+                  <span class="truncate max-w-40" [attr.title]="vacanteTitulo(a)"
+                        [ngClass]="vacanteDe(a) ? 'text-amber-700 dark:text-amber-300 font-semibold' : ''">
+                    {{ a.publicador?.nombre_completo ?? textoSlotVacio(a) }}
                   </span>
                   <span *ngIf="a.estado === 'reasignado'"
                         class="text-[10px] font-bold uppercase text-exh-700 dark:text-exh-300"
@@ -786,6 +790,33 @@ export class ProgramacionExhibidoresPage implements OnInit {
     for (const t of m.turnos) vistos.set(t.id_ubicacion_exhibidor, t.ubicacion_nombre);
     return [...vistos.entries()].map(([id, nombre]) => ({ id, nombre }));
   });
+
+  // ── Turnos libres por traslado ──────────────────────────────
+  // Quien tenía el turno se trasladó a otra congregación: el hueco lo dice
+  // hasta que alguien lo ocupa (el backend da la vacante por resuelta solo).
+  private vacantesSvc = inject(VacantesTrasladoService);
+  private vacantes = signal<Map<number, VacanteTraslado>>(new Map());
+  private recargarVacantes = effect(() => {
+    if (!this.mesData()) return;
+    untracked(() => this.vacantesSvc.listar(['exhibidores'], this.idCong).subscribe((lista) =>
+      this.vacantes.set(vacantesPor(lista, 'id_exhibidor_asignacion'))
+    ));
+  });
+
+  vacanteDe(a: { id_exhibidor_asignacion: number; publicador?: unknown }): VacanteTraslado | null {
+    if (a.publicador) return null;
+    return this.vacantes().get(a.id_exhibidor_asignacion) ?? null;
+  }
+
+  textoSlotVacio(a: { id_exhibidor_asignacion: number; publicador?: unknown }): string {
+    const v = this.vacanteDe(a);
+    return v ? textoVacanteCorto(v) : 'Sin asignar';
+  }
+
+  vacanteTitulo(a: { id_exhibidor_asignacion: number; publicador?: unknown }): string | null {
+    const v = this.vacanteDe(a);
+    return v ? textoVacante(v) : null;
+  }
 
   get idCong(): number | null {
     return this.ctx.effectiveCongregacionId();

@@ -12,6 +12,9 @@
   ViewChild,
   ElementRef,
 } from '@angular/core';
+import {
+  VacanteTraslado, VacantesTrasladoService, textoVacante, textoVacanteCorto,
+} from '../../../shared/vacantes-traslado';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -872,7 +875,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                   <span class="text-[0.48rem] font-black uppercase tracking-wide leading-none shrink-0 opacity-60">{{ grupoRoleLabel(grupo, pi) }}</span>
                                   <span class="opacity-30 text-[0.6rem] leading-none shrink-0">·</span>
                                 }
-                                <span class="truncate max-w-[9rem]">{{ asig.nombre_completo || 'Sin asignar' }}</span>
+                                <span class="truncate max-w-[9rem]" [attr.title]="vacanteTituloParte(asig)">{{ asig.nombre_completo || textoParteVacia(asig) }}</span>
                                 @if (hasEditPermission()) {
                                   <svg class="chevron w-3 h-3 shrink-0"
                                     [class.open]="editingHistorialId() === pillKey(asig)"
@@ -3811,6 +3814,43 @@ export class ReunionesProgramacionComponent implements OnInit {
     if (hasConflict) return 'bg-red-50/30 dark:bg-red-900/10';
     if (hasSwapped)  return 'bg-amber-50/30 dark:bg-amber-900/10';
     return 'hover:bg-slate-50/60 dark:hover:bg-slate-800/20';
+  }
+
+  // ── Partes libres por traslado ──────────────────────────────
+  // Quien tenía la parte se trasladó a otra congregación: la casilla vacía lo
+  // dice hasta que alguien la ocupa (el backend da la vacante por resuelta solo).
+  private vacantesSvc = inject(VacantesTrasladoService);
+  private vacantesPartes = signal<Map<string, VacanteTraslado>>(new Map());
+  private recargarVacantes = effect(() => {
+    if (!this.semanas().length) return;
+    const cong = this.congregacionCtx.effectiveCongregacionId();
+    untracked(() => this.vacantesSvc.listar(['entre_semana', 'fin_semana'], cong).subscribe((lista) => {
+      const mapa = new Map<string, VacanteTraslado>();
+      for (const v of lista) {
+        const r = v.referencia || {};
+        mapa.set(this.claveParte(r['id_programa_parte'], r['sala'], !!r['es_ayudante']), v);
+      }
+      this.vacantesPartes.set(mapa);
+    }));
+  });
+
+  private claveParte(idParte: number, sala: string | null | undefined, ayudante: boolean): string {
+    return `${idParte}|${(sala || '').toLowerCase()}|${ayudante ? 1 : 0}`;
+  }
+
+  vacanteParte(asig: AsignacionDraft): VacanteTraslado | null {
+    if (asig.id_publicador) return null;
+    return this.vacantesPartes().get(this.claveParte(asig.id_programa_parte, asig.sala, !!asig.es_ayudante)) ?? null;
+  }
+
+  textoParteVacia(asig: AsignacionDraft): string {
+    const v = this.vacanteParte(asig);
+    return v ? textoVacanteCorto(v) : 'Sin asignar';
+  }
+
+  vacanteTituloParte(asig: AsignacionDraft): string | null {
+    const v = this.vacanteParte(asig);
+    return v ? textoVacante(v) : null;
   }
 
   assigneeButtonClass(asig: AsignacionDraft): string {

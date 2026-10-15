@@ -112,6 +112,17 @@ export class InformesService {
      return this.http.get<ResumenSucursal>(`${this.apiUrl}/resumen-sucursal`, { params: finalParams });
    }
 
+   // --- Cierre del mes (enviado a la sucursal) ---
+   cerrarPeriodo(periodoId: number, congregacionId: number): Observable<ResumenSucursal> {
+      const params = new HttpParams().set('congregacion_id', congregacionId.toString());
+      return this.http.post<ResumenSucursal>(`${this.apiUrl}/cierres/${periodoId}`, null, { params });
+   }
+
+   reabrirPeriodo(periodoId: number, congregacionId: number, motivo: string): Observable<ResumenSucursal> {
+      const params = new HttpParams().set('congregacion_id', congregacionId.toString());
+      return this.http.post<ResumenSucursal>(`${this.apiUrl}/cierres/${periodoId}/reabrir`, { motivo }, { params });
+   }
+
    // --- Export Historial PDF ---
    exportHistorialPdf(
       congregacionId: number,

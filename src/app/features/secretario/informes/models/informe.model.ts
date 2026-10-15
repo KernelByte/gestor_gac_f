@@ -35,6 +35,7 @@ export interface InformeConPublicador {
 }
 
 export interface ResumenMensual {
+   cierre?: CierreInfo | null;
    periodo_id: number;
    periodo_descripcion: string;
    total_publicadores: number;
@@ -142,6 +143,25 @@ export interface ResumenSucursal {
 
    asistencia_entre_semana: AsistenciaReunion | null;
    asistencia_fin_semana: AsistenciaReunion | null;
+
+   // Envío a la sucursal: con `cierre`, el resumen es la copia guardada al enviarlo.
+   cierre?: CierreInfo | null;
+   ultima_reapertura?: ReaperturaInfo | null;
+   cierre_automatico_el?: string | null;
+}
+
+export interface CierreInfo {
+   id_cierre: number;
+   version: number;
+   origen: 'manual' | 'automatico' | 'migracion';
+   cerrado_en: string | null;
+   cerrado_por_nombre: string | null;
+}
+
+export interface ReaperturaInfo {
+   reabierto_en: string;
+   reabierto_por_nombre: string | null;
+   motivo: string | null;
 }
 
 // --- Historial Anual ---

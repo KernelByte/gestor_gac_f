@@ -2,6 +2,7 @@
   Component, signal, computed, inject, OnInit, effect, untracked, HostListener, type Signal,
   afterNextRender, Injector,
 } from '@angular/core';
+import { VacanteTraslado, VacantesTrasladoService, textoVacante, vacantesPor } from '../../../shared/vacantes-traslado';
 import { Observable, Subject, catchError, debounceTime, distinctUntilChanged, forkJoin, map, of, switchMap, EMPTY } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -1487,6 +1488,10 @@ type ItemEntrante =
                   <div class="min-w-0 flex items-center gap-1.5">
                     @if (saliente.publicador) {
                       <span class="min-w-0 text-sm font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 sm:line-clamp-none sm:truncate">{{ saliente.publicador.nombre_completo }}</span>
+                    } @else if (vacanteSaliente(saliente.id_discurso_saliente); as v) {
+                      <span class="min-w-0 text-sm font-semibold text-amber-600 dark:text-amber-400 line-clamp-2" [title]="textoVacante(v)">
+                        Falta publicador · {{ v.nombre_publicador }} se trasladó
+                      </span>
                     } @else {
                       <span class="text-sm font-semibold text-amber-600 dark:text-amber-400">Falta publicador</span>
                     }
@@ -2961,6 +2966,23 @@ export class ReunionesDiscursosComponent implements OnInit {
   errorMsg = signal('');
   confirmadoBanner = signal(false);
   mesDatos = signal<DiscursosMesOut | null>(null);
+
+  // Salientes cuyo orador se trasladó a otra congregación: la tarjeta lo dice
+  // hasta que alguien lo reemplaza (el backend da la vacante por resuelta solo).
+  private vacantesSvc = inject(VacantesTrasladoService);
+  private vacantesSalientes = signal<Map<number, VacanteTraslado>>(new Map());
+  private recargarVacantes = effect(() => {
+    if (!this.mesDatos()) return;
+    const cong = this.congCtx.effectiveCongregacionId();
+    untracked(() => this.vacantesSvc.listar(['discursos'], cong).subscribe((lista) =>
+      this.vacantesSalientes.set(vacantesPor(lista, 'id_discurso_saliente'))
+    ));
+  });
+  readonly textoVacante = textoVacante;
+
+  vacanteSaliente(id: number): VacanteTraslado | null {
+    return this.vacantesSalientes().get(id) ?? null;
+  }
   mesesDisponibles = signal<MesDiscursosDisponible[]>([]);
 
   /**

@@ -152,6 +152,17 @@
       class="flex-1 min-h-0 overflow-hidden flex flex-col print:!overflow-visible print:!h-auto print:block pt-1 md:pt-0">
       <!-- Tab 1: Entrada Mensual -->
       <div [ngClass]="activeTab() === 'entrada' ? 'flex flex-col gap-3 flex-1 min-h-0 overflow-hidden' : 'hidden'">
+         <!-- Mes ya enviado a la sucursal: se puede corregir, pero solo cambia la tarjeta personal -->
+         <div *ngIf="resumen()?.cierre" role="note"
+              class="shrink-0 flex items-start gap-2 px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-200">
+            <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="text-xs sm:text-sm">
+               <strong>Este mes ya se envió a la sucursal.</strong>
+               Los totales del mes son los que se enviaron. Si corriges un informe, el cambio solo queda en la tarjeta de ese publicador.
+            </p>
+         </div>
          <!-- Data List/Table Container -->
          <app-informes-table [resumen]="filteredResumen()" [canEdit]="canEditInformes()"
             [autoSaveStatus]="autoSaveStatus()" [hasPendingChanges]="hasPendingChanges()"
@@ -184,7 +195,9 @@
          <app-resumen-sucursal [selectedMes]="selectedMes ?? ''" [selectedAno]="selectedAno ?? ''"
             [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0"
             [grupoId]="canViewResumenSucursalAllGroups() ? null : historialGroupId()"
-            [showAsistencia]="canViewResumenSucursalAllGroups()">
+            [showAsistencia]="canViewResumenSucursalAllGroups()"
+            [puedeCerrar]="canViewResumenSucursalAllGroups()"
+            [puedeReabrir]="isAdminOrSecretario()">
          </app-resumen-sucursal>
       </div>
    </div>

@@ -1,4 +1,5 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, effect, inject, OnInit, untracked } from '@angular/core';
+import { VacanteTraslado, VacantesTrasladoService, textoVacante, vacantesPor } from '../../../shared/vacantes-traslado';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -128,6 +129,10 @@ interface Publicador {
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
                   <span class="font-semibold">Capitán:</span> {{ h.nombre_capitan }}
                 </p>
+              } @else if (vacanteHorario(h); as v) {
+                <p class="text-xs font-semibold text-amber-700 dark:text-amber-300 mt-1" [title]="textoVacante(v)">
+                  Sin capitán · {{ v.nombre_publicador }} se trasladó. Asigna un reemplazo.
+                </p>
               }
               @if (h.nombre_punto_salida) {
                 <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
@@ -230,6 +235,23 @@ export class HorariosPage implements OnInit {
   private congregacionCtx = inject(CongregacionContextService);
 
   horarios = signal<Horario[]>([]);
+
+  // Salidas cuyo capitán se trasladó a otra congregación: la tarjeta lo dice
+  // hasta que alguien lo reemplaza (el backend da la vacante por resuelta solo).
+  private vacantesSvc = inject(VacantesTrasladoService);
+  private vacantes = signal<Map<number, VacanteTraslado>>(new Map());
+  private recargarVacantes = effect(() => {
+    if (!this.horarios().length) return;
+    const cong = this.congregacionCtx.effectiveCongregacionId();
+    untracked(() => this.vacantesSvc.listar(['horario_predicacion'], cong).subscribe((lista) =>
+      this.vacantes.set(vacantesPor(lista, 'id_horario'))
+    ));
+  });
+  readonly textoVacante = textoVacante;
+
+  vacanteHorario(h: Horario): VacanteTraslado | null {
+    return h.id_capitan ? null : this.vacantes().get(h.id_horario) ?? null;
+  }
   territorios = signal<Territorio[]>([]);
   publicadores = signal<Publicador[]>([]);
   loading = signal(false);

@@ -41,9 +41,20 @@ export class ResumenSucursalComponent implements OnChanges {
   @Input() congregacionId = 0;
   @Input() grupoId: number | null = null;
   @Input() showAsistencia: boolean = true;
+  /** Puede marcar el mes como enviado a la sucursal. */
+  @Input() puedeCerrar = false;
+  /** Puede reabrir un mes ya enviado (solo secretario o administrador). */
+  @Input() puedeReabrir = false;
 
   resumen = signal<ResumenSucursal | null>(null);
   loading = signal(false);
+
+  // Envío a la sucursal
+  confirmandoCierre = signal(false);
+  reabriendo = signal(false);
+  guardandoCierre = signal(false);
+  errorCierre = signal<string | null>(null);
+  motivoReapertura = '';
 
   meses = [
     { value: '1', label: 'Enero' }, { value: '2', label: 'Febrero' },
@@ -78,6 +89,7 @@ export class ResumenSucursalComponent implements OnChanges {
   loadResumen() {
     const periodoId = this.getPeriodoId();
     if (!periodoId || !this.congregacionId) return;
+    this.cancelarAccionCierre();
 
     this.loading.set(true);
     this.informesService.getResumenSucursal(periodoId, this.congregacionId, this.grupoId).subscribe({
@@ -115,5 +127,61 @@ export class ResumenSucursalComponent implements OnChanges {
 
   print() {
     window.print();
+  }
+
+  // --- Envío a la sucursal ---
+
+  cancelarAccionCierre() {
+    this.confirmandoCierre.set(false);
+    this.reabriendo.set(false);
+    this.errorCierre.set(null);
+    this.motivoReapertura = '';
+  }
+
+  marcarComoEnviado() {
+    const periodoId = this.getPeriodoId();
+    if (!periodoId || !this.congregacionId) return;
+    this.guardandoCierre.set(true);
+    this.errorCierre.set(null);
+    this.informesService.cerrarPeriodo(periodoId, this.congregacionId).subscribe({
+      next: () => {
+        this.guardandoCierre.set(false);
+        this.loadResumen();
+      },
+      error: (err) => {
+        this.guardandoCierre.set(false);
+        this.errorCierre.set(err?.error?.detail || 'No se pudo marcar el mes como enviado. Inténtalo de nuevo.');
+      }
+    });
+  }
+
+  reabrirMes() {
+    const periodoId = this.getPeriodoId();
+    const motivo = this.motivoReapertura.trim();
+    if (!periodoId || !this.congregacionId) return;
+    if (motivo.length < 3) {
+      this.errorCierre.set('Escribe el motivo para reabrir el mes.');
+      return;
+    }
+    this.guardandoCierre.set(true);
+    this.errorCierre.set(null);
+    this.informesService.reabrirPeriodo(periodoId, this.congregacionId, motivo).subscribe({
+      next: () => {
+        this.guardandoCierre.set(false);
+        this.loadResumen();
+      },
+      error: (err) => {
+        this.guardandoCierre.set(false);
+        this.errorCierre.set(err?.error?.detail || 'No se pudo reabrir el mes. Inténtalo de nuevo.');
+      }
+    });
+  }
+
+  /** "12 de septiembre de 2026" */
+  fechaLarga(iso: string | null | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 }

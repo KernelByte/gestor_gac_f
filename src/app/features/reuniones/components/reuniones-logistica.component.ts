@@ -1,6 +1,9 @@
 ﻿import {
-  Component, signal, computed, inject, OnInit, HostListener, DestroyRef, NgZone,
+  Component, signal, computed, effect, inject, OnInit, HostListener, DestroyRef, NgZone,
 } from '@angular/core';
+import {
+  VacanteTraslado, VacantesTrasladoService, textoVacante, textoVacanteCorto, vacantesPor,
+} from '../../../shared/vacantes-traslado';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -703,9 +706,12 @@ function normalizarTexto(s: string): string {
                               } @else {
                                 <span
                                   class="text-xs truncate"
+                                  [attr.title]="vacanteTitulo(fecha.fecha, puesto)"
                                   [class]="esConflicto(fecha.fecha, puesto)
                                     ? 'text-red-500 dark:text-red-400 font-semibold'
-                                    : 'text-slate-400 dark:text-slate-500 italic'">
+                                    : vacanteDe(fecha.fecha, puesto)
+                                      ? 'text-amber-600 dark:text-amber-400 font-semibold'
+                                      : 'text-slate-400 dark:text-slate-500 italic'">
                                   {{ textoCasillaVacia(fecha.fecha, puesto) }}
                                 </span>
                               }
@@ -856,9 +862,12 @@ function normalizarTexto(s: string): string {
                                           } @else {
                                             <span
                                               class="flex-1 text-xs italic truncate"
+                                              [attr.title]="vacanteTitulo(fecha.fecha, puesto)"
                                               [class]="esConflicto(fecha.fecha, puesto)
                                                 ? 'text-red-500 dark:text-red-400 font-semibold not-italic'
-                                                : 'text-slate-400'">
+                                                : vacanteDe(fecha.fecha, puesto)
+                                                  ? 'text-amber-600 dark:text-amber-400 font-semibold not-italic'
+                                                  : 'text-slate-400'">
                                               {{ textoCasillaVacia(fecha.fecha, puesto) }}
                                             </span>
                                           }
@@ -2918,7 +2927,33 @@ export class ReunionesLogisticaComponent implements OnInit {
    * congregación: se distingue en el texto para no mandar a buscar a nadie.
    */
   textoCasillaVacia(fecha: string, puesto: string): string {
+    const v = this.vacanteDe(fecha, puesto);
+    if (v) return textoVacanteCorto(v);
     return this.esConflicto(fecha, puesto) ? 'Falta asignar' : 'Sin asignar';
+  }
+
+  // ── Puestos libres por traslado ─────────────────────────────
+  // Quien estaba asignado se trasladó a otra congregación: el hueco lo dice
+  // hasta que alguien lo ocupa (el backend da la vacante por resuelta solo).
+  private vacantesSvc = inject(VacantesTrasladoService);
+  private vacantes = signal<Map<number, VacanteTraslado>>(new Map());
+  private recargarVacantes = effect(() => {
+    if (!this.mesDatos()) return;
+    const cong = this.congregacionCtx.effectiveCongregacionId();
+    this.vacantesSvc.listar(['logistica'], cong).subscribe((lista) =>
+      this.vacantes.set(vacantesPor(lista, 'id_logistica'))
+    );
+  });
+
+  vacanteDe(fecha: string, puesto: string): VacanteTraslado | null {
+    const a = this.getAsignacion(fecha, puesto);
+    if (!a || a.publicador) return null;
+    return this.vacantes().get(a.id_logistica) ?? null;
+  }
+
+  vacanteTitulo(fecha: string, puesto: string): string | null {
+    const v = this.vacanteDe(fecha, puesto);
+    return v ? textoVacante(v) : null;
   }
 
   // ── Ausencias: aviso, no bloqueo ────────────────────────────

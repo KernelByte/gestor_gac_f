@@ -147,7 +147,7 @@ export class InformesMainPage implements OnInit {
       rolesLower.includes('superintendente de servicio');
   });
 
-  private isAdminOrSecretario = computed(() => {
+  isAdminOrSecretario = computed(() => {
     const user = this.authStore.user();
     if (!user) return false;
     const roles = user.roles ?? (user.rol ? [user.rol] : []);
