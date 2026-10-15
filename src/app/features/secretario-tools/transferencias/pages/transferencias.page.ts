@@ -48,15 +48,26 @@ interface PublicadorLite {
 
     <!-- ── PUB DROPDOWN PANEL (fuera del modal para evitar backdrop-filter containing block) ── -->
     <ng-container *ngIf="pubDropOpen()">
-      <div class="pub-drop-backdrop" style="position:fixed;inset:0;z-index:9998" (click)="pubDropOpen.set(false)"></div>
-      <div class="pub-dropdown-panel"
+      <div class="pub-drop-backdrop" [class.pub-drop-backdrop--hoja]="pubDropHoja()" style="position:fixed;inset:0;z-index:9998" (click)="pubDropOpen.set(false)"></div>
+      <div class="pub-dropdown-panel" [class.pub-dropdown-panel--hoja]="pubDropHoja()"
            style="position:fixed;z-index:9999"
-           [style.top.px]="pubDropPos().top"
-           [style.left.px]="pubDropPos().left"
-           [style.width.px]="pubDropPos().width">
+           [attr.role]="pubDropHoja() ? 'dialog' : null" [attr.aria-label]="pubDropHoja() ? 'Elegir persona' : null"
+           [style.top.px]="pubDropHoja() ? null : pubDropPos().top"
+           [style.left.px]="pubDropHoja() ? null : pubDropPos().left"
+           [style.width.px]="pubDropHoja() ? null : pubDropPos().width">
+        <!-- En el móvil la lista es una hoja inferior: título, buscador fijo y lista con espacio -->
+        <div *ngIf="pubDropHoja()" class="pub-hoja-cabecera">
+          <span class="pub-hoja-agarre" aria-hidden="true"></span>
+          <div class="pub-hoja-titulo">
+            <span>{{ form.id_publicadores.length ? 'Agregar a la familia' : 'Elegir persona' }}</span>
+            <button type="button" class="pub-hoja-cerrar" (click)="pubDropOpen.set(false)" aria-label="Cerrar lista">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
         <div class="pub-search-wrap">
           <svg class="pub-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input class="pub-search-input" type="text" placeholder="Buscar por nombre…"
+          <input class="pub-search-input" type="search" enterkeyhint="search" placeholder="Buscar por nombre…"
                  [ngModel]="pubSearch()" (ngModelChange)="pubSearch.set($event)"
                  (click)="$event.stopPropagation()" autocomplete="off" />
           <button *ngIf="pubSearch()" type="button" class="pub-search-clear" (click)="pubSearch.set(''); $event.stopPropagation()" aria-label="Limpiar">
@@ -1567,6 +1578,49 @@ interface PublicadorLite {
     .pub-search-clear:hover { background: #cbd5e1; }
     .pub-dropdown-list { overflow-y: auto; max-height: min(18rem, 45dvh); overscroll-behavior: contain; }
 
+    /* ── Móvil: la lista de personas es una hoja inferior ── */
+    .pub-hoja-cabecera, .pub-hoja-agarre { display: none; }
+    .pub-dropdown-panel--hoja {
+      left: 0; right: 0; bottom: 0; top: auto; width: auto;
+      display: flex; flex-direction: column;
+      height: min(32rem, 82dvh);
+      border-radius: 1.25rem 1.25rem 0 0; border-bottom: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -12px 32px -8px rgba(15,23,42,0.28);
+      animation: hojaSube 220ms cubic-bezier(0.25, 1, 0.5, 1) both;
+    }
+    .pub-dropdown-panel--hoja .pub-hoja-cabecera { display: block; padding: 0.5rem 1rem 0; }
+    .pub-dropdown-panel--hoja .pub-hoja-agarre {
+      display: block; width: 2.25rem; height: 0.25rem; margin: 0 auto 0.25rem;
+      border-radius: 999px; background: #cbd5e1;
+    }
+    .pub-hoja-titulo {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+      font-size: 1rem; font-weight: 700; color: #0f172a;
+    }
+    .pub-hoja-cerrar {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 2.75rem; height: 2.75rem; margin-right: -0.5rem; border-radius: 0.75rem;
+      color: #64748b; background: transparent; cursor: pointer;
+    }
+    .pub-hoja-cerrar:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
+    .pub-dropdown-panel--hoja .pub-search-wrap { padding: 0.5rem 1rem 0.75rem; }
+    .pub-dropdown-panel--hoja .pub-search-input { font-size: 1rem; min-height: 2.75rem; } /* 16px: iOS no hace zoom */
+    .pub-dropdown-panel--hoja .pub-dropdown-list { flex: 1 1 auto; min-height: 0; max-height: none; padding: 0.25rem 0.5rem 0.5rem; }
+    /* El nombre se lee completo (pasa a otra línea) y la etiqueta no lo come */
+    .pub-dropdown-panel--hoja .pub-dropdown-item { align-items: center; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .pub-dropdown-panel--hoja .pub-item-name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.3; }
+    .pub-dropdown-panel--hoja .pub-item-badge { font-size: 0.6875rem; padding: 0.125rem 0.5rem; max-width: 6.5rem; white-space: normal; overflow-wrap: normal; text-align: center; line-height: 1.2; flex-shrink: 0; }
+    .pub-drop-backdrop--hoja { background: rgba(2, 6, 23, 0.5); animation: hojaFondo 200ms ease-out both; }
+    @keyframes hojaSube { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes hojaFondo { from { opacity: 0; } to { opacity: 1; } }
+    :host-context(.dark) .pub-hoja-titulo { color: #f1f5f9; }
+    :host-context(.dark) .pub-hoja-cerrar { color: #94a3b8; }
+    :host-context(.dark) .pub-dropdown-panel--hoja .pub-hoja-agarre { background: #475569; }
+    @media (prefers-reduced-motion: reduce) {
+      .pub-dropdown-panel--hoja, .pub-drop-backdrop--hoja { animation: none; }
+    }
+
     :host-context(.dark) .pub-search-wrap { background: #1e293b; border-bottom-color: #334155; }
     :host-context(.dark) .pub-search-input { color: #f1f5f9; }
     :host-context(.dark) .pub-search-clear { background: #334155; color: #94a3b8; }
@@ -2125,6 +2179,8 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   creandoFase         = signal('Creando…');
   pubDropOpen         = signal(false);
   pubDropPos          = signal<{top: number; left: number; width: number}>({top: 0, left: 0, width: 0});
+  /** En pantallas pequeñas la lista de personas se abre como hoja inferior. */
+  pubDropHoja         = signal(false);
   pubSearch           = signal('');
 
   // ── Completar transferencia (trasladar / eliminar) ───────────
@@ -2290,6 +2346,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   }
 
   openPubDrop(trigger: HTMLElement) {
+    this.pubDropHoja.set(window.matchMedia?.('(max-width: 639px)').matches ?? false);
     const rect = trigger.getBoundingClientRect();
     this.pubDropPos.set({ top: rect.bottom + 4, left: rect.left, width: rect.width });
     this.pubDropOpen.set(!this.pubDropOpen());
