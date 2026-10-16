@@ -1598,8 +1598,15 @@ export class ShellPage implements OnInit, OnDestroy {
       this.router.navigate(['/herramientas/visita-colaborador']);
     } else if (n.tipo === 'transferencia_recibida') {
       this.notificationsOpen.set(false);
+      // Transferencias es solo del Secretario (y el Administrador): el
+      // Coordinador y el S. de servicio también reciben este aviso y para ellos
+      // el módulo no existe, así que los lleva a la lista de publicadores.
       const id = n.payload?.['id_transferencia'];
-      this.router.navigate(['/secretario-tools/transferencias'], id ? { queryParams: { id } } : {});
+      if (this.hasRole('Secretario') || this.hasRole('Administrador')) {
+        this.router.navigate(['/secretario-tools/transferencias'], id ? { queryParams: { id } } : {});
+      } else {
+        this.router.navigate(['/secretario/publicadores']);
+      }
     }
   }
 
