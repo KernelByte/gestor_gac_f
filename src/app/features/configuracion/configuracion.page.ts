@@ -1,10 +1,13 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import {
+   AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from '../../core/auth/auth.store';
+import { UbicacionSalonMapComponent, UbicacionSalon } from './ubicacion-salon-map.component';
 import { ImportPublicadoresModalComponent } from '../../shared/components/import-publicadores/import-publicadores-modal.component';
 import { FormatoNombreService } from '../../core/utils/formato-nombre.service';
 import {
@@ -31,13 +34,42 @@ interface Configuracion {
    correo_congregacion?: string | null;
    numero_congregacion?: string | null;
    enlace_zoom?: string | null;
+   latitud_salon?: number | null;
+   longitud_salon?: number | null;
    formato_nombre_visible?: FormatoNombre;
 }
+
+/**
+ * Clases compartidas de la pantalla. Viven aquí y no repetidas en cada campo
+ * para que todos los controles tengan exactamente el mismo alto, borde y foco.
+ * Tailwind v4 escanea también los .ts, así que estas clases se generan.
+ */
+const CLS = {
+   etiqueta: 'block text-sm font-semibold text-slate-700 dark:text-slate-200',
+   ayuda:    'text-sm leading-relaxed text-slate-500 dark:text-slate-400',
+   campo:    'w-full h-12 px-4 rounded-xl border bg-white dark:bg-slate-800/60 text-[15px] font-medium text-slate-900 dark:text-white ' +
+             'border-slate-300 dark:border-slate-700 placeholder:text-slate-400 dark:placeholder:text-slate-500 ' +
+             'hover:border-slate-400 dark:hover:border-slate-600 focus:border-brand-purple dark:focus:border-purple-400 ' +
+             'focus:ring-4 focus:ring-purple-500/15 outline-none transition-[border-color,box-shadow] duration-150 ' +
+             'read-only:bg-slate-50 read-only:dark:bg-slate-800/30 read-only:hover:border-slate-300 dark:read-only:hover:border-slate-700',
+   btnSecundario: 'inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-slate-300 dark:border-slate-600 ' +
+             'bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 ' +
+             'active:scale-[0.98] transition-[background-color,transform] duration-150 disabled:opacity-50 disabled:cursor-not-allowed ' +
+             'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25',
+   btnPrimario: 'inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-brand-purple text-white text-sm font-semibold ' +
+             'hover:bg-purple-700 active:scale-[0.98] transition-[background-color,transform] duration-150 ' +
+             'disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/30',
+   chip:     'h-11 px-4 rounded-xl border text-sm font-semibold transition-[background-color,border-color,color,transform] duration-150 ' +
+             'active:scale-[0.97] disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25',
+   chipOn:   'border-brand-purple bg-brand-purple text-white',
+   chipOff:  'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 ' +
+             'hover:border-slate-400 dark:hover:border-slate-500 disabled:hover:border-slate-300',
+} as const;
 
 @Component({
    selector: 'app-configuracion',
    standalone: true,
-   imports: [CommonModule, FormsModule, ImportPublicadoresModalComponent],
+   imports: [CommonModule, FormsModule, ImportPublicadoresModalComponent, UbicacionSalonMapComponent],
    templateUrl: './configuracion.page.html',
    styles: [`
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; }
@@ -45,6 +77,9 @@ interface Configuracion {
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* El ancla de cada sección no debe quedar pegada al borde al saltar desde el índice. */
+    section[id] { scroll-margin-top: 4.25rem; }
+    @media (prefers-reduced-motion: reduce) { .animate-fadeIn { animation: none; } }
   `],
    animations: [
       trigger('slideIn', [
@@ -58,7 +93,27 @@ interface Configuracion {
       ])
    ]
 })
-export class ConfiguracionPage implements OnInit {
+export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
+   readonly cls = CLS;
+
+   /** Índice de la pantalla (columna izquierda en pantallas anchas). */
+   readonly secciones = [
+      { id: 'cfg-datos',     label: 'Congregación' },
+      { id: 'cfg-salon',     label: 'Salón del Reino' },
+      { id: 'cfg-reuniones', label: 'Reuniones' },
+      { id: 'cfg-nombres',   label: 'Nombres' },
+      { id: 'cfg-informes',  label: 'Informes' },
+      { id: 'cfg-seguridad', label: 'Seguridad' },
+   ];
+   seccionActiva = signal('cfg-datos');
+   @ViewChild('scroller') private scroller?: ElementRef<HTMLElement>;
+   private observador?: IntersectionObserver;
+   /** Mientras dura el desplazamiento pedido con un clic, manda la sección pulsada, no lo que va pasando por la franja. */
+   private fijadaHasta = 0;
+
+   /** Paso de confirmación antes de cambiar el código que usan todos para entrar. */
+   confirmandoCodigo = signal(false);
+
    readonly formatoNombre = inject(FormatoNombreService);
 
    /** Las cuatro reglas, cada una con su etiqueta y su ejemplo. */
@@ -111,6 +166,8 @@ export class ConfiguracionPage implements OnInit {
       correo_congregacion:       null,
       numero_congregacion:       null,
       enlace_zoom:               null,
+      latitud_salon:             null,
+      longitud_salon:            null,
    };
 
    periodosDisponibles: any[] = [];
@@ -128,11 +185,6 @@ export class ConfiguracionPage implements OnInit {
    showSecurityCode = signal(false);
    generatingCode   = signal(false);
    notification     = signal<{ message: string, type: 'success' | 'error' } | null>(null);
-   dropdownEntreOpen   = signal(false);
-   dropdownFinOpen     = signal(false);
-   dropdownPeriodoOpen = signal(false);
-   timePickerEntreOpen = signal(false);
-   timePickerFinOpen   = signal(false);
 
    /** Controla visibilidad del modal de importación. */
    showImportModal = signal(false);
@@ -146,86 +198,37 @@ export class ConfiguracionPage implements OnInit {
       Lunes: 'Lunes', Martes: 'Martes', Miercoles: 'Miércoles',
       Jueves: 'Jueves', Viernes: 'Viernes', Sabado: 'Sábado', Domingo: 'Domingo'
    };
-   readonly horas12  = ['12','01','02','03','04','05','06','07','08','09','10','11'];
-   readonly minutos  = ['00','05','10','15','20','25','30','35','40','45','50','55'];
-   readonly periodos = ['AM','PM'];
 
-   selectDiaEntre(dia: string) { this.config.dia_reunion_entre_semana = dia; this.dropdownEntreOpen.set(false); }
-   selectDiaFin(dia: string)   { this.config.dia_reunion_fin_semana   = dia; this.dropdownFinOpen.set(false);   }
+   elegirDia(tipo: 'entre' | 'fin', dia: string): void {
+      if (!this.canEdit()) return;
+      if (tipo === 'entre') this.config.dia_reunion_entre_semana = dia;
+      else                  this.config.dia_reunion_fin_semana   = dia;
+   }
 
-   selectPeriodoInformes(periodo: any | null) {
-      if (periodo === null) {
-         this.config.periodo_informes_automatico = 1;
-      } else {
-         this.config.id_periodo_informes_activo = periodo.id_periodo;
-         this.config.periodo_informes_automatico = 0;
+   // ── Periodo de informes ──────────────────────────────────
+   /** Automático = siempre el mes anterior al actual. */
+   esPeriodoAutomatico(): boolean { return this.config.periodo_informes_automatico === 1; }
+
+   usarPeriodoAutomatico(): void {
+      if (!this.canEdit()) return;
+      this.config.periodo_informes_automatico = 1;
+   }
+
+   /** Al pasar a "un mes fijo" se propone el que ya estaba, o el más reciente. */
+   usarPeriodoFijo(): void {
+      if (!this.canEdit()) return;
+      this.config.periodo_informes_automatico = 0;
+      if (!this.config.id_periodo_informes_activo && this.periodosDisponibles.length) {
+         this.config.id_periodo_informes_activo = this.periodosDisponibles[0].id_periodo;
       }
-      this.dropdownPeriodoOpen.set(false);
    }
 
-   getPeriodoLabel(): string {
-      if (this.config.periodo_informes_automatico === 1) return 'Automático (Mes Anterior)';
-      const p = this.periodosDisponibles.find(x => x.id_periodo === this.config.id_periodo_informes_activo);
-      return p ? p.nombre_periodo : 'Periodo seleccionado';
-   }
-
-   // ── 24h helpers ──────────────────────────────────────────
-   private to24(h12: string, periodo: string): string {
-      let h = parseInt(h12, 10);
-      if (periodo === 'AM') { h = h === 12 ? 0 : h; }
-      else                  { h = h === 12 ? 12 : h + 12; }
-      return String(h).padStart(2, '0');
-   }
-
-   getMinuto(time: string)    { return time ? time.split(':')[1] : ''; }
-
-   get12Hour(time: string): string {
-      if (!time) return '12';
-      const h = parseInt(time.split(':')[0], 10);
-      const h12 = h % 12 || 12;
-      return String(h12).padStart(2, '0');
-   }
-
-   getPeriodo(time: string): string {
-      if (!time) return 'AM';
-      return parseInt(time.split(':')[0], 10) < 12 ? 'AM' : 'PM';
-   }
-
-   setHoraEntre(h12: string) {
-      const m  = this.getMinuto(this.config.hora_reunion_entre_semana) || '00';
-      const p  = this.getPeriodo(this.config.hora_reunion_entre_semana);
-      this.config.hora_reunion_entre_semana = `${this.to24(h12, p)}:${m}`;
-   }
-   setMinutoEntre(m: string) {
-      const h24 = this.config.hora_reunion_entre_semana
-         ? this.config.hora_reunion_entre_semana.split(':')[0] : '07';
-      this.config.hora_reunion_entre_semana = `${h24}:${m}`;
-   }
-   setPeriodoEntre(p: string) {
-      const h12 = this.get12Hour(this.config.hora_reunion_entre_semana);
-      const m   = this.getMinuto(this.config.hora_reunion_entre_semana) || '00';
-      this.config.hora_reunion_entre_semana = `${this.to24(h12, p)}:${m}`;
-   }
-
-   setHoraFin(h12: string) {
-      const m  = this.getMinuto(this.config.hora_reunion_fin_semana) || '00';
-      const p  = this.getPeriodo(this.config.hora_reunion_fin_semana);
-      this.config.hora_reunion_fin_semana = `${this.to24(h12, p)}:${m}`;
-   }
-   setMinutoFin(m: string) {
-      const h24 = this.config.hora_reunion_fin_semana
-         ? this.config.hora_reunion_fin_semana.split(':')[0] : '09';
-      this.config.hora_reunion_fin_semana = `${h24}:${m}`;
-   }
-   setPeriodoFin(p: string) {
-      const h12 = this.get12Hour(this.config.hora_reunion_fin_semana);
-      const m   = this.getMinuto(this.config.hora_reunion_fin_semana) || '00';
-      this.config.hora_reunion_fin_semana = `${this.to24(h12, p)}:${m}`;
-   }
-
-   formatDisplay(time: string): string {
-      if (!time) return '--:--';
-      return `${this.get12Hour(time)}:${this.getMinuto(time)} ${this.getPeriodo(time)}`;
+   /** "Septiembre 2026": lo que hoy significa "automático", para no tener que deducirlo. */
+   mesAnteriorTexto(): string {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() - 1);
+      return `${this.mesesNombre[d.getMonth() + 1]} ${d.getFullYear()}`;
    }
 
    ngOnInit() {
@@ -233,6 +236,68 @@ export class ConfiguracionPage implements OnInit {
       this.loadPeriodos();
       this.detectGlobalRole();
       this.cargarEjemploNombre();
+   }
+
+   /**
+    * Marca en el índice la sección que se está leyendo. La franja de
+    * detección es el tercio superior del área desplazable: la sección
+    * "activa" es la que tiene el título a la vista, no la que asoma abajo.
+    */
+   ngAfterViewInit(): void {
+      const root = this.scroller?.nativeElement;
+      if (!root || typeof IntersectionObserver === 'undefined') return;
+      this.observador = new IntersectionObserver(entradas => {
+         if (Date.now() < this.fijadaHasta) return;
+         if (this.alFinal()) { this.marcarActiva(this.secciones[this.secciones.length - 1].id); return; }
+         const visible = entradas.find(e => e.isIntersecting);
+         if (visible) this.marcarActiva(visible.target.id);
+      }, { root, rootMargin: '-72px 0px -60% 0px', threshold: 0 });
+      this.secciones.forEach(sec => {
+         const el = root.querySelector('#' + sec.id);
+         if (el) this.observador!.observe(el);
+      });
+   }
+
+   ngOnDestroy(): void {
+      this.observador?.disconnect();
+   }
+
+   /** Al llegar al final, la última sección no alcanza la franja de arriba: se marca a mano. */
+   private alFinal(): boolean {
+      const el = this.scroller?.nativeElement;
+      return !!el && el.scrollTop > 0 && el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
+   }
+
+   alDesplazar(): void {
+      if (Date.now() < this.fijadaHasta) return;
+      if (this.alFinal()) this.marcarActiva(this.secciones[this.secciones.length - 1].id);
+   }
+
+   irA(id: string): void {
+      const el = this.scroller?.nativeElement.querySelector('#' + id);
+      if (!el) return;
+      const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      this.fijadaHasta = Date.now() + (reducido ? 150 : 1100);
+      el.scrollIntoView({ behavior: reducido ? 'auto' : 'smooth', block: 'start' });
+      this.marcarActiva(id);
+   }
+
+   /**
+    * Cambia la sección activa y, si la barra se desliza de lado (móvil), centra
+    * su botón. Se mueve solo el `scrollLeft` de la barra: un `scrollIntoView`
+    * aquí cancelaría el desplazamiento suave de la página que acaba de pedir irA().
+    */
+   private marcarActiva(id: string): void {
+      if (this.seccionActiva() === id) return;
+      this.seccionActiva.set(id);
+      const chip = document.getElementById('chip-' + id);
+      const barra = chip?.closest('ul');
+      if (!chip || !barra) return;
+      const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      barra.scrollTo({
+         left: chip.offsetLeft - (barra.clientWidth - chip.offsetWidth) / 2,
+         behavior: reducido ? 'auto' : 'smooth',
+      });
    }
 
    /**
@@ -302,7 +367,8 @@ export class ConfiguracionPage implements OnInit {
    save() {
       if (!this.canEdit()) return;
       if (this.enlaceZoomInvalido()) {
-         this.showNotification('El enlace de la reunión debe empezar por https://', 'error');
+         this.showNotification('Revise el enlace de la reunión: debe empezar por https://', 'error');
+         this.irA('cfg-reuniones');
          return;
       }
       this.saving.set(true);
@@ -322,6 +388,8 @@ export class ConfiguracionPage implements OnInit {
          correo_congregacion:        this.config.correo_congregacion       || null,
          numero_congregacion:        this.config.numero_congregacion       || null,
          enlace_zoom:                this.config.enlace_zoom?.trim()       || null,
+         latitud_salon:              this.config.latitud_salon  ?? null,
+         longitud_salon:             this.config.longitud_salon ?? null,
          formato_nombre_visible:     this.config.formato_nombre_visible    || 'completo',
       };
 
@@ -333,12 +401,12 @@ export class ConfiguracionPage implements OnInit {
             // el formulario de publicador seguiría enseñando la anterior.
             this.formatoNombre.aplicar(data.formato_nombre_visible);
             this.saving.set(false);
-            this.showNotification('Configuración guardada exitosamente', 'success');
+            this.showNotification('Cambios guardados', 'success');
          },
          error: (err) => {
             console.error('Error guardando configuración', err);
             this.saving.set(false);
-            this.showNotification(err.error?.detail || 'Error al guardar la configuración', 'error');
+            this.showNotification(err.error?.detail || 'No se pudieron guardar los cambios. Inténtelo otra vez.', 'error');
          }
       });
    }
@@ -348,8 +416,16 @@ export class ConfiguracionPage implements OnInit {
       setTimeout(() => this.notification.set(null), 4000);
    }
 
+   /** Vuelve todo a como estaba guardado. */
+   descartarCambios(): void {
+      if (!this.originalConfig) return;
+      this.config = { ...this.originalConfig };
+      this.confirmandoCodigo.set(false);
+   }
+
    regenerateSecurityCode() {
       if (!this.canEdit()) return;
+      this.confirmandoCodigo.set(false);
       this.generatingCode.set(true);
       const chars  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       const result = Array.from({ length: 7 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -359,16 +435,18 @@ export class ConfiguracionPage implements OnInit {
 
       this.http.put<Configuracion>(this.API_URL, { codigo_seguridad: result }).subscribe({
          next: (data) => {
-            this.config = data;
+            // Solo el código: reemplazar `config` entero borraría cualquier
+            // otro cambio que la persona tuviera a medio guardar.
+            this.config.codigo_seguridad = data.codigo_seguridad;
             if (this.originalConfig) this.originalConfig.codigo_seguridad = data.codigo_seguridad;
             this.generatingCode.set(false);
-            this.showNotification('Código de seguridad actualizado', 'success');
+            this.showNotification('Código nuevo guardado. Compártalo con los publicadores.', 'success');
          },
          error: (err) => {
             console.error('Error actualizando código', err);
             this.config.codigo_seguridad = oldCode;
             this.generatingCode.set(false);
-            this.showNotification('Error al regenerar el código', 'error');
+            this.showNotification('No se pudo generar el código nuevo. Inténtelo otra vez.', 'error');
          }
       });
    }
@@ -390,6 +468,8 @@ export class ConfiguracionPage implements OnInit {
          (this.config.correo_congregacion       || '') !== (this.originalConfig.correo_congregacion       || '') ||
          (this.config.numero_congregacion       || '') !== (this.originalConfig.numero_congregacion       || '') ||
          (this.config.enlace_zoom               || '') !== (this.originalConfig.enlace_zoom               || '') ||
+         (this.config.latitud_salon  ?? null) !== (this.originalConfig.latitud_salon  ?? null) ||
+         (this.config.longitud_salon ?? null) !== (this.originalConfig.longitud_salon ?? null) ||
          // Sin esto, elegir una regla de nombre no habilitaba Guardar: la
          // tarjeta se marcaba como seleccionada y el cambio se perdía al salir.
          (this.config.formato_nombre_visible    || 'completo') !== (this.originalConfig.formato_nombre_visible || 'completo');
@@ -407,6 +487,12 @@ export class ConfiguracionPage implements OnInit {
       const v = this.config.enlace_zoom?.trim();
       if (!v) return false;              // vacío = no configurado, es válido
       return !/^https?:\/\/.+/i.test(v);
+   }
+
+   onUbicacionCambio(u: UbicacionSalon | null): void {
+      if (!this.canEdit()) return;
+      this.config.latitud_salon  = u?.lat ?? null;
+      this.config.longitud_salon = u?.lng ?? null;
    }
 
    canEdit(): boolean {
