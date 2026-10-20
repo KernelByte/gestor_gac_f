@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
-import { Territorio, GeoJSONFeatureCollection } from '../models/territorio.model';
+import { Territorio, GeoJSONFeatureCollection, ViviendaDeTerritorio, textoDireccion } from '../models/territorio.model';
 import { geoCentroid } from '../utils/geo-math.util';
 
 @Component({
@@ -52,6 +52,15 @@ import { geoCentroid } from '../utils/geo-math.util';
           <span class="card-label">Cobertura</span>
           <span class="card-value">{{ stats.cobertura_promedio }}%</span>
         </div>
+      </div>
+
+      <!-- No visitar -->
+      <div *ngIf="noVisitar.length" style="padding: 12px 24px; border-top: 1px solid #fecaca; background: #fef2f2;">
+        <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: #b91c1c; margin-bottom: 6px;">NO VISITAR</div>
+        <div *ngFor="let v of noVisitar.slice(0, 10)" style="font-size: 12px; color: #7f1d1d; line-height: 1.5;">
+          · Manzana {{ v.numero_manzana || v.id_manzana }}: {{ textoDir(v) }}
+        </div>
+        <div *ngIf="noVisitar.length > 10" style="font-size: 12px; color: #7f1d1d;">y {{ noVisitar.length - 10 }} más</div>
       </div>
 
       <!-- Footer -->
@@ -142,6 +151,8 @@ export class TerritorioCardComponent implements AfterViewInit, OnChanges, OnDest
   @Input() geojson: GeoJSONFeatureCollection | null = null;
   @Input() manzanasGeojson: GeoJSONFeatureCollection | null = null;
   @Input() stats: { manzanas_count: number; viviendas_count: number; cobertura_promedio: number } | null = null;
+  @Input() noVisitar: ViviendaDeTerritorio[] = [];
+  textoDir = textoDireccion;
 
   today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 

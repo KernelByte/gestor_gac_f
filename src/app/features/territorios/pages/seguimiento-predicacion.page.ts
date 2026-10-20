@@ -1,12 +1,18 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TerritoriosService } from '../services/territorios.service';
+import { TerritoriosService, PublicadorOpcion } from '../services/territorios.service';
+import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
+import { nombreMostrado } from '../../../core/utils/nombre.util';
 import {
   Territorio,
   Manzana,
+  Punto,
   SalidaPredicacion,
   ProgresoTerritorio,
+  ViviendaDeTerritorio,
+  textoDiasSinTrabajar,
+  textoDireccion,
 } from '../models/territorio.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
@@ -165,6 +171,24 @@ interface EstadoManzana {
                   <div class="w-16 h-10 bg-gray-100 dark:bg-gray-700 rounded-xl animate-pulse shrink-0"></div>
                 }
               </div>
+              @if (progreso()?.ciclo; as ciclo) {
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    @if (ciclo.completado) {
+                      <span class="font-semibold text-green-600 dark:text-green-400">Vuelta completada el {{ ciclo.fecha_fin | date:'d MMM yyyy':'':'es' }}.</span>
+                      La próxima salida empieza una vuelta nueva.
+                    } @else {
+                      Vuelta en curso desde el {{ ciclo.fecha_inicio | date:'d MMM yyyy':'':'es' }}.
+                    }
+                  </p>
+                  @if (!ciclo.completado && progreso()!.total_manzanas === 0) {
+                    <button type="button" (click)="completarVuelta()" [disabled]="completandoCiclo()"
+                      class="text-xs font-semibold px-3 py-1.5 border border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors min-h-[32px] disabled:opacity-50">
+                      Marcar vuelta como completada
+                    </button>
+                  }
+                </div>
+              }
               @if (progreso() && progreso()!.total_manzanas > 0) {
                 <div class="mt-3 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div class="h-full bg-green-500 rounded-full transition-all duration-700"
@@ -175,6 +199,22 @@ interface EstadoManzana {
 
             <!-- Contenido scrollable -->
             <div class="flex-1 overflow-y-auto p-5 space-y-6">
+
+              @if (noVisitar().length > 0) {
+                <div class="rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/15 p-4" role="alert">
+                  <p class="text-sm font-bold text-red-800 dark:text-red-300">
+                    {{ noVisitar().length === 1 ? 'Hay 1 dirección que no se debe visitar en este territorio' : 'Hay ' + noVisitar().length + ' direcciones que no se deben visitar en este territorio' }}
+                  </p>
+                  <ul class="mt-2 space-y-1">
+                    @for (v of noVisitar(); track v.id_vivienda) {
+                      <li class="text-xs text-red-900 dark:text-red-200">
+                        <span class="font-semibold">Manzana {{ v.numero_manzana || v.id_manzana }}:</span>
+                        {{ textoDir(v) }}@if (v.motivo_no_visitar) { · {{ v.motivo_no_visitar }} }
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
 
               <!-- ── Vista tracking activo ── -->
               @if (salidaActiva()) {
@@ -466,9 +506,25 @@ interface EstadoManzana {
               <label for="salida-capitan" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 Capitán <span class="text-xs text-gray-400 normal-case font-normal">(opcional)</span>
               </label>
-              <input id="salida-capitan" type="text" [(ngModel)]="editingSalida.nombre_capitan"
-                placeholder="Nombre del capitán..."
-                class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+              <select id="salida-capitan" [(ngModel)]="editingSalida.id_capitan"
+                class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option [ngValue]="null">— Sin capitán —</option>
+                @for (p of publicadoresOrdenados(); track p.id_publicador) {
+                  <option [ngValue]="p.id_publicador">{{ nombreDe(p) }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label for="salida-punto" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                Punto de salida <span class="text-xs text-gray-400 normal-case font-normal">(opcional)</span>
+              </label>
+              <select id="salida-punto" [(ngModel)]="editingSalida.id_punto_salida"
+                class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                <option [ngValue]="null">— Sin punto de salida —</option>
+                @for (pt of puntosSalida(); track pt.id_punto) {
+                  <option [ngValue]="pt.id_punto">{{ pt.nombre || 'Punto ' + pt.id_punto }}</option>
+                }
+              </select>
             </div>
             <div>
               <label for="salida-notas" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -497,6 +553,17 @@ interface EstadoManzana {
 })
 export class SeguimientoPredicacionPage implements OnInit {
   private territoriosService = inject(TerritoriosService);
+  private congregacionCtx = inject(CongregacionContextService);
+
+  publicadores = signal<PublicadorOpcion[]>([]);
+  publicadoresOrdenados = computed(() =>
+    [...this.publicadores()].sort((a, b) => nombreMostrado(a).localeCompare(nombreMostrado(b), 'es'))
+  );
+  nombreDe = (p: PublicadorOpcion) => nombreMostrado(p);
+  puntos = signal<Punto[]>([]);
+  noVisitar = signal<ViviendaDeTerritorio[]>([]);
+  textoDir = textoDireccion;
+  puntosSalida = computed(() => this.puntos().filter(p => (p.tipo ?? 'Otro') === 'Salida'));
 
   // Lista
   territorios = signal<Territorio[]>([]);
@@ -530,6 +597,7 @@ export class SeguimientoPredicacionPage implements OnInit {
   editingSalidaId = signal<number | null>(null);
   editingSalida: Partial<SalidaPredicacion> = {};
   salidaSaving = signal(false);
+  completandoCiclo = signal(false);
 
   // Fix #1: computed() ahora lee searchQuery() como signal → reactivo
   territoriosFiltrados = computed(() => {
@@ -546,6 +614,8 @@ export class SeguimientoPredicacionPage implements OnInit {
       next: (list) => { this.territorios.set(list); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
+    this.territoriosService.getPublicadores(this.congregacionCtx.effectiveCongregacionId())
+      .subscribe({ next: (list) => this.publicadores.set(list) });
   }
 
   seleccionarTerritorio(t: Territorio): void {
@@ -554,6 +624,10 @@ export class SeguimientoPredicacionPage implements OnInit {
     this.manzanasSalidaActiva.set([]);
     this.estadoManzanas.set(new Map());
     this.confirmarEliminarId.set(null);
+    this.puntos.set([]);
+    this.noVisitar.set([]);
+    this.territoriosService.getNoVisitar(t.id_territorio).subscribe({ next: (l) => this.noVisitar.set(l) });
+    this.territoriosService.getPuntos(t.id_territorio).subscribe({ next: (l) => this.puntos.set(l) });
     this.loadManzanas(t.id_territorio);
     this.loadSalidas(t.id_territorio);
     this.loadProgreso(t.id_territorio);
@@ -599,8 +673,22 @@ export class SeguimientoPredicacionPage implements OnInit {
     });
   }
 
+  completarVuelta(): void {
+    const t = this.territorioSeleccionado();
+    if (!t || this.completandoCiclo()) return;
+    this.completandoCiclo.set(true);
+    this.territoriosService.completarCiclo(t.id_territorio).subscribe({
+      next: () => {
+        this.completandoCiclo.set(false);
+        this.loadProgreso(t.id_territorio);
+        this.loadEstadoManzanas(t.id_territorio);
+      },
+      error: () => this.completandoCiclo.set(false),
+    });
+  }
+
   openNuevaSalidaModal(): void {
-    this.editingSalida = { fecha_salida: new Date().toISOString().slice(0, 10), nombre_capitan: '' };
+    this.editingSalida = { fecha_salida: new Date().toISOString().slice(0, 10), id_capitan: null, id_punto_salida: null, notas: '' };
     this.editingSalidaId.set(null);
     this.showSalidaModal.set(true);
   }
@@ -608,9 +696,8 @@ export class SeguimientoPredicacionPage implements OnInit {
   openEditSalidaModal(s: SalidaPredicacion): void {
     this.editingSalida = {
       fecha_salida: s.fecha_salida,
-      nombre_capitan: s.nombre_capitan ?? '',
-      id_capitan: s.id_capitan,
-      id_punto_salida: s.id_punto_salida,
+      id_capitan: s.id_capitan ?? null,
+      id_punto_salida: s.id_punto_salida ?? null,
       notas: s.notas ?? '',
     };
     this.editingSalidaId.set(s.id_salida);
@@ -622,9 +709,16 @@ export class SeguimientoPredicacionPage implements OnInit {
     if (!t) return;
     this.salidaSaving.set(true);
     const id = this.editingSalidaId();
+    // Solo lo que el backend guarda: el nombre del capitán se resuelve allí por id_capitan.
+    const cuerpo: Partial<SalidaPredicacion> = {
+      fecha_salida: this.editingSalida.fecha_salida,
+      id_capitan: this.editingSalida.id_capitan ?? null,
+      id_punto_salida: this.editingSalida.id_punto_salida ?? null,
+      notas: this.editingSalida.notas,
+    };
     const obs = id
-      ? this.territoriosService.updateSalida(t.id_territorio, id, this.editingSalida)
-      : this.territoriosService.createSalida(t.id_territorio, { ...this.editingSalida, id_territorio: t.id_territorio });
+      ? this.territoriosService.updateSalida(t.id_territorio, id, cuerpo)
+      : this.territoriosService.createSalida(t.id_territorio, { ...cuerpo, id_territorio: t.id_territorio });
     obs.subscribe({
       next: () => {
         this.salidaSaving.set(false);

@@ -2,10 +2,12 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { ConNombre } from '../../../core/utils/nombre.util';
 import {
   Territorio,
   Manzana,
   Vivienda,
+  ViviendaDeTerritorio,
   CoberturaManzana,
   TerritorioStats,
   GeoJSONFeatureCollection,
@@ -14,7 +16,15 @@ import {
   Punto,
   SalidaPredicacion,
   ProgresoTerritorio,
+  ResumenTerritorio,
+  RegistroS13,
+  CicloTerritorio,
 } from '../models/territorio.model';
+
+/** Publicador tal como lo necesitan los selectores de capitán y asignación. */
+export interface PublicadorOpcion extends ConNombre {
+  id_publicador: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TerritoriosService {
@@ -22,10 +32,11 @@ export class TerritoriosService {
   private baseUrl = `${environment.apiUrl}/territorios`;
 
   // ── Territorios ──────────────────────────────────────────────────────
-  getTerritorios(skip = 0, limit = 100): Observable<Territorio[]> {
+  getTerritorios(skip = 0, limit = 100, incluirInactivos = false): Observable<Territorio[]> {
     const params = new HttpParams()
       .set('skip', skip.toString())
-      .set('limit', limit.toString());
+      .set('limit', limit.toString())
+      .set('incluir_inactivos', String(incluirInactivos));
     return this.http.get<Territorio[]>(this.baseUrl, { params });
   }
 
@@ -59,7 +70,9 @@ export class TerritoriosService {
 
   // ── Manzanas ─────────────────────────────────────────────────────────
   getManzanas(idTerritorio: number): Observable<Manzana[]> {
-    return this.http.get<Manzana[]>(`${this.baseUrl}/${idTerritorio}/manzanas`);
+    // Con barra final: es la ruta canónica; sin ella FastAPI responde 307 y el redirect
+    // no sobrevive al proxy de desarrollo.
+    return this.http.get<Manzana[]>(`${this.baseUrl}/${idTerritorio}/manzanas/`);
   }
 
   getManzanasGeoJSON(idTerritorio: number): Observable<GeoJSONFeatureCollection> {
@@ -67,7 +80,7 @@ export class TerritoriosService {
   }
 
   createManzana(idTerritorio: number, data: Partial<Manzana>): Observable<Manzana> {
-    return this.http.post<Manzana>(`${this.baseUrl}/${idTerritorio}/manzanas`, data);
+    return this.http.post<Manzana>(`${this.baseUrl}/${idTerritorio}/manzanas/`, data);
   }
 
   updateManzana(idTerritorio: number, idManzana: number, data: Partial<Manzana>): Observable<Manzana> {
@@ -80,7 +93,7 @@ export class TerritoriosService {
 
   // ── Viviendas ────────────────────────────────────────────────────────
   getViviendas(idManzana: number): Observable<Vivienda[]> {
-    return this.http.get<Vivienda[]>(`${environment.apiUrl}/manzanas/${idManzana}/viviendas`);
+    return this.http.get<Vivienda[]>(`${environment.apiUrl}/manzanas/${idManzana}/viviendas/`);
   }
 
   getViviendasGeoJSON(idManzana: number): Observable<GeoJSONFeatureCollection> {
@@ -88,12 +101,37 @@ export class TerritoriosService {
   }
 
   createVivienda(idManzana: number, data: Partial<Vivienda>): Observable<Vivienda> {
-    return this.http.post<Vivienda>(`${environment.apiUrl}/manzanas/${idManzana}/viviendas`, data);
+    return this.http.post<Vivienda>(`${environment.apiUrl}/manzanas/${idManzana}/viviendas/`, data);
+  }
+
+  updateVivienda(idManzana: number, idVivienda: number, data: Partial<Vivienda>): Observable<Vivienda> {
+    return this.http.put<Vivienda>(`${environment.apiUrl}/manzanas/${idManzana}/viviendas/${idVivienda}`, data);
+  }
+
+  deleteVivienda(idManzana: number, idVivienda: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/manzanas/${idManzana}/viviendas/${idVivienda}`);
+  }
+
+  revisarVivienda(idManzana: number, idVivienda: number): Observable<Vivienda> {
+    return this.http.post<Vivienda>(`${environment.apiUrl}/manzanas/${idManzana}/viviendas/${idVivienda}/revisar`, {});
+  }
+
+  getViviendasTerritorio(idTerritorio: number): Observable<ViviendaDeTerritorio[]> {
+    return this.http.get<ViviendaDeTerritorio[]>(`${this.baseUrl}/${idTerritorio}/viviendas`);
+  }
+
+  getNoVisitar(idTerritorio: number): Observable<ViviendaDeTerritorio[]> {
+    return this.http.get<ViviendaDeTerritorio[]>(`${this.baseUrl}/${idTerritorio}/no-visitar`);
+  }
+
+  /** {id_territorio: cantidad} de "no visitar" que llevan más de un año sin revisarse. */
+  getNoVisitarPorRevisar(): Observable<Record<string, number>> {
+    return this.http.get<Record<string, number>>(`${this.baseUrl}/no-visitar/por-revisar`);
   }
 
   // ── Cobertura ────────────────────────────────────────────────────────
   getCoberturas(idManzana: number): Observable<CoberturaManzana[]> {
-    return this.http.get<CoberturaManzana[]>(`${environment.apiUrl}/manzanas/${idManzana}/cobertura`);
+    return this.http.get<CoberturaManzana[]>(`${environment.apiUrl}/manzanas/${idManzana}/cobertura/`);
   }
 
   /**
@@ -105,12 +143,12 @@ export class TerritoriosService {
   }
 
   createCobertura(idManzana: number, data: Partial<CoberturaManzana>): Observable<CoberturaManzana> {
-    return this.http.post<CoberturaManzana>(`${environment.apiUrl}/manzanas/${idManzana}/cobertura`, data);
+    return this.http.post<CoberturaManzana>(`${environment.apiUrl}/manzanas/${idManzana}/cobertura/`, data);
   }
 
   // ── Asignaciones ──────────────────────────────────────────────────────
   getAsignaciones(idTerritorio: number): Observable<AsignacionTerritorio[]> {
-    return this.http.get<AsignacionTerritorio[]>(`${this.baseUrl}/${idTerritorio}/asignaciones`);
+    return this.http.get<AsignacionTerritorio[]>(`${this.baseUrl}/${idTerritorio}/asignaciones/`);
   }
 
   getAsignacionActiva(idTerritorio: number): Observable<AsignacionTerritorio | null> {
@@ -118,7 +156,7 @@ export class TerritoriosService {
   }
 
   createAsignacion(idTerritorio: number, data: { id_publicador: number; fecha_asignacion: string; notas?: string }): Observable<AsignacionTerritorio> {
-    return this.http.post<AsignacionTerritorio>(`${this.baseUrl}/${idTerritorio}/asignaciones`, data);
+    return this.http.post<AsignacionTerritorio>(`${this.baseUrl}/${idTerritorio}/asignaciones/`, data);
   }
 
   devolverAsignacion(idTerritorio: number, idAsignacion: number, data: { fecha_devolucion: string; notas?: string }): Observable<AsignacionTerritorio> {
@@ -131,7 +169,7 @@ export class TerritoriosService {
 
   // ── Puntos ───────────────────────────────────────────────────────────
   getPuntos(idTerritorio: number): Observable<Punto[]> {
-    return this.http.get<Punto[]>(`${this.baseUrl}/${idTerritorio}/puntos`);
+    return this.http.get<Punto[]>(`${this.baseUrl}/${idTerritorio}/puntos/`);
   }
 
   getPuntosGeoJSON(idTerritorio: number): Observable<GeoJSONFeatureCollection> {
@@ -139,7 +177,7 @@ export class TerritoriosService {
   }
 
   createPunto(idTerritorio: number, data: Partial<Punto>): Observable<Punto> {
-    return this.http.post<Punto>(`${this.baseUrl}/${idTerritorio}/puntos`, data);
+    return this.http.post<Punto>(`${this.baseUrl}/${idTerritorio}/puntos/`, data);
   }
 
   updatePunto(idTerritorio: number, idPunto: number, data: Partial<Punto>): Observable<Punto> {
@@ -187,6 +225,28 @@ export class TerritoriosService {
 
   unmarkManzanaPredicada(idTerritorio: number, idSalida: number, idManzana: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${idTerritorio}/salidas/${idSalida}/manzanas/${idManzana}`);
+  }
+
+  // ── Ciclos, resumen y registro S-13 ────────────────────────────────────
+  getResumen(): Observable<ResumenTerritorio[]> {
+    return this.http.get<ResumenTerritorio[]>(`${this.baseUrl}/resumen`);
+  }
+
+  getRegistroS13(anioServicio?: number): Observable<RegistroS13> {
+    let params = new HttpParams();
+    if (anioServicio) params = params.set('anio_servicio', String(anioServicio));
+    return this.http.get<RegistroS13>(`${this.baseUrl}/registro-s13`, { params });
+  }
+
+  completarCiclo(idTerritorio: number): Observable<CicloTerritorio> {
+    return this.http.post<CicloTerritorio>(`${this.baseUrl}/${idTerritorio}/ciclos/completar`, {});
+  }
+
+  // ── Publicadores (selectores de capitán y asignación) ────────────────
+  getPublicadores(idCongregacion?: number | null): Observable<PublicadorOpcion[]> {
+    let params = new HttpParams().set('limit', '1000');
+    if (idCongregacion) params = params.set('id_congregacion', String(idCongregacion));
+    return this.http.get<PublicadorOpcion[]>('/api/publicadores/', { params });
   }
 
   // ── Tile Provider Config ─────────────────────────────────────────────

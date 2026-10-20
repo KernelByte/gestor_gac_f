@@ -348,6 +348,13 @@ export class TimeAgoPipe implements PipeTransform {
                           [ngClass]="rlaPred.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
                     <span class="truncate">Predicación</span>
                   </a>
+                  <a routerLink="/territorios/registro" routerLinkActive="sub-active" #rlaS13="routerLinkActive"
+                     class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
+                     [ngClass]="rlaS13.isActive ? '!text-brand-green dark:!text-green-400 font-medium bg-brand-green/[0.03] dark:bg-green-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                    <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
+                          [ngClass]="rlaS13.isActive ? 'bg-brand-green dark:bg-green-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                    <span class="truncate">Registro S-13</span>
+                  </a>
                 </div>
               </div>
 

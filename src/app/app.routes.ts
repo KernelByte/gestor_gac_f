@@ -58,6 +58,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/territorios/pages/territorios.page').then(m => m.TerritoriosPage),
       },
       {
+        path: 'territorios/registro',
+        title: 'Registro de Territorios',
+        canActivate: [permissionGuard],
+        data: { permissions: ['territorios.ver'] },
+        loadComponent: () => import('./features/territorios/pages/registro-s13.page').then(m => m.RegistroS13Page),
+      },
+      {
         path: 'horarios',
         title: 'Horarios de Predicación',
         canActivate: [permissionGuard],

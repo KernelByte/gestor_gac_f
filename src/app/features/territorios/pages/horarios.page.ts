@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { TerritoriosService } from '../services/territorios.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
-import { Territorio } from '../models/territorio.model';
+import { Territorio, ResumenTerritorio, textoDiasSinTrabajar } from '../models/territorio.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { nombreMostrado } from '../../../core/utils/nombre.util';
 
@@ -187,10 +187,11 @@ interface Publicador {
             <select [(ngModel)]="form.id_territorio"
               class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
               <option [ngValue]="null">— Sin asignar —</option>
-              @for (t of territorios(); track t.id_territorio) {
-                <option [ngValue]="t.id_territorio">{{ t.codigo }} — {{ t.nombre }}</option>
+              @for (t of territoriosParaElegir(); track t.id_territorio) {
+                <option [ngValue]="t.id_territorio">{{ t.codigo }} — {{ t.nombre }} · {{ etiquetaTrabajo(t.id_territorio) }}</option>
               }
             </select>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Primero los que llevan más tiempo sin trabajarse.</p>
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Capitán</label>
@@ -254,6 +255,25 @@ export class HorariosPage implements OnInit {
   }
   territorios = signal<Territorio[]>([]);
   publicadores = signal<Publicador[]>([]);
+  resumen = signal<Map<number, ResumenTerritorio>>(new Map());
+
+  /** Para elegir el siguiente: nunca trabajados, luego los de más días sin salir. */
+  territoriosParaElegir = computed(() => {
+    const r = this.resumen();
+    const peso = (id: number) => {
+      const d = r.get(id)?.dias_sin_trabajar;
+      return d === null || d === undefined ? Number.MAX_SAFE_INTEGER : d;
+    };
+    return [...this.territorios()].sort((a, b) => peso(b.id_territorio) - peso(a.id_territorio));
+  });
+
+  etiquetaTrabajo(id: number): string {
+    const f = this.resumen().get(id);
+    if (!f) return '';
+    const base = textoDiasSinTrabajar(f.dias_sin_trabajar);
+    const avance = f.en_curso ? ` · ${f.porcentaje} %` : '';
+    return base === 'Nunca trabajado' ? base : `última salida ${base}${avance}`;
+  }
   loading = signal(false);
   saving = signal(false);
   ejecutandoId = signal<number | null>(null);
@@ -296,6 +316,9 @@ export class HorariosPage implements OnInit {
   loadTerritorios(): void {
     this.territoriosService.getTerritorios(0, 500).subscribe({
       next: (list) => this.territorios.set(list),
+    });
+    this.territoriosService.getResumen().subscribe({
+      next: (filas) => this.resumen.set(new Map(filas.map(f => [f.id_territorio, f]))),
     });
   }
 
