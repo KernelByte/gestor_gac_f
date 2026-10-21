@@ -21,6 +21,7 @@ import {
   MWBImportPreviewResponse,
   MWBImportConfirmRequest,
   MWBImportConfirmResponse,
+  CompletarDescripcionesResponse,
   MWBDuplicadosResponse,
   AlgorithmParamsResponse,
   AlgorithmParamsUpdate,
@@ -255,6 +256,16 @@ export class ReunionesService {
   ): Observable<MWBImportConfirmResponse> {
     return this.http.post<MWBImportConfirmResponse>(
       `${this.base}/programas/importar-mwb/confirm`,
+      payload
+    );
+  }
+
+  /** Rellena la descripción de las partes de una guía ya importada (aunque esté en uso). */
+  completarDescripcionesMWB(
+    payload: MWBImportConfirmRequest
+  ): Observable<CompletarDescripcionesResponse> {
+    return this.http.post<CompletarDescripcionesResponse>(
+      `${this.base}/programas/importar-mwb/completar-descripciones`,
       payload
     );
   }

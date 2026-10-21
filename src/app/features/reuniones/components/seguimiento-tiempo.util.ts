@@ -1,4 +1,4 @@
-import { NivelTiempo } from '../models/reuniones.models';
+import { AsistenciaSeguimiento, NivelTiempo } from '../models/reuniones.models';
 
 /**
  * El tiempo de una parte, en los dos sentidos.
@@ -59,10 +59,29 @@ export function etiquetaNivel(
 /** Las clases del chip de nivel. En un sitio para que la hoja de trabajo, el
  *  panel y el historial no se pinten de tres verdes distintos. */
 export function claseNivel(nivel: NivelTiempo | null | undefined): string {
-  if (nivel === 'pasado') return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
-  if (nivel === 'corto') return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400';
-  if (nivel === 'ok') return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400';
+  if (nivel === 'pasado') return CHIP_MAL;
+  if (nivel === 'corto') return CHIP_AVISO;
+  if (nivel === 'ok') return CHIP_BIEN;
   return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+}
+
+const CHIP_MAL = 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
+const CHIP_AVISO = 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400';
+const CHIP_BIEN = 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400';
+
+/** Las tres respuestas a "¿Cumplió?", con sus textos y colores en un solo
+ *  sitio: el botón ("Sí") y el chip del historial ("Cumplió") dicen lo mismo
+ *  con palabras distintas, y la hoja y el panel se pintan igual. */
+export const ASISTENCIAS: {
+  valor: AsistenciaSeguimiento; boton: string; texto: string; claseBoton: string; claseChip: string;
+}[] = [
+  { valor: 'si', boton: 'Sí', texto: 'Cumplió', claseBoton: 'bg-emerald-600 border-emerald-600 text-white', claseChip: CHIP_BIEN },
+  { valor: 'no', boton: 'No vino', texto: 'No vino', claseBoton: 'bg-red-600 border-red-600 text-white', claseChip: CHIP_MAL },
+  { valor: 'sustituido', boton: 'Lo sustituyeron', texto: 'Lo sustituyeron', claseBoton: 'bg-amber-500 border-amber-500 text-white', claseChip: CHIP_AVISO },
+];
+
+export function asistencia(a: AsistenciaSeguimiento) {
+  return ASISTENCIAS.find(x => x.valor === a)!;
 }
 
 /** "Hoy" / "Ayer" / "Hace 3 días" / "Hace 2 meses". Negativo = aún no ha pasado. */

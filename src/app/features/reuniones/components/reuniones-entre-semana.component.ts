@@ -55,6 +55,7 @@ import {
   NOMBRE_RESPONSABLE_SALA_B,
 } from '../models/reuniones.models';
 import { whatsappUrl } from '../../../shared/whatsapp';
+import { hoyIso } from '../../../core/utils/fecha.util';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
@@ -173,6 +174,19 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
         (cerrado)="ajustesAbierto.set(false)"
         (cambios)="onAjustesCambiaron()">
       </app-reuniones-ajustes-dialog>
+
+      @if (ayudaParte(); as ayuda) {
+        <!-- Fuera de las tarjetas de sección, que recortan (overflow-hidden):
+             fijo y colocado desde el botón. -->
+        <div role="tooltip" data-ayuda-parte-globo
+          class="fixed z-[60] w-[22rem] max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl px-3.5 py-3 pointer-events-none"
+          [style.top.px]="ayuda.top"
+          [style.left.px]="ayuda.left"
+          [style.transform]="ayuda.arriba ? 'translateY(-100%)' : 'none'">
+          <p class="text-[0.8rem] font-semibold text-slate-800 dark:text-slate-100 leading-snug mb-1">{{ ayuda.titulo }}</p>
+          <p class="text-[0.8rem] text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">{{ ayuda.texto }}</p>
+        </div>
+      }
 
       <!-- ===== ERROR ===== -->
       @if (estado() === 'error') {
@@ -825,6 +839,20 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                                 <span class="sec-badge shrink-0 px-1.5 py-[2px] rounded font-mono tabular-nums text-[0.65rem] font-bold leading-none">
                                   {{ grupo.partes[0].duracion_minutos }}&nbsp;min
                                 </span>
+                              }
+                              @if (grupo.partes[0].descripcion) {
+                                <!-- Detalle de la parte según la guía. Con el
+                                     cursor se abre solo; con el dedo o un clic
+                                     queda fijo hasta tocar fuera. -->
+                                <button type="button"
+                                  data-ayuda-parte
+                                  (mouseenter)="mostrarAyuda($event, grupo.partes[0])"
+                                  (mouseleave)="ocultarAyuda()"
+                                  (focus)="mostrarAyuda($event, grupo.partes[0])"
+                                  (blur)="ocultarAyuda()"
+                                  (click)="alternarAyuda($event, grupo.partes[0])"
+                                  aria-label="Ver el detalle de esta parte"
+                                  class="shrink-0 w-5 h-5 inline-flex items-center justify-center rounded-full border border-slate-300 dark:border-slate-600 text-[0.7rem] font-bold leading-none text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-150">?</button>
                               }
                             </div>
                             @if (grupo.partes[0].fuente_informacion) {
@@ -2607,9 +2635,52 @@ export class ReunionesProgramacionComponent implements OnInit {
     return this.periodoActivo() === p.clave;
   }
 
+  // ── "?" con el detalle de la parte (Seamos Mejores Maestros) ──
+  ayudaParte = signal<{ id: number; titulo: string; texto: string; top: number; left: number; arriba: boolean } | null>(null);
+  /** Fijada por un clic o un toque: no se cierra al sacar el cursor. */
+  private ayudaFija = false;
+
+  mostrarAyuda(ev: Event, parte: AsignacionDraft): void {
+    if (this.ayudaFija && this.ayudaParte()?.id !== parte.id_programa_parte) this.ayudaFija = false;
+    if (this.ayudaFija) return;
+    const rect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+    const ancho = Math.min(352, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.left + rect.width / 2 - ancho / 2, window.innerWidth - ancho - 12));
+    // Abajo del botón; arriba si abajo no cabe.
+    const arriba = rect.bottom + 180 > window.innerHeight && rect.top > 180;
+    const duracion = parte.duracion_minutos ? `(${parte.duracion_minutos} mins.) ` : '';
+    this.ayudaParte.set({
+      id: parte.id_programa_parte,
+      titulo: this.displayNombreParte(parte),
+      texto: duracion + (parte.descripcion ?? ''),
+      top: arriba ? rect.top - 8 : rect.bottom + 8,
+      left,
+      arriba,
+    });
+  }
+
+  ocultarAyuda(): void {
+    if (!this.ayudaFija) this.ayudaParte.set(null);
+  }
+
+  alternarAyuda(ev: Event, parte: AsignacionDraft): void {
+    ev.stopPropagation();
+    if (this.ayudaParte()?.id === parte.id_programa_parte && this.ayudaFija) {
+      this.ayudaFija = false;
+      this.ayudaParte.set(null);
+      return;
+    }
+    this.mostrarAyuda(ev, parte);
+    this.ayudaFija = true;
+  }
+
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
+    if (this.ayudaParte() && !target.closest('[data-ayuda-parte]')) {
+      this.ayudaFija = false;
+      this.ayudaParte.set(null);
+    }
     if (this.menuMesesAbierto() && !target.closest('[data-mes-menu]')) {
       this.menuMesesAbierto.set(false);
     }
@@ -2620,6 +2691,7 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.ayudaParte()) { this.ayudaFija = false; this.ayudaParte.set(null); }
     if (this.menuMesesAbierto()) this.menuMesesAbierto.set(false);
     if (this.menuAccionesAbierto()) this.menuAccionesAbierto.set(false);
     if (this.papeletaPreview()) this.cerrarPapeletaPreview();
@@ -2649,7 +2721,7 @@ export class ReunionesProgramacionComponent implements OnInit {
     if (!this.hasSeguimientoPermission()) return false;
     if (asig.id_asignacion == null || asig.estado === 'sin_asignar') return false;
     const fecha = this.currentSemana()?.fecha;
-    return !!fecha && fecha.slice(0, 10) <= new Date().toISOString().slice(0, 10);
+    return !!fecha && fecha.slice(0, 10) <= hoyIso();
   }
 
   abrirSeguimientoPill(asig: AsignacionDraft, ev: Event): void {

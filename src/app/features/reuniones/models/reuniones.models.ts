@@ -41,6 +41,9 @@ export interface AsignacionDraft {
   orden_visual?: number;
   duracion_minutos?: number;
   fuente_informacion?: string;
+  /** Texto de la guía sobre la parte (solo Seamos Mejores Maestros): lo que
+   *  enseña el "?" de la programación. Sin "(N mins.)", que va aparte. */
+  descripcion?: string | null;
   /** El cántico que abre el Estudio de La Atalaya, cuando el PDF de la revista
    *  ya se importó para esa semana. Viene aparte de `fuente_informacion` para
    *  que cada pantalla decida si lo enseña. */
@@ -411,6 +414,14 @@ export interface SemanaConfirm {
 
 export interface MWBImportConfirmRequest {
   semanas: SemanaConfirm[];
+}
+
+export interface CompletarDescripcionesResponse {
+  mensaje: string;
+  id_plantilla: number;
+  partes_completadas: number;
+  sin_cambio: number;
+  sin_pareja: number;
 }
 
 export interface MWBImportConfirmResponse {

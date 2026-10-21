@@ -8,7 +8,7 @@ import {
   AsistenciaSeguimiento, NivelTiempo, Seguimiento,
 } from '../models/reuniones.models';
 import {
-  etiquetaNivel, formatFecha, formatSegundos, nivelDeTiempo, parseTiempo,
+  ASISTENCIAS, etiquetaNivel, formatFecha, formatSegundos, nivelDeTiempo, parseTiempo,
 } from './seguimiento-tiempo.util';
 
 /** Lo mínimo que el panel necesita saber de la asignación sobre la que escribe.
@@ -122,9 +122,9 @@ export interface SeguimientoObjetivo {
                   [attr.aria-pressed]="asistio() === op.valor"
                   class="px-3 h-9 rounded-xl text-xs font-bold border transition-colors active:scale-95"
                   [class]="asistio() === op.valor
-                    ? op.clase
+                    ? op.claseBoton
                     : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
-                  {{ op.label }}
+                  {{ op.boton }}
                 </button>
               }
             </div>
@@ -180,11 +180,7 @@ export class SeguimientoAsignacionPanelComponent implements OnInit, OnDestroy {
 
   constructor(private svc: ReunionesService) {}
 
-  readonly ASISTENCIAS: { valor: AsistenciaSeguimiento; label: string; clase: string }[] = [
-    { valor: 'si', label: 'Sí', clase: 'bg-emerald-600 border-emerald-600 text-white' },
-    { valor: 'no', label: 'No vino', clase: 'bg-red-500 border-red-500 text-white' },
-    { valor: 'sustituido', label: 'Lo sustituyeron', clase: 'bg-amber-500 border-amber-500 text-white' },
-  ];
+  readonly ASISTENCIAS = ASISTENCIAS;
 
   guardando = signal(false);
   error = signal('');

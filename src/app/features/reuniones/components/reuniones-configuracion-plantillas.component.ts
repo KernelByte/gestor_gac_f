@@ -1600,6 +1600,12 @@ import {
                    Cada congregación debe eliminar antes su programación desde «Eliminar guía»,
                    en su pestaña de programación.
                  </p>
+                 @if (mwbPreview()?.origen === 'jwpub') {
+                   <p class="text-[0.6875rem] text-slate-500 dark:text-slate-400 text-center mt-3 leading-relaxed px-2">
+                     Si solo quieres que las partes de <b>Seamos Mejores Maestros</b> muestren su
+                     detalle, puedes completarlo sin tocar la programación.
+                   </p>
+                 }
                } @else {
                  <h3 class="text-lg font-black text-slate-900 dark:text-white text-center tracking-tight">Esta guía ya está subida</h3>
                  <p class="text-sm text-slate-500 dark:text-slate-400 text-center mt-2 leading-relaxed px-2">
@@ -1615,6 +1621,16 @@ import {
                        class="flex-1 h-10 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]">
                  {{ mwbEnUsoPor().length > 0 ? 'Entendido' : 'Cancelar' }}
                </button>
+               @if (mwbEnUsoPor().length > 0 && mwbPreview()?.origen === 'jwpub') {
+                 <button (click)="completarDescripciones()"
+                         [disabled]="mwbConfirming()"
+                         class="flex-1 h-10 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold shadow-sm shadow-purple-900/20 transition-[background-color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.97] disabled:opacity-50 flex items-center justify-center gap-2">
+                   @if (mwbConfirming()) {
+                     <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                   }
+                   Completar descripciones
+                 </button>
+               }
                @if (mwbEnUsoPor().length === 0) {
                  <button (click)="acceptDuplicateReplace()"
                          [disabled]="mwbConfirming()"
@@ -2886,6 +2902,29 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
             this.showToast('error', err?.error?.detail ?? 'Error al procesar la confirmación');
             this.mwbConfirming.set(false);
         }
+    });
+  }
+
+  /** Guía en uso: no se reimporta, solo se completa el texto de sus partes. */
+  completarDescripciones() {
+    const payload = this.mwbPendingPayload;
+    if (!payload) return;
+    this.mwbConfirming.set(true);
+    this.reunionesSvc.completarDescripcionesMWB(payload).subscribe({
+      next: (res) => {
+        this.showToast('success', res.mensaje);
+        this.mwbConfirming.set(false);
+        this.mwbPreview.set(null);
+        this.mwbDates.set(new Map());
+        this.mwbShowDuplicateModal.set(false);
+        this.mwbEnUsoPor.set([]);
+        this.mwbPendingPayload = null;
+        this.loadSavedPlantillas();
+      },
+      error: (err) => {
+        this.showToast('error', err?.error?.detail ?? 'No se pudieron completar las descripciones');
+        this.mwbConfirming.set(false);
+      },
     });
   }
 

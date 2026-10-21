@@ -1981,13 +1981,9 @@ export class ReunionesResumenComponent {
       let targetDay = DIA_MAP[diaKey] ?? parseInt(diaKey, 10);
       if (isNaN(targetDay)) continue;
 
-      let daysUntil = (targetDay - today + 7) % 7;
-      if (daysUntil === 0) {
-        const [h = 0, m = 0] = (hora ?? '00:00').split(':').map(Number);
-        const meetingTime = new Date(now);
-        meetingTime.setHours(h, m, 0, 0);
-        if (now > meetingTime) daysUntil = 7;
-      }
+      // El día de la reunión sigue siendo "hoy" hasta que termina el día: la
+      // siguiente solo aparece a partir del día siguiente.
+      const daysUntil = (targetDay - today + 7) % 7;
 
       const fecha = new Date(now);
       fecha.setDate(now.getDate() + daysUntil);

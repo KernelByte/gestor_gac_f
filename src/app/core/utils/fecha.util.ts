@@ -6,7 +6,11 @@
  * en Colombia (UTC-5) desde las 19:00 ya devuelve el día siguiente.
  */
 export function hoyIso(): string {
-  const d = new Date();
+  return fechaIsoLocal(new Date());
+}
+
+/** Cualquier fecha en `YYYY-MM-DD` según la zona del navegador (ver `hoyIso`). */
+export function fechaIsoLocal(d: Date): string {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   return `${d.getFullYear()}-${mm}-${dd}`;
