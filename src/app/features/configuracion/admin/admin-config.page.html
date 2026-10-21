@@ -250,8 +250,20 @@
                </tbody>
             </table>
 
-            <!-- Empty State -->
-            <div *ngIf="filteredCongregations().length === 0"
+            <!-- Cargando -->
+            <div *ngIf="loading() && congregaciones().length === 0" class="py-20 flex justify-center">
+               <div class="w-8 h-8 border-[3px] border-brand-purple/10 border-t-brand-purple rounded-full animate-spin"></div>
+            </div>
+
+            <!-- Error al cargar -->
+            <div *ngIf="loadError() && !loading()" role="alert" class="py-16 flex flex-col items-center text-center">
+               <h3 class="text-slate-900 dark:text-white font-bold text-lg mb-1">No se pudieron cargar las congregaciones</h3>
+               <p class="text-slate-500 dark:text-slate-400 font-medium">Revisa la conexión e inténtalo de nuevo.</p>
+               <button type="button" (click)="loadCongregaciones()" class="mt-4 px-4 min-h-[2.75rem] rounded-xl bg-brand-purple text-white font-bold text-sm">Reintentar</button>
+            </div>
+
+            <!-- Sin resultados / lista vacía -->
+            <div *ngIf="!loading() && !loadError() && filteredCongregations().length === 0"
                class="py-16 flex flex-col items-center justify-center text-center">
                <div class="w-20 h-20 bg-slate-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mb-4">
                   <svg class="w-10 h-10 text-slate-200 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -259,11 +271,17 @@
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                </div>
-               <h3 class="text-slate-900 dark:text-white font-bold text-lg mb-1">Sin Resultados</h3>
-               <p class="text-slate-500 dark:text-slate-400 font-medium">No se encontraron congregaciones que coincidan con tu búsqueda.</p>
-               <button (click)="searchTerm.set('')" class="mt-4 text-brand-purple dark:text-purple-300 font-bold hover:underline">
-                  Limpiar búsqueda
-               </button>
+               <ng-container *ngIf="searchTerm(); else sinCongregaciones">
+                  <h3 class="text-slate-900 dark:text-white font-bold text-lg mb-1">Sin Resultados</h3>
+                  <p class="text-slate-500 dark:text-slate-400 font-medium">No se encontraron congregaciones que coincidan con tu búsqueda.</p>
+                  <button (click)="searchTerm.set('')" type="button" class="mt-4 text-brand-purple dark:text-purple-300 font-bold hover:underline">
+                     Limpiar búsqueda
+                  </button>
+               </ng-container>
+               <ng-template #sinCongregaciones>
+                  <h3 class="text-slate-900 dark:text-white font-bold text-lg mb-1">Aún no hay congregaciones</h3>
+                  <p class="text-slate-500 dark:text-slate-400 font-medium">Crea la primera con el botón «Nueva».</p>
+               </ng-template>
             </div>
          </div>
 
@@ -461,6 +479,13 @@
             <p class="text-red-600 dark:text-red-400 text-sm font-semibold mt-3">
                Esta acción no se puede deshacer.
             </p>
+            <label class="block mt-4 text-sm font-bold text-slate-700 dark:text-slate-200">
+               Para confirmar, escribe el nombre: <span class="font-black">{{ congregationToDelete()?.nombre_congregacion }}</span>
+               <input type="text" autocomplete="off" [value]="deleteConfirmText()"
+                  (input)="deleteConfirmText.set($any($event.target).value)"
+                  (keydown.enter)="executeDeleteCongregation()"
+                  class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500">
+            </label>
          </div>
          <!-- Footer -->
          <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-end gap-3">
@@ -468,7 +493,7 @@
                class="px-5 py-2.5 rounded-xl font-bold text-sm border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50">
                Cancelar
             </button>
-            <button type="button" (click)="executeDeleteCongregation()" [disabled]="deletingCongregation()"
+            <button type="button" (click)="executeDeleteCongregation()" [disabled]="deletingCongregation() || !deleteConfirmed()"
                class="px-5 py-2.5 rounded-xl font-bold text-sm bg-red-500 hover:bg-red-600 text-white shadow-md shadow-red-500/25 transition-all disabled:opacity-50 flex items-center gap-2">
                <span *ngIf="deletingCongregation()" class="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span>
                <span>{{ deletingCongregation() ? 'Eliminando...' : 'Eliminar' }}</span>
@@ -488,7 +513,7 @@
    <!-- SLIDING PANEL (Create/Edit) -->
    <div *ngIf="panelOpen()" class="fixed inset-0 z-50 flex justify-end">
       <!-- Backdrop -->
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closePanel()"></div>
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="requestClosePanel()"></div>
 
       <!-- Slide-over Panel (full width on mobile) -->
       <div @slidePanel
@@ -760,6 +785,21 @@
                   class="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full"></span>
                <span *ngIf="!creating()">{{ editingCongregation() ? 'Guardar Cambios' : 'Crear Congregación' }}</span>
             </button>
+         </div>
+      </div>
+   </div>
+
+   <!-- MODAL CONFIRMAR ELIMINAR URL -->
+   <div *ngIf="urlToDelete()" class="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      (click)="urlToDelete.set(null)">
+      <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-slate-200 dark:border-slate-700"
+         (click)="$event.stopPropagation()">
+         <h3 class="text-lg font-bold text-slate-900 dark:text-white">¿Eliminar la URL «{{ urlToDelete() }}»?</h3>
+         <p class="text-sm text-slate-600 dark:text-slate-300">Esta acción no se puede deshacer.</p>
+         <div class="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+            <button type="button" (click)="urlToDelete.set(null)" class="min-h-[2.75rem] px-4 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-300">Cancelar</button>
+            <button type="button" (click)="confirmDeleteUrl()" [disabled]="deletingUrlKey() !== null"
+               class="min-h-[2.75rem] px-4 rounded-xl bg-red-600 text-white font-bold text-sm disabled:opacity-50">Eliminar</button>
          </div>
       </div>
    </div>

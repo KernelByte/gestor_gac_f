@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { etiquetaRol } from '../../../../core/auth/rol-label';
+import { AuthStore } from '../../../../core/auth/auth.store';
 
 interface SesionActiva {
   user_id: string;
@@ -59,6 +60,7 @@ interface SesionesResponse {
           >
             <option value="osm">OpenStreetMap (OSM)</option>
             <option value="google">Google Maps</option>
+            <option value="propio">Mapa propio (Colombia)</option>
           </select>
           <button (click)="saveSettings()" [disabled]="saving() || loading()" class="shrink-0 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50 touch-manipulation">
              <span *ngIf="saving()" class="w-4 h-4 inline-block border-2 border-white/30 border-t-white rounded-full animate-spin align-middle mr-1"></span>
@@ -183,7 +185,7 @@ interface SesionesResponse {
               </div>
               
               <!-- Botón Kick -->
-              <button (click)="kickUser(s.user_id)" [disabled]="isKicking(s.user_id)" title="Cerrar sesión forzosamente"
+              <button *ngIf="!esMiSesion(s)" (click)="kickUser(s.user_id)" [disabled]="isKicking(s.user_id)" title="Cerrar sesión forzosamente"
                 [attr.aria-label]="'Cerrar sesión de ' + s.nombre"
                 class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
                 <svg *ngIf="!isKicking(s.user_id)" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -262,6 +264,8 @@ export class SystemConfigComponent implements OnInit, OnDestroy {
   etiquetaRol = etiquetaRol;
 
   private http = inject(HttpClient);
+  private store = inject(AuthStore);
+  private notificationTimer: ReturnType<typeof setTimeout> | null = null;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   // Map settings
@@ -291,6 +295,7 @@ export class SystemConfigComponent implements OnInit, OnDestroy {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
     }
+    if (this.notificationTimer) clearTimeout(this.notificationTimer);
   }
 
   // ── Map Settings ──────────────────────────────────────
@@ -323,8 +328,9 @@ export class SystemConfigComponent implements OnInit, OnDestroy {
   }
 
   showNotification(message: string, type: 'success' | 'error') {
+    if (this.notificationTimer) clearTimeout(this.notificationTimer);
     this.notification.set({ message, type });
-    setTimeout(() => this.notification.set(null), 4000);
+    this.notificationTimer = setTimeout(() => this.notification.set(null), 4000);
   }
 
   // ── Active Sessions ──────────────────────────────────
@@ -339,6 +345,11 @@ export class SystemConfigComponent implements OnInit, OnDestroy {
         this.sessionsLoading.set(false);
       }
     });
+  }
+
+  /** El backend rechaza cerrar la propia sesión: no se ofrece el botón. */
+  esMiSesion(s: SesionActiva): boolean {
+    return s.tipo === 'usuario_completo' && String(s.user_id) === String(this.store.user()?.id);
   }
 
   trackSession(_index: number, session: SesionActiva): string {

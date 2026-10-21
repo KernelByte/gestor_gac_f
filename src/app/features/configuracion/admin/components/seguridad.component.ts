@@ -5,6 +5,7 @@ import { lastValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { AuthStore } from '../../../../core/auth/auth.store';
+import { etiquetaRol } from '../../../../core/auth/rol-label';
 
 const API = `${environment.apiUrl}/seguridad`;
 
@@ -98,7 +99,7 @@ interface UsuarioDosPasos {
                 <p class="font-bold text-slate-800 dark:text-slate-100 truncate max-w-[14rem] sm:max-w-none">{{ u.nombre }}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[14rem] sm:max-w-none">{{ u.correo }}</p>
               </td>
-              <td class="px-4 py-3 hidden md:table-cell text-slate-600 dark:text-slate-300">{{ u.rol }}</td>
+              <td class="px-4 py-3 hidden md:table-cell text-slate-600 dark:text-slate-300">{{ etiquetaRol(u.rol) }}</td>
               <td class="px-4 py-3">
                 <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-bold"
                   [ngClass]="u.totp_activo ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'">
@@ -116,6 +117,7 @@ interface UsuarioDosPasos {
           </tbody>
         </table>
       </div>
+      <p *ngIf="errorUsuarios()" role="alert" class="mt-2 text-sm font-semibold text-red-600 dark:text-red-400">No se pudo cargar la lista de usuarios.</p>
       <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
         "Restablecer" sirve cuando alguien perdió el teléfono: quita su verificación, cierra su sesión y deberá activarla de nuevo.
       </p>
@@ -235,6 +237,8 @@ export class SeguridadComponent implements OnInit {
   private toast = inject(ToastService);
   private store = inject(AuthStore);
 
+  etiquetaRol = etiquetaRol;
+  errorUsuarios = signal(false);
   estado = signal<EstadoSeguridad | null>(null);
   usuarios = signal<UsuarioDosPasos[]>([]);
   error = signal<string | null>(null);
@@ -287,7 +291,10 @@ export class SeguridadComponent implements OnInit {
       next: e => { this.estado.set(e); this.error.set(null); },
       error: () => this.error.set('No se pudo cargar el estado de seguridad.'),
     });
-    this.http.get<UsuarioDosPasos[]>(`${API}/usuarios`).subscribe({ next: u => this.usuarios.set(u) });
+    this.http.get<UsuarioDosPasos[]>(`${API}/usuarios`).subscribe({
+      next: u => { this.usuarios.set(u); this.errorUsuarios.set(false); },
+      error: () => this.errorUsuarios.set(true),
+    });
   }
 
   async cambiarObligatorio(valor: boolean) {
@@ -322,8 +329,9 @@ export class SeguridadComponent implements OnInit {
         { frase, password }, { observe: 'response', responseType: 'blob' }));
       const url = URL.createObjectURL(r.body!);
       const a = document.createElement('a');
-      a.href = url; a.download = 'respaldos.gacllave'; a.click();
-      URL.revokeObjectURL(url);
+      a.href = url; a.download = 'respaldos.gacllave';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       this.toast.success('Llave creada', 'Guarda el archivo descargado fuera del servidor y no olvides la frase.', 8000);
       this.formLlave.set(false);
       this.cargar();

@@ -2,7 +2,7 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { geoKinks } from '../utils/geo-math.util';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { firstValueFrom, forkJoin, timeout } from 'rxjs';
 import { TerritoriosService, PublicadorOpcion } from '../services/territorios.service';
@@ -12,9 +12,11 @@ import { AuthStore } from '../../../core/auth/auth.store';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
 import { TerritorioCardComponent } from '../components/territorio-card.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { exportTerritorioCard } from '../utils/territorio-export.util';
 import {
   Territorio,
+  Sector,
   Manzana,
   CoberturaManzana,
   TerritorioStats,
@@ -31,211 +33,176 @@ import {
 @Component({
    standalone: true,
    selector: 'app-territorios-page',
-   imports: [CommonModule, FormsModule, TerritorioMapComponent, TerritorioCardComponent, PageHeaderComponent],
+   imports: [CommonModule, FormsModule, TerritorioMapComponent, TerritorioCardComponent, PageHeaderComponent, SelectPickerComponent],
    animations: [
       trigger('slideOver', [
          transition(':enter', [
-            style({ transform: 'translateX(100%)', opacity: 0 }),
-            animate('400ms cubic-bezier(0.16, 1, 0.3, 1)', style({ transform: 'translateX(0)', opacity: 1 }))
+            style({ transform: 'translateX(24px)', opacity: 0 }),
+            animate('240ms cubic-bezier(0.23, 1, 0.32, 1)', style({ transform: 'translateX(0)', opacity: 1 }))
          ]),
          transition(':leave', [
-            animate('300ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(100%)', opacity: 0 }))
+            animate('160ms cubic-bezier(0.23, 1, 0.32, 1)', style({ transform: 'translateX(24px)', opacity: 0 }))
          ])
       ])
    ],
    template: `
-    <div class="flex flex-col h-full overflow-hidden gap-5">
+    <!-- En móvil la página se desplaza entera (la lista siempre se ve); desde md encaja en la
+         ventana y solo se desplazan la lista y el detalle. -->
+    <div class="flex flex-col h-full gap-4 overflow-y-auto md:overflow-hidden">
 
-      <!-- 1. Header -->
-      <app-page-header
-        spacing="none"
-        title="Territorios"
-        subtitle="Administra, asigna y monitorea el estado de los territorios de la congregación.">
-        <button (click)="navigateToMap()" class="btn-secondary focus-ring-green whitespace-nowrap">
+      <!-- 1. Encabezado: el subtítulo es el resumen vivo, no un texto de relleno -->
+      <app-page-header spacing="none" title="Territorios" [subtitle]="resumenEncabezado()">
+        <button (click)="navigateToMap()" class="btn-secondary focus-ring-green whitespace-nowrap active:scale-[0.97] transition-transform">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-          Ver Mapa General
+          Mapa general
         </button>
-        <button *ngIf="puedeEditar()" (click)="openCreateModal()" class="btn-primary-green focus-ring-green whitespace-nowrap">
+        <button (click)="irASectores()" class="btn-secondary focus-ring-green whitespace-nowrap active:scale-[0.97] transition-transform">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          Barrios o sectores
+        </button>
+        <button *ngIf="puedeEditar()" (click)="openCreateModal()" class="btn-primary-green focus-ring-green whitespace-nowrap active:scale-[0.97] transition-transform">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Nuevo Territorio
+          Nueva tarjeta
         </button>
       </app-page-header>
 
-      <!-- 2. KPIs -->
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 shrink-0">
-        <!-- Total -->
-        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
-          <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-          <div class="flex items-center gap-3 z-10">
-            <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            </div>
-            <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">Territorios Totales</span>
-          </div>
-          <div class="flex items-baseline gap-3 z-10">
-            <span class="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{{ territorios().length }}</span>
-          </div>
-        </div>
-
-        <!-- Asignados -->
-        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
-          <div class="absolute right-0 top-0 w-24 h-24 bg-purple-50 dark:bg-purple-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-          <div class="flex items-center gap-3 z-10">
-            <div class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-            </div>
-            <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">Territorios Asignados</span>
-          </div>
-          <div class="flex items-baseline gap-3 z-10">
-            <span class="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{{ asignadosCount() }}</span>
-            <span class="text-slate-600 font-medium text-sm dark:text-slate-400">de {{ territoriosActivos().length }}</span>
-          </div>
-        </div>
-
-        <!-- Disponibles -->
-        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
-          <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-          <div class="flex items-center gap-3 z-10">
-            <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-            </div>
-            <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">Disponibles</span>
-          </div>
-          <div class="flex items-baseline gap-3 z-10">
-            <span class="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{{ disponiblesCount() }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. Filter Bar -->
-      <div class="shrink-0 bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center gap-2">
-        <div class="relative flex-1 w-full group">
-          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#059669] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <!-- 2. Una sola barra: buscar, estado y filtros de actividad -->
+      <div class="shrink-0 flex flex-wrap items-center gap-2" role="search">
+        <label class="relative flex-1 min-w-[min(100%,16rem)] group">
+          <span class="sr-only">Buscar territorio</span>
+          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-600 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           <input
             [(ngModel)]="searchQuery"
-            type="text"
-            placeholder="Buscar territorio..."
-            class="w-full pl-11 pr-4 py-2.5 bg-transparent border-none rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#059669]/20 transition-all"
+            type="search"
+            placeholder="Buscar por código o nombre"
+            class="w-full h-11 pl-10 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-[border-color,box-shadow]"
           >
-        </div>
-        <div class="h-8 w-px bg-slate-100 dark:bg-slate-700 hidden sm:block shrink-0"></div>
-        <div class="relative w-full sm:w-48 shrink-0">
-          <select
-            [(ngModel)]="estadoFilter"
-            class="w-full pl-3 pr-8 py-2.5 border-none bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors appearance-none cursor-pointer outline-none"
-          >
-            <option value="">Todos los Estados</option>
-            <option value="Disponible">Disponible</option>
-            <option value="Asignado">Asignado</option>
-            <option value="En Pausa">En Pausa</option>
-            <option value="Inactivo">Inactivo (retirados)</option>
-          </select>
-          <svg class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-        </div>
-      </div>
-
-      <!-- 3b. Chips de alerta -->
-      <div class="shrink-0 flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar por actividad">
-        @for (c of chips(); track c.id) {
-          <button type="button" (click)="chip.set(chip() === c.id ? '' : c.id)"
-            [attr.aria-pressed]="chip() === c.id"
-            class="px-3 py-1.5 rounded-full text-xs font-bold border transition-colors"
-            [ngClass]="chip() === c.id ? c.activo : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'">
-            {{ c.etiqueta }} <span class="tabular-nums opacity-80">· {{ c.cuenta }}</span>
-          </button>
+        </label>
+        <app-select-picker class="w-full sm:w-56 shrink-0" colorScheme="emerald" ariaLabel="Estado"
+          [(ngModel)]="estadoFilter" [options]="opcionesEstadoFiltro" placeholder="Todos los estados" [searchable]="false" />
+        @if (sectores().length > 0) {
+          <app-select-picker class="w-full sm:w-56 shrink-0" colorScheme="emerald" ariaLabel="Sector"
+            [(ngModel)]="sectorFilter" [options]="opcionesSectorFiltro()" placeholder="Todos los sectores" [searchable]="false" />
         }
+        <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar por actividad">
+          @for (c of chips(); track c.id) {
+            <button type="button" (click)="chip.set(chip() === c.id ? '' : c.id)"
+              [attr.aria-pressed]="chip() === c.id"
+              class="h-9 px-3.5 rounded-full text-[13px] font-semibold border transition-colors active:scale-[0.97] whitespace-nowrap"
+              [ngClass]="chip() === c.id ? c.activo : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'">
+              {{ c.etiqueta }} <span class="font-bold ml-0.5">{{ c.cuenta }}</span>
+            </button>
+          }
+        </div>
       </div>
 
-      <!-- 4. Main Content (List + Detail) -->
-      <div class="flex-1 flex gap-5 min-h-0 relative">
+      <!-- 3. Lista + detalle -->
+      <div class="md:flex-1 flex gap-4 md:min-h-0 relative">
 
-        <!-- Left: List -->
-        <div class="flex-1 flex flex-col bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm overflow-hidden transition-all duration-300">
+        <!-- Lista. Es un contenedor: las columnas aparecen según el ancho que le queda, no según la ventana. -->
+        <section aria-label="Lista de territorios" class="@container flex-1 min-w-0 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
 
-           <!-- Table -->
-           <div class="flex-1 overflow-y-auto simple-scrollbar relative">
+           <div class="md:flex-1 md:overflow-y-auto simple-scrollbar relative">
               @if (loading()) {
-                <div class="flex flex-col items-center justify-center py-20 gap-3" role="status" aria-label="Cargando territorios">
-                  <div class="w-8 h-8 border-[3px] border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Cargando territorios…</span>
+                <div class="divide-y divide-slate-100 dark:divide-slate-800" role="status" aria-label="Cargando territorios">
+                  @for (i of [1,2,3,4,5,6]; track i) {
+                    <div class="px-5 py-4 flex items-center gap-4 animate-pulse">
+                      <div class="flex-1 space-y-2"><div class="h-4 w-16 rounded bg-slate-200 dark:bg-slate-700"></div><div class="h-3 w-40 rounded bg-slate-100 dark:bg-slate-800"></div></div>
+                      <div class="h-6 w-24 rounded-full bg-slate-100 dark:bg-slate-800"></div>
+                    </div>
+                  }
                 </div>
               } @else if (loadError()) {
-                <div class="flex flex-col items-center justify-center py-20 gap-4" role="alert">
-                  <div class="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  </div>
-                  <div class="text-center">
-                    <p class="text-sm font-bold text-slate-700 dark:text-slate-200">No se pudo cargar los territorios</p>
-                    <p class="text-xs text-slate-400 mt-1">Verifica tu conexión e intenta de nuevo.</p>
-                  </div>
-                  <button (click)="loadTerritorios()" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm">
-                    Reintentar
-                  </button>
+                <div class="flex flex-col items-center justify-center py-16 px-6 gap-4 text-center" role="alert">
+                  <p class="text-base font-bold text-slate-800 dark:text-slate-100">No se pudieron cargar los territorios</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 -mt-2">Revise la conexión e intente de nuevo.</p>
+                  <button (click)="loadTerritorios()" class="h-10 px-5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors active:scale-[0.97]">Reintentar</button>
                 </div>
               } @else if (filteredTerritorios().length === 0) {
-                <div class="flex flex-col items-center justify-center py-20 gap-4">
-                  <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center">
-                    <svg class="w-7 h-7 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                  </div>
-                  <div class="text-center">
-                    @if (searchQuery || estadoFilter || chip()) {
-                      <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Sin resultados</p>
-                      <p class="text-xs text-slate-400 mt-1">Ningún territorio coincide con los filtros aplicados.</p>
-                    } @else {
-                      <p class="text-sm font-bold text-slate-700 dark:text-slate-200">Sin territorios registrados</p>
-                      <p class="text-xs text-slate-400 mt-1">Crea el primer territorio para comenzar.</p>
-                    }
-                  </div>
-                  @if (!searchQuery && !estadoFilter && !chip()) {
-                    <button *ngIf="puedeEditar()" (click)="openCreateModal()" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                      Nuevo Territorio
-                    </button>
+                <div class="flex flex-col items-center justify-center py-16 px-6 gap-3 text-center">
+                  @if (searchQuery || estadoFilter || sectorFilter || chip()) {
+                    <p class="text-base font-bold text-slate-800 dark:text-slate-100">Ningún territorio coincide</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Pruebe con otra búsqueda o quite los filtros.</p>
+                    <button (click)="limpiarFiltros()" class="h-10 px-5 text-sm font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">Quitar filtros</button>
+                  } @else {
+                    <p class="text-base font-bold text-slate-800 dark:text-slate-100">Aún no hay territorios</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 max-w-sm">Cree el primero: le pedirá código y nombre y luego abrirá el mapa para dibujar su límite.</p>
+                    <button *ngIf="puedeEditar()" (click)="openCreateModal()" class="h-10 px-5 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors active:scale-[0.97]">Nueva tarjeta</button>
                   }
                 </div>
               } @else {
               <table class="w-full text-left border-collapse">
-                 <thead class="sticky top-0 bg-white dark:bg-slate-800 z-10 border-b border-slate-100 dark:border-slate-700/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                    <tr>
-                       <th scope="col" class="px-6 py-4 text-[0.6875rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Código / Nombre</th>
-                       <th scope="col" class="px-6 py-4 text-[0.6875rem] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Estado</th>
-                       <th scope="col" aria-label="Acciones" class="px-4 py-4 w-10"></th>
+                 <thead class="sticky top-0 z-10 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm">
+                    <tr class="border-b border-slate-200 dark:border-slate-800">
+                       <th scope="col" class="pl-4 @md:pl-5 pr-3 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Territorio</th>
+                       <th scope="col" class="px-3 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Estado</th>
+                       <th scope="col" class="hidden @xl:table-cell px-3 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Última predicación</th>
+                       <th scope="col" class="hidden @3xl:table-cell px-3 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 w-44">Vuelta actual</th>
+                       <th scope="col" class="hidden @4xl:table-cell px-3 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Asignado a</th>
+                       <th scope="col" class="hidden @md:table-cell w-10 pr-4"><span class="sr-only">Abrir</span></th>
                     </tr>
                  </thead>
-                  <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                     @for (t of paginatedTerritorios(); track t.id_territorio) {
+                    @let r = resumenDe(t.id_territorio);
+                    @let activo = selectedTerritorio()?.id_territorio === t.id_territorio;
                     <tr
                       (click)="selectTerritorio(t)"
-                      class="group cursor-pointer hover:bg-emerald-50/40 dark:hover:bg-emerald-900/20 transition-colors"
-                      [class.bg-emerald-50]="selectedTerritorio()?.id_territorio === t.id_territorio"
-                      [class.dark:bg-emerald-900/20]="selectedTerritorio()?.id_territorio === t.id_territorio"
+                      (keydown.enter)="selectTerritorio(t)"
+                      tabindex="0"
+                      [attr.aria-selected]="activo"
+                      class="group cursor-pointer transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-500"
+                      [ngClass]="activo ? 'bg-emerald-50/80 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'"
                     >
-                       <!-- Code/Name -->
-                       <td class="px-6 py-4 border-l-4" [ngClass]="franjaDe(t.id_territorio)">
-                          <p class="font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#059669] dark:group-hover:text-emerald-400 transition-colors">{{ t.codigo }}</p>
-                          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ t.nombre }}</p>
-                          @if (resumenDe(t.id_territorio); as r) {
-                            <p class="text-xs mt-1 text-slate-600 dark:text-slate-400">
-                              {{ r.dias_sin_trabajar === null ? 'Nunca trabajado' : 'Última salida ' + textoDias(r.dias_sin_trabajar) }}
-                              @if (r.en_curso) { · vuelta al {{ r.porcentaje }} % }
-                            </p>
-                          }
+                       <td class="pl-4 @md:pl-5 pr-3 py-3.5">
+                          <div class="flex items-baseline gap-2 min-w-0">
+                            <span class="font-display text-base font-bold tabular-nums shrink-0"
+                              [ngClass]="activo ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-900 dark:text-slate-100'">{{ t.codigo }}</span>
+                            <span class="text-sm text-slate-600 dark:text-slate-300 truncate">{{ t.nombre }}</span>
+                            @if (sectorDe(t); as sec) {
+                              <span class="hidden @lg:inline-flex items-center gap-1.5 shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                <span class="w-2 h-2 rounded-full" [style.background-color]="sec.color || '#94a3b8'"></span>{{ sec.nombre }}
+                              </span>
+                            }
+                          </div>
+                          <!-- Con la lista angosta, lo que no cabe en columnas va aquí debajo -->
+                          <p class="@xl:hidden mt-1 flex items-center gap-1.5 text-[13px] text-slate-500 dark:text-slate-400">
+                            <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="alertaDe(t.id_territorio)"></span>
+                            {{ textoUltima(r) }}
+                            @if (r?.asignado_a) { <span aria-hidden="true">·</span> {{ r!.asignado_a }} }
+                          </p>
                        </td>
-                       <!-- Status -->
-                       <td class="px-6 py-4">
-                          <span
-                            class="inline-flex items-center px-2.5 py-1 rounded-full text-[0.625rem] font-bold border"
-                            [ngClass]="getStatusColor(t.estado_territorio)"
-                          >
-                             <span class="w-1.5 h-1.5 rounded-full mr-1.5" [ngClass]="getStatusDotColor(t.estado_territorio)"></span>
+                       <td class="px-3 py-3.5">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border whitespace-nowrap" [ngClass]="getStatusColor(t.estado_territorio)">
+                             <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getStatusDotColor(t.estado_territorio)"></span>
                              {{ t.estado_territorio }}
                           </span>
                        </td>
-                       <!-- Actions -->
-                       <td class="px-4 py-4 text-right">
-                          <button aria-label="Opciones" class="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors">
-                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-                          </button>
+                       <td class="hidden @xl:table-cell px-3 py-3.5">
+                          <span class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                            <span class="w-2 h-2 rounded-full shrink-0" [ngClass]="alertaDe(t.id_territorio)"></span>
+                            {{ textoUltima(r) }}
+                          </span>
+                       </td>
+                       <td class="hidden @3xl:table-cell px-3 py-3.5">
+                          @if (r?.en_curso) {
+                            <div class="flex items-center gap-2.5">
+                              <div class="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden" role="progressbar" [attr.aria-valuenow]="r!.porcentaje" aria-valuemin="0" aria-valuemax="100" aria-label="Avance de la vuelta">
+                                <div class="h-full rounded-full bg-emerald-500" [style.width.%]="r!.porcentaje"></div>
+                              </div>
+                              <span class="text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-300 w-10 text-right">{{ r!.porcentaje }} %</span>
+                            </div>
+                          } @else if (r?.ultimo_completado) {
+                            <span class="text-sm text-slate-500 dark:text-slate-400">Completa el {{ r!.ultimo_completado | date:'d MMM y' }}</span>
+                          } @else {
+                            <span class="text-sm text-slate-400 dark:text-slate-500">Sin empezar</span>
+                          }
+                       </td>
+                       <td class="hidden @4xl:table-cell px-3 py-3.5 text-sm text-slate-700 dark:text-slate-300 max-w-[14rem] truncate">
+                          {{ r?.asignado_a || '—' }}
+                       </td>
+                       <td class="hidden @md:table-cell pr-4 py-3.5 text-right" aria-hidden="true">
+                          <svg class="w-4 h-4 inline-block text-slate-300 dark:text-slate-600 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-[color,transform]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
                        </td>
                     </tr>
                     }
@@ -243,106 +210,73 @@ import {
               </table>
               }
            </div>
-           
-           <!-- Pagination -->
-           @if (!loading() && !loadError() && filteredTerritorios().length > 0) {
-           <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
-              <span class="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                Mostrando {{ paginationStart() }}-{{ paginationEnd() }} de {{ filteredTerritorios().length }}
-              </span>
+
+           @if (!loading() && !loadError() && totalPages().length > 1) {
+           <div class="shrink-0 px-5 py-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <span class="text-[13px] text-slate-500 dark:text-slate-400">{{ paginationStart() }}–{{ paginationEnd() }} de {{ filteredTerritorios().length }}</span>
               <div class="flex gap-1">
                 @for (p of totalPages(); track p) {
-                  <button 
-                    (click)="currentPage.set(p)"
-                    class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors"
-                    [class.bg-emerald-600]="currentPage() === p"
-                    [class.text-white]="currentPage() === p"
-                    [class.shadow-md]="currentPage() === p"
-                    [class.hover:bg-slate-100]="currentPage() !== p"
-                    [class.dark:hover:bg-slate-700]="currentPage() !== p"
-                    [class.text-slate-500]="currentPage() !== p"
-                  >{{ p }}</button>
+                  <button (click)="currentPage.set(p)" [attr.aria-current]="currentPage() === p ? 'page' : null"
+                    class="w-9 h-9 flex items-center justify-center rounded-lg text-sm font-bold transition-colors"
+                    [ngClass]="currentPage() === p ? 'bg-emerald-600 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'">{{ p }}</button>
                 }
               </div>
            </div>
            }
-        </div>
+        </section>
 
-        <!-- Right: Detail Panel -->
+        <!-- Detalle: panel al lado desde 1280 px; por debajo, cajón encima de la lista -->
         @if (selectedTerritorio()) {
-        <div
+        <div class="xl:hidden fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[2px]" (click)="closeDetails()" aria-hidden="true"></div>
+        <aside
           @slideOver
-          class="w-full md:w-[420px] shrink-0 bg-white dark:bg-slate-800 md:rounded-2xl border-0 md:border border-slate-200 dark:border-slate-700/50 shadow-xl overflow-hidden flex flex-col h-full absolute inset-0 md:inset-auto md:relative z-30"
+          aria-label="Detalle del territorio"
+          class="fixed inset-0 z-40 md:inset-y-3 md:right-3 md:left-auto md:w-[min(500px,calc(100vw-1.5rem))] md:rounded-2xl xl:static xl:z-auto xl:w-[440px] 2xl:w-[500px] shrink-0 bg-white dark:bg-slate-900 border-0 md:border border-slate-200 dark:border-slate-800 shadow-2xl xl:shadow-none overflow-hidden flex flex-col"
         >
-           <!-- Mobile back button -->
-           <div class="md:hidden flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 shrink-0">
-             <button (click)="closeDetails()" class="flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
-               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                 <path d="M19 12H5M12 5l-7 7 7 7"/>
-               </svg>
-               Volver
-             </button>
-           </div>
-           <!-- Header -->
-           <div class="px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-700/50 bg-gradient-to-br from-emerald-50/60 to-white dark:from-emerald-900/10 dark:to-slate-800">
+           <!-- Encabezado -->
+           <div class="px-5 pt-4 pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <p class="text-[0.6rem] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.15em] mb-1">Territorio</p>
-                  <h3 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">{{ selectedTerritorio()!.codigo }}</h3>
-                  <p class="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">{{ selectedTerritorio()!.nombre }}</p>
+                  <div class="flex items-center gap-2.5">
+                    <h3 class="font-display text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-none tabular-nums">{{ selectedTerritorio()!.codigo }}</h3>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border" [ngClass]="getStatusColor(selectedTerritorio()!.estado_territorio)">
+                      <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getStatusDotColor(selectedTerritorio()!.estado_territorio)"></span>{{ selectedTerritorio()!.estado_territorio }}
+                    </span>
+                  </div>
+                  <p class="text-[15px] font-medium text-slate-600 dark:text-slate-300 mt-1.5">{{ selectedTerritorio()!.nombre }}</p>
                 </div>
-                <div class="flex items-center gap-2 shrink-0 mt-1">
-                  <span class="text-xs font-bold px-2.5 py-1 rounded-full border"
-                    [class]="selectedTerritorio()!.estado_territorio === 'Disponible'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
-                      : selectedTerritorio()!.estado_territorio === 'Asignado'
-                      ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-900/30 dark:text-sky-400 dark:border-sky-800/50'
-                      : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600'">
-                    <span class="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle"
-                      [class]="selectedTerritorio()!.estado_territorio === 'Disponible' ? 'bg-emerald-500' : selectedTerritorio()!.estado_territorio === 'Asignado' ? 'bg-sky-500' : 'bg-slate-400'"></span>{{ selectedTerritorio()!.estado_territorio }}
-                  </span>
-                  <button (click)="closeDetails()" class="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-colors">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                  </button>
-                </div>
+                <button (click)="closeDetails()" aria-label="Cerrar detalle" class="w-10 h-10 -mr-2 -mt-1 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors shrink-0">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
               </div>
-              @if (selectedStats()) {
-                <div class="flex gap-3 mt-3">
-                  <div class="flex items-center gap-1.5 bg-white/70 dark:bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-slate-200 dark:border-slate-600/50">
-                    <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    <span class="text-xs font-black text-slate-700 dark:text-slate-200">{{ selectedStats()!.manzanas_count }}</span>
-                    <span class="text-[10px] text-slate-500 dark:text-slate-400">manz.</span>
+              <dl class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-slate-500 dark:text-slate-400">
+                @if (selectedStats()) {
+                  <div class="flex items-baseline gap-1"><dt class="sr-only">Manzanas</dt><dd class="font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ selectedStats()!.manzanas_count }}</dd> manzanas</div>
+                  <div class="flex items-baseline gap-1"><dt class="sr-only">Direcciones</dt><dd class="font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ selectedStats()!.viviendas_count }}</dd> direcciones</div>
+                }
+                @if (resumenDe(selectedTerritorio()!.id_territorio); as rs) {
+                  <div class="flex items-center gap-1.5"><dt class="sr-only">Última predicación</dt>
+                    <span class="w-2 h-2 rounded-full" [ngClass]="alertaDe(selectedTerritorio()!.id_territorio)"></span>
+                    <dd>{{ textoUltima(rs) }}</dd>
                   </div>
-                  <div class="flex items-center gap-1.5 bg-white/70 dark:bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-slate-200 dark:border-slate-600/50">
-                    <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                    <span class="text-xs font-black text-slate-700 dark:text-slate-200">{{ selectedStats()!.viviendas_count }}</span>
-                    <span class="text-[10px] text-slate-500 dark:text-slate-400">viv.</span>
-                  </div>
-                  <div class="flex items-center gap-1.5 bg-white/70 dark:bg-slate-700/50 rounded-lg px-2.5 py-1.5 border border-slate-200 dark:border-slate-600/50">
-                    <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    <span class="text-xs font-black text-slate-700 dark:text-slate-200">{{ selectedStats()!.cobertura_promedio }}%</span>
-                    <span class="text-[10px] text-slate-500 dark:text-slate-400">cob.</span>
-                  </div>
-                </div>
-              }
+                }
+              </dl>
            </div>
 
-           <!-- Tabs (icon + label, scrollable) -->
-           <div class="flex border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 shrink-0 overflow-x-auto no-scrollbar">
+           <!-- Pestañas: las cuatro caben siempre -->
+           <div class="grid grid-cols-4 border-b border-slate-100 dark:border-slate-800 shrink-0" role="tablist">
              @for (tab of tabs; track tab.id) {
                <button
+                 role="tab"
+                 [attr.aria-selected]="activeDetailTab() === tab.id"
                  (click)="setDetailTab($any(tab.id))"
-                 class="flex items-center gap-1.5 px-3.5 py-2.5 text-[0.65rem] font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap"
-                 [class]="activeDetailTab() === tab.id
-                   ? 'border-emerald-500 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10'
-                   : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'"
-               >
-                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="tab.icon"></svg>
-                 {{ tab.label }}
-               </button>
+                 class="h-11 px-1 text-[13px] font-semibold border-b-2 -mb-px transition-colors truncate"
+                 [ngClass]="activeDetailTab() === tab.id
+                   ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
+                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+               >{{ tab.label }}</button>
              }
            </div>
-
            <!-- Content -->
            <div class="flex-1 overflow-y-auto p-5 simple-scrollbar space-y-5">
 
@@ -351,43 +285,42 @@ import {
                <!-- Mini-map -->
                @if (selectedTerritorioPolygon()) {
                  <app-territorio-map
+                   style="height: auto"
                    [geojson]="selectedTerritorioPolygon()"
                    [manzanasGeojson]="selectedManzanasGeoJSON()"
                    [puntosGeojson]="selectedPuntosGeoJSON()"
-                   height="200px"
+                   height="clamp(220px, 36vh, 420px)"
                    [interactive]="false" />
                } @else {
                  <div class="w-full h-36 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center gap-2">
                    <svg class="w-8 h-8 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-                   <span class="text-xs text-slate-400 font-medium">Sin geometría — usa "Dibujar Mapa"</span>
+                   <span class="text-xs text-slate-400 font-medium">Aún sin dibujar — use el botón «Dibujar»</span>
                  </div>
                }
 
                <!-- Puntos de lugar -->
                @if (puntos().length > 0) {
-                 <div>
-                   <div class="flex items-center justify-between mb-2">
-                     <h4 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-widest">Puntos de salida</h4>
-                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">{{ puntos().length }}</span>
-                   </div>
-                   <div class="grid grid-cols-2 gap-1.5">
+                 <section>
+                   <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-2">Puntos en el mapa <span class="font-semibold text-slate-400">{{ puntos().length }}</span></h4>
+                   <ul class="grid grid-cols-1 gap-2">
                      @for (p of puntos(); track p.id_punto) {
-                       <div class="flex items-center gap-2 p-2 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/50 group">
-                         <div class="w-7 h-7 rounded-lg flex items-center justify-center text-[0.6rem] font-black text-white shrink-0"
-                              [class]="p.tipo === 'Salida' ? 'bg-rose-500' : p.tipo === 'Lugar' ? 'bg-emerald-500' : 'bg-slate-400'">
+                       <li class="flex items-center gap-3 pl-2.5 pr-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700/70">
+                         <span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0"
+                              [ngClass]="p.tipo === 'Salida' ? 'bg-rose-500' : p.tipo === 'Lugar' ? 'bg-sky-600' : 'bg-slate-400'" aria-hidden="true">
                            {{ p.tipo === 'Salida' ? 'S' : p.tipo === 'Lugar' ? 'L' : 'P' }}
-                         </div>
+                         </span>
                          <div class="min-w-0 flex-1">
-                           <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate leading-tight">{{ p.nombre }}</p>
-                           <p class="text-[9px] text-slate-400 uppercase font-semibold tracking-wide">{{ p.tipo }}</p>
+                           <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight">{{ p.nombre }}</p>
+                           <p class="text-xs text-slate-500 dark:text-slate-400">{{ p.tipo === 'Salida' ? 'Punto de salida' : p.tipo === 'Lugar' ? 'Lugar de referencia' : 'Otro' }}</p>
                          </div>
-                         <button *ngIf="puedeEditar()" (click)="deletePunto(p.id_punto)" class="p-1 text-slate-200 hover:text-red-500 dark:text-slate-600 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-                           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                         <button *ngIf="puedeEditar()" (click)="deletePunto(p.id_punto)" [attr.aria-label]="'Borrar ' + p.nombre"
+                           class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors shrink-0">
+                           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                          </button>
-                       </div>
+                       </li>
                      }
-                   </div>
-                 </div>
+                   </ul>
+                 </section>
                }
 
                @if (selectedTerritorio()!.notas) {
@@ -445,23 +378,23 @@ import {
                          />
                          <button (click)="saveEditManzana(m.id_manzana)"
                            [disabled]="!editingManzanaNombre().trim() || manzanaRenaming() === m.id_manzana"
-                           class="text-[10px] font-bold px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 shrink-0">
+                           class="text-xs font-bold px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 shrink-0">
                            {{ manzanaRenaming() === m.id_manzana ? '...' : 'Ok' }}
                          </button>
                          <button (click)="cancelEditManzana()"
-                           class="text-[10px] font-bold px-2 py-1.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-600 dark:text-slate-200 rounded-lg transition-colors shrink-0">
+                           class="text-xs font-bold px-2 py-1.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-600 dark:text-slate-200 rounded-lg transition-colors shrink-0">
                            ✕
                          </button>
                        } @else {
                          <div class="flex-1 min-w-0">
                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ m.numero_manzana }}</p>
                            @if (isPredicada) {
-                             <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                             <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                                Predicada · {{ m.ultimaCobertura!.fecha_inicio | date:'dd/MM/yy' }}
                              </p>
                            } @else {
-                             <p class="text-[10px] text-slate-400">Pendiente</p>
+                             <p class="text-xs text-slate-400">Pendiente</p>
                            }
                          </div>
                          <!-- Edit pencil button -->
@@ -482,7 +415,7 @@ import {
                          @if (!isPredicada) {
                            <button (click)="marcarManzanaPredicada(m.id_manzana)"
                              [disabled]="coberturaSaving() === m.id_manzana"
-                             class="text-[10px] font-bold px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shrink-0">
+                             class="text-xs font-bold px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shrink-0">
                              {{ coberturaSaving() === m.id_manzana ? '...' : '✓ Marcar' }}
                            </button>
                          } @else {
@@ -577,7 +510,7 @@ import {
                        <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                      </div>
                      <div>
-                       <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Asignado a</p>
+                       <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Asignado a</p>
                        <p class="text-sm font-black text-slate-800 dark:text-white">{{ asignacionActiva()!.nombre_publicador ?? 'Publicador #' + asignacionActiva()!.id_publicador }}</p>
                      </div>
                    </div>
@@ -607,7 +540,7 @@ import {
                <!-- Historial -->
                @if (historialAsignaciones().length > 0) {
                <div>
-                 <h4 class="text-[0.625rem] font-bold text-slate-400 uppercase tracking-widest mb-2.5">Historial</h4>
+                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5">Historial</h4>
                  <div class="space-y-1.5">
                    @for (a of historialAsignaciones(); track a.id_asignacion) {
                      @if (!a.activa) {
@@ -617,9 +550,9 @@ import {
                        </div>
                        <div class="min-w-0 flex-1">
                          <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ a.nombre_publicador ?? 'Publicador #' + a.id_publicador }}</p>
-                         <p class="text-[10px] text-slate-400">{{ a.fecha_asignacion | date:'dd/MM/yy' }} → {{ a.fecha_devolucion | date:'dd/MM/yy' }}</p>
+                         <p class="text-xs text-slate-400">{{ a.fecha_asignacion | date:'dd/MM/yy' }} → {{ a.fecha_devolucion | date:'dd/MM/yy' }}</p>
                        </div>
-                       <span class="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">Devuelto</span>
+                       <span class="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">Devuelto</span>
                      </div>
                      }
                    }
@@ -649,7 +582,7 @@ import {
                  Imprimir
               </button>
            </div>
-        </div>
+        </aside>
         }
 
         <!-- Hidden card for print (offscreen) -->
@@ -682,13 +615,9 @@ import {
               }
               <div>
                 <label for="dir-manzana" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Manzana *</label>
-                <select id="dir-manzana" [(ngModel)]="direccionForm.id_manzana" [disabled]="!!direccionForm.id_vivienda"
-                  class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm disabled:opacity-60">
-                  <option [ngValue]="null">— Elige la manzana —</option>
-                  @for (m of manzanasLista(); track m.id_manzana) {
-                    <option [ngValue]="m.id_manzana">Manzana {{ m.numero_manzana || m.id_manzana }}</option>
-                  }
-                </select>
+                <app-select-picker colorScheme="emerald" ariaLabel="Manzana" [(ngModel)]="direccionForm.id_manzana"
+                  [options]="opcionesManzana()" placeholder="— Elige la manzana —" [clearable]="false"
+                  [disabled]="!!direccionForm.id_vivienda" />
               </div>
               <div>
                 <label for="dir-direccion" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Calle o dirección *</label>
@@ -758,13 +687,8 @@ import {
               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Publicador *</label>
               <input type="text" [(ngModel)]="busquedaPublicador" placeholder="Escribe para buscar..."
                 class="w-full mb-2 px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              <select [(ngModel)]="newAsignacion.id_publicador"
-                class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option [ngValue]="null">— Elige un publicador —</option>
-                @for (p of publicadoresFiltrados(); track p.id_publicador) {
-                  <option [ngValue]="p.id_publicador">{{ nombreDe(p) }}</option>
-                }
-              </select>
+              <app-select-picker colorScheme="emerald" ariaLabel="Publicador" [(ngModel)]="newAsignacion.id_publicador"
+                [options]="opcionesPublicador()" placeholder="— Elige un publicador —" [clearable]="false" [searchable]="false" />
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Fecha de Asignación</label>
@@ -830,7 +754,7 @@ import {
         
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md relative z-10 shadow-2xl overflow-hidden animate-fadeIn">
           <div class="p-5 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
-            <h3 class="text-lg font-black text-slate-900 dark:text-white">Nuevo Territorio</h3>
+            <h3 class="text-lg font-black text-slate-900 dark:text-white">Nueva tarjeta</h3>
             <button (click)="closeCreateModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
@@ -847,12 +771,16 @@ import {
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Estado Inicial</label>
-              <select [(ngModel)]="newTerritorio.estado_territorio" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all cursor-pointer">
-                <option value="Disponible">Disponible</option>
-                <option value="Asignado">Asignado</option>
-                <option value="En Pausa">En Pausa</option>
-              </select>
+              <app-select-picker colorScheme="emerald" ariaLabel="Estado inicial" [(ngModel)]="newTerritorio.estado_territorio"
+                [options]="opcionesEstadoNuevo" [clearable]="false" [searchable]="false" />
             </div>
+            @if (sectores().length > 0) {
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Sector <span class="font-normal normal-case text-slate-400">(opcional)</span></label>
+                <app-select-picker colorScheme="emerald" ariaLabel="Sector" [(ngModel)]="newTerritorio.id_sector"
+                  [options]="opcionesSector()" placeholder="Sin sector" [searchable]="false" />
+              </div>
+            }
           </div>
           
           <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
@@ -927,16 +855,18 @@ import {
             <!-- Estado -->
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Estado</label>
-              <select
-                [(ngModel)]="editingTerritorioInfo.estado_territorio"
-                class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
-              >
-                <option value="Disponible">Disponible</option>
-                <option value="Asignado">Asignado</option>
-                <option value="En Pausa">En Pausa</option>
-                <option value="Inactivo">Inactivo (retirado, conserva historial)</option>
-              </select>
+              <app-select-picker colorScheme="emerald" ariaLabel="Estado" [(ngModel)]="editingTerritorioInfo.estado_territorio"
+                [options]="opcionesEstadoEditar" [clearable]="false" [searchable]="false" />
             </div>
+
+            <!-- Sector -->
+            @if (sectores().length > 0) {
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Sector <span class="font-normal normal-case text-slate-400">(opcional)</span></label>
+                <app-select-picker colorScheme="emerald" ariaLabel="Sector" [(ngModel)]="editingTerritorioInfo.id_sector"
+                  [options]="opcionesSector()" placeholder="Sin sector" [searchable]="false" />
+              </div>
+            }
 
             <!-- Notas -->
             <div>
@@ -949,6 +879,28 @@ import {
               ></textarea>
             </div>
           </div>
+
+          <!-- Eliminar territorio -->
+          @if (puedeEditar()) {
+            <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-700/50">
+              @if (!confirmandoEliminar()) {
+                <button type="button" (click)="confirmandoEliminar.set(true)" class="text-sm font-bold text-red-600 dark:text-red-400 hover:underline">Eliminar este territorio</button>
+              } @else {
+                <div class="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 p-3 space-y-2" role="alert">
+                  <p class="text-sm font-semibold text-red-800 dark:text-red-300">
+                    ¿Eliminar {{ selectedTerritorio()!.codigo }}? Se borran también sus manzanas, direcciones y puntos. No se puede deshacer.
+                  </p>
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" (click)="eliminarTerritorio()" [disabled]="saving()" class="px-3 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50">Sí, eliminar</button>
+                    <button type="button" (click)="confirmandoEliminar.set(false)" class="px-3 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700 rounded-lg">No</button>
+                    @if (puedeRetirar()) {
+                      <button type="button" (click)="retirarTerritorio()" class="px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-lg">Marcar como Inactivo</button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
 
           <!-- Footer -->
           <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
@@ -974,24 +926,34 @@ import {
         
       <!-- Modal Editar Mapa -->
       @if (showMapEditModal() && selectedTerritorio()) {
-      <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="fixed inset-0 z-[100] flex items-center justify-center sm:p-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="closeMapEditor()"></div>
-        
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-5xl h-[85vh] flex flex-col relative z-10 shadow-2xl overflow-hidden animate-fadeIn">
-          <div class="p-5 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between shrink-0">
-            <div>
-              <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <svg class="w-5 h-5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-                Editor Cartográfico: {{ selectedTerritorio()!.codigo }}
-              </h3>
-              <p class="text-sm text-slate-500 mt-1 font-medium">Selecciona la capa activa (arriba derecha) para dibujar el territorio, manzanas o colocar puntos.</p>
+
+        <div class="bg-white dark:bg-slate-800 sm:rounded-2xl sm:border border-slate-200 dark:border-slate-700 w-full max-w-6xl h-[100dvh] sm:h-[88vh] flex flex-col relative z-10 shadow-2xl overflow-hidden animate-fadeIn">
+
+          <!-- Header -->
+          <div class="px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-4 shrink-0 bg-gradient-to-r from-purple-50/60 to-white dark:from-purple-900/10 dark:to-slate-800">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+                <svg class="text-[#6D28D9] dark:text-purple-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">Editor cartográfico</h3>
+                  <span class="px-2 py-0.5 rounded-md bg-slate-900/5 dark:bg-white/10 text-xs font-bold text-slate-700 dark:text-slate-200 tabular-nums">{{ selectedTerritorio()!.codigo }}</span>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                  {{ selectedTerritorio()!.nombre }}<span class="hidden md:inline"> · Siga los pasos 1, 2 y 3 de la barra del mapa</span>
+                </p>
+              </div>
             </div>
-            <button (click)="closeMapEditor()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-700/50 p-2 rounded-full transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <button (click)="closeMapEditor()" title="Cerrar editor" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors shrink-0">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
-          <div class="flex-1 bg-slate-100 dark:bg-slate-900 relative">
+          <div class="flex-1 min-h-0 p-2 sm:p-3 bg-slate-50 dark:bg-slate-900/40">
+           <div class="relative h-full rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 bg-slate-100 dark:bg-slate-900">
             <app-territorio-map
               [geojson]="editingGeoJSON()"
               [manzanasGeojson]="selectedManzanasGeoJSON()"
@@ -999,29 +961,50 @@ import {
               height="100%"
               [enableDrawing]="true"
               [interactive]="true"
+              [referenciasGeojson]="editorReferencias()"
+              [centroInicial]="editorCentro()"
+              [propuestasGeojson]="propuestasManzanas()"
+              [detectando]="detectandoManzanas()"
+              [guardandoPropuestas]="guardandoPropuestas()"
+              [avisoEditor]="avisoEditor()"
               (geometryChanged)="onGeometryChanged($event)"
               (manzanaDrawn)="onManzanaDrawn($event)"
               (puntoPlaced)="onPuntoPlaced($event)"
+              (detectar)="onDetectarManzanas($event)"
+              (guardarPropuestas)="onGuardarPropuestas($event)"
+              (descartarPropuestas)="propuestasManzanas.set(null)"
+              (manzanaBorrar)="deleteManzana($event)"
             />
+           </div>
           </div>
 
-          <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex flex-col gap-3 shrink-0">
+          <div class="px-4 sm:px-6 py-3.5 border-t border-slate-100 dark:border-slate-700/50 flex flex-col gap-3 shrink-0">
             @if (geoSaveError()) {
               <div class="flex items-start gap-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl px-4 py-3">
                 <svg class="w-4 h-4 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 <p class="text-xs font-semibold text-red-600 dark:text-red-400 leading-snug">{{ geoSaveError() }}</p>
               </div>
             }
-            <div class="flex justify-end gap-3">
-              <button (click)="closeMapEditor()" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all">Cerrar editor</button>
-              <button (click)="saveGeometry()" [disabled]="saving()" class="px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2">
-                @if (saving()) {
-                  <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                } @else {
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                }
-                Guardar límite del territorio
-              </button>
+            <div class="flex flex-wrap items-center justify-end gap-3">
+              <p class="mr-auto inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors"
+                 [class]="limiteSinGuardar() ? 'bg-amber-50 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-800/50' : 'text-slate-500 dark:text-slate-400'">
+                <span class="relative flex w-2 h-2">
+                  @if (limiteSinGuardar()) { <span class="absolute inset-0 rounded-full bg-amber-500 animate-ping opacity-60"></span> }
+                  <span class="relative w-2 h-2 rounded-full" [class]="limiteSinGuardar() ? 'bg-amber-500' : 'bg-emerald-500'"></span>
+                </span>
+                {{ limiteSinGuardar() ? 'El límite tiene cambios sin guardar' : 'Todo guardado · las manzanas y los puntos se guardan solos' }}
+              </p>
+              <div class="flex w-full sm:w-auto gap-2">
+                <button (click)="closeMapEditor()" class="flex-1 sm:flex-none whitespace-nowrap px-4 sm:px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors active:scale-[0.97]">Cerrar editor</button>
+                <button (click)="saveGeometry()" [disabled]="saving() || !limiteSinGuardar()" class="flex-[2] sm:flex-none justify-center px-5 py-2.5 text-sm font-bold rounded-xl transition-[background-color,box-shadow,transform] flex items-center gap-2 active:scale-[0.97] text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100 dark:disabled:bg-slate-700/60 dark:disabled:text-slate-500">
+                  @if (saving()) {
+                    <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  } @else {
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                  }
+                  Guardar límite
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1047,6 +1030,7 @@ export class TerritoriosPage implements OnInit {
       return this.authStore.hasPermission('territorios.editar');
    });
    private router = inject(Router);
+   private route = inject(ActivatedRoute);
    private congregacionCtx = inject(CongregacionContextService);
 
    publicadores = signal<PublicadorOpcion[]>([]);
@@ -1062,10 +1046,58 @@ export class TerritoriosPage implements OnInit {
    });
    nombreDe = (p: PublicadorOpcion) => nombreMostrado(p);
 
+   // Opciones de los selectores propios (select-picker). Las listas fijas son constantes;
+   // las que dependen de datos son computed para no recrear el arreglo en cada ciclo.
+   readonly opcionesEstadoFiltro: PickerOption[] = [
+      { value: 'Disponible', label: 'Disponible' },
+      { value: 'Asignado', label: 'Asignado' },
+      { value: 'En Pausa', label: 'En pausa' },
+      { value: 'Inactivo', label: 'Inactivo (retirados)' },
+   ];
+   readonly opcionesEstadoNuevo: PickerOption[] = this.opcionesEstadoFiltro.slice(0, 3);
+   readonly opcionesEstadoEditar: PickerOption[] = this.opcionesEstadoFiltro.map(o =>
+      o.value === 'Inactivo' ? { ...o, label: 'Inactivo', hint: 'Retirado; conserva su historial' } : o);
+   opcionesManzana = computed<PickerOption[]>(() =>
+      this.manzanasLista().map(m => ({ value: m.id_manzana, label: `Manzana ${m.numero_manzana || m.id_manzana}` })));
+   opcionesPublicador = computed<PickerOption[]>(() =>
+      this.publicadoresFiltrados().map(p => ({ value: p.id_publicador, label: this.nombreDe(p) })));
+
    // Signals con getter/setter: ngModel sigue enlazando campos, pero los computed
    // (filteredTerritorios, chips) se recalculan al escribir o cambiar el filtro.
    private searchQuerySig = signal('');
    private estadoFilterSig = signal('');
+   private sectorFilterSig = signal<string>('');
+   get sectorFilter(): string { return this.sectorFilterSig(); }
+   set sectorFilter(v: string | number | null) { this.sectorFilterSig.set(v == null ? '' : String(v)); this.currentPage.set(1); }
+
+   /** Sectores de la congregación (vacío si aún no se crearon: entonces no se muestra nada de sectores). */
+   sectores = signal<Sector[]>([]);
+   private sectoresPorId = computed(() => new Map(this.sectores().map(s => [s.id_sector, s])));
+   sectorDe(t: Territorio): Sector | null {
+      return t.id_sector != null ? this.sectoresPorId().get(t.id_sector) ?? null : null;
+   }
+   opcionesSector = computed<PickerOption[]>(() =>
+      this.sectores().map(s => ({ value: s.id_sector, label: s.nombre })));
+   opcionesSectorFiltro = computed<PickerOption[]>(() => {
+      const activos = this.territoriosActivos();
+      const cuenta = (id: number) => activos.filter(t => t.id_sector === id).length;
+      const sin = activos.filter(t => t.id_sector == null).length;
+      return [
+         ...this.sectores().map(s => ({ value: String(s.id_sector), label: `${s.nombre} (${cuenta(s.id_sector)})` })),
+         { value: 'sin', label: `Sin sector (${sin})` },
+      ];
+   });
+
+   irASectores(): void {
+      this.router.navigate(['/territorios/sectores']);
+   }
+
+   private cargarSectores(): void {
+      this.territoriosService.getSectores().subscribe({
+         next: (r) => this.sectores.set(r.sectores),
+         error: () => this.sectores.set([]),
+      });
+   }
    get searchQuery(): string { return this.searchQuerySig(); }
    set searchQuery(v: string) { this.searchQuerySig.set(v ?? ''); this.currentPage.set(1); }
    get estadoFilter(): string { return this.estadoFilterSig(); }
@@ -1080,7 +1112,18 @@ export class TerritoriosPage implements OnInit {
    showCreateModal = signal(false);
    showMapEditModal = signal(false);
    geoSaveError = signal<string | null>(null);
+   // Editor de mapa
+   editorReferencias = signal<GeoJSONFeatureCollection | null>(null);
+   editorCentro = signal<{ lat: number; lng: number } | null>(null);
+   propuestasManzanas = signal<GeoJSONFeatureCollection | null>(null);
+   detectandoManzanas = signal(false);
+   guardandoPropuestas = signal(false);
+   avisoEditor = signal<string | null>(null);
+   limiteSinGuardar = signal(false);
    showEditInfoModal = signal(false);
+   confirmandoEliminar = signal(false);
+   /** Tras un 409 (tiene historial) se ofrece retirarlo en vez de borrarlo. */
+   puedeRetirar = signal(false);
    editInfoError = signal<string | null>(null);
 
    newTerritorio: Partial<Territorio> = {
@@ -1134,7 +1177,7 @@ export class TerritoriosPage implements OnInit {
    manzanaSaving = signal(false);
 
    readonly tabs: Array<{ id: 'info' | 'manzanas' | 'direcciones' | 'asignaciones'; label: string; icon: string }> = [
-     { id: 'info',        label: 'territorio',  icon: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' },
+     { id: 'info',        label: 'Resumen',  icon: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' },
      { id: 'manzanas',   label: 'Manzanas',     icon: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>' },
      { id: 'direcciones', label: 'Direcciones', icon: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' },
      { id: 'asignaciones', label: 'Asignación', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
@@ -1276,18 +1319,46 @@ export class TerritoriosPage implements OnInit {
       return this.resumen().get(id);
    }
 
-   /** Franja de color a la izquierda de la fila según el tiempo sin trabajar. */
-   franjaDe(id: number): string {
+   /** Punto de color junto a la última predicación: verde al día, ámbar 4 meses, rojo 6 meses. */
+   alertaDe(id: number): string {
       const r = this.resumenDe(id);
-      if (!r) return 'border-transparent';
-      if (r.dias_sin_trabajar === null) return 'border-slate-300 dark:border-slate-600';
-      if (r.dias_sin_trabajar >= this.DIAS_CRITICO) return 'border-red-400';
-      if (r.dias_sin_trabajar >= this.DIAS_ATRASADO) return 'border-amber-400';
-      return 'border-emerald-400';
+      if (!r || r.dias_sin_trabajar === null) return 'bg-slate-300 dark:bg-slate-600';
+      if (r.dias_sin_trabajar >= this.DIAS_CRITICO) return 'bg-red-500';
+      if (r.dias_sin_trabajar >= this.DIAS_ATRASADO) return 'bg-amber-500';
+      return 'bg-emerald-500';
+   }
+
+   textoUltima(r: ResumenTerritorio | undefined): string {
+      if (!r || r.dias_sin_trabajar === null) return 'Nunca trabajado';
+      const t = this.textoDias(r.dias_sin_trabajar);
+      return t.charAt(0).toUpperCase() + t.slice(1);
+   }
+
+   /** Subtítulo de la página: el estado de un vistazo en lugar de tarjetas de cifras. */
+   resumenEncabezado = computed(() => {
+      if (this.loading()) return 'Cargando…';
+      const total = this.territoriosActivos().length;
+      if (total === 0) return 'Aún no hay territorios registrados.';
+      const partes = [
+         `${total} ${total === 1 ? 'territorio' : 'territorios'}`,
+         `${this.asignadosCount()} ${this.asignadosCount() === 1 ? 'asignado' : 'asignados'}`,
+         `${this.disponiblesCount()} ${this.disponiblesCount() === 1 ? 'disponible' : 'disponibles'}`,
+      ];
+      return partes.join(' · ');
+   });
+
+   limpiarFiltros(): void {
+      this.searchQuery = '';
+      this.estadoFilter = '';
+      this.sectorFilter = '';
+      this.chip.set('');
    }
 
    chips = computed(() => {
-      const filas = this.territoriosActivos().map(t => this.resumen().get(t.id_territorio));
+      const sector = this.sectorFilterSig();
+      const enSector = this.territoriosActivos().filter(t =>
+         !sector || (sector === 'sin' ? t.id_sector == null : String(t.id_sector) === sector));
+      const filas = enSector.map(t => this.resumen().get(t.id_territorio));
       const cuenta = {
          atrasados: filas.filter(r => r && r.dias_sin_trabajar !== null && r.dias_sin_trabajar >= this.DIAS_ATRASADO).length,
          nunca: filas.filter(r => r && r.dias_sin_trabajar === null).length,
@@ -1299,7 +1370,7 @@ export class TerritoriosPage implements OnInit {
          : [];
       return [
          ...extra,
-         { id: 'atrasados' as const, etiqueta: 'Sin trabajar hace más de 4 meses', cuenta: cuenta.atrasados, activo: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700' },
+         { id: 'atrasados' as const, etiqueta: 'Más de 4 meses sin trabajar', cuenta: cuenta.atrasados, activo: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700' },
          { id: 'nunca' as const, etiqueta: 'Nunca trabajados', cuenta: cuenta.nunca, activo: 'bg-slate-200 text-slate-800 border-slate-400 dark:bg-slate-700 dark:text-slate-100 dark:border-slate-500' },
          { id: 'en_curso' as const, etiqueta: 'Vuelta en curso', cuenta: cuenta.en_curso, activo: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700' },
       ];
@@ -1308,6 +1379,7 @@ export class TerritoriosPage implements OnInit {
    filteredTerritorios = computed(() => {
       const q = this.searchQuerySig().toLowerCase();
       const estado = this.estadoFilterSig();
+      const sector = this.sectorFilterSig();
       const chip = this.chip();
       const resumen = this.resumen();
       const lista = this.territorios().filter(t => {
@@ -1324,9 +1396,12 @@ export class TerritoriosPage implements OnInit {
            (chip === 'nunca' && !!r && r.dias_sin_trabajar === null) ||
            (chip === 'en_curso' && !!r?.en_curso) ||
            (chip === 'por_revisar' && (this.porRevisar()[String(t.id_territorio)] ?? 0) > 0);
-         return matchesSearch && matchesEstado && matchesChip;
+         const matchesSector = !sector
+           || (sector === 'sin' ? t.id_sector == null : String(t.id_sector) === sector);
+         return matchesSearch && matchesEstado && matchesSector && matchesChip;
       });
-      // Con un chip de alerta, lo más urgente primero.
+      // Por código (T2 antes que T10); con el chip de atrasados, lo más urgente primero.
+      lista.sort((a, b) => (a.codigo ?? '').localeCompare(b.codigo ?? '', 'es', { numeric: true }));
       if (chip === 'atrasados') {
          lista.sort((a, b) => (resumen.get(b.id_territorio)?.dias_sin_trabajar ?? 0) - (resumen.get(a.id_territorio)?.dias_sin_trabajar ?? 0));
       }
@@ -1354,6 +1429,9 @@ export class TerritoriosPage implements OnInit {
    });
 
    ngOnInit(): void {
+      this.cargarSectores();
+      const sectorUrl = this.route.snapshot.queryParamMap.get('sector');
+      if (sectorUrl) this.sectorFilter = sectorUrl;
       this.loadTerritorios();
       this.territoriosService.getPublicadores(this.congregacionCtx.effectiveCongregacionId())
          .subscribe({ next: (list) => this.publicadores.set(list) });
@@ -1375,12 +1453,27 @@ export class TerritoriosPage implements OnInit {
             this.loading.set(false);
             this.loadResumen();
             this.loadPorRevisar();
+            this.abrirSeleccionDeUrl(data);
          },
          error: () => {
             this.loading.set(false);
             this.loadError.set(true);
          },
       });
+   }
+
+   /** Llegar desde el mapa general (?selected=id): abre ese territorio y limpia la URL. */
+   private abrirSeleccionDeUrl(lista: Territorio[]): void {
+      const id = Number(this.route.snapshot.queryParamMap.get('selected'));
+      if (!id) return;
+      const t = lista.find(x => x.id_territorio === id);
+      if (t) {
+         this.selectTerritorio(t);
+         // En la lista paginada puede quedar en otra página: llevarla a la del territorio.
+         const idx = this.filteredTerritorios().findIndex(x => x.id_territorio === id);
+         if (idx >= 0) this.currentPage.set(Math.floor(idx / this.pageSize) + 1);
+      }
+      this.router.navigate([], { relativeTo: this.route, queryParams: { selected: null }, queryParamsHandling: 'merge', replaceUrl: true });
    }
 
    selectTerritorio(t: Territorio): void {
@@ -1687,19 +1780,80 @@ export class TerritoriosPage implements OnInit {
       }).subscribe({
          next: () => {
             this.manzanaSaving.set(false);
-            // Reload manzanas GeoJSON and stats
-            this.territoriosService.getManzanasGeoJSON(t.id_territorio).subscribe({
-               next: (manzanasGeo) => {
-                  if (manzanasGeo?.features?.length > 0) {
-                     this.selectedManzanasGeoJSON.set(manzanasGeo);
-                  }
-               },
-            });
-            this.territoriosService.getTerritorioStats(t.id_territorio).subscribe({
-               next: (stats) => this.selectedStats.set(stats),
-            });
+            this.recargarManzanas(t.id_territorio);
          },
-         error: () => this.manzanaSaving.set(false),
+         error: (err) => {
+            this.manzanaSaving.set(false);
+            this.avisoEditor.set(err?.error?.detail ?? 'No se pudo guardar la manzana. Intente de nuevo.');
+         },
+      });
+   }
+
+   /** Tras crear o borrar manzanas: mapa, pestaña Manzanas y contadores. */
+   private recargarManzanas(idTerritorio: number): void {
+      this.territoriosService.getManzanasGeoJSON(idTerritorio).subscribe({
+         next: (manzanasGeo) => this.selectedManzanasGeoJSON.set(manzanasGeo),
+      });
+      this.territoriosService.getTerritorioStats(idTerritorio).subscribe({
+         next: (stats) => this.selectedStats.set(stats),
+      });
+      // La pestaña Manzanas se recarga al abrirla si su lista está vacía.
+      this.manzanasConCobertura.set([]);
+      if (this.activeDetailTab() === 'manzanas') this.loadManzanasCobertura();
+      this.loadResumen();
+   }
+
+   /** El mapa ya leyó las calles visibles; si el límite tiene cambios, se guardan antes. */
+   onDetectarManzanas(calles: any): void {
+      const t = this.selectedTerritorio();
+      if (!t) return;
+      this.avisoEditor.set(null);
+      const proponer = () => {
+         const actual = this.selectedTerritorio()!;
+         if (!actual.coordenada) {
+            this.avisoEditor.set('Primero dibuje el límite del territorio en "1 · Límite".');
+            return;
+         }
+         this.detectandoManzanas.set(true);
+         this.territoriosService.proponerManzanas(actual.id_territorio, calles).subscribe({
+            next: (fc) => {
+               this.detectandoManzanas.set(false);
+               if (!fc.features.length) {
+                  const yaHay = (this.selectedManzanasGeoJSON()?.features.length ?? 0) > 0;
+                  this.avisoEditor.set(yaHay
+                     ? 'No quedan manzanas nuevas por detectar: las cuadras de este territorio ya están dibujadas.'
+                     : 'No se encontraron cuadras cerradas por calles dentro del límite. Dibuje las manzanas a mano.');
+                  return;
+               }
+               this.propuestasManzanas.set(fc);
+            },
+            error: (err) => {
+               this.detectandoManzanas.set(false);
+               this.avisoEditor.set(err?.error?.detail ?? 'No se pudieron detectar las manzanas. Intente de nuevo.');
+            },
+         });
+      };
+      if (this.limiteSinGuardar()) this.saveGeometry(proponer);
+      else proponer();
+   }
+
+   onGuardarPropuestas(features: any[]): void {
+      const t = this.selectedTerritorio();
+      if (!t || !features.length) return;
+      this.guardandoPropuestas.set(true);
+      this.territoriosService.createManzanasLote(t.id_territorio, features.map(f => ({
+         numero_manzana: String(f.properties.numero_manzana),
+         coordenada: f.geometry,
+      }))).subscribe({
+         next: () => {
+            this.guardandoPropuestas.set(false);
+            this.propuestasManzanas.set(null);
+            this.recargarManzanas(t.id_territorio);
+         },
+         error: (err) => {
+            this.guardandoPropuestas.set(false);
+            this.avisoEditor.set(err?.error?.detail ?? 'No se pudieron guardar las manzanas. Intente de nuevo.');
+         },
       });
    }
 
@@ -1718,8 +1872,20 @@ export class TerritoriosPage implements OnInit {
    }
 
    openCreateModal(): void {
-      this.newTerritorio = { codigo: '', nombre: '', estado_territorio: 'Disponible' };
+      this.newTerritorio = { codigo: this.siguienteCodigo(), nombre: '', estado_territorio: 'Disponible' };
       this.showCreateModal.set(true);
+   }
+
+   /** "T07" si el último es "T06": mismo prefijo y mismo ancho que los códigos existentes. */
+   private siguienteCodigo(): string {
+      let mejor: { prefijo: string; numero: number; ancho: number } | null = null;
+      for (const t of this.territorios()) {
+         const m = /^(.*?)(\d+)$/.exec((t.codigo ?? '').trim());
+         if (!m) continue;
+         const numero = Number(m[2]);
+         if (!mejor || numero > mejor.numero) mejor = { prefijo: m[1], numero, ancho: m[2].length };
+      }
+      return mejor ? mejor.prefijo + String(mejor.numero + 1).padStart(mejor.ancho, '0') : '';
    }
 
    closeCreateModal(): void {
@@ -1733,10 +1899,41 @@ export class TerritoriosPage implements OnInit {
       this.editingGeoJSON.set(fc);
       this.lastEditedGeoJSON.set(null);
       this.geoSaveError.set(null);
+      this.limiteSinGuardar.set(false);
+      this.propuestasManzanas.set(null);
+      this.avisoEditor.set(null);
       this.showMapEditModal.set(true);
+
+      // Los vecinos se ven de referencia; el salón centra el mapa si aún no hay nada dibujado.
+      const actual = this.selectedTerritorio()?.id_territorio;
+      this.editorReferencias.set(null);
+      // Además de los vecinos: el límite de la congregación y los sectores, para dibujar dentro de la raya.
+      forkJoin({
+         tarjetas: this.territoriosService.getTerritoriosGeoJSON(),
+         unidades: this.territoriosService.getCongregacionLimite(),
+      }).subscribe({
+         next: ({ tarjetas, unidades }) => {
+            const limite = unidades.filter(u => u.coordenada).map(u => ({
+               type: 'Feature' as const, id: `u${u.id_unidad}`, properties: { codigo: '' }, geometry: u.coordenada!,
+            }));
+            const sectoresDibujados = this.sectores().filter(s => s.coordenada).map(s => ({
+               type: 'Feature' as const, id: `s${s.id_sector}`, properties: { codigo: s.nombre }, geometry: s.coordenada!,
+            }));
+            this.editorReferencias.set({
+               ...tarjetas,
+               features: [...limite, ...sectoresDibujados, ...tarjetas.features.filter(f => f.id !== actual && f.geometry)],
+            });
+         },
+      });
+      if (!this.editorCentro()) {
+         this.territoriosService.getMapaContexto().subscribe({ next: (r) => this.editorCentro.set(r.centro) });
+      }
    }
 
    closeMapEditor(): void {
+      if (this.limiteSinGuardar() && !confirm('El límite del territorio tiene cambios sin guardar. ¿Cerrar sin guardarlos?')) return;
+      this.limiteSinGuardar.set(false);
+      this.propuestasManzanas.set(null);
       this.showMapEditModal.set(false);
       this.editingGeoJSON.set(null);
       this.lastEditedGeoJSON.set(null);
@@ -1750,10 +1947,42 @@ export class TerritoriosPage implements OnInit {
          codigo: t.codigo,
          nombre: t.nombre,
          estado_territorio: t.estado_territorio,
-         notas: t.notas || ''
+         notas: t.notas || '',
+         id_sector: t.id_sector ?? null,
       };
       this.editInfoError.set(null);
+      this.confirmandoEliminar.set(false);
+      this.puedeRetirar.set(false);
       this.showEditInfoModal.set(true);
+   }
+
+   eliminarTerritorio(): void {
+      const t = this.selectedTerritorio();
+      if (!t) return;
+      this.saving.set(true);
+      this.editInfoError.set(null);
+      this.territoriosService.deleteTerritorio(t.id_territorio).subscribe({
+         next: () => {
+            this.saving.set(false);
+            this.closeEditInfoModal();
+            this.territorios.update(l => l.filter(x => x.id_territorio !== t.id_territorio));
+            this.selectedTerritorio.set(null);
+            this.loadResumen();
+         },
+         error: (err) => {
+            this.saving.set(false);
+            this.puedeRetirar.set(err?.status === 409);
+            const d = err?.error?.detail;
+            this.editInfoError.set(typeof d === 'string' ? d : 'No se pudo eliminar el territorio. Intente de nuevo.');
+         },
+      });
+   }
+
+   /** Retirar sin perder el historial: lo mismo que cambiar el estado a Inactivo. */
+   retirarTerritorio(): void {
+      this.editingTerritorioInfo.estado_territorio = 'Inactivo';
+      this.confirmandoEliminar.set(false);
+      this.saveEditInfo();
    }
 
    closeEditInfoModal(): void {
@@ -1771,7 +2000,8 @@ export class TerritoriosPage implements OnInit {
          codigo: this.editingTerritorioInfo.codigo,
          nombre: this.editingTerritorioInfo.nombre,
          estado_territorio: this.editingTerritorioInfo.estado_territorio,
-         notas: this.editingTerritorioInfo.notas
+         notas: this.editingTerritorioInfo.notas,
+         id_sector: this.editingTerritorioInfo.id_sector || null,
       }).subscribe({
          next: (updated) => {
             this.saving.set(false);
@@ -1790,17 +2020,25 @@ export class TerritoriosPage implements OnInit {
 
    onGeometryChanged(fc: GeoJSONFeatureCollection): void {
       this.lastEditedGeoJSON.set(fc);
+      this.limiteSinGuardar.set(true);
    }
 
-   saveGeometry(): void {
+   /** Guarda el límite y deja el editor abierto: lo siguiente suele ser dibujar las manzanas. */
+   saveGeometry(despues?: () => void): void {
       const fc = this.lastEditedGeoJSON();
       const t = this.selectedTerritorio();
       if (!t || !fc) {
-         this.closeMapEditor();
+         despues?.();
          return;
       }
 
       this.geoSaveError.set(null);
+
+      // Antes se guardaba solo la primera figura y las demás se perdían sin aviso.
+      if (fc.features.length > 1) {
+         this.geoSaveError.set(`Hay ${fc.features.length} figuras en la capa Límite y el territorio debe ser una sola. Borre las que sobran con la goma de la izquierda.`);
+         return;
+      }
 
       // Validate self-intersections with turf.kinks
       for (const feature of fc.features) {
@@ -1824,9 +2062,22 @@ export class TerritoriosPage implements OnInit {
       this.territoriosService.updateTerritorio(t.id_territorio, { coordenada: geometryToSave }).subscribe({
          next: (updated) => {
             this.saving.set(false);
-            this.closeMapEditor();
-            this.selectTerritorio(updated);
+            this.limiteSinGuardar.set(false);
+            this.lastEditedGeoJSON.set(null);
+            this.selectedTerritorio.set(updated);
             this.territorios.update(list => list.map(item => item.id_territorio === updated.id_territorio ? updated : item));
+            const poligono: GeoJSONFeatureCollection | null = updated.coordenada ? {
+               type: 'FeatureCollection',
+               features: [{
+                  type: 'Feature',
+                  id: updated.id_territorio,
+                  properties: { codigo: updated.codigo, nombre: updated.nombre, estado_territorio: updated.estado_territorio },
+                  geometry: updated.coordenada,
+               }],
+            } : null;
+            this.selectedTerritorioPolygon.set(poligono);
+            this.selectedTerritorioGeoJSON.set(poligono);
+            despues?.();
          },
          error: (err) => {
             console.error('Error al guardar geometría:', err);
@@ -1841,13 +2092,16 @@ export class TerritoriosPage implements OnInit {
       if (!this.newTerritorio.codigo || !this.newTerritorio.nombre) return;
       
       this.saving.set(true);
-      this.territoriosService.createTerritorio(this.newTerritorio).subscribe({
+      this.territoriosService.createTerritorio({ ...this.newTerritorio, id_sector: this.newTerritorio.id_sector || null }).subscribe({
          next: (created) => {
             // Add to the signals instead of reloading completely (optional)
             this.territorios.update(list => [created, ...list]);
             this.saving.set(false);
             this.closeCreateModal();
             this.selectTerritorio(created);
+            this.loadResumen();
+            // Lo siguiente siempre es dibujarlo: se abre el editor sin otro clic.
+            this.openMapEditor();
          },
          error: (err) => {
             console.error('Error al crear territorio:', err);
@@ -1882,17 +2136,17 @@ export class TerritoriosPage implements OnInit {
 
    getStatusColor(estado: string): string {
       switch (estado) {
-         case 'Disponible': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-         case 'Asignado': return 'bg-purple-50 text-purple-700 border-purple-200';
-         case 'En Pausa': return 'bg-slate-100 text-slate-700 border-slate-300';
-         default: return 'bg-slate-50 text-slate-700 border-slate-200';
+         case 'Disponible': return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/25 dark:text-emerald-300 dark:border-emerald-800/60';
+         case 'Asignado': return 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/25 dark:text-violet-300 dark:border-violet-800/60';
+         case 'En Pausa': return 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600';
+         default: return 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
       }
    }
 
    getStatusDotColor(estado: string): string {
       switch (estado) {
          case 'Disponible': return 'bg-emerald-500';
-         case 'Asignado': return 'bg-purple-600';
+         case 'Asignado': return 'bg-violet-600';
          case 'En Pausa': return 'bg-slate-400';
          default: return 'bg-slate-400';
       }

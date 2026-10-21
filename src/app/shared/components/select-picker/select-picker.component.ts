@@ -5,7 +5,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-type ColorScheme = 'orange' | 'violet' | 'rose';
+type ColorScheme = 'orange' | 'violet' | 'rose' | 'emerald';
 
 /** Opción con identidad propia: el valor que viaja al formulario no tiene que
  *  ser el texto que ve el usuario (id numérico + etiqueta, típicamente). */
@@ -36,7 +36,7 @@ export interface PickerOption {
     multi: true,
   }],
   template: `
-    <div class="sp-root" [class.sp-violet]="colorScheme === 'violet'" [class.sp-rose]="colorScheme === 'rose'">
+    <div class="sp-root" [class.sp-violet]="colorScheme === 'violet'" [class.sp-rose]="colorScheme === 'rose'" [class.sp-emerald]="colorScheme === 'emerald'">
 
       <button
         #trigger
@@ -157,6 +157,13 @@ export interface PickerOption {
       border-color: #7c3aed;
       box-shadow: 0 0 0 3px rgba(124,58,237,0.14);
     }
+    .sp-emerald:focus-within .sp-trigger:not(:disabled) {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.16);
+    }
+    :host-context(.dark) .sp-emerald:focus-within .sp-trigger:not(:disabled) {
+      border-color: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,0.18);
+    }
     .sp-rose:focus-within .sp-trigger:not(:disabled) {
       border-color: #e11d48;
       box-shadow: 0 0 0 3px rgba(225,29,72,0.14);
@@ -185,6 +192,8 @@ export interface PickerOption {
     }
     .sp-violet .sp-chevron { color: #8b5cf6; }
     .sp-rose .sp-chevron { color: #f43f5e; }
+    .sp-emerald .sp-chevron { color: #10b981; }
+    :host-context(.dark) .sp-emerald .sp-chevron { color: #34d399; }
     :host-context(.dark) .sp-chevron { color: #64748b; }
     :host-context(.dark) .sp-violet .sp-chevron { color: #a78bfa; }
     :host-context(.dark) .sp-rose .sp-chevron { color: #fb7185; }
@@ -254,6 +263,10 @@ export interface PickerOption {
     .sp-violet .sp-opt--active:not(.sp-opt--on) { background: rgba(124,58,237,0.08); color: #6d28d9; }
     .sp-rose .sp-opt:hover:not(.sp-opt--on),
     .sp-rose .sp-opt--active:not(.sp-opt--on) { background: rgba(225,29,72,0.08); color: #be123c; }
+    .sp-emerald .sp-opt:hover:not(.sp-opt--on),
+    .sp-emerald .sp-opt--active:not(.sp-opt--on) { background: rgba(16,185,129,0.09); color: #047857; }
+    :host-context(.dark) .sp-emerald .sp-opt:hover:not(.sp-opt--on),
+    :host-context(.dark) .sp-emerald .sp-opt--active:not(.sp-opt--on) { background: rgba(52,211,153,0.12); color: #6ee7b7; }
     :host-context(.dark) .sp-violet .sp-opt:hover:not(.sp-opt--on),
     :host-context(.dark) .sp-violet .sp-opt--active:not(.sp-opt--on) { background: rgba(167,139,250,0.12); color: #a78bfa; }
     :host-context(.dark) .sp-rose .sp-opt:hover:not(.sp-opt--on),
@@ -263,6 +276,7 @@ export interface PickerOption {
     .sp-opt--on .sp-opt-hint { color: rgba(255,255,255,0.75); }
     .sp-violet .sp-opt--on { background: #7c3aed; box-shadow: 0 2px 8px rgba(124,58,237,0.35); }
     .sp-rose .sp-opt--on { background: #e11d48; box-shadow: 0 2px 8px rgba(225,29,72,0.35); }
+    .sp-emerald .sp-opt--on { background: #059669; box-shadow: 0 2px 8px rgba(5,150,105,0.35); }
 
     .sp-empty-wrap { padding: 0.25rem; display: flex; flex-direction: column; gap: 0.375rem; }
     .sp-empty { padding: 0.5rem 0.375rem 0; font-size: 0.8125rem; color: #94a3b8; margin: 0; }

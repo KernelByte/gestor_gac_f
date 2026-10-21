@@ -5,8 +5,51 @@ export interface Territorio {
   nombre: string;
   estado_territorio: string;
   notas?: string;
+  id_sector?: number | null;
   coordenada?: GeoJSONGeometry | null;
 }
+
+/** Barrio o sector que agrupa tarjetas. */
+export interface Sector {
+  id_sector: number;
+  id_congregacion: number;
+  nombre: string;
+  color?: string | null;
+  notas?: string | null;
+  coordenada?: GeoJSONGeometry | null;
+  tarjetas_count: number;
+}
+
+export interface SectoresRespuesta {
+  sectores: Sector[];
+  sin_sector: number;
+}
+
+export interface TarjetaSugerida {
+  id_territorio: number;
+  codigo: string;
+  nombre: string;
+  id_sector_actual: number | null;
+  sector_actual: string | null;
+}
+
+/** Territorio de la congregación tal como lo entrega JW en su KML. */
+export interface UnidadCongregacion {
+  id_unidad?: number;
+  nombre: string;
+  tipo?: string | null;
+  idioma?: string | null;
+  ultima_actualizacion?: string | null;
+  limite_norte?: string | null;
+  limite_este?: string | null;
+  limite_sur?: string | null;
+  limite_oeste?: string | null;
+  archivo_origen?: string | null;
+  coordenada?: GeoJSONGeometry | null;
+}
+
+/** Colores que se ofrecen para los sectores (distintos a los de estado de las tarjetas). */
+export const COLORES_SECTOR = ['#0ea5e9', '#14b8a6', '#8b5cf6', '#f59e0b', '#ec4899', '#84cc16', '#f97316', '#6366f1'];
 
 export interface Manzana {
   id_manzana: number;
@@ -130,6 +173,8 @@ export interface ResumenTerritorio {
 export interface RegistroS13Ciclo {
   fecha_inicio: string;
   fecha_fin: string | null;
+  /** Primer capitán que trabajó la vuelta: es a quien queda asignada en el S-13. */
+  asignado_a: string | null;
   capitanes: string[];
 }
 

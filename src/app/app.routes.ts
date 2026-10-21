@@ -14,6 +14,7 @@ export const routes: Routes = [
   { path: 'public/visita/:token', title: 'Visita del Superintendente', loadComponent: () => import('./features/public/visita/public-visita.page').then(m => m.PublicVisitaPage) },
   { path: 'public/logistica/:token', title: 'Programa de la Congregación', loadComponent: () => import('./features/public/logistica/public-logistica.page').then(m => m.PublicLogisticaPage) },
   { path: 'public/invitacion/:token', title: 'Acceso a la app', loadComponent: () => import('./features/public/invitacion/public-invitacion.page').then(m => m.PublicInvitacionPage) },
+  { path: 'public/lectura/:codigo', title: 'Lectura de la Biblia', loadComponent: () => import('./features/public/lectura-companero/public-lectura-companero.page').then(m => m.PublicLecturaCompaneroPage) },
 
   // Shell protegido
   {
@@ -58,6 +59,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/territorios/pages/territorios.page').then(m => m.TerritoriosPage),
       },
       {
+        path: 'territorios/sectores',
+        title: 'Barrios o sectores',
+        canActivate: [permissionGuard],
+        data: { permissions: ['territorios.ver'] },
+        loadComponent: () => import('./features/territorios/pages/sectores.page').then(m => m.SectoresPage),
+      },
+      {
         path: 'territorios/registro',
         title: 'Registro de Territorios',
         canActivate: [permissionGuard],
@@ -66,7 +74,7 @@ export const routes: Routes = [
       },
       {
         path: 'horarios',
-        title: 'Horarios de Predicación',
+        title: 'Programa de salidas',
         canActivate: [permissionGuard],
         data: { permissions: ['territorios.ver'] },
         loadComponent: () => import('./features/territorios/pages/horarios.page').then(m => m.HorariosPage),

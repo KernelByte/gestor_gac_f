@@ -1,4 +1,5 @@
-import { Component, signal, computed, inject, OnInit, AfterViewInit, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, AfterViewInit, ElementRef, HostListener, ViewChild, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -136,6 +137,8 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    private fb = inject(FormBuilder);
    private router = inject(Router);
    private route = inject(ActivatedRoute);
+   private destroyRef = inject(DestroyRef);
+   private notificationTimer: ReturnType<typeof setTimeout> | null = null;
    private API_URL = `${environment.apiUrl}/configuracion/admin`;
 
    activeTab = signal<AdminTab>('congregaciones');
@@ -143,6 +146,7 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    tabFade = signal({ start: false, end: false });
    @ViewChild('tabsScroller') private tabsScroller?: ElementRef<HTMLElement>;
    loading = signal(false);
+   loadError = signal(false);
 
    // Data Signals
    congregaciones = signal<CongregacionAdmin[]>([]);
@@ -170,6 +174,7 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    editingUrlClave = signal<string | null>(null);
    savingUrl = signal(false);
    deletingUrlKey = signal<string | null>(null);
+   urlToDelete = signal<string | null>(null);
 
    // Notification Signal
    notification = signal<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -180,6 +185,12 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    // Delete confirmation modal
    congregationToDelete = signal<CongregacionAdmin | null>(null);
    deletingCongregation = signal(false);
+   /** Texto que el admin escribe para confirmar el borrado en cascada. */
+   deleteConfirmText = signal('');
+   readonly deleteConfirmed = computed(() => {
+      const c = this.congregationToDelete();
+      return !!c && this.deleteConfirmText().trim().toLowerCase() === c.nombre_congregacion.trim().toLowerCase();
+   });
 
    // Solicitudes signals
    solicitudes = signal<SolicitudAcceso[]>([]);
@@ -192,7 +203,7 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
       this.initForm();
 
       // Reactive tab handling from query params
-      this.route.queryParams.subscribe(params => {
+      this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
          const tabParam = params['tab'];
          const savedTab = localStorage.getItem('admin_active_tab');
          const tabToSet = (tabParam || savedTab || 'congregaciones') as AdminTab;
@@ -229,13 +240,15 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
       });
 
       this.urlForm = this.fb.group({
-         clave: ['', [Validators.required, Validators.maxLength(50)]],
+         clave: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(/^[a-z0-9_]+$/i)]],
          url: ['', [Validators.required, Validators.pattern('https?://.+')]],
          descripcion: ['', [Validators.maxLength(200)]]
       });
    }
 
    setTab(tab: AdminTab) {
+      // Solo se navega: la suscripción a queryParams activa la pestaña y carga sus datos
+      // (antes se cargaba aquí y otra vez allí, duplicando las peticiones).
       this.activeTab.set(tab);
       localStorage.setItem('admin_active_tab', tab);
 
@@ -247,8 +260,6 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
          replaceUrl: true
       });
 
-      if (tab === 'congregaciones') this.loadCongregaciones();
-      if (tab === 'solicitudes') this.loadSolicitudes();
    }
 
    ngAfterViewInit() {
@@ -282,6 +293,7 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
 
    loadCongregaciones() {
       this.loading.set(true);
+      this.loadError.set(false);
       this.http.get<CongregacionAdmin[]>(`${this.API_URL}/congregaciones`)
          .subscribe({
             next: (data) => {
@@ -290,6 +302,7 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
             },
             error: (err: any) => {
                console.error(err);
+               this.loadError.set(true);
                this.loading.set(false);
             }
          });
@@ -429,19 +442,27 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    }
 
    deleteUrl(clave: string) {
-      if (!this.editingCongregation() || !confirm(`¿Está seguro que desea eliminar la URL '${clave}'?`)) return;
-      
+      if (!this.editingCongregation()) return;
+      this.urlToDelete.set(clave);
+   }
+
+   confirmDeleteUrl() {
+      const clave = this.urlToDelete();
+      if (!clave || !this.editingCongregation()) return;
+
       const congId = this.editingCongregation()!.id_congregacion;
       this.deletingUrlKey.set(clave);
-      
-      this.http.delete(`${this.API_URL}/congregaciones/${congId}/urls/${clave}`).subscribe({
+
+      this.http.delete(`${this.API_URL}/congregaciones/${congId}/urls/${encodeURIComponent(clave)}`).subscribe({
          next: () => {
+            this.urlToDelete.set(null);
             this.deletingUrlKey.set(null);
             this.loadCongregacionUrls(congId);
             this.showNotification('URL eliminada', 'success');
          },
          error: (err: any) => {
             console.error('Error deleting URL:', err);
+            this.urlToDelete.set(null);
             this.deletingUrlKey.set(null);
             this.showNotification('Error al eliminar la URL', 'error');
          }
@@ -449,15 +470,35 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    }
 
    // ===== Panel Methods =====
+   private readonly formDefaults = {
+      nombre_congregacion: '', circuito: '', direccion: '', codigo_seguridad: '',
+      tiene_sala_b: false, usa_zoom: true,
+      dia_reunion_entre_semana: '', hora_reunion_entre_semana: '',
+      dia_reunion_fin_semana: '', hora_reunion_fin_semana: ''
+   };
+
+   @HostListener('document:keydown.escape')
+   onEscape() {
+      if (this.urlToDelete()) this.urlToDelete.set(null);
+      else if (this.congregationToDelete()) this.closeDeleteModal();
+      else if (this.panelOpen()) this.requestClosePanel();
+   }
+
+   /** Cierre por fondo/Escape: si hay cambios sin guardar, pregunta antes de descartarlos. */
+   requestClosePanel() {
+      if (this.congregationForm.dirty && !confirm('Hay cambios sin guardar. ¿Descartarlos?')) return;
+      this.closePanel();
+   }
+
    openCreatePanel() {
       this.editingCongregation.set(null);
-      this.congregationForm.reset();
+      this.congregationForm.reset(this.formDefaults);
       this.panelOpen.set(true);
    }
 
    closePanel() {
       this.panelOpen.set(false);
-      this.congregationForm.reset();
+      this.congregationForm.reset(this.formDefaults);
       this.editingCongregation.set(null);
       this.congregacionUrls.set([]);
       this.showUrlForm.set(false);
@@ -519,10 +560,9 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    }
 
    showNotification(message: string, type: 'success' | 'error') {
+      if (this.notificationTimer) clearTimeout(this.notificationTimer);
       this.notification.set({ message, type });
-      setTimeout(() => {
-         this.notification.set(null);
-      }, 3000);
+      this.notificationTimer = setTimeout(() => this.notification.set(null), 3000);
    }
 
    // ===== Export Method =====
@@ -546,34 +586,14 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
          },
          error: (err: any) => {
             console.error('Export error:', err);
-            alert('Error al exportar la congregación');
+            this.showNotification('Error al exportar la congregación', 'error');
             this.exportingId.set(null);
          }
       });
    }
 
-   downloadTemplate() {
-      this.http.get(`${environment.apiUrl}/export/plantilla`, {
-         responseType: 'blob'
-      }).subscribe({
-         next: (blob: Blob) => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Plantilla_Importacion_GAC.xlsx';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-         },
-         error: (err: any) => {
-            console.error('Template download error:', err);
-            alert('Error al descargar la plantilla');
-         }
-      });
-   }
-
    confirmDeleteCongregation(cong: CongregacionAdmin) {
+      this.deleteConfirmText.set('');
       this.congregationToDelete.set(cong);
    }
 
@@ -583,7 +603,7 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
 
    executeDeleteCongregation() {
       const cong = this.congregationToDelete();
-      if (!cong) return;
+      if (!cong || !this.deleteConfirmed()) return;
       this.deletingCongregation.set(true);
       this.http.delete(`${this.API_URL}/congregaciones/${cong.id_congregacion}`).subscribe({
          next: () => {
@@ -606,12 +626,8 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
    // ===== Solicitudes de Acceso =====
    loadSolicitudes() {
       this.solicitudesLoading.set(true);
-      const filter = this.solicitudFilter();
-      let url = `${environment.apiUrl}/solicitudes/`;
-      if (filter !== 'todas') {
-         url += `?estado=${filter}`;
-      }
-      this.http.get<SolicitudAcceso[]>(url).subscribe({
+      // Siempre se piden todas: los contadores deben ser globales y el filtro se aplica en cliente.
+      this.http.get<SolicitudAcceso[]>(`${environment.apiUrl}/solicitudes/`).subscribe({
          next: (data) => {
             this.solicitudes.set(data);
             this.solicitudesLoading.set(false);
@@ -623,7 +639,10 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
       });
    }
 
-   readonly filteredSolicitudes = computed(() => this.solicitudes());
+   readonly filteredSolicitudes = computed(() => {
+      const f = this.solicitudFilter();
+      return f === 'todas' ? this.solicitudes() : this.solicitudes().filter(s => s.estado === f);
+   });
 
    /**
     * Antes era un getter: devolvia un objeto nuevo en cada lectura, asi que los
@@ -642,7 +661,6 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
 
    setSolicitudFilter(filter: string) {
       this.solicitudFilter.set(filter);
-      this.loadSolicitudes();
    }
 
    cambiarEstadoSolicitud(id: number, nuevoEstado: string) {

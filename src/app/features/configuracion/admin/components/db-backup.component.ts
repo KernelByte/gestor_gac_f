@@ -184,9 +184,9 @@ interface CongregacionOption {
                   </datalist>
                   <div *ngIf="enviarEmail()" class="mt-4 animate-slideIn">
                      <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Correo electr&oacute;nico</label>
-                     <input [(ngModel)]="emailDestino" type="email" placeholder="correo de un administrador" list="correos-admin"
+                     <input [(ngModel)]="emailDestino" type="email" list="correos-admin" placeholder="ejemplo@correo.com"
                         class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
-                     <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Por seguridad, solo se puede enviar al correo de un administrador del sistema.</p>
+                     <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Puedes escribir cualquier correo. Los respaldos programados solo se envían a correos de administradores.</p>
                   </div>
                </div>
 
@@ -394,7 +394,7 @@ interface CongregacionOption {
                         </button>
                      </div>
                      <div *ngIf="scheduleEmail()" class="mt-4 animate-slideIn">
-                        <input [(ngModel)]="scheduleEmailDestino" type="email" placeholder="ejemplo@correo.com"
+                        <input [(ngModel)]="scheduleEmailDestino" type="email" list="correos-admin" placeholder="ejemplo@correo.com"
                            class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-colors">
                      </div>
                   </div>
@@ -604,7 +604,7 @@ interface CongregacionOption {
                   class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                   Cancelar
                </button>
-               <button (click)="eliminarBackup()" type="button"
+               <button (click)="eliminarBackup()" type="button" [disabled]="eliminando()"
                   class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold shadow-sm transition-colors">
                   Eliminar
                </button>
@@ -747,6 +747,8 @@ export class DbBackupComponent implements OnInit {
 
    // Delete modal
    backupAEliminar = signal<BackupHistorial | null>(null);
+   eliminando = signal(false);
+   private notificationTimer: ReturnType<typeof setTimeout> | null = null;
 
    // Restore from historial
    restoringId = signal<number | null>(null);
@@ -877,8 +879,10 @@ export class DbBackupComponent implements OnInit {
             const a = document.createElement('a');
             a.href = url;
             a.download = backup.nombre_archivo;
+            document.body.appendChild(a);
             a.click();
-            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
          },
          error: () => this.showNotification('Error al descargar el archivo', 'error')
       });
@@ -890,15 +894,18 @@ export class DbBackupComponent implements OnInit {
 
    eliminarBackup() {
       const backup = this.backupAEliminar();
-      if (!backup) return;
+      if (!backup || this.eliminando()) return;
+      this.eliminando.set(true);
 
       this.backupService.eliminarBackup(backup.id_backup).subscribe({
          next: () => {
+            this.eliminando.set(false);
             this.backupAEliminar.set(null);
             this.showNotification('Respaldo eliminado', 'success');
             this.loadHistorial();
          },
          error: () => {
+            this.eliminando.set(false);
             this.backupAEliminar.set(null);
             this.showNotification('Error al eliminar el respaldo', 'error');
          }
@@ -974,6 +981,8 @@ export class DbBackupComponent implements OnInit {
          next: result => {
             this.restoringId.set(null);
             this.showNotification(result.mensaje, 'success');
+            this.loadHistorial();
+            this.loadProgramacion();
          },
          error: err => {
             this.restoringId.set(null);
@@ -1010,6 +1019,8 @@ export class DbBackupComponent implements OnInit {
             this.subiendoArchivo.set(false);
             this.archivoSubir.set(null);
             this.showNotification(result.mensaje, 'success');
+            this.loadHistorial();
+            this.loadProgramacion();
          },
          error: err => {
             this.subiendoArchivo.set(false);
@@ -1028,12 +1039,14 @@ export class DbBackupComponent implements OnInit {
       const d = new Date(fecha);
       return d.toLocaleDateString('es-ES', {
          day: '2-digit', month: 'short', year: 'numeric',
-         hour: '2-digit', minute: '2-digit'
+         hour: '2-digit', minute: '2-digit',
+         timeZone: 'America/Bogota'
       });
    }
 
    private showNotification(message: string, type: 'success' | 'error') {
+      if (this.notificationTimer) clearTimeout(this.notificationTimer);
       this.notification.set({ message, type });
-      setTimeout(() => this.notification.set(null), 5000);
+      this.notificationTimer = setTimeout(() => this.notification.set(null), 5000);
    }
 }

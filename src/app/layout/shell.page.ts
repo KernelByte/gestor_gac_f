@@ -1416,7 +1416,7 @@ export class ShellPage implements OnInit, OnDestroy {
         this.pageTitle.set({ title: 'Publicadores', subtitle: 'Base de datos de hermanos y publicadores.' });
       }
     } else if (url.includes('/horarios')) {
-      this.pageTitle.set({ title: 'Horarios de Predicación', subtitle: 'Programa y registra salidas de predicación.' });
+      this.pageTitle.set({ title: 'Programa de salidas', subtitle: 'Qué días se predica, dónde y con quién.' });
     } else if (url.includes('/seguimiento-predicacion')) {
       this.pageTitle.set({ title: 'Predicación', subtitle: 'Seguimiento de estado de predicación por manzana.' });
     } else if (url.includes('/territorios')) {

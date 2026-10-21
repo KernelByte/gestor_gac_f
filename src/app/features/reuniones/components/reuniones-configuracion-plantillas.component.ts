@@ -290,31 +290,20 @@ import {
                 <p class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">
                   {{ plantillaTipoActivo() === 'fin_semana' ? 'Reunión Pública y Estudio de La Atalaya' : 'Vida y Ministerio Cristiano' }}
                 </p>
+                <p class="text-[0.6875rem] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                  Sube el archivo .jwpub (recomendado, el mismo de JW Library) o el PDF.
+                </p>
               </div>
            </div>
 
-           <input type="file" #fileInput (change)="onFileSelected($event)" accept=".pdf" class="hidden">
+           <input type="file" #fileInput (change)="onFileSelected($event)" accept=".jwpub,.pdf" class="hidden">
 
            @if (!mwbLoading()) {
              <div class="flex items-center gap-2 flex-wrap">
-               <!-- Selector mes / año -->
-               <div class="flex items-center gap-0 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 h-9 overflow-hidden shrink-0">
-                 <span class="pl-3 pr-2 text-[9px] uppercase tracking-wider font-black text-slate-400 dark:text-slate-500 border-r border-slate-200 dark:border-slate-700 h-full flex items-center shrink-0">Mes</span>
-                 <select [ngModel]="mwbTargetMonth()" (ngModelChange)="mwbTargetMonth.set(+$event)" class="h-full text-[0.6875rem] font-bold bg-transparent outline-none px-2 text-slate-700 dark:text-slate-200 cursor-pointer">
-                   <option [value]="1">Enero</option><option [value]="2">Febrero</option><option [value]="3">Marzo</option>
-                   <option [value]="4">Abril</option><option [value]="5">Mayo</option><option [value]="6">Junio</option>
-                   <option [value]="7">Julio</option><option [value]="8">Agosto</option><option [value]="9">Septiembre</option>
-                   <option [value]="10">Octubre</option><option [value]="11">Noviembre</option><option [value]="12">Diciembre</option>
-                 </select>
-                 <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1 shrink-0"></span>
-                 <input type="number" [ngModel]="mwbTargetYear()" (ngModelChange)="mwbTargetYear.set(+$event)"
-                        class="w-16 h-full text-[0.6875rem] font-bold bg-transparent outline-none pl-1 pr-3 text-slate-700 dark:text-slate-200 text-center" min="2020" max="2100">
-               </div>
-
                <button *ngIf="hasEditPermission()" (click)="fileInput.click()" [disabled]="mwbConfirming()"
                        class="plt-btn-primary h-9 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[0.6875rem] font-bold rounded-lg shadow-sm flex items-center gap-2 shrink-0">
                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                 <span>Subir PDF</span>
+                 <span>Subir archivo</span>
                </button>
                <button *ngIf="hasEditPermission()" (click)="mwbJsonInputOpen.set(!mwbJsonInputOpen())"
                        class="plt-btn-secondary h-9 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-500 border border-slate-200 dark:border-slate-600 text-[0.6875rem] font-bold rounded-lg flex items-center gap-2 shrink-0">
@@ -384,7 +373,7 @@ import {
              </div>
            } @else if (!atalayaTemasLoading()) {
              <p class="text-[0.6875rem] text-slate-400 dark:text-slate-500 text-center py-3">
-               Ningún mes tiene tema cargado todavía. Sube el PDF de La Atalaya arriba para agregarlos.
+               Ningún mes tiene tema cargado todavía. Sube el archivo de La Atalaya (.jwpub o PDF) arriba para agregarlos.
              </p>
            }
          </div>
@@ -471,7 +460,7 @@ import {
                    </h3>
                    <p class="text-[0.625rem] font-medium mt-0.5"
                       [class]="plantillaEditing() ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'">
-                     {{ plantillaEditing() ? 'Los cambios afectarán solo a las generaciones futuras.' : 'Verifique y confirme la estructura propuesta por la IA.' }}
+                     {{ plantillaEditing() ? 'Los cambios afectarán solo a las generaciones futuras.' : (mwbPreview()?.origen === 'jwpub' ? 'Leído del archivo oficial. Las fechas ya vienen puestas: revise y confirme.' : 'Verifique y confirme la estructura propuesta por la IA.') }}
                    </p>
                  </div>
                  <div class="flex items-center gap-2 shrink-0 ml-3">
@@ -502,6 +491,27 @@ import {
                    }
                  </div>
                </div>
+
+               @if (mwbPreview() && mwbPreview()?.origen !== 'jwpub') {
+                 <div class="flex items-center gap-2 flex-wrap px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                   <!-- Mes / año de referencia: solo cuando la guía no trae las fechas (PDF o JSON) -->
+               <div class="flex items-center gap-0 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 h-9 overflow-hidden shrink-0">
+                 <span class="pl-3 pr-2 text-[9px] uppercase tracking-wider font-black text-slate-400 dark:text-slate-500 border-r border-slate-200 dark:border-slate-700 h-full flex items-center shrink-0">Mes</span>
+                 <select [ngModel]="mwbTargetMonth()" (ngModelChange)="setMwbTarget('mes', +$event)" class="h-full text-[0.6875rem] font-bold bg-transparent outline-none px-2 text-slate-700 dark:text-slate-200 cursor-pointer">
+                   <option [value]="1">Enero</option><option [value]="2">Febrero</option><option [value]="3">Marzo</option>
+                   <option [value]="4">Abril</option><option [value]="5">Mayo</option><option [value]="6">Junio</option>
+                   <option [value]="7">Julio</option><option [value]="8">Agosto</option><option [value]="9">Septiembre</option>
+                   <option [value]="10">Octubre</option><option [value]="11">Noviembre</option><option [value]="12">Diciembre</option>
+                 </select>
+                 <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1 shrink-0"></span>
+                 <input type="number" [ngModel]="mwbTargetYear()" (ngModelChange)="setMwbTarget('ano', +$event)"
+                        class="w-16 h-full text-[0.6875rem] font-bold bg-transparent outline-none pl-1 pr-3 text-slate-700 dark:text-slate-200 text-center" min="2020" max="2100">
+               </div>
+                   <p class="text-[0.625rem] font-medium text-slate-500 dark:text-slate-400 flex-1 min-w-[180px]">
+                     Este archivo no trae las fechas. Elige el año (y el mes si el título de la semana no lo dice) y se recalculan; luego puedes ajustar cada una.
+                   </p>
+                 </div>
+               }
 
                <div class="overflow-y-auto min-h-0 space-y-3 p-4 simple-scrollbar">
                  <!-- MWB PREVIEW Mode -->
@@ -540,6 +550,9 @@ import {
                                      <input [(ngModel)]="parte.nombre_parte" class="text-[0.6875rem] font-bold text-slate-800 dark:text-slate-200 bg-transparent border-none outline-none focus:ring-1 focus:ring-[#6D28D9]/40 rounded px-1 w-full">
                                      @if (parte.fuente_informacion) {
                                        <div class="text-[9px] text-slate-400 dark:text-slate-500 italic px-1 truncate">{{ parte.fuente_informacion }}</div>
+                                     }
+                                     @if (parte.descripcion) {
+                                       <p class="text-[0.625rem] leading-snug text-slate-500 dark:text-slate-400 whitespace-pre-line px-1">{{ parte.descripcion }}</p>
                                      }
                                      <div class="flex items-center gap-1.5 px-1">
                                        <button (click)="parte.aplica_sala_b = !parte.aplica_sala_b"
@@ -610,6 +623,9 @@ import {
                                      @if (parte.fuente_informacion) {
                                        <div class="text-[9px] text-slate-400 dark:text-slate-500 italic px-1 truncate">{{ parte.fuente_informacion }}</div>
                                      }
+                                     @if (parte.descripcion) {
+                                       <p class="text-[0.625rem] leading-snug text-slate-500 dark:text-slate-400 whitespace-pre-line px-1">{{ parte.descripcion }}</p>
+                                     }
                                      <div class="flex items-center gap-1.5 px-1">
                                        <button (click)="parte.aplica_sala_b = !parte.aplica_sala_b"
                                                class="plt-tag-toggle px-2 py-1 rounded-md text-[8px] font-black uppercase leading-none"
@@ -653,7 +669,7 @@ import {
                      </button>
                      @if (plantillaTipoActivo() === 'fin_semana') {
                        <p class="text-[0.625rem] text-slate-400 dark:text-slate-500 text-center px-2 -mt-1">
-                         El tema semanal de La Atalaya (título, cántico) se agrega solo, importando el PDF arriba — esto es solo para el resto de la reunión.
+                         El tema semanal de La Atalaya (título, cántico) se agrega solo, importando el archivo arriba — esto es solo para el resto de la reunión.
                        </p>
                      }
                    }
@@ -1636,7 +1652,7 @@ import {
             <div class="text-center flex flex-col gap-2 w-full">
               <p class="text-[0.6875rem] font-black uppercase tracking-widest text-[#6D28D9] dark:text-purple-400">Motor IA activo</p>
               <p class="text-sm font-bold text-slate-800 dark:text-white leading-snug min-h-[2.5rem] flex items-center justify-center text-center px-2">
-                {{ mwbProgressMessage() || 'Analizando documento PDF...' }}
+                {{ mwbProgressMessage() || 'Leyendo el archivo...' }}
               </p>
               <p class="text-[0.625rem] text-slate-400 dark:text-slate-500">Este proceso puede tardar unos momentos</p>
             </div>
@@ -2588,7 +2604,9 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
     this.mwbLoading.set(true);
     this.mwbProgress.set(0);
-    this.mwbProgressMessage.set('Subiendo PDF...');
+    this.mwbProgressMessage.set(
+      file.name.toLowerCase().endsWith('.jwpub') ? 'Leyendo el archivo...' : 'Subiendo PDF...'
+    );
 
     try {
       const formData = new FormData();
@@ -2650,7 +2668,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       }
     } catch (err: any) {
       console.error(err);
-      this.showToast('error', err?.message || 'Error al analizar PDF');
+      this.showToast('error', err?.message || 'No se pudo leer el archivo');
     } finally {
       this.mwbLoading.set(false);
       this.mwbProgress.set(0);
@@ -2696,6 +2714,15 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     let lastValidDate: Date | null = null;
     
     for (let i = 0; i < semanas.length; i++) {
+        // El .jwpub trae el lunes exacto: no hace falta deducirlo del título.
+        const exacta = semanas[i].fecha_lunes;
+        if (exacta && /^\d{4}-\d{2}-\d{2}$/.test(exacta)) {
+            map.set(i, exacta);
+            lastValidDate = new Date(exacta + 'T00:00:00');
+            year = lastValidDate.getFullYear();
+            continue;
+        }
+
         const title = (semanas[i].titulo_semana || '').toUpperCase();
         
         let foundDay: number | null = null;
@@ -2748,6 +2775,13 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     }
     
     return map;
+  }
+
+  /** Cambia el mes o el año de referencia y recalcula las fechas de la vista previa. */
+  setMwbTarget(campo: 'mes' | 'ano', valor: number) {
+    (campo === 'mes' ? this.mwbTargetMonth : this.mwbTargetYear).set(valor);
+    const preview = this.mwbPreview();
+    if (preview) this.mwbDates.set(this.prefillDates(preview.semanas));
   }
 
   updateMwbDate(index: number, dateStr: string) {

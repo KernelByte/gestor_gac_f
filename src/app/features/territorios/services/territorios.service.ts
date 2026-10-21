@@ -1,3 +1,4 @@
+import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -19,6 +20,10 @@ import {
   ResumenTerritorio,
   RegistroS13,
   CicloTerritorio,
+  Sector,
+  SectoresRespuesta,
+  TarjetaSugerida,
+  UnidadCongregacion,
 } from '../models/territorio.model';
 
 /** Publicador tal como lo necesitan los selectores de capitán y asignación. */
@@ -29,7 +34,50 @@ export interface PublicadorOpcion extends ConNombre {
 @Injectable({ providedIn: 'root' })
 export class TerritoriosService {
   private http = inject(HttpClient);
+  private ctx = inject(CongregacionContextService);
   private baseUrl = `${environment.apiUrl}/territorios`;
+  private sectoresUrl = `${environment.apiUrl}/territorio-sectores`;
+  private congregacionUrl = `${environment.apiUrl}/territorio-congregacion`;
+
+  /** La congregación de los listados. Para el Administrador es la del selector;
+   *  para los demás el backend usa siempre la suya. */
+  private conCongregacion(params = new HttpParams()): HttpParams {
+    const cong = this.ctx.effectiveCongregacionId();
+    return cong ? params.set('id_congregacion', String(cong)) : params;
+  }
+
+  // ── Sectores y territorio de la congregación ─────────────────────────
+  getSectores(): Observable<SectoresRespuesta> {
+    return this.http.get<SectoresRespuesta>(this.sectoresUrl, { params: this.conCongregacion() });
+  }
+  crearSector(data: Partial<Sector>): Observable<Sector> {
+    return this.http.post<Sector>(this.sectoresUrl, data, { params: this.conCongregacion() });
+  }
+  actualizarSector(id: number, data: Partial<Sector>): Observable<Sector> {
+    return this.http.put<Sector>(`${this.sectoresUrl}/${id}`, data);
+  }
+  borrarSector(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.sectoresUrl}/${id}`);
+  }
+  sugerirTarjetas(id: number): Observable<TarjetaSugerida[]> {
+    return this.http.get<TarjetaSugerida[]>(`${this.sectoresUrl}/${id}/sugerir-tarjetas`);
+  }
+  asignarTarjetas(id: number, ids: number[]): Observable<Sector> {
+    return this.http.put<Sector>(`${this.sectoresUrl}/${id}/tarjetas`, { ids });
+  }
+  getCongregacionLimite(): Observable<UnidadCongregacion[]> {
+    return this.http.get<UnidadCongregacion[]>(this.congregacionUrl, { params: this.conCongregacion() });
+  }
+  importarKml(archivo: File, guardar: boolean): Observable<{ unidades: UnidadCongregacion[] }> {
+    const fd = new FormData();
+    fd.append('archivo', archivo);
+    return this.http.post<{ unidades: UnidadCongregacion[] }>(
+      `${this.congregacionUrl}/importar-kml`, fd,
+      { params: this.conCongregacion(new HttpParams().set('guardar', String(guardar))) });
+  }
+  actualizarCongregacionLimite(id: number, data: Partial<UnidadCongregacion>): Observable<UnidadCongregacion> {
+    return this.http.put<UnidadCongregacion>(`${this.congregacionUrl}/${id}`, data);
+  }
 
   // ── Territorios ──────────────────────────────────────────────────────
   getTerritorios(skip = 0, limit = 100, incluirInactivos = false): Observable<Territorio[]> {
@@ -37,7 +85,7 @@ export class TerritoriosService {
       .set('skip', skip.toString())
       .set('limit', limit.toString())
       .set('incluir_inactivos', String(incluirInactivos));
-    return this.http.get<Territorio[]>(this.baseUrl, { params });
+    return this.http.get<Territorio[]>(this.baseUrl, { params: this.conCongregacion(params) });
   }
 
   getTerritorio(id: number): Observable<Territorio> {
@@ -45,7 +93,12 @@ export class TerritoriosService {
   }
 
   getTerritoriosGeoJSON(): Observable<GeoJSONFeatureCollection> {
-    return this.http.get<GeoJSONFeatureCollection>(`${this.baseUrl}/geojson`);
+    return this.http.get<GeoJSONFeatureCollection>(`${this.baseUrl}/geojson`, { params: this.conCongregacion() });
+  }
+
+  /** Centro del salón de la congregación, para abrir el editor donde se va a dibujar. */
+  getMapaContexto(): Observable<{ centro: { lat: number; lng: number } | null }> {
+    return this.http.get<{ centro: { lat: number; lng: number } | null }>(`${this.baseUrl}/mapa-contexto`, { params: this.conCongregacion() });
   }
 
   getTerritorioGeoJSON(id: number): Observable<GeoJSONFeature> {
@@ -57,7 +110,7 @@ export class TerritoriosService {
   }
 
   createTerritorio(data: Partial<Territorio>): Observable<Territorio> {
-    return this.http.post<Territorio>(this.baseUrl, data);
+    return this.http.post<Territorio>(this.baseUrl, data, { params: this.conCongregacion() });
   }
 
   updateTerritorio(id: number, data: Partial<Territorio>): Observable<Territorio> {
@@ -89,6 +142,15 @@ export class TerritoriosService {
 
   deleteManzana(idTerritorio: number, idManzana: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${idTerritorio}/manzanas/${idManzana}`);
+  }
+
+  /** Manzanas propuestas a partir de las calles del mapa (no guarda nada). */
+  proponerManzanas(idTerritorio: number, calles: any): Observable<GeoJSONFeatureCollection> {
+    return this.http.post<GeoJSONFeatureCollection>(`${this.baseUrl}/${idTerritorio}/manzanas/proponer`, { calles });
+  }
+
+  createManzanasLote(idTerritorio: number, manzanas: { numero_manzana: string; coordenada: any }[]): Observable<Manzana[]> {
+    return this.http.post<Manzana[]>(`${this.baseUrl}/${idTerritorio}/manzanas/lote`, { manzanas });
   }
 
   // ── Viviendas ────────────────────────────────────────────────────────
@@ -229,13 +291,19 @@ export class TerritoriosService {
 
   // ── Ciclos, resumen y registro S-13 ────────────────────────────────────
   getResumen(): Observable<ResumenTerritorio[]> {
-    return this.http.get<ResumenTerritorio[]>(`${this.baseUrl}/resumen`);
+    return this.http.get<ResumenTerritorio[]>(`${this.baseUrl}/resumen`, { params: this.conCongregacion() });
   }
 
   getRegistroS13(anioServicio?: number): Observable<RegistroS13> {
     let params = new HttpParams();
     if (anioServicio) params = params.set('anio_servicio', String(anioServicio));
-    return this.http.get<RegistroS13>(`${this.baseUrl}/registro-s13`, { params });
+    return this.http.get<RegistroS13>(`${this.baseUrl}/registro-s13`, { params: this.conCongregacion(params) });
+  }
+
+  /** El mismo registro en el formulario oficial S-13-S (PDF A4). */
+  getRegistroS13Pdf(anioServicio: number): Observable<Blob> {
+    const params = new HttpParams().set('anio_servicio', String(anioServicio));
+    return this.http.get(`${this.baseUrl}/registro-s13/pdf`, { params: this.conCongregacion(params), responseType: 'blob' });
   }
 
   completarCiclo(idTerritorio: number): Observable<CicloTerritorio> {

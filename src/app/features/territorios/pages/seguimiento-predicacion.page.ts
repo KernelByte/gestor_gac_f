@@ -10,11 +10,13 @@ import {
   Punto,
   SalidaPredicacion,
   ProgresoTerritorio,
+  ResumenTerritorio,
   ViviendaDeTerritorio,
   textoDiasSinTrabajar,
   textoDireccion,
 } from '../models/territorio.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 
 interface EstadoManzana {
   nombre_capitan: string;
@@ -24,462 +26,421 @@ interface EstadoManzana {
 @Component({
   selector: 'app-seguimiento-predicacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent, SelectPickerComponent],
   template: `
-    <div class="flex flex-col h-full overflow-hidden">
+    <div class="flex flex-col h-full min-h-0">
 
       <app-page-header
         title="Seguimiento de Predicación"
-        subtitle="Registra y monitorea las salidas por territorio" />
+        subtitle="Elige un territorio para ver qué manzanas faltan y registrar las salidas del grupo"
+        spacing="none" />
 
-      <!-- ── Split panel ── -->
-      <div class="flex flex-1 overflow-hidden">
+      <!-- Lista + detalle. En pantallas medianas y grandes van lado a lado;
+           en el teléfono se alternan (la lista se oculta al elegir territorio). -->
+      <div class="mt-5 flex flex-1 min-h-0 rounded-2xl border border-gray-200/80 dark:border-gray-700/60 bg-white dark:bg-gray-800 overflow-hidden">
 
-        <!-- ── Panel izquierdo: lista de territorios ── -->
-        <div class="w-80 shrink-0 flex flex-col border-r border-gray-100 dark:border-gray-700/50 bg-white dark:bg-gray-800 overflow-hidden">
+        <!-- ── Lista de territorios ── -->
+        <aside class="w-full md:w-64 2xl:w-80 shrink-0 flex-col border-r border-gray-100 dark:border-gray-700/60 min-h-0"
+          [class]="territorioSeleccionado() ? 'hidden md:flex' : 'flex'"
+          aria-label="Territorios">
 
-          <!-- Fix #1: buscador reactivo con signal -->
-          <div class="p-4 border-b border-gray-100 dark:border-gray-700/50 shrink-0">
+          <div class="p-3 border-b border-gray-100 dark:border-gray-700/60 shrink-0">
             <div class="relative">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
-              <!-- Fix #3 (accesibilidad): aria-label en input -->
               <input
-                type="text"
+                type="search"
                 [ngModel]="searchQuery()"
                 (ngModelChange)="searchQuery.set($event)"
-                placeholder="Buscar territorio..."
+                placeholder="Buscar territorio"
                 aria-label="Buscar territorio"
-                class="w-full pl-10 pr-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                class="w-full pl-9 pr-3 h-10 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
               />
             </div>
           </div>
 
-          <!-- Lista de territorios -->
-          <div class="flex-1 overflow-y-auto">
+          <div class="flex-1 min-h-0 overflow-y-auto">
             @if (loading()) {
-              <div class="p-4 space-y-2">
-                @for (i of [1,2,3,4,5]; track i) {
-                  <div class="h-16 bg-gray-100 dark:bg-gray-700/50 rounded-xl animate-pulse"></div>
+              <div class="p-2 space-y-1">
+                @for (i of [1,2,3,4,5,6]; track i) {
+                  <div class="h-14 bg-gray-100 dark:bg-gray-700/50 rounded-xl animate-pulse"></div>
                 }
               </div>
             } @else if (territoriosFiltrados().length === 0) {
-              <!-- Fix #5: text-xs mínimo para "Sin resultados" -->
-              <div class="flex flex-col items-center justify-center py-12 gap-2 text-center px-4">
-                <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                  <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                  </svg>
-                </div>
-                <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">Sin resultados</p>
-                <p class="text-xs text-gray-400">Prueba con otro nombre o código</p>
+              <div class="py-12 px-4 text-center">
+                <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">Ningún territorio coincide</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Prueba con otro nombre o código</p>
               </div>
             } @else {
-              <div class="p-2 space-y-1">
+              <ul class="p-2 space-y-0.5">
                 @for (t of territoriosFiltrados(); track t.id_territorio) {
-                  <button
-                    (click)="seleccionarTerritorio(t)"
-                    class="w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all border"
-                    [class]="territorioSeleccionado()?.id_territorio === t.id_territorio
-                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-700/40 border-transparent'"
-                  >
-                    <!-- Badge código -->
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-xs"
-                      [class]="territorioSeleccionado()?.id_territorio === t.id_territorio
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'">
-                      {{ t.codigo }}
-                    </div>
-                    <div class="min-w-0 flex-1">
-                      <p class="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate leading-tight">
-                        {{ t.nombre }}
-                      </p>
-                      <!-- Fix #5: dot de estado con text-xs mínimo -->
-                      <p class="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
-                        <span class="inline-block w-1.5 h-1.5 rounded-full shrink-0"
-                          [class]="t.estado_territorio === 'Disponible' ? 'bg-green-400'
-                                 : t.estado_territorio === 'Asignado'   ? 'bg-sky-400'
-                                 : 'bg-gray-300'"></span>
-                        {{ t.estado_territorio }}
-                      </p>
-                    </div>
-                    @if (territorioSeleccionado()?.id_territorio === t.id_territorio) {
-                      <svg class="w-4 h-4 text-green-500 shrink-0" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                    }
-                  </button>
+                  @let activo = territorioSeleccionado()?.id_territorio === t.id_territorio;
+                  @let r = resumen().get(t.id_territorio);
+                  <li>
+                    <button type="button"
+                      (click)="seleccionarTerritorio(t)"
+                      [attr.aria-current]="activo ? 'true' : null"
+                      class="w-full text-left flex items-center gap-3 px-2.5 py-2 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                      [class]="activo
+                        ? 'bg-green-50 dark:bg-green-900/25'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-700/40'">
+                      <span class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs tabular-nums"
+                        [class]="activo
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
+                        {{ t.codigo }}
+                      </span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-semibold truncate leading-snug"
+                          [class]="activo ? 'text-green-900 dark:text-green-100' : 'text-gray-800 dark:text-gray-100'">
+                          {{ t.nombre }}
+                        </span>
+                        <span class="block text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                          @if (r?.ultima_salida) {
+                            Última salida {{ textoDias(r!.dias_sin_trabajar) }}
+                          } @else {
+                            Sin salidas aún
+                          }
+                        </span>
+                      </span>
+                      @if (r && r.en_curso) {
+                        <span class="shrink-0 text-xs font-bold tabular-nums"
+                          [class]="activo ? 'text-green-700 dark:text-green-300' : 'text-gray-500 dark:text-gray-400'"
+                          [attr.aria-label]="(r.porcentaje | number:'1.0-0') + '% de la vuelta'">
+                          {{ r.porcentaje | number:'1.0-0' }}%
+                        </span>
+                      }
+                    </button>
+                  </li>
                 }
-              </div>
+              </ul>
             }
           </div>
 
-          <!-- Pie: conteo de territorios (Fix #7 — dato contextual) -->
           @if (!loading()) {
-            <div class="px-4 py-2.5 border-t border-gray-100 dark:border-gray-700/50 shrink-0">
-              <p class="text-xs text-gray-400">
-                {{ territoriosFiltrados().length }}
-                {{ territoriosFiltrados().length === 1 ? 'territorio' : 'territorios' }}
-              </p>
-            </div>
+            <p class="px-4 py-2.5 border-t border-gray-100 dark:border-gray-700/60 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+              {{ territoriosFiltrados().length }}
+              {{ territoriosFiltrados().length === 1 ? 'territorio' : 'territorios' }}
+            </p>
           }
-        </div>
+        </aside>
 
-        <!-- ── Panel derecho: detalle ── -->
+        <!-- ── Detalle ── -->
         @if (!territorioSeleccionado()) {
-          <!-- Fix #6: gray en lugar de slate; Fix #5: text-sm -->
-          <div class="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
-            <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center">
-              <svg class="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M9 11l3 3L22 4"/>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              </svg>
-            </div>
-            <div class="text-center">
-              <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">Selecciona un territorio</p>
-              <p class="text-xs text-gray-400 mt-0.5">para ver el seguimiento de predicación</p>
+          <div class="hidden md:flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center bg-gray-50/70 dark:bg-gray-900/30">
+            <svg class="w-12 h-12 text-gray-300 dark:text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14"/><path d="M15 6v14"/>
+            </svg>
+            <div>
+              <p class="text-base font-semibold text-gray-700 dark:text-gray-200">Elige un territorio de la lista</p>
+              <ol class="mt-3 space-y-1.5 text-sm text-gray-500 dark:text-gray-400 text-left inline-block">
+                <li><span class="font-semibold text-gray-700 dark:text-gray-300">1.</span> Registra la salida con su fecha y capitán.</li>
+                <li><span class="font-semibold text-gray-700 dark:text-gray-300">2.</span> Marca las manzanas que se predicaron ese día.</li>
+                <li><span class="font-semibold text-gray-700 dark:text-gray-300">3.</span> Cuando no falte ninguna, la vuelta queda completa.</li>
+              </ol>
             </div>
           </div>
         } @else {
-          <div class="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900/30">
+          @let t = territorioSeleccionado()!;
+          @let p = progreso();
+          <section class="flex-1 min-w-0 flex flex-col min-h-0 bg-gray-50/70 dark:bg-gray-900/30" [attr.aria-label]="'Territorio ' + t.codigo">
 
-            <!-- Header territorio -->
-            <div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700/50 p-5 shrink-0">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <!-- Fix #5: label mínimo 10px; Fix #6: green en lugar de emerald -->
-                  <p class="text-[10px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-[0.15em] mb-0.5">
-                    Territorio
-                  </p>
-                  <!-- Fix #5: font-bold en lugar de font-black -->
-                  <h2 class="font-display text-xl font-bold text-gray-900 dark:text-white">
-                    {{ territorioSeleccionado()!.codigo }} — {{ territorioSeleccionado()!.nombre }}
-                  </h2>
-                </div>
-                @if (progreso()) {
-                  <div class="shrink-0 text-right">
-                    <p class="text-2xl font-bold text-green-600 dark:text-green-400 leading-none">
-                      {{ progreso()!.porcentaje }}%
-                    </p>
-                    <p class="text-xs text-gray-400 mt-0.5">
-                      {{ progreso()!.manzanas_predicadas }}/{{ progreso()!.total_manzanas }} manzanas
-                    </p>
-                  </div>
-                } @else if (progresoLoading()) {
-                  <div class="w-16 h-10 bg-gray-100 dark:bg-gray-700 rounded-xl animate-pulse shrink-0"></div>
-                }
-              </div>
-              @if (progreso()?.ciclo; as ciclo) {
-                <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    @if (ciclo.completado) {
-                      <span class="font-semibold text-green-600 dark:text-green-400">Vuelta completada el {{ ciclo.fecha_fin | date:'d MMM yyyy':'':'es' }}.</span>
-                      La próxima salida empieza una vuelta nueva.
+            <!-- Cabecera: quién es, cómo va y la acción principal -->
+            <header class="shrink-0 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700/60 px-4 md:px-6 py-4">
+              <button type="button" (click)="volverALista()"
+                class="md:hidden -ml-1 mb-2 inline-flex items-center gap-1 text-sm font-semibold text-green-700 dark:text-green-400 min-h-[44px]">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                Territorios
+              </button>
+
+              <div class="flex flex-wrap items-start gap-x-6 gap-y-3">
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold text-green-700 dark:text-green-400 tabular-nums">Territorio {{ t.codigo }}</p>
+                  <h2 class="font-display text-xl md:text-2xl font-bold text-gray-900 dark:text-white leading-tight md:truncate">{{ t.nombre }}</h2>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    @if (p?.ciclo; as ciclo) {
+                      @if (ciclo.completado) {
+                        <span class="font-semibold text-green-700 dark:text-green-400">Vuelta completada el {{ ciclo.fecha_fin | date:'d MMM yyyy':'':'es' }}.</span>
+                        La próxima salida empieza una vuelta nueva.
+                      } @else {
+                        Vuelta en curso desde el {{ ciclo.fecha_inicio | date:'d MMM yyyy':'':'es' }}
+                      }
                     } @else {
-                      Vuelta en curso desde el {{ ciclo.fecha_inicio | date:'d MMM yyyy':'':'es' }}.
+                      {{ t.estado_territorio }}
                     }
                   </p>
-                  @if (!ciclo.completado && progreso()!.total_manzanas === 0) {
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0 basis-full sm:basis-auto [&>button]:flex-1 sm:[&>button]:flex-none [&>button]:justify-center">
+                  @if (p?.ciclo && !p!.ciclo!.completado && p!.total_manzanas === 0) {
                     <button type="button" (click)="completarVuelta()" [disabled]="completandoCiclo()"
-                      class="text-xs font-semibold px-3 py-1.5 border border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors min-h-[32px] disabled:opacity-50">
-                      Marcar vuelta como completada
+                      class="h-10 px-3.5 text-sm font-semibold border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors disabled:opacity-50">
+                      Marcar vuelta completada
                     </button>
                   }
+                  <button type="button" (click)="openNuevaSalidaModal()"
+                    class="h-10 px-4 text-sm font-semibold bg-green-600 hover:bg-green-700 active:scale-[0.97] text-white rounded-xl transition flex items-center gap-1.5 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-500">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Registrar salida
+                  </button>
                 </div>
-              }
-              @if (progreso() && progreso()!.total_manzanas > 0) {
-                <div class="mt-3 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div class="h-full bg-green-500 rounded-full transition-all duration-700"
-                    [style.width.%]="progreso()!.porcentaje"></div>
-                </div>
-              }
-            </div>
+              </div>
 
-            <!-- Contenido scrollable -->
-            <div class="flex-1 overflow-y-auto p-5 space-y-6">
+              <!-- Progreso de la vuelta -->
+              @if (p && p.total_manzanas > 0) {
+                <div class="mt-4 flex items-center gap-4">
+                  <div class="flex-1 h-2.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden"
+                    role="progressbar" [attr.aria-valuenow]="p.porcentaje" aria-valuemin="0" aria-valuemax="100"
+                    aria-label="Avance de la vuelta">
+                    <div class="h-full bg-green-500 rounded-full transition-[width] duration-700 ease-out" [style.width.%]="p.porcentaje"></div>
+                  </div>
+                  <p class="shrink-0 text-sm text-gray-600 dark:text-gray-300 tabular-nums">
+                    <span class="font-bold text-gray-900 dark:text-white">{{ p.manzanas_predicadas }}</span>
+                    de {{ p.total_manzanas }} manzanas
+                    <span class="ml-1.5 font-bold text-green-700 dark:text-green-400">{{ p.porcentaje | number:'1.0-0' }}%</span>
+                  </p>
+                </div>
+              } @else if (progresoLoading()) {
+                <div class="mt-4 h-2.5 bg-gray-100 dark:bg-gray-700 rounded-full animate-pulse"></div>
+              }
+            </header>
+
+            <!-- Cuerpo: en escritorio dos columnas con scroll propio; la página no se desplaza -->
+            <div class="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden p-4 md:p-5 flex flex-col gap-4">
 
               @if (noVisitar().length > 0) {
-                <div class="rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/15 p-4" role="alert">
-                  <p class="text-sm font-bold text-red-800 dark:text-red-300">
-                    {{ noVisitar().length === 1 ? 'Hay 1 dirección que no se debe visitar en este territorio' : 'Hay ' + noVisitar().length + ' direcciones que no se deben visitar en este territorio' }}
-                  </p>
-                  <ul class="mt-2 space-y-1">
+                <details class="shrink-0 group rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/15" role="alert">
+                  <summary class="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer list-none text-sm font-semibold text-red-800 dark:text-red-300 select-none">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/>
+                    </svg>
+                    <span class="flex-1">
+                      {{ noVisitar().length === 1 ? '1 dirección no se debe visitar' : noVisitar().length + ' direcciones no se deben visitar' }}
+                    </span>
+                    <span class="text-xs font-semibold underline underline-offset-2 group-open:hidden">Ver cuáles</span>
+                    <span class="text-xs font-semibold underline underline-offset-2 hidden group-open:inline">Ocultar</span>
+                  </summary>
+                  <ul class="px-4 pb-3 space-y-1 max-h-32 overflow-y-auto">
                     @for (v of noVisitar(); track v.id_vivienda) {
-                      <li class="text-xs text-red-900 dark:text-red-200">
+                      <li class="text-sm text-red-900 dark:text-red-200">
                         <span class="font-semibold">Manzana {{ v.numero_manzana || v.id_manzana }}:</span>
                         {{ textoDir(v) }}@if (v.motivo_no_visitar) { · {{ v.motivo_no_visitar }} }
                       </li>
                     }
                   </ul>
-                </div>
+                </details>
               }
 
-              <!-- ── Vista tracking activo ── -->
-              @if (salidaActiva()) {
-                <!-- Fix #6: green en lugar de emerald; Fix #5: tamaños mínimos -->
-                <div class="bg-green-50 dark:bg-green-900/15 rounded-2xl border border-green-200 dark:border-green-800/40 p-4">
-                  <div class="flex items-start justify-between gap-2">
-                    <div>
-                      <p class="text-[10px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-[0.15em] mb-0.5">
-                        Registrando salida
-                      </p>
-                      <p class="text-base font-semibold text-gray-800 dark:text-white">
-                        {{ salidaActiva()!.fecha_salida | date:'EEEE d MMM':'':'es' }}
-                      </p>
-                      @if (salidaActiva()!.nombre_capitan) {
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
-                          <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                          </svg>
-                          {{ salidaActiva()!.nombre_capitan }}
+              <div class="grid gap-4 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_17rem] 2xl:grid-cols-[minmax(0,1fr)_22rem]">
+
+                <!-- ── Manzanas ── -->
+                <section class="flex flex-col lg:min-h-0 rounded-2xl border bg-white dark:bg-gray-800 transition-colors"
+                  [class]="salidaActiva()
+                    ? 'border-green-300 dark:border-green-700 ring-4 ring-green-500/10'
+                    : 'border-gray-200/80 dark:border-gray-700/60'"
+                  aria-labelledby="titulo-manzanas">
+
+                  @if (salidaActiva(); as sa) {
+                    <!-- Modo marcar: el panel se convierte en la herramienta de registro -->
+                    <div class="shrink-0 flex flex-wrap items-center gap-3 px-4 py-3 border-b border-green-100 dark:border-green-900/40 bg-green-50/70 dark:bg-green-900/20 rounded-t-2xl">
+                      <div class="min-w-0 flex-1">
+                        <h3 id="titulo-manzanas" class="text-sm font-bold text-gray-900 dark:text-white">
+                          Salida del {{ sa.fecha_salida | date:'EEEE d MMM':'':'es' }}
+                        </h3>
+                        <p class="text-xs text-gray-600 dark:text-gray-300 mt-0.5">
+                          Toca las manzanas que se predicaron ese día.
                         </p>
-                      }
-                    </div>
-                    <button (click)="closeSalidaTracking()"
-                      class="shrink-0 text-xs font-semibold px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/40 transition-colors flex items-center gap-1">
-                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="15 18 9 12 15 6"/>
-                      </svg>
-                      Volver
-                    </button>
-                  </div>
-                  <div class="mt-3 flex items-center gap-2">
-                    <div class="flex-1 h-1.5 bg-green-100 dark:bg-green-900/50 rounded-full overflow-hidden">
-                      @let pctSalida = manzanas().length > 0
-                        ? (manzanasSalidaActiva().length / manzanas().length * 100)
-                        : 0;
-                      <div class="h-full bg-green-500 rounded-full transition-all" [style.width.%]="pctSalida"></div>
-                    </div>
-                    <span class="text-xs font-bold text-green-600 dark:text-green-400 whitespace-nowrap tabular-nums">
-                      {{ manzanasSalidaActiva().length }}/{{ manzanas().length }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Fix #5: instrucción de manzana en text-xs -->
-                <p class="text-xs text-gray-400 text-center">
-                  Toca una manzana para marcarla como predicada en esta salida
-                </p>
-
-                @if (manzanas().length === 0) {
-                  <div class="text-center py-6 text-gray-400 text-sm">
-                    <p>No hay manzanas registradas en este territorio</p>
-                  </div>
-                } @else {
-                  <div class="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
-                    @for (m of manzanas(); track m.id_manzana) {
-                      @let isPredicada = manzanasSalidaActiva().includes(m.id_manzana);
-                      @let toggling = manzanaSalidaToggling() === m.id_manzana;
-                      <button (click)="toggleManzanaEnSalida(m.id_manzana)"
-                        [disabled]="toggling"
-                        class="flex flex-col items-center justify-center aspect-square rounded-xl border-2 transition-all font-bold text-sm disabled:opacity-50"
-                        [class]="isPredicada
-                          ? 'bg-green-500 border-green-600 text-white shadow-md shadow-green-200 dark:shadow-green-900/40'
-                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-green-400 dark:hover:border-green-600 hover:text-green-600 dark:hover:text-green-400 hover:shadow-sm'">
-                        @if (toggling) {
-                          <div class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                        } @else {
-                          <span class="text-sm leading-none">{{ m.numero_manzana || m.id_manzana }}</span>
-                          @if (isPredicada) {
-                            <svg class="w-3.5 h-3.5 mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                              <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                          }
-                        }
+                      </div>
+                      <span class="text-sm font-bold text-green-700 dark:text-green-300 tabular-nums whitespace-nowrap">
+                        {{ manzanasSalidaActiva().length }} {{ manzanasSalidaActiva().length === 1 ? 'marcada' : 'marcadas' }}
+                      </span>
+                      <button type="button" (click)="closeSalidaTracking()"
+                        class="h-9 px-4 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                        Listo
                       </button>
-                    }
-                  </div>
-                }
-
-              } @else {
-
-                <!-- ── Estado actual por manzana ── -->
-                <div>
-                  <div class="flex items-center justify-between mb-3">
-                    <!-- Fix #5: text-xs mínimo para label de sección -->
-                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Estado por Manzana</h3>
-                    @if (estadoLoading()) {
-                      <span class="text-xs text-gray-400">Calculando...</span>
-                    }
-                  </div>
-
-                  @if (manzanas().length === 0 && !manzanasLoading()) {
-                    <div class="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-6 text-center text-gray-400">
-                      <p class="text-sm font-semibold">Sin manzanas registradas</p>
-                      <p class="text-xs mt-1">Ve a Territorios → Manzanas para agregar manzanas a este territorio</p>
-                    </div>
-                  } @else if (manzanasLoading()) {
-                    <div class="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-                      @for (i of [1,2,3,4,5,6]; track i) {
-                        <div class="aspect-square bg-gray-100 dark:bg-gray-700/50 rounded-xl animate-pulse"></div>
-                      }
                     </div>
                   } @else {
-                    <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      @for (m of manzanas(); track m.id_manzana) {
-                        @let estado = estadoManzanas().get(m.id_manzana);
-                        <div class="rounded-2xl border-2 p-3 flex flex-col items-center gap-1.5 text-center transition-all"
-                          [class]="estado
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40'
-                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'">
-                          <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0"
+                    <div class="shrink-0 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 border-b border-gray-100 dark:border-gray-700/60">
+                      <h3 id="titulo-manzanas" class="text-sm font-bold text-gray-900 dark:text-white">
+                        Manzanas
+                      </h3>
+                      @if (manzanas().length > 0) {
+                        <div class="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-300">
+                          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-green-500" aria-hidden="true"></span>Predicada</span>
+                          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded border-2 border-gray-300 dark:border-gray-500" aria-hidden="true"></span>Falta</span>
+                          @if (estadoLoading()) { <span class="text-gray-400">Actualizando…</span> }
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <div class="lg:flex-1 lg:min-h-0 lg:overflow-y-auto p-4">
+                    @if (manzanasLoading()) {
+                      <div class="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2">
+                        @for (i of [1,2,3,4,5,6,7,8,9,10,11,12]; track i) {
+                          <div class="h-14 bg-gray-100 dark:bg-gray-700/50 rounded-xl animate-pulse"></div>
+                        }
+                      </div>
+                    } @else if (manzanas().length === 0) {
+                      <div class="h-full min-h-[8rem] flex flex-col items-center justify-center text-center px-4">
+                        <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Este territorio no tiene manzanas</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Agrégalas en Territorios → Congregación → Manzanas.</p>
+                      </div>
+                    } @else if (salidaActiva()) {
+                      <div class="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2">
+                        @for (m of manzanas(); track m.id_manzana) {
+                          @let marcada = manzanasSalidaActiva().includes(m.id_manzana);
+                          @let toggling = manzanaSalidaToggling() === m.id_manzana;
+                          <button type="button" (click)="toggleManzanaEnSalida(m.id_manzana)"
+                            [disabled]="toggling"
+                            [attr.aria-pressed]="marcada"
+                            [attr.aria-label]="'Manzana ' + (m.numero_manzana || m.id_manzana)"
+                            class="h-14 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-[background-color,border-color,transform] duration-150 active:scale-[0.95] disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-800"
+                            [class]="marcada
+                              ? 'bg-green-500 border-green-600 text-white'
+                              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:border-green-400 dark:hover:border-green-600'">
+                            @if (toggling) {
+                              <span class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                            } @else {
+                              <span class="text-base leading-none tabular-nums">{{ m.numero_manzana || m.id_manzana }}</span>
+                              @if (marcada) {
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                              }
+                            }
+                          </button>
+                        }
+                      </div>
+                    } @else {
+                      <ul class="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-2">
+                        @for (m of manzanas(); track m.id_manzana) {
+                          @let estado = estadoManzanas().get(m.id_manzana);
+                          <li class="h-14 rounded-xl flex flex-col items-center justify-center gap-1 px-1 text-center"
                             [class]="estado
                               ? 'bg-green-500 text-white'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'">
-                            {{ m.numero_manzana || m.id_manzana }}
-                          </div>
-                          @if (estado) {
-                            <!-- Fix #5: mínimo text-[10px] para badges de manzana -->
-                            <span class="text-[10px] font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide leading-none">
-                              Predicada
+                              : 'border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                            [attr.title]="estado
+                              ? 'Predicada el ' + (estado.fecha_salida | date:'d MMM yyyy':'':'es') + (estado.nombre_capitan ? ' · ' + estado.nombre_capitan : '')
+                              : 'Falta predicar'">
+                            <span class="text-base font-bold leading-none tabular-nums">{{ m.numero_manzana || m.id_manzana }}</span>
+                            <span class="text-xs leading-none"
+                              [class]="estado ? 'text-green-50 font-semibold' : 'text-gray-500 dark:text-gray-400'">
+                              {{ estado ? (estado.fecha_salida | date:'d MMM':'':'es') : 'Falta' }}
                             </span>
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 leading-tight truncate w-full">
-                              {{ estado.nombre_capitan }}
-                            </p>
-                            <p class="text-[10px] text-gray-400 leading-none">
-                              {{ estado.fecha_salida | date:'d MMM yy':'':'es' }}
-                            </p>
-                          } @else {
-                            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide leading-none">
-                              Pendiente
-                            </span>
-                          }
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                </section>
 
                 <!-- ── Salidas ── -->
-                <div>
-                  <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                      Salidas ({{ salidas().length }})
+                <section class="flex flex-col lg:min-h-0 rounded-2xl border border-gray-200/80 dark:border-gray-700/60 bg-white dark:bg-gray-800"
+                  aria-labelledby="titulo-salidas">
+                  <div class="shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700/60">
+                    <h3 id="titulo-salidas" class="text-sm font-bold text-gray-900 dark:text-white">
+                      Salidas registradas
+                      @if (salidas().length) {
+                        <span class="ml-1 font-semibold text-gray-500 dark:text-gray-400 tabular-nums">{{ salidas().length }}</span>
+                      }
                     </h3>
-                    <button (click)="openNuevaSalidaModal()"
-                      class="text-xs font-semibold px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-1 shadow-sm min-h-[32px]">
-                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                      </svg>
-                      Nueva Salida
-                    </button>
                   </div>
 
-                  @if (salidasLoading()) {
-                    <div class="space-y-2">
-                      @for (i of [1,2,3]; track i) {
-                        <div class="h-16 bg-gray-100 dark:bg-gray-700/50 rounded-xl animate-pulse"></div>
-                      }
-                    </div>
-                  } @else if (salidas().length === 0) {
-                    <div class="text-center py-8 text-gray-400 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
-                      <svg class="w-10 h-10 mx-auto mb-3 opacity-30" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="1.5">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                      </svg>
-                      <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Sin salidas registradas</p>
-                      <p class="text-xs mt-1">Registra los días que el grupo predicó en este territorio</p>
-                    </div>
-                  } @else {
-                    <div class="space-y-2">
-                      @for (s of salidas(); track s.id_salida) {
-                        <!-- Fix #3: botones siempre visibles (sin opacity-0 group-hover) -->
-                        <div class="flex items-center gap-3 p-3 bg-white dark:bg-gray-800/60 rounded-xl border border-gray-100 dark:border-gray-700/40 hover:border-green-200 dark:hover:border-green-800/40 transition-all">
-                          <!-- Date badge -->
-                          <div class="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/30 border border-green-100 dark:border-green-800/30 flex flex-col items-center justify-center shrink-0">
-                            <span class="text-[10px] font-semibold text-green-600 dark:text-green-400 uppercase leading-none">
-                              {{ s.fecha_salida | date:'MMM':'':'es' }}
-                            </span>
-                            <span class="text-base font-bold text-green-700 dark:text-green-300 leading-tight">
-                              {{ s.fecha_salida | date:'d' }}
-                            </span>
-                          </div>
-
-                          <!-- Info -->
-                          <div class="flex-1 min-w-0">
-                            @if (s.nombre_capitan) {
-                              <p class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">
-                                {{ s.nombre_capitan }}
-                              </p>
-                            } @else {
-                              <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                                {{ s.fecha_salida | date:'EEEE':'':'es' }}
-                              </p>
-                            }
-                            <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                                {{ s.manzanas_predicadas }} manz.
-                              </span>
-                              <!-- Fix #4: SVG pin en lugar de emoji 📍 -->
-                              @if (s.nombre_punto_salida) {
-                                <span class="text-[10px] text-gray-400 flex items-center gap-0.5 truncate">
-                                  <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                  </svg>
-                                  {{ s.nombre_punto_salida }}
+                  <div class="lg:flex-1 lg:min-h-0 lg:overflow-y-auto">
+                    @if (salidasLoading()) {
+                      <div class="p-3 space-y-2">
+                        @for (i of [1,2,3]; track i) {
+                          <div class="h-16 bg-gray-100 dark:bg-gray-700/50 rounded-xl animate-pulse"></div>
+                        }
+                      </div>
+                    } @else if (salidas().length === 0) {
+                      <div class="h-full min-h-[10rem] flex flex-col items-center justify-center text-center px-6 py-8">
+                        <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Todavía no hay salidas</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-[28ch]">
+                          Cada vez que el grupo predique aquí, regístralo con <span class="font-semibold text-gray-700 dark:text-gray-200">Registrar salida</span>.
+                        </p>
+                      </div>
+                    } @else {
+                      <ul class="divide-y divide-gray-100 dark:divide-gray-700/60">
+                        @for (s of salidas(); track s.id_salida) {
+                          @let activa = salidaActiva()?.id_salida === s.id_salida;
+                          <li class="px-4 py-2.5 transition-colors"
+                            [class]="activa ? 'bg-green-50 dark:bg-green-900/20' : ''">
+                            <div class="flex items-start gap-3">
+                              <div class="w-11 shrink-0 text-center rounded-lg py-1"
+                                [class]="activa ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100'">
+                                <span class="block text-lg font-bold leading-none tabular-nums">{{ s.fecha_salida | date:'d' }}</span>
+                                <span class="block text-xs font-semibold leading-tight mt-0.5" [class]="activa ? 'text-green-50' : 'text-gray-500 dark:text-gray-400'">
+                                  {{ s.fecha_salida | date:'MMM':'':'es' }}
                                 </span>
+                              </div>
+                              <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                  {{ s.nombre_capitan || 'Sin capitán' }}
+                                </p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                                  <span class="capitalize">{{ s.fecha_salida | date:'EEEE':'':'es' }}</span>
+                                  · {{ s.manzanas_predicadas === 1 ? '1 manzana' : s.manzanas_predicadas + ' manzanas' }}
+                                  @if (s.nombre_punto_salida) { · {{ s.nombre_punto_salida }} }
+                                </p>
+                                @if (s.notas) {
+                                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate" [title]="s.notas">{{ s.notas }}</p>
+                                }
+                              </div>
+                            </div>
+
+                            <div class="mt-1 2xl:pl-14 flex items-center gap-1">
+                              @if (confirmarEliminarId() === s.id_salida) {
+                                <span class="text-sm text-red-700 dark:text-red-400 font-semibold mr-auto">¿Eliminar esta salida?</span>
+                                <button type="button" (click)="confirmarEliminarId.set(null)"
+                                  class="h-8 px-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                                  No
+                                </button>
+                                <button type="button" (click)="confirmarEliminarSalida(s.id_salida)"
+                                  class="h-8 px-3 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                                  Sí, eliminar
+                                </button>
+                              } @else {
+                                @if (activa) {
+                                  <span class="h-8 inline-flex items-center whitespace-nowrap text-sm font-semibold text-green-700 dark:text-green-400 mr-auto">Marcando manzanas…</span>
+                                } @else {
+                                  <button type="button" (click)="openSalidaTracking(s)"
+                                    class="h-8 px-2.5 -ml-2.5 mr-auto inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                      <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                                    </svg>
+                                    Marcar manzanas
+                                  </button>
+                                }
+                                <button type="button" (click)="openEditSalidaModal(s)"
+                                  title="Editar salida" aria-label="Editar salida"
+                                  class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                  </svg>
+                                </button>
+                                <button type="button" (click)="confirmarEliminarId.set(s.id_salida)"
+                                  title="Eliminar salida" aria-label="Eliminar salida"
+                                  class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                                  </svg>
+                                </button>
                               }
                             </div>
-                          </div>
-
-                          <!-- Fix #2: confirmación inline antes de eliminar -->
-                          <!-- Fix #3: botones siempre visibles, sin hover-only -->
-                          <div class="flex items-center gap-1 shrink-0">
-                            @if (confirmarEliminarId() === s.id_salida) {
-                              <span class="text-xs text-red-600 dark:text-red-400 font-semibold mr-1">¿Eliminar?</span>
-                              <button (click)="confirmarEliminarSalida(s.id_salida)"
-                                class="px-2 py-1 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
-                                Sí
-                              </button>
-                              <button (click)="confirmarEliminarId.set(null)"
-                                class="px-2 py-1 text-xs font-bold bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-colors">
-                                No
-                              </button>
-                            } @else {
-                              <button (click)="openSalidaTracking(s)"
-                                title="Registrar manzanas"
-                                class="p-1.5 text-gray-400 hover:text-green-600 dark:hover:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                  <path d="M9 11l3 3L22 4"/>
-                                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                                </svg>
-                              </button>
-                              <button (click)="openEditSalidaModal(s)"
-                                title="Editar salida"
-                                class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                </svg>
-                              </button>
-                              <!-- Botón eliminar separado visualmente -->
-                              <button (click)="confirmarEliminarId.set(s.id_salida)"
-                                title="Eliminar salida"
-                                class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors ml-0.5">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                  <polyline points="3 6 5 6 21 6"/>
-                                  <path d="M19 6l-1 14H6L5 6"/>
-                                  <path d="M10 11v6"/><path d="M14 11v6"/>
-                                </svg>
-                              </button>
-                            }
-                          </div>
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
-
-              }
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                </section>
+              </div>
             </div>
-          </div>
+          </section>
         }
       </div>
     </div>
@@ -506,25 +467,20 @@ interface EstadoManzana {
               <label for="salida-capitan" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 Capitán <span class="text-xs text-gray-400 normal-case font-normal">(opcional)</span>
               </label>
-              <select id="salida-capitan" [(ngModel)]="editingSalida.id_capitan"
-                class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
-                <option [ngValue]="null">— Sin capitán —</option>
-                @for (p of publicadoresOrdenados(); track p.id_publicador) {
-                  <option [ngValue]="p.id_publicador">{{ nombreDe(p) }}</option>
-                }
-              </select>
+              <app-select-picker colorScheme="emerald" ariaLabel="Capitán" [(ngModel)]="editingSalida.id_capitan"
+                [options]="opcionesCapitan()" placeholder="— Sin capitán —" />
+              @if (iniciaVueltaNueva()) {
+                <p class="mt-1.5 text-xs text-gray-600 dark:text-gray-300">
+                  Esta salida inicia una vuelta nueva: el capitán queda como "Asignado a" en el registro S-13.
+                </p>
+              }
             </div>
             <div>
               <label for="salida-punto" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 Punto de salida <span class="text-xs text-gray-400 normal-case font-normal">(opcional)</span>
               </label>
-              <select id="salida-punto" [(ngModel)]="editingSalida.id_punto_salida"
-                class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
-                <option [ngValue]="null">— Sin punto de salida —</option>
-                @for (pt of puntosSalida(); track pt.id_punto) {
-                  <option [ngValue]="pt.id_punto">{{ pt.nombre || 'Punto ' + pt.id_punto }}</option>
-                }
-              </select>
+              <app-select-picker colorScheme="emerald" ariaLabel="Punto de salida" [(ngModel)]="editingSalida.id_punto_salida"
+                [options]="opcionesPunto()" placeholder="— Sin punto de salida —" [searchable]="false" />
             </div>
             <div>
               <label for="salida-notas" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -563,7 +519,21 @@ export class SeguimientoPredicacionPage implements OnInit {
   puntos = signal<Punto[]>([]);
   noVisitar = signal<ViviendaDeTerritorio[]>([]);
   textoDir = textoDireccion;
+  textoDias = textoDiasSinTrabajar;
+  /** Última salida y % de la vuelta de cada territorio, para la lista. */
+  resumen = signal<Map<number, ResumenTerritorio>>(new Map());
   puntosSalida = computed(() => this.puntos().filter(p => (p.tipo ?? 'Otro') === 'Salida'));
+  opcionesCapitan = computed<PickerOption[]>(() =>
+    this.publicadoresOrdenados().map(p => ({ value: p.id_publicador, label: this.nombreDe(p) })));
+  opcionesPunto = computed<PickerOption[]>(() =>
+    this.puntosSalida().map(pt => ({ value: pt.id_punto, label: pt.nombre || 'Punto ' + pt.id_punto })));
+
+  /** Al crear una salida sin vuelta en curso, esa salida abre la vuelta y su capitán queda asignado. */
+  iniciaVueltaNueva = computed(() => {
+    if (this.editingSalidaId() !== null) return false;
+    const ciclo = this.progreso()?.ciclo;
+    return !ciclo || ciclo.completado;
+  });
 
   // Lista
   territorios = signal<Territorio[]>([]);
@@ -616,10 +586,24 @@ export class SeguimientoPredicacionPage implements OnInit {
     });
     this.territoriosService.getPublicadores(this.congregacionCtx.effectiveCongregacionId())
       .subscribe({ next: (list) => this.publicadores.set(list) });
+    this.loadResumen();
+  }
+
+  private loadResumen(): void {
+    this.territoriosService.getResumen().subscribe({
+      next: (filas) => this.resumen.set(new Map(filas.map(f => [f.id_territorio, f]))),
+    });
+  }
+
+  volverALista(): void {
+    this.salidaActiva.set(null);
+    this.manzanasSalidaActiva.set([]);
+    this.territorioSeleccionado.set(null);
   }
 
   seleccionarTerritorio(t: Territorio): void {
     this.territorioSeleccionado.set(t);
+    this.progreso.set(null);
     this.salidaActiva.set(null);
     this.manzanasSalidaActiva.set([]);
     this.estadoManzanas.set(new Map());
@@ -682,6 +666,7 @@ export class SeguimientoPredicacionPage implements OnInit {
         this.completandoCiclo.set(false);
         this.loadProgreso(t.id_territorio);
         this.loadEstadoManzanas(t.id_territorio);
+        this.loadResumen();
       },
       error: () => this.completandoCiclo.set(false),
     });
@@ -726,6 +711,7 @@ export class SeguimientoPredicacionPage implements OnInit {
         this.loadSalidas(t.id_territorio);
         this.loadProgreso(t.id_territorio);
         this.loadEstadoManzanas(t.id_territorio);
+        this.loadResumen();
       },
       error: () => this.salidaSaving.set(false),
     });
@@ -745,6 +731,7 @@ export class SeguimientoPredicacionPage implements OnInit {
         this.loadSalidas(t.id_territorio);
         this.loadProgreso(t.id_territorio);
         this.loadEstadoManzanas(t.id_territorio);
+        this.loadResumen();
       },
     });
   }
@@ -766,6 +753,7 @@ export class SeguimientoPredicacionPage implements OnInit {
       this.loadSalidas(t.id_territorio);
       this.loadProgreso(t.id_territorio);
       this.loadEstadoManzanas(t.id_territorio);
+      this.loadResumen();
     }
   }
 

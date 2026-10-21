@@ -2,9 +2,19 @@
 // accion ocasional y entre las dos librerias suman cientos de kB que antes
 // entraban en el chunk de territorios para todo el que abria la pantalla.
 
-export async function exportTerritorioCard(
+export function exportTerritorioCard(
   elementId: string,
   codigo: string,
+  format: 'pdf' | 'image' = 'pdf'
+): Promise<void> {
+  // La tarjeta sigue sin propagar el error: quien la llama no lo maneja.
+  return exportarElemento(elementId, `Tarjeta_${codigo}`, format).catch(() => undefined);
+}
+
+/** Exporta un elemento de la página a PNG o PDF con el nombre de archivo dado (sin extensión). */
+export async function exportarElemento(
+  elementId: string,
+  nombreArchivo: string,
   format: 'pdf' | 'image' = 'pdf'
 ): Promise<void> {
   const element = document.getElementById(elementId);
@@ -24,7 +34,7 @@ export async function exportTerritorioCard(
 
     if (format === 'image') {
       const link = document.createElement('a');
-      link.download = `Tarjeta_${codigo}.png`;
+      link.download = `${nombreArchivo}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } else {
@@ -44,9 +54,10 @@ export async function exportTerritorioCard(
       });
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Tarjeta_${codigo}.pdf`);
+      pdf.save(`${nombreArchivo}.pdf`);
     }
   } catch (err) {
     console.error('Error exporting card:', err);
+    throw err;
   }
 }

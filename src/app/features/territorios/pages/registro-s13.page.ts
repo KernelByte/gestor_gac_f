@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TerritoriosService } from '../services/territorios.service';
 import { RegistroS13 } from '../models/territorio.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 
 /**
  * Registro de asignación de territorio (S-13) por año de servicio (sep–ago).
@@ -12,7 +13,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 @Component({
   standalone: true,
   selector: 'app-registro-s13-page',
-  imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent, SelectPickerComponent],
   encapsulation: ViewEncapsulation.None,
   styles: [`
     @media print {
@@ -31,19 +32,22 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
           title="Registro de territorios (S-13)"
           subtitle="Cuándo se terminó de trabajar cada territorio y quién lo trabajó">
           <button type="button" (click)="imprimir()" [disabled]="!data()"
-            class="btn-primary-green focus-ring-green whitespace-nowrap disabled:opacity-50">
+            class="btn-secondary whitespace-nowrap disabled:opacity-50">
             Imprimir
+          </button>
+          <button type="button" (click)="descargarPdf()" [disabled]="!data() || descargando()"
+            class="btn-primary-green focus-ring-green whitespace-nowrap disabled:opacity-50">
+            {{ descargando() ? 'Generando…' : 'Descargar PDF (S-13)' }}
           </button>
         </app-page-header>
 
         <div class="flex flex-wrap items-center gap-3 mb-4">
           <label for="anio-servicio" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Año de servicio</label>
-          <select id="anio-servicio" [ngModel]="anio()" (ngModelChange)="cambiarAnio($event)"
-            class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-100">
-            @for (a of anios; track a) {
-              <option [ngValue]="a">{{ a }} – {{ a + 1 }} (sep–ago)</option>
-            }
-          </select>
+          <app-select-picker class="w-60" colorScheme="emerald" ariaLabel="Año de servicio" [ngModel]="anio()"
+            (ngModelChange)="cambiarAnio($event)" [options]="opcionesAnio" [clearable]="false" [searchable]="false" />
+          @if (errorPdf()) {
+            <p class="text-sm text-red-600 dark:text-red-400" role="alert">No se pudo generar el PDF. Intenta de nuevo.</p>
+          }
         </div>
       </div>
 
@@ -92,8 +96,8 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
                               @if (c.fecha_fin) { Terminó: {{ c.fecha_fin | date:'d/M/yy':'':'es' }} }
                               @else { <span class="font-semibold text-amber-700 dark:text-amber-400">En curso</span> }
                             </p>
-                            @if (c.capitanes.length) {
-                              <p class="text-xs text-slate-500 dark:text-slate-400">{{ c.capitanes.join(', ') }}</p>
+                            @if (c.asignado_a) {
+                              <p class="text-xs text-slate-500 dark:text-slate-400">Asignado a: {{ c.asignado_a }}</p>
                             }
                           } @else {
                             <span class="text-slate-400">—</span>
@@ -121,6 +125,7 @@ export class RegistroS13Page implements OnInit {
   }
 
   anios = [0, 1, 2, 3].map(i => RegistroS13Page.anioActual() - i);
+  opcionesAnio: PickerOption[] = this.anios.map(a => ({ value: a, label: `${a} – ${a + 1}`, hint: 'septiembre a agosto' }));
   anio = signal(RegistroS13Page.anioActual());
   data = signal<RegistroS13 | null>(null);
   loading = signal(true);
@@ -152,5 +157,28 @@ export class RegistroS13Page implements OnInit {
 
   imprimir(): void {
     window.print();
+  }
+
+  descargando = signal(false);
+  errorPdf = signal(false);
+
+  descargarPdf(): void {
+    const anio = this.anio();
+    this.descargando.set(true);
+    this.errorPdf.set(false);
+    this.territoriosService.getRegistroS13Pdf(anio).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `S-13_${anio}-${anio + 1}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        this.descargando.set(false);
+      },
+      error: () => { this.descargando.set(false); this.errorPdf.set(true); },
+    });
   }
 }

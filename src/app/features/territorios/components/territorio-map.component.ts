@@ -1,3 +1,4 @@
+import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import {
   Component,
   Input,
@@ -11,12 +12,14 @@ import {
   ViewChild,
   inject,
   signal,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import { geoPolygon, geoArea, geoCircle } from '../utils/geo-math.util';
+import { crearCapaBasePropia, callesDelMapa } from '../utils/mapa-base-propio';
 
 import { GeoJSONFeatureCollection, GeoJSONFeature } from '../models/territorio.model';
 import { TerritoriosService } from '../services/territorios.service';
@@ -26,7 +29,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 @Component({
   standalone: true,
   selector: 'app-territorio-map',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SelectPickerComponent],
   template: `
     <!-- Wrapper with dynamic height -->
     <div class="relative w-full overflow-visible" [style.height]="height">
@@ -39,42 +42,36 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
            ════════════════════════════════════════════ -->
       @if (enableDrawing) {
 
-        <!-- ── TOP RIGHT: Layer mode + Geocoder + Geolocate ── -->
-        <div class="absolute top-2 right-2 z-[1000] flex items-start gap-1.5">
+        <!-- ── TOP: pasos (junto a la barra de herramientas) · ubicación + buscador ── -->
+        <div class="absolute top-3 left-[60px] right-3 z-[1000] flex flex-wrap items-start justify-between gap-2 pointer-events-none">
 
-          <!-- Layer mode switcher -->
-          <div class="flex items-center bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-600 rounded-xl shadow-md backdrop-blur-sm overflow-hidden">
-            <button
-              (click)="setLayerMode('territorio')"
-              [class]="layerMode() === 'territorio'
-                ? 'px-2.5 py-1.5 text-[0.65rem] font-black text-white bg-purple-600 transition-colors'
-                : 'px-2.5 py-1.5 text-[0.65rem] font-bold text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors'"
-              title="Dibujar límite del territorio"
-            >Territorio</button>
-            <div class="w-px h-4 bg-slate-200 dark:bg-slate-600"></div>
-            <button
-              (click)="setLayerMode('manzana')"
-              [class]="layerMode() === 'manzana'
-                ? 'px-2.5 py-1.5 text-[0.65rem] font-black text-white bg-blue-600 transition-colors'
-                : 'px-2.5 py-1.5 text-[0.65rem] font-bold text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors'"
-              title="Dibujar manzanas (bloques)"
-            >Manzanas</button>
-            <div class="w-px h-4 bg-slate-200 dark:bg-slate-600"></div>
-            <button
-              (click)="setLayerMode('punto')"
-              [class]="layerMode() === 'punto'
-                ? 'px-2.5 py-1.5 text-[0.65rem] font-black text-white bg-rose-600 transition-colors'
-                : 'px-2.5 py-1.5 text-[0.65rem] font-bold text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors'"
-              title="Colocar puntos de lugar (salida, etc.)"
-            >Puntos</button>
+          <!-- Pasos 1 · 2 · 3 -->
+          @if (!soloLimite) {
+          <div class="gac-float pointer-events-auto flex items-center gap-0.5 p-1 rounded-xl" role="tablist" aria-label="Pasos del editor">
+            @for (paso of pasos; track paso.modo) {
+              <button
+                (click)="setLayerMode(paso.modo)"
+                role="tab"
+                [attr.aria-selected]="layerMode() === paso.modo"
+                [title]="paso.titulo"
+                class="flex items-center gap-2 pl-1.5 pr-3 h-8 rounded-lg text-[13px] font-bold transition-[background-color,color,transform] duration-150 active:scale-[0.97]"
+                [class]="layerMode() === paso.modo ? paso.activo : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/70'"
+              >
+                <span class="w-5 h-5 rounded-md flex items-center justify-center text-[11px] font-black tabular-nums transition-colors"
+                      [class]="layerMode() === paso.modo ? 'bg-white/25 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">{{ paso.n }}</span>
+                {{ paso.label }}
+              </button>
+            }
           </div>
+          } @else { <span></span> }
 
+          <div class="pointer-events-auto flex items-start gap-1.5">
           <!-- Geolocate button -->
           <button
             (click)="geolocate()"
             [disabled]="geolocating()"
             title="Ir a mi ubicación actual"
-            class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-600 shadow-md text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all disabled:opacity-60 backdrop-blur-sm"
+            class="gac-float w-10 h-10 flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-60 active:scale-[0.96]"
           >
             @if (geolocating()) {
               <div class="w-4 h-4 border-2 border-slate-400 border-t-emerald-500 rounded-full animate-spin"></div>
@@ -90,15 +87,15 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
           </button>
 
           <!-- Geocoder -->
-          <div class="relative w-56">
-            <div class="flex items-center bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-600 rounded-xl shadow-md backdrop-blur-sm overflow-hidden transition-all" [class.rounded-b-none]="geocodeResults().length > 0" [class.border-b-0]="geocodeResults().length > 0">
+          <div class="relative w-[min(16rem,calc(100vw-9rem))]">
+            <div class="gac-float h-10 flex items-center rounded-xl overflow-hidden transition-[border-radius] focus-within:ring-2 focus-within:ring-purple-500/40" [class.rounded-b-none]="geocodeResults().length > 0">
               <svg class="w-4 h-4 text-slate-400 ml-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               <input
                 type="text"
                 [(ngModel)]="geocodeQueryStr"
                 (keydown.enter)="searchGeocode()"
                 placeholder="Buscar dirección..."
-                class="flex-1 px-2 py-2 bg-transparent text-xs font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none"
+                class="flex-1 min-w-0 px-2 py-2 bg-transparent text-[13px] font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none"
               >
               @if (geocodeQueryStr) {
                 <button (click)="clearGeocode()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
@@ -118,7 +115,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
                     class="px-3 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 cursor-pointer border-b border-slate-100 dark:border-slate-700/50 last:border-0 transition-colors leading-snug"
                   >
                     <p class="font-semibold text-slate-800 dark:text-slate-200 truncate">{{ r.name || r.display_name.split(',')[0] }}</p>
-                    <p class="text-slate-400 text-[0.65rem] truncate mt-0.5">{{ r.display_name }}</p>
+                    <p class="text-slate-400 text-xs truncate mt-0.5">{{ r.display_name }}</p>
                   </li>
                 }
                 @if (geocodeLoading()) {
@@ -137,63 +134,108 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
               </div>
             }
           </div>
+          </div>
         </div>
 
-        <!-- ── BOTTOM LEFT: Hint panel ── -->
-        <div class="absolute bottom-2 left-2 z-[1000] flex flex-col gap-1.5 max-w-[calc(100%-100px)]">
-          <div class="flex items-center gap-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 shadow-md">
-            <div class="w-5 h-5 rounded-lg flex items-center justify-center shrink-0"
-                 [class]="layerMode() === 'territorio' ? 'bg-purple-100 dark:bg-purple-900/40' : layerMode() === 'manzana' ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-rose-100 dark:bg-rose-900/40'">
-              <svg class="w-3 h-3"
-                   [class]="layerMode() === 'territorio' ? 'text-purple-600 dark:text-purple-400' : layerMode() === 'manzana' ? 'text-blue-600 dark:text-blue-400' : 'text-rose-600 dark:text-rose-400'"
-                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <!-- ── BOTTOM LEFT: Hint panel (mientras se revisan propuestas, el panel de revisión ocupa su lugar) ── -->
+        @if (!propuestasActivas()) {
+        <div class="absolute bottom-3 left-3 z-[1000] flex flex-col items-start gap-2 max-w-[calc(100%-4.5rem)] sm:max-w-[min(calc(100%-11rem),36rem)]">
+          @if (layerMode() === 'manzana' && !propuestasActivas()) {
+            <button
+              (click)="detectarManzanas()"
+              [disabled]="detectando || extrayendo()"
+              class="flex items-center gap-2 px-4 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold shadow-lg shadow-blue-900/20 transition-[background-color,transform] active:scale-[0.97]"
+              title="Propone las manzanas con las calles del mapa; usted revisa antes de guardar"
+            >
+              @if (detectando || extrayendo()) {
+                <div class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                Buscando manzanas…
+              } @else {
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
+                Detectar manzanas automáticamente
+              }
+            </button>
+          }
+          @if (!soloLimite) {
+          <div class="gac-float flex items-center gap-2.5 rounded-xl pl-2 pr-3.5 py-2">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[12px] font-black tabular-nums"
+                 [class]="layerMode() === 'territorio' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' : layerMode() === 'manzana' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'">
+              {{ layerMode() === 'territorio' ? 1 : layerMode() === 'manzana' ? 2 : 3 }}
             </div>
-            <span class="text-[0.65rem] font-semibold text-slate-600 dark:text-slate-300 leading-tight">{{ activeToolHint() }}</span>
+            <span class="text-[13px] font-semibold text-slate-700 dark:text-slate-200 leading-snug">{{ activeToolHint() }}</span>
           </div>
-          @if (realtimeArea()) {
-            <div class="flex items-center gap-2 bg-emerald-600/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md">
-              <svg class="w-3.5 h-3.5 text-emerald-100 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-              <span class="text-[0.65rem] font-bold text-white leading-tight">{{ realtimeArea() }}</span>
+          }
+          @if (realtimeArea() && !soloLimite) {
+            <div class="gac-float flex items-center gap-2 rounded-xl px-3 h-9">
+              <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+              <span class="text-[13px] font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ realtimeArea() }}</span>
             </div>
           }
         </div>
+        }
+
+        <!-- ── Revisión de manzanas propuestas ── -->
+        @if (propuestasActivas()) {
+          <div class="absolute bottom-2 left-2 z-[1050] w-[min(calc(100%-1rem),440px)] bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-amber-300 dark:border-amber-700/60 rounded-2xl shadow-xl p-4">
+            <p class="text-sm font-black text-slate-800 dark:text-white">Se encontraron {{ propuestasTotal() }} manzanas</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-snug">
+              Compárelas con las cuadras reales. Toque una manzana para quitarla (o para incluirla otra vez).
+              Las que falten las puede dibujar después a mano.
+            </p>
+            <div class="flex gap-2 mt-3">
+              <button (click)="descartarPropuestas.emit()" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Descartar</button>
+              <button (click)="confirmarPropuestas()" [disabled]="propuestasIncluidas() === 0 || guardandoPropuestas"
+                class="flex-[2] py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold transition-colors">
+                {{ guardandoPropuestas ? 'Guardando…' : 'Guardar ' + propuestasIncluidas() + ' manzanas' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (aviso()) {
+          <div class="absolute top-16 left-1/2 -translate-x-1/2 z-[1060] w-[min(92%,460px)] flex items-start gap-2 bg-amber-50 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/60 rounded-xl px-3 py-2.5 shadow-lg">
+            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <p class="flex-1 text-sm font-semibold text-amber-800 dark:text-amber-200 leading-snug">{{ aviso() }}</p>
+            <button (click)="aviso.set(null)" class="text-amber-700 dark:text-amber-300 text-sm font-bold px-1" title="Cerrar aviso">✕</button>
+          </div>
+        }
 
         <!-- ── BOTTOM RIGHT: Action buttons ── -->
-        <div class="absolute bottom-2 right-2 z-[1000] flex flex-col items-end gap-1.5">
+        <div class="absolute bottom-3 right-3 z-[1000] flex flex-col items-end gap-2">
           @if (!showClearConfirm()) {
             @if (drawingActive()) {
               <button
                 (click)="undoLastVertex()"
                 title="Deshacer último vértice (Ctrl+Z)"
-                class="flex items-center gap-1.5 px-3 py-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200 dark:border-slate-600 rounded-xl shadow-md text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 transition-all"
+                class="gac-float flex items-center justify-center gap-2 min-w-9 px-2.5 sm:px-3.5 h-9 rounded-xl text-[13px] font-bold text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors active:scale-[0.97]"
               >
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.51"></path></svg>
-                Deshacer
+                <span class="hidden sm:inline">Deshacer</span>
               </button>
             }
-            @if (layerMode() === 'territorio') {
+            @if (layerMode() === 'territorio' && !soloLimite) {
               <button
                 (click)="showClearConfirm.set(true)"
                 title="Limpiar todos los trazos del territorio"
-                class="flex items-center gap-1.5 px-3 py-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200 dark:border-slate-600 rounded-xl shadow-md text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 transition-all"
+                class="gac-float flex items-center justify-center gap-2 min-w-9 px-2.5 sm:px-3.5 h-9 rounded-xl text-[13px] font-bold text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors active:scale-[0.97]"
               >
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
-                Limpiar territorio
+                <span class="hidden sm:inline">Limpiar territorio</span>
               </button>
             }
           } @else {
-            <div class="flex items-center gap-1.5 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-red-200 dark:border-red-800/50 rounded-xl shadow-lg px-3 py-2">
+            <div class="gac-float flex items-center gap-2 rounded-xl pl-3 pr-1.5 h-10 !border-red-200 dark:!border-red-800/60">
               <svg class="w-3.5 h-3.5 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-              <span class="text-[0.65rem] font-bold text-slate-600 dark:text-slate-300">¿Borrar territorio?</span>
-              <button (click)="clearAll()" class="px-2.5 py-1 text-[0.65rem] font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">Sí</button>
-              <button (click)="showClearConfirm.set(false)" class="px-2.5 py-1 text-[0.65rem] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">No</button>
+              <span class="text-[13px] font-bold text-slate-700 dark:text-slate-200 mr-1">¿Borrar el límite dibujado?</span>
+              <button (click)="clearAll()" class="px-3 h-7 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">Sí, borrar</button>
+              <button (click)="showClearConfirm.set(false)" class="px-3 h-7 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">No</button>
             </div>
           }
         </div>
 
         <!-- ── Geolocation error toast ── -->
         @if (geolocateError()) {
-          <div class="absolute top-14 right-2 z-[1000] flex items-center gap-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 rounded-xl px-3 py-2 shadow-md">
+          <div class="absolute top-16 right-3 z-[1000] flex items-center gap-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 rounded-xl px-3 py-2 shadow-md">
             <svg class="w-3.5 h-3.5 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             <span class="text-xs font-semibold text-red-600 dark:text-red-400">{{ geolocateError() }}</span>
           </div>
@@ -204,7 +246,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
           <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999] pointer-events-none">
             <div class="flex items-center gap-2 bg-rose-600/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg">
               <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-              <span class="text-[0.65rem] font-bold text-white">Clic en el mapa para colocar un punto</span>
+              <span class="text-xs font-bold text-white">Clic en el mapa para colocar un punto</span>
             </div>
           </div>
         }
@@ -215,7 +257,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-72 shadow-2xl overflow-hidden">
               <div class="p-4 border-b border-slate-100 dark:border-slate-700/50 bg-blue-50/50 dark:bg-blue-900/20">
                 <h4 class="text-sm font-black text-slate-800 dark:text-white">Número de manzana</h4>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Asigna un número o código a esta manzana</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Ya va el siguiente número; cámbielo si hace falta</p>
               </div>
               <div class="p-4">
                 <input
@@ -225,6 +267,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
                   placeholder="Ej: 1, 2, A, 10B..."
                   (keydown.enter)="confirmManzana()"
                   (keydown.escape)="cancelManzana()"
+                  (focus)="$any($event.target).select()"
                   class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   autofocus
                 />
@@ -247,7 +290,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
               </div>
               <div class="p-4 space-y-3">
                 <div>
-                  <label class="block text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre *</label>
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre *</label>
                   <input
                     type="text"
                     [(ngModel)]="pendingPuntoNombre"
@@ -258,15 +301,12 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
                   />
                 </div>
                 <div>
-                  <label class="block text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider mb-1">Tipo</label>
-                  <select [(ngModel)]="pendingPuntoTipo" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all cursor-pointer">
-                    <option value="Salida">Salida</option>
-                    <option value="Lugar">Lugar de interés</option>
-                    <option value="Otro">Otro</option>
-                  </select>
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tipo</label>
+                  <app-select-picker colorScheme="rose" ariaLabel="Tipo de punto" [(ngModel)]="pendingPuntoTipo"
+                    [options]="opcionesTipoPunto" [clearable]="false" [searchable]="false" />
                 </div>
                 <div>
-                  <label class="block text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider mb-1">Notas (opcional)</label>
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Notas (opcional)</label>
                   <input
                     type="text"
                     [(ngModel)]="pendingPuntoNotas"
@@ -289,6 +329,120 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
   `,
   styles: [`
     :host { display: block; height: 100%; width: 100%; }
+    :host ::ng-deep .gac-ref-label {
+      background: rgba(255,255,255,0.85); border: 1px solid #cbd5e1; box-shadow: none;
+      color: #475569; font: 700 12px system-ui, sans-serif; padding: 1px 6px;
+    }
+    :host ::ng-deep .gac-ref-label::before { display: none; }
+
+    /* Mapa general: código sobre cada territorio y ficha al pasar el cursor */
+    :host ::ng-deep .gac-terr-code {
+      background: rgba(255,255,255,0.92); border: 0; border-radius: 6px; padding: 1px 6px;
+      color: #0f172a; font: 800 11px/16px system-ui, sans-serif; letter-spacing: 0.02em;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.25); pointer-events: none;
+    }
+    :host ::ng-deep .gac-terr-code::before { display: none; }
+    :host ::ng-deep .gac-tt-wrap {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;
+      box-shadow: 0 10px 28px -8px rgba(15,23,42,0.35); font-family: system-ui, sans-serif;
+    }
+    :host ::ng-deep .gac-tt-wrap::before { display: none; }
+    :host ::ng-deep .gac-tt { min-width: 170px; }
+    :host ::ng-deep .gac-tt__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    :host ::ng-deep .gac-tt__top strong { font-size: 15px; color: #0f172a; font-weight: 800; }
+    :host ::ng-deep .gac-tt__estado { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    :host ::ng-deep .gac-tt__estado--ok { background: #ecfdf5; color: #047857; }
+    :host ::ng-deep .gac-tt__estado--asig { background: #f5f3ff; color: #6d28d9; }
+    :host ::ng-deep .gac-tt__estado--pausa { background: #f1f5f9; color: #475569; }
+    :host ::ng-deep .gac-tt__nombre { margin-top: 4px; font-size: 13px; color: #475569; font-weight: 500; }
+    :host ::ng-deep .gac-tt__cta { margin-top: 8px; padding-top: 7px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; font-weight: 600; }
+    :host-context(.dark) ::ng-deep .gac-tt-wrap { background: #1e293b; border-color: #334155; }
+    :host-context(.dark) ::ng-deep .gac-tt__top strong { color: #f8fafc; }
+    :host-context(.dark) ::ng-deep .gac-tt__nombre { color: #cbd5e1; }
+    :host-context(.dark) ::ng-deep .gac-tt__cta { border-top-color: #334155; color: #94a3b8; }
+    :host-context(.dark) ::ng-deep .gac-tt__estado--ok { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+    :host-context(.dark) ::ng-deep .gac-tt__estado--asig { background: rgba(139,92,246,0.18); color: #c4b5fd; }
+    :host-context(.dark) ::ng-deep .gac-tt__estado--pausa { background: rgba(148,163,184,0.15); color: #cbd5e1; }
+
+    /* Superficie de los controles que flotan sobre el mapa */
+    .gac-float {
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgb(226 232 240);
+      box-shadow: 0 1px 2px rgba(15,23,42,0.06), 0 6px 16px -4px rgba(15,23,42,0.14);
+      backdrop-filter: blur(8px);
+    }
+    :host-context(.dark) .gac-float {
+      background: rgba(30,41,59,0.92);
+      border-color: rgb(51 65 85);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 20px -6px rgba(0,0,0,0.5);
+    }
+
+    /* Zoom y herramientas de dibujo con el mismo lenguaje */
+    :host ::ng-deep .leaflet-top .leaflet-control { margin-top: 12px; }
+    :host ::ng-deep .leaflet-left .leaflet-control { margin-left: 12px; }
+    :host ::ng-deep .leaflet-bar {
+      border: 1px solid rgb(226 232 240) !important;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 1px 2px rgba(15,23,42,0.06), 0 6px 16px -4px rgba(15,23,42,0.14);
+    }
+    :host ::ng-deep .leaflet-bar a,
+    :host ::ng-deep .leaflet-pm-toolbar .button-container a.leaflet-buttons-control-button {
+      width: 36px; height: 36px; line-height: 36px;
+      background-color: transparent;
+      border-bottom: 1px solid rgb(241 245 249);
+      color: rgb(51 65 85); font-size: 18px;
+      transition: background-color 120ms ease-out;
+    }
+    :host ::ng-deep .leaflet-bar a:first-child,
+    :host ::ng-deep .leaflet-pm-toolbar .button-container:first-child a.leaflet-buttons-control-button { border-radius: 11px 11px 0 0; }
+    :host ::ng-deep .leaflet-bar a:last-child,
+    :host ::ng-deep .leaflet-pm-toolbar .button-container:last-child a.leaflet-buttons-control-button { border-radius: 0 0 11px 11px; border-bottom: none; }
+    :host ::ng-deep .leaflet-bar a:hover,
+    :host ::ng-deep .leaflet-buttons-control-button:hover { background-color: rgb(248 250 252); }
+    :host ::ng-deep .leaflet-pm-toolbar .leaflet-buttons-control-button { padding: 8px; }
+    :host ::ng-deep .leaflet-pm-toolbar .control-icon { opacity: 0.85; }
+    /* El ícono de polígono de Geoman no se lee como lápiz; la ayuda lo nombra así. */
+    :host ::ng-deep .leaflet-pm-toolbar .leaflet-pm-icon-polygon {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'/%3E%3C/svg%3E");
+      background-size: 22px 22px;
+    }
+    :host ::ng-deep .active > .leaflet-buttons-control-button {
+      box-shadow: inset 3px 0 0 #7c3aed;
+      background-color: rgb(245 243 255) !important;
+    }
+    :host ::ng-deep .active > .leaflet-buttons-control-button .control-icon { opacity: 1; }
+    :host ::ng-deep .button-container .leaflet-pm-actions-container { margin-left: 8px; top: 2px; }
+    :host ::ng-deep .button-container .leaflet-pm-actions-container .leaflet-pm-action {
+      height: 32px; line-height: 32px; padding: 0 12px;
+      background-color: rgb(15 23 42); color: #fff;
+      font-family: inherit; font-size: 13px; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.12);
+    }
+    :host ::ng-deep .button-container .leaflet-pm-actions-container .leaflet-pm-action:first-child { border-radius: 10px 0 0 10px; }
+    :host ::ng-deep .button-container .leaflet-pm-actions-container .leaflet-pm-action:last-child { border-radius: 0 10px 10px 0; border-right: 0; }
+    :host ::ng-deep .button-container .leaflet-pm-actions-container .leaflet-pm-action:only-child { border-radius: 10px; }
+    :host ::ng-deep .button-container .leaflet-pm-actions-container .leaflet-pm-action:hover { background-color: rgb(51 65 85); }
+
+    :host-context(.dark) ::ng-deep .leaflet-bar {
+      border-color: rgb(51 65 85) !important;
+      background: rgba(30,41,59,0.94);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 20px -6px rgba(0,0,0,0.5);
+    }
+    :host-context(.dark) ::ng-deep .leaflet-bar a,
+    :host-context(.dark) ::ng-deep .leaflet-pm-toolbar .button-container a.leaflet-buttons-control-button {
+      color: rgb(226 232 240); border-bottom-color: rgb(51 65 85);
+    }
+    :host-context(.dark) ::ng-deep .leaflet-bar a:hover,
+    :host-context(.dark) ::ng-deep .leaflet-buttons-control-button:hover { background-color: rgba(51,65,85,0.7); }
+    :host-context(.dark) ::ng-deep .leaflet-pm-toolbar .control-icon { filter: invert(1) brightness(1.6); }
+    :host-context(.dark) ::ng-deep .active > .leaflet-buttons-control-button { background-color: rgba(124,58,237,0.22) !important; box-shadow: inset 3px 0 0 #a78bfa; }
+    :host-context(.dark) ::ng-deep .leaflet-buttons-control-button.pm-disabled { background-color: rgba(51,65,85,0.5); }
+    :host-context(.dark) ::ng-deep .button-container .leaflet-pm-actions-container .leaflet-pm-action { background-color: rgb(241 245 249); color: rgb(15 23 42); border-right-color: rgb(203 213 225); }
+    :host-context(.dark) ::ng-deep .button-container .leaflet-pm-actions-container .leaflet-pm-action:hover { background-color: #fff; }
+
+    @media (prefers-reduced-motion: reduce) {
+      :host ::ng-deep .leaflet-bar a, :host button { transition: none !important; }
+    }
   `],
 })
 export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestroy {
@@ -302,6 +456,23 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   @Input() interactive = true;
   @Input() showPopups = false;
   @Input() enableDrawing = false;
+  /** Dibujar un solo polígono (sectores): sin los pasos de manzanas y puntos. */
+  @Input() soloLimite = false;
+  /** Con `soloLimite`: color con el que se dibuja y se ve la zona (el del barrio). */
+  @Input() set colorForma(v: string | null) {
+    this._colorForma = v;
+    this.aplicarColorForma();
+  }
+  private _colorForma: string | null = null;
+  /** Los demás territorios de la congregación: se ven en gris y sirven de imán al dibujar. */
+  @Input() referenciasGeojson: GeoJSONFeatureCollection | null = null;
+  /** Dónde abrir el mapa si el territorio aún no tiene límite (el salón). */
+  @Input() centroInicial: { lat: number; lng: number } | null = null;
+  /** Manzanas propuestas por la detección, pendientes de revisar. */
+  @Input() propuestasGeojson: GeoJSONFeatureCollection | null = null;
+  @Input() detectando = false;
+  @Input() guardandoPropuestas = false;
+  @Input() set avisoEditor(v: string | null) { this.aviso.set(v); }
 
   @Output() featureClick = new EventEmitter<any>();
   @Output() geometryChanged = new EventEmitter<GeoJSONFeatureCollection>();
@@ -309,13 +480,27 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   @Output() manzanaDrawn = new EventEmitter<{ geojson: any; numero: string }>();
   /** Emite datos del punto cuando se confirma su creación */
   @Output() puntoPlaced = new EventEmitter<{ geojson: any; nombre: string; tipo: string; notas: string }>();
+  /** Calles visibles (MultiLineString) con las que el padre pide las manzanas propuestas. */
+  @Output() detectar = new EventEmitter<any>();
+  @Output() guardarPropuestas = new EventEmitter<any[]>();
+  @Output() descartarPropuestas = new EventEmitter<void>();
+  @Output() manzanaBorrar = new EventEmitter<number>();
 
   private map: L.Map | null = null;
   private geoLayer: L.GeoJSON | null = null;
   private manzanasLayer: L.LayerGroup | null = null;
   private puntosLayer: L.LayerGroup | null = null;
+  private referenciasLayer: L.GeoJSON | null = null;
+  private propuestasLayer: L.LayerGroup | null = null;
+  /** Por propuesta: su polígono y su etiqueta, para renumerar al quitar o incluir. */
+  private propuestasCapas: { id: number; feature: any; poligono: L.GeoJSON; etiqueta: L.Marker }[] = [];
+  /** La vista inicial (salón o territorios vecinos) se aplica una sola vez. */
+  private vistaInicialAplicada = false;
+  private ultimaFormaManzana: string | null = null;
   private tileProvider = 'osm';
-  private tileLayer: L.TileLayer | null = null;
+  private tileLayer: L.Layer | null = null;
+  /** Cada cambio de proveedor invalida los anteriores: la capa propia se carga de forma asíncrona. */
+  private tileLayerToken = 0;
   private geolocateMarker: L.Marker | null = null;
   private keydownListener: ((e: KeyboardEvent) => void) | null = null;
   private geolocateErrorTimer: ReturnType<typeof setTimeout> | null = null;
@@ -327,9 +512,21 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   private pendingPuntoMarker: L.Marker | null = null;
 
   // ── Signals ────────────────────────────────────────────────────────────
+  readonly opcionesTipoPunto: PickerOption[] = [
+    { value: 'Salida', label: 'Salida' },
+    { value: 'Lugar', label: 'Lugar de interés' },
+    { value: 'Otro', label: 'Otro' },
+  ];
   layerMode = signal<LayerMode>('territorio');
-  activeToolHint = signal('Selecciona una herramienta para dibujar el límite del territorio.');
+  readonly pasos: { modo: LayerMode; n: number; label: string; titulo: string; activo: string }[] = [
+    { modo: 'territorio', n: 1, label: 'Límite',   titulo: 'Dibujar el límite del territorio',      activo: 'bg-purple-600 text-white shadow-sm shadow-purple-900/20' },
+    { modo: 'manzana',    n: 2, label: 'Manzanas', titulo: 'Dibujar las manzanas (cuadras)',        activo: 'bg-blue-600 text-white shadow-sm shadow-blue-900/20' },
+    { modo: 'punto',      n: 3, label: 'Puntos',   titulo: 'Marcar el punto de salida u otro lugar', activo: 'bg-rose-600 text-white shadow-sm shadow-rose-900/20' },
+  ];
+  activeToolHint = signal(Hint.limite);
   drawingActive = signal(false);
+  /** Con `soloLimite`: se están moviendo las esquinas de la zona ya dibujada. */
+  editMode = signal(false);
   realtimeArea = signal<string | null>(null);
   showClearConfirm = signal(false);
   geolocating = signal(false);
@@ -337,6 +534,12 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   geocodeResults = signal<any[]>([]);
   geocodeLoading = signal(false);
   geocodeError = signal<string | null>(null);
+  aviso = signal<string | null>(null);
+  extrayendo = signal(false);
+  propuestasTotal = signal(0);
+  propuestasExcluidas = signal<Set<number>>(new Set());
+  propuestasActivas = computed(() => this.propuestasTotal() > 0);
+  propuestasIncluidas = computed(() => this.propuestasTotal() - this.propuestasExcluidas().size);
 
   // ── Manzana prompt ─────────────────────────────────────────────────────
   showManzanaPrompt = signal(false);
@@ -375,6 +578,15 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     if (changes['puntosGeojson'] && this.map) {
       this.renderPuntosLayer();
     }
+    if (changes['referenciasGeojson'] && this.map) {
+      this.renderReferencias();
+    }
+    if (changes['propuestasGeojson'] && this.map) {
+      this.renderPropuestas();
+    }
+    if (changes['centroInicial'] && this.map) {
+      this.aplicarVistaInicial();
+    }
   }
 
   ngOnDestroy(): void {
@@ -409,14 +621,41 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       attributionControl: false,
     });
 
-    this.setTileLayer('osm');
+    // El fondo lo pone loadTileProvider() (y cae a OSM si falla): añadir OSM aquí pediría teselas
+    // que se descartan enseguida cuando el proveedor configurado es otro.
+
+    // Los números de manzana van en su propia capa: lejos se amontonan y tapan el mapa.
+    this.map.createPane('etiquetasManzana').style.zIndex = '640';
+    this.map.on('zoomend', () => this.ajustarEtiquetasManzana());
 
     if (this.geojson) this.renderGeoJSON();
     if (this.manzanasGeojson) this.renderManzanasLayer();
     if (this.puntosGeojson) this.renderPuntosLayer();
+    if (this.referenciasGeojson) this.renderReferencias();
+    this.aplicarVistaInicial();
 
     if (this.enableDrawing) {
       this.initDrawingControls();
+    }
+  }
+
+  /**
+   * Sin límite dibujado, el mapa no debe abrir en Bogotá: se encuadran los
+   * territorios vecinos o, si es el primero, el salón de la congregación.
+   */
+  private aplicarVistaInicial(): void {
+    if (!this.map || this.vistaInicialAplicada) return;
+    if (this.geojson?.features?.length) {
+      this.vistaInicialAplicada = true; // renderGeoJSON ya encuadró el territorio
+      return;
+    }
+    const vecinos = this.referenciasLayer?.getBounds();
+    if (vecinos?.isValid()) {
+      this.map.fitBounds(vecinos, { padding: [30, 30] });
+      this.vistaInicialAplicada = true;
+    } else if (this.centroInicial) {
+      this.map.setView([this.centroInicial.lat, this.centroInicial.lng], 16);
+      this.vistaInicialAplicada = true;
     }
   }
 
@@ -438,7 +677,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     if (!this.map) return;
 
     if (mode === 'territorio') {
-      this.activeToolHint.set('Selecciona una herramienta para dibujar el límite del territorio.');
+      this.activeToolHint.set(Hint.limite);
       // Restore polygon drawing tools visibility
       this.map.pm.addControls({
         position: 'topleft',
@@ -455,7 +694,8 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         removalMode: true,
       });
     } else if (mode === 'manzana') {
-      this.activeToolHint.set('Dibuja el polígono de cada manzana. Luego asigna su número.');
+      this.activeToolHint.set(Hint.manzanas);
+      this.manzanasAlFrente();
       this.map.pm.addControls({
         position: 'topleft',
         drawPolygon: true,
@@ -471,7 +711,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         removalMode: false,
       });
     } else if (mode === 'punto') {
-      this.activeToolHint.set('Haz clic en el mapa para colocar un punto de lugar.');
+      this.activeToolHint.set('Haga clic en el mapa donde se reúnen para salir (o en otro lugar de referencia).');
       // Hide all geoman tools — we use our own click handler
       this.map.pm.addControls({
         position: 'topleft',
@@ -509,22 +749,28 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         snappable: true,
         snapDistance: 15,
         allowSelfIntersection: false,
+        // La ayuda dice "doble clic para terminar": sin esto solo cierra tocando el primer vértice.
+        finishOn: 'dblclick',
       });
 
-      this.map.pm.addControls({
-        position: 'topleft',
-        drawPolygon: true,
-        drawMarker: false,
-        drawCircleMarker: false,
-        drawPolyline: false,
-        drawRectangle: true,
-        drawCircle: true,
-        drawText: false,
-        editMode: true,
-        dragMode: true,
-        cutPolygon: false,
-        removalMode: true,
-      });
+      // En modo barrio no hay barra de herramientas: el panel de al lado dibuja, ajusta y borra.
+      if (!this.soloLimite) {
+        this.map.pm.addControls({
+          position: 'topleft',
+          drawPolygon: true,
+          drawMarker: false,
+          drawCircleMarker: false,
+          drawPolyline: false,
+          drawRectangle: true,
+          drawCircle: true,
+          drawText: false,
+          editMode: true,
+          dragMode: true,
+          cutPolygon: false,
+          removalMode: true,
+        });
+      }
+      this.aplicarColorForma();
 
       // ── Drawing lifecycle events ─────────────────────────────────────
 
@@ -535,9 +781,9 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         if (shape === 'Polygon') {
           const mode = this.layerMode();
           if (mode === 'manzana') {
-            this.activeToolHint.set('Dibuja la manzana · Doble clic para finalizar · ESC para cancelar');
+            this.activeToolHint.set('Clic en cada esquina de la manzana · Doble clic para terminar · Esc para salir');
           } else {
-            this.activeToolHint.set('Clic para agregar vértices · Doble clic para finalizar · ESC para cancelar');
+            this.activeToolHint.set('Clic en cada esquina del territorio · Doble clic para terminar · Esc para salir');
           }
         } else if (shape === 'Rectangle') {
           this.activeToolHint.set('Arrastra para definir el rectángulo');
@@ -550,12 +796,8 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
       this.map.on('pm:drawend', () => {
         this.drawingActive.set(false);
-        const mode = this.layerMode();
-        if (mode === 'manzana') {
-          this.activeToolHint.set('Dibuja el polígono de cada manzana. Luego asigna su número.');
-        } else {
-          this.activeToolHint.set('Selecciona una herramienta para comenzar.');
-        }
+        if (this.showManzanaPrompt()) return; // la ayuda la pone el aviso del número
+        this.activeToolHint.set(this.layerMode() === 'manzana' ? Hint.manzanas : Hint.limite);
       });
 
       this.map.on('pm:create', (e: any) => {
@@ -565,11 +807,15 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         if (mode === 'manzana') {
           // Store the layer and show number prompt — don't emit geometryChanged
           this.pendingManzanaLayerObj = e.layer;
-          this.pendingManzanaNumero = '';
+          this.ultimaFormaManzana = e.shape;
+          this.pendingManzanaNumero = this.sugerirNumeroManzana();
           this.showManzanaPrompt.set(true);
           this.activeToolHint.set('Ingresa el número para esta manzana.');
         } else {
-          // Territorio mode: existing behavior
+          // Un barrio es una sola zona: la nueva reemplaza a la anterior.
+          if (this.soloLimite) {
+            this.capasDelLimite().filter((l: any) => l !== e.layer).forEach((l) => this.map!.removeLayer(l));
+          }
           e.layer.on('pm:edit', () => this.emitGeometryUpdate());
           e.layer.on('pm:dragend', () => this.emitGeometryUpdate());
           this.emitGeometryUpdate();
@@ -590,6 +836,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       });
 
       this.map.on('pm:globaleditmodetoggled', (e: any) => {
+        this.editMode.set(!!e.enabled);
         if (e.enabled) {
           this.activeToolHint.set('Arrastra los vértices para editar · Clic fuera para salir');
         } else {
@@ -616,6 +863,11 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         }
       });
 
+      // Sin zona todavía, se deja la herramienta lista: no hay que buscar ningún lápiz.
+      if (this.soloLimite && this.capasDelLimite().length === 0) {
+        setTimeout(() => this.empezarDibujo());
+      }
+
     } catch (err) {
       console.error('Error inicializando controles Geoman:', err);
     }
@@ -634,7 +886,16 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     this.pendingManzanaLayerObj = null;
     this.showManzanaPrompt.set(false);
     this.pendingManzanaNumero = '';
-    this.activeToolHint.set('Manzana guardada. Dibuja la siguiente o cambia de capa.');
+    // Dibujo continuo: la herramienta queda lista para la siguiente manzana (Esc para salir).
+    if (this.ultimaFormaManzana) this.map.pm.enableDraw(this.ultimaFormaManzana as any);
+    this.activeToolHint.set('Manzana guardada. Dibuje la siguiente · Esc para terminar');
+  }
+
+  /** El número que sigue al mayor ya usado (o al conteo, si los números no son enteros). */
+  private sugerirNumeroManzana(): string {
+    const numeros = (this.manzanasGeojson?.features ?? []).map((f: any) => String(f.properties?.numero_manzana ?? '').trim());
+    const enteros = numeros.filter((n) => /^\d+$/.test(n)).map(Number);
+    return String(enteros.length ? Math.max(...enteros) + 1 : numeros.length + 1);
   }
 
   cancelManzana(): void {
@@ -716,6 +977,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       if (e.key === 'Escape') {
         if (this.showManzanaPrompt()) this.cancelManzana();
         if (this.showPuntoPrompt()) this.cancelPunto();
+        if (this.drawingActive()) this.map?.pm.disableDraw();
       }
     };
     document.addEventListener('keydown', this.keydownListener);
@@ -733,6 +995,33 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     } catch (e) {
       console.warn('No se pudo deshacer el vértice:', e);
     }
+  }
+
+  // ── Modo barrio: el panel de al lado maneja el dibujo ──────────────────
+
+  /** Empieza a marcar la zona: cada toque es una esquina, doble toque termina. */
+  empezarDibujo(): void {
+    if (!this.map?.pm) return;
+    this.map.pm.disableGlobalEditMode();
+    this.map.pm.enableDraw('Polygon');
+  }
+
+  cancelarDibujo(): void {
+    this.map?.pm?.disableDraw();
+  }
+
+  /** Activa o desactiva el arrastre de esquinas de la zona ya dibujada. */
+  alternarEdicion(): void {
+    this.map?.pm?.toggleGlobalEditMode();
+  }
+
+  /** Aplica el color del barrio a lo que se dibuje y a lo ya dibujado. */
+  private aplicarColorForma(): void {
+    const c = this._colorForma;
+    if (!this.map || !this.soloLimite || !c) return;
+    const estilo = { color: c, fillColor: c, weight: 3, fillOpacity: 0.25 };
+    try { (this.map.pm as any).setGlobalOptions({ pathOptions: estilo }); } catch { /* sin Geoman */ }
+    this.capasDelLimite().forEach((l: any) => l.setStyle?.(estilo));
   }
 
   // ── Clear all territory layers ─────────────────────────────────────────
@@ -786,6 +1075,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
       // Polygon fill
       const poly = L.geoJSON(feature, {
+        ...CAPA_AUXILIAR,
         style: {
           color: strokeColor,
           weight: isPredicada ? 2.5 : 2,
@@ -793,7 +1083,11 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
           fillOpacity: isPredicada ? 0.55 : 0.40,
           opacity: 0.9,
         },
-      });
+        onEachFeature: (_f: any, capa: any) => { capa._capaAuxiliar = true; },
+      } as any);
+      if (this.enableDrawing && feature.id != null) {
+        poly.on('click', (ev: L.LeafletMouseEvent) => this.abrirMenuManzana(Number(feature.id), props.numero_manzana, ev.latlng));
+      }
       poly.addTo(this.manzanasLayer!);
 
       // Centroid label with number
@@ -823,10 +1117,179 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
               iconSize: [0, 0],
               iconAnchor: [0, 0],
             });
-            L.marker(centroid, { icon: labelIcon, interactive: false }).addTo(this.manzanasLayer!);
+            L.marker(centroid, { icon: labelIcon, interactive: false, pane: 'etiquetasManzana' }).addTo(this.manzanasLayer!);
           }
         } catch {}
       }
+    });
+  }
+
+  /** En los mapas de consulta, los números solo se ven con el mapa cerca (en el editor, siempre). */
+  private ajustarEtiquetasManzana(): void {
+    const pane = this.map?.getPane('etiquetasManzana');
+    if (!pane || !this.map) return;
+    pane.style.display = this.enableDrawing || this.map.getZoom() >= 17 ? '' : 'none';
+  }
+
+  /** El límite dibujado después queda encima de las manzanas y se lleva los clics. */
+  private manzanasAlFrente(): void {
+    this.manzanasLayer?.eachLayer((capa: any) => capa.bringToFront?.());
+    this.propuestasLayer?.eachLayer((capa: any) => capa.bringToFront?.());
+  }
+
+  /** Menú de una manzana guardada (capa Manzanas): por ahora, borrarla sin salir del editor. */
+  private abrirMenuManzana(id: number, numero: string, latlng: L.LatLng): void {
+    if (!this.map || this.layerMode() !== 'manzana' || this.drawingActive() || this.propuestasActivas()) return;
+    const caja = document.createElement('div');
+    caja.style.cssText = 'font-family:system-ui;min-width:150px';
+    caja.innerHTML = `<p style="margin:0 0 8px;font-weight:800;font-size:14px;color:#1e293b">Manzana ${numero ?? ''}</p>`;
+    const borrar = document.createElement('button');
+    borrar.textContent = 'Borrar manzana';
+    borrar.style.cssText = 'width:100%;padding:8px;border-radius:10px;background:#dc2626;color:#fff;font-weight:700;font-size:13px;border:0;cursor:pointer';
+    borrar.onclick = () => { this.map?.closePopup(); this.manzanaBorrar.emit(id); };
+    caja.appendChild(borrar);
+    L.popup().setLatLng(latlng).setContent(caja).openOn(this.map);
+  }
+
+  // ── Territorios vecinos (referencia) ───────────────────────────────────
+
+  private renderReferencias(): void {
+    if (!this.map) return;
+    if (this.referenciasLayer) {
+      this.map.removeLayer(this.referenciasLayer);
+      this.referenciasLayer = null;
+    }
+    if (!this.referenciasGeojson?.features?.length) return;
+    this.referenciasLayer = L.geoJSON(this.referenciasGeojson as any, {
+      ...CAPA_AUXILIAR,
+      interactive: false,
+      // Gris para las tarjetas vecinas; los sectores con su color y el límite de la congregación destacado.
+      style: (f: any) => {
+        const p = f?.properties ?? {};
+        if (p.limite) return { color: '#0f766e', weight: 3, dashArray: '8 6', fillColor: '#14b8a6', fillOpacity: 0.05 };
+        if (p.color) return { color: p.color, weight: 2, fillColor: p.color, fillOpacity: 0.18 };
+        return { color: '#64748b', weight: 1.5, dashArray: '5 5', fillColor: '#94a3b8', fillOpacity: 0.12 };
+      },
+      onEachFeature: (f: any, capa: any) => {
+        capa._capaAuxiliar = true;
+        if (f.properties?.codigo) {
+          capa.bindTooltip(String(f.properties.codigo), { permanent: true, direction: 'center', className: 'gac-ref-label' });
+        }
+      },
+    } as any).addTo(this.map);
+    this.referenciasLayer.bringToBack();
+    this.aplicarVistaInicial();
+  }
+
+  /** Vuelve a encuadrar las referencias (p. ej. tras subir el límite de la congregación). */
+  encuadrarReferencias(): void {
+    if (!this.map) return;
+    this.map.invalidateSize(); // el contenedor pudo cambiar de ancho (p. ej. al abrir un panel)
+    const b = this.referenciasLayer?.getBounds();
+    if (b?.isValid()) this.map.fitBounds(b, { padding: [30, 30] });
+  }
+
+  // ── Manzanas propuestas (detección automática) ─────────────────────────
+
+  /** Encuadra el territorio, lee las calles del mapa propio y se las pasa al padre. */
+  async detectarManzanas(): Promise<void> {
+    if (!this.map) return;
+    this.aviso.set(null);
+    if (this.tileProvider !== 'propio' || !(this.tileLayer as any)?.getMaplibreMap) {
+      this.aviso.set('La detección usa las calles del mapa propio. Actívelo en Configuración → Sistema → Proveedor de mapas.');
+      return;
+    }
+    const limite = this.capasDelLimite();
+    if (!limite.length) {
+      this.aviso.set('Primero dibuje el límite del territorio en "1 · Límite".');
+      return;
+    }
+    this.extrayendo.set(true);
+    try {
+      this.map.fitBounds(L.featureGroup(limite).getBounds(), { padding: [40, 40], animate: false });
+      await new Promise((r) => setTimeout(r, 400)); // MapLibre sigue a Leaflet en el siguiente cuadro
+      const calles = await callesDelMapa(this.tileLayer);
+      if (!calles?.coordinates.length) {
+        this.aviso.set('El mapa no tiene calles en esta zona. Dibuje las manzanas a mano.');
+        return;
+      }
+      this.detectar.emit(calles);
+    } finally {
+      this.extrayendo.set(false);
+    }
+  }
+
+  private renderPropuestas(): void {
+    if (!this.map) return;
+    if (this.propuestasLayer) {
+      this.map.removeLayer(this.propuestasLayer);
+      this.propuestasLayer = null;
+    }
+    this.propuestasCapas = [];
+    this.propuestasExcluidas.set(new Set());
+    const features = this.propuestasGeojson?.features ?? [];
+    this.propuestasTotal.set(features.length);
+    if (!features.length) return;
+
+    this.propuestasLayer = L.layerGroup().addTo(this.map);
+    features.forEach((feature: any, i: number) => {
+      const id = feature.id ?? i;
+      const poligono = L.geoJSON(feature, {
+        pmIgnore: true,
+        snapIgnore: true,
+        style: this.estiloPropuesta(false),
+        onEachFeature: (_f: any, capa: any) => { capa._capaAuxiliar = true; },
+      } as any);
+      poligono.on('click', () => this.alternarPropuesta(id));
+      poligono.addTo(this.propuestasLayer!);
+      const etiqueta = L.marker(this.getCentroid(feature.geometry) ?? poligono.getBounds().getCenter(), {
+        interactive: false,
+        icon: this.iconoEtiqueta('', '#d97706'),
+      }).addTo(this.propuestasLayer!);
+      this.propuestasCapas.push({ id, feature, poligono, etiqueta });
+    });
+    this.numerarPropuestas();
+  }
+
+  private alternarPropuesta(id: number): void {
+    const excluidas = new Set(this.propuestasExcluidas());
+    if (excluidas.has(id)) excluidas.delete(id);
+    else excluidas.add(id);
+    this.propuestasExcluidas.set(excluidas);
+    this.numerarPropuestas();
+  }
+
+  /** Las incluidas se numeran seguidas desde el primer número propuesto; las quitadas llevan ✕. */
+  private numerarPropuestas(): void {
+    const excluidas = this.propuestasExcluidas();
+    const inicio = parseInt(this.propuestasCapas[0]?.feature.properties?.numero_manzana, 10) || 1;
+    let n = inicio;
+    for (const p of this.propuestasCapas) {
+      const fuera = excluidas.has(p.id);
+      p.poligono.setStyle(this.estiloPropuesta(fuera));
+      p.etiqueta.setIcon(this.iconoEtiqueta(fuera ? '✕' : String(n), fuera ? '#94a3b8' : '#d97706'));
+      p.feature.properties = { ...p.feature.properties, numero_manzana: fuera ? null : String(n) };
+      if (!fuera) n++;
+    }
+  }
+
+  confirmarPropuestas(): void {
+    const excluidas = this.propuestasExcluidas();
+    this.guardarPropuestas.emit(this.propuestasCapas.filter((p) => !excluidas.has(p.id)).map((p) => p.feature));
+  }
+
+  private estiloPropuesta(fuera: boolean): L.PathOptions {
+    return fuera
+      ? { color: '#94a3b8', weight: 1.5, dashArray: '4 4', fillColor: '#e2e8f0', fillOpacity: 0.25 }
+      : { color: '#d97706', weight: 2, dashArray: '6 4', fillColor: '#fde68a', fillOpacity: 0.45 };
+  }
+
+  private iconoEtiqueta(texto: string, fondo: string): L.DivIcon {
+    return L.divIcon({
+      html: `<div style="display:inline-block;transform:translate(-50%,-50%);background:${fondo};color:#fff;font:700 12px system-ui,sans-serif;padding:3px 8px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);border:1.5px solid rgba(255,255,255,.6)">${texto}</div>`,
+      className: '',
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
     });
   }
 
@@ -944,10 +1407,20 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     }
   }
 
+  /** Figuras que forman el límite: lo dibujado en "Límite", sin manzanas, vecinos, propuestas ni trazos temporales. */
+  private capasDelLimite(): L.Layer[] {
+    const capas: L.Layer[] = [];
+    this.map?.eachLayer((layer: any) => {
+      if (layer._capaAuxiliar || layer._pmTempLayer) return;
+      if (layer instanceof L.Circle || layer instanceof L.Polygon) capas.push(layer);
+    });
+    return capas;
+  }
+
   private recalculateAreaFromAllLayers(): void {
     if (!this.map) return;
     let totalArea = 0;
-    this.map.eachLayer((layer: any) => {
+    this.capasDelLimite().forEach((layer: any) => {
       try {
         if (layer instanceof L.Circle) {
           const r = layer.getRadius();
@@ -1060,7 +1533,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     if (!this.map) return;
 
     const features: any[] = [];
-    this.map.eachLayer((layer: any) => {
+    this.capasDelLimite().forEach((layer: any) => {
       if (layer instanceof L.Circle) {
         try {
           const center = layer.getLatLng();
@@ -1068,9 +1541,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
           const circlePoly = geoCircle([center.lng, center.lat], radiusKm, 64);
           features.push(circlePoly);
         } catch {}
-      } else if (layer instanceof L.Polygon) {
-        // Exclude manzanas layer polygons — they are in manzanasLayer
-        if (this.manzanasLayer && this.manzanasLayer.hasLayer(layer)) return;
+      } else {
         features.push(layer.toGeoJSON());
       }
     });
@@ -1097,6 +1568,22 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   setTileLayer(provider: string): void {
     if (!this.map) return;
     if (this.tileLayer) this.map.removeLayer(this.tileLayer);
+    this.tileLayer = null;
+    const token = ++this.tileLayerToken;
+
+    if (provider === 'propio') {
+      // La capa propia se importa bajo demanda; si el archivo no responde se vuelve a OSM.
+      crearCapaBasePropia()
+        .then((capa) => {
+          if (token !== this.tileLayerToken || !this.map) return;
+          if (!capa) return this.setTileLayer('osm');
+          this.tileLayer = capa.addTo(this.map);
+        })
+        .catch(() => {
+          if (token === this.tileLayerToken) this.setTileLayer('osm');
+        });
+      return;
+    }
 
     const tileUrl =
       provider === 'google'
@@ -1108,12 +1595,34 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
   // ── GeoJSON Rendering (territory outline) ─────────────────────────────
 
+  private codigoLabels: { bounds: L.LatLngBounds; tooltip: L.Tooltip; visible: boolean }[] = [];
+  private zoomLabelsHandler: (() => void) | null = null;
+
+  /**
+   * Con muchos territorios las etiquetas se pisarían: cada código solo se muestra
+   * si su polígono mide lo bastante en pantalla para contenerlo. Al acercar el zoom aparecen.
+   */
+  private actualizarCodigos(): void {
+    const map = this.map;
+    if (!map) return;
+    for (const l of this.codigoLabels) {
+      const a = map.latLngToContainerPoint(l.bounds.getNorthWest());
+      const b = map.latLngToContainerPoint(l.bounds.getSouthEast());
+      const cabe = Math.abs(b.x - a.x) >= 56 && Math.abs(b.y - a.y) >= 30;
+      if (cabe && !l.visible) l.tooltip.addTo(map);
+      else if (!cabe && l.visible) l.tooltip.remove();
+      l.visible = cabe;
+    }
+  }
+
   private renderGeoJSON(): void {
     if (!this.map || !this.geojson) return;
 
     if (this.geoLayer) {
       this.map.removeLayer(this.geoLayer);
     }
+    this.codigoLabels.forEach(l => l.tooltip.remove());
+    this.codigoLabels = [];
 
     this.geoLayer = L.geoJSON(this.geojson as any, {
       style: (feature: any) => this.getFeatureStyle(feature),
@@ -1122,22 +1631,44 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
         if (this.showPopups && feature.properties) {
           const p = feature.properties;
-          const stateColor =
-            p.estado_territorio === 'Disponible' ? { bg: '#ecfdf5', text: '#047857' }
-            : p.estado_territorio === 'Asignado' ? { bg: '#f5f3ff', text: '#6d28d9' }
-            : { bg: '#f1f5f9', text: '#64748b' };
-          layer.bindPopup(`
-            <div style="font-family:system-ui;min-width:160px">
-              <strong style="font-size:14px;color:#1e293b">${p.codigo || ''}</strong>
-              <p style="margin:4px 0 0;color:#64748b;font-size:12px">${p.nombre || ''}</p>
-              <span style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:${stateColor.bg};color:${stateColor.text}">
-                ${p.estado_territorio || ''}
-              </span>
+          const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+          const estado = p.estado_territorio || 'Sin estado';
+          const tono = estado === 'Disponible' ? 'ok' : estado === 'Asignado' ? 'asig' : 'pausa';
+          // El clic navega al territorio, así que la ficha va al pasar el cursor, no en un popup.
+          layer.bindTooltip(`
+            <div class="gac-tt">
+              <div class="gac-tt__top"><strong>${esc(p.codigo)}</strong><span class="gac-tt__estado gac-tt__estado--${tono}">${esc(estado)}</span></div>
+              <div class="gac-tt__nombre">${esc(p.nombre)}</div>
+              <div class="gac-tt__cta">Clic para abrir el territorio</div>
             </div>
-          `);
+          `, { sticky: true, direction: 'top', offset: [0, -8], opacity: 1, className: 'gac-tt-wrap' });
+          layer.on('mouseover', () => (layer as L.Path).setStyle({ weight: 3, fillOpacity: 0.55 }));
+          layer.on('mouseout', () => this.geoLayer?.resetStyle(layer as L.Path));
         }
       },
     }).addTo(this.map);
+
+    if (this.showPopups) {
+      // Código de cada territorio sobre su polígono, para ubicarlos sin pasar el cursor.
+      this.geoLayer.eachLayer((layer: any) => {
+        const codigo = layer.feature?.properties?.codigo;
+        if (!codigo) return;
+        const centro = (layer.getBounds?.() as L.LatLngBounds | undefined)?.getCenter();
+        if (!centro) return;
+        this.codigoLabels.push({
+          bounds: layer.getBounds(),
+          tooltip: L.tooltip({ permanent: true, direction: 'center', className: 'gac-terr-code', interactive: false })
+            .setContent(String(codigo)).setLatLng(centro),
+          visible: false,
+        });
+      });
+    }
+
+    if (this.showPopups && this.map) {
+      if (this.zoomLabelsHandler) this.map.off('zoomend', this.zoomLabelsHandler);
+      this.zoomLabelsHandler = () => this.actualizarCodigos();
+      this.map.on('zoomend', this.zoomLabelsHandler);
+    }
 
     if (this.enableDrawing) {
       this.geoLayer.eachLayer((layer: any) => {
@@ -1151,11 +1682,16 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     if (bounds.isValid()) {
       this.map.fitBounds(bounds, { padding: [30, 30] });
     }
+    this.ajustarEtiquetasManzana();
+    this.actualizarCodigos();
 
     this.highlightSelected();
   }
 
   private getFeatureStyle(feature: any): L.PathOptions {
+    if (this.soloLimite && this._colorForma) {
+      return { color: this._colorForma, fillColor: this._colorForma, weight: 3, fillOpacity: 0.25 };
+    }
     const estado = feature?.properties?.estado_territorio || '';
     const isSelected = feature?.id === this.selectedId;
 
@@ -1184,3 +1720,14 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     this.geoLayer.setStyle((feature: any) => this.getFeatureStyle(feature));
   }
 }
+
+/**
+ * Capas que no son el límite (manzanas, vecinos): Geoman no las edita ni las
+ * borra, pero el lápiz se pega a sus bordes para que los límites coincidan.
+ */
+const CAPA_AUXILIAR = { pmIgnore: true, snapIgnore: false };
+
+const Hint = {
+  limite: 'Elija el lápiz (izquierda) y haga clic en cada esquina del territorio. Doble clic para terminar.',
+  manzanas: 'Use "Detectar manzanas" o dibuje cada una con el lápiz. Toque una manzana guardada para borrarla.',
+};

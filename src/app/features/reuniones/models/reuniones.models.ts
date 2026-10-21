@@ -379,18 +379,25 @@ export interface ParteParsed {
   es_informativa: boolean;
   orden_visual: number;
   fuente_informacion?: string;
+  /** Texto completo de la parte según la guía (.jwpub): escenario, indicaciones
+   *  y preguntas. Solo en Seamos Mejores Maestros. */
+  descripcion?: string | null;
   semana_ordinal?: number;
 }
 
 export interface SemanaParsed {
   titulo_semana: string;
   lectura_semanal?: string;
+  /** Lunes exacto de la semana (YYYY-MM-DD). Solo llega si se subió el .jwpub. */
+  fecha_lunes?: string | null;
   partes: ParteParsed[];
 }
 
 export interface MWBImportPreviewResponse {
   mensaje: string;
   semanas: SemanaParsed[];
+  /** 'jwpub' = leído del archivo oficial sin IA; 'ia' = PDF analizado por IA. */
+  origen?: 'jwpub' | 'ia';
 }
 
 export interface SemanaConfirm {
@@ -463,6 +470,9 @@ export interface PlantillaParteDetail {
   es_informativa: boolean;
   orden_visual: number;
   fuente_informacion?: string;
+  /** Texto completo de la parte según la guía (.jwpub): escenario, indicaciones
+   *  y preguntas. Solo en Seamos Mejores Maestros. */
+  descripcion?: string | null;
   semana_ordinal?: number;
   titulo_semana?: string;
   lectura_semanal?: string;

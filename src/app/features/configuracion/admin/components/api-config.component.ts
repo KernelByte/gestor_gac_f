@@ -242,7 +242,13 @@ const FORMULARIO_VACIO: FormularioCredencial = {
                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                   </button>
-                  <button *ngIf="!c.revocado" type="button" (click)="confirmar('revocar', c)" title="Revocar el acceso"
+                  <button *ngIf="c.revocado || !c.activo" type="button" (click)="reactivar(c)" title="Reactivar el acceso"
+                    class="w-10 h-10 grid place-items-center rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-500/5 transition-colors touch-manipulation">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                  <button *ngIf="!c.revocado && c.activo" type="button" (click)="confirmar('revocar', c)" title="Revocar el acceso"
                     class="w-10 h-10 grid place-items-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-500/5 transition-colors touch-manipulation">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
@@ -927,6 +933,14 @@ export class ApiConfigComponent implements OnInit {
     }[accion];
 
     this.confirmacion.set(config);
+  }
+
+  /** El backend limpia la revocación al recibir activo=true. */
+  reactivar(c: ApiCliente): void {
+    this.svc.actualizar(c.id_api_cliente, { activo: true }).subscribe({
+      next: () => this.toast.success('Acceso reactivado', `«${c.nombre}» vuelve a poder usar la API.`),
+      error: e => this.toast.error('No se pudo reactivar', this.mensajeError(e)),
+    });
   }
 
   ejecutarConfirmacion(): void {

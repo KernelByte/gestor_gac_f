@@ -61,6 +61,7 @@ import { AIConfigService, AIConfig, ProcessConfig, ProviderConfig } from '../ser
           </div>
         </div>
 
+        <span *ngIf="sucio()" class="ml-auto mr-3 text-xs font-bold text-amber-600 dark:text-amber-400">Cambios sin guardar</span>
         <button (click)="saveChanges()" [disabled]="loading() || !config()"
           class="relative group overflow-hidden bg-brand-purple hover:bg-purple-700 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-sm flex items-center gap-2 transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none">
           <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-500"></div>
@@ -586,6 +587,7 @@ export class AIConfigComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.service.getConfig().subscribe(() => {
+      this.marcarGuardado();
       const cfg = this.config();
       if (cfg) {
         const keys = Object.keys(cfg.processes);
@@ -616,12 +618,15 @@ export class AIConfigComponent implements OnInit, OnDestroy {
       { id: 'gpt-4-turbo',     label: 'GPT-4 Turbo' },
     ],
     anthropic: [
+      { id: 'claude-fable-5-1',              label: 'Claude Fable 5.1' },
+      { id: 'claude-opus-5-5',               label: 'Claude Opus 5.5' },
+      { id: 'claude-sonnet-5-5',             label: 'Claude Sonnet 5.5' },
+      { id: 'claude-haiku-5-5',              label: 'Claude Haiku 5.5' },
       { id: 'claude-opus-4-6',              label: 'Claude Opus 4.6' },
       { id: 'claude-sonnet-4-6',            label: 'Claude Sonnet 4.6' },
       { id: 'claude-haiku-4-5-20251001',    label: 'Claude Haiku 4.5' },
       { id: 'claude-3-5-sonnet-20241022',   label: 'Claude 3.5 Sonnet' },
       { id: 'claude-3-5-haiku-20241022',    label: 'Claude 3.5 Haiku' },
-      { id: 'claude-3-opus-20240229',       label: 'Claude 3 Opus' },
     ],
     open_source: [
       { id: 'meta-llama/llama-3.3-70b-instruct',   label: 'Llama 3.3 70B' },
@@ -785,9 +790,15 @@ export class AIConfigComponent implements OnInit, OnDestroy {
     this.showAddModal.set(false);
   }
 
+  /** Foto de lo último guardado: la edición muta objetos en sitio, así que se compara por contenido. */
+  private guardado = '';
+  private marcarGuardado() { this.guardado = JSON.stringify(this.config()); }
+  sucio(): boolean { return !!this.config() && JSON.stringify(this.config()) !== this.guardado; }
+
   deleteProcess(key: string) {
     const cfg = this.config();
     if (!cfg) return;
+    if (!confirm(`¿Eliminar el proceso «${key}»? Se aplicará al pulsar Guardar.`)) return;
     const { [key]: _, ...remaining } = cfg.processes as { [k: string]: ProcessConfig };
     const updated: AIConfig = { ...cfg, processes: remaining };
     this.service.config.set(updated);
@@ -798,7 +809,7 @@ export class AIConfigComponent implements OnInit, OnDestroy {
   saveChanges() {
     if (this.config()) {
       this.service.saveConfig(this.config()!).subscribe({
-        next: () => this.showToast('success', 'Configuración guardada correctamente.'),
+        next: () => { this.marcarGuardado(); this.showToast('success', 'Configuración guardada correctamente.'); },
         error: (err: any) => this.showToast('error', 'Error: ' + (err.error?.detail || err.message))
       });
     }
