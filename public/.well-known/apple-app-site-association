@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["86L3MYCQ4J.com.gestorgac.mobile"],
+        "components": [
+          { "/": "/public/invitacion/*", "comment": "Invitación de acceso a la app" },
+          { "/": "/public/lectura/*", "comment": "Compañeros de lectura" }
+        ]
+      }
+    ]
+  }
+}
