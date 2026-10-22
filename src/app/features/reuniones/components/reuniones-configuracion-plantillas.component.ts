@@ -286,7 +286,7 @@ import {
                  <svg class="w-4.5 h-4.5 text-[#6D28D9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               </div>
               <div>
-                <h3 class="font-bold text-slate-800 dark:text-white text-[0.8125rem]">Generador de Plantillas <span class="text-[#6D28D9] dark:text-purple-400 font-black">Motor IA</span></h3>
+                <h3 class="font-bold text-slate-800 dark:text-white text-[0.8125rem]">Generador de Plantillas</h3>
                 <p class="text-[0.625rem] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">
                   {{ plantillaTipoActivo() === 'fin_semana' ? 'Reunión Pública y Estudio de La Atalaya' : 'Vida y Ministerio Cristiano' }}
                 </p>
@@ -409,7 +409,12 @@ import {
                   [class.hidden]="!historialExpanded()"
                   [class.lg:flex]="true">
                @for (p of savedPlantillas(); track p.id_plantilla) {
-                 <div class="plt-hist-item group flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 cursor-default">
+                 <!-- La que está abierta en el editor se marca: sin esto no se sabía cuál se editaba. -->
+                 <div class="plt-hist-item group flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-default transition-colors"
+                      [attr.aria-current]="selectedPlantilla()?.id_plantilla === p.id_plantilla ? 'true' : null"
+                      [class]="selectedPlantilla()?.id_plantilla === p.id_plantilla
+                        ? 'bg-violet-50 dark:bg-violet-900/25 border-violet-300 dark:border-violet-700'
+                        : 'bg-white dark:bg-slate-800/60 border-slate-100 dark:border-slate-800'">
                    <!-- Left border accent -->
                    <div class="w-1 self-stretch rounded-full shrink-0"
                         [class]="p.tipo === 'entre_semana' ? 'bg-[#6D28D9]/30' : 'bg-emerald-400/40'"></div>
@@ -485,7 +490,7 @@ import {
                          <span>Importando...</span>
                        } @else {
                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                         <span>Importar Mes</span>
+                         <span>{{ plantillaTipoActivo() === 'fin_semana' ? 'Importar temas' : 'Importar guía' }}</span>
                        }
                      </button>
                    }
@@ -1666,7 +1671,7 @@ import {
 
             <!-- Text content -->
             <div class="text-center flex flex-col gap-2 w-full">
-              <p class="text-[0.6875rem] font-black uppercase tracking-widest text-[#6D28D9] dark:text-purple-400">Motor IA activo</p>
+              <p class="text-[0.6875rem] font-black uppercase tracking-widest text-[#6D28D9] dark:text-purple-400">{{ mwbEsJwpub() ? 'Leyendo el archivo oficial' : 'Motor IA activo' }}</p>
               <p class="text-sm font-bold text-slate-800 dark:text-white leading-snug min-h-[2.5rem] flex items-center justify-center text-center px-2">
                 {{ mwbProgressMessage() || 'Leyendo el archivo...' }}
               </p>
@@ -2285,6 +2290,8 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   mwbLoading = signal(false);
   mwbConfirming = signal(false);
   mwbPreview = signal<MWBImportPreviewResponse | null>(null);
+  /** El .jwpub se lee sin IA: el aviso de carga no debe decir "Motor IA". */
+  mwbEsJwpub = signal(false);
   mwbDates = signal<Map<number, string>>(new Map());
   mwbProgress = signal(0);
   mwbProgressMessage = signal('');
@@ -2620,9 +2627,8 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
     this.mwbLoading.set(true);
     this.mwbProgress.set(0);
-    this.mwbProgressMessage.set(
-      file.name.toLowerCase().endsWith('.jwpub') ? 'Leyendo el archivo...' : 'Subiendo PDF...'
-    );
+    this.mwbEsJwpub.set(file.name.toLowerCase().endsWith('.jwpub'));
+    this.mwbProgressMessage.set(this.mwbEsJwpub() ? 'Leyendo el archivo...' : 'Subiendo PDF...');
 
     try {
       const formData = new FormData();
@@ -2670,6 +2676,8 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
 
             if (evt.step === 'done' && evt.result) {
               const res = evt.result as MWBImportPreviewResponse;
+              // El panel enseña una sola cosa: importar cierra el editor.
+              this.closePlantillaEditor();
               this.mwbPreview.set(res);
               this.showToast('success', res.mensaje);
               const map = this.prefillDates(res.semanas);
@@ -2708,6 +2716,7 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
       const res = parsed as MWBImportPreviewResponse;
       res.mensaje = res.mensaje || 'JSON ingresado manualmente';
       
+      this.closePlantillaEditor();
       this.mwbPreview.set(res);
       this.mwbJsonInputOpen.set(false);
       
@@ -2987,6 +2996,11 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     this.plantillasLoading.set(true);
     this.reunionesSvc.getPlantillaDetail(id).subscribe({
       next: (res) => {
+        // Editar una guía guardada sustituye a cualquier importación a medias:
+        // con las dos abiertas, el encabezado decía "Modificando" pero el cuerpo
+        // era la vista previa del archivo, y "Guardar" no guardaba eso.
+        this.mwbPreview.set(null);
+        this.mwbDates.set(new Map());
         this.selectedPlantilla.set(res);
         this.plantillaEditing.set(true);
         this.plantillasLoading.set(false);
