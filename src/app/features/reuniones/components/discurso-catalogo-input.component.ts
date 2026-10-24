@@ -11,6 +11,7 @@ import {
   ViewChild,
   forwardRef,
   inject,
+  computed,
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -73,6 +74,16 @@ import { CatalogoDiscurso } from '../models/discursos.models';
       }
     </div>
 
+    <!-- Solo avisa: el bosquejo se puede guardar igual (lo ya programado no cambia). -->
+    @if (avisoNoDisponible(); as a) {
+      <p role="status" class="mt-1 flex items-start gap-1.5 text-[0.7rem] font-semibold leading-snug text-amber-700 dark:text-amber-300">
+        <svg class="w-3.5 h-3.5 mt-px shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>
+        </svg>
+        <span>Este discurso no está disponible: {{ a.motivo_no_disponible || 'sin razón indicada' }}</span>
+      </p>
+    }
+
     @if (abierto() && (sugerencias().length > 0 || propios().length > 0)) {
       <div class="fixed z-[60] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden"
         [style.top.px]="pos().top" [style.left.px]="pos().left" [style.width.px]="pos().width"
@@ -100,6 +111,9 @@ import { CatalogoDiscurso } from '../models/discursos.models';
                   [class]="j === resaltado() ? 'text-teal-800 dark:text-teal-200' : 'text-slate-700 dark:text-slate-200'">
                   {{ b.titulo }}
                 </span>
+                @if (svc.bosquejoDe(b.texto)?.no_disponible) {
+                  <span class="shrink-0 px-1.5 h-5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-[0.6rem] font-bold text-amber-800 dark:text-amber-200 flex items-center">No disponible</span>
+                }
                 @if (b.esActual) {
                   <span class="shrink-0 text-[0.6rem] font-bold text-teal-700 dark:text-teal-300">Actual</span>
                 }
@@ -129,12 +143,22 @@ import { CatalogoDiscurso } from '../models/discursos.models';
                   : 'bg-slate-100 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400'">
                 {{ d.numero }}
               </span>
-              <span class="flex-1 min-w-0 text-sm font-medium leading-snug transition-colors duration-100"
-                [class]="i === resaltado()
-                  ? 'text-amber-700 dark:text-amber-300'
-                  : 'text-slate-700 dark:text-slate-200'">
-                {{ d.titulo }}
+              <span class="flex-1 min-w-0 transition-colors duration-100">
+                <span class="block text-sm font-medium leading-snug"
+                  [class]="i === resaltado()
+                    ? 'text-amber-700 dark:text-amber-300'
+                    : (d.no_disponible ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-200')">
+                  {{ d.titulo }}
+                </span>
+                @if (d.no_disponible) {
+                  <span class="block text-[0.7rem] leading-snug text-amber-700 dark:text-amber-300">
+                    {{ d.motivo_no_disponible || 'Sin razón indicada' }}
+                  </span>
+                }
               </span>
+              @if (d.no_disponible) {
+                <span class="shrink-0 px-1.5 h-5 rounded-md bg-amber-100 dark:bg-amber-900/40 text-[0.6rem] font-bold text-amber-800 dark:text-amber-200 flex items-center">No disponible</span>
+              }
             </button>
           }
         </div>
@@ -148,7 +172,7 @@ import { CatalogoDiscurso } from '../models/discursos.models';
   `,
 })
 export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnInit, OnDestroy {
-  private svc = inject(DiscursosService);
+  protected svc = inject(DiscursosService);
 
   @ViewChild('campo') campoRef?: ElementRef<HTMLInputElement>;
 
@@ -191,6 +215,11 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
   /** Bosquejos del orador que coinciden con lo escrito (van antes del catálogo). */
   propios = signal<{ texto: string; numero: number | null; titulo: string; esActual: boolean }[]>([]);
   totalCoincidencias = signal(0);
+  /** El bosquejo escrito en el campo, si el catálogo lo tiene marcado como no disponible. */
+  avisoNoDisponible = computed(() => {
+    const b = this.svc.bosquejoDe(this.texto());
+    return b?.no_disponible ? b : null;
+  });
   abierto = signal(false);
   resaltado = signal(-1);
   pos = signal({ top: 0, left: 0, width: 0 });

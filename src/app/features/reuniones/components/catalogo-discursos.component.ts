@@ -4,7 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { DiscursosService } from '../services/discursos.service';
-import { CatalogoDiscurso, CatalogoPublicacion } from '../models/discursos.models';
+import {
+  CatalogoDiscurso,
+  CatalogoImportacionDetalle,
+  CatalogoImportacionResumen,
+  CatalogoPublicacion,
+} from '../models/discursos.models';
 
 /**
  * Panel de la pestaña «Catálogo de Discursos» de la configuración de Reuniones.
@@ -26,12 +31,6 @@ import { CatalogoDiscurso, CatalogoPublicacion } from '../models/discursos.model
         Bosquejos oficiales del S-34. Una vez cargados, al programar un discurso basta
         con escribir su número o una palabra del título para completarlo.
       </p>
-      @if (discursos().length > 0) {
-        <button type="button" (click)="confirmandoBorrado.set(true)" [disabled]="subiendo()"
-          class="shrink-0 h-9 px-3.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 disabled:opacity-50 transition-[background-color] duration-150 ease-out active:scale-[0.97]">
-          Vaciar catálogo
-        </button>
-      }
     </div>
 
     <!-- ===== ZONA DE CARGA ===== -->
@@ -122,6 +121,18 @@ import { CatalogoDiscurso, CatalogoPublicacion } from '../models/discursos.model
             placeholder="Buscar por número o palabra…"
             class="h-10 px-3 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-violet-500 transition-[border-color] duration-150 ease-out">
         </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" (click)="soloNoDisponibles.set(false)"
+            class="h-9 px-3 rounded-xl text-xs font-bold transition-[background-color,color] duration-150 ease-out"
+            [class]="!soloNoDisponibles() ? 'bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'">
+            Todos
+          </button>
+          <button type="button" (click)="soloNoDisponibles.set(true)"
+            class="h-9 px-3 rounded-xl text-xs font-bold transition-[background-color,color] duration-150 ease-out"
+            [class]="soloNoDisponibles() ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-200'">
+            No disponibles ({{ totalNoDisponibles() }})
+          </button>
+        </div>
       </div>
 
       <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
@@ -131,7 +142,27 @@ import { CatalogoDiscurso, CatalogoPublicacion } from '../models/discursos.model
               <span class="shrink-0 min-w-[2.25rem] h-6 px-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[0.65rem] font-black flex items-center justify-center">
                 {{ d.numero }}
               </span>
-              <span class="flex-1 min-w-0 text-sm text-slate-700 dark:text-slate-200">{{ d.titulo }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm" [class]="d.no_disponible ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'">{{ d.titulo }}</p>
+                @if (d.no_disponible) {
+                  <p class="mt-0.5 text-xs leading-snug text-amber-700 dark:text-amber-300">
+                    <span class="font-bold">No disponible:</span> {{ d.motivo_no_disponible || 'sin razón indicada' }}
+                    @if (d.no_disponible_desde) {
+                      <span class="text-slate-400"> · desde el {{ d.no_disponible_desde | date:'d MMM y' }}</span>
+                    }
+                  </p>
+                }
+              </div>
+              @if (d.no_disponible) {
+                <span class="shrink-0 px-2 h-6 rounded-md bg-amber-100 dark:bg-amber-900/40 text-[0.65rem] font-bold text-amber-800 dark:text-amber-200 flex items-center">No disponible</span>
+              }
+              <button type="button" (click)="d.no_disponible ? habilitar(d) : abrirMarcar(d)"
+                class="shrink-0 h-8 px-3 rounded-lg text-xs font-bold transition-[background-color] duration-150 ease-out active:scale-[0.97]"
+                [class]="d.no_disponible
+                  ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
+                  : 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'">
+                {{ d.no_disponible ? 'Volver a habilitar' : 'Marcar no disponible' }}
+              </button>
             </div>
           } @empty {
             <div class="px-4 py-8 text-center">
@@ -142,29 +173,110 @@ import { CatalogoDiscurso, CatalogoPublicacion } from '../models/discursos.model
       </div>
     }
 
+    <!-- ===== HISTORIAL DE CARGUES ===== -->
+    @if (importaciones().length > 0) {
+      <div class="mt-8">
+        <h3 class="text-sm font-black text-slate-800 dark:text-slate-100">Historial de cargues</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-3 max-w-xl">
+          Cada archivo que se carga queda guardado. Así se sabe qué decía cada número en cada edición,
+          aunque después cambie su número o su título.
+        </p>
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden divide-y divide-slate-50 dark:divide-slate-800/60">
+          @for (imp of importaciones(); track imp.id_importacion) {
+            <div>
+              <button type="button" (click)="alternarCargue(imp)"
+                class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-[background-color] duration-150 ease-out">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                    {{ imp.importado_en | date:'d MMM y, HH:mm' }}
+                    <span *ngIf="imp.ano" class="font-medium text-slate-500"> · edición {{ imp.ano }}</span>
+                  </p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    {{ imp.total }} discursos · {{ imp.insertados }} nuevos · {{ imp.actualizados }} actualizados
+                    · {{ imp.desactivados }} retirados
+                    <span *ngIf="imp.usuario"> · {{ imp.usuario }}</span>
+                  </p>
+                </div>
+                @if (imp.total_cambios > 0) {
+                  <span class="shrink-0 px-2 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 text-[0.65rem] font-bold text-violet-700 dark:text-violet-300 flex items-center">
+                    {{ imp.total_cambios }} {{ imp.total_cambios === 1 ? 'cambio' : 'cambios' }}
+                  </span>
+                }
+                <svg class="w-4 h-4 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="cargueAbierto() === imp.id_importacion"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              @if (cargueAbierto() === imp.id_importacion) {
+                <div class="px-4 pb-4 text-xs text-slate-600 dark:text-slate-300 space-y-3">
+                  @if (!detalleCargue()) {
+                    <p class="text-slate-400">Cargando…</p>
+                  } @else {
+                    @let c = detalleCargue()!.cambios;
+                    @if (c.titulos.length + c.retirados.length + c.marcas_retiradas.length === 0) {
+                      <p class="text-slate-400">Este cargue no cambió ningún título ni número respecto al anterior.</p>
+                    }
+                    @if (c.titulos.length > 0) {
+                      <div>
+                        <p class="font-bold mb-1">Títulos que cambiaron</p>
+                        @for (t of c.titulos; track t.numero) {
+                          <p class="leading-snug mb-1"><span class="font-black">{{ t.numero }}.</span> <span class="line-through text-slate-400">{{ t.antes }}</span> → {{ t.despues }}</p>
+                        }
+                      </div>
+                    }
+                    @if (c.retirados.length > 0) {
+                      <div>
+                        <p class="font-bold mb-1">Números que ya no vienen en el archivo</p>
+                        @for (t of c.retirados; track t.numero) {
+                          <p class="leading-snug mb-1"><span class="font-black">{{ t.numero }}.</span> {{ t.titulo }}</p>
+                        }
+                      </div>
+                    }
+                    @if (c.marcas_retiradas.length > 0) {
+                      <div>
+                        <p class="font-bold mb-1 text-amber-700 dark:text-amber-300">Marcas «no disponible» que se quitaron (el número ahora es otro discurso)</p>
+                        @for (t of c.marcas_retiradas; track t.numero) {
+                          <p class="leading-snug mb-1"><span class="font-black">{{ t.numero }}.</span> {{ t.titulo }} <span class="text-slate-400">— {{ t.motivo || 'sin razón' }}</span></p>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
     </div>
 
-    <!-- ===== CONFIRMAR VACIADO ===== -->
-    @if (confirmandoBorrado()) {
+    <!-- ===== MARCAR NO DISPONIBLE ===== -->
+    @if (marcando(); as m) {
       <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm"
-        (click)="confirmandoBorrado.set(false)">
-        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm border border-slate-200/60 dark:border-slate-700/60 overflow-hidden"
+        (click)="marcando.set(null)">
+        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md border border-slate-200/60 dark:border-slate-700/60 overflow-hidden"
           (click)="$event.stopPropagation()">
           <div class="px-5 pt-5 pb-3">
-            <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Vaciar el catálogo</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-              Se borrarán los {{ discursos().length }} discursos. Los meses ya programados
-              conservan sus títulos: sólo dejará de haber sugerencias al escribir.
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Marcar como no disponible</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mt-1.5">{{ m.numero }}. {{ m.titulo }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+              Solo es un aviso: en las pantallas donde se usa este discurso se verá la razón,
+              pero no se cambia nada de lo ya programado.
             </p>
+            <label class="block mt-3 text-xs font-bold text-slate-600 dark:text-slate-300" for="motivo-no-disp">
+              ¿Por qué no se debe dar este discurso?
+            </label>
+            <textarea id="motivo-no-disp" rows="3" [ngModel]="motivo()" (ngModelChange)="motivo.set($event)"
+              placeholder="Ejemplo: El bosquejo fue retirado por la organización."
+              class="mt-1.5 w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 resize-none"></textarea>
           </div>
           <div class="flex gap-2 px-5 pb-6 sm:pb-5 pt-1">
-            <button (click)="confirmandoBorrado.set(false)"
+            <button (click)="marcando.set(null)"
               class="flex-1 h-11 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-[background-color] duration-150 ease-out active:scale-[0.97]">
               Cancelar
             </button>
-            <button (click)="vaciar()" [disabled]="borrando()"
-              class="flex-1 h-11 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color] duration-150 ease-out active:scale-[0.97]">
-              {{ borrando() ? 'Borrando…' : 'Vaciar' }}
+            <button (click)="confirmarMarca()" [disabled]="guardandoMarca() || !motivo().trim()"
+              class="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color] duration-150 ease-out active:scale-[0.97]">
+              {{ guardandoMarca() ? 'Guardando…' : 'Marcar' }}
             </button>
           </div>
         </div>
@@ -180,17 +292,25 @@ export class CatalogoDiscursosComponent implements OnInit {
   publicacion = signal<CatalogoPublicacion | null>(null);
   cargando = signal(true);
   subiendo = signal(false);
-  borrando = signal(false);
-  confirmandoBorrado = signal(false);
+  marcando = signal<CatalogoDiscurso | null>(null);
+  motivo = signal('');
+  guardandoMarca = signal(false);
+  soloNoDisponibles = signal(false);
+  importaciones = signal<CatalogoImportacionResumen[]>([]);
+  cargueAbierto = signal<number | null>(null);
+  detalleCargue = signal<CatalogoImportacionDetalle | null>(null);
   arrastrando = signal(false);
   progreso = signal(0);
   error = signal<string | null>(null);
   filtro = signal('');
 
+  totalNoDisponibles = computed(() => this.discursos().filter(d => d.no_disponible).length);
+
   filtrados = computed(() => {
     const q = this.normalizar(this.filtro().trim());
-    if (!q) return this.discursos();
-    return this.discursos().filter(d => this.normalizar(`${d.numero}. ${d.titulo}`).includes(q));
+    const base = this.soloNoDisponibles() ? this.discursos().filter(d => d.no_disponible) : this.discursos();
+    if (!q) return base;
+    return base.filter(d => this.normalizar(`${d.numero}. ${d.titulo}`).includes(q));
   });
 
   ngOnInit(): void {
@@ -205,10 +325,68 @@ export class CatalogoDiscursosComponent implements OnInit {
         this.discursos.set(r.discursos ?? []);
         this.publicacion.set(r.publicacion);
         this.cargando.set(false);
+        this.cargarImportaciones();
       },
       error: () => {
         this.cargando.set(false);
         this.error.set('No se pudo leer el catálogo actual.');
+      },
+    });
+  }
+
+  private cargarImportaciones(): void {
+    this.svc.getImportacionesCatalogo().subscribe({
+      next: (r) => this.importaciones.set(r.importaciones ?? []),
+      error: () => this.importaciones.set([]),
+    });
+  }
+
+  alternarCargue(imp: CatalogoImportacionResumen): void {
+    if (this.cargueAbierto() === imp.id_importacion) {
+      this.cargueAbierto.set(null);
+      return;
+    }
+    this.cargueAbierto.set(imp.id_importacion);
+    this.detalleCargue.set(null);
+    this.svc.getImportacionCatalogo(imp.id_importacion).subscribe({
+      next: (d) => { if (this.cargueAbierto() === imp.id_importacion) this.detalleCargue.set(d); },
+      error: () => this.error.set('No se pudo leer el detalle de ese cargue.'),
+    });
+  }
+
+  // ── Disponibilidad ──────────────────────────────────────────────────────────
+  abrirMarcar(d: CatalogoDiscurso): void {
+    this.motivo.set('');
+    this.marcando.set(d);
+  }
+
+  confirmarMarca(): void {
+    const d = this.marcando();
+    const motivo = this.motivo().trim();
+    if (!d || !motivo || this.guardandoMarca()) return;
+    this.guardarDisponibilidad(d, true, motivo, () => this.marcando.set(null));
+  }
+
+  habilitar(d: CatalogoDiscurso): void {
+    this.guardarDisponibilidad(d, false);
+  }
+
+  private guardarDisponibilidad(d: CatalogoDiscurso, noDisponible: boolean, motivo?: string, alTerminar?: () => void): void {
+    this.guardandoMarca.set(true);
+    this.svc.marcarDisponibilidad(d.numero, noDisponible, motivo).subscribe({
+      next: (r) => {
+        this.guardandoMarca.set(false);
+        this.discursos.update(lista => lista.map(x => x.numero === d.numero ? { ...x, ...r } : x));
+        this.svc.invalidarCatalogo();
+        alTerminar?.();
+        this.toast.success(
+          noDisponible ? 'Discurso marcado como no disponible' : 'Discurso habilitado de nuevo',
+          `${d.numero}. ${d.titulo}`,
+        );
+      },
+      error: (e: HttpErrorResponse) => {
+        this.guardandoMarca.set(false);
+        this.error.set(e?.error?.detail ?? 'No se pudo guardar el cambio.');
       },
     });
   }
@@ -266,7 +444,12 @@ export class CatalogoDiscursosComponent implements OnInit {
           const detalle = nuevos > 0
             ? `${nuevos} nuevos y ${r?.actualizados ?? 0} actualizados.`
             : `${r?.actualizados ?? 0} discursos actualizados.`;
-          this.toast.success(`${r?.total ?? 0} discursos importados`, detalle);
+          const quitadas = r?.cambios?.marcas_retiradas?.length ?? 0;
+          this.toast.success(
+            `${r?.total ?? 0} discursos importados`,
+            quitadas > 0 ? `${detalle} Se quitó la marca «no disponible» de ${quitadas} porque su título cambió.` : detalle,
+          );
+          this.cargarImportaciones();
         }
       },
       error: (e: HttpErrorResponse) => {
@@ -277,24 +460,6 @@ export class CatalogoDiscursosComponent implements OnInit {
             ? 'El archivo es demasiado grande para el servidor.'
             : (e?.error?.detail ?? 'No se pudo importar el archivo.')
         );
-      },
-    });
-  }
-
-  vaciar(): void {
-    this.borrando.set(true);
-    this.svc.borrarCatalogo().subscribe({
-      next: (r) => {
-        this.borrando.set(false);
-        this.confirmandoBorrado.set(false);
-        this.discursos.set([]);
-        this.publicacion.set(null);
-        this.svc.invalidarCatalogo();
-        this.toast.success('Catálogo vaciado', `Se borraron ${r.borrados} discursos.`);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.borrando.set(false);
-        this.error.set(e?.error?.detail ?? 'No se pudo vaciar el catálogo.');
       },
     });
   }

@@ -155,6 +155,9 @@ type SubTab = 'entrantes' | 'salientes';
                         <span class="shrink-0 min-w-[1.75rem] h-6 px-1.5 rounded-full bg-blue-50 dark:bg-blue-900/25 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-400 text-[0.65rem] font-black flex items-center justify-center">{{ item.numero }}</span>
                       }
                       <span class="flex-1 min-w-0 text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ item.titulo }}</span>
+                      @if (svc.bosquejoDe(item.numero + '.')?.no_disponible) {
+                        <span class="shrink-0 px-2 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 text-[0.65rem] font-bold flex items-center" [title]="svc.bosquejoDe(item.numero + '.')?.motivo_no_disponible || ''">No disponible</span>
+                      }
                       @if (item.veces > 1) {
                         <span class="shrink-0 px-2 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[0.65rem] font-black flex items-center justify-center">×{{ item.veces }}</span>
                       }
@@ -220,6 +223,9 @@ type SubTab = 'entrantes' | 'salientes';
                                 <span class="shrink-0 min-w-[1.5rem] h-5 px-1 rounded-full bg-violet-50 dark:bg-violet-900/25 border border-violet-200 dark:border-violet-800/50 text-violet-700 dark:text-violet-400 text-[0.6rem] font-black flex items-center justify-center">{{ t.numero }}</span>
                               }
                               <span class="flex-1 min-w-0 text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{{ t.titulo }}</span>
+                              @if (svc.bosquejoDe(t.numero + '.')?.no_disponible) {
+                        <span class="shrink-0 px-2 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 text-[0.6rem] font-bold flex items-center" [title]="svc.bosquejoDe(t.numero + '.')?.motivo_no_disponible || ''">No disponible</span>
+                      }
                               @if (t.veces > 1) {
                                 <span class="shrink-0 text-[0.6rem] font-black text-amber-600 dark:text-amber-400">×{{ t.veces }}</span>
                               }
@@ -253,7 +259,7 @@ export class HistorialDiscursosComponent implements OnInit {
   @Input() bloquearSubTab = false;
   @Output() cerrar = new EventEmitter<void>();
 
-  constructor(private svc: DiscursosService) {}
+  constructor(protected svc: DiscursosService) {}
 
   @HostListener('document:keydown.escape')
   onEscape(): void {

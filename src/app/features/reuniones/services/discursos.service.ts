@@ -1,9 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpEvent, HttpParams, HttpRequest } from '@angular/common/http';
-import { Observable, shareReplay } from 'rxjs';
+import { Observable, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   ArchivoCongregacionContacto,
+  CatalogoDiscurso,
+  CatalogoImportacionDetalle,
+  CatalogoImportacionResumen,
   CatalogoResponse,
   CatalogoCanticosResponse,
   ResumenImportacion,
@@ -382,18 +385,52 @@ export class DiscursosService {
 
   private catalogo$?: Observable<CatalogoResponse>;
 
+  /** Bosquejos por número, para avisar de los «no disponibles» en cualquier pantalla. */
+  private catalogoPorNumero = signal<Map<number, CatalogoDiscurso>>(new Map());
+
   getCatalogo(): Observable<CatalogoResponse> {
     if (!this.catalogo$) {
       this.catalogo$ = this.http
         .get<CatalogoResponse>(`${this.base}/catalogo`)
-        .pipe(shareReplay({ bufferSize: 1, refCount: false }));
+        .pipe(
+          tap(r => this.catalogoPorNumero.set(new Map((r.discursos ?? []).map(d => [d.numero, d] as [number, CatalogoDiscurso])))),
+          shareReplay({ bufferSize: 1, refCount: false }),
+        );
     }
     return this.catalogo$;
   }
 
-  /** Invalida la caché tras importar o vaciar, para que la próxima lectura sea fresca. */
+  /** Invalida la caché tras importar o marcar, para que la próxima lectura sea fresca. */
   invalidarCatalogo(): void {
     this.catalogo$ = undefined;
+  }
+
+  /**
+   * El bosquejo del catálogo que abre `texto` ("110. Título" o solo "110"), o
+   * null si no empieza con un número o no está en el catálogo. Se puede llamar
+   * desde una plantilla: lee una señal, así que se refresca cuando llega el
+   * catálogo (y lo pide la primera vez si nadie lo había hecho).
+   */
+  bosquejoDe(texto: string | null | undefined): CatalogoDiscurso | null {
+    if (!this.catalogo$) this.getCatalogo().subscribe({ error: () => { this.catalogo$ = undefined; } });
+    const m = /^\s*(\d{1,4})\s*(?:[.\-–—]|$)/.exec(texto ?? '');
+    return m ? this.catalogoPorNumero().get(Number(m[1])) ?? null : null;
+  }
+
+  /** Marca un bosquejo como no disponible (con su razón) o lo habilita. Solo Administrador. */
+  marcarDisponibilidad(numero: number, noDisponible: boolean, motivo?: string): Observable<CatalogoDiscurso> {
+    return this.http.patch<CatalogoDiscurso>(`${this.base}/catalogo/${numero}/disponibilidad`, {
+      no_disponible: noDisponible,
+      motivo: motivo ?? null,
+    });
+  }
+
+  getImportacionesCatalogo(): Observable<{ importaciones: CatalogoImportacionResumen[] }> {
+    return this.http.get<{ importaciones: CatalogoImportacionResumen[] }>(`${this.base}/catalogo/importaciones`);
+  }
+
+  getImportacionCatalogo(id: number): Observable<CatalogoImportacionDetalle> {
+    return this.http.get<CatalogoImportacionDetalle>(`${this.base}/catalogo/importaciones/${id}`);
   }
 
   /**
@@ -407,10 +444,6 @@ export class DiscursosService {
       reportProgress: true,
     });
     return this.http.request<ResumenImportacion>(req);
-  }
-
-  borrarCatalogo(): Observable<{ borrados: number }> {
-    return this.http.delete<{ borrados: number }>(`${this.base}/catalogo`);
   }
 
   // ── Catálogo de cánticos ("Cantemos con gozo a Jehová") ────────────────────

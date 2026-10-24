@@ -38,6 +38,7 @@ import {
   DiscursoSalienteOut,
   EditarEntranteRequest,
   EditarOradorLocalRequest,
+  OtraProgramacion,
   EditarTemaRequest,
   GrupoSimple,
   HistorialOcurrenciaEntrante,
@@ -991,6 +992,33 @@ type ItemEntrante =
                    reconocer "quién viene y con qué" de un vistazo; el
                    formulario sigue a un clic (fila o lápiz) para quien
                    necesite tocar algo. -->
+                            <!-- Aviso discreto: el bosquejo está marcado como no disponible en el
+                   catálogo (retirado, etc.). Solo informa; la razón va en el tooltip. -->
+              <ng-template #bosquejoNoDisponible let-texto>
+                @if (svc.bosquejoDe(texto); as b) {
+                  @if (b.no_disponible) {
+                    <span role="note" [title]="'Discurso no disponible: ' + (b.motivo_no_disponible || 'sin razón indicada')"
+                      [attr.aria-label]="'Discurso no disponible: ' + (b.motivo_no_disponible || 'sin razón indicada')"
+                      class="max-w-full inline-flex items-start gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 text-xs font-bold leading-snug">
+                      <svg class="w-3.5 h-3.5 mt-px shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M5.6 5.6l12.8 12.8"/></svg>
+                      <span>No disponible: {{ b.motivo_no_disponible || 'sin razón indicada' }}</span>
+                    </span>
+                  }
+                }
+              </ng-template>
+
+              <!-- Aviso discreto: el mismo discurso está programado en otra fecha
+                   que aún no llega. Solo informa; lo ya pasado no cuenta. -->
+              <ng-template #tambienProgramado let-lista>
+                @if (lista?.length) {
+                  <span role="note" [title]="tituloTambienProgramado(lista)" [attr.aria-label]="tituloTambienProgramado(lista)"
+                    class="max-w-full inline-flex items-start gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 text-xs font-bold leading-snug">
+                    <svg class="w-3.5 h-3.5 mt-px shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M5 11h14M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1zm7 8v2m0 2h.01"/></svg>
+                    {{ resumenTambienProgramado(lista) }}
+                  </span>
+                }
+              </ng-template>
+
               <!-- Resumen de una fecha: qué discurso, quién lo da y de dónde
                    viene, en dos líneas con jerarquía clara (título arriba,
                    quién/de dónde debajo en gris) en vez de cuatro datos del
@@ -1019,6 +1047,12 @@ type ItemEntrante =
                     @if (entrante.notas) {
                       <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" [attr.aria-label]="'Nota: ' + entrante.notas" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     }
+                  </div>
+                  <!-- Avisos en su propio renglón y con el texto completo: la razón
+                       no se recorta, envuelve. -->
+                  <div class="min-w-0 flex flex-col items-start gap-1 empty:hidden">
+                    <ng-container *ngTemplateOutlet="bosquejoNoDisponible; context: { $implicit: entrante.titulo_discurso }"></ng-container>
+                    <ng-container *ngTemplateOutlet="tambienProgramado; context: { $implicit: entrante.tambien_programado }"></ng-container>
                   </div>
                   <!-- Quién viene y de dónde: un solo renglón secundario. El
                        separador es una línea fina, no un punto, para que el
@@ -1532,6 +1566,12 @@ type ItemEntrante =
                       <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>
                       <span class="text-xs tabular-nums text-slate-500 dark:text-slate-400">{{ saliente.hora ? (saliente.hora | hora12) : '—' }}</span>
                     </span>
+                  </div>
+                  <!-- Avisos en su propio renglón y con el texto completo: la razón
+                       no se recorta, envuelve. -->
+                  <div class="min-w-0 flex flex-col items-start gap-1 empty:hidden">
+                    <ng-container *ngTemplateOutlet="bosquejoNoDisponible; context: { $implicit: saliente.tema_discurso }"></ng-container>
+                    <ng-container *ngTemplateOutlet="tambienProgramado; context: { $implicit: saliente.tambien_programado }"></ng-container>
                   </div>
                 </div>
               </ng-template>
@@ -2948,7 +2988,7 @@ type ItemEntrante =
   `],
 })
 export class ReunionesDiscursosComponent implements OnInit {
-  private svc = inject(DiscursosService);
+  protected svc = inject(DiscursosService);
   private conflictosSvc = inject(ConflictosService);
   private reunionesSvc = inject(ReunionesService);
   private congCtx = inject(CongregacionContextService);
@@ -3750,6 +3790,23 @@ export class ReunionesDiscursosComponent implements OnInit {
    * Corrección hecha en una fila al elegir de una lista, con lo necesario
    * para deshacerla de un clic. Una por fila: la última manda.
    */
+  /** "24 oct" a partir de "2026-10-24", sin pasar por zona horaria. */
+  private fechaCorta(iso: string): string {
+    const [a, m, d] = iso.split('-').map(Number);
+    return new Date(a, m - 1, d).toLocaleDateString('es', { day: 'numeric', month: 'short' }).replace('.', '');
+  }
+
+  resumenTambienProgramado(lista: OtraProgramacion[]): string {
+    return lista.length === 1
+      ? `También el ${this.fechaCorta(lista[0].fecha)}`
+      : `También en ${lista.length} fechas`;
+  }
+
+  tituloTambienProgramado(lista: OtraProgramacion[]): string {
+    const donde = lista.map(o => o.nombre ? `${this.fechaCorta(o.fecha)} (${o.nombre})` : this.fechaCorta(o.fecha)).join(', ');
+    return `Este discurso también está programado: ${donde}. Revisa que no se repita.`;
+  }
+
   avisosFila = signal<Record<number, { mensaje: string; detalle: string; accion: string; deshacer: EditarEntranteRequest }>>({});
   /** Discursos que el usuario decidió mantener aunque no sean del orador (no se vuelve a avisar). */
   private discursosMantenidos = new Map<number, string>();

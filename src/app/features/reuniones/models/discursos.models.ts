@@ -75,7 +75,14 @@ export interface GrupoSimple {
 
 export type EstadoDiscursoSaliente = 'programado' | 'realizada' | 'cancelado';
 
+/** El mismo discurso en otra fecha que aún no llega; el gestor debe revisarlo. */
+export interface OtraProgramacion {
+  fecha: string;
+  nombre: string | null;
+}
+
 export interface DiscursoSalienteOut {
+  tambien_programado?: OtraProgramacion[];
   id_discurso_saliente: number;
   fecha: string;
   id_publicador: number | null;
@@ -109,6 +116,7 @@ export interface DiscursoSalienteOut {
 }
 
 export interface DiscursoEntranteOut {
+  tambien_programado?: OtraProgramacion[];
   id_discurso_entrante: number;
   fecha: string;
   nombre_orador: string | null;
@@ -333,6 +341,10 @@ export interface CatalogoDiscurso {
   activo: boolean;
   /** Id real de docs.jw.org (doc-<meps_document_id>); null si el catálogo se importó antes de tenerlo. */
   meps_document_id: number | null;
+  /** Marca informativa: los conferenciantes no deben dar este discurso. No bloquea nada. */
+  no_disponible?: boolean;
+  motivo_no_disponible?: string | null;
+  no_disponible_desde?: string | null;
 }
 
 /** Qué edición del S-34 está cargada y cuándo se importó. */
@@ -385,6 +397,38 @@ export interface ResumenImportacion extends CatalogoResponse {
   insertados: number;
   actualizados: number;
   desactivados: number;
+  cambios: CatalogoCambios;
+}
+
+/** Qué cambió en un cargue respecto al catálogo anterior. */
+export interface CatalogoCambios {
+  titulos: { numero: number; antes: string; despues: string }[];
+  retirados: { numero: number; titulo: string }[];
+  /** Marcas «no disponible» que se quitaron porque el número pasó a ser otro bosquejo. */
+  marcas_retiradas: { numero: number; titulo: string; motivo: string | null }[];
+}
+
+/** Una fila del historial de cargues del S-34. */
+export interface CatalogoImportacionResumen {
+  id_importacion: number;
+  simbolo: string | null;
+  titulo_publicacion: string | null;
+  idioma: string;
+  ano: number | null;
+  archivo: string | null;
+  total: number;
+  insertados: number;
+  actualizados: number;
+  desactivados: number;
+  importado_en: string | null;
+  usuario: string | null;
+  total_cambios: number;
+}
+
+export interface CatalogoImportacionDetalle {
+  id_importacion: number;
+  cambios: CatalogoCambios;
+  discursos: { numero: number; titulo: string; meps_document_id: number | null }[];
 }
 
 // ── Historial de discursos ───────────────────────────────────────────────────
