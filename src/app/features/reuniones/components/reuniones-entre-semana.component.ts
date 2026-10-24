@@ -760,7 +760,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <p class="text-xs font-bold text-amber-800 dark:text-amber-300">Esta semana está marcada como sin reunión</p>
                   <p class="text-[0.7rem] text-amber-700/80 dark:text-amber-400/80 mt-0.5 leading-relaxed">
                     @if (sinReunion.motivo) { {{ sinReunion.motivo }}. }
-                    No se programa a nadie. Puedes quitar la marca en Configuración → Semanas sin reunión.
+                    No se programa a nadie. Puedes quitar la marca con el engranaje «Excepciones» de esta pantalla.
                   </p>
                 </div>
               </div>
@@ -1496,7 +1496,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             </div>
           } @else {
             <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Todos los meses de esta guía ya están generados. Para regenerar un mes, elimínalo primero desde el historial.
+              Todos los meses de esta guía ya están generados. Para regenerar un mes, elimínalo primero con la papelera del selector de mes.
             </p>
             <button
               (click)="cancelarConflictoModal()"
@@ -2547,6 +2547,23 @@ export class ReunionesProgramacionComponent implements OnInit {
     return new Promise(resolve => this.confirmDialog.set({ title, body, confirmLabel, resolve }));
   }
 
+  /** Texto del error del servidor, o `respaldo` si no trae uno legible (el
+   *  `detail` de un 409 de confirmación es un objeto, no una frase). */
+  private textoDeError(err: any, respaldo: string): string {
+    const detalle = err?.error?.detail;
+    return typeof detalle === 'string' && detalle ? detalle : respaldo;
+  }
+
+  /**
+   * Un fallo de UNA acción (asignar, quitar, borrar, descargar) se avisa con un
+   * toast y la pantalla se queda como estaba. Antes pasaba a estado `error`,
+   * que esconde el programa abierto: por un fallo puntual, todo el trabajo
+   * desaparecía de la vista.
+   */
+  private avisarFallo(titulo: string, err: any, respaldo: string): void {
+    this.toast.error(titulo, this.textoDeError(err, respaldo));
+  }
+
   onConfirmDialogAction(accept: boolean): void {
     const d = this.confirmDialog();
     this.confirmDialog.set(null);
@@ -3493,10 +3510,10 @@ export class ReunionesProgramacionComponent implements OnInit {
           this._ejecutarGeneracion(createPayload, genPayload);
         }
       },
-      error: () => {
-        // Si falla la verificación, proceder directamente
-        this.showModal.set(false);
-        this._ejecutarGeneracion(createPayload, genPayload);
+      error: (err) => {
+        // No se genera a ciegas: sin saber qué meses ya existen se podría
+        // pisar un borrador. El modal sigue abierto para reintentar.
+        this.avisarFallo('No se pudo comprobar qué meses ya existen', err, 'Inténtalo de nuevo.');
       },
     });
   }
@@ -4028,7 +4045,10 @@ export class ReunionesProgramacionComponent implements OnInit {
         }));
         this.loadingAyudante.set(null);
       },
-      error: () => this.loadingAyudante.set(null),
+      error: (err) => {
+        this.loadingAyudante.set(null);
+        this.avisarFallo('No se pudo añadir el ayudante', err, 'Inténtalo de nuevo.');
+      },
     });
   }
 
@@ -4060,6 +4080,7 @@ export class ReunionesProgramacionComponent implements OnInit {
         }));
         this._sexoFilters.delete(this.pillKey(asig));
       },
+      error: (err) => this.avisarFallo('No se pudo quitar el ayudante', err, 'Inténtalo de nuevo.'),
     });
   }
 
@@ -4090,6 +4111,7 @@ export class ReunionesProgramacionComponent implements OnInit {
           };
         }));
       },
+      error: (err) => this.avisarFallo('No se pudo dejar la parte sin asignar', err, 'Inténtalo de nuevo.'),
     });
   }
 
@@ -4155,7 +4177,10 @@ export class ReunionesProgramacionComponent implements OnInit {
           URL.revokeObjectURL(url);
           this.descargandoPdf.set(false);
         },
-        error: () => this.descargandoPdf.set(false),
+        error: (err) => {
+          this.descargandoPdf.set(false);
+          this.avisarFallo('No se pudo descargar el PDF', err, 'Inténtalo de nuevo.');
+        },
       });
   }
 
@@ -4178,7 +4203,10 @@ export class ReunionesProgramacionComponent implements OnInit {
           URL.revokeObjectURL(url);
           this.descargandoPdf.set(false);
         },
-        error: () => this.descargandoPdf.set(false),
+        error: (err) => {
+          this.descargandoPdf.set(false);
+          this.avisarFallo('No se pudo descargar el PDF', err, 'Inténtalo de nuevo.');
+        },
       });
   }
 
@@ -4213,7 +4241,10 @@ export class ReunionesProgramacionComponent implements OnInit {
           URL.revokeObjectURL(url);
           this.descargandoPapeletas.set(false);
         },
-        error: () => this.descargandoPapeletas.set(false),
+        error: (err) => {
+          this.descargandoPapeletas.set(false);
+          this.avisarFallo('No se pudieron descargar las papeletas', err, 'Inténtalo de nuevo.');
+        },
       });
   }
 
@@ -4236,7 +4267,10 @@ export class ReunionesProgramacionComponent implements OnInit {
           URL.revokeObjectURL(url);
           this.descargandoPapeletas.set(false);
         },
-        error: () => this.descargandoPapeletas.set(false),
+        error: (err) => {
+          this.descargandoPapeletas.set(false);
+          this.avisarFallo('No se pudieron descargar las papeletas', err, 'Inténtalo de nuevo.');
+        },
       });
   }
 
@@ -4244,7 +4278,7 @@ export class ReunionesProgramacionComponent implements OnInit {
    *  parte lleva papeleta S-89-S (lo decide el backend) y ya tiene a alguien
    *  asignado. */
   mostrarWhatsappPapeleta(asig: AsignacionDraft): boolean {
-    return !!asig.id_publicador && !asig.es_ayudante && !!asig.papeleta_s89;
+    return !!asig.id_publicador && !asig.es_ayudante && !!asig.papeleta_s89 && asig.estado === 'publicado';
   }
 
   private papeletaKey(asig: AsignacionDraft): string {
@@ -4549,15 +4583,13 @@ export class ReunionesProgramacionComponent implements OnInit {
           },
           error: (err) => {
             this.borrandoSalaB.set(false);
-            this.errorMsg.set(err?.error?.detail ?? 'No se pudo quitar la Sala B.');
-            this.estado.set('error');
+            this.avisarFallo('No se pudo quitar la Sala B', err, 'Inténtalo de nuevo.');
           },
         });
       },
       error: (err) => {
         this.borrandoSalaB.set(false);
-        this.errorMsg.set(err?.error?.detail ?? 'No se pudo comprobar la Sala B de este mes.');
-        this.estado.set('error');
+        this.avisarFallo('No se pudo comprobar la Sala B', err, 'Inténtalo de nuevo.');
       },
     });
   }
@@ -4615,8 +4647,12 @@ export class ReunionesProgramacionComponent implements OnInit {
         if (!forzar) return;
         this.reunionesSvc
           .eliminarHistorialPlantilla(p.id_plantilla!, idCong, tipo, true)
-          .subscribe({ next: limpiar });
+          .subscribe({
+            next: limpiar,
+            error: (err) => this.avisarFallo('No se pudo eliminar la guía', err, 'Inténtalo de nuevo.'),
+          });
       },
+      error: (err) => this.avisarFallo('No se pudo eliminar la guía', err, 'Inténtalo de nuevo.'),
     });
   }
 
@@ -4641,6 +4677,7 @@ export class ReunionesProgramacionComponent implements OnInit {
           this.periodoActivo.set(null);
           this.estado.set('idle');
         },
+        error: (err) => this.avisarFallo('No se pudo eliminar el mes', err, 'Inténtalo de nuevo.'),
       });
   }
 
@@ -4920,16 +4957,26 @@ export class ReunionesProgramacionComponent implements OnInit {
       this.mobileSheetAsig.set(null);
     };
 
-    const alFallar = (err: any) => {
-      // El error se enseña. Cuando esto se lo tragaba, el clic simplemente no
-      // hacía nada y no había forma de saber por qué.
+    const alFallar = async (err: any, reintentar: (confirmarReglas: boolean) => void) => {
+      // La parte pide otro perfil (hermano, anciano, oratoria...): se avisa y
+      // se deja decidir. No es un error, el motor solo no habría elegido así.
+      const reglas: string[] | undefined = err?.status === 409 ? err.error?.detail?.reglas : undefined;
+      if (reglas?.length) {
+        const seguir = await this.openConfirmDialog(
+          `${candidato.nombre_completo}: revisa antes de asignar`,
+          `${reglas.join(' ')} ¿Quieres asignarle esta parte igualmente?`,
+          'Asignar igualmente',
+        );
+        if (seguir) reintentar(true);
+        else this.editingHistorialId.set(null);
+        return;
+      }
       this.editingHistorialId.set(null);
       this.mobileSheetAsig.set(null);
-      this.errorMsg.set(err?.error?.detail ?? 'No se pudo guardar la asignación.');
-      this.estado.set('error');
+      this.avisarFallo('No se pudo guardar la asignación', err, 'Inténtalo de nuevo.');
     };
 
-    const doEdit = () => {
+    const doEdit = (confirmarReglas = false) => {
       if (!asig.id_asignacion) {
         // Ranura vacía: se crea la asignación indicando CUÁL es, porque la
         // parte puede tener hasta cuatro y todas comparten id.
@@ -4940,17 +4987,31 @@ export class ReunionesProgramacionComponent implements OnInit {
           asig.sala === 'Auxiliar' ? 'Auxiliar' : 'Principal',
           !!asig.es_ayudante,
           true,
-        ).subscribe({ next: applyResult, error: alFallar });
+          confirmarReglas,
+        ).subscribe({ next: applyResult, error: (e) => void alFallar(e, doEdit) });
         return;
       }
       const payload: EditarAsignacionRequest = {
         id_publicador_nuevo: candidato.id_publicador,
         confirmar_conflicto: true,
+        confirmar_reglas: confirmarReglas,
       };
       this.reunionesSvc.editarAsignacion(asig.id_asignacion, payload, idCong).subscribe({
         next: applyResult,
-        error: alFallar,
+        error: (e) => void alFallar(e, doEdit),
       });
+    };
+
+    // Cambiar a alguien de una semana YA publicada se ve al instante en la
+    // app de todos: se pide un sí antes, con quién sale y quién entra.
+    const confirmarCambioPublicado = async (): Promise<boolean> => {
+      if (this.estado() !== 'publicado' || !asig.id_asignacion || !asig.nombre_completo) return true;
+      return this.openConfirmDialog(
+        'Cambiar una parte ya publicada',
+        `${asig.nombre_completo} deja esta parte y la tendrá ${candidato.nombre_completo}. ` +
+        'La congregación ya ve el programa publicado: conviene avisarles.',
+        'Cambiar',
+      );
     };
 
     // La comprobación de conflictos se hace también al rellenar un hueco. Antes
@@ -4963,10 +5024,10 @@ export class ReunionesProgramacionComponent implements OnInit {
         semana.fecha,
         idCong,
         candidato.nombre_completo,
-        asig.id_asignacion ? { tipo: 'entre_semana', id: asig.id_asignacion } : undefined,
+        asig.id_asignacion ? { tipo: this.tipoReunionActivo(), id: asig.id_asignacion } : undefined,
       )
-      .subscribe((proceder) => {
-        if (proceder) doEdit();
+      .subscribe(async (proceder) => {
+        if (proceder && (await confirmarCambioPublicado())) doEdit();
         else this.editingHistorialId.set(null);
       });
   }

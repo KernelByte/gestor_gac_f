@@ -76,6 +76,8 @@ export interface AsignacionDraft {
 export interface EditarAsignacionRequest {
   id_publicador_nuevo: number;
   confirmar_conflicto?: boolean;
+  /** La parte pide otro perfil (hermano, anciano...) y se asigna igualmente. */
+  confirmar_reglas?: boolean;
 }
 
 export interface ProgramaSemana {

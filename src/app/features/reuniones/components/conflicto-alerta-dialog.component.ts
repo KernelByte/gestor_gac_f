@@ -54,8 +54,8 @@ const TIPO_COLOR: Record<string, string> = {
             </svg>
           </div>
           <div class="conflicto-header-text">
-            <p class="conflicto-title" id="conflicto-title">{{ soloAusencia ? 'Publicador ausente' : 'Conflicto de asignación' }}</p>
-            <p class="conflicto-subtitle">{{ soloAusencia ? 'Tiene una ausencia registrada en esta fecha' : 'Se detectaron asignaciones existentes' }}</p>
+            <p class="conflicto-title" id="conflicto-title">{{ sinVerificar ? 'No se pudo comprobar la agenda' : soloAusencia ? 'Publicador ausente' : 'Conflicto de asignación' }}</p>
+            <p class="conflicto-subtitle">{{ sinVerificar ? 'No hubo respuesta del servidor' : soloAusencia ? 'Tiene una ausencia registrada en esta fecha' : 'Se detectaron asignaciones existentes' }}</p>
           </div>
         </div>
 
@@ -64,7 +64,14 @@ const TIPO_COLOR: Record<string, string> = {
 
         <!-- Body -->
         <div class="conflicto-body">
-          @if (soloAusencia) {
+          @if (sinVerificar) {
+            <p class="conflicto-desc">
+              No se pudo comprobar si
+              <span class="conflicto-nombre">{{ nombre }}</span>
+              ya tiene otra asignación el <span class="conflicto-fecha">{{ fechaFormateada }}</span>.
+              Revisa tu conexión o asígnale igualmente si estás seguro.
+            </p>
+          } @else if (soloAusencia) {
             <p class="conflicto-desc">
               <span class="conflicto-nombre">{{ nombre }}</span>
               tiene una ausencia registrada
@@ -420,6 +427,8 @@ export class ConflictoAlertaDialogComponent {
   @Input() nombre = '';
   @Input() fecha = '';
   @Input() asignaciones: ConflictoAsignacion[] = [];
+  /** La consulta de conflictos falló: no se sabe si hay choque, y se dice así. */
+  @Input() sinVerificar = false;
   @Output() resolved = new EventEmitter<boolean>();
 
   /** True cuando el único "conflicto" detectado es una ausencia registrada. */

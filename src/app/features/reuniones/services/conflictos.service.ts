@@ -23,6 +23,8 @@ export interface ConflictoAsignacion {
 export interface ConflictoResponse {
   tiene_conflicto: boolean;
   asignaciones: ConflictoAsignacion[];
+  /** Solo en cliente: la consulta falló y no se sabe si hay choque. */
+  sin_verificar?: boolean;
 }
 
 export interface ExcluirConflicto {
@@ -40,7 +42,9 @@ export class ConflictosService {
   /**
    * Verifica si un publicador ya tiene asignaciones en una fecha concreta
    * revisando las 4 fuentes: entre/fin semana, logística y discursos salientes.
-   * Si falla la petición devuelve sin conflicto para no bloquear la operación.
+   * Si falla la petición lo marca con `sin_verificar`: no bloquea la operación,
+   * pero tampoco la da por buena en silencio (quien llama guarda forzando el
+   * choque, así que el servidor ya no lo revisaría).
    */
   verificarConflicto(
     idPublicador: number,
@@ -60,7 +64,7 @@ export class ConflictosService {
     return this.http.get<ConflictoResponse>(this.base, { params }).pipe(
       catchError((err) => {
         console.error('[ConflictosService] Error al verificar conflictos:', err);
-        return of({ tiene_conflicto: false, asignaciones: [] });
+        return of({ tiene_conflicto: false, asignaciones: [], sin_verificar: true });
       }),
     );
   }
@@ -79,6 +83,7 @@ export class ConflictosService {
   ): Observable<boolean> {
     return this.verificarConflicto(idPublicador, fecha, idCongregacion, excluir).pipe(
       switchMap((resp) => {
+        if (resp.sin_verificar) return from(this._mostrarDialogo(nombrePublicador, fecha, [], true));
         if (!resp.tiene_conflicto) return of(true);
         return from(this._mostrarDialogo(nombrePublicador, fecha, resp.asignaciones));
       }),
@@ -90,6 +95,7 @@ export class ConflictosService {
     nombre: string,
     fecha: string,
     asignaciones: ConflictoAsignacion[],
+    sinVerificar = false,
   ): Promise<boolean> {
     return new Promise((resolve) => {
       // Crear host div
@@ -105,6 +111,7 @@ export class ConflictosService {
       ref.instance.nombre = nombre;
       ref.instance.fecha = fecha;
       ref.instance.asignaciones = asignaciones;
+      ref.instance.sinVerificar = sinVerificar;
 
       // Escuchar respuesta
       ref.instance.resolved.subscribe((accept: boolean) => {
