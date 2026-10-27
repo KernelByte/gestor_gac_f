@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, viewChild } from '@angular/core';
 import { geoKinks } from '../utils/geo-math.util';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,6 +10,7 @@ import { CongregacionContextService } from '../../../core/congregacion-context/c
 import { nombreMostrado } from '../../../core/utils/nombre.util';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
+import { EditorPanelComponent } from '../components/editor-panel.component';
 import { TerritorioCardComponent } from '../components/territorio-card.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
@@ -33,7 +34,7 @@ import {
 @Component({
    standalone: true,
    selector: 'app-territorios-page',
-   imports: [CommonModule, FormsModule, TerritorioMapComponent, TerritorioCardComponent, PageHeaderComponent, SelectPickerComponent],
+   imports: [CommonModule, FormsModule, TerritorioMapComponent, EditorPanelComponent, TerritorioCardComponent, PageHeaderComponent, SelectPickerComponent],
    animations: [
       trigger('slideOver', [
          transition(':enter', [
@@ -243,7 +244,9 @@ import {
                       <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getStatusDotColor(selectedTerritorio()!.estado_territorio)"></span>{{ selectedTerritorio()!.estado_territorio }}
                     </span>
                   </div>
-                  <p class="text-[15px] font-medium text-slate-600 dark:text-slate-300 mt-1.5">{{ selectedTerritorio()!.nombre }}</p>
+                  @if (selectedTerritorio()!.nombre) {
+                    <p class="text-[15px] font-medium text-slate-600 dark:text-slate-300 mt-1.5">{{ selectedTerritorio()!.nombre }}</p>
+                  }
                 </div>
                 <button (click)="closeDetails()" aria-label="Cerrar detalle" class="w-10 h-10 -mr-2 -mt-1 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors shrink-0">
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -576,12 +579,15 @@ import {
                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                  Dibujar
               </button>
-              <button (click)="printCard()"
-                class="py-2.5 bg-slate-50 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-all flex flex-col items-center justify-center gap-1 hover:border-slate-300 dark:hover:border-slate-500">
+              <button (click)="printCard()" [disabled]="generandoTarjeta()"
+                class="disabled:opacity-60 py-2.5 bg-slate-50 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-all flex flex-col items-center justify-center gap-1 hover:border-slate-300 dark:hover:border-slate-500">
                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                 Imprimir
+                 {{ generandoTarjeta() ? 'Generando…' : 'Imprimir' }}
               </button>
            </div>
+           @if (errorTarjeta()) {
+              <p class="px-4 pb-3 text-sm font-semibold text-red-600 dark:text-red-400" role="alert">{{ errorTarjeta() }}</p>
+           }
         </aside>
         }
 
@@ -622,7 +628,7 @@ import {
               <div>
                 <label for="dir-direccion" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Calle o dirección *</label>
                 <input id="dir-direccion" type="text" [(ngModel)]="direccionForm.direccion" placeholder="Ej: Calle 5"
-                  class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
+                  class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
               </div>
               <div class="grid grid-cols-3 gap-3">
                 <div>
@@ -652,7 +658,7 @@ import {
                 <div>
                   <label for="dir-motivo" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Motivo (opcional)</label>
                   <input id="dir-motivo" type="text" [(ngModel)]="direccionForm.motivo_no_visitar" placeholder="Ej: Lo pidió el dueño"
-                    class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
+                    class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" />
                 </div>
               }
               <div>
@@ -677,7 +683,7 @@ import {
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm relative z-10 shadow-2xl overflow-hidden animate-fadeIn">
           <div class="p-5 border-b border-slate-100 dark:border-slate-700/50">
             <h3 class="text-base font-black text-slate-900 dark:text-white">Asignar Territorio</h3>
-            <p class="text-xs text-slate-500 mt-0.5">{{ selectedTerritorio()?.codigo }} — {{ selectedTerritorio()?.nombre }}</p>
+            <p class="text-xs text-slate-500 mt-0.5">{{ selectedTerritorio()?.codigo }}{{ selectedTerritorio()?.nombre ? ' — ' + selectedTerritorio()?.nombre : '' }}</p>
           </div>
           <div class="p-5 space-y-4">
             @if (asignacionError()) {
@@ -686,7 +692,7 @@ import {
             <div>
               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Publicador *</label>
               <input type="text" [(ngModel)]="busquedaPublicador" placeholder="Escribe para buscar..."
-                class="w-full mb-2 px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full mb-2 px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               <app-select-picker colorScheme="emerald" ariaLabel="Publicador" [(ngModel)]="newAsignacion.id_publicador"
                 [options]="opcionesPublicador()" placeholder="— Elige un publicador —" [clearable]="false" [searchable]="false" />
             </div>
@@ -698,7 +704,7 @@ import {
             <div>
               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notas (opcional)</label>
               <input type="text" [(ngModel)]="newAsignacion.notas" placeholder="Observaciones..."
-                class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
           <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 flex gap-3">
@@ -733,7 +739,7 @@ import {
             <div>
               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notas (opcional)</label>
               <input type="text" [(ngModel)]="devolucionData.notas" placeholder="Observaciones..."
-                class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
           <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 flex gap-3">
@@ -763,11 +769,11 @@ import {
           <div class="p-5 space-y-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Código</label>
-              <input type="text" [(ngModel)]="newTerritorio.codigo" placeholder="Ej: T-01" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all">
+              <input type="text" [(ngModel)]="newTerritorio.codigo" placeholder="T-01" class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nombre</label>
-              <input type="text" [(ngModel)]="newTerritorio.nombre" placeholder="Ej: Centro Norte" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all">
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nombre <span class="font-normal normal-case text-slate-500 dark:text-slate-400">(opcional)</span></label>
+              <input type="text" [(ngModel)]="newTerritorio.nombre" placeholder="Una referencia, si la quiere" class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all">
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Estado Inicial</label>
@@ -785,7 +791,7 @@ import {
           
           <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
             <button (click)="closeCreateModal()" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all">Cancelar</button>
-            <button (click)="saveNewTerritorio()" [disabled]="!newTerritorio.codigo || !newTerritorio.nombre || saving()" class="px-5 py-2.5 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-purple-600/20 flex items-center gap-2">
+            <button (click)="saveNewTerritorio()" [disabled]="!newTerritorio.codigo || saving()" class="px-5 py-2.5 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-purple-600/20 flex items-center gap-2">
               @if (saving()) {
                 <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               }
@@ -811,7 +817,7 @@ import {
               </div>
               <div>
                 <h3 class="text-base font-black text-slate-900 dark:text-white leading-tight">Editar Territorio</h3>
-                <p class="text-[0.7rem] text-slate-400 font-medium">{{ selectedTerritorio()!.codigo }} · {{ selectedTerritorio()!.nombre }}</p>
+                <p class="text-[0.7rem] text-slate-400 font-medium">{{ selectedTerritorio()!.codigo }}{{ selectedTerritorio()!.nombre ? ' · ' + selectedTerritorio()!.nombre : '' }}</p>
               </div>
             </div>
             <button (click)="closeEditInfoModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
@@ -836,19 +842,19 @@ import {
               <input
                 type="text"
                 [(ngModel)]="editingTerritorioInfo.codigo"
-                placeholder="Ej: T-01"
-                class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                placeholder="T-01"
+                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
               >
             </div>
 
             <!-- Nombre -->
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nombre</label>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nombre <span class="font-normal normal-case text-slate-500 dark:text-slate-400">(opcional)</span></label>
               <input
                 type="text"
                 [(ngModel)]="editingTerritorioInfo.nombre"
-                placeholder="Ej: Centro Norte"
-                class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                placeholder="Una referencia, si la quiere"
+                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
               >
             </div>
 
@@ -874,8 +880,8 @@ import {
               <textarea
                 [(ngModel)]="editingTerritorioInfo.notas"
                 rows="3"
-                placeholder="Ej: Zona residencial, muchas rejas..."
-                class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none"
+                placeholder="Ej: muchas rejas"
+                class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none"
               ></textarea>
             </div>
           </div>
@@ -909,7 +915,7 @@ import {
             </button>
             <button
               (click)="saveEditInfo()"
-              [disabled]="!editingTerritorioInfo.nombre || !editingTerritorioInfo.codigo || saving()"
+              [disabled]="!editingTerritorioInfo.codigo || saving()"
               class="px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2"
             >
               @if (saving()) {
@@ -924,42 +930,55 @@ import {
       </div>
       }
         
-      <!-- Modal Editar Mapa -->
+      <!-- Editor cartográfico: pantalla completa, mapa + panel lateral -->
       @if (showMapEditModal() && selectedTerritorio()) {
-      <div class="fixed inset-0 z-[100] flex items-center justify-center sm:p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="closeMapEditor()"></div>
+      <div class="fixed inset-0 z-[100] flex flex-col bg-white dark:bg-slate-900 animate-fadeIn">
 
-        <div class="bg-white dark:bg-slate-800 sm:rounded-2xl sm:border border-slate-200 dark:border-slate-700 w-full max-w-6xl h-[100dvh] sm:h-[88vh] flex flex-col relative z-10 shadow-2xl overflow-hidden animate-fadeIn">
-
-          <!-- Header -->
-          <div class="px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-4 shrink-0 bg-gradient-to-r from-purple-50/60 to-white dark:from-purple-900/10 dark:to-slate-800">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                <svg class="text-[#6D28D9] dark:text-purple-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-              </div>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">Editor cartográfico</h3>
-                  <span class="px-2 py-0.5 rounded-md bg-slate-900/5 dark:bg-white/10 text-xs font-bold text-slate-700 dark:text-slate-200 tabular-nums">{{ selectedTerritorio()!.codigo }}</span>
-                </div>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
-                  {{ selectedTerritorio()!.nombre }}<span class="hidden md:inline"> · Siga los pasos 1, 2 y 3 de la barra del mapa</span>
-                </p>
-              </div>
+        <div class="px-3 sm:px-5 h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shrink-0 bg-white dark:bg-slate-800">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+              <svg class="text-[#6D28D9] dark:text-purple-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
             </div>
-            <button (click)="closeMapEditor()" title="Cerrar editor" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors shrink-0">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <h3 class="text-base font-black text-slate-900 dark:text-white truncate">
+              Editor cartográfico
+              <span class="ml-1.5 px-2 py-0.5 rounded-md bg-slate-900/5 dark:bg-white/10 text-sm font-bold text-slate-700 dark:text-slate-200 tabular-nums">{{ selectedTerritorio()!.codigo }}</span>
+              @if (selectedTerritorio()!.nombre) { <span class="hidden md:inline text-sm font-medium text-slate-500 dark:text-slate-400"> · {{ selectedTerritorio()!.nombre }}</span> }
+            </h3>
           </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <p class="hidden sm:inline-flex items-center gap-2 text-sm font-semibold"
+               [class]="limiteSinGuardar() ? 'text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'">
+              <span class="w-2 h-2 rounded-full" [class]="limiteSinGuardar() ? 'bg-amber-500' : 'bg-emerald-500'"></span>
+              {{ limiteSinGuardar() ? 'El límite tiene cambios sin guardar' : 'Todo guardado' }}
+            </p>
+            <button (click)="closeMapEditor()" class="px-4 h-10 text-sm font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors active:scale-[0.97]">Cerrar editor</button>
+          </div>
+        </div>
 
-          <div class="flex-1 min-h-0 p-2 sm:p-3 bg-slate-50 dark:bg-slate-900/40">
-           <div class="relative h-full rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 bg-slate-100 dark:bg-slate-900">
+        <div class="flex-1 min-h-0 flex flex-col lg:flex-row">
+          <div class="relative flex-1 min-w-0 min-h-0 bg-slate-100 dark:bg-slate-900">
+            @if (sinLimiteCongregacion()) {
+              <div class="absolute inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px]" role="alert">
+                <div class="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 text-center shadow-2xl space-y-4">
+                  <p class="text-lg font-black text-slate-900 dark:text-white">Primero suba el territorio de la congregación</p>
+                  <p class="text-base text-slate-600 dark:text-slate-400">
+                    Las tarjetas se dibujan dentro del límite de la congregación. Suba el archivo .kml en Mapa general y vuelva aquí.
+                  </p>
+                  <div class="flex flex-col sm:flex-row gap-2 justify-center">
+                    <button (click)="irAMapaGeneral()" class="btn-primary-green focus-ring-green justify-center">Ir a Mapa general</button>
+                    <button (click)="closeMapEditor()" class="btn-secondary focus-ring-green justify-center">Cerrar</button>
+                  </div>
+                </div>
+              </div>
+            }
             <app-territorio-map
+              #mapaEditor
               [geojson]="editingGeoJSON()"
               [manzanasGeojson]="selectedManzanasGeoJSON()"
               [puntosGeojson]="selectedPuntosGeoJSON()"
               height="100%"
               [enableDrawing]="true"
+              [panelExterno]="true"
               [interactive]="true"
               [referenciasGeojson]="editorReferencias()"
               [centroInicial]="editorCentro()"
@@ -973,40 +992,25 @@ import {
               (detectar)="onDetectarManzanas($event)"
               (guardarPropuestas)="onGuardarPropuestas($event)"
               (descartarPropuestas)="propuestasManzanas.set(null)"
-              (manzanaBorrar)="deleteManzana($event)"
+              (manzanaForma)="onManzanaForma($event)"
+              (puntoMovido)="onPuntoMovido($event)"
             />
-           </div>
           </div>
 
-          <div class="px-4 sm:px-6 py-3.5 border-t border-slate-100 dark:border-slate-700/50 flex flex-col gap-3 shrink-0">
-            @if (geoSaveError()) {
-              <div class="flex items-start gap-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl px-4 py-3">
-                <svg class="w-4 h-4 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <p class="text-xs font-semibold text-red-600 dark:text-red-400 leading-snug">{{ geoSaveError() }}</p>
-              </div>
-            }
-            <div class="flex flex-wrap items-center justify-end gap-3">
-              <p class="mr-auto inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors"
-                 [class]="limiteSinGuardar() ? 'bg-amber-50 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-800/50' : 'text-slate-500 dark:text-slate-400'">
-                <span class="relative flex w-2 h-2">
-                  @if (limiteSinGuardar()) { <span class="absolute inset-0 rounded-full bg-amber-500 animate-ping opacity-60"></span> }
-                  <span class="relative w-2 h-2 rounded-full" [class]="limiteSinGuardar() ? 'bg-amber-500' : 'bg-emerald-500'"></span>
-                </span>
-                {{ limiteSinGuardar() ? 'El límite tiene cambios sin guardar' : 'Todo guardado · las manzanas y los puntos se guardan solos' }}
-              </p>
-              <div class="flex w-full sm:w-auto gap-2">
-                <button (click)="closeMapEditor()" class="flex-1 sm:flex-none whitespace-nowrap px-4 sm:px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors active:scale-[0.97]">Cerrar editor</button>
-                <button (click)="saveGeometry()" [disabled]="saving() || !limiteSinGuardar()" class="flex-[2] sm:flex-none justify-center px-5 py-2.5 text-sm font-bold rounded-xl transition-[background-color,box-shadow,transform] flex items-center gap-2 active:scale-[0.97] text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100 dark:disabled:bg-slate-700/60 dark:disabled:text-slate-500">
-                  @if (saving()) {
-                    <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  } @else {
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                  }
-                  Guardar límite
-                </button>
-              </div>
-            </div>
-          </div>
+          <app-editor-panel
+            [mapa]="mapaEditorRef()"
+            [manzanasGeojson]="selectedManzanasGeoJSON()"
+            [puntosGeojson]="selectedPuntosGeoJSON()"
+            [limiteSinGuardar]="limiteSinGuardar()"
+            [saving]="saving()"
+            [geoSaveError]="geoSaveError()"
+            [detectando]="detectandoManzanas()"
+            (guardarLimite)="saveGeometry()"
+            (renombrarManzana)="onRenombrarManzana($event)"
+            (borrarManzana)="deleteManzana($event, false)"
+            (actualizarPunto)="onActualizarPunto($event)"
+            (borrarPunto)="deletePunto($event)"
+          />
         </div>
       </div>
       }
@@ -1107,14 +1111,19 @@ export class TerritoriosPage implements OnInit {
    textoDias = textoDiasSinTrabajar;
    loading = signal(true);
    loadError = signal(false);
+   /** Mapa del editor a pantalla completa: el panel lateral lo maneja. */
+   mapaEditorRef = viewChild<TerritorioMapComponent>('mapaEditor');
    saving = signal(false);
    showPrintCard = signal(false);
+   generandoTarjeta = signal(false);
+   errorTarjeta = signal<string | null>(null);
    showCreateModal = signal(false);
    showMapEditModal = signal(false);
    geoSaveError = signal<string | null>(null);
    // Editor de mapa
    editorReferencias = signal<GeoJSONFeatureCollection | null>(null);
    editorCentro = signal<{ lat: number; lng: number } | null>(null);
+   sinLimiteCongregacion = signal(false);
    propuestasManzanas = signal<GeoJSONFeatureCollection | null>(null);
    detectandoManzanas = signal(false);
    guardandoPropuestas = signal(false);
@@ -1384,7 +1393,7 @@ export class TerritoriosPage implements OnInit {
       const resumen = this.resumen();
       const lista = this.territorios().filter(t => {
          const matchesSearch =
-           t.nombre.toLowerCase().includes(q) ||
+           (t.nombre ?? '').toLowerCase().includes(q) ||
            t.codigo.toLowerCase().includes(q);
          const matchesEstado = estado
            ? t.estado_territorio === estado
@@ -1708,9 +1717,9 @@ export class TerritoriosPage implements OnInit {
       });
    }
 
-   deleteManzana(idManzana: number): void {
+   deleteManzana(idManzana: number, confirmar = true): void {
       const t = this.selectedTerritorio();
-      if (!t || !confirm('¿Eliminar esta manzana? Esta acción no se puede deshacer.')) return;
+      if (!t || (confirmar && !confirm('¿Eliminar esta manzana? Esta acción no se puede deshacer.'))) return;
       this.manzanaDeleting.set(idManzana);
       this.territoriosService.deleteManzana(t.id_territorio, idManzana).subscribe({
          next: () => {
@@ -1769,6 +1778,51 @@ export class TerritoriosPage implements OnInit {
    }
 
    // ── Mapa editor events ────────────────────────────────────────────────
+   /** Editor: cambia el número de una manzana y refresca el mapa. */
+   onRenombrarManzana(e: { id: number; numero: string }): void {
+      const t = this.selectedTerritorio();
+      if (!t) return;
+      this.territoriosService.updateManzana(t.id_territorio, e.id, { numero_manzana: e.numero }).subscribe({
+         next: () => this.recargarManzanas(t.id_territorio),
+         error: (err) => this.avisoEditor.set(err?.error?.detail ?? 'No se pudo cambiar el número. Intente de nuevo.'),
+      });
+   }
+
+   /** Editor: guarda la nueva forma de una manzana; siempre se recarga para que el mapa muestre lo guardado. */
+   onManzanaForma(e: { id: number; geojson: any }): void {
+      const t = this.selectedTerritorio();
+      if (!t) return;
+      this.territoriosService.updateManzana(t.id_territorio, e.id, { coordenada: e.geojson }).subscribe({
+         next: () => this.recargarManzanas(t.id_territorio),
+         error: (err) => {
+            this.avisoEditor.set(err?.error?.detail ?? 'No se pudo guardar la nueva forma. Intente de nuevo.');
+            this.recargarManzanas(t.id_territorio);
+         },
+      });
+   }
+
+   /** Editor: guarda el nuevo lugar de un punto. */
+   onPuntoMovido(e: { id: number; geojson: any }): void {
+      const t = this.selectedTerritorio();
+      if (!t) return;
+      this.territoriosService.updatePunto(t.id_territorio, e.id, { coordenadas: e.geojson }).subscribe({
+         next: () => this.loadPuntos(t.id_territorio),
+         error: (err) => {
+            this.avisoEditor.set(err?.error?.detail ?? 'No se pudo mover el punto. Intente de nuevo.');
+            this.loadPuntos(t.id_territorio);
+         },
+      });
+   }
+
+   onActualizarPunto(e: { id: number; nombre: string; tipo: string; notas: string }): void {
+      const t = this.selectedTerritorio();
+      if (!t) return;
+      this.territoriosService.updatePunto(t.id_territorio, e.id, { nombre: e.nombre, tipo: e.tipo, notas: e.notas }).subscribe({
+         next: () => this.loadPuntos(t.id_territorio),
+         error: (err) => this.avisoEditor.set(err?.error?.detail ?? 'No se pudieron guardar los cambios del punto.'),
+      });
+   }
+
    onManzanaDrawn(event: { geojson: any; numero: string }): void {
       const t = this.selectedTerritorio();
       if (!t) return;
@@ -1907,6 +1961,7 @@ export class TerritoriosPage implements OnInit {
       // Los vecinos se ven de referencia; el salón centra el mapa si aún no hay nada dibujado.
       const actual = this.selectedTerritorio()?.id_territorio;
       this.editorReferencias.set(null);
+      this.sinLimiteCongregacion.set(false);
       // Además de los vecinos: el límite de la congregación y los sectores, para dibujar dentro de la raya.
       forkJoin({
          tarjetas: this.territoriosService.getTerritoriosGeoJSON(),
@@ -1914,8 +1969,9 @@ export class TerritoriosPage implements OnInit {
       }).subscribe({
          next: ({ tarjetas, unidades }) => {
             const limite = unidades.filter(u => u.coordenada).map(u => ({
-               type: 'Feature' as const, id: `u${u.id_unidad}`, properties: { codigo: '' }, geometry: u.coordenada!,
+               type: 'Feature' as const, id: `u${u.id_unidad}`, properties: { codigo: '', limite: true }, geometry: u.coordenada!,
             }));
+            this.sinLimiteCongregacion.set(limite.length === 0);
             const sectoresDibujados = this.sectores().filter(s => s.coordenada).map(s => ({
                type: 'Feature' as const, id: `s${s.id_sector}`, properties: { codigo: s.nombre }, geometry: s.coordenada!,
             }));
@@ -1928,6 +1984,11 @@ export class TerritoriosPage implements OnInit {
       if (!this.editorCentro()) {
          this.territoriosService.getMapaContexto().subscribe({ next: (r) => this.editorCentro.set(r.centro) });
       }
+   }
+
+   irAMapaGeneral(): void {
+      this.closeMapEditor();
+      void this.router.navigate(['/territorios/mapa']);
    }
 
    closeMapEditor(): void {
@@ -1992,13 +2053,13 @@ export class TerritoriosPage implements OnInit {
 
    saveEditInfo(): void {
       const t = this.selectedTerritorio();
-      if (!t || !this.editingTerritorioInfo.nombre || !this.editingTerritorioInfo.codigo) return;
+      if (!t || !this.editingTerritorioInfo.codigo) return;
 
       this.saving.set(true);
       this.editInfoError.set(null);
       this.territoriosService.updateTerritorio(t.id_territorio, {
          codigo: this.editingTerritorioInfo.codigo,
-         nombre: this.editingTerritorioInfo.nombre,
+         nombre: (this.editingTerritorioInfo.nombre ?? '').trim(),
          estado_territorio: this.editingTerritorioInfo.estado_territorio,
          notas: this.editingTerritorioInfo.notas,
          id_sector: this.editingTerritorioInfo.id_sector || null,
@@ -2077,6 +2138,11 @@ export class TerritoriosPage implements OnInit {
             } : null;
             this.selectedTerritorioPolygon.set(poligono);
             this.selectedTerritorioGeoJSON.set(poligono);
+            if (updated.ajustado_al_limite) {
+               // El servidor recortó lo que se salía: se repinta la forma que quedó guardada.
+               this.editingGeoJSON.set(poligono);
+               this.avisoEditor.set('Se ajustó el dibujo al límite de la congregación: lo que quedaba fuera se recortó.');
+            }
             despues?.();
          },
          error: (err) => {
@@ -2089,10 +2155,10 @@ export class TerritoriosPage implements OnInit {
    }
 
    saveNewTerritorio(): void {
-      if (!this.newTerritorio.codigo || !this.newTerritorio.nombre) return;
+      if (!this.newTerritorio.codigo) return;
       
       this.saving.set(true);
-      this.territoriosService.createTerritorio({ ...this.newTerritorio, id_sector: this.newTerritorio.id_sector || null }).subscribe({
+      this.territoriosService.createTerritorio({ ...this.newTerritorio, nombre: (this.newTerritorio.nombre ?? '').trim(), id_sector: this.newTerritorio.id_sector || null }).subscribe({
          next: (created) => {
             // Add to the signals instead of reloading completely (optional)
             this.territorios.update(list => [created, ...list]);
@@ -2112,7 +2178,9 @@ export class TerritoriosPage implements OnInit {
 
    async printCard(): Promise<void> {
       const t = this.selectedTerritorio();
-      if (!t) return;
+      if (!t || this.generandoTarjeta()) return;
+      this.generandoTarjeta.set(true);
+      this.errorTarjeta.set(null);
 
       // La tarjeta lleva las direcciones "no visitar": se piden antes de dibujarla.
       try {
@@ -2122,16 +2190,21 @@ export class TerritoriosPage implements OnInit {
       }
       this.showPrintCard.set(true);
 
-      // Wait for card to render
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      await exportTerritorioCard(
-         `territorio-card-${t.id_territorio}`,
-         t.codigo,
-         'pdf'
-      );
-
-      this.showPrintCard.set(false);
+      try {
+         // Wait for card to render
+         await new Promise(resolve => setTimeout(resolve, 1500));
+         await exportTerritorioCard(
+            `territorio-card-${t.id_territorio}`,
+            t.codigo,
+            'pdf'
+         );
+      } catch (err) {
+         console.error('No se pudo generar la tarjeta:', err);
+         this.errorTarjeta.set('No se pudo generar el PDF de la tarjeta. Intente de nuevo.');
+      } finally {
+         this.showPrintCard.set(false);
+         this.generandoTarjeta.set(false);
+      }
    }
 
    getStatusColor(estado: string): string {

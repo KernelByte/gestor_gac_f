@@ -24,6 +24,17 @@ interface SesionesResponse {
   sesiones: SesionActiva[];
 }
 
+interface EstadoMapaPropio {
+  existe: boolean;
+  tamano_mb: number | null;
+  estado: 'vacio' | 'listo' | 'descargando' | 'error';
+  mensaje: string | null;
+  progreso: number | null;
+  version_datos: string | null;
+  actualizado_en: string | null;
+  proveedor_activado: boolean;
+}
+
 @Component({
   selector: 'app-system-config',
   standalone: true,
@@ -67,6 +78,72 @@ interface SesionesResponse {
              {{ saving() ? 'Guardando...' : 'Guardar' }}
           </button>
         </div>
+      </div>
+
+      <!-- Sugerencia de límites con IA -->
+      <div class="mt-4 flex items-center justify-between gap-4 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-white dark:bg-slate-800/40 shadow-sm">
+        <div class="min-w-0">
+          <span id="etiquetaIaLimites" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Sugerir límites con IA</span>
+          <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Permite pedir a Gemini los nombres de las calles de los cuatro lados del territorio. Hasta 3 intentos por día.
+          </span>
+        </div>
+        <button type="button" role="switch" aria-labelledby="etiquetaIaLimites" [attr.aria-checked]="iaLimites()"
+          (click)="alternarIaLimites()" [disabled]="loading() || guardandoIa()"
+          class="relative shrink-0 w-14 h-8 rounded-full transition-colors disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500"
+          [ngClass]="iaLimites() ? 'bg-teal-600' : 'bg-slate-300 dark:bg-slate-600'">
+          <span class="absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow transition-transform" [class.translate-x-6]="iaLimites()"></span>
+          <span class="sr-only">{{ iaLimites() ? 'Activada' : 'Desactivada' }}</span>
+        </button>
+      </div>
+
+      <!-- Mapa propio de Colombia -->
+      <div class="mt-4 p-4 border border-slate-200/80 dark:border-slate-700/50 rounded-2xl bg-white dark:bg-slate-800/40 shadow-sm space-y-3">
+        <div>
+          <span class="block text-sm font-bold text-slate-700 dark:text-slate-300">Mapa propio de Colombia</span>
+          <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Calles y mapa de OpenStreetMap guardados en su servidor. Hacen funcionar la detección automática de manzanas sin depender de otros servicios.
+          </span>
+        </div>
+
+        @if (mapa(); as m) {
+          <p class="text-sm text-slate-700 dark:text-slate-200" aria-live="polite">
+            @if (m.estado === 'descargando') {
+              {{ m.mensaje || 'Descargando…' }}
+            } @else if (m.existe) {
+              Datos del <strong>{{ fechaVersion(m.version_datos) }}</strong> · {{ m.tamano_mb }} MB
+              @if (m.actualizado_en) { · descargado el {{ m.actualizado_en | date:'d MMM y, h:mm a' }} }
+            } @else {
+              Todavía no se ha descargado. Son unos 600 MB y tarda pocos minutos.
+            }
+          </p>
+
+          @if (m.estado === 'descargando') {
+            <div class="h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden" role="progressbar" [attr.aria-valuenow]="m.progreso ?? 0" aria-valuemin="0" aria-valuemax="100">
+              <div class="h-full bg-teal-600 transition-[width] duration-500" [style.width.%]="m.progreso ?? 3"></div>
+            </div>
+          }
+          @if (m.estado === 'error' && m.mensaje) {
+            <p class="text-sm font-semibold text-rose-700 dark:text-rose-400" role="alert">{{ m.mensaje }}</p>
+          }
+          @if (m.estado === 'listo' && m.proveedor_activado && !m.mensaje) {
+            <p class="text-xs text-slate-500 dark:text-slate-400">Quedó activado como el mapa del sistema.</p>
+          }
+          @if (m.estado === 'listo' && m.mensaje) {
+            <p class="text-sm text-emerald-700 dark:text-emerald-400">{{ m.mensaje }}</p>
+          }
+        }
+
+        <button type="button" (click)="actualizarMapa()" [disabled]="mapa()?.estado === 'descargando' || iniciandoMapa()"
+          class="h-11 px-4 inline-flex items-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold shadow-md transition-all active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed">
+          @if (mapa()?.estado === 'descargando' || iniciandoMapa()) {
+            <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true"></span>
+            Descargando…
+          } @else {
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            {{ mapa()?.existe ? 'Actualizar los datos del mapa' : 'Descargar el mapa de Colombia' }}
+          }
+        </button>
       </div>
 
       <!-- Toast Alert (Mapa) -->
@@ -270,6 +347,11 @@ export class SystemConfigComponent implements OnInit, OnDestroy {
 
   // Map settings
   tileProvider = signal('osm');
+  iaLimites = signal(false);
+  mapa = signal<EstadoMapaPropio | null>(null);
+  iniciandoMapa = signal(false);
+  private sondeoMapa: ReturnType<typeof setTimeout> | null = null;
+  guardandoIa = signal(false);
   loading = signal(false);
   saving = signal(false);
   notification = signal<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -296,6 +378,7 @@ export class SystemConfigComponent implements OnInit, OnDestroy {
       this.pollInterval = null;
     }
     if (this.notificationTimer) clearTimeout(this.notificationTimer);
+    if (this.sondeoMapa) clearTimeout(this.sondeoMapa);
   }
 
   // ── Map Settings ──────────────────────────────────────
@@ -305,6 +388,9 @@ export class SystemConfigComponent implements OnInit, OnDestroy {
       next: (res) => {
          this.tileProvider.set(res.tile_provider || 'osm');
          this.loading.set(false);
+         this.cargarMapa();
+         this.http.get<{ habilitado: boolean }>(`${environment.apiUrl}/configuracion/ia-limites-territorio`)
+           .subscribe({ next: (r) => this.iaLimites.set(r.habilitado), error: () => this.iaLimites.set(false) });
       },
       error: () => {
          this.tileProvider.set('osm');
@@ -324,6 +410,54 @@ export class SystemConfigComponent implements OnInit, OnDestroy {
          this.saving.set(false);
          this.showNotification('Error al guardar la configuración', 'error');
       }
+    });
+  }
+
+  // ── Mapa propio ───────────────────────────────────────
+  cargarMapa() {
+    this.http.get<EstadoMapaPropio>(`${environment.apiUrl}/configuracion/mapa-propio`).subscribe({
+      next: (e) => {
+        this.mapa.set(e);
+        if (this.sondeoMapa) clearTimeout(this.sondeoMapa);
+        // Mientras descarga se pregunta cada 2,5 s para mover la barra de progreso.
+        if (e.estado === 'descargando') this.sondeoMapa = setTimeout(() => this.cargarMapa(), 2500);
+      },
+      error: () => this.mapa.set(null),
+    });
+  }
+
+  actualizarMapa() {
+    this.iniciandoMapa.set(true);
+    this.http.post<EstadoMapaPropio>(`${environment.apiUrl}/configuracion/mapa-propio/actualizar`, {}).subscribe({
+      next: (e) => { this.iniciandoMapa.set(false); this.mapa.set(e); this.cargarMapa(); },
+      error: (err) => {
+        this.iniciandoMapa.set(false);
+        if (err?.status === 409) { this.cargarMapa(); return; }
+        this.showNotification(err?.error?.detail ?? 'No se pudo iniciar la descarga del mapa', 'error');
+      },
+    });
+  }
+
+  /** «20261025» → «25 oct 2026». */
+  fechaVersion(v: string | null | undefined): string {
+    if (!v || !/^\d{8}$/.test(v)) return '—';
+    const f = new Date(Number(v.slice(0, 4)), Number(v.slice(4, 6)) - 1, Number(v.slice(6, 8)));
+    return f.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/\./g, '');
+  }
+
+  alternarIaLimites() {
+    const nuevo = !this.iaLimites();
+    this.guardandoIa.set(true);
+    this.http.put(`${environment.apiUrl}/configuracion/ia-limites-territorio`, { habilitado: nuevo }).subscribe({
+      next: () => {
+        this.guardandoIa.set(false);
+        this.iaLimites.set(nuevo);
+        this.showNotification(nuevo ? 'Sugerencia de límites con IA activada' : 'Sugerencia de límites con IA desactivada', 'success');
+      },
+      error: () => {
+        this.guardandoIa.set(false);
+        this.showNotification('No se pudo cambiar el ajuste', 'error');
+      },
     });
   }
 

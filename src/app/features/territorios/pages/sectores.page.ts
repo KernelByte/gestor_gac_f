@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,7 +6,6 @@ import { forkJoin } from 'rxjs';
 import { TerritoriosService } from '../services/territorios.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import {
   COLORES_SECTOR,
   GeoJSONFeatureCollection,
@@ -30,87 +29,165 @@ interface TarjetaElegible {
 @Component({
   standalone: true,
   selector: 'app-sectores-page',
-  imports: [CommonModule, FormsModule, TerritorioMapComponent, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, TerritorioMapComponent],
   template: `
-    <div class="flex flex-col h-full gap-5 overflow-y-auto simple-scrollbar pb-6">
-      <app-page-header spacing="none" title="Barrios o sectores"
-        subtitle="Marque en el mapa, con un color, cada barrio o sector. Luego creará dentro de ellos las tarjetas de territorio.">
-        <button (click)="volver()" class="btn-secondary focus-ring-green whitespace-nowrap">
-          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          Volver a Territorios
-        </button>
-      </app-page-header>
+    <div class="flex flex-col h-full min-h-0 gap-3">
+      <!-- Cabecera en una fila: el mapa recibe casi toda la altura -->
+      <header class="shrink-0 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div class="flex items-center gap-1 min-w-0">
+          <button type="button" (click)="volver()" aria-label="Volver a Territorios" title="Volver a Territorios"
+            class="-ml-2 w-11 h-11 shrink-0 inline-flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97] focus-ring-green">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <div class="min-w-0">
+            <h1 class="font-display font-bold text-xl sm:text-2xl leading-tight text-gray-900 dark:text-slate-100">Barrios o sectores</h1>
+            <p class="hidden lg:block text-sm text-slate-500 dark:text-slate-400 truncate">Divida el territorio en barrios, cada uno con su color. Después las tarjetas se agrupan dentro de ellos.</p>
+          </div>
+        </div>
+        @if (puedeEditar() && sectores().length > 0) {
+          <button type="button" (click)="nuevoSector()" class="btn-primary-green focus-ring-green h-11 whitespace-nowrap">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Nuevo barrio
+          </button>
+        }
+      </header>
 
       @if (aviso()) {
-        <div role="alert" class="flex items-start justify-between gap-3 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
+        <div role="alert" class="shrink-0 flex items-start justify-between gap-3 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
           <p class="text-sm font-medium text-amber-900 dark:text-amber-200">{{ aviso() }}</p>
-          <button (click)="aviso.set(null)" class="text-sm font-bold text-amber-800 dark:text-amber-300 shrink-0">Entendido</button>
+          <button (click)="aviso.set(null)" class="text-sm font-bold text-amber-800 dark:text-amber-300 shrink-0 h-8 px-1">Entendido</button>
         </div>
       }
 
-      <!-- ═══ Paso 1: barrios ═══ -->
-      <section class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4" aria-labelledby="paso2">
-        <div class="flex items-start justify-between gap-3 flex-wrap">
-          <div class="flex items-start gap-3 min-w-0">
-            <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-black shrink-0" aria-hidden="true">1</span>
-            <div class="min-w-0">
-              <h2 id="paso2" class="text-lg font-black text-slate-900 dark:text-white">Barrios o sectores</h2>
-              <p class="text-sm text-slate-600 dark:text-slate-400">
-                Cada barrio se dibuja en el mapa con su color. El límite de la congregación se ve de fondo; si aún no aparece, súbalo desde «Mapa general».
-              </p>
-            </div>
-          </div>
-          @if (puedeEditar()) {
-            <button (click)="nuevoSector()" class="btn-primary-green focus-ring-green whitespace-nowrap">Nuevo barrio</button>
-          }
-        </div>
+      <!-- Mapa arriba en el teléfono; a la derecha desde lg. La lista nunca queda tapada. -->
+      <div class="flex-1 min-h-0 grid gap-3 lg:gap-4 grid-rows-[minmax(13rem,36dvh)_minmax(0,1fr)] lg:grid-rows-1 lg:grid-cols-[minmax(21rem,26rem)_minmax(0,1fr)]">
 
-        @if (sectores().length === 0) {
-          <p class="text-sm text-slate-500 dark:text-slate-400 rounded-xl bg-slate-50 dark:bg-slate-800/50 p-4">
-            Todavía no hay barrios. Cree el primero con «Nuevo barrio»: le pone un nombre, elige un color y lo dibuja en el mapa.
-          </p>
-        } @else {
-          <ul class="divide-y divide-slate-100 dark:divide-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-            @for (s of sectores(); track s.id_sector) {
-              <li class="flex flex-wrap items-center gap-3 px-4 py-3">
-                <span class="w-4 h-4 rounded-full shrink-0" [style.background-color]="s.color || '#94a3b8'" aria-hidden="true"></span>
-                <div class="min-w-0 flex-1">
-                  <p class="text-base font-bold text-slate-900 dark:text-white truncate">{{ s.nombre }}</p>
-                  <p class="text-sm text-slate-500 dark:text-slate-400">
-                    {{ s.tarjetas_count }} {{ s.tarjetas_count === 1 ? 'tarjeta' : 'tarjetas' }} ·
-                    {{ s.coordenada ? 'Dibujado en el mapa' : 'Sin dibujar' }}
-                  </p>
-                </div>
-                <button (click)="verTarjetas(s)"
-                   class="text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:underline">Ver tarjetas</button>
-                @if (puedeEditar()) {
-                  <button (click)="elegirTarjetas(s)" class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Elegir tarjetas</button>
-                  <button (click)="editarSector(s)" class="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Editar</button>
-                  <button (click)="pedirBorrar(s)" class="h-9 px-3 rounded-lg border border-red-200 dark:border-red-900/50 text-sm font-semibold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">Borrar</button>
-                }
-              </li>
-            }
-          </ul>
-        }
-      </section>
-
-      <!-- ═══ Paso 2: tarjetas sin barrio ═══ -->
-      @if (sectores().length > 0) {
-        <section class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 flex flex-wrap items-center gap-4" aria-labelledby="paso3">
-          <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-black shrink-0" aria-hidden="true">2</span>
-          <div class="min-w-0 flex-1">
-            <h2 id="paso3" class="text-lg font-black text-slate-900 dark:text-white">Tarjetas sin barrio</h2>
-            <p class="text-sm text-slate-600 dark:text-slate-400">
-              @if (sinSector() === 0) { Todas las tarjetas ya tienen barrio. }
-              @else { Hay {{ sinSector() }} {{ sinSector() === 1 ? 'tarjeta' : 'tarjetas' }} sin barrio. Use «Elegir tarjetas» en un barrio, o cámbielas una por una al editar la tarjeta. }
+        <section class="relative order-1 lg:order-2 min-h-0 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900" aria-label="Mapa de los barrios">
+          <app-territorio-map #mapaGeneral
+            [geojson]="null" [referenciasGeojson]="referenciasMapa()" [centroInicial]="centro()"
+            height="100%" [interactive]="true" />
+          @if (hayLimite() && sectores().length === 0 && !cargando()) {
+            <p class="pointer-events-none absolute left-3 bottom-3 right-3 sm:right-auto sm:max-w-xs z-[500] rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 shadow-sm">
+              La línea punteada es el límite de la congregación. Los barrios se dibujan dentro de ella.
             </p>
-          </div>
-          @if (sinSector() > 0) {
-            <button (click)="verSinSector()" class="btn-secondary focus-ring-green whitespace-nowrap">Ver las tarjetas sin barrio</button>
           }
         </section>
-      }
+
+        <section class="order-2 lg:order-1 min-h-0 flex flex-col gap-3 overflow-y-auto simple-scrollbar pr-1" aria-label="Lista de barrios">
+
+          @if (!hayLimite() && !cargando()) {
+            <div class="rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3">
+              <p class="text-base font-bold text-amber-900 dark:text-amber-100">Falta el territorio de la congregación</p>
+              <p class="text-sm text-amber-900/90 dark:text-amber-200">Los barrios se dibujan dentro de ese límite. Suba el archivo .kml en Mapa general y vuelva aquí.</p>
+              <button type="button" (click)="irAMapaGeneral()" class="btn-primary-green focus-ring-green h-11">Ir a Mapa general</button>
+            </div>
+          }
+
+          @if (cargando()) {
+            <div class="space-y-2" aria-hidden="true">
+              @for (n of [1,2,3]; track n) { <div class="h-[4.25rem] rounded-xl bg-slate-100 dark:bg-slate-800/60 animate-pulse"></div> }
+            </div>
+          } @else if (sectores().length === 0) {
+            <!-- Estado vacío que enseña el camino -->
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+              <div>
+                <h2 class="text-lg font-black text-slate-900 dark:text-white">Cree su primer barrio</h2>
+                <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Son tres pasos y lo verá aquí mismo en el mapa.</p>
+              </div>
+              <ol class="space-y-3 text-base text-slate-700 dark:text-slate-200">
+                <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-sm font-black flex items-center justify-center shrink-0" aria-hidden="true">1</span> Póngale nombre y elija un color</li>
+                <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-sm font-black flex items-center justify-center shrink-0" aria-hidden="true">2</span> Marque la zona tocando el mapa</li>
+                <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-sm font-black flex items-center justify-center shrink-0" aria-hidden="true">3</span> Confirme las tarjetas que quedan dentro</li>
+              </ol>
+              @if (puedeEditar()) {
+                <button type="button" (click)="nuevoSector()" class="btn-primary-green focus-ring-green h-11 w-full justify-center">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  Nuevo barrio
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="flex items-baseline justify-between px-1">
+              <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ sectores().length }} {{ sectores().length === 1 ? 'barrio' : 'barrios' }}</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Toque uno para verlo en el mapa</p>
+            </div>
+
+            <ul class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+              @for (s of sectores(); track s.id_sector) {
+                <li [ngClass]="seleccionado() === s.id_sector ? 'bg-slate-50 dark:bg-slate-800/40' : ''" class="transition-colors">
+                  <button type="button" (click)="elegir(s)" [attr.aria-expanded]="seleccionado() === s.id_sector"
+                    class="w-full min-h-[4rem] flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors focus-ring-green">
+                    <span class="w-4 h-4 rounded-full shrink-0 ring-2 ring-white dark:ring-slate-900" [style.background-color]="s.color || '#94a3b8'" aria-hidden="true"></span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block text-base font-bold text-slate-900 dark:text-white truncate">{{ s.nombre }}</span>
+                      <span class="block text-sm text-slate-500 dark:text-slate-400">
+                        {{ s.tarjetas_count }} {{ s.tarjetas_count === 1 ? 'tarjeta' : 'tarjetas' }}
+                        @if (!s.coordenada) { <span class="ml-1 inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 text-xs font-semibold px-2 py-0.5">Falta dibujarlo</span> }
+                      </span>
+                    </span>
+                    <svg class="w-4 h-4 shrink-0 text-slate-400 transition-transform duration-200" [class.rotate-90]="seleccionado() === s.id_sector" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+
+                  @if (seleccionado() === s.id_sector) {
+                    <div class="revelar px-4 pb-4 flex flex-wrap gap-2">
+                      @if (puedeEditar()) {
+                        @if (!s.coordenada) {
+                          <button type="button" (click)="editarSector(s)" class="btn-primary-green focus-ring-green h-11 flex-1 justify-center whitespace-nowrap">
+                            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 22 8.5 18 21 6 21 2 8.5 12 2"></polygon></svg>
+                            Dibujar en el mapa
+                          </button>
+                          <button type="button" (click)="elegirTarjetas(s)" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Elegir tarjetas</button>
+                        } @else {
+                          <button type="button" (click)="elegirTarjetas(s)" class="btn-primary-green focus-ring-green h-11 flex-1 justify-center whitespace-nowrap">Elegir tarjetas</button>
+                          <button type="button" (click)="editarSector(s)" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Editar</button>
+                        }
+                        <button type="button" (click)="verTarjetas(s)" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Ver tarjetas</button>
+                        <button type="button" (click)="pedirBorrar(s)" aria-label="Borrar este barrio" title="Borrar este barrio"
+                          class="w-11 h-11 shrink-0 inline-flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors active:scale-[0.97] focus-ring-green">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                        </button>
+                      } @else {
+                        <button type="button" (click)="verTarjetas(s)" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex-1">Ver tarjetas</button>
+                      }
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+
+            <!-- Lo que queda por hacer, sin pasos numerados -->
+            <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 flex flex-wrap items-center gap-3">
+              @if (sinSector() === 0) {
+                <svg class="w-5 h-5 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <p class="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Todas las tarjetas ya tienen barrio.</p>
+              } @else {
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-bold text-slate-900 dark:text-white">{{ sinSector() }} {{ sinSector() === 1 ? 'tarjeta' : 'tarjetas' }} sin barrio</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">Abra un barrio y use «Elegir tarjetas».</p>
+                </div>
+                <button type="button" (click)="verSinSector()" class="h-11 px-4 inline-flex items-center justify-center gap-2 rounded-lg border text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.97] focus-ring-green border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">Verlas</button>
+              }
+            </div>
+          }
+        </section>
+      </div>
     </div>
+
+    @if (sinLimite()) {
+      <div class="fixed inset-0 z-[110] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloSinLimite">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="sinLimite.set(false)"></div>
+        <div class="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 text-center shadow-2xl space-y-4">
+          <h3 id="tituloSinLimite" class="text-lg font-black text-slate-900 dark:text-white">Primero suba el territorio de la congregación</h3>
+          <p class="text-base text-slate-600 dark:text-slate-400">
+            Los barrios se dibujan dentro del límite de la congregación. Suba el archivo .kml en Mapa general y vuelva aquí.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-2 justify-center">
+            <button (click)="irAMapaGeneral()" class="btn-primary-green focus-ring-green justify-center">Ir a Mapa general</button>
+            <button (click)="sinLimite.set(false)" class="btn-secondary focus-ring-green justify-center">Entendido</button>
+          </div>
+        </div>
+      </div>
+    }
 
     <!-- ═══ Editor de barrio: panel con pasos + mapa ═══ -->
     @if (editor(); as e) {
@@ -201,7 +278,17 @@ interface TarjetaElegible {
                     <p class="text-sm font-semibold text-emerald-900 dark:text-emerald-200">Toque el mapa en cada esquina del barrio.</p>
                     <p class="text-sm text-emerald-800/80 dark:text-emerald-300/80 mt-1">Para terminar, toque dos veces la última esquina.</p>
                     @if (mapaBarrio.realtimeArea()) { <p class="text-sm font-bold text-emerald-900 dark:text-emerald-200 mt-2 tabular-nums">{{ mapaBarrio.realtimeArea() }}</p> }
-                    <button type="button" (click)="mapaBarrio.cancelarDibujo()" class="mt-3 h-10 px-4 rounded-lg text-sm font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 focus-ring-green">Cancelar</button>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                      <button type="button" (click)="mapaBarrio.undoLastVertex()" [disabled]="mapaBarrio.puntosColocados() < 1"
+                        class="h-11 px-4 inline-flex items-center gap-2 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 text-sm font-bold text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97] focus-ring-green">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.51"></path></svg>
+                        Quitar el último punto
+                      </button>
+                      <button type="button" (click)="mapaBarrio.cancelarDibujo()" class="h-11 px-4 rounded-lg text-sm font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 focus-ring-green">Cancelar</button>
+                    </div>
+                    <p class="mt-2 text-sm text-emerald-800/80 dark:text-emerald-300/80">
+                      También puede presionar <kbd class="px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 text-xs font-bold">{{ mapaBarrio.atajoDeshacer }}</kbd>.
+                    </p>
                   </div>
                 } @else if (hayDibujo()) {
                   <div class="mt-2 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
@@ -210,7 +297,7 @@ interface TarjetaElegible {
                       Zona marcada@if (mapaBarrio.realtimeArea()) { <span class="font-normal text-slate-500 dark:text-slate-400 tabular-nums">· {{ mapaBarrio.realtimeArea() }}</span> }
                     </p>
                     @if (mapaBarrio.editMode()) {
-                      <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Arrastre los puntos blancos del borde para acomodar la zona.</p>
+                      <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Arrastre un punto blanco para moverlo. Para agregar uno nuevo, arrastre o toque un punto verde con «+» a mitad de una línea.</p>
                     }
                     <div class="mt-3 flex flex-wrap gap-2">
                       <button type="button" (click)="mapaBarrio.alternarEdicion()" [attr.aria-pressed]="mapaBarrio.editMode()"
@@ -218,12 +305,24 @@ interface TarjetaElegible {
                         [ngClass]="mapaBarrio.editMode() ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'">
                         {{ mapaBarrio.editMode() ? 'Listo' : 'Acomodar los bordes' }}
                       </button>
+                      <button type="button" (click)="mapaBarrio.deshacerZona()" [disabled]="!mapaBarrio.puedeDeshacerZona()"
+                        [attr.title]="'Deshace el último cambio de la zona (' + mapaBarrio.atajoDeshacer + ')'"
+                        class="h-10 px-4 inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97] focus-ring-green">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.51"></path></svg>
+                        Deshacer
+                      </button>
                       <button type="button" (click)="dibujarDeNuevo(mapaBarrio)"
                         class="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 focus-ring-green">Dibujar de nuevo</button>
                     </div>
                   </div>
                 } @else {
                   <p class="text-sm text-slate-500 dark:text-slate-400">Dibuje el contorno del barrio sobre el mapa.</p>
+                  @if (mapaBarrio.puedeDeshacerZona()) {
+                    <button type="button" (click)="mapaBarrio.deshacerZona()" class="mt-3 h-11 px-4 inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 focus-ring-green">
+                      <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.51"></path></svg>
+                      Recuperar la zona anterior
+                    </button>
+                  }
                   <button type="button" (click)="mapaBarrio.empezarDibujo()" class="mt-3 btn-secondary focus-ring-green">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 22 8.5 18 21 6 21 2 8.5 12 2"></polygon></svg>
                     Empezar a dibujar
@@ -296,6 +395,9 @@ interface TarjetaElegible {
   `,
   styles: [`
     :host { display: block; height: 100%; }
+    .revelar { animation: revelar 180ms cubic-bezier(0.23, 1, 0.32, 1); }
+    @keyframes revelar { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .revelar { animation: none; } }
     .simple-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
     .simple-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   `],
@@ -304,6 +406,25 @@ export class SectoresPage implements OnInit {
   private svc = inject(TerritoriosService);
   private router = inject(Router);
   private authStore = inject(AuthStore);
+  @ViewChild('mapaGeneral') private mapaGeneral?: TerritorioMapComponent;
+
+  cargando = signal(true);
+  seleccionado = signal<number | null>(null);
+  hayLimite = computed(() => this.unidades().some(u => u.coordenada));
+
+  /** Lo que muestra el mapa de la página: el límite y todos los barrios con su color (el elegido, resaltado). */
+  referenciasMapa = computed<GeoJSONFeatureCollection | null>(() => {
+    const sel = this.seleccionado();
+    const features = [
+      ...this.mapaCongregacion().features,
+      ...this.sectores().filter(s => s.coordenada).map(s => ({
+        type: 'Feature' as const, id: `s${s.id_sector}`,
+        properties: { codigo: s.nombre, color: s.color || '#94a3b8', sel: s.id_sector === sel },
+        geometry: s.coordenada!,
+      })),
+    ];
+    return features.length ? { type: 'FeatureCollection' as const, features } : null;
+  });
 
   puedeEditar = computed(() => {
     this.authStore.user();
@@ -318,6 +439,8 @@ export class SectoresPage implements OnInit {
   /** Límite de la congregación: solo se ve de fondo al dibujar; se sube en el Mapa general. */
   unidades = signal<UnidadCongregacion[]>([]);
   mapaCongregacion = computed(() => this.aFeatures(this.unidades()));
+  sinLimite = signal(false);
+  private notaAjuste = '';
 
   // Paso 2 y 3
   sectores = signal<Sector[]>([]);
@@ -352,8 +475,12 @@ export class SectoresPage implements OnInit {
         this.sectores.set(r.sectores.sectores);
         this.sinSector.set(r.sectores.sin_sector);
         this.tarjetas.set(r.tarjetas);
+        this.cargando.set(false);
       },
-      error: () => this.aviso.set('No se pudo cargar la información. Revise la conexión e intente de nuevo.'),
+      error: () => {
+        this.cargando.set(false);
+        this.aviso.set('No se pudo cargar la información. Revise la conexión e intente de nuevo.');
+      },
     });
   }
 
@@ -382,10 +509,21 @@ export class SectoresPage implements OnInit {
     return this.sectores().find(s => s.color === c && s.id_sector !== idPropio)?.nombre ?? null;
   }
 
+  /** Elegir un barrio de la lista lo resalta y lo acerca en el mapa; volver a tocarlo lo suelta. */
+  elegir(s: Sector): void {
+    const ya = this.seleccionado() === s.id_sector;
+    this.seleccionado.set(ya ? null : s.id_sector);
+    setTimeout(() => (ya || !s.coordenada)
+      ? this.mapaGeneral?.encuadrarReferencias()
+      : this.mapaGeneral?.encuadrarReferencia(`s${s.id_sector}`));
+  }
+
   nuevoSector(): void { void this.abrirEditor(); }
   editarSector(s: Sector): void { void this.abrirEditor(s); }
 
   private async abrirEditor(s?: Sector): Promise<void> {
+    // Sin el territorio de la congregación no hay dentro de qué dibujar.
+    if (!this.unidades().some(u => u.coordenada)) { this.sinLimite.set(true); return; }
     const usados = new Set(this.sectores().map(x => x.color));
     const referencias = await this.referencias(s?.id_sector);
     this.errorForm.set(null);
@@ -401,6 +539,11 @@ export class SectoresPage implements OnInit {
         : FC_VACIA,
       referencias,
     });
+  }
+
+  irAMapaGeneral(): void {
+    this.sinLimite.set(false);
+    void this.router.navigate(['/territorios/mapa']);
   }
 
   cerrarEditor(): void {
@@ -457,6 +600,8 @@ export class SectoresPage implements OnInit {
         this.guardando.set(false);
         this.editor.set(null);
         this.cargar();
+        this.notaAjuste = s.ajustado_al_limite ? 'Se ajustó el dibujo al límite de la congregación: lo que quedaba fuera se recortó. ' : '';
+        if (this.notaAjuste) this.aviso.set(this.notaAjuste.trim());
         if (s.coordenada && (zonaNueva || !e.id_sector)) this.proponerTarjetas(s);
       },
       error: (err) => {
@@ -472,7 +617,7 @@ export class SectoresPage implements OnInit {
     this.svc.sugerirTarjetas(s.id_sector).subscribe({
       next: (sug: TarjetaSugerida[]) => {
         if (!sug.length) {
-          this.aviso.set(`Barrio «${s.nombre}» guardado. Todavía no hay tarjetas dibujadas dentro de esa zona; cuando las cree aparecerán aquí, o puede elegirlas a mano con «Elegir tarjetas».`);
+          this.aviso.set(`${this.notaAjuste}Barrio «${s.nombre}» guardado. Todavía no hay tarjetas dibujadas dentro de esa zona; cuando las cree aparecerán aquí, o puede elegirlas a mano con «Elegir tarjetas».`);
           return;
         }
         const propias = this.tarjetas().filter(t => t.id_sector === s.id_sector).map(t => t.id_territorio);

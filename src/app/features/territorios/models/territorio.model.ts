@@ -7,6 +7,8 @@ export interface Territorio {
   notas?: string;
   id_sector?: number | null;
   coordenada?: GeoJSONGeometry | null;
+  /** Solo en la respuesta de guardar: el dibujo se recortó al límite de la congregación. */
+  ajustado_al_limite?: boolean;
 }
 
 /** Barrio o sector que agrupa tarjetas. */
@@ -18,6 +20,8 @@ export interface Sector {
   notas?: string | null;
   coordenada?: GeoJSONGeometry | null;
   tarjetas_count: number;
+  /** Solo en la respuesta de guardar: el dibujo se recortó al límite de la congregación. */
+  ajustado_al_limite?: boolean;
 }
 
 export interface SectoresRespuesta {

@@ -75,6 +75,12 @@ export class TerritoriosService {
       `${this.congregacionUrl}/importar-kml`, fd,
       { params: this.conCongregacion(new HttpParams().set('guardar', String(guardar))) });
   }
+  estadoSugerenciasIa(id: number): Observable<EstadoSugerenciasIa> {
+    return this.http.get<EstadoSugerenciasIa>(`${this.congregacionUrl}/${id}/sugerencias-ia`);
+  }
+  sugerirLimitesIa(id: number): Observable<SugerenciasLimitesIa> {
+    return this.http.post<SugerenciasLimitesIa>(`${this.congregacionUrl}/${id}/sugerencias-ia`, {});
+  }
   actualizarCongregacionLimite(id: number, data: Partial<UnidadCongregacion>): Observable<UnidadCongregacion> {
     return this.http.put<UnidadCongregacion>(`${this.congregacionUrl}/${id}`, data);
   }
@@ -325,4 +331,20 @@ export class TerritoriosService {
   updateTileProvider(provider: string): Observable<any> {
     return this.http.put(`${environment.apiUrl}/configuracion/tile-provider`, { tile_provider: provider });
   }
+}
+
+export type LadoLimite = 'norte' | 'este' | 'sur' | 'oeste';
+
+export interface EstadoSugerenciasIa {
+  habilitado: boolean;
+  intentos_max: number;
+  intentos_restantes: number;
+}
+
+export interface SugerenciasLimitesIa {
+  sugerencias: Record<LadoLimite, { calles: string[]; texto: string }>;
+  actuales: Record<LadoLimite, string | null>;
+  intentos_max: number;
+  intentos_restantes: number;
+  aviso?: string;
 }

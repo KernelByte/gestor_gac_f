@@ -1446,3 +1446,31 @@
 @media (prefers-reduced-motion: reduce) {
   .loc-chip:hover, .loc-chip:active { transform: none; }
 }
+
+/* Editor de mapas (Geoman): los puntos de los bordes se ven y se tocan con comodidad.
+   - Puntos blancos = esquinas existentes (se arrastran).
+   - Puntos verdes con "+" = a mitad de cada línea; arrastrarlos o tocarlos agrega una esquina nueva.
+   Geoman los trae de 10 px y casi transparentes; el área tocable se amplía a ~44 px con ::before. */
+.leaflet-marker-icon.marker-icon:not(.marker-icon-middle) {
+  width: 16px !important; height: 16px !important;
+  margin: -8px 0 0 -8px !important;
+  border-radius: 50%;
+}
+.leaflet-marker-icon.marker-icon-middle {
+  width: 20px !important; height: 20px !important;
+  margin: -10px 0 0 -10px !important;
+  opacity: 1 !important;
+  border-radius: 50%;
+  background: #16a34a !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.45);
+  cursor: copy !important;
+  display: flex; align-items: center; justify-content: center;
+}
+.leaflet-marker-icon.marker-icon-middle::after {
+  content: '+'; color: #ffffff; font: 700 15px/1 'Manrope', system-ui, sans-serif;
+  margin-top: -1px; pointer-events: none;
+}
+.leaflet-marker-icon.marker-icon::before {
+  content: ''; position: absolute; inset: -14px; border-radius: 50%;
+}

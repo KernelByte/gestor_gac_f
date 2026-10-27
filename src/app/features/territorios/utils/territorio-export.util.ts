@@ -7,8 +7,23 @@ export function exportTerritorioCard(
   codigo: string,
   format: 'pdf' | 'image' = 'pdf'
 ): Promise<void> {
-  // La tarjeta sigue sin propagar el error: quien la llama no lo maneja.
-  return exportarElemento(elementId, `Tarjeta_${codigo}`, format).catch(() => undefined);
+  // Quien llama decide cómo avisar si falla (antes el error se perdía y el botón parecía muerto).
+  return exportarElemento(elementId, `Tarjeta_${codigo}`, format);
+}
+
+/**
+ * Dibuja el elemento en un canvas. html2canvas es lo que ya se usaba, pero no entiende oklch() (la
+ * paleta de Tailwind v4) y falla; en ese caso se usa modern-screenshot, que lo pinta el propio navegador.
+ */
+async function elementoACanvas(element: HTMLElement): Promise<HTMLCanvasElement> {
+  try {
+    const { default: html2canvas } = await import('html2canvas');
+    return await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+  } catch (err) {
+    console.warn('html2canvas falló, se usa modern-screenshot:', err);
+    const { domToCanvas } = await import('modern-screenshot');
+    return await domToCanvas(element, { scale: 2, backgroundColor: '#ffffff' });
+  }
 }
 
 /** Exporta un elemento de la página a PNG o PDF con el nombre de archivo dado (sin extensión). */
@@ -24,13 +39,7 @@ export async function exportarElemento(
   }
 
   try {
-    const { default: html2canvas } = await import('html2canvas');
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-    });
+    const canvas = await elementoACanvas(element);
 
     if (format === 'image') {
       const link = document.createElement('a');
