@@ -2,6 +2,12 @@ import { Routes } from '@angular/router';
 
 export const SECRETARIO_TOOLS_ROUTES: Routes = [
   {
+    path: 'agenda',
+    title: 'Agenda del secretario',
+    loadComponent: () =>
+      import('./agenda/pages/agenda.page').then(m => m.AgendaPage),
+  },
+  {
     path: 'visita-superintendente',
     title: 'Visita del superintendente',
     loadComponent: () =>
@@ -31,5 +37,5 @@ export const SECRETARIO_TOOLS_ROUTES: Routes = [
     loadComponent: () =>
       import('./tareas/pages/tarea-detail.page').then(m => m.TareaDetailPage),
   },
-  { path: '', redirectTo: 'visita-superintendente', pathMatch: 'full' },
+  { path: '', redirectTo: 'agenda', pathMatch: 'full' },
 ];

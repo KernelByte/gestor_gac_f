@@ -192,6 +192,8 @@ import { AuthStore } from '../../../../core/auth/auth.store';
 })
 export class TareaCrearModalComponent implements OnChanges {
   @Input() open = false;
+  /** Fecha límite con la que se abre (YYYY-MM-DD), p. ej. al crearla desde un día de la Agenda. */
+  @Input() fechaInicial: string | null = null;
   @Output() openChange = new EventEmitter<boolean>();
   @Output() creada = new EventEmitter<Tarea>();
   @ViewChild('tituloEl') tituloEl?: ElementRef<HTMLInputElement>;
@@ -257,7 +259,7 @@ export class TareaCrearModalComponent implements OnChanges {
     this.descripcion = '';
     this.asignadoA = this.miId;
     this.prioridad = 'media';
-    this.fechaLimite = null;
+    this.fechaLimite = this.fechaInicial;
     this.nuevoPaso = '';
     this.pasos.set([]);
     this.mostrarDescripcion.set(false);

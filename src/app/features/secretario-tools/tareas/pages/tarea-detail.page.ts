@@ -125,6 +125,8 @@ export class TareaDetailPage implements OnInit {
   volver() {
     if (this.desde === 'mis-tareas') {
       this.router.navigate(['/herramientas/mis-tareas']);
+    } else if (this.desde === 'agenda') {
+      this.router.navigate(['/secretario-tools/agenda']);
     } else if (this.origenActaId) {
       this.router.navigate(['/secretario-tools/actas-reunion', this.origenActaId]);
     } else {

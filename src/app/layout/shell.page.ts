@@ -267,6 +267,13 @@ export class TimeAgoPipe implements PipeTransform {
                      [ngClass]="collapsed() ? 'nav-flyout fixed z-[70] w-60 p-1.5 space-y-0.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/10 dark:shadow-black/40' : 'relative mt-1 ml-4 pl-3 pr-1 space-y-0.5 reuniones-submenu border-l border-slate-200 dark:border-slate-800'"
                      [style.top.px]="collapsed() ? flyout()?.top : null" [style.left.px]="collapsed() ? flyout()?.left : null"
                      [attr.data-title]="collapsed() ? 'Secretario' : null" [attr.role]="collapsed() ? 'menu' : null">
+                  <a routerLink="/secretario-tools/agenda" routerLinkActive="sub-active" #rlaAG="routerLinkActive"
+                     class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
+                     [ngClass]="rlaAG.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
+                    <span class="-ml-[17px] absolute w-[6px] h-[6px] rounded-full ring-2 ring-white dark:ring-slate-900 transition-all duration-300"
+                          [ngClass]="rlaAG.isActive ? 'bg-brand-purple dark:bg-purple-400 scale-110' : 'bg-slate-300 dark:bg-slate-600 scale-[0.6] group-hover:scale-75'"></span>
+                    <span class="truncate">Agenda</span>
+                  </a>
                   <a routerLink="/secretario-tools/visita-superintendente" routerLinkActive="sub-active" #rlaVS="routerLinkActive"
                      class="relative flex items-center px-4 py-2 text-[0.8125rem] transition-colors duration-200 rounded-lg group"
                      [ngClass]="rlaVS.isActive ? '!text-brand-purple dark:!text-purple-400 font-medium bg-brand-purple/[0.03] dark:bg-purple-500/[0.03]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-white/[0.04]'">
@@ -1441,6 +1448,8 @@ export class ShellPage implements OnInit, OnDestroy {
       this.pageTitle.set({ title: 'Carga de Logística', subtitle: 'Reparto del trabajo de las reuniones por persona, categoría y grupo.' });
     } else if (url.includes('/reportes')) {
       this.pageTitle.set({ title: 'Reportes', subtitle: 'Análisis e indicadores de la congregación.' });
+    } else if (url.includes('/secretario-tools/agenda')) {
+      this.pageTitle.set({ title: 'Agenda del Secretario', subtitle: 'Sus pendientes por fecha, con aviso un día antes.' });
     } else if (url.includes('/secretario-tools/visita-superintendente')) {
       this.pageTitle.set({ title: 'Visita del Superintendente', subtitle: 'Documentos y agenda para la visita del SC.' });
     } else if (url.includes('/secretario-tools/actas-reunion')) {
@@ -1599,6 +1608,10 @@ export class ShellPage implements OnInit, OnDestroy {
         ['/herramientas/tareas', n.payload['id_tarea']],
         { queryParams: { desde: 'mis-tareas' } }
       );
+    } else if (n.tipo === 'agenda_aviso') {
+      this.notificationsOpen.set(false);
+      const fecha = n.payload?.['fecha'];
+      this.router.navigate(['/secretario-tools/agenda'], fecha ? { queryParams: { fecha } } : {});
     } else if (n.tipo === 'visita_colaborador') {
       this.hasColaboraciones.set(true);
       this.notificationsOpen.set(false);
@@ -1629,6 +1642,7 @@ export class ShellPage implements OnInit, OnDestroy {
       case 'tarea_asignada':
       case 'tarea_completada':   return 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400';
       case 'visita_colaborador': return 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400';
+      case 'agenda_aviso':       return 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400';
       case 'transferencia_recibida': return 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400';
       default: return 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
     }
