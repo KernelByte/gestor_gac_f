@@ -90,7 +90,7 @@ type ToastType = 'error' | 'success' | 'info';
         <!-- Overlay mobile — cierra al tocar fuera -->
         <div class="sheet-overlay" (click)="creando.set(false)" aria-hidden="true"></div>
 
-        <section #formNueva class="form-nueva-section card-anim bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+        <section #formNueva class="form-nueva-section card-anim bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
           <!-- Handle pill — solo mobile -->
           <div class="sheet-handle-wrap" aria-hidden="true">
             <div class="sheet-handle"></div>
@@ -610,6 +610,8 @@ type ToastType = 'error' | 'success' | 'info';
 
     /* ── Card entrance ── */
     .card-anim { animation: cardIn 280ms var(--ease-out) both; }
+    /* Los desplegables sobresalen del formulario: debe quedar por encima de las tarjetas que siguen */
+    .form-nueva-section { position: relative; z-index: 30; }
     @keyframes cardIn { from { opacity: 0; transform: translateY(4px) scale(0.99); } to { opacity: 1; transform: none; } }
 
     /* ── Custom date picker ── */
