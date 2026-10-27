@@ -9,7 +9,10 @@ import { EntregaPortalComponent } from '../components/entrega-portal.component';
 import { EntregaPortalService } from '../services/entrega-portal.service';
 import { AgendaEditorComponent } from '../components/agenda-editor.component';
 import { EntregaMetodosComponent } from '../components/entrega-metodos.component';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
+import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 type Tab = 'docs' | 'agenda' | 'entrega' | 'preview';
 type ToastType = 'success' | 'error' | 'info';
@@ -18,7 +21,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
 @Component({
   standalone: true,
   selector: 'app-visita-main',
-  imports: [CommonModule, FormsModule, EntregaPortalComponent, AgendaEditorComponent, EntregaMetodosComponent, DatePickerComponent],
+  imports: [CommonModule, FormsModule, EntregaPortalComponent, AgendaEditorComponent, EntregaMetodosComponent, DatePickerComponent, SelectPickerComponent, ModalComponent, ConfirmDialogComponent],
   template: `
   <div class="h-full flex flex-col overflow-hidden">
 
@@ -69,6 +72,10 @@ interface Toast { id: number; type: ToastType; msg: string; }
             </p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
+            <button (click)="abrirEdicion()" class="btn-colab" title="Editar los datos de la visita">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 16.5 8 18l1-5z"/></svg>
+              <span class="hidden md:inline">Editar</span>
+            </button>
             <button (click)="abrirColaboradores()" class="btn-colab" [title]="'Colaboradores de la visita'">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm8-6a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               <span class="hidden md:inline">Colaboradores</span>
@@ -76,7 +83,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
                 <span class="colab-count">{{ colaboradores().length }}</span>
               }
             </button>
-            <button (click)="seleccionada.set(null)" class="btn-close-detail shrink-0 hidden sm:inline-flex" aria-label="Cerrar detalle">
+            <button (click)="cerrarDetalle()" class="btn-close-detail shrink-0 hidden sm:inline-flex" aria-label="Cerrar detalle">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/></svg>
               <span class="hidden sm:inline">Cerrar</span>
             </button>
@@ -207,6 +214,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
                   <span class="field-hint">Calculado según la fecha de inicio. Puedes cambiarlo.</span>
                 }
               </label>
+              <ng-container *ngTemplateOutlet="rangoCampos; context: { $implicit: form }"></ng-container>
               <div class="flex justify-end gap-2 pt-2">
                 <button (click)="cancelarForm()" class="btn-ghost">Cancelar</button>
                 <button (click)="crearVisita()"
@@ -242,9 +250,9 @@ interface Toast { id: number; type: ToastType; msg: string; }
             <div
               role="button"
               tabindex="0"
-              (click)="abrir(v)"
-              (keydown.enter)="abrir(v)"
-              (keydown.space)="$event.preventDefault(); abrir(v)"
+              (click)="solicitarAbrir(v)"
+              (keydown.enter)="solicitarAbrir(v)"
+              (keydown.space)="$event.preventDefault(); solicitarAbrir(v)"
               class="visita-card group w-full text-left"
               [class.is-active]="seleccionada()?.id_visita === v.id_visita"
               [style.--stagger]="i * 40 + 'ms'">
@@ -332,7 +340,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
              [class.py-2]="activeTab() !== 'preview'"
              [class.mb-2]="activeTab() !== 'preview'"
              [class.mb-0]="activeTab() === 'preview'">
-          <button (click)="seleccionada.set(null)"
+          <button (click)="cerrarDetalle()"
                   class="inline-flex items-center gap-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold text-slate-700 dark:text-slate-300 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                   [class.h-8]="activeTab() === 'preview'"
                   [class.text-xs]="activeTab() === 'preview'"
@@ -422,18 +430,39 @@ interface Toast { id: number; type: ToastType; msg: string; }
               </section>
             }
 
+
+
             <!-- Tab: Vista del Superintendente (previsualización interna) -->
             @if (activeTab() === 'preview') {
               <section class="tab-panel p-0 flex flex-col">
                 <div class="preview-context-banner">
                   <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                  <span>Vista previa — así verá el superintendente los datos de la congregación</span>
+                  <span>
+                    @if (v.congelada_en) {
+                      Vista previa — datos tal como quedaron el {{ v.congelada_en | date: 'dd/MM/yyyy' }}, al terminar la visita
+                    } @else {
+                      Vista previa — así verá el superintendente los datos de la congregación
+                    }
+                  </span>
                 </div>
-                <app-entrega-portal
-                  modo="interno"
-                  [idVisita]="v.id_visita"
-                  class="flex-1">
-                </app-entrega-portal>
+                <details class="rango-panel">
+                  <summary>Datos que verá el superintendente: {{ resumenRango(v) }}</summary>
+                  <div class="rango-body">
+                    <ng-container *ngTemplateOutlet="rangoCampos; context: { $implicit: rangoEdit }"></ng-container>
+                    <div class="flex justify-end pt-2">
+                      <button class="btn-primary" (click)="guardarRango()" [disabled]="guardando()">
+                        @if (guardando()) { <span class="spinner"></span> Guardando… } @else { Aplicar }
+                      </button>
+                    </div>
+                  </div>
+                </details>
+                @for (k of [v.actualizado_en]; track k) {
+                  <app-entrega-portal
+                    modo="interno"
+                    [idVisita]="v.id_visita"
+                    class="flex-1">
+                  </app-entrega-portal>
+                }
               </section>
             }
 
@@ -443,6 +472,7 @@ interface Toast { id: number; type: ToastType; msg: string; }
                 <app-entrega-metodos
                   [idVisita]="v.id_visita"
                   [correoSugerido]="v.correo_superintendente || null"
+                  [puedeRevocar]="true"
                   (aviso)="toast($event.type, $event.msg)"
                   (enlaceCambio)="hayEnlace.set($event)">
                 </app-entrega-metodos>
@@ -644,7 +674,97 @@ interface Toast { id: number; type: ToastType; msg: string; }
       }
     </div>
 
+    <!-- Aviso al salir con cambios de agenda sin guardar -->
+    <app-confirm-dialog [open]="confirmandoDescartar()" (openChange)="confirmandoDescartar.set($event)"
+      title="Hay cambios sin guardar"
+      message="Escribiste cambios en la agenda que todavía no se han guardado. Si sales ahora se perderán."
+      confirmLabel="Salir sin guardar" cancelLabel="Seguir editando" severity="warning"
+      (confirmed)="confirmarDescartar()" (cancelled)="accionPendiente = null"/>
+
   </div>
+  
+<app-modal [open]="editando()" title="Editar visita" subtitle="Datos de la visita y rango de datos del superintendente" size="md" [hasFooter]="true" (closed)="editando.set(false)">
+  <div class="space-y-4">
+    <label class="form-label">
+      <span>Superintendente</span>
+      <input class="field" [(ngModel)]="editForm.nombre_superintendente" placeholder="Ej. Carlos Ramírez" />
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <label class="form-label">
+        <span>Correo electrónico</span>
+        <input type="email" class="field" [(ngModel)]="editForm.correo_superintendente" placeholder="nombre@ejemplo.com" />
+      </label>
+      <label class="form-label">
+        <span>Teléfono</span>
+        <input class="field" [(ngModel)]="editForm.telefono_superintendente" />
+      </label>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <label class="form-label">
+        <span>Fecha inicio <span class="field-required">*</span></span>
+        <app-date-picker [(ngModel)]="editForm.fecha_inicio" colorScheme="violet" [fieldLike]="true" [inlineOnMobile]="true" placeholder="dd/mm/aaaa"></app-date-picker>
+      </label>
+      <label class="form-label">
+        <span>Fecha fin</span>
+        <app-date-picker [(ngModel)]="editForm.fecha_fin" colorScheme="violet" [fieldLike]="true" [inlineOnMobile]="true" placeholder="dd/mm/aaaa"></app-date-picker>
+      </label>
+    </div>
+    <label class="form-label">
+      <span>Semestre</span>
+      <input class="field" [(ngModel)]="editForm.semestre" placeholder="Ej. 2026-II" />
+    </label>
+    <div class="form-section-divider"></div>
+    <ng-container *ngTemplateOutlet="rangoCampos; context: { $implicit: editForm }"></ng-container>
+    <p class="field-hint">Si cambias la fecha de inicio o el rango, los datos del superintendente se vuelven a calcular.</p>
+  </div>
+  <div slot="footer" class="flex justify-end gap-2">
+    <button (click)="editando.set(false)" class="btn-ghost">Cancelar</button>
+    <button (click)="guardarEdicion()" [disabled]="!editForm.fecha_inicio || guardando()" class="btn-primary">
+      @if (guardando()) { <span class="spinner"></span> Guardando… } @else { Guardar cambios }
+    </button>
+  </div>
+</app-modal>
+
+<ng-template #rangoCampos let-f>
+              <div class="grid gap-3">
+                <label class="form-label">
+                  <span>Datos que verá el superintendente</span>
+                  <app-select-picker
+                    [(ngModel)]="f.rango_modo"
+                    colorScheme="violet"
+                    ariaLabel="Datos que verá el superintendente"
+                    [clearable]="false"
+                    [options]="opcionesRangoModo">
+                  </app-select-picker>
+                </label>
+                @if (f.rango_modo === 'ano_servicio') {
+                  <label class="form-label">
+                    <span>Año de servicio</span>
+                    <app-select-picker
+                      [(ngModel)]="f.rango_ano_servicio"
+                      colorScheme="violet"
+                      ariaLabel="Año de servicio"
+                      placeholder="El de la visita"
+                      [clearable]="true"
+                      [options]="opcionesAnioServicio()">
+                    </app-select-picker>
+                  </label>
+                }
+                @if (f.rango_modo === 'fechas') {
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="form-label">
+                      <span>Desde</span>
+                      <app-date-picker [(ngModel)]="f.rango_desde" colorScheme="violet" [fieldLike]="true" [inlineOnMobile]="true" placeholder="dd/mm/aaaa"></app-date-picker>
+                    </label>
+                    <label class="form-label">
+                      <span>Hasta</span>
+                      <app-date-picker [(ngModel)]="f.rango_hasta" colorScheme="violet" [fieldLike]="true" [inlineOnMobile]="true" placeholder="dd/mm/aaaa"></app-date-picker>
+                    </label>
+                  </div>
+                  <span class="field-hint">Se incluyen los meses completos. Máximo 36 meses.</span>
+                }
+              </div>
+            </ng-template>
   `,
   styles: [`
     :host { display: block; height: 100%; min-height: 0; }
@@ -1230,6 +1350,9 @@ interface Toast { id: number; type: ToastType; msg: string; }
       from { opacity: 0; transform: translateX(-6px); }
       to   { opacity: 1; transform: none; }
     }
+    .rango-panel { border-bottom: 1px solid rgba(109,40,217,0.12); font-size: 0.8125rem; }
+    .rango-panel > summary { cursor: pointer; padding: 0.5rem 1rem; font-weight: 500; }
+    .rango-body { padding: 0.5rem 1rem 1rem; max-width: 36rem; }
     .preview-context-banner {
       display: flex; align-items: center; gap: 0.5rem;
       padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 500;
@@ -1479,6 +1602,9 @@ export class VisitaMainPage implements OnInit {
   pendingDeleteVisitaId = signal<number | null>(null);
   pendingDeleteFile = signal<string | null>(null);
   agendaDirty = signal(false);
+  /** Diálogo "hay cambios sin guardar" y la acción que quedó en espera. */
+  confirmandoDescartar = signal(false);
+  accionPendiente: (() => void) | null = null;
   /** Snapshot (JSON) de la agenda tal como está guardada — para comparar contenido real, no solo "algo disparó un evento". */
   private agendaBaseline = '';
   agendaSecciones = signal<AgendaSecciones>({});
@@ -1554,7 +1680,132 @@ export class VisitaMainPage implements OnInit {
     fecha_inicio: '',
     fecha_fin: '',
     semestre: '',
+    rango_modo: 'ultimos_12',
+    rango_ano_servicio: null,
+    rango_desde: '',
+    rango_hasta: '',
   };
+
+  /** Copia editable del rango de la visita abierta (pestaña de vista previa). */
+  rangoEdit: any = { rango_modo: 'ultimos_12', rango_ano_servicio: null, rango_desde: '', rango_hasta: '' };
+
+  editando = signal(false);
+  editForm: any = {};
+
+  abrirEdicion() {
+    const v = this.seleccionada();
+    if (!v) return;
+    this.editForm = {
+      nombre_superintendente: v.nombre_superintendente ?? '',
+      correo_superintendente: v.correo_superintendente ?? '',
+      telefono_superintendente: v.telefono_superintendente ?? '',
+      fecha_inicio: v.fecha_inicio,
+      fecha_fin: v.fecha_fin ?? '',
+      semestre: v.semestre ?? '',
+      rango_modo: v.rango_modo ?? 'ultimos_12',
+      rango_ano_servicio: v.rango_ano_servicio ?? null,
+      rango_desde: v.rango_desde ?? '',
+      rango_hasta: v.rango_hasta ?? '',
+    };
+    this.editando.set(true);
+  }
+
+  guardarEdicion() {
+    const v = this.seleccionada();
+    const f = this.editForm;
+    if (!v || !f.fecha_inicio) return;
+    if (f.fecha_fin && f.fecha_fin < f.fecha_inicio) {
+      this.toast('info', 'La fecha fin no puede ser anterior a la fecha de inicio.');
+      return;
+    }
+    if (f.rango_modo === 'fechas' && (!f.rango_desde || !f.rango_hasta)) {
+      this.toast('info', 'Indica desde y hasta para el rango por fechas.');
+      return;
+    }
+    const vacio = (x: any) => (x ?? '').toString().trim() || null;
+    this.guardando.set(true);
+    this.svc.update(v.id_visita, {
+      nombre_superintendente: vacio(f.nombre_superintendente),
+      correo_superintendente: vacio(f.correo_superintendente),
+      telefono_superintendente: vacio(f.telefono_superintendente),
+      fecha_inicio: f.fecha_inicio,
+      fecha_fin: vacio(f.fecha_fin),
+      semestre: vacio(f.semestre),
+      rango_modo: f.rango_modo,
+      rango_ano_servicio: f.rango_modo === 'ano_servicio' ? (f.rango_ano_servicio ?? null) : null,
+      rango_desde: f.rango_modo === 'fechas' ? f.rango_desde : null,
+      rango_hasta: f.rango_modo === 'fechas' ? f.rango_hasta : null,
+    }).subscribe({
+      next: (nv) => {
+        this.seleccionada.set(nv);
+        this.visitas.update(arr => arr.map(x => x.id_visita === nv.id_visita ? nv : x));
+        this.rangoEdit = {
+          rango_modo: nv.rango_modo ?? 'ultimos_12', rango_ano_servicio: nv.rango_ano_servicio ?? null,
+          rango_desde: nv.rango_desde ?? '', rango_hasta: nv.rango_hasta ?? '',
+        };
+        this.guardando.set(false);
+        this.editando.set(false);
+        this.toast('success', 'Visita actualizada');
+      },
+      error: (e) => {
+        this.guardando.set(false);
+        this.toast('error', this.errMsg(e, 'No se pudo actualizar la visita'));
+      },
+    });
+  }
+
+  readonly opcionesRangoModo: PickerOption[] = [
+    { value: 'ultimos_12', label: 'Un año hacia atrás', hint: '12 meses antes de la visita' },
+    { value: 'ano_servicio', label: 'Un año de servicio', hint: 'De septiembre a agosto' },
+    { value: 'fechas', label: 'Entre fechas específicas', hint: 'Desde y hasta, por meses completos' },
+  ];
+
+  opcionesAnioServicio(): PickerOption[] {
+    return this.aniosServicio().map(a => ({ value: a, label: `Año de servicio ${a}`, hint: `Septiembre ${a - 1} a agosto ${a}` }));
+  }
+
+  /** Años de servicio que se pueden elegir: del actual hacia atrás, 5. */
+  aniosServicio(): number[] {
+    const hoy = new Date();
+    const actual = hoy.getMonth() + 1 >= 9 ? hoy.getFullYear() + 1 : hoy.getFullYear();
+    return Array.from({ length: 5 }, (_, i) => actual - i);
+  }
+
+  resumenRango(v: Visita): string {
+    switch (v.rango_modo) {
+      case 'ano_servicio': return v.rango_ano_servicio ? `año de servicio ${v.rango_ano_servicio}` : 'año de servicio de la visita';
+      case 'fechas': return `del ${v.rango_desde} al ${v.rango_hasta}`;
+      default: return 'un año hacia atrás';
+    }
+  }
+
+  guardarRango() {
+    const v = this.seleccionada();
+    if (!v) return;
+    const r = this.rangoEdit;
+    if (r.rango_modo === 'fechas' && (!r.rango_desde || !r.rango_hasta)) {
+      this.toast('info', 'Indica desde y hasta.');
+      return;
+    }
+    this.guardando.set(true);
+    this.svc.update(v.id_visita, {
+      rango_modo: r.rango_modo,
+      rango_ano_servicio: r.rango_modo === 'ano_servicio' ? (r.rango_ano_servicio ?? null) : null,
+      rango_desde: r.rango_modo === 'fechas' ? r.rango_desde : null,
+      rango_hasta: r.rango_modo === 'fechas' ? r.rango_hasta : null,
+    }).subscribe({
+      next: (nv) => {
+        this.seleccionada.set(nv);
+        this.visitas.update(arr => arr.map(x => x.id_visita === nv.id_visita ? nv : x));
+        this.guardando.set(false);
+        this.toast('success', 'Rango de datos actualizado');
+      },
+      error: (e) => {
+        this.guardando.set(false);
+        this.toast('error', this.errMsg(e, 'No se pudo cambiar el rango'));
+      },
+    });
+  }
 
   /** true mientras "Fecha fin" siga siendo la sugerencia automática (+7 días)
    *  y no algo que el usuario haya elegido a mano. Se apaga en cuanto toca
@@ -1571,13 +1822,19 @@ export class VisitaMainPage implements OnInit {
 
   cargar() {
     this.cargandoLista.set(true);
-    this.svc.list().subscribe({
+    // Se pide la congregación del contexto: sin ella, un administrador veía las
+    // visitas de todas las congregaciones pero creaba en la del contexto.
+    this.svc.list(this.ctx.effectiveCongregacionId() ?? undefined).subscribe({
       next: (v) => { this.visitas.set(v); this.cargandoLista.set(false); },
       error: () => { this.cargandoLista.set(false); this.toast('error', 'No se pudieron cargar las visitas'); },
     });
   }
 
   abrirFormulario() {
+    this.conConfirmacionAgenda(() => this.abrirFormularioSinConfirmar());
+  }
+
+  private abrirFormularioSinConfirmar() {
     // Si había una visita abierta, se cierra: si no, el panel derecho seguía
     // mostrando su detalle (agenda, stepper, etc.) mientras el izquierdo ya
     // pedía datos para una visita distinta — dos flujos mezclados en pantalla.
@@ -1641,7 +1898,7 @@ export class VisitaMainPage implements OnInit {
   private resetForm() {
     this.fechaFinEsSugerencia.set(true);
     this.semestreEsSugerencia.set(true);
-    this.form = { fecha_inicio: '', fecha_fin: '', nombre_superintendente: '', correo_superintendente: '', semestre: '' };
+    this.form = { fecha_inicio: '', fecha_fin: '', nombre_superintendente: '', correo_superintendente: '', semestre: '', rango_modo: 'ultimos_12', rango_ano_servicio: null, rango_desde: '', rango_hasta: '' };
   }
 
   crearVisita() {
@@ -1650,8 +1907,26 @@ export class VisitaMainPage implements OnInit {
       this.toast('info', 'Selecciona una congregación en el contexto de la app.');
       return;
     }
+    if (!this.form.fecha_inicio) {
+      this.toast('info', 'Indica la fecha de inicio de la visita.');
+      return;
+    }
+    if (this.form.fecha_fin && this.form.fecha_fin < this.form.fecha_inicio) {
+      this.toast('info', 'La fecha fin no puede ser anterior a la fecha de inicio.');
+      return;
+    }
+    // Los campos vacíos se mandan como ausentes: "" no es una fecha válida.
+    const datos = { ...this.form, id_congregacion: idCong };
+    for (const k of ['fecha_fin', 'semestre', 'correo_superintendente', 'nombre_superintendente', 'rango_desde', 'rango_hasta']) {
+      if (!(datos[k] ?? '').toString().trim()) delete datos[k];
+    }
+    if (datos.rango_modo === 'fechas' && (!datos.rango_desde || !datos.rango_hasta)) {
+      this.toast('info', 'Indica desde y hasta para el rango por fechas.');
+      return;
+    }
+    if (datos.rango_modo !== 'ano_servicio') delete datos.rango_ano_servicio;
     this.guardando.set(true);
-    this.svc.create({ ...this.form, id_congregacion: idCong }).subscribe({
+    this.svc.create(datos).subscribe({
       next: (v) => {
         this.visitas.update(arr => [v, ...arr]);
         this.nuevoVisita.set(false);
@@ -1667,7 +1942,44 @@ export class VisitaMainPage implements OnInit {
     });
   }
 
+  /**
+   * Ejecuta `accion` salvo que haya cambios de agenda sin guardar: entonces pide
+   * confirmación primero. Sin esto, cerrar el detalle o tocar otra visita de la
+   * lista (que sigue visible en pantallas anchas) descartaba lo escrito sin avisar.
+   */
+  private conConfirmacionAgenda(accion: () => void) {
+    if (this.seleccionada() && this.agendaDirty()) {
+      this.accionPendiente = accion;
+      this.confirmandoDescartar.set(true);
+      return;
+    }
+    accion();
+  }
+
+  confirmarDescartar() {
+    const accion = this.accionPendiente;
+    this.accionPendiente = null;
+    this.agendaDirty.set(false);
+    accion?.();
+  }
+
+  cerrarDetalle() {
+    this.conConfirmacionAgenda(() => this.seleccionada.set(null));
+  }
+
+  solicitarAbrir(v: Visita) {
+    // Tocar la visita que ya está abierta no cambia nada: no se pregunta.
+    if (this.seleccionada()?.id_visita === v.id_visita) return;
+    this.conConfirmacionAgenda(() => this.abrir(v));
+  }
+
   abrir(v: Visita) {
+    this.rangoEdit = {
+      rango_modo: v.rango_modo ?? 'ultimos_12',
+      rango_ano_servicio: v.rango_ano_servicio ?? null,
+      rango_desde: v.rango_desde ?? '',
+      rango_hasta: v.rango_hasta ?? '',
+    };
     this.seleccionada.set(v);
     this.hayEnlace.set(false);
     this.activeTab.set('agenda');
@@ -1677,14 +1989,18 @@ export class VisitaMainPage implements OnInit {
     this.agendaSecciones.set(v.agenda_json?.secciones ? structuredClone(v.agenda_json.secciones) : {});
     this.agendaBaseline = this.snapshotAgenda();
     this.agendaDirty.set(false);
+    // Las respuestas llegan en cualquier orden: si el usuario ya abrió otra
+    // visita, la respuesta de esta se descarta para no mostrar sus archivos
+    // y colaboradores en la visita equivocada.
+    this.archivos.set([]);
     this.svc.listarArchivos(v.id_visita).subscribe({
-      next: (a) => this.archivos.set(a),
+      next: (a) => { if (this.seleccionada()?.id_visita === v.id_visita) this.archivos.set(a); },
       error: () => this.toast('error', 'No se pudieron cargar los archivos'),
     });
     this.colabOpen.set(false);
     this.colaboradores.set([]);
     this.svc.listarColaboradores(v.id_visita).subscribe({
-      next: (cs) => this.colaboradores.set(cs),
+      next: (cs) => { if (this.seleccionada()?.id_visita === v.id_visita) this.colaboradores.set(cs); },
       error: () => {},
     });
   }
@@ -1768,7 +2084,10 @@ export class VisitaMainPage implements OnInit {
   }
 
   estadoVisita(v: Visita): 'proxima' | 'curso' | 'realizada' {
-    const hoy = new Date().toISOString().slice(0, 10);
+    // Fecha LOCAL: toISOString() da la de UTC, que en Colombia ya es "mañana"
+    // desde las 7 pm y movía la visita de estado.
+    const d = new Date();
+    const hoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     if (v.fecha_inicio > hoy) return 'proxima';
     const fin = v.fecha_fin || v.fecha_inicio;
     if (fin >= hoy) return 'curso';
@@ -1863,11 +2182,27 @@ export class VisitaMainPage implements OnInit {
   generarAgenda() {
     const v = this.seleccionada();
     if (!v) return;
+    const vacio = (x: unknown) => !(x ?? '').toString().trim();
+    const items: AgendaItem[] = [];
+    const incompletas: number[] = [];
+    this.agendaItems().forEach((i, idx) => {
+      const conDatos = [i.dia, i.hora_inicio, i.hora_fin, i.actividad, i.responsable, i.lugar, i.notas]
+        .some(x => !vacio(x));
+      if (!conDatos) return; // fila en blanco: se omite
+      if (vacio(i.actividad)) { incompletas.push(idx + 1); return; }
+      items.push({ ...i, dia: i.dia ?? '' });
+    });
+    // Antes las filas sin actividad se descartaban en silencio y la pantalla
+    // las seguía mostrando como guardadas: al reabrir habían desaparecido.
+    if (incompletas.length) {
+      this.toast('error', `Completa la actividad de la fila ${incompletas.join(', ')} o bórrala antes de guardar.`, 6000);
+      return;
+    }
     this.guardando.set(true);
     this.svc.generarAgenda({
       id_visita: v.id_visita,
       titulo: `Agenda Visita del Superintendente — ${v.semestre || ''}`.trim(),
-      items: this.agendaItems().filter(i => i.actividad?.trim()),
+      items,
       secciones: this.seccionesLimpias(),
     }).subscribe({
       next: (updated) => {

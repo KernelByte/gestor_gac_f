@@ -631,9 +631,25 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['token'] || changes['idVisita']) {
-      this.inicializar();
-    }
+    const cambio = changes['token'] ?? changes['idVisita'];
+    // Angular dispara ngOnChanges con el primer binding justo antes de
+    // ngOnInit: sin este filtro la carga inicial (incluido el pesado
+    // /registros) se hacía dos veces. Solo se recarga si cambia de visita
+    // con el componente ya vivo.
+    if (!cambio || cambio.firstChange) return;
+    // Los datos cacheados son de la visita anterior: sin vaciarlos,
+    // cargarSeccion() los daba por buenos y mostraba la visita equivocada.
+    this.registros.set(null);
+    this.totales.set(null);
+    this.asistencia.set(null);
+    this.contactos.set(null);
+    this.documentos.set(null);
+    this.agenda.set(null);
+    this.metadata.set(null);
+    this.error.set(null);
+    this.gruposExpandidos.set(new Set());
+    this.seccionActiva.set('registros');
+    this.inicializar();
   }
 
   private inicializar() {
@@ -967,7 +983,12 @@ export class EntregaPortalComponent implements OnInit, OnChanges, OnDestroy {
     if (this.modo !== 'interno') return;
     const key = grupo.grupo_id ?? 'sin-grupo';
     this.descargandoGrupo.set(key);
-    this.svc.tarjetaPdfInterno(this.idVisita, this.anioSel(), { grupoId: grupo.grupo_id }).subscribe({
+    // Se piden los ids de quienes se ven en el grupo: filtrar por grupo_id
+    // dejaba entrar a inactivos y precursores y, con «Sin grupo» (id nulo),
+    // devolvía las tarjetas de toda la congregación.
+    const ids = (grupo.publicadores ?? []).map((p: any) => p.id_publicador as number);
+    if (!ids.length) { this.descargandoGrupo.set(null); return; }
+    this.svc.tarjetaPdfInterno(this.idVisita, this.anioSel(), { publicadorIds: ids }).subscribe({
       next: (blob) => {
         this.svc.saveBlob(blob, `Tarjetas - ${grupo.grupo_nombre} - ${this.anioSel()}.pdf`);
         this.descargandoGrupo.set(null);

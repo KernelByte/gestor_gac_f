@@ -1,3 +1,5 @@
+export type RangoModo = 'ultimos_12' | 'ano_servicio' | 'fechas';
+
 export interface Visita {
   id_visita: number;
   id_congregacion: number;
@@ -10,6 +12,11 @@ export interface Visita {
   notas?: string | null;
   agenda_json?: { titulo?: string; items: AgendaItem[]; secciones?: AgendaSecciones } | null;
   archivo_agenda?: string | null;
+  congelada_en?: string | null;
+  rango_modo?: RangoModo;
+  rango_ano_servicio?: number | null;
+  rango_desde?: string | null;
+  rango_hasta?: string | null;
   creado_en: string;
   actualizado_en: string;
 }
@@ -23,6 +30,10 @@ export interface VisitaCreate {
   telefono_superintendente?: string | null;
   semestre?: string | null;
   notas?: string | null;
+  rango_modo?: RangoModo;
+  rango_ano_servicio?: number | null;
+  rango_desde?: string | null;
+  rango_hasta?: string | null;
 }
 
 export interface AgendaItem {

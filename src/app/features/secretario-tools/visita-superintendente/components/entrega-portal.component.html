@@ -54,11 +54,15 @@
         </div>
 
         <div class="topbar-right">
-          <div class="anio-servicio" title="Año de servicio: de septiembre a agosto">
+          <div class="anio-servicio" title="Los 12 meses anteriores a la visita">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
-            <span>Año de servicio <strong>{{ anioSel() }}</strong></span>
+            @if (registros()?.ventana ?? totales()?.ventana; as vt) {
+              <span>Datos de <strong>{{ vt.desde }}</strong> a <strong>{{ vt.hasta }}</strong></span>
+            } @else {
+              <span>Año de servicio <strong>{{ anioSel() }}</strong></span>
+            }
           </div>
           <button class="btn-zip" (click)="onDescargarZip()" [disabled]="descargandoZip()">
             @if (descargandoZip()) {
@@ -120,7 +124,7 @@
       <div class="seccion-panel">
         <div class="registros-sticky-header">
           <div class="panel-header">
-            <h2 class="panel-title">Registros de Predicación — {{ registros()!.anio }}</h2>
+            <h2 class="panel-title">Registros de Predicación — {{ registros()!.ventana ? registros()!.ventana!.desde + ' a ' + registros()!.ventana!.hasta : registros()!.anio }}</h2>
             <p class="panel-subtitle">Publicadores activos (por grupo y precursores) e inactivos</p>
           </div>
 
@@ -325,7 +329,7 @@
       <div class="seccion-panel">
         <div class="panel-sticky-header">
           <div class="panel-header">
-            <h2 class="panel-title">Totales — {{ totales()!.anio }}</h2>
+            <h2 class="panel-title">Totales — {{ totales()!.ventana ? totales()!.ventana!.desde + ' a ' + totales()!.ventana!.hasta : totales()!.anio }}</h2>
             <p class="panel-subtitle">Resumen mensual consolidado por categoría</p>
           </div>
         </div>

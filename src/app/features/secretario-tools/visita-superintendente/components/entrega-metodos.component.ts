@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { VisitaService } from '../../services/visita.service';
 import { EntregaPortalService } from '../services/entrega-portal.service';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
 
@@ -19,7 +20,7 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
 @Component({
   standalone: true,
   selector: 'app-entrega-metodos',
-  imports: [CommonModule, FormsModule, DatePickerComponent],
+  imports: [CommonModule, FormsModule, DatePickerComponent, ConfirmDialogComponent],
   template: `
     <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
       Elige cómo entregar la información al superintendente. Puedes usar uno o varios métodos.
@@ -113,6 +114,12 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
                 Copiar enlace
               }
             </button>
+            @if (puedeRevocar) {
+              <button (click)="confirmandoRevocar.set(true)" [disabled]="revocando()" type="button"
+                      class="btn-ghost text-xs mt-1 w-full justify-center text-rose-600">
+                @if (revocando()) { <span class="spinner"></span> Revocando… } @else { Revocar enlace }
+              </button>
+            }
           </div>
         }
       </div>
@@ -140,6 +147,11 @@ export type EntregaAviso = { type: 'success' | 'error' | 'info'; msg: string };
         </button>
       </div>
     </div>
+
+    <app-confirm-dialog [open]="confirmandoRevocar()" (openChange)="confirmandoRevocar.set($event)"
+      title="¿Revocar el enlace?"
+      message="Quien tenga el enlace dejará de poder abrir el portal de inmediato. Podrás generar uno nuevo cuando quieras."
+      confirmLabel="Revocar enlace" severity="danger" (confirmed)="revocarEnlace()"/>
   `,
   styles: [`
     :host {
@@ -305,6 +317,8 @@ export class EntregaMetodosComponent implements OnChanges {
   @Input({ required: true }) idVisita!: number;
   /** Correo del superintendente registrado en la visita, si lo hay. */
   @Input() correoSugerido: string | null = null;
+  /** Solo el secretario y la administración pueden revocar enlaces (el backend lo exige). */
+  @Input() puedeRevocar = false;
 
   /** Mensajes para el sistema de toasts de la pantalla contenedora. */
   @Output() aviso = new EventEmitter<EntregaAviso>();
@@ -318,11 +332,19 @@ export class EntregaMetodosComponent implements OnChanges {
   descargandoZip = signal(false);
   copiado = signal(false);
   enviando = signal(false);
+  revocando = signal(false);
+  confirmandoRevocar = signal(false);
 
   fechaEnlace = '';
   correoDestino = '';
-  /** Un enlace que expira hoy no serviría de nada: el mínimo es mañana. */
-  minFechaEnlace = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  /** Un enlace que expira hoy no serviría de nada: el mínimo es mañana (fecha local, no UTC). */
+  minFechaEnlace = EntregaMetodosComponent.fechaManiana();
+
+  private static fechaManiana(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
 
   ngOnChanges(cambios: SimpleChanges) {
     if (cambios['correoSugerido']) this.correoDestino = this.correoSugerido || '';
@@ -418,13 +440,34 @@ export class EntregaMetodosComponent implements OnChanges {
       enviar_zip: true,
       enviar_enlace: true,
     }).subscribe({
-      next: () => {
+      next: (r) => {
+        // El correo lleva el enlace vigente: se refresca por si no había uno y
+        // se creó al enviar, para que la pantalla muestre el mismo que recibió
+        // el superintendente.
+        if (r.enlace) this.setEnlace(r.enlace);
         this.aviso.emit({ type: 'success', msg: 'Correo enviado correctamente' });
         this.enviando.set(false);
       },
       error: (e) => {
         this.aviso.emit({ type: 'error', msg: this.errMsg(e, 'Error al enviar correo') });
         this.enviando.set(false);
+      },
+    });
+  }
+
+  revocarEnlace() {
+    this.revocando.set(true);
+    this.svc.revocarEnlaces(this.idVisita).subscribe({
+      next: () => {
+        this.setEnlace(null);
+        this.editandoFechaEnlace.set(false);
+        this.fechaEnlace = '';
+        this.revocando.set(false);
+        this.aviso.emit({ type: 'success', msg: 'Enlace revocado' });
+      },
+      error: (e) => {
+        this.revocando.set(false);
+        this.aviso.emit({ type: 'error', msg: this.errMsg(e, 'No se pudo revocar el enlace') });
       },
     });
   }

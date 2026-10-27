@@ -75,8 +75,8 @@ export class VisitaService {
     return this.http.post<{ revocados: number }>(`${this.url}/${id}/revocar-enlaces`, {});
   }
 
-  enviarCorreo(data: EnvioCorreoRequest): Observable<{ ok: boolean }> {
-    return this.http.post<{ ok: boolean }>(`${this.url}/enviar-correo`, data);
+  enviarCorreo(data: EnvioCorreoRequest): Observable<{ ok: boolean; enlace?: TokenVisita | null }> {
+    return this.http.post<{ ok: boolean; enlace?: TokenVisita | null }>(`${this.url}/enviar-correo`, data);
   }
 
   // Colaboradores

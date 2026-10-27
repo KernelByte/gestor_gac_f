@@ -85,8 +85,15 @@ export interface MesEnCurso {
   anio: number;
 }
 
+export interface VentanaVisita {
+  desde: string;
+  hasta: string;
+  meses: number;
+}
+
 export interface RegistrosOut {
   anio: number;
+  ventana?: VentanaVisita | null;
   activos: {
     publicadores_por_grupo: GrupoRegistro[];
     precursores_regulares: GrupoRegistro[];
@@ -115,6 +122,7 @@ export interface TarjetaTotal {
 
 export interface TotalesOut {
   anio: number;
+  ventana?: VentanaVisita | null;
   mes_en_curso: MesEnCurso | null;
   total_publicadores: TarjetaTotal;
   total_precursores_regulares: TarjetaTotal;
