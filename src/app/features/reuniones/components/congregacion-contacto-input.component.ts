@@ -252,8 +252,12 @@ export class CongregacionContactoInputComponent implements ControlValueAccessor,
     this.cerrar();
     this.resaltado.set(-1);
     this.onChange(c.nombre);
+    // Sin `commit` aquí, igual que en el campo de orador: quien escucha
+    // `seleccion` ya guarda el nombre junto con lo demás en una sola petición.
+    // Emitir también `commit` lanzaba un segundo guardado solo con el nombre
+    // cuya respuesta, si llegaba después, devolvía la fila al orador quitado.
+    this.ultimoEmitido = c.nombre.trim() || null;
     this.seleccion.emit(c);
-    this.emitirSiCambio(c.nombre);
     this.campoRef?.nativeElement.focus();
   }
 

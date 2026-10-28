@@ -50,9 +50,18 @@ import {
   TemaPublicador,
   UbicacionSaliente,
 } from '../models/discursos.models';
+import { etiquetaNumeroBosquejo, mismoBosquejo, partirBosquejo } from '../utils/bosquejo';
+import {
+  mensajeAvisoSaliente,
+  mensajeRecordatorioEntrante,
+  mensajeWhatsappCongregacionDestino,
+} from '../utils/mensajes-discursos';
 
 type Estado = 'idle' | 'loading' | 'ready' | 'error';
 type SubTab = 'entrantes' | 'salientes' | 'temas' | 'congregaciones';
+
+/** Corrección automática hecha en una fila de Entrantes, con su "deshacer". */
+type AvisoFila = { mensaje: string; detalle: string; accion: string; deshacer: EditarEntranteRequest };
 
 /** Una tarjeta de la lista de Entrantes: un discurso por programar, o una semana sin reunión. */
 type ItemEntrante =
@@ -80,30 +89,12 @@ type ItemEntrante =
              extremo derecho, sin hueco entre ellos. -->
         <span class="hidden md:block md:flex-1" aria-hidden="true"></span>
 
-        <!-- ===== BANDEJA DE CONTROL ===== -->
-        <!-- A todo el ancho en móvil sólo con un mes abierto (lleva el
-             selector de mes); sin él queda sólo Congregaciones y una barra
-             entera con un icono suelto se leía como un campo vacío. -->
-        <div [class.w-full]="!!mesDatos()" class="flex flex-wrap items-center gap-0.5 min-w-0 md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
-
-          <!-- Volver desde Congregaciones/Temas cuando no hay mes abierto:
-               el interruptor Entrantes/Salientes (con su propio "Volver")
-               vive dentro de la barra del mes, así que sin un mes cargado
-               desaparece y Congregaciones se quedaba como una puerta sin
-               picaporte de vuelta. -->
-          @if ((subTab() === 'congregaciones' || subTab() === 'temas') && !mesDatos()) {
-            <button type="button" (click)="volverAProgramacion()"
-              title="Volver a la programación" aria-label="Volver a la programación"
-              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors active:scale-[0.97]">
-              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-              <span class="hidden sm:inline">Programación</span>
-            </button>
-            <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
-          }
-
-          <!-- El selector de mes sólo con un mes abierto: sin él, la lista
-               vive centrada en la tarjeta del panel. -->
-          @if (mesDatos() && estado() !== 'loading') {
+        <!-- ===== BANDEJA DEL MES ===== -->
+        <!-- Solo el selector de mes. Congregaciones y su "Volver a
+             Programación" bajaron a la barra de pestañas del panel, junto a
+             las otras tres pantallas. -->
+        @if (mesDatos() && estado() !== 'loading') {
+          <div class="w-full md:w-auto md:ml-auto flex items-center min-w-0 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
             <div class="relative shrink-0" data-mes-menu>
               <button
                 type="button"
@@ -137,7 +128,7 @@ type ItemEntrante =
                     @for (grupo of mesesPorAno(); track grupo.ano) {
                       <!-- Año como divisor del grupo, no repetido por fila. -->
                       <p class="flex items-center gap-2 px-1.5 pt-2.5 pb-1 first:pt-0.5">
-                        <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 data-num">{{ grupo.ano }}</span>
+                        <span class="text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 data-num">{{ grupo.ano }}</span>
                         <span class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></span>
                       </p>
                       @for (m of grupo.meses; track m.ano + '-' + m.mes) {
@@ -165,8 +156,16 @@ type ItemEntrante =
                       }
                     }
                   </div>
+                  <div class="shrink-0 p-1.5 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-1">
+                    <!-- La cuadrícula por año: el menú solo salta entre meses ya
+                         programados; esto lleva a ver todos los años. Antes era
+                         un "‹ Todos los meses" en la barra de pestañas. -->
+                    <button type="button" (click)="menuMesesAbierto.set(false); mesDatos.set(null); estado.set('idle'); subTab.set('entrantes')"
+                      class="w-full flex items-center justify-center gap-2 h-9 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                      Ver todos los meses
+                    </button>
                   @if (hasEditPermission()) {
-                    <div class="shrink-0 p-1.5 border-t border-slate-100 dark:border-slate-800">
                       <button
                         type="button"
                         data-testid="disc-btn-generar-mes"
@@ -176,39 +175,14 @@ type ItemEntrante =
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         Generar Mes
                       </button>
-                    </div>
                   }
+                  </div>
                 </div>
               }
             </div>
 
-            <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
-          }
-
-            <!-- Temas / Congregaciones: catálogos que no dependen del mes
-                 abierto, así que están siempre. El historial bajó al nivel de
-                 Entrantes/Salientes porque su contenido depende de cuál de
-                 las dos pantallas está abierta. -->
-            <!-- Antes el estado activo era un bloque teal-500 sólido con
-                 sombra: al lado de la píldora "Discursos" (que ya lleva ese
-                 tratamiento sólido para marcar la pantalla activa) competía
-                 por la misma atención siendo sólo un catálogo secundario. Un
-                 tinte plano + borde de 1px lo deja igual de legible como
-                 "encendido" sin subir el volumen visual. -->
-            <button (click)="abrirCatalogo('congregaciones')"
-              role="tab" [attr.aria-selected]="subTab() === 'congregaciones'"
-              title="Congregaciones de contacto"
-              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[0.7rem] font-bold border transition-colors active:scale-[0.97]"
-              [class]="subTab() === 'congregaciones'
-                ? 'bg-teal-50 dark:bg-teal-400/10 border-teal-200 dark:border-teal-400/25 text-teal-700 dark:text-teal-300'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-teal-600 dark:hover:text-teal-400'">
-              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                <circle cx="12" cy="12" r="2"/>
-              </svg>
-              <span [class]="mesDatos() ? 'hidden sm:inline' : ''">Congregaciones</span>
-            </button>
-        </div>
+          </div>
+        }
 
         <!-- Fuera de la bandeja: siempre cae al extremo derecho de la fila,
              justo después de ella. -->
@@ -268,65 +242,77 @@ type ItemEntrante =
            tiempo. -->
       <div class="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative">
 
-          <!-- Sub-pestañas del mes abierto. Los catálogos que no dependen
-               del mes (Historial, Temas, Congregaciones) viven arriba, en la
-               bandeja de control. -->
+          <!-- Una sola barra con las cuatro pantallas de Discursos, siempre en
+               el mismo sitio. Antes Entrantes/Salientes vivían aquí (y solo con
+               un mes abierto), Congregaciones arriba en la bandeja del mes y
+               Oradores locales era un botón naranja que solo salía en
+               Salientes: cuatro estilos repartidos en tres sitios, y la gente
+               se perdía al cambiar. Dos grupos separados por una raya: lo del
+               mes (Entrantes, Salientes) y los directorios que no dependen del
+               mes (Congregaciones, Oradores locales). Las cuatro se encienden
+               igual; el color propio de cada una va en su icono. En el
+               teléfono quedan 2×2, un grupo por fila. -->
           @if (mesDatos()) {
-            <div class="shrink-0 flex flex-wrap items-center gap-2 px-1.5 py-1.5 border-b border-slate-100 dark:border-slate-800">
-              @if (subTab() === 'entrantes' || subTab() === 'salientes') {
-                <!-- Vuelve a la vista general de meses (la cuadrícula por año). El
-                     selector de la cabecera sólo salta entre meses ya
-                     programados; esto es lo que lleva a ver todos los años. -->
-                <button (click)="mesDatos.set(null); estado.set('idle'); menuMesesAbierto.set(false)"
-                  class="shrink-0 h-9 px-2.5 flex items-center gap-1.5 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors active:scale-95"
-                  title="Volver a todos los meses"
-                  aria-label="Volver a todos los meses">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                  <span class="hidden sm:inline">Todos los meses</span>
+          <div class="shrink-0 flex flex-wrap items-center gap-2 px-1.5 py-1.5 border-b border-slate-100 dark:border-slate-800">
+            <!-- Siempre visible, en las cuatro pantallas: la salida a la
+                 cuadrícula de meses no puede depender de abrir un menú. -->
+            <button type="button" (click)="mesDatos.set(null); estado.set('idle'); menuMesesAbierto.set(false); subTab.set('entrantes')"
+              title="Volver a todos los meses" aria-label="Volver a todos los meses"
+              class="shrink-0 h-9 px-2.5 flex items-center gap-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+              <span>Meses</span>
+            </button>
+            <div role="tablist" aria-label="Pantallas de Discursos" (keydown)="moverPestanaConTeclado($event)"
+              class="w-full sm:w-auto grid grid-cols-2 sm:flex sm:items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1">
+              @for (p of pestanasDiscursos; track p.id; let i = $index) {
+                @if (i === 2) {
+                  <span class="hidden sm:block shrink-0 w-px h-5 mx-1 bg-slate-300/80 dark:bg-slate-600/70" aria-hidden="true"></span>
+                }
+                <button type="button" role="tab" [id]="'disc-tab-' + p.id"
+                  [attr.aria-selected]="subTab() === p.id"
+                  [attr.tabindex]="subTab() === p.id ? 0 : -1"
+                  (click)="subTab.set(p.id)"
+                  class="flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg text-xs font-bold whitespace-nowrap transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/60"
+                  [class]="subTab() === p.id
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-slate-200'">
+                  <svg class="w-4 h-4 shrink-0" [class]="p.colorIcono" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    @switch (p.id) {
+                      @case ('entrantes') {
+                        <!-- Flecha hacia adentro: llegan a nuestra congregación. -->
+                        <path d="M3 12h13M10 6l-6 6 6 6"/><path d="M21 5v14" opacity=".4"/>
+                      }
+                      @case ('salientes') {
+                        <!-- Flecha hacia afuera: salen a otras congregaciones. -->
+                        <path d="M21 12H8M14 6l6 6-6 6"/><path d="M3 5v14" opacity=".4"/>
+                      }
+                      @case ('congregaciones') {
+                        <!-- Casa: el directorio de otras congregaciones. -->
+                        <path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/>
+                      }
+                      @case ('temas') {
+                        <!-- Micrófono: el mismo que marca al orador en las tarjetas. -->
+                        <path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 18v4M8 22h8"/>
+                      }
+                    }
+                  </svg>
+                  <span>{{ p.etiqueta }}</span>
                 </button>
               }
-              <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1" role="tablist">
-                <button (click)="subTab.set('entrantes')"
-                  role="tab" [attr.aria-selected]="subTab() === 'entrantes'"
-                  class="flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]"
-                  [class]="subTab() === 'entrantes'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
-                  <!-- Entrantes: flecha apuntando hacia adentro (recepción) -->
-                  <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h13M10 6l-6 6 6 6"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 5v14" opacity=".4"/>
-                  </svg>
-                  <span>Entrantes</span>
-                </button>
-                <button (click)="subTab.set('salientes')"
-                  role="tab" [attr.aria-selected]="subTab() === 'salientes'"
-                  class="flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-xs font-bold transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]"
-                  [class]="subTab() === 'salientes'
-                    ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'">
-                  <!-- Salientes: flecha apuntando hacia afuera (salida) -->
-                  <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12H8M14 6l6 6-6 6"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 5v14" opacity=".4"/>
-                  </svg>
-                  <span>Salientes</span>
-                </button>
-              </div>
+            </div>
 
+            @if (esVistaDelMes()) {
               <div class="ml-auto flex items-center gap-1.5 shrink-0">
-                @if (subTab() === 'entrantes' || subTab() === 'salientes') {
                   <button (click)="abrirModalHistorial()"
                     title="Historial de discursos" aria-label="Historial de discursos"
-                    class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-sky-50 dark:hover:bg-sky-900/25 hover:text-sky-600 dark:hover:text-sky-400 text-xs font-bold transition-all active:scale-95">
+                    class="w-9 h-9 2xl:w-auto 2xl:px-3 2xl:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-sky-50 dark:hover:bg-sky-900/25 hover:text-sky-600 dark:hover:text-sky-400 text-xs font-bold transition-all active:scale-95">
                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="9"/>
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/>
                     </svg>
-                    <span class="hidden sm:inline">Historial</span>
+                    <span class="hidden 2xl:inline">Historial</span>
                   </button>
-                }
-                @if ((subTab() === 'entrantes' || subTab() === 'salientes') && hasEditPermission()) {
+                @if (hasEditPermission()) {
                   @if (!mesDatos()!.confirmado) {
                     <button (click)="confirmarMes()" [disabled]="estado() === 'loading'"
                       title="Confirmar" aria-label="Confirmar"
@@ -349,17 +335,17 @@ type ItemEntrante =
                   @if (subTab() === 'entrantes') {
                     <button (click)="descargarPdf('entrantes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
                       title="Descargar PDF de entrantes" aria-label="Descargar PDF de entrantes"
-                      class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/25 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
+                      class="w-9 h-9 2xl:w-auto 2xl:px-3 2xl:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/25 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
                       <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 12v6m-2.5-2.5L12 18l2.5-2.5"/></svg>
-                      <span class="hidden sm:inline">PDF</span>
+                      <span class="hidden 2xl:inline">PDF</span>
                     </button>
                   }
                   @if (subTab() === 'salientes') {
                     <button (click)="descargarPdf('salientes', mesDatos()!.ano, mesDatos()!.mes, $event)" [disabled]="descargandoPdf()"
                       title="Descargar PDF de salientes" aria-label="Descargar PDF de salientes"
-                      class="w-9 h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-violet-600 dark:hover:text-violet-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
+                      class="w-9 h-9 2xl:w-auto 2xl:px-3 2xl:gap-1.5 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-violet-600 dark:hover:text-violet-400 disabled:opacity-40 text-xs font-semibold transition-all active:scale-95">
                       <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 12v6m-2.5-2.5L12 18l2.5-2.5"/></svg>
-                      <span class="hidden sm:inline">PDF</span>
+                      <span class="hidden 2xl:inline">PDF</span>
                     </button>
                     <!-- Aviso automático al orador la víspera, por la app móvil.
                          Sólo en Salientes: los entrantes no son publicadores de
@@ -376,31 +362,12 @@ type ItemEntrante =
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>
                 }
-                <!-- El portafolio de temas es propio de Salientes (los oradores
-                     que salen a otras congregaciones llevan un tema del
-                     repertorio local): solo tiene sentido ofrecerlo junto a esa
-                     pestaña, no sobre Entrantes. Relleno sólido siempre (no solo
-                     en estado activo) para que se lea como una acción aparte,
-                     no como una tercera opción del interruptor Entrantes/Salientes. -->
-                @if (subTab() === 'salientes' || subTab() === 'temas') {
-                  <button (click)="abrirCatalogo('temas')"
-                    role="tab" [attr.aria-selected]="subTab() === 'temas'"
-                    title="Oradores locales"
-                    class="flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-lg text-xs font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97]"
-                    [class]="subTab() === 'temas'
-                      ? 'bg-amber-600 shadow-md shadow-amber-500/30 ring-2 ring-amber-300 dark:ring-amber-500/40'
-                      : 'bg-amber-500 shadow-sm shadow-amber-500/20 hover:bg-amber-600'">
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                    </svg>
-                    <span>Oradores locales</span>
-                  </button>
-                }
               </div>
-            </div>
+            }
+          </div>
           }
 
-          @if (subTab() === 'congregaciones') {
+          @if (subTab() === 'congregaciones' && mesDatos()) {
             <!-- CONGREGACIONES DE CONTACTO tab.
                  La cabecera queda fuera del contenedor con scroll: así el
                  total y "Añadir congregación" se ven siempre, sin bajar hasta
@@ -412,13 +379,25 @@ type ItemEntrante =
               <div class="shrink-0 flex flex-col sm:flex-row sm:items-center gap-2.5 px-3 sm:px-4 pt-3 sm:pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div class="min-w-0">
                   <p class="text-sm font-black text-slate-800 dark:text-slate-100">Congregaciones de contacto</p>
-                  <p class="text-xs text-slate-400">
-                    {{ congregacionesContacto().length }} congregaci{{ congregacionesContacto().length === 1 ? 'ón' : 'ones' }} registrada{{ congregacionesContacto().length === 1 ? '' : 's' }}
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    @if (busquedaCongregacion().trim()) {
+                      {{ congregacionesFiltradas().length }} de {{ congregacionesContacto().length }} congregaciones
+                    } @else {
+                      {{ congregacionesContacto().length }} congregaci{{ congregacionesContacto().length === 1 ? 'ón' : 'ones' }} registrada{{ congregacionesContacto().length === 1 ? '' : 's' }}
+                    }
                   </p>
                 </div>
+                @if (congregacionesContacto().length > 0) {
+                  <div class="relative sm:ml-auto sm:w-72">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                    <input type="search" [value]="busquedaCongregacion()" (input)="busquedaCongregacion.set($any($event.target).value)"
+                      placeholder="Buscar congregación u orador…" aria-label="Buscar congregación"
+                      class="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 dark:focus:border-violet-500">
+                  </div>
+                }
                 @if (hasEditPermission()) {
                   <button (click)="abrirModalCongregacionContacto()"
-                    class="sm:ml-auto shrink-0 flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-teal-500 hover:bg-teal-600 text-xs font-bold text-white shadow-sm shadow-teal-500/25 transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]">
+                    class="shrink-0 flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500 text-white shadow-sm shadow-violet-900/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 text-xs font-bold transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Añadir congregación
                   </button>
@@ -447,7 +426,7 @@ type ItemEntrante =
                     </button>
                   </div>
                 } @else {
-                  <span class="shrink-0 pl-[2.625rem] @md:pl-0 text-[0.7rem] text-slate-400 dark:text-slate-500">Sin teléfono</span>
+                  <span class="shrink-0 pl-[2.625rem] @md:pl-0 text-[0.7rem] text-slate-500 dark:text-slate-400">Sin teléfono</span>
                 }
               </ng-template>
 
@@ -465,15 +444,20 @@ type ItemEntrante =
               } @else if (congregacionesContacto().length === 0) {
                 <div class="flex flex-col items-center justify-center py-12 text-center gap-3">
                   <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <svg class="w-6 h-6 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                   </div>
                   <div>
                     <p class="text-sm font-bold text-slate-600 dark:text-slate-500">Sin congregaciones registradas</p>
-                    <p class="text-xs text-slate-400 mt-0.5">Guarda las congregaciones con las que coordinas discursos para autocompletar hora y ubicación</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Guarda las congregaciones con las que coordinas discursos para autocompletar hora y ubicación</p>
                   </div>
                 </div>
+              } @else if (congregacionesFiltradas().length === 0) {
+                <div class="flex flex-col items-center justify-center py-12 text-center gap-1">
+                  <p class="text-sm font-bold text-slate-600 dark:text-slate-400">Ninguna congregación coincide con «{{ busquedaCongregacion().trim() }}»</p>
+                  <button type="button" (click)="busquedaCongregacion.set('')" class="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline">Borrar búsqueda</button>
+                </div>
               } @else {
-                @for (c of congregacionesContacto(); track c.id_congregacion_contacto) {
+                @for (c of congregacionesFiltradas(); track c.id_congregacion_contacto) {
                   <!-- shrink-0: la lista es un flex column con scroll, y sin esto
                        las tarjetas se comprimen para caber en la altura visible
                        en vez de desbordar, recortando su propio contenido. -->
@@ -504,12 +488,12 @@ type ItemEntrante =
                         <!-- Ciudad y departamento: distinguen homónimas
                              ("Norte - Cali" / "Norte - Candelaria"). -->
                         @if (ubicacionGeografica(c)) {
-                          <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 truncate">{{ ubicacionGeografica(c) }}</p>
+                          <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 truncate">{{ ubicacionGeografica(c) }}</p>
                         }
                         <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
                           @if (c.dia_reunion_fin_semana || c.hora_reunion_fin_semana) {
                             <span class="inline-flex items-center gap-1 text-[0.7rem] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                              <svg class="w-3 h-3 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                              <svg class="w-3 h-3 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                               {{ diaLabel(c.dia_reunion_fin_semana) }}{{ c.hora_reunion_fin_semana ? ' · ' + (c.hora_reunion_fin_semana | hora12) : '' }}
                             </span>
                           }
@@ -539,11 +523,11 @@ type ItemEntrante =
                       @if (hasEditPermission()) {
                         <div class="shrink-0 flex items-center gap-1" (click)="$event.stopPropagation()">
                           <button (click)="abrirModalCongregacionContacto(c)" title="Editar"
-                            class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95">
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                           </button>
                           <button (click)="confirmarEliminarCongregacionContacto(c)" title="Eliminar"
-                            class="w-9 h-9 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                           </button>
                         </div>
@@ -576,7 +560,7 @@ type ItemEntrante =
                           @if (ubicacionDeContacto(c)) {
                             <app-ubicacion-picker size="sm" [ngModel]="ubicacionDeContacto(c)" [ngModelOptions]="{ standalone: true }" [disabled]="true"></app-ubicacion-picker>
                           } @else {
-                            <p class="text-xs text-slate-400 dark:text-slate-500">Sin dirección registrada.</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Sin dirección registrada.</p>
                           }
                           @if (c.notas) {
                             <!-- La nota suele ser una indicación para coordinar
@@ -612,20 +596,36 @@ type ItemEntrante =
                                  el peso del archivo visible, para que se note
                                  que hay algo que abrir. -->
                             <div class="flex flex-col gap-1.5">
-                              <span class="text-[0.65rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                              <span class="text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 Archivo{{ archivosDeCongregacion(c).length === 1 ? '' : 's' }} adjunto{{ archivosDeCongregacion(c).length === 1 ? '' : 's' }}
                               </span>
                               <div class="flex flex-col gap-1.5">
                                 @for (a of archivosDeCongregacion(c); track a.nombre) {
-                                  <button type="button" (click)="abrirArchivoDeCongregacion(c, a.nombre)" [title]="'Abrir ' + a.nombre"
-                                    class="w-full flex items-center gap-2.5 h-11 pl-2.5 pr-3 rounded-xl border border-violet-200 dark:border-violet-400/25 bg-violet-50/70 dark:bg-violet-400/[0.07] hover:bg-violet-100 dark:hover:bg-violet-400/[0.12] hover:border-violet-300 dark:hover:border-violet-400/40 transition-[background-color,border-color] duration-150 ease-out active:scale-[0.99]">
-                                    <span class="shrink-0 w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-400/15 text-violet-600 dark:text-violet-300 flex items-center justify-center" aria-hidden="true">
-                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                    </span>
-                                    <span class="min-w-0 flex-1 truncate text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{{ a.nombre }}</span>
-                                    <span class="shrink-0 text-[0.65rem] font-medium text-slate-400 dark:text-slate-500">{{ formatoTamanoArchivo(a.tamano_bytes) }}</span>
-                                    <svg class="shrink-0 w-3.5 h-3.5 text-violet-400 dark:text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M7 7h10v10"/></svg>
-                                  </button>
+                                  <div class="flex items-stretch gap-1.5">
+                                    <button type="button" (click)="abrirArchivoDeCongregacion(c, a.nombre)" [title]="'Abrir ' + a.nombre"
+                                      [disabled]="archivoOcupado(c.id_congregacion_contacto, a.nombre)"
+                                      class="min-w-0 flex-1 flex items-center gap-2.5 h-11 pl-2.5 pr-3 rounded-xl border border-violet-200 dark:border-violet-400/25 bg-violet-50/70 dark:bg-violet-400/[0.07] hover:bg-violet-100 dark:hover:bg-violet-400/[0.12] hover:border-violet-300 dark:hover:border-violet-400/40 transition-[background-color,border-color] duration-150 ease-out active:scale-[0.99] disabled:cursor-wait disabled:opacity-70">
+                                      <span class="shrink-0 w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-400/15 text-violet-600 dark:text-violet-300 flex items-center justify-center" aria-hidden="true">
+                                        @if (archivoCargando() === claveArchivo(c.id_congregacion_contacto, a.nombre, 'abrir')) {
+                                          <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                                        } @else {
+                                          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                        }
+                                      </span>
+                                      <span class="min-w-0 flex-1 truncate text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{{ archivoCargando() === claveArchivo(c.id_congregacion_contacto, a.nombre, 'abrir') ? 'Abriendo…' : a.nombre }}</span>
+                                      <span class="shrink-0 text-[0.65rem] font-medium text-slate-500 dark:text-slate-400">{{ formatoTamanoArchivo(a.tamano_bytes) }}</span>
+                                    </button>
+                                    <button type="button" (click)="descargarArchivoDeCongregacion(c, a.nombre)" [title]="'Descargar ' + a.nombre"
+                                      [attr.aria-label]="'Descargar ' + a.nombre"
+                                      [disabled]="archivoOcupado(c.id_congregacion_contacto, a.nombre)"
+                                      class="shrink-0 w-11 h-11 rounded-xl border border-violet-200 dark:border-violet-400/25 bg-violet-50/70 dark:bg-violet-400/[0.07] text-violet-600 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-400/[0.12] flex items-center justify-center transition-[background-color,transform] duration-150 active:scale-95 disabled:cursor-wait disabled:opacity-70">
+                                      @if (archivoCargando() === claveArchivo(c.id_congregacion_contacto, a.nombre, 'descargar')) {
+                                        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                                      } @else {
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg>
+                                      }
+                                    </button>
+                                  </div>
                                 }
                               </div>
                             </div>
@@ -668,7 +668,7 @@ type ItemEntrante =
                                           }
                                         </ul>
                                       } @else {
-                                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Sin bosquejos registrados</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sin bosquejos registrados</p>
                                       }
                                     </div>
                                   </div>
@@ -730,13 +730,13 @@ type ItemEntrante =
               }
               </div>
             </div>
-          } @else if (subTab() === 'temas') {
+          } @else if (subTab() === 'temas' && mesDatos()) {
             <!-- TEMAS tab -->
             <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar flex flex-col gap-3 p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
               <div class="flex flex-wrap items-center gap-2">
                 @if (hasEditPermission()) {
                   <button (click)="abrirModalTema()"
-                    class="flex items-center gap-2 px-4 h-9 rounded-xl border-2 border-dashed border-amber-400 dark:border-amber-600 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all active:scale-95">
+                    class="flex items-center gap-2 px-4 h-10 rounded-xl bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500 text-white shadow-sm shadow-violet-900/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 text-xs font-bold transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Añadir orador local
                   </button>
@@ -744,9 +744,9 @@ type ItemEntrante =
                 @if (temasAgrupados().length > 0) {
                   <button (click)="descargarPdfOradores()" [disabled]="descargandoPdfOradores()"
                     title="Descargar la lista de oradores en PDF"
-                    class="flex items-center gap-2 px-4 h-9 rounded-xl border border-teal-300 dark:border-teal-700 bg-white dark:bg-slate-900 text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/20 disabled:opacity-50 disabled:cursor-wait transition-all active:scale-95">
+                    class="flex items-center gap-2 px-4 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 text-xs font-bold disabled:opacity-50 disabled:cursor-wait transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.98]">
                     @if (descargandoPdfOradores()) {
-                      <div class="w-3.5 h-3.5 rounded-full border-2 border-teal-300 border-t-teal-600 animate-spin"></div>
+                      <div class="w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 border-t-slate-700 dark:border-t-slate-200 animate-spin"></div>
                     } @else {
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
                     }
@@ -761,11 +761,11 @@ type ItemEntrante =
               } @else if (temas().length === 0) {
                 <div class="flex flex-col items-center justify-center py-12 text-center gap-3">
                   <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    <svg class="w-6 h-6 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                   </div>
                   <div>
                     <p class="text-sm font-bold text-slate-600 dark:text-slate-500">Sin temas registrados</p>
-                    <p class="text-xs text-slate-400 mt-0.5">Registra los temas preparados de los discursantes</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Registra los temas preparados de los discursantes</p>
                   </div>
                 </div>
               } @else {
@@ -781,7 +781,7 @@ type ItemEntrante =
                           {{ grupo.nombre.charAt(0).toUpperCase() }}
                         </div>
                         <span class="text-sm font-black text-slate-800 dark:text-slate-100 truncate">{{ grupo.nombre }}</span>
-                        <span class="text-[0.6rem] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full shrink-0">{{ grupo.temas.length }}</span>
+                        <span class="text-[0.6rem] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full shrink-0">{{ grupo.temas.length }}</span>
                         @if (orador?.estado === 'inhabilitado') {
                           <span class="shrink-0 inline-flex items-center gap-1 text-[0.6rem] font-bold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-400/10 px-1.5 py-0.5 rounded-full" [title]="orador?.notas || 'Inhabilitado temporalmente'">
                             <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
@@ -792,12 +792,12 @@ type ItemEntrante =
                       @if (hasEditPermission()) {
                         <div class="shrink-0 flex items-center gap-1">
                           <button (click)="orador && abrirModalOrador(orador)" title="Estado del orador"
-                            class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95">
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                           </button>
                           <button (click)="abrirModalTema(); nuevoTema.id_publicador = grupo.temas[0].id_publicador"
                             title="Añadir tema a este publicador"
-                            class="w-9 h-9 rounded-lg flex items-center justify-center text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all active:scale-95">
+                            class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all active:scale-95">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                           </button>
                         </div>
@@ -816,15 +816,15 @@ type ItemEntrante =
                           }
                           <span class="flex-1 text-xs font-medium text-slate-700 dark:text-slate-200">{{ tema.titulo }}</span>
                           @if (!tema.activo) {
-                            <span class="shrink-0 text-[0.6rem] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">Inactivo</span>
+                            <span class="shrink-0 text-[0.6rem] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">Inactivo</span>
                           }
                           @if (hasEditPermission()) {
                             <button (click)="abrirModalTema(tema)" title="Editar"
-                              class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95">
+                              class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95">
                               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
                             <button (click)="confirmarEliminarTema(tema)" title="Eliminar"
-                              class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
+                              class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
                               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                           }
@@ -927,7 +927,7 @@ type ItemEntrante =
                                   [disabled]="estado() === 'loading'"
                                   [title]="'Generar ' + mesLabel(fila.ano, c.mes)"
                                   [attr.aria-label]="'Generar ' + mesLabel(fila.ano, c.mes)"
-                                  class="group h-11 sm:h-12 rounded-lg sm:rounded-xl flex flex-col items-center justify-center gap-0.5 text-xs font-medium border border-dashed border-slate-200 dark:border-slate-700/80 text-slate-400 dark:text-slate-500 hover:border-violet-300 dark:hover:border-violet-500/50 hover:text-violet-600 dark:hover:text-violet-300 hover:bg-violet-50/60 dark:hover:bg-violet-500/[0.06] transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.96] disabled:opacity-40"
+                                  class="group h-11 sm:h-12 rounded-lg sm:rounded-xl flex flex-col items-center justify-center gap-0.5 text-xs font-medium border border-dashed border-slate-200 dark:border-slate-700/80 text-slate-500 dark:text-slate-400 hover:border-violet-300 dark:hover:border-violet-500/50 hover:text-violet-600 dark:hover:text-violet-300 hover:bg-violet-50/60 dark:hover:bg-violet-500/[0.06] transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.96] disabled:opacity-40"
                                   [class.disc-sel-hoy]="c.esActual">
                                   <span>{{ c.corto }}</span>
                                   <svg class="w-3 h-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1036,7 +1036,7 @@ type ItemEntrante =
                            cabe entero y se trunca para que la fila no crezca. -->
                       <span class="min-w-0 text-sm font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 sm:line-clamp-none sm:truncate">{{ entrante.titulo_discurso }}</span>
                     } @else {
-                      <span class="text-sm text-slate-400 dark:text-slate-500 italic">Sin discurso registrado</span>
+                      <span class="text-sm text-slate-500 dark:text-slate-400 italic">Sin discurso registrado</span>
                     }
                     @if (urlBosquejo(entrante.meps_document_id); as urlBosq) {
                       <button type="button" (click)="abrirBosquejo($event, urlBosq)" title="Ver bosquejo en jw.org" aria-label="Ver bosquejo en jw.org"
@@ -1045,7 +1045,7 @@ type ItemEntrante =
                       </button>
                     }
                     @if (entrante.notas) {
-                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" [attr.aria-label]="'Nota: ' + entrante.notas" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-500 dark:text-slate-400" [attr.aria-label]="'Nota: ' + entrante.notas" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     }
                   </div>
                   <!-- Avisos en su propio renglón y con el texto completo: la razón
@@ -1059,7 +1059,7 @@ type ItemEntrante =
                        nombre largo pueda truncarse sin que el renglón salte. -->
                   <div class="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span class="min-w-0 inline-flex items-center gap-1.5">
-                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
                       @if (entrante.nombre_orador) {
                         <span class="truncate text-xs font-medium text-slate-700 dark:text-slate-300">{{ entrante.nombre_orador }}</span>
                       } @else {
@@ -1068,7 +1068,7 @@ type ItemEntrante =
                     </span>
                     <span class="shrink-0 w-px h-3 bg-slate-200 dark:bg-slate-700 hidden sm:block" aria-hidden="true"></span>
                     <span class="min-w-0 inline-flex items-center gap-1.5">
-                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                       <span class="truncate text-xs text-slate-500 dark:text-slate-400">{{ entrante.congregacion_origen || '—' }}</span>
                     </span>
                     @if (nombreGrupoHospitalidad(entrante); as grupo) {
@@ -1086,7 +1086,7 @@ type ItemEntrante =
                         ? 'bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200/70 dark:border-emerald-800/40'
                         : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200/70 dark:border-slate-700/60'">
                       <svg class="w-3.5 h-3.5 shrink-0"
-                        [class]="entrantesConfirmados() === entrantesActivos().length ? 'text-emerald-500' : 'text-slate-400'"
+                        [class]="entrantesConfirmados() === entrantesActivos().length ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400'"
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
                       </svg>
@@ -1094,7 +1094,7 @@ type ItemEntrante =
                         Oradores confirmados: {{ entrantesConfirmados() }} de {{ entrantesActivos().length }}
                       </span>
                       @if (entrantesActivos().length > entrantesConfirmados()) {
-                        <span class="text-[0.65rem] text-slate-400">
+                        <span class="text-[0.65rem] text-slate-500 dark:text-slate-400">
                           Faltan {{ entrantesActivos().length - entrantesConfirmados() }} por llamar
                         </span>
                       }
@@ -1274,6 +1274,18 @@ type ItemEntrante =
                                 </span>
                               }
 
+                              <!-- Recordatorio sin abrir el detalle. Con el detalle abierto (o en un
+                                   mes sin confirmar, que va siempre abierto) el mismo botón
+                                   está junto al nombre del orador. -->
+                              @if (entrante.telefono_orador && entrante.confirmado && !isEditandoEntrante(entrante.id_discurso_entrante)) {
+                                <button type="button" (click)="enviarRecordatorioEntrante(entrante)"
+                                  [title]="'Enviar recordatorio por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
+                                  [attr.aria-label]="'Enviar recordatorio por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
+                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all active:scale-95">
+                                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                                </button>
+                              }
+
                               @if (entrante.confirmado && hasEditPermission()) {
                                 @if (isEditandoEntrante(entrante.id_discurso_entrante)) {
                                   <button type="button" (click)="toggleEditEntrante(entrante.id_discurso_entrante)"
@@ -1287,7 +1299,7 @@ type ItemEntrante =
                                        mismo dato 8 veces seguidas. El lápiz basta
                                        para saber que hay que tocarlo para editar. -->
                                   <button type="button" (click)="toggleEditEntrante(entrante.id_discurso_entrante)" title="Editar"
-                                    class="ml-auto sm:ml-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors active:scale-95">
+                                    class="ml-auto sm:ml-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                   </button>
                                 }
@@ -1380,18 +1392,14 @@ type ItemEntrante =
                                   class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sky-500 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all active:scale-95">
                                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                 </a>
-                                <button (click)="contactarPersona({ nombre: entrante.nombre_orador || '', telefono: entrante.telefono_orador })"
-                                  [title]="'Escribir por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
-                                  [attr.aria-label]="'Escribir por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
+                                <!-- Un solo botón de WhatsApp, como en la app móvil: abre el
+                                     recordatorio con los datos de la asignación (discurso, fecha,
+                                     hora, hospitalidad, dirección y mapa del salón), no un saludo genérico. -->
+                                <button (click)="enviarRecordatorioEntrante(entrante)"
+                                  [title]="'Enviar recordatorio por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
+                                  [attr.aria-label]="'Enviar recordatorio por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
                                   class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all active:scale-95">
                                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                                </button>
-                                <!-- Recordatorio con los datos de la asignación (discurso, cántico, fecha, hora, hospitalidad), a diferencia del WhatsApp genérico de arriba. -->
-                                <button (click)="enviarRecordatorioEntrante(entrante)"
-                                  title="Enviar recordatorio de la asignación por WhatsApp"
-                                  aria-label="Enviar recordatorio de la asignación por WhatsApp"
-                                  class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-violet-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95">
-                                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                                 </button>
                               }
                             </div>
@@ -1471,7 +1479,7 @@ type ItemEntrante =
                         <!-- Discurso puesto a mano que no es de los bosquejos del
                              orador registrado: se permite, solo se avisa. -->
                         <div class="flex items-start gap-2.5 px-3 sm:px-4 py-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                          <svg class="w-4 h-4 mt-0.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 16v-4M12 8h.01"/></svg>
+                          <svg class="w-4 h-4 mt-0.5 shrink-0 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 16v-4M12 8h.01"/></svg>
                           <p class="flex-1 min-w-0 text-[0.7rem] text-slate-500 dark:text-slate-400">
                             Este discurso no está entre los bosquejos registrados de <span class="font-semibold text-slate-700 dark:text-slate-200">{{ fuera.orador }}</span>
                             ({{ fuera.etiquetas }}).
@@ -1530,7 +1538,7 @@ type ItemEntrante =
                       <span class="text-sm font-semibold text-amber-600 dark:text-amber-400">Falta publicador</span>
                     }
                     @if (saliente.notas) {
-                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" [attr.aria-label]="'Nota: ' + saliente.notas" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-500 dark:text-slate-400" [attr.aria-label]="'Nota: ' + saliente.notas" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     }
                   </div>
                   <!-- Con qué tema, a dónde y a qué hora: un solo renglón
@@ -1540,11 +1548,11 @@ type ItemEntrante =
                        envuelve, que es donde no hay ancho para nada. -->
                   <div class="min-w-0 flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1">
                     <span class="min-w-0 sm:flex-1 inline-flex items-center gap-1.5">
-                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                       @if (saliente.tema_discurso) {
                         <span class="truncate text-xs font-medium text-slate-700 dark:text-slate-300">{{ saliente.tema_discurso }}</span>
                       } @else {
-                        <span class="text-xs text-slate-400 dark:text-slate-500 italic">Sin tema</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 italic">Sin tema</span>
                       }
                     </span>
                     @if (urlBosquejo(saliente.meps_document_id); as urlBosq) {
@@ -1555,7 +1563,7 @@ type ItemEntrante =
                     }
                     <span class="shrink-0 w-px h-3 bg-slate-200 dark:bg-slate-700 hidden sm:block" aria-hidden="true"></span>
                     <span class="min-w-0 sm:max-w-[14rem] shrink-0 inline-flex items-center gap-1.5">
-                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                       @if (saliente.congregacion_destino) {
                         <span class="truncate text-xs text-slate-500 dark:text-slate-400">{{ saliente.congregacion_destino }}</span>
                       } @else {
@@ -1563,7 +1571,7 @@ type ItemEntrante =
                       }
                     </span>
                     <span class="shrink-0 inline-flex items-center gap-1.5">
-                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>
+                      <svg class="shrink-0 w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>
                       <span class="text-xs tabular-nums text-slate-500 dark:text-slate-400">{{ saliente.hora ? (saliente.hora | hora12) : '—' }}</span>
                     </span>
                   </div>
@@ -1589,7 +1597,7 @@ type ItemEntrante =
                   }
                   @if (hasEditPermission()) {
                     <button (click)="abrirModalSaliente()"
-                      class="self-start flex items-center gap-2 px-4 h-9 rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-700 text-xs font-bold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all active:scale-95">
+                      class="self-start flex items-center gap-2 px-4 h-10 rounded-xl bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500 text-white shadow-sm shadow-violet-900/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 text-xs font-bold transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                       Añadir saliente
                     </button>
@@ -1627,7 +1635,7 @@ type ItemEntrante =
                       </div>
                       <div>
                         <p class="text-sm font-bold text-slate-500 dark:text-slate-400">Sin salientes programados</p>
-                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Añade publicadores que salen a dar discursos</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Añade publicadores que salen a dar discursos</p>
                       </div>
                     </div>
                   }
@@ -1701,7 +1709,7 @@ type ItemEntrante =
                                     (click)="reactivarSaliente(saliente)"
                                     [disabled]="cancelandoSaliente().has(saliente.id_discurso_saliente)"
                                     [title]="tituloEstadoSaliente(saliente)"
-                                    class="flex items-center gap-1.5 pl-1.5 pr-2.5 h-8 rounded-full border text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait bg-red-500 border-red-500 text-white hover:bg-red-600 hover:border-red-600">
+                                    class="flex items-center gap-1.5 pl-1.5 pr-2.5 h-8 rounded-full border text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait bg-red-50 dark:bg-red-400/10 border-red-200 dark:border-red-400/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-400/15">
                                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                     <span>Cancelado</span>
                                   </button>
@@ -1712,7 +1720,7 @@ type ItemEntrante =
                                     [title]="tituloEstadoSaliente(saliente)"
                                     class="flex items-center gap-1.5 pl-1.5 pr-2.5 h-8 rounded-full border text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                                     [class]="saliente.estado === 'realizada'
-                                      ? 'bg-violet-600 border-violet-600 text-white hover:bg-violet-700 hover:border-violet-700'
+                                      ? 'bg-violet-50 dark:bg-violet-400/10 border-violet-200 dark:border-violet-400/30 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-400/15'
                                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-700 dark:hover:text-violet-400'">
                                     @if (saliente.estado === 'realizada') {
                                       <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1723,8 +1731,8 @@ type ItemEntrante =
                               } @else if (saliente.estado !== 'programado') {
                                 <span class="flex items-center gap-1.5 px-2.5 h-8 rounded-full text-[0.65rem] font-bold whitespace-nowrap"
                                   [class]="saliente.estado === 'realizada'
-                                    ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400'
-                                    : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'">
+                                    ? 'bg-violet-50 dark:bg-violet-400/10 text-violet-700 dark:text-violet-300'
+                                    : 'bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-300'">
                                   {{ saliente.estado === 'realizada' ? 'Realizada' : 'Cancelado' }}
                                 </span>
                               }
@@ -1736,7 +1744,7 @@ type ItemEntrante =
                                 <button type="button" (click)="abrirWhatsapp(saliente)"
                                   title="Notificar al orador por WhatsApp"
                                   aria-label="Notificar al orador por WhatsApp"
-                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors active:scale-95">
+                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors active:scale-95">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                                 </button>
                               }
@@ -1744,7 +1752,7 @@ type ItemEntrante =
                                 <button type="button" (click)="abrirWhatsappCongregacion(saliente)"
                                   title="Confirmar con la congregación destino por WhatsApp"
                                   aria-label="Confirmar con la congregación destino por WhatsApp"
-                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-sky-500 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors active:scale-95">
+                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors active:scale-95">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 11h.01M15 11h.01M9 15h.01M15 15h.01"/></svg>
                                 </button>
                               }
@@ -1759,7 +1767,7 @@ type ItemEntrante =
                                 <button type="button" (click)="cancelarSaliente(saliente)"
                                   title="Cancelar esta salida"
                                   aria-label="Cancelar esta salida"
-                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-400 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20 dark:hover:text-amber-400 transition-colors active:scale-95">
+                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20 dark:hover:text-amber-400 transition-colors active:scale-95">
                                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><line x1="7" y1="17" x2="17" y2="7"/></svg>
                                 </button>
                               }
@@ -1767,7 +1775,7 @@ type ItemEntrante =
                                 <button type="button" (click)="eliminarSaliente(saliente)"
                                   title="Eliminar esta salida"
                                   aria-label="Eliminar saliente"
-                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors active:scale-95">
+                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors active:scale-95">
                                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                 </button>
                               }
@@ -1788,7 +1796,7 @@ type ItemEntrante =
                                        un tercer renglón, y ahí toda la franja
                                        superior ya abre el detalle. -->
                                   <button type="button" (click)="toggleEditSaliente(saliente.id_discurso_saliente)" title="Editar"
-                                    class="w-8 h-8 shrink-0 rounded-lg hidden sm:flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors active:scale-95">
+                                    class="w-8 h-8 shrink-0 rounded-lg hidden sm:flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                   </button>
                                 }
@@ -1955,7 +1963,7 @@ type ItemEntrante =
                   class="h-9 w-full px-3 rounded-xl border bg-white dark:bg-slate-800 text-sm text-left flex items-center justify-between gap-2 outline-none transition-[border-color,background-color] duration-150 ease-out"
                   [class]="mesDropdownAbierto() ? 'border-violet-500 ring-2 ring-violet-400/30' : 'border-slate-200 dark:border-slate-600 hover:border-violet-300 dark:hover:border-violet-700'">
                   <span class="text-slate-800 dark:text-slate-100">{{ mesSoloLabel(genMes) }}</span>
-                  <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="mesDropdownAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                  <svg class="w-3.5 h-3.5 shrink-0 text-slate-500 dark:text-slate-400 transition-transform duration-150" [class.rotate-180]="mesDropdownAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 @if (mesDropdownAbierto()) {
                   <div class="disc-dropdown absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1.5">
@@ -2065,7 +2073,7 @@ type ItemEntrante =
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Solo el nombre es obligatorio. Lo demás autocompleta hora, ubicación y orador al programar un entrante.</p>
             </div>
             <button type="button" (click)="cerrarModalCongregacionContacto()" aria-label="Cerrar"
-              class="shrink-0 -mr-2 w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
+              class="shrink-0 -mr-2 w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
@@ -2158,7 +2166,7 @@ type ItemEntrante =
                     colorScheme="rose" placeholder="Mes y año" [inlineOnMobile]="true"></app-month-picker>
                 </div>
                 <div class="flex flex-col gap-1.5">
-                  <label for="cong-arreglo-nota" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Nota <span class="font-normal text-slate-400">· opcional</span></label>
+                  <label for="cong-arreglo-nota" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Nota <span class="font-normal text-slate-500 dark:text-slate-400">· opcional</span></label>
                   <input id="cong-arreglo-nota" type="text" [(ngModel)]="nuevaCongregacionContacto.proximo_arreglo_nota" [ngModelOptions]="{ standalone: true }"
                     placeholder="Ej. Intercambio de oradores acordado" autocomplete="off"
                     [class]="campoModal + ' h-10 text-sm focus:border-rose-500 focus:ring-rose-500/20'">
@@ -2193,7 +2201,7 @@ type ItemEntrante =
                           [attr.aria-label]="'Teléfono del discursante ' + (i + 1)"
                           [class]="campoModal + ' h-10 text-sm tabular-nums max-sm:col-span-1 max-sm:row-start-2'">
                         <button type="button" (click)="quitarDiscursanteModal(i)" [title]="'Quitar discursante ' + (i + 1)" [attr.aria-label]="'Quitar discursante ' + (i + 1)"
-                          class="max-sm:row-start-1 max-sm:col-start-2 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-[background-color,color,transform] duration-150 ease-out active:scale-95">
+                          class="max-sm:row-start-1 max-sm:col-start-2 w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-[background-color,color,transform] duration-150 ease-out active:scale-95">
                           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                       </div>
@@ -2278,7 +2286,7 @@ type ItemEntrante =
                         {{ p.activo ? 'Activo' : 'Inactivo' }}
                       </button>
                       <button type="button" (click)="quitarPersonaModal(i)" [title]="'Quitar contacto ' + (i + 1)" [attr.aria-label]="'Quitar contacto ' + (i + 1)"
-                        class="max-sm:row-start-1 max-sm:col-start-3 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-[background-color,color,transform] duration-150 ease-out active:scale-95">
+                        class="max-sm:row-start-1 max-sm:col-start-3 w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-[background-color,color,transform] duration-150 ease-out active:scale-95">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                       </button>
                     </div>
@@ -2300,23 +2308,32 @@ type ItemEntrante =
             <!-- 5 · Notas y archivos -->
             <section class="grid gap-4 sm:grid-cols-2">
               <div class="flex flex-col gap-1.5">
-                <label for="cong-notas" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Notas <span class="font-normal text-slate-400">· opcional</span></label>
+                <label for="cong-notas" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Notas <span class="font-normal text-slate-500 dark:text-slate-400">· opcional</span></label>
                 <textarea id="cong-notas" rows="3" [(ngModel)]="nuevaCongregacionContacto.notas" placeholder="Ej. Prefieren coordinar con dos semanas de anticipación."
                   [class]="campoModal + ' py-2.5 text-sm leading-relaxed resize-y min-h-[5.5rem]'"></textarea>
               </div>
               <div class="flex flex-col gap-1.5">
-                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Archivos adjuntos <span class="font-normal text-slate-400">· opcional</span></span>
+                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Archivos adjuntos <span class="font-normal text-slate-500 dark:text-slate-400">· opcional</span></span>
                 @if (archivosCongregacionContacto().length || archivosNuevosCongregacionContacto().length) {
                   <div class="flex flex-col gap-1">
                     @for (a of archivosCongregacionContacto(); track a.nombre) {
                       <div class="flex items-center gap-1.5 h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                        <svg class="w-3.5 h-3.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                        <button type="button" (click)="abrirArchivoCongregacionContacto(a)" class="flex-1 min-w-0 truncate text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-teal-600 dark:hover:text-teal-400">
-                          {{ a.nombre }}
+                        <svg class="w-3.5 h-3.5 shrink-0 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                        <button type="button" (click)="abrirArchivoCongregacionContacto(a)" [disabled]="archivoOcupado(editandoCongregacionContacto()?.id_congregacion_contacto, a.nombre)" class="flex-1 min-w-0 truncate text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-teal-600 dark:hover:text-teal-400 disabled:cursor-wait disabled:opacity-70">
+                          {{ archivoCargando() === claveArchivo(editandoCongregacionContacto()?.id_congregacion_contacto, a.nombre, 'abrir') ? 'Abriendo…' : a.nombre }}
                         </button>
-                        <span class="shrink-0 text-[0.65rem] text-slate-400">{{ formatoTamanoArchivo(a.tamano_bytes) }}</span>
+                        <span class="shrink-0 text-[0.65rem] text-slate-500 dark:text-slate-400">{{ formatoTamanoArchivo(a.tamano_bytes) }}</span>
+                        <button type="button" (click)="descargarArchivoCongregacionContacto(a)" title="Descargar" aria-label="Descargar"
+                          [disabled]="archivoOcupado(editandoCongregacionContacto()?.id_congregacion_contacto, a.nombre)"
+                          class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all active:scale-95 disabled:cursor-wait disabled:opacity-70">
+                          @if (archivoCargando() === claveArchivo(editandoCongregacionContacto()?.id_congregacion_contacto, a.nombre, 'descargar')) {
+                            <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                          } @else {
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg>
+                          }
+                        </button>
                         <button type="button" (click)="eliminarArchivoCongregacionContactoModal(a.nombre)" title="Quitar"
-                          class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
+                          class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
                           <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                       </div>
@@ -2327,7 +2344,7 @@ type ItemEntrante =
                         <span class="flex-1 min-w-0 truncate text-xs font-semibold text-slate-700 dark:text-slate-200">{{ f.name }}</span>
                         <span class="shrink-0 text-[0.65rem] text-teal-600 dark:text-teal-400 font-bold">Pendiente</span>
                         <button type="button" (click)="quitarArchivoNuevoCongregacionContacto(i)" title="Quitar"
-                          class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
+                          class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95">
                           <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                       </div>
@@ -2340,7 +2357,7 @@ type ItemEntrante =
                   class="flex flex-col items-center justify-center gap-1 min-h-[5.5rem] flex-1 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.99]">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                   <span class="text-xs font-bold">Adjuntar archivo</span>
-                  <span class="text-[0.65rem] text-slate-400">Listado de discursantes en PDF, Word o imagen</span>
+                  <span class="text-[0.65rem] text-slate-500 dark:text-slate-400">Listado de discursantes en PDF, Word o imagen</span>
                 </button>
               </div>
             </section>
@@ -2352,7 +2369,7 @@ type ItemEntrante =
               Cancelar
             </button>
             <button type="button" (click)="guardarCongregacionContacto()" [disabled]="!nuevaCongregacionContacto.nombre.trim()"
-              class="flex-1 sm:flex-none sm:px-6 h-11 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-md shadow-teal-500/20">
+              class="flex-1 sm:flex-none sm:px-6 h-11 rounded-xl bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-sm shadow-violet-900/15">
               {{ editandoCongregacionContacto() ? 'Guardar cambios' : 'Añadir congregación' }}
             </button>
           </div>
@@ -2370,7 +2387,7 @@ type ItemEntrante =
             <div class="flex items-center justify-between">
               <h2 class="text-base font-black text-slate-900 dark:text-white">{{ editandoTema() ? 'Editar Tema' : 'Orador Local' }}</h2>
               <button (click)="cerrarModalTema()"
-                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
+                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -2422,7 +2439,7 @@ type ItemEntrante =
               Cancelar
             </button>
             <button (click)="guardarTema()" [disabled]="!nuevoTema.titulo.trim() || (!editandoTema() && !nuevoTema.id_publicador)"
-              class="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-md shadow-amber-500/20">
+              class="flex-1 h-11 rounded-xl bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-sm shadow-violet-900/15">
               {{ editandoTema() ? 'Guardar cambios' : 'Añadir' }}
             </button>
           </div>
@@ -2440,7 +2457,7 @@ type ItemEntrante =
             <div class="flex items-center justify-between">
               <h2 class="text-base font-black text-slate-900 dark:text-white truncate">{{ orador.nombre_completo }}</h2>
               <button (click)="cerrarModalOrador()"
-                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95] shrink-0">
+                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95] shrink-0">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -2468,7 +2485,7 @@ type ItemEntrante =
               Cancelar
             </button>
             <button (click)="guardarOrador()"
-              class="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-md shadow-amber-500/20">
+              class="flex-1 h-11 rounded-xl bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-sm shadow-violet-900/15">
               Guardar cambios
             </button>
           </div>
@@ -2501,7 +2518,7 @@ type ItemEntrante =
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Un publicador de esta congregación va a dar el discurso en otra.</p>
             </div>
             <button type="button" (click)="cerrarModalSaliente()" aria-label="Cerrar"
-              class="shrink-0 -mr-2 w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
+              class="shrink-0 -mr-2 w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
@@ -2581,16 +2598,16 @@ type ItemEntrante =
                   @if (nuevoSaliente.id_publicador) {
                     <button type="button"
                       (click)="nuevoSaliente.id_publicador = null; nuevoSaliente.tema_discurso = ''; busquedaPublicador.set(''); buscarEnCatalogo.set(false)"
-                      class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-[background-color,color] duration-150 ease-out">
+                      class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-[background-color,color] duration-150 ease-out">
                       <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   }
                   @if (mostrarDropdownBusqueda()) {
                     <div class="disc-dropdown pub-dropdown absolute z-10 mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl shadow-black/10 max-h-64 overflow-y-auto py-1">
                       @if (buscandoPublicador()) {
-                        <div class="px-4 py-3 text-xs text-slate-400">Buscando…</div>
+                        <div class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">Buscando…</div>
                       } @else if (resultadosBusqueda().length === 0) {
-                        <div class="px-4 py-3 text-xs text-slate-400">Sin resultados</div>
+                        <div class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">Sin resultados</div>
                       } @else {
                         @for (p of habilitadosBusqueda(); track p.id_publicador) {
                           <button type="button"
@@ -2600,7 +2617,7 @@ type ItemEntrante =
                           </button>
                         }
                         @if (busquedaPublicador().trim().length > 0 && otrosPublicadoresBusqueda().length > 0) {
-                          <p class="px-4 pt-2.5 pb-1 text-[0.6rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-700/60 mt-1">
+                          <p class="px-4 pt-2.5 pb-1 text-[0.6rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700/60 mt-1">
                             Sin el privilegio de conferenciante
                           </p>
                           @for (p of otrosPublicadoresBusqueda(); track p.id_publicador) {
@@ -2653,10 +2670,10 @@ type ItemEntrante =
                           }
                         }
                       } @else {
-                        <span class="text-slate-400">Seleccionar tema…</span>
+                        <span class="text-slate-500 dark:text-slate-400">Seleccionar tema…</span>
                       }
                       <!-- chevron -->
-                      <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-transform duration-150"
+                      <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400 transition-transform duration-150"
                         [class.rotate-180]="mostrarDropdownTemas()"
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
@@ -2712,14 +2729,14 @@ type ItemEntrante =
                     [disabled]="!nuevoSaliente.id_publicador"
                     [inputClass]="campoSaliente + ' h-11 pr-8 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed'"></app-discurso-catalogo-input>
                   @if (!nuevoSaliente.id_publicador) {
-                    <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 px-0.5">Selecciona primero un publicador.</p>
+                    <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 px-0.5">Selecciona primero un publicador.</p>
                   } @else if (temasDelPublicadorSeleccionado().length > 0) {
                     <button type="button" (click)="buscarEnCatalogo.set(false)"
                       class="self-start text-[0.7rem] font-bold text-amber-700 dark:text-amber-400 hover:underline px-0.5">
                       Volver a sus temas registrados
                     </button>
                   } @else {
-                    <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 px-0.5">Sin temas registrados: escribe el número o una palabra para buscar en el catálogo.</p>
+                    <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 px-0.5">Sin temas registrados: escribe el número o una palabra para buscar en el catálogo.</p>
                   }
                 }
               </div>
@@ -2727,7 +2744,7 @@ type ItemEntrante =
 
             <!-- 3 · Notas -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Notas <span class="font-normal text-slate-400">· opcional</span></label>
+              <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Notas <span class="font-normal text-slate-500 dark:text-slate-400">· opcional</span></label>
               <textarea rows="2" [(ngModel)]="nuevoSaliente.notas" [ngModelOptions]="{ standalone: true }"
                 placeholder="Notas adicionales"
                 [class]="campoSaliente + ' py-2.5 text-sm leading-relaxed focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 resize-y min-h-[4.5rem]'"></textarea>
@@ -2760,11 +2777,11 @@ type ItemEntrante =
             <div class="flex items-center justify-between gap-3">
               <h2 class="text-base font-black text-slate-900 dark:text-white truncate">Registrar a {{ pReg.nombre_completo }}</h2>
               <button (click)="cerrarRegistroOrador()" aria-label="Cerrar"
-                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95] shrink-0">
+                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95] shrink-0">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            <p class="text-[0.7rem] text-slate-400 dark:text-slate-500 mt-1">Como orador local, para poder asignarle discursos salientes.</p>
+            <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">Como orador local, para poder asignarle discursos salientes.</p>
           </div>
           <div class="flex flex-col gap-3 px-5 py-4">
             <div class="flex flex-col gap-1.5">
@@ -2792,7 +2809,7 @@ type ItemEntrante =
               <textarea [(ngModel)]="nuevoRegistroOrador.notas" [ngModelOptions]="{ standalone: true }" rows="3" placeholder="Ej. de vacaciones hasta octubre, en tratamiento médico..."
                 class="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 transition-[border-color,background-color] duration-150 ease-out w-full resize-none"></textarea>
             </div>
-            <p class="text-[0.65rem] text-slate-400 dark:text-slate-500 px-1 leading-relaxed">
+            <p class="text-[0.65rem] text-slate-500 dark:text-slate-400 px-1 leading-relaxed">
               Quedará habilitado como conferenciante en Configuración, no solo para esta asignación.
             </p>
           </div>
@@ -2802,7 +2819,7 @@ type ItemEntrante =
               Cancelar
             </button>
             <button (click)="confirmarRegistroOrador()" [disabled]="!nuevoRegistroOrador.titulo.trim() || registrandoOrador()"
-              class="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
+              class="flex-1 h-11 rounded-xl bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500 disabled:opacity-50 text-sm font-bold text-white transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] shadow-sm shadow-violet-900/15 flex items-center justify-center gap-2">
               @if (registrandoOrador()) {
                 <div class="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin"></div>
               } @else {
@@ -2827,7 +2844,7 @@ type ItemEntrante =
             <div class="flex items-center justify-between">
               <h2 class="text-base font-black text-slate-900 dark:text-white">Notificar por WhatsApp</h2>
               <button (click)="cerrarWhatsapp()"
-                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
+                class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-[background-color,color] duration-150 ease-out active:scale-[0.95]">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -2838,7 +2855,7 @@ type ItemEntrante =
               <span class="text-slate-500 dark:text-slate-400">Para:</span>
               <span class="font-bold text-slate-800 dark:text-slate-100">{{ wa.nombre }}</span>
               @if (wa.telefono) {
-                <span class="text-slate-400 dark:text-slate-500">· +{{ wa.telefono }}</span>
+                <span class="text-slate-500 dark:text-slate-400">· +{{ wa.telefono }}</span>
               }
             </div>
             @if (!wa.telefono) {
@@ -2997,9 +3014,6 @@ export class ReunionesDiscursosComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  /** Nombre y hora del fin de semana de la propia congregación, para el recordatorio al orador entrante. */
-  private configuracionPropia = signal<{ nombre_congregacion: string; hora_reunion_fin_semana: string } | null>(null);
-
   readonly mesesOpciones = MESES_ES.map((label, i) => ({ value: i + 1, label }));
 
   estado = signal<Estado>('idle');
@@ -3092,20 +3106,27 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
   subTab = signal<SubTab>(this.subTabDesdeUrl());
 
-  /** Última pantalla principal (Entrantes o Salientes) antes de entrar a un
-   *  catálogo (Congregaciones/Temas), para que "Volver" sepa a dónde —
-   *  incluso sin mes abierto, donde el interruptor Entrantes/Salientes no se
-   *  pinta y Congregaciones se quedaría sin cómo regresar. */
-  private subTabPrincipal = signal<'entrantes' | 'salientes'>('entrantes');
+  /** Las cuatro pantallas, en el orden de la barra. "temas" se conserva como id (va en `?sub=`). */
+  readonly pestanasDiscursos: { id: SubTab; etiqueta: string; colorIcono: string }[] = [
+    { id: 'entrantes', etiqueta: 'Entrantes', colorIcono: 'text-blue-600 dark:text-blue-400' },
+    { id: 'salientes', etiqueta: 'Salientes', colorIcono: 'text-violet-600 dark:text-violet-400' },
+    { id: 'congregaciones', etiqueta: 'Congregaciones', colorIcono: 'text-teal-600 dark:text-teal-400' },
+    { id: 'temas', etiqueta: 'Oradores locales', colorIcono: 'text-amber-600 dark:text-amber-400' },
+  ];
 
-  abrirCatalogo(tab: 'congregaciones' | 'temas'): void {
-    const actual = this.subTab();
-    if (actual === 'entrantes' || actual === 'salientes') this.subTabPrincipal.set(actual);
-    this.subTab.set(tab);
-  }
+  /** Entrantes y Salientes dependen del mes abierto; los otros dos son directorios. */
+  esVistaDelMes = computed(() => this.subTab() === 'entrantes' || this.subTab() === 'salientes');
 
-  volverAProgramacion(): void {
-    this.subTab.set(this.subTabPrincipal());
+  /** Flechas, Inicio y Fin recorren las pestañas, como en cualquier barra de pestañas. */
+  moverPestanaConTeclado(e: KeyboardEvent): void {
+    const ids = this.pestanasDiscursos.map((p) => p.id);
+    const i = ids.indexOf(this.subTab());
+    const destino: Record<string, number> = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: ids.length - 1 };
+    if (!(e.key in destino)) return;
+    e.preventDefault();
+    const id = ids[(destino[e.key] + ids.length) % ids.length];
+    this.subTab.set(id);
+    document.getElementById('disc-tab-' + id)?.focus();
   }
 
   // Selector de mes de la barra de pestañas. Sustituye a la barra lateral
@@ -3144,9 +3165,40 @@ export class ReunionesDiscursosComponent implements OnInit {
     { value: 'inhabilitado', label: 'Inhabilitado temporalmente' },
   ];
 
-  congregacionesContacto = signal<CongregacionContacto[]>([]);
-  loadingCongregacionesContacto = signal(false);
-  congregacionesContactoLoaded = signal(false);
+  /**
+   * La pestaña Congregaciones lee el mismo directorio que los autocompletados
+   * (servicio). Antes cada uno descargaba su copia: dos peticiones iguales al
+   * abrir la pantalla y otras dos tras cada guardado.
+   */
+  congregacionesContacto = computed(() => this.directorioContactoSig());
+  busquedaCongregacion = signal('');
+  /**
+   * Busca sin tildes ni mayúsculas por nombre, ciudad, departamento y nombres de
+   * oradores o contactos. Primero van las que coinciden por nombre (empezando
+   * por él, luego conteniéndolo), después el resto; en cada grupo se conserva
+   * el orden original de la lista.
+   */
+  congregacionesFiltradas = computed(() => {
+    const q = this.normalizarTexto(this.busquedaCongregacion().trim());
+    const todas = this.congregacionesContacto();
+    if (!q) return todas;
+    const rango = (c: CongregacionContacto): number => {
+      const nombre = this.normalizarTexto(c.nombre);
+      if (nombre.startsWith(q)) return 0;
+      if (nombre.includes(q)) return 1;
+      const otros = [c.ciudad, c.departamento, ...c.discursantes.map((d) => d.nombre), ...c.personas.map((p) => p.nombre)];
+      return otros.some((t) => !!t && this.normalizarTexto(t).includes(q)) ? 2 : -1;
+    };
+    return todas
+      .map((c, i) => ({ c, i, r: rango(c) }))
+      .filter((x) => x.r >= 0)
+      .sort((x, y) => x.r - y.r || x.i - y.i)
+      .map((x) => x.c);
+  });
+  /** Spinner solo en la primera carga: al recargar tras guardar, la lista sigue a la vista. */
+  loadingCongregacionesContacto = computed(() => this.svc.directorioCargando() && this.congregacionesContacto().length === 0);
+  /** Congregación para la que ya se trajeron los adjuntos de todas las tarjetas. */
+  private archivosCargadosPara: number | null = null;
   /** Acordeón: sólo una congregación de contacto muestra su detalle a la vez. */
   congregacionContactoExpandidaId = signal<number | null>(null);
   toggleCongregacionContacto(id: number): void {
@@ -3160,7 +3212,9 @@ export class ReunionesDiscursosComponent implements OnInit {
    * puede escribir un signal la primera vez que se pide y eso no está
    * permitido desde un método invocado directamente en la plantilla.
    */
-  private directorioContactoSig: Signal<readonly CongregacionContacto[]> = signal([]);
+  private directorioFuente = signal<Signal<readonly CongregacionContacto[]>>(signal([]));
+  /** El directorio vigente; los `computed` que lo leen siguen al cambiar de congregación. */
+  private directorioContactoSig = computed(() => this.directorioFuente()());
   temasAgrupados = computed(() => {
     const map = new Map<number, { nombre: string; temas: TemaPublicador[] }>();
     for (const t of this.temas()) {
@@ -3421,6 +3475,16 @@ export class ReunionesDiscursosComponent implements OnInit {
     });
 
     effect(() => {
+      const lista = this.congregacionesContacto();
+      if (!lista.length) return;
+      untracked(() => {
+        if (this.archivosCargadosPara === this.idCong) return;
+        this.archivosCargadosPara = this.idCong;
+        this.cargarArchivosDeCongregaciones([...lista]);
+      });
+    });
+
+    effect(() => {
       const id = this.idCong;
       if (id) {
         untracked(() => {
@@ -3433,14 +3497,11 @@ export class ReunionesDiscursosComponent implements OnInit {
           this.oradoresLoaded.set(false);
           this.oradoresLocales.set([]);
           this.loadOradoresLocales();
-          this.congregacionesContactoLoaded.set(false);
-          this.congregacionesContacto.set([]);
-          this.loadCongregacionesContacto();
           // `directorioContacto()` puede escribir un signal la primera vez que
           // se pide (dispara la carga). Llamarlo aquí, fuera del renderizado
           // de plantilla, evita el NG0600 que saltaría si se llamara desde un
           // método enlazado en el template (p. ej. discursantesDeCongregacion).
-          this.directorioContactoSig = this.svc.directorioContacto(id);
+          this.directorioFuente.set(this.svc.directorioContacto(id));
         });
       }
     });
@@ -3562,18 +3623,27 @@ export class ReunionesDiscursosComponent implements OnInit {
     return [asignado, ...lista];
   }
 
+  /** Sube con cada carga de mes: solo la última respuesta se pinta. */
+  private cargaMesActual = 0;
+
   cargarMes(ano: number, mes: number): void {
+    const carga = ++this.cargaMesActual;
     this.estado.set('loading');
     this.editandoEntrantes.set(new Set());
     this.editandoSalientes.set(new Set());
     this.svc.getMes(ano, mes, this.idCong).subscribe({
       next: (data) => {
+        // Al saltar de mes rápido, la respuesta del mes anterior puede llegar
+        // después y dejaba en pantalla un mes distinto al marcado.
+        if (carga !== this.cargaMesActual) return;
+        this.avisosFila.set({});
         this.mesDatos.set(data);
         this.estado.set('ready');
         // También avisa de los que ya traían título antes de esta sesión.
-        data.entrantes.filter(e => e.titulo_discurso?.trim()).forEach(e => this.verificarRepetido(e));
+        this.verificarRepetidosDelMes(ano, mes, carga);
       },
       error: (e) => {
+        if (carga !== this.cargaMesActual) return;
         this.errorMsg.set(e?.error?.detail ?? 'Error al cargar el mes');
         this.estado.set('error');
       },
@@ -3703,6 +3773,7 @@ export class ReunionesDiscursosComponent implements OnInit {
     const val = (valor ?? '').trim() || null;
     if (campo === 'titulo_discurso') this.descartarAvisoFila(entrante.id_discurso_entrante);
     if ((entrante as any)[campo] === val) return;
+    this.descartarAvisoFila(entrante.id_discurso_entrante);
     this.svc.editarEntrante(entrante.id_discurso_entrante, { [campo]: val }, this.idCong).subscribe({
       next: (updated) => {
         this.updateEntrante(updated);
@@ -3723,16 +3794,34 @@ export class ReunionesDiscursosComponent implements OnInit {
   private discursanteDeLaFila(nombreOrador: string | null, congregacionOrigen: string | null): Discursante | undefined {
     const nombre = this.normalizarTexto((nombreOrador ?? '').trim());
     if (!nombre) return undefined;
+    const coincidencias = this.indiceDiscursantes().get(nombre);
+    if (!coincidencias) return undefined;
     const origen = this.normalizarTexto((congregacionOrigen ?? '').trim());
-    let candidato: Discursante | undefined;
-    for (const c of this.directorioContactoSig()) {
-      const d = c.discursantes.find(x => this.normalizarTexto(x.nombre) === nombre);
-      if (!d) continue;
-      if (origen && this.normalizarTexto(c.nombre) === origen) return d;
-      candidato ??= d;
-    }
-    return candidato;
+    // Con congregación escrita, solo vale el discursante de ESA congregación:
+    // un homónimo de otra no es el orador de la fila, y tomarlo quitaba un
+    // orador escrito a mano o avisaba contra bosquejos ajenos.
+    if (origen) return coincidencias.find(x => x.congregacion === origen)?.discursante;
+    return coincidencias[0].discursante;
   }
+
+  /**
+   * Discursantes del directorio por nombre normalizado. Se calcula una vez por
+   * cambio del directorio: buscar recorriendo y normalizando cada nombre corría
+   * en cada detección de cambios, por cada fila del mes.
+   */
+  private indiceDiscursantes = computed(() => {
+    const indice = new Map<string, { congregacion: string; discursante: Discursante }[]>();
+    for (const c of this.directorioContactoSig()) {
+      const congregacion = this.normalizarTexto(c.nombre.trim());
+      for (const d of c.discursantes) {
+        const clave = this.normalizarTexto(d.nombre.trim());
+        const lista = indice.get(clave);
+        if (lista) lista.push({ congregacion, discursante: d });
+        else indice.set(clave, [{ congregacion, discursante: d }]);
+      }
+    }
+    return indice;
+  });
 
   /**
    * Bosquejos preparados del orador de la fila, para ofrecerlos primero en el
@@ -3757,6 +3846,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   guardarOradorEscrito(entrante: DiscursoEntranteOut, valor: string | null): void {
     const nombre = (valor ?? '').trim() || null;
     if (entrante.nombre_orador === nombre) return;
+    this.descartarAvisoFila(entrante.id_discurso_entrante);
     const payload: EditarEntranteRequest = { nombre_orador: nombre };
     const anterior = this.discursanteDeLaFila(entrante.nombre_orador, entrante.congregacion_origen);
     if (anterior?.telefono && entrante.telefono_orador === anterior.telefono) {
@@ -3768,28 +3858,11 @@ export class ReunionesDiscursosComponent implements OnInit {
     });
   }
 
-  /**
-   * Si dos textos de discurso son el mismo bosquejo: por número cuando los
-   * dos lo llevan ("120" y "120. Razones…"), y si no, por el texto sin
-   * tildes ni mayúsculas.
-   */
-  private mismoBosquejo(a: string, b: string): boolean {
-    const num = (t: string) => /^\s*(\d{1,3})(?:\s*[.\-–]|\s*$)/.exec(t)?.[1];
-    const na = num(a), nb = num(b);
-    if (na && nb) return na === nb;
-    return this.normalizarTexto(a.trim()) === this.normalizarTexto(b.trim());
-  }
-
   /** "120. Razones…" → "Nº 120"; sin número, el título recortado. */
   private etiquetaBosquejo(b: string): string {
-    const m = /^\s*(\d{1,3})\s*[.\-–]/.exec(b);
-    return m ? `Nº ${m[1]}` : (b.length > 30 ? b.slice(0, 30) + '…' : b);
+    return etiquetaNumeroBosquejo(b) ?? (b.length > 30 ? b.slice(0, 30) + '…' : b);
   }
 
-  /**
-   * Corrección hecha en una fila al elegir de una lista, con lo necesario
-   * para deshacerla de un clic. Una por fila: la última manda.
-   */
   /** "24 oct" a partir de "2026-10-24", sin pasar por zona horaria. */
   private fechaCorta(iso: string): string {
     const [a, m, d] = iso.split('-').map(Number);
@@ -3807,7 +3880,13 @@ export class ReunionesDiscursosComponent implements OnInit {
     return `Este discurso también está programado: ${donde}. Revisa que no se repita.`;
   }
 
-  avisosFila = signal<Record<number, { mensaje: string; detalle: string; accion: string; deshacer: EditarEntranteRequest }>>({});
+  /**
+   * Corrección hecha en una fila al elegir de una lista, con lo necesario
+   * para deshacerla de un clic. Una por fila: la última manda. Cualquier
+   * cambio posterior a mano en la fila la descarta, para que "Mantener" no
+   * pise con datos viejos lo que se escribió después.
+   */
+  avisosFila = signal<Record<number, AvisoFila>>({});
   /** Discursos que el usuario decidió mantener aunque no sean del orador (no se vuelve a avisar). */
   private discursosMantenidos = new Map<number, string>();
 
@@ -3823,16 +3902,22 @@ export class ReunionesDiscursosComponent implements OnInit {
   deshacerAvisoFila(entrante: DiscursoEntranteOut): void {
     const aviso = this.avisosFila()[entrante.id_discurso_entrante];
     if (!aviso) return;
+    const id = entrante.id_discurso_entrante;
     const titulo = aviso.deshacer.titulo_discurso;
     // Lo devuelto a mano no se vuelve a señalar como "no es suyo".
-    if (titulo) this.discursosMantenidos.set(entrante.id_discurso_entrante, titulo);
-    this.descartarAvisoFila(entrante.id_discurso_entrante);
-    this.svc.editarEntrante(entrante.id_discurso_entrante, aviso.deshacer, this.idCong).subscribe({
+    if (titulo) this.discursosMantenidos.set(id, titulo);
+    this.descartarAvisoFila(id);
+    this.svc.editarEntrante(id, aviso.deshacer, this.idCong).subscribe({
       next: (updated) => {
         this.updateEntrante(updated);
         if ('titulo_discurso' in aviso.deshacer) this.verificarRepetido(updated);
       },
-      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al guardar'),
+      error: (e) => {
+        // No se deshizo nada: el aviso vuelve para poder reintentarlo.
+        if (titulo) this.discursosMantenidos.delete(id);
+        this.avisosFila.update(m => ({ ...m, [id]: aviso }));
+        this.errorMsg.set(e?.error?.detail ?? 'Error al guardar');
+      },
     });
   }
 
@@ -3847,10 +3932,10 @@ export class ReunionesDiscursosComponent implements OnInit {
     const anterior = this.discursanteDeLaFila(entrante.nombre_orador, entrante.congregacion_origen);
     const esDeLaNueva = !!anterior && c.discursantes.some(d => this.normalizarTexto(d.nombre) === this.normalizarTexto(anterior.nombre));
 
-    let aviso: { mensaje: string; detalle: string; accion: string; deshacer: EditarEntranteRequest } | null = null;
+    let aviso: AvisoFila | null = null;
     if (anterior && !esDeLaNueva) {
       const titulo = (entrante.titulo_discurso ?? '').trim();
-      const eraSuyo = !!titulo && anterior.bosquejos.some(b => this.mismoBosquejo(b, titulo));
+      const eraSuyo = !!titulo && anterior.bosquejos.some(b => mismoBosquejo(b, titulo));
       payload.nombre_orador = null;
       payload.telefono_orador = null;
       if (eraSuyo) payload.titulo_discurso = null;
@@ -3887,9 +3972,9 @@ export class ReunionesDiscursosComponent implements OnInit {
     if (!titulo) return null;
     const d = this.discursanteDeLaFila(entrante.nombre_orador, entrante.congregacion_origen);
     if (!d || d.bosquejos.length === 0) return null;
-    if (d.bosquejos.some(b => this.mismoBosquejo(b, titulo))) return null;
+    if (d.bosquejos.some(b => mismoBosquejo(b, titulo))) return null;
     const mantenido = this.discursosMantenidos.get(entrante.id_discurso_entrante);
-    if (mantenido && this.mismoBosquejo(mantenido, titulo)) return null;
+    if (mantenido && mismoBosquejo(mantenido, titulo)) return null;
     return { orador: d.nombre, etiquetas: d.bosquejos.map(b => this.etiquetaBosquejo(b)).join(', ') };
   }
 
@@ -3919,10 +4004,10 @@ export class ReunionesDiscursosComponent implements OnInit {
 
     const actual = (entrante.titulo_discurso ?? '').trim();
     const nuevos = r.discursante.bosquejos;
-    const cuadra = !!actual && nuevos.some(b => this.mismoBosquejo(b, actual));
+    const cuadra = !!actual && nuevos.some(b => mismoBosquejo(b, actual));
 
     let elegirDespues = false;
-    let aviso: { mensaje: string; detalle: string; accion: string; deshacer: EditarEntranteRequest } | null = null;
+    let aviso: AvisoFila | null = null;
     if (nuevos.length > 0 && !cuadra) {
       const reemplazo = nuevos.length === 1 ? nuevos[0] : null;
       if (reemplazo !== null || actual) payload.titulo_discurso = reemplazo;
@@ -3965,8 +4050,43 @@ export class ReunionesDiscursosComponent implements OnInit {
 
   repeticiones = signal<Record<number, HistorialOcurrenciaEntrante[]>>({});
 
+  /**
+   * Sube con cada verificación de una fila. Si se cambia el título dos veces
+   * seguidas, la respuesta de la primera puede llegar después: solo se aplica
+   * la que corresponde a la última versión.
+   */
+  private versionRepeticion = new Map<number, number>();
+
+  /**
+   * Todas las filas del mes en una petición. Antes se pedía una verificación
+   * por fila cada vez que se abría o recargaba el mes. Las filas que el
+   * usuario editó mientras tanto conservan su verificación propia, más nueva.
+   */
+  private verificarRepetidosDelMes(ano: number, mes: number, carga: number): void {
+    const versiones = new Map(this.versionRepeticion);
+    const intacta = (id: number) => (this.versionRepeticion.get(id) ?? 0) === (versiones.get(id) ?? 0);
+    this.svc.verificarRepeticionesMes(ano, mes, this.idCong).subscribe({
+      next: (res) => {
+        if (carga !== this.cargaMesActual) return;
+        this.repeticiones.update(actual => {
+          const nuevo: Record<number, HistorialOcurrenciaEntrante[]> = {};
+          for (const [clave, lista] of Object.entries(res.repeticiones)) {
+            if (intacta(+clave) && lista.length) nuevo[+clave] = lista;
+          }
+          for (const [clave, lista] of Object.entries(actual)) {
+            if (!intacta(+clave)) nuevo[+clave] = lista;
+          }
+          return nuevo;
+        });
+      },
+      error: () => {}, // aviso de cortesía: un fallo aquí no debe interrumpir nada
+    });
+  }
+
   private verificarRepetido(entrante: DiscursoEntranteOut): void {
     const id = entrante.id_discurso_entrante;
+    const version = (this.versionRepeticion.get(id) ?? 0) + 1;
+    this.versionRepeticion.set(id, version);
     if (!entrante.titulo_discurso?.trim()) {
       this.repeticiones.update(m => {
         if (!(id in m)) return m;
@@ -3977,6 +4097,7 @@ export class ReunionesDiscursosComponent implements OnInit {
     }
     this.svc.verificarRepeticion(entrante.titulo_discurso, entrante.fecha, id, this.idCong).subscribe({
       next: (res) => {
+        if (this.versionRepeticion.get(id) !== version) return;
         this.repeticiones.update(m => {
           if (res.repeticiones.length === 0) {
             if (!(id in m)) return m;
@@ -4606,62 +4727,31 @@ export class ReunionesDiscursosComponent implements OnInit {
     this.cerrarWhatsapp();
   }
 
+  /** Texto igual al de la app móvil (utils/mensajes-discursos.ts). */
   private mensajeWhatsapp(s: DiscursoSalienteOut): string {
-    const primerNombre = (s.publicador?.nombre_completo ?? '').split(' ')[0] || 'hermano';
-    const lineas = [
-      `Hola ${primerNombre},`,
-      '',
-      'Has sido programado para dar un discurso público:',
-      '',
-      `📅 *Fecha:* ${this.fechaLarga(s.fecha)}`,
-    ];
-    if (s.hora) lineas.push(`⏰ *Hora:* ${this.formatHora(s.hora)}`);
-    if (s.congregacion_destino) lineas.push(`🏛️ *Congregación:* ${s.congregacion_destino}`);
-    if (s.tema_discurso) lineas.push(`🎤 *Discurso:* ${s.tema_discurso}`);
-    if (s.direccion_destino) lineas.push(`📍 *Lugar:* ${s.direccion_destino}`);
-    if (s.url_mapa) lineas.push(`🗺️ *Cómo llegar:* ${s.url_mapa}`);
-    lineas.push('', 'Por favor confirma que puedes atender esta asignación. ¡Gracias!');
-    return lineas.join('\n');
+    return mensajeAvisoSaliente({
+      nombreOrador: s.publicador?.nombre_completo ?? null,
+      fecha: s.fecha,
+      hora: s.hora,
+      congregacionDestino: s.congregacion_destino,
+      temaDiscurso: s.tema_discurso,
+      direccionDestino: s.direccion_destino ?? null,
+      urlMapa: s.url_mapa ?? null,
+      contactoCoordinador: s.congregacion_destino
+        ? this.contactoPrincipalDeCongregacion(s.congregacion_destino)
+        : null,
+    });
   }
 
   private mensajeWhatsappCongregacion(s: DiscursoSalienteOut, nombreContacto: string | null): string {
-    const primerNombreContacto = (nombreContacto ?? '').split(' ')[0] || 'hermano';
-    const nombreOrador = s.publicador?.nombre_completo ?? 'nuestro hermano';
-    const lineas = [
-      `Hola, ${primerNombreContacto} 👋`,
-      '',
-      `Queremos confirmar la salida de ${nombreOrador} para presentar el discurso:`,
-      '',
-    ];
-    if (s.tema_discurso) lineas.push(`📖 ${this.formatTemaDiscurso(s.tema_discurso)}`);
-    lineas.push('');
-    if (s.congregacion_destino) lineas.push(`📍 Congregación: ${s.congregacion_destino}`);
-    lineas.push(`📅 Fecha: ${this.fechaLarga(s.fecha)}`);
-    if (s.hora) lineas.push(`🕕 Hora: ${this.formatHora(s.hora)}`);
-    lineas.push('', '¿Nos confirmas por favor que todo sigue en orden?', '', 'Muchas gracias. Quedamos atentos.');
-    return lineas.join('\n');
-  }
-
-  /** "179. Título" (como lo guarda el catálogo) → "179 — "Título"" para el mensaje. */
-  private formatTemaDiscurso(tema: string): string {
-    const m = /^(\d{1,3})\.\s*(.+)$/.exec(tema.trim());
-    return m ? `${m[1]} — “${m[2]}”` : tema;
-  }
-
-  private fechaLarga(fechaStr: string): string {
-    const d = new Date(fechaStr + 'T00:00:00');
-    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    return `${dias[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
-  }
-
-  /** "14:30" → "2:30 p. m." */
-  private formatHora(hora: string): string {
-    const [h, m] = hora.split(':').map(Number);
-    if (isNaN(h)) return hora;
-    const sufijo = h < 12 ? 'a. m.' : 'p. m.';
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${String(m ?? 0).padStart(2, '0')} ${sufijo}`;
+    return mensajeWhatsappCongregacionDestino({
+      nombreOrador: s.publicador?.nombre_completo ?? null,
+      nombreContacto,
+      fecha: s.fecha,
+      hora: s.hora,
+      congregacionDestino: s.congregacion_destino,
+      temaDiscurso: s.tema_discurso,
+    });
   }
 
   /** Deja sólo dígitos y antepone el indicativo de Colombia a los móviles. */
@@ -4715,6 +4805,9 @@ export class ReunionesDiscursosComponent implements OnInit {
       this.nuevoSaliente.ubicacion = { direccion_destino: c.direccion, url_mapa: c.url_mapa, lat: c.lat, lon: c.lon };
       this.ubicacionAutorellenada.set(true);
     }
+    // Elegir de la lista ya no emite `commit`: lo que falte (sin mapa en el
+    // directorio) se completa con la sugerencia de salidas anteriores.
+    this.autorellenarUbicacion();
   }
 
   /** Igual que la anterior, pero al elegir en la tarjeta inline de un saliente ya creado. */
@@ -4804,20 +4897,6 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   // ── Directorio de congregaciones de contacto ──────────────────────────────
-
-  loadCongregacionesContacto(): void {
-    if (this.congregacionesContactoLoaded() || !this.idCong) return;
-    this.loadingCongregacionesContacto.set(true);
-    this.svc.getCongregacionesContacto(this.idCong).subscribe({
-      next: (r) => {
-        this.congregacionesContacto.set(r);
-        this.congregacionesContactoLoaded.set(true);
-        this.loadingCongregacionesContacto.set(false);
-        this.cargarArchivosDeCongregaciones(r);
-      },
-      error: () => this.loadingCongregacionesContacto.set(false),
-    });
-  }
 
   /**
    * Trae de una vez los adjuntos de cada congregación del directorio, para que
@@ -4963,22 +5042,65 @@ export class ReunionesDiscursosComponent implements OnInit {
   abrirArchivoCongregacionContacto(a: ArchivoCongregacionContacto): void {
     const actual = this.editandoCongregacionContacto();
     if (!actual) return;
-    this.abrirArchivoBlob(actual.id_congregacion_contacto, a.nombre);
+    this.procesarArchivoCongregacion(actual.id_congregacion_contacto, a.nombre, 'abrir');
+  }
+
+  descargarArchivoCongregacionContacto(a: ArchivoCongregacionContacto): void {
+    const actual = this.editandoCongregacionContacto();
+    if (!actual) return;
+    this.procesarArchivoCongregacion(actual.id_congregacion_contacto, a.nombre, 'descargar');
   }
 
   /** Igual que abrir un archivo desde el modal, pero llamado desde la tarjeta del directorio. */
   abrirArchivoDeCongregacion(c: CongregacionContacto, nombre: string): void {
-    this.abrirArchivoBlob(c.id_congregacion_contacto, nombre);
+    this.procesarArchivoCongregacion(c.id_congregacion_contacto, nombre, 'abrir');
   }
 
-  private abrirArchivoBlob(idCongContacto: number, nombre: string): void {
+  descargarArchivoDeCongregacion(c: CongregacionContacto, nombre: string): void {
+    this.procesarArchivoCongregacion(c.id_congregacion_contacto, nombre, 'descargar');
+  }
+
+  /** Archivo que se está pidiendo al servidor ("id|nombre|modo"); mientras tanto sus botones se bloquean. */
+  archivoCargando = signal<string | null>(null);
+
+  claveArchivo(id: number | null | undefined, nombre: string, modo: 'abrir' | 'descargar'): string {
+    return `${id}|${nombre}|${modo}`;
+  }
+
+  archivoOcupado(id: number | null | undefined, nombre: string): boolean {
+    const c = this.archivoCargando();
+    return !!c && (c === this.claveArchivo(id, nombre, 'abrir') || c === this.claveArchivo(id, nombre, 'descargar'));
+  }
+
+  private procesarArchivoCongregacion(idCongContacto: number, nombre: string, modo: 'abrir' | 'descargar'): void {
+    if (this.archivoCargando()) return;
+    this.archivoCargando.set(this.claveArchivo(idCongContacto, nombre, modo));
+    // La pestaña se abre ya, dentro del clic: si se abriera al llegar el
+    // archivo, el navegador la tomaría por una ventana emergente y la bloquearía.
+    const ventana = modo === 'abrir' ? window.open('', '_blank') : null;
     this.svc.descargarArchivoCongregacionContacto(idCongContacto, nombre, this.idCong).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        if (modo === 'descargar') {
+          const enlace = document.createElement('a');
+          enlace.href = url;
+          enlace.download = nombre;
+          document.body.appendChild(enlace);
+          enlace.click();
+          enlace.remove();
+        } else if (ventana) {
+          ventana.location.href = url;
+        } else {
+          window.open(url, '_blank');
+        }
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        this.archivoCargando.set(null);
       },
-      error: (e) => this.errorMsg.set(e?.error?.detail ?? 'Error al abrir el archivo'),
+      error: (e) => {
+        ventana?.close();
+        this.archivoCargando.set(null);
+        this.errorMsg.set(e?.error?.detail ?? (modo === 'abrir' ? 'Error al abrir el archivo' : 'Error al descargar el archivo'));
+      },
     });
   }
 
@@ -5107,13 +5229,8 @@ export class ReunionesDiscursosComponent implements OnInit {
     }
 
     const finalizar = () => {
-      this.svc.getCongregacionesContacto(idCong).subscribe({
-        next: (lista) => this.congregacionesContacto.set(lista),
-        error: () => {},
-      });
-      // El directorio que alimenta los autocompletados es otro y vive en el
-      // servicio: sin invalidarlo, renombrar una congregación aquí la seguiría
-      // ofreciendo con el nombre viejo en las tarjetas del mes.
+      // Una sola recarga: la lista de esta pestaña y los autocompletados del
+      // mes leen el mismo directorio.
       this.svc.invalidarDirectorioContacto();
       this.refrescarArchivosCongregacion(idCongContacto);
       this.cerrarModalCongregacionContacto();
@@ -5143,7 +5260,7 @@ export class ReunionesDiscursosComponent implements OnInit {
       callback: () => {
         this.svc.eliminarCongregacionContacto(c.id_congregacion_contacto, this.idCong).subscribe({
           next: () => {
-            this.congregacionesContacto.set(this.congregacionesContacto().filter(x => x.id_congregacion_contacto !== c.id_congregacion_contacto));
+            this.svc.quitarDeDirectorio(c.id_congregacion_contacto);
             this.archivosPorCongregacion.update(m => {
               const { [c.id_congregacion_contacto]: _eliminado, ...resto } = m;
               return resto;
@@ -5166,61 +5283,22 @@ export class ReunionesDiscursosComponent implements OnInit {
   }
 
   /**
-   * Recordatorio con los datos completos de la asignación para un orador
-   * entrante (discurso, cántico, fecha, hora y hospitalidad si aplica). Usa
-   * el nombre/hora del fin de semana de la propia congregación desde
-   * /configuracion/, que se carga una sola vez y se cachea.
+   * Recordatorio al orador que nos visita. El texto es el mismo de la app
+   * móvil (utils/mensajes-discursos.ts) y el salón —nombre, hora, dirección y
+   * ubicación— llega con el propio mes, sin pedir nada más al servidor.
    */
   enviarRecordatorioEntrante(entrante: DiscursoEntranteOut): void {
-    const cfg = this.configuracionPropia();
-    if (cfg) {
-      this.abrirRecordatorioEntrante(entrante);
-      return;
-    }
-    this.http.get<{ nombre_congregacion: string; hora_reunion_fin_semana: string }>(`${environment.apiUrl}/configuracion/`).subscribe({
-      next: (c) => {
-        this.configuracionPropia.set({ nombre_congregacion: c.nombre_congregacion, hora_reunion_fin_semana: c.hora_reunion_fin_semana });
-        this.abrirRecordatorioEntrante(entrante);
-      },
-      error: () => this.abrirRecordatorioEntrante(entrante),
-    });
-  }
-
-  private abrirRecordatorioEntrante(entrante: DiscursoEntranteOut): void {
     this.whatsappPendiente.set({
       nombre: entrante.nombre_orador || 'Orador',
       telefono: this.normalizarTelefono(entrante.telefono_orador),
-      mensaje: this.mensajeWhatsappEntrante(entrante),
+      mensaje: mensajeRecordatorioEntrante({
+        nombreOrador: entrante.nombre_orador,
+        fecha: entrante.fecha,
+        tituloDiscurso: entrante.titulo_discurso,
+        grupoHospitalidad: this.nombreGrupoHospitalidad(entrante),
+        salon: this.mesDatos()?.salon ?? null,
+      }),
     });
-  }
-
-  private mensajeWhatsappEntrante(e: DiscursoEntranteOut): string {
-    const primerNombre = (e.nombre_orador ?? '').split(' ')[0] || 'hermano';
-    const cfg = this.configuracionPropia();
-    const lineas = [
-      `Hola, ${primerNombre} 👋`,
-      '',
-      'Esperamos que estés muy bien.',
-      '',
-      'Te recordamos que estás programado para visitarnos y presentar el discurso:',
-      '',
-    ];
-    if (e.titulo_discurso) lineas.push(`📖 ${e.titulo_discurso}`);
-    if (e.cantico) lineas.push(`🎵 Cántico: ${e.cantico}`);
-    lineas.push('');
-    if (cfg?.nombre_congregacion) lineas.push(`📍 Congregación: ${cfg.nombre_congregacion}`);
-    lineas.push(`📅 Fecha: ${this.fechaLarga(e.fecha)}`);
-    if (cfg?.hora_reunion_fin_semana) lineas.push(`🕕 Hora: ${this.formatHora(cfg.hora_reunion_fin_semana)}`);
-    const grupo = this.nombreGrupoHospitalidad(e);
-    if (grupo) {
-      lineas.push(
-        '',
-        `Además, el ${grupo} quisiera compartir con ustedes al finalizar la reunión.`,
-        '¿Nos confirmas si se quedarán durante toda la reunión y cuántas personas serían?',
-      );
-    }
-    lineas.push('', 'Por favor, avísanos si surge algún cambio.', '', 'Muchas gracias. Quedamos atentos.');
-    return lineas.join('\n');
   }
 
   /**
@@ -5229,8 +5307,8 @@ export class ReunionesDiscursosComponent implements OnInit {
    * se muestra tal cual.
    */
   partirTema(tema: string): { numero: string | null; titulo: string } {
-    const m = /^\s*(\d{1,3})\s*[.\-–]\s*(.+)$/.exec(tema);
-    return m ? { numero: m[1], titulo: m[2] } : { numero: null, titulo: tema };
+    const { numero, titulo } = partirBosquejo(tema);
+    return numero !== null && titulo ? { numero: String(numero), titulo } : { numero: null, titulo: tema };
   }
 
   /**

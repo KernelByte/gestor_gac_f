@@ -18,6 +18,7 @@ import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DiscursosService } from '../services/discursos.service';
 import { CatalogoDiscurso } from '../models/discursos.models';
+import { partirBosquejo } from '../utils/bosquejo';
 
 /**
  * Campo de texto con sugerencias del catálogo de bosquejos del S-34.
@@ -344,8 +345,8 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
     this.cerrar();
     this.resaltado.set(-1);
     this.onChange(texto);
-    const m = /^\s*(\d{1,3})\s*[.\-–]/.exec(texto);
-    const d = m ? this.catalogo().find(c => c.numero === +m[1]) : undefined;
+    const { numero } = partirBosquejo(texto);
+    const d = numero !== null ? this.catalogo().find(c => c.numero === numero) : undefined;
     if (d) this.seleccion.emit(d);
     this.emitirSiCambio(texto);
     this.campoRef?.nativeElement.focus();
@@ -456,11 +457,11 @@ export class DiscursoCatalogoInputComponent implements ControlValueAccessor, OnI
     const actual = this.normalizar(this.texto().trim());
     return this._sugeridos
       .map(texto => {
-        const m = /^\s*(\d{1,3})\s*[.\-–]\s*(.+)$/.exec(texto);
+        const p = partirBosquejo(texto);
         return {
           texto,
-          numero: m ? +m[1] : null,
-          titulo: m ? m[2] : texto,
+          numero: p.numero,
+          titulo: p.titulo || texto,
           esActual: !!actual && this.normalizar(texto) === actual,
         };
       })

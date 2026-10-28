@@ -18,6 +18,7 @@ import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DiscursosService } from '../services/discursos.service';
 import { CongregacionContacto, Discursante } from '../models/discursos.models';
+import { etiquetaNumeroBosquejo, partirBosquejo } from '../utils/bosquejo';
 
 /** Un discursante guardado, junto con la congregación de contacto que lo tiene registrado. */
 export interface DiscursanteConCongregacion {
@@ -288,13 +289,12 @@ export class OradorCatalogoInputComponent implements ControlValueAccessor, OnIni
 
   /** "110. La familia feliz…" → "Nº 110"; sin número, "Sin nº". */
   etiquetaBosquejo(b: string): string {
-    const m = /^\s*(\d{1,3})\s*[.\-–]/.exec(b);
-    return m ? `Nº ${m[1]}` : 'Sin nº';
+    return etiquetaNumeroBosquejo(b) ?? 'Sin nº';
   }
 
   /** "110. La familia feliz…" → "La familia feliz…". */
   tituloBosquejo(b: string): string {
-    return b.replace(/^\s*\d{1,3}\s*[.\-–]\s*/, '');
+    return partirBosquejo(b).titulo || b;
   }
 
   @HostListener('window:resize')

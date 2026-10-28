@@ -155,6 +155,9 @@ export interface FechaSinReunion {
   motivo: string | null;
 }
 
+import type { SalonCongregacion } from '../utils/mensajes-discursos';
+export type { SalonCongregacion };
+
 export interface DiscursosMesOut {
   ano: number;
   mes: number;
@@ -164,6 +167,8 @@ export interface DiscursosMesOut {
   sin_reunion: FechaSinReunion[];
   salientes: DiscursoSalienteOut[];
   entrantes: DiscursoEntranteOut[];
+  /** Dónde y cuándo se reúne la congregación: alimenta el recordatorio al orador que viene. */
+  salon?: SalonCongregacion | null;
 }
 
 export interface MesDiscursosDisponible {

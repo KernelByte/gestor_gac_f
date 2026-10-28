@@ -42,6 +42,7 @@ import {
   RecordatorioSalienteConfig,
   TemaPublicador,
   VerificarRepeticionOut,
+  HistorialOcurrenciaEntrante,
 } from '../models/discursos.models';
 
 @Injectable({ providedIn: 'root' })
@@ -260,13 +261,30 @@ export class DiscursosService {
     const clave = String(idCong ?? 'propia');
     if (this.directorioClave !== clave) {
       this.directorioClave = clave;
+      this.directorioIdCong = idCong;
       this._directorio.set([]);
-      this.getCongregacionesContacto(idCong).subscribe({
-        next: (r) => this._directorio.set(r ?? []),
-        error: () => this._directorio.set([]),
-      });
+      this.recargarDirectorio(idCong);
     }
     return this._directorio.asReadonly();
+  }
+
+  private directorioIdCong: number | null = null;
+
+  private _directorioCargando = signal(false);
+  /** Mientras se descarga el directorio (la pestaña Congregaciones muestra el spinner si aún está vacío). */
+  readonly directorioCargando = this._directorioCargando.asReadonly();
+
+  private recargarDirectorio(idCong: number | null): void {
+    this._directorioCargando.set(true);
+    this.getCongregacionesContacto(idCong).subscribe({
+      next: (r) => { this._directorio.set(r ?? []); this._directorioCargando.set(false); },
+      error: () => { this._directorio.set([]); this._directorioCargando.set(false); },
+    });
+  }
+
+  /** Quita del directorio una congregación recién borrada, sin esperar a la recarga. */
+  quitarDeDirectorio(idCongregacionContacto: number): void {
+    this._directorio.update(d => d.filter(c => c.id_congregacion_contacto !== idCongregacionContacto));
   }
 
   /**
@@ -287,14 +305,18 @@ export class DiscursosService {
   }
 
   /**
-   * Fuerza una recarga del directorio la próxima vez que se pida.
+   * Vuelve a descargar el directorio ya cargado.
    *
    * La llama el CRUD de la pestaña Congregaciones: sin esto, renombrar o
-   * borrar una congregación dejaría el autocompletado ofreciendo la versión
-   * vieja durante el resto de la sesión.
+   * borrar una congregación —o añadir bosquejos a un discursante— dejaría el
+   * autocompletado y los avisos de Entrantes con la versión vieja. Recarga en
+   * el acto (no "la próxima vez que se pida"): con el mes confirmado las filas
+   * están cerradas, ningún campo vuelve a pedirlo y los avisos de bosquejo
+   * seguían leyendo la lista anterior. No vacía mientras tanto, para que los
+   * avisos no parpadeen.
    */
   invalidarDirectorioContacto(): void {
-    this.directorioClave = null;
+    if (this.directorioClave !== null) this.recargarDirectorio(this.directorioIdCong);
   }
 
   crearCongregacionContacto(payload: CrearCongregacionContactoRequest, idCong: number | null): Observable<CongregacionContacto> {
@@ -372,6 +394,14 @@ export class DiscursosService {
    * Aviso proactivo al escribir el título de un entrante: ¿esto ya se dio en
    * esta congregación hace poco? No bloquea nada, solo informa.
    */
+  /** Repeticiones de todas las filas de un mes, en una petición: `{id_discurso_entrante: [...]}`. */
+  verificarRepeticionesMes(
+    ano: number, mes: number, idCong: number | null,
+  ): Observable<{ repeticiones: Record<string, HistorialOcurrenciaEntrante[]> }> {
+    const params = this.congParams(idCong).set('ano', ano).set('mes', mes);
+    return this.http.get<{ repeticiones: Record<string, HistorialOcurrenciaEntrante[]> }>(`${this.base}/entrantes/repeticiones-mes`, { params });
+  }
+
   verificarRepeticion(
     titulo: string, fecha: string, excluirId: number, idCong: number | null,
   ): Observable<VerificarRepeticionOut> {
