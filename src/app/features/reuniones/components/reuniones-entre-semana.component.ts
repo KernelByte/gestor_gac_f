@@ -239,7 +239,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
       <!-- ===== DISCURSOS PÚBLICOS ===== -->
       @if (tipoReunionActivo() === 'discursos') {
-        <app-reuniones-discursos class="flex-1 min-h-0 block overflow-hidden">
+        <app-reuniones-discursos class="flex-1 md:min-h-0 block md:overflow-hidden">
           <div cabecera class="flex items-center gap-3 min-w-0 shrink">
             <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
           </div>

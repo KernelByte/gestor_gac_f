@@ -73,7 +73,7 @@ type ItemEntrante =
   standalone: true,
   imports: [CommonModule, FormsModule, DatePickerComponent, TimePickerComponent, MonthPickerComponent, SelectPickerComponent, UbicacionPickerComponent, DiscursoCatalogoInputComponent, CanticoCatalogoInputComponent, CongregacionContactoInputComponent, OradorCatalogoInputComponent, HistorialDiscursosComponent, Hora12Pipe],
   template: `
-    <div class="flex flex-col h-full gap-0">
+    <div class="flex flex-col md:h-full gap-0">
 
       <!-- ===== BARRA SUPERIOR ===== -->
       <!-- Comparte fila la píldora de pestañas que proyecta el shell con los
@@ -94,8 +94,8 @@ type ItemEntrante =
              Programación" bajaron a la barra de pestañas del panel, junto a
              las otras tres pantallas. -->
         @if (mesDatos() && estado() !== 'loading') {
-          <div class="w-full md:w-auto md:ml-auto flex items-center min-w-0 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
-            <div class="relative shrink-0" data-mes-menu>
+          <div class="order-last md:order-none w-full md:w-auto md:ml-auto flex items-center min-w-0 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+            <div class="relative flex-1 md:flex-none min-w-0" data-mes-menu>
               <button
                 type="button"
                 data-testid="disc-selector-mes"
@@ -103,7 +103,7 @@ type ItemEntrante =
                 [attr.aria-expanded]="menuMesesAbierto()"
                 aria-haspopup="listbox"
                 aria-label="Cambiar de mes"
-                class="flex items-center gap-1.5 h-8 px-2.5 rounded-xl transition-colors"
+                class="w-full md:w-auto flex items-center gap-1.5 h-10 md:h-8 px-2.5 rounded-xl transition-colors"
                 [class]="menuMesesAbierto()
                   ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
                   : 'text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'">
@@ -119,11 +119,11 @@ type ItemEntrante =
                     : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'">
                   {{ mesDatos()!.confirmado ? 'Confirmado' : 'Borrador' }}
                 </span>
-                <svg class="w-3.5 h-3.5 shrink-0 opacity-50 transition-transform duration-200" [class.rotate-180]="menuMesesAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <svg class="w-3.5 h-3.5 shrink-0 ml-auto md:ml-0 opacity-50 transition-transform duration-200" [class.rotate-180]="menuMesesAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
               </button>
 
               @if (menuMesesAbierto()) {
-                <div role="listbox" aria-label="Meses programados" class="disc-dropdown absolute z-40 top-[calc(100%+4px)] left-0 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
+                <div role="listbox" aria-label="Meses programados" class="disc-dropdown absolute z-40 top-[calc(100%+4px)] left-0 w-full md:w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
                   <div class="max-h-[min(60vh,20rem)] overflow-y-auto overscroll-contain simple-scrollbar p-1.5">
                     @for (grupo of mesesPorAno(); track grupo.ano) {
                       <!-- Año como divisor del grupo, no repetido por fila. -->
@@ -186,7 +186,7 @@ type ItemEntrante =
 
         <!-- Fuera de la bandeja: siempre cae al extremo derecho de la fila,
              justo después de ella. -->
-        <ng-content select="[accion-derecha]"></ng-content>
+        <div class="ml-auto md:ml-0 shrink-0"><ng-content select="[accion-derecha]"></ng-content></div>
       </div>
 
 
@@ -240,7 +240,7 @@ type ItemEntrante =
            selector desplegable dentro de la barra de pestañas (igual que
            Logística), y ese ancho es de la lista de discursos el resto del
            tiempo. -->
-      <div class="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative">
+      <div class="flex-1 min-w-0 md:min-h-0 flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative">
 
           <!-- Una sola barra con las cuatro pantallas de Discursos, siempre en
                el mismo sitio. Antes Entrantes/Salientes vivían aquí (y solo con
@@ -263,7 +263,7 @@ type ItemEntrante =
               <span>Meses</span>
             </button>
             <div role="tablist" aria-label="Pantallas de Discursos" (keydown)="moverPestanaConTeclado($event)"
-              class="w-full sm:w-auto grid grid-cols-2 sm:flex sm:items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1">
+              class="order-last sm:order-none w-full sm:w-auto grid grid-cols-2 sm:flex sm:items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1">
               @for (p of pestanasDiscursos; track p.id; let i = $index) {
                 @if (i === 2) {
                   <span class="hidden sm:block shrink-0 w-px h-5 mx-1 bg-slate-300/80 dark:bg-slate-600/70" aria-hidden="true"></span>
@@ -372,7 +372,7 @@ type ItemEntrante =
                  La cabecera queda fuera del contenedor con scroll: así el
                  total y "Añadir congregación" se ven siempre, sin bajar hasta
                  arriba de una lista larga para volver a encontrarlos. -->
-            <div class="flex-1 min-h-0 flex flex-col">
+            <div class="flex-1 md:min-h-0 flex flex-col">
 
               <!-- Cabecera: cuenta + acción principal, en una barra propia en vez
                    de un botón punteado suelto flotando sobre la lista. -->
@@ -436,7 +436,7 @@ type ItemEntrante =
                    1px, casi invisible en oscuro. Este tono de fondo hace que
                    las tarjetas se lean como superficies elevadas encima de
                    la zona de lista, en vez de fundirse con ella. -->
-              <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar flex flex-col gap-3 p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
+              <div class="flex-1 md:min-h-0 md:overflow-y-auto simple-scrollbar flex flex-col gap-3 p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
               @if (loadingCongregacionesContacto()) {
                 <div class="flex items-center justify-center py-12">
                   <div class="w-7 h-7 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-teal-500 animate-spin"></div>
@@ -521,7 +521,10 @@ type ItemEntrante =
                         </div>
                       </div>
                       @if (hasEditPermission()) {
-                        <div class="shrink-0 flex items-center gap-1" (click)="$event.stopPropagation()">
+                        <!-- En el teléfono los dos iconos le quitaban al nombre
+                             casi un tercio del ancho ("Arboleda Campe…"); allí
+                             bajan al detalle desplegado, con rótulo. -->
+                        <div class="shrink-0 hidden sm:flex items-center gap-1" (click)="$event.stopPropagation()">
                           <button (click)="abrirModalCongregacionContacto(c)" title="Editar"
                             class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -723,6 +726,21 @@ type ItemEntrante =
                             </ul>
                           </section>
                         </div>
+
+                        @if (hasEditPermission()) {
+                          <div class="sm:hidden grid grid-cols-2 gap-2 pt-1">
+                            <button type="button" (click)="abrirModalCongregacionContacto(c)"
+                              class="h-11 flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold text-slate-700 dark:text-slate-200 active:scale-[0.98] transition-transform duration-150 ease-out">
+                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                              Editar
+                            </button>
+                            <button type="button" (click)="confirmarEliminarCongregacionContacto(c)"
+                              class="h-11 flex items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-900/50 bg-white dark:bg-slate-900 text-sm font-bold text-red-600 dark:text-red-400 active:scale-[0.98] transition-transform duration-150 ease-out">
+                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                              Eliminar
+                            </button>
+                          </div>
+                        }
                       </div>
                     }
                   </div>
@@ -732,11 +750,11 @@ type ItemEntrante =
             </div>
           } @else if (subTab() === 'temas' && mesDatos()) {
             <!-- TEMAS tab -->
-            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar flex flex-col gap-3 p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
+            <div class="flex-1 md:min-h-0 md:overflow-y-auto simple-scrollbar flex flex-col gap-3 p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
               <div class="flex flex-wrap items-center gap-2">
                 @if (hasEditPermission()) {
                   <button (click)="abrirModalTema()"
-                    class="flex items-center gap-2 px-4 h-10 rounded-xl bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500 text-white shadow-sm shadow-violet-900/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 text-xs font-bold transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]">
+                    class="flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 h-10 rounded-xl bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500 text-white shadow-sm shadow-violet-900/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 text-xs font-bold transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Añadir orador local
                   </button>
@@ -744,7 +762,7 @@ type ItemEntrante =
                 @if (temasAgrupados().length > 0) {
                   <button (click)="descargarPdfOradores()" [disabled]="descargandoPdfOradores()"
                     title="Descargar la lista de oradores en PDF"
-                    class="flex items-center gap-2 px-4 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 text-xs font-bold disabled:opacity-50 disabled:cursor-wait transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.98]">
+                    class="flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 text-xs font-bold disabled:opacity-50 disabled:cursor-wait transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.98]">
                     @if (descargandoPdfOradores()) {
                       <div class="w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 border-t-slate-700 dark:border-t-slate-200 animate-spin"></div>
                     } @else {
@@ -851,7 +869,7 @@ type ItemEntrante =
                  Ahora es un calendario de año por fila: doce casillas por año
                  caben en una sola pantalla, y el centrado vertical va con
                  min-h-full + my-auto, que nunca recorta el contenido. -->
-            <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain simple-scrollbar bg-slate-50 dark:bg-slate-950/40">
+            <div class="flex-1 md:min-h-0 md:overflow-y-auto md:overscroll-contain simple-scrollbar bg-slate-50 dark:bg-slate-950/40">
               <div class="min-h-full flex flex-col">
                 <div class="w-full max-w-5xl mx-auto my-auto px-4 py-5 sm:px-6 sm:py-8 flex flex-col gap-5">
 
@@ -948,7 +966,7 @@ type ItemEntrante =
                       <span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Borrador</span>
                       <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-[4px] ring-2 ring-violet-500/70"></span>Mes actual</span>
                       @if (hasEditPermission()) {
-                        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-[4px] border border-dashed border-slate-300 dark:border-slate-600"></span>Sin programar · clic para generar</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-[4px] border border-dashed border-slate-300 dark:border-slate-600"></span>Sin programar · elígelo para generarlo</span>
                       }
                     </div>
 
@@ -982,7 +1000,7 @@ type ItemEntrante =
             </div>
           } @else {
             <!-- CONTENT area -->
-            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
+            <div class="flex-1 md:min-h-0 md:overflow-y-auto simple-scrollbar p-3 sm:p-4 bg-slate-50 dark:bg-slate-950/40">
 
               <!-- ENTRANTES -->
               <!-- Resumen de una fecha ya confirmada: discurso, orador,
@@ -1229,7 +1247,7 @@ type ItemEntrante =
                                   (click)="toggleOradorConfirmado(entrante)"
                                   [disabled]="confirmandoOrador().has(entrante.id_discurso_entrante)"
                                   [title]="tituloConfirmacion(entrante)"
-                                  class="flex items-center gap-1.5 px-2.5 h-8 rounded-lg border text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                                  class="flex items-center gap-1.5 px-2.5 h-9 sm:h-8 rounded-lg border text-xs sm:text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                                   [class]="entrante.orador_confirmado
                                     ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
                                     : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-300 hover:text-emerald-600 dark:hover:border-emerald-700 dark:hover:text-emerald-400'">
@@ -1242,7 +1260,7 @@ type ItemEntrante =
                                   }
                                 </button>
                               } @else if (entrante.orador_confirmado) {
-                                <span class="flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-[0.65rem] font-bold">
+                                <span class="flex items-center gap-1.5 px-2.5 h-9 sm:h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs sm:text-[0.65rem] font-bold">
                                   <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                   Orador confirmado
                                 </span>
@@ -1256,7 +1274,7 @@ type ItemEntrante =
                                   (click)="togglePresentado(entrante)"
                                   [disabled]="marcandoPresentado().has(entrante.id_discurso_entrante)"
                                   [title]="tituloPresentado(entrante)"
-                                  class="flex items-center gap-1.5 px-2.5 h-8 rounded-lg border text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                                  class="flex items-center gap-1.5 px-2.5 h-9 sm:h-8 rounded-lg border text-xs sm:text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                                   [class]="entrante.presentado
                                     ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800/40 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/30'
                                     : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-700 dark:hover:text-violet-400'">
@@ -1268,7 +1286,7 @@ type ItemEntrante =
                                   <span>{{ entrante.presentado ? 'Presentado' : 'Sin presentar' }}</span>
                                 </button>
                               } @else if (entrante.presentado) {
-                                <span class="flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-[0.65rem] font-bold">
+                                <span class="flex items-center gap-1.5 px-2.5 h-9 sm:h-8 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-xs sm:text-[0.65rem] font-bold">
                                   <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                   Presentado
                                 </span>
@@ -1281,7 +1299,7 @@ type ItemEntrante =
                                 <button type="button" (click)="enviarRecordatorioEntrante(entrante)"
                                   [title]="'Enviar recordatorio por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
                                   [attr.aria-label]="'Enviar recordatorio por WhatsApp a ' + (entrante.nombre_orador || 'el orador')"
-                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all active:scale-95">
+                                  class="w-9 h-9 sm:w-8 sm:h-8 shrink-0 rounded-lg flex items-center justify-center text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all active:scale-95">
                                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                                 </button>
                               }
@@ -1289,7 +1307,7 @@ type ItemEntrante =
                               @if (entrante.confirmado && hasEditPermission()) {
                                 @if (isEditandoEntrante(entrante.id_discurso_entrante)) {
                                   <button type="button" (click)="toggleEditEntrante(entrante.id_discurso_entrante)"
-                                    class="ml-auto sm:ml-0 flex items-center gap-1.5 px-3 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[0.65rem] font-bold transition-[background-color,transform] duration-150 ease-out active:scale-95">
+                                    class="ml-auto sm:ml-0 flex items-center gap-1.5 px-3 h-9 sm:h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-[0.65rem] font-bold transition-[background-color,transform] duration-150 ease-out active:scale-95">
                                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     Guardar
                                   </button>
@@ -1299,7 +1317,7 @@ type ItemEntrante =
                                        mismo dato 8 veces seguidas. El lápiz basta
                                        para saber que hay que tocarlo para editar. -->
                                   <button type="button" (click)="toggleEditEntrante(entrante.id_discurso_entrante)" title="Editar"
-                                    class="ml-auto sm:ml-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors active:scale-95">
+                                    class="ml-auto sm:ml-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                   </button>
                                 }
@@ -1709,7 +1727,7 @@ type ItemEntrante =
                                     (click)="reactivarSaliente(saliente)"
                                     [disabled]="cancelandoSaliente().has(saliente.id_discurso_saliente)"
                                     [title]="tituloEstadoSaliente(saliente)"
-                                    class="flex items-center gap-1.5 pl-1.5 pr-2.5 h-8 rounded-full border text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait bg-red-50 dark:bg-red-400/10 border-red-200 dark:border-red-400/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-400/15">
+                                    class="flex items-center gap-1.5 pl-1.5 pr-2.5 h-9 sm:h-8 rounded-full border text-xs sm:text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait bg-red-50 dark:bg-red-400/10 border-red-200 dark:border-red-400/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-400/15">
                                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                     <span>Cancelado</span>
                                   </button>
@@ -1718,7 +1736,7 @@ type ItemEntrante =
                                     (click)="togglePresentadoSaliente(saliente)"
                                     [disabled]="marcandoPresentadoSaliente().has(saliente.id_discurso_saliente)"
                                     [title]="tituloEstadoSaliente(saliente)"
-                                    class="flex items-center gap-1.5 pl-1.5 pr-2.5 h-8 rounded-full border text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                                    class="flex items-center gap-1.5 pl-1.5 pr-2.5 h-9 sm:h-8 rounded-full border text-xs sm:text-[0.65rem] font-bold whitespace-nowrap transition-[background-color,border-color,color] duration-150 ease-out active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                                     [class]="saliente.estado === 'realizada'
                                       ? 'bg-violet-50 dark:bg-violet-400/10 border-violet-200 dark:border-violet-400/30 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-400/15'
                                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-700 dark:hover:text-violet-400'">
@@ -1729,7 +1747,7 @@ type ItemEntrante =
                                   </button>
                                 }
                               } @else if (saliente.estado !== 'programado') {
-                                <span class="flex items-center gap-1.5 px-2.5 h-8 rounded-full text-[0.65rem] font-bold whitespace-nowrap"
+                                <span class="flex items-center gap-1.5 px-2.5 h-9 sm:h-8 rounded-full text-xs sm:text-[0.65rem] font-bold whitespace-nowrap"
                                   [class]="saliente.estado === 'realizada'
                                     ? 'bg-violet-50 dark:bg-violet-400/10 text-violet-700 dark:text-violet-300'
                                     : 'bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-300'">
@@ -1744,7 +1762,7 @@ type ItemEntrante =
                                 <button type="button" (click)="abrirWhatsapp(saliente)"
                                   title="Notificar al orador por WhatsApp"
                                   aria-label="Notificar al orador por WhatsApp"
-                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors active:scale-95">
+                                  class="w-9 h-9 sm:w-8 sm:h-8 shrink-0 rounded-lg flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors active:scale-95">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.174.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 016.988 2.896 9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                                 </button>
                               }
@@ -1752,7 +1770,7 @@ type ItemEntrante =
                                 <button type="button" (click)="abrirWhatsappCongregacion(saliente)"
                                   title="Confirmar con la congregación destino por WhatsApp"
                                   aria-label="Confirmar con la congregación destino por WhatsApp"
-                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors active:scale-95">
+                                  class="w-9 h-9 sm:w-8 sm:h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors active:scale-95">
                                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 11h.01M15 11h.01M9 15h.01M15 15h.01"/></svg>
                                 </button>
                               }
@@ -1767,7 +1785,7 @@ type ItemEntrante =
                                 <button type="button" (click)="cancelarSaliente(saliente)"
                                   title="Cancelar esta salida"
                                   aria-label="Cancelar esta salida"
-                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20 dark:hover:text-amber-400 transition-colors active:scale-95">
+                                  class="w-9 h-9 sm:w-8 sm:h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20 dark:hover:text-amber-400 transition-colors active:scale-95">
                                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><line x1="7" y1="17" x2="17" y2="7"/></svg>
                                 </button>
                               }
@@ -1775,7 +1793,7 @@ type ItemEntrante =
                                 <button type="button" (click)="eliminarSaliente(saliente)"
                                   title="Eliminar esta salida"
                                   aria-label="Eliminar saliente"
-                                  class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors active:scale-95">
+                                  class="w-9 h-9 sm:w-8 sm:h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors active:scale-95">
                                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                 </button>
                               }
@@ -1783,7 +1801,7 @@ type ItemEntrante =
                               @if (hasEditPermission()) {
                                 @if (isEditandoSaliente(saliente.id_discurso_saliente)) {
                                   <button type="button" (click)="toggleEditSaliente(saliente.id_discurso_saliente)"
-                                    class="ml-auto sm:ml-0 flex items-center gap-1.5 px-3 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[0.65rem] font-bold transition-[background-color,transform] duration-150 ease-out active:scale-95">
+                                    class="ml-auto sm:ml-0 flex items-center gap-1.5 px-3 h-9 sm:h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-[0.65rem] font-bold transition-[background-color,transform] duration-150 ease-out active:scale-95">
                                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     Guardar
                                   </button>

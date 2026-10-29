@@ -28,7 +28,7 @@ type SubTab = 'entrantes' | 'salientes';
   imports: [CommonModule, FormsModule, DatePickerComponent],
   template: `
     <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm" (click)="cerrar.emit()">
-      <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-3xl sm:max-h-[85vh] flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
+      <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-3xl max-h-[92dvh] sm:max-h-[85vh] flex flex-col border border-slate-200/60 dark:border-slate-700/60 overflow-hidden" (click)="$event.stopPropagation()">
 
         <!-- Handle bar (móvil) -->
         <div class="flex justify-center pt-3 pb-1 sm:hidden">
