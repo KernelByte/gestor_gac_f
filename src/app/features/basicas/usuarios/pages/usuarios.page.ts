@@ -281,6 +281,29 @@ export class UsuariosPage implements OnInit {
       return this.isAdmin() || !this.esRolReservado(u);
    }
 
+   /** La fila es la cuenta de quien tiene la sesión abierta. */
+   esCuentaPropia(u: Usuario): boolean {
+      return u.id_usuario === Number(this.authStore.user()?.id);
+   }
+
+   /** Editar: lo que puede gestionar, más los datos y la seguridad de la
+    *  propia cuenta (el Gestor no tiene otra puerta; el rol, el estado y el
+    *  publicador de su cuenta los sigue cambiando solo el Administrador). */
+   puedeEditarFila(u: Usuario): boolean {
+      return this.puedeGestionarFila(u) || this.esCuentaPropia(u);
+   }
+
+   /** Campos de la pestaña "Acceso" que una cuenta no cambia sobre sí misma. */
+   private readonly CAMPOS_ACCESO = ['id_rol_usuario', 'id_congregacion', 'id_usuario_publicador', 'id_usuario_estado'];
+
+   private bloquearCamposAcceso(bloquear: boolean) {
+      for (const c of this.CAMPOS_ACCESO) {
+         const ctrl = this.userForm.get(c);
+         if (bloquear) ctrl?.disable({ emitEvent: false });
+         else ctrl?.enable({ emitEvent: false });
+      }
+   }
+
    /** Permisos de esta fila: además, el Gestor gestiona los suyos propios. */
    puedeVerPermisosDe(u: Usuario): boolean {
       if (!this.canManagePermisos()) return false;
@@ -937,6 +960,7 @@ export class UsuariosPage implements OnInit {
       this.maxStepReached.set(0);
 
       this.editingUser.set(null);
+      this.bloquearCamposAcceso(false);
       this.userForm.reset({ 
          tipo_identificacion: 'CC',
          id_usuario_estado: 1, // Activo
@@ -988,12 +1012,13 @@ export class UsuariosPage implements OnInit {
    editUsuario(u: Usuario) {
       // Administrador y Gestores solo los edita el Administrador (el backend
       // respondería 403 al guardar).
-      if (!this.puedeGestionarFila(u)) return;
+      if (!this.puedeEditarFila(u)) return;
       this.closeFloatingDropdowns();
       this.resetQuickPubForm();
       this.activeTab.set('datos');
       this.maxStepReached.set(this.tabs.length - 1); // editando se navega libre
       this.editingUser.set(u);
+      this.bloquearCamposAcceso(!this.isAdmin() && !this.puedeGestionarFila(u));
       this.patchingForm = true;
       this.userForm.patchValue({
          nombre: u.nombre,
@@ -1034,6 +1059,7 @@ export class UsuariosPage implements OnInit {
       this.resetQuickPubForm();
       this.panelOpen.set(false);
       this.editingUser.set(null);
+      this.bloquearCamposAcceso(false);
       this.userForm.reset();
       this.saveError.set(null);
    }
