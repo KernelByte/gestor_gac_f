@@ -83,6 +83,23 @@ function iconoPin(): L.DivIcon {
       }
     </div>
 
+    @if (!readonly && !bloqueado()) {
+      <div class="mt-3">
+        <label for="coordenadas-salon" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">O escriba las coordenadas</label>
+        <div class="flex flex-wrap items-center gap-2">
+          <input id="coordenadas-salon" type="text" inputmode="decimal" autocomplete="off"
+            [value]="textoCoord()" (input)="textoCoord.set($any($event.target).value)" (keydown.enter)="[$event.preventDefault(), usarCoordenadas()]"
+            placeholder="Ejemplo: 4.711000, -74.072000"
+            class="flex-1 min-w-[220px] h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-base text-slate-800 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25" />
+          <button type="button" (click)="usarCoordenadas()"
+            class="inline-flex items-center justify-center h-11 px-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-[background-color,transform] duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/25">
+            Ubicar en el mapa
+          </button>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Latitud y longitud separadas por coma. Puede copiarlas desde Google Maps (clic derecho sobre el lugar).</p>
+      </div>
+    }
+
     <p class="text-sm leading-relaxed mt-2" aria-live="polite" [ngClass]="aviso() ? 'text-amber-700 dark:text-amber-300 font-semibold' : 'text-slate-500 dark:text-slate-400'">
       @if (aviso()) { {{ aviso() }} }
       @else if (readonly) { {{ tienePunto() ? 'Ubicación guardada del Salón del Reino.' : 'Aún no se ha marcado la ubicación del Salón.' }} }
@@ -113,6 +130,28 @@ export class UbicacionSalonMapComponent implements AfterViewInit, OnChanges, OnD
   private puntoAnterior: UbicacionSalon | null = null;
   buscando = signal(false);
   aviso = signal<string | null>(null);
+  textoCoord = signal('');
+
+  usarCoordenadas(): void {
+    const partes = this.textoCoord().trim().split(/\s*[;,]\s*|\s+/).filter(Boolean);
+    let nums: number[];
+    if (this.textoCoord().includes(';')) {
+      nums = this.textoCoord().split(';').map(t => parseFloat(t.trim().replace(',', '.')));
+    } else {
+      nums = partes.map(t => parseFloat(t));
+    }
+    if (nums.length !== 2 || nums.some(n => !isFinite(n))) {
+      this.avisar('Escriba la latitud y la longitud separadas por coma, por ejemplo: 4.711, -74.072');
+      return;
+    }
+    const [lat, lng] = nums;
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      this.avisar('Esas coordenadas no son válidas. La latitud va de -90 a 90 y la longitud de -180 a 180.');
+      return;
+    }
+    this.map?.setView([lat, lng], ZOOM_CON_PUNTO);
+    this.emitir(lat, lng);
+  }
 
   /**
    * Con un punto ya guardado el mapa está bloqueado: un clic suelto o un
@@ -163,6 +202,7 @@ export class UbicacionSalonMapComponent implements AfterViewInit, OnChanges, OnD
   }
 
   ngOnChanges(c: SimpleChanges): void {
+    if (c['lat'] || c['lng']) this.textoCoord.set(this.tienePunto() ? `${this.lat}, ${this.lng}` : '');
     if (this.map && (c['lat'] || c['lng'] || c['readonly'])) this.pintar(false);
   }
 
