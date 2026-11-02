@@ -6,7 +6,7 @@
   signal,
 } from '@angular/core';
 import { CommonModule, NgStyle } from '@angular/common';
-import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { Subscription, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ReunionesService } from '../services/reuniones.service';
 import { AsistenciaService, CongregacionConfig } from '../services/asistencia.service';
 import { LogisticaService } from '../services/logistica.service';
@@ -29,6 +29,17 @@ interface NextMeetingInfo {
   dateLabel: string;
   dateFormatted: string;
 }
+
+/** Cuántas reuniones por delante se pueden recorrer (entre semana y fin de semana juntas). */
+const REUNIONES_ADELANTE = 12;
+
+interface ResultadoCarga {
+  prog: ProgramaSemana | null;
+  log: LogisticaData | null;
+  disc: DiscursoEntranteOut | null;
+}
+
+const CARGA_VACIA: ResultadoCarga = { prog: null, log: null, disc: null };
 
 interface ParteRow {
   principal: AsignacionDraft;
@@ -146,6 +157,31 @@ const SECCION_LABELS: Record<string, string> = {
   template: `<div class="resumen-host">
   <div class="resumen-layout">
   <div class="resumen-container">
+
+    <!-- ══════════ CAMBIAR DE REUNIÓN ══════════ -->
+    <nav *ngIf="reuniones().length > 1" class="reunion-nav" aria-label="Cambiar de reunión">
+      <button *ngIf="indice() > 0" type="button" class="nav-centro nav-volver" (click)="irA(0)">
+        Ir a la próxima
+      </button>
+      <span *ngIf="indice() === 0" class="nav-centro">Próxima reunión</span>
+
+      <div class="nav-botones">
+        <button type="button" class="nav-btn" (click)="irA(indice() - 1)"
+                [disabled]="indice() === 0"
+                aria-label="Ver la reunión anterior" title="Reunión anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <button type="button" class="nav-btn" (click)="irA(indice() + 1)"
+                [disabled]="indice() >= reuniones().length - 1"
+                aria-label="Ver la reunión siguiente" title="Reunión siguiente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </nav>
 
     <!-- ══════════ SKELETON ══════════ -->
     <ng-container *ngIf="loading()">
@@ -728,6 +764,68 @@ const SECCION_LABELS: Record<string, string> = {
       color: #c4b5fd;
     }
     :host-context(.dark) .empty-action:hover { background: rgba(167, 139, 250, 0.12); }
+
+    /* ──────────────────────────────────────────
+       CAMBIAR DE REUNIÓN
+    ────────────────────────────────────────── */
+    /* Una sola fila fina: la etiqueta a la izquierda y las dos flechas juntas
+       a la derecha. Sin texto en los botones, así no ocupan ancho de pantalla. */
+    .reunion-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .nav-botones { display: inline-flex; gap: 8px; flex-shrink: 0; }
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      /* 44px es el mínimo táctil; el icono es lo único visible dentro. */
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: var(--radius-soft);
+      border: 1px solid var(--border-std);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: background 160ms var(--ease-out), transform 160ms var(--ease-out);
+    }
+    .nav-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+    @media (hover: hover) and (pointer: fine) {
+      .nav-btn:hover:not(:disabled) { background: rgba(109, 40, 217, 0.07); }
+    }
+    .nav-btn:active:not(:disabled) { transform: scale(0.97); }
+    .nav-btn:disabled { opacity: 0.4; cursor: default; }
+    .nav-btn:focus-visible,
+    .nav-volver:focus-visible {
+      outline: 2px solid var(--brand-2);
+      outline-offset: 2px;
+    }
+    .nav-centro {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text-2);
+    }
+    .nav-volver {
+      min-height: 44px;
+      padding: 0;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      color: var(--brand);
+      font-family: var(--font-display);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    :host-context(.dark) .nav-volver { color: #c4b5fd; }
+    @media (hover: hover) and (pointer: fine) {
+      :host-context(.dark) .nav-btn:hover:not(:disabled) { background: rgba(167, 139, 250, 0.12); }
+    }
 
     /* ──────────────────────────────────────────
        HEADER CARD
@@ -1497,6 +1595,10 @@ export class ReunionesResumenComponent {
   error = signal<string | null>(null);
   noPublicado = signal(false);
   nextMeeting = signal<NextMeetingInfo | null>(null);
+  /** Las próximas reuniones en orden; la de la posición 0 es la que toca. */
+  reuniones = signal<NextMeetingInfo[]>([]);
+  indice = signal(0);
+  private carga: Subscription | null = null;
   programa = signal<ProgramaSemana | null>(null);
   logistica = signal<LogisticaData | null>(null);
   logisticaNoPublicada = signal(false);
@@ -1876,84 +1978,123 @@ export class ReunionesResumenComponent {
       return;
     }
 
-    this.asistenciaService
+    this.carga?.unsubscribe();
+    this.carga = this.asistenciaService
       .getCongregacionConfigById(idCong)
       .pipe(
         switchMap(config => {
-          const next = this.computeNextMeeting(config);
-          if (!next) {
+          const lista = this.computeUpcomingMeetings(config);
+          if (!lista.length) {
             this.noPublicado.set(true);
-            return of({ prog: null as ProgramaSemana | null, log: null as LogisticaData | null, disc: null as DiscursoEntranteOut | null });
+            return of(CARGA_VACIA);
           }
-          this.nextMeeting.set(next);
-          const ano = next.fecha.getFullYear();
-          const mes = next.fecha.getMonth() + 1;
-          const tipo = next.tipo;
-          const targetWeek = this.getISOWeek(next.fecha);
-          const fechaIso = this.toIsoDate(next.fecha);
-
-          const prog$ = this.reunionesService
-            .getProgramaMes(tipo, ano, mes, idCong, true)
-            .pipe(
-              switchMap(semanas => {
-                const match = semanas.find(s => s.semana_iso === targetWeek);
-                if (match) return of(match);
-                const prevMes = mes === 1 ? 12 : mes - 1;
-                const prevAno = mes === 1 ? ano - 1 : ano;
-                return this.reunionesService
-                  .getProgramaMes(tipo, prevAno, prevMes, idCong, true)
-                  .pipe(map(s2 => s2.find(s => s.semana_iso === targetWeek) ?? null));
-              }),
-              catchError(() => of(null as ProgramaSemana | null))
-            );
-
-          const log$ = this.logisticaService.getMes(ano, mes, idCong).pipe(
-            map(mesData => ({
-              // El Resumen es de solo lectura para la congregación: solo debe
-              // ver lo ya publicado, igual que el resumen de la app móvil.
-              // `getMes` también alimenta el editor de logística (que sí
-              // necesita ver el borrador), así que el filtro va aquí y no
-              // en el backend.
-              asignaciones: mesData.asignaciones.filter(
-                a => a.fecha === fechaIso && a.tipo_reunion === tipo && a.confirmado,
-              ),
-              aseo: mesData.aseo.filter(
-                a => a.fecha === fechaIso && a.tipo_reunion === tipo && a.confirmado,
-              ),
-            }) as LogisticaData),
-            catchError(() => of(null as LogisticaData | null)),
-          );
-
-          const disc$ = tipo === 'fin_semana'
-            ? this.discursosService.getMes(ano, mes, idCong).pipe(
-                map(mesData => mesData.entrantes.find(e => e.fecha === fechaIso) ?? null),
-                catchError(() => of(null as DiscursoEntranteOut | null)),
-              )
-            : of(null as DiscursoEntranteOut | null);
-
-          return forkJoin({ prog: prog$, log: log$, disc: disc$ });
+          // Siempre se abre en la que toca; las demás quedan a un clic.
+          this.reuniones.set(lista);
+          this.indice.set(0);
+          this.nextMeeting.set(lista[0]);
+          return this.cargarReunion$(idCong, lista[0]);
         }),
-        catchError(() => {
-          this.error.set('No se pudo cargar la información. Verifica tu conexión e intenta de nuevo.');
-          return of({ prog: null as ProgramaSemana | null, log: null as LogisticaData | null, disc: null as DiscursoEntranteOut | null });
-        })
+        catchError(() => this.falloDeCarga()),
       )
-      .subscribe(({ prog, log, disc }) => {
-        if (prog) {
-          this.programa.set(prog);
-        } else if (!this.noPublicado()) {
-          this.noPublicado.set(true);
-        }
-        if (log && (log.asignaciones.length > 0 || log.aseo.length > 0)) {
-          this.logistica.set(log);
-          this.logisticaNoPublicada.set(false);
-        } else {
-          this.logistica.set(null);
-          this.logisticaNoPublicada.set(true);
-        }
-        this.discursoInvitado.set(disc ?? null);
-        this.loading.set(false);
-      });
+      .subscribe(resultado => this.aplicarResultado(resultado));
+  }
+
+  /** Cambia a otra de las próximas reuniones sin volver a pedir la configuración. */
+  irA(i: number): void {
+    const lista = this.reuniones();
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong || i < 0 || i >= lista.length || i === this.indice()) return;
+
+    // Una petición vieja que llegue tarde no debe pisar a la reunión elegida
+    // después: al pulsar varias veces seguidas solo cuenta la última.
+    this.carga?.unsubscribe();
+    this.indice.set(i);
+    this.nextMeeting.set(lista[i]);
+    this.loading.set(true);
+    this.error.set(null);
+    this.noPublicado.set(false);
+    this.programa.set(null);
+    this.logistica.set(null);
+    this.logisticaNoPublicada.set(false);
+    this.discursoInvitado.set(null);
+    // Quien navega a propósito no espera que la pantalla salte a su parte.
+    this.scrollDone = true;
+
+    this.carga = this.cargarReunion$(idCong, lista[i])
+      .pipe(catchError(() => this.falloDeCarga()))
+      .subscribe(resultado => this.aplicarResultado(resultado));
+  }
+
+  private falloDeCarga() {
+    this.error.set('No se pudo cargar la información. Verifica tu conexión e intenta de nuevo.');
+    return of(CARGA_VACIA);
+  }
+
+  /** Programa, logística y discurso de una reunión concreta. */
+  private cargarReunion$(idCong: number, next: NextMeetingInfo) {
+    const ano = next.fecha.getFullYear();
+    const mes = next.fecha.getMonth() + 1;
+    const tipo = next.tipo;
+    const targetWeek = this.getISOWeek(next.fecha);
+    const fechaIso = this.toIsoDate(next.fecha);
+
+    const prog$ = this.reunionesService
+      .getProgramaMes(tipo, ano, mes, idCong, true)
+      .pipe(
+        switchMap(semanas => {
+          const match = semanas.find(s => s.semana_iso === targetWeek);
+          if (match) return of(match);
+          const prevMes = mes === 1 ? 12 : mes - 1;
+          const prevAno = mes === 1 ? ano - 1 : ano;
+          return this.reunionesService
+            .getProgramaMes(tipo, prevAno, prevMes, idCong, true)
+            .pipe(map(s2 => s2.find(s => s.semana_iso === targetWeek) ?? null));
+        }),
+        catchError(() => of(null as ProgramaSemana | null))
+      );
+
+    const log$ = this.logisticaService.getMes(ano, mes, idCong).pipe(
+      map(mesData => ({
+        // El Resumen es de solo lectura para la congregación: solo debe
+        // ver lo ya publicado, igual que el resumen de la app móvil.
+        // `getMes` también alimenta el editor de logística (que sí
+        // necesita ver el borrador), así que el filtro va aquí y no
+        // en el backend.
+        asignaciones: mesData.asignaciones.filter(
+          a => a.fecha === fechaIso && a.tipo_reunion === tipo && a.confirmado,
+        ),
+        aseo: mesData.aseo.filter(
+          a => a.fecha === fechaIso && a.tipo_reunion === tipo && a.confirmado,
+        ),
+      }) as LogisticaData),
+      catchError(() => of(null as LogisticaData | null)),
+    );
+
+    const disc$ = tipo === 'fin_semana'
+      ? this.discursosService.getMes(ano, mes, idCong).pipe(
+          map(mesData => mesData.entrantes.find(e => e.fecha === fechaIso) ?? null),
+          catchError(() => of(null as DiscursoEntranteOut | null)),
+        )
+      : of(null as DiscursoEntranteOut | null);
+
+    return forkJoin({ prog: prog$, log: log$, disc: disc$ });
+  }
+
+  private aplicarResultado({ prog, log, disc }: ResultadoCarga): void {
+    if (prog) {
+      this.programa.set(prog);
+    } else if (!this.noPublicado()) {
+      this.noPublicado.set(true);
+    }
+    if (log && (log.asignaciones.length > 0 || log.aseo.length > 0)) {
+      this.logistica.set(log);
+      this.logisticaNoPublicada.set(false);
+    } else {
+      this.logistica.set(null);
+      this.logisticaNoPublicada.set(true);
+    }
+    this.discursoInvitado.set(disc ?? null);
+    this.loading.set(false);
   }
 
   private toIsoDate(d: Date): string {
@@ -1963,9 +2104,13 @@ export class ReunionesResumenComponent {
     return `${y}-${m}-${day}`;
   }
 
-  // ─── Próxima reunión ─────────────────────
+  // ─── Próximas reuniones ──────────────────
 
-  private computeNextMeeting(config: CongregacionConfig): NextMeetingInfo | null {
+  /**
+   * Las próximas reuniones de la congregación, de la más cercana a la más
+   * lejana, mezclando entre semana y fin de semana. La primera es la que toca.
+   */
+  private computeUpcomingMeetings(config: CongregacionConfig): NextMeetingInfo[] {
     const now = new Date();
     const today = now.getDay();
     const candidates: NextMeetingInfo[] = [];
@@ -1985,21 +2130,24 @@ export class ReunionesResumenComponent {
       // siguiente solo aparece a partir del día siguiente.
       const daysUntil = (targetDay - today + 7) % 7;
 
-      const fecha = new Date(now);
-      fecha.setDate(now.getDate() + daysUntil);
-      fecha.setHours(0, 0, 0, 0);
+      for (let semana = 0; semana < REUNIONES_ADELANTE; semana++) {
+        const dias = daysUntil + 7 * semana;
+        const fecha = new Date(now);
+        fecha.setDate(now.getDate() + dias);
+        fecha.setHours(0, 0, 0, 0);
 
-      candidates.push({
-        tipo, tipoLabel, fecha,
-        hora: hora ?? '',
-        dateLabel: this.computeDateLabel(daysUntil),
-        dateFormatted: this.formatDateSpanish(fecha),
-      });
+        candidates.push({
+          tipo, tipoLabel, fecha,
+          hora: hora ?? '',
+          dateLabel: this.computeDateLabel(dias),
+          dateFormatted: this.formatDateSpanish(fecha),
+        });
+      }
     }
 
-    if (!candidates.length) return null;
+    // El orden es estable: si ambas caen el mismo día, queda primero la de entre semana.
     candidates.sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
-    return candidates[0];
+    return candidates.slice(0, REUNIONES_ADELANTE);
   }
 
   private computeDateLabel(d: number): string {

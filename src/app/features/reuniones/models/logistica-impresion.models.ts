@@ -8,6 +8,11 @@
 
 export type TamanoPaginaImpresion = 'carta' | 'a4';
 export type OrientacionImpresion = 'vertical' | 'horizontal';
+/**
+ * `secciones`: una tabla por sección, en dos hojas. `hoja_unica`: todo el mes
+ * en una sola hoja agrupado por semana (el cuadro del tablero de anuncios).
+ */
+export type FormatoImpresion = 'secciones' | 'hoja_unica';
 
 export interface SeccionesImpresion {
   acomodadores: boolean;
@@ -46,6 +51,10 @@ export interface EstiloImpresion {
   secciones: SeccionesImpresion;
   /** Añade a la 2.ª hoja el fin de semana y los discursos del mes siguiente. */
   incluir_mes_siguiente: boolean;
+
+  formato: FormatoImpresion;
+  /** Aviso al pie de la hoja única. Vacío = sin aviso. */
+  nota_pie: string;
 }
 
 export interface EstiloImpresionOut {
@@ -148,6 +157,8 @@ export const ESTILO_IMPRESION_DEFECTO: EstiloImpresion = {
     discursos: true,
   },
   incluir_mes_siguiente: false,
+  formato: 'secciones',
+  nota_pie: 'Si no puede cumplir con su asignación, avise con tiempo para buscar el reemplazo.',
 };
 
 /** Los dos colores de texto que se pueden elegir (además del de cada tabla). */

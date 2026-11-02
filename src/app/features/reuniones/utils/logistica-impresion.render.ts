@@ -195,8 +195,9 @@ function coloresTablas(e: EstiloImpresion): string {
   return tira + claves.map((k) => {
     const color = e.colores_tablas[k];
     const tinta = tintaSeccion(color);
+    // Sin `.seccion`: en la hoja única cada grupo de columnas lleva su color.
     return `
-    .seccion[data-seccion="${k}"] {
+    [data-seccion="${k}"] {
       --acento: ${tinta};
       --enc-fondo: ${e.encabezado_suave ? `color-mix(in oklch, ${color} 13%, white)` : tinta};
       --enc-texto: ${e.encabezado_suave ? tinta : '#ffffff'};
@@ -406,6 +407,7 @@ function css(e: EstiloImpresion, origen: string): string {
 export function renderDocumentoImpresion(
   datos: VistaImprimibleOut, estilo: EstiloImpresion, origen: string,
 ): string {
+  if (estilo.formato === 'hoja_unica') return renderHojaUnica(datos, estilo, origen);
   const s = estilo.secciones;
   // Dos hojas, como el programa que se reparte: la 1.ª con los puestos de
   // servicio y la 2.ª con el fin de semana y los discursos públicos.
@@ -489,6 +491,251 @@ export function renderDocumentoImpresion(
 <body>
   ${cabecera('', soloSegunda)}
   ${partes.join('\n')}
+</body>
+</html>`;
+}
+
+// ── Hoja única ───────────────────────────────────────────────
+//
+// Todo el mes en una hoja, como el cuadro que se pega en el tablero de
+// anuncios: una tabla de puestos con una fila por reunión agrupada por semana,
+// y otra del fin de semana con presidente, lector, discurso y hospitalidad.
+// Los pares (acomodadores, vigilancia, micrófonos) van en una sola celda, un
+// nombre por línea. El estudio reduce `.contenido` con zoom si no cabe
+// (ver `ajustarAUnaHoja` en el estudio).
+
+/** '2026-10-06' → clave del lunes de su semana, para agrupar por semana ISO. */
+function lunesDe(iso: string): string {
+  const [a, m, d] = iso.split('-').map(Number);
+  const f = new Date(Date.UTC(a, m - 1, d));
+  f.setUTCDate(f.getUTCDate() - ((f.getUTCDay() + 6) % 7));
+  return f.toISOString().slice(0, 10);
+}
+
+/** '2026-10-06' → 'Mar 06/10'. */
+function fechaCorta(iso: string, dia?: string): string {
+  const [, m, d] = iso.split('-').map(Number);
+  const nombre = (dia || diaSemana(iso)).slice(0, 3);
+  return `${esc(nombre)} <b>${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}</b>`;
+}
+
+/** Uno o varios nombres en la misma celda, uno por línea. */
+function nombres(valores: (string | null | undefined)[]): string {
+  if (!valores.length) return '<span class="vacio">—</span>';
+  return valores.map((v) => `<span class="linea">${celda(v)}</span>`).join('');
+}
+
+interface ColumnaUnica { titulo: string; puestos: string[]; aseo?: boolean }
+interface GrupoUnico { seccion: Seccion; titulo: string; columnas: ColumnaUnica[] }
+
+/**
+ * Tabla con dos filas de encabezado: la del grupo (con el color de su
+ * sección) y la de las columnas. `filas` ya viene pintado.
+ */
+function tablaUnica(
+  clase: string, titulo: string, grupos: { seccion: Seccion; titulo: string; columnas: { titulo: string; ancho?: string }[] }[],
+  filas: string, primera: { titulo: string; ancho: string },
+): string {
+  const colgroup = [`<col style="width:${primera.ancho}">`,
+    ...grupos.flatMap((g) => g.columnas.map((c) => `<col${c.ancho ? ` style="width:${c.ancho}"` : ''}>`))].join('');
+  const fila1 = `<th scope="col" rowspan="2" class="th-fecha">${esc(primera.titulo)}</th>`
+    + grupos.map((g) => `<th scope="colgroup" colspan="${g.columnas.length}" class="th-grupo" data-seccion="${g.seccion}">${esc(g.titulo)}</th>`).join('');
+  const fila2 = grupos.flatMap((g) => g.columnas.map((c) => `<th scope="col" data-seccion="${g.seccion}">${esc(c.titulo)}</th>`)).join('');
+  return `
+    <section class="seccion unica ${clase}">
+      <h2>${esc(titulo)}</h2>
+      <table class="por-semana">
+        <colgroup>${colgroup}</colgroup>
+        <thead><tr>${fila1}</tr><tr>${fila2}</tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </section>`;
+}
+
+function tablaPuestosUnica(datos: VistaImprimibleOut, s: SeccionesImpresion): string {
+  const activo = (p: string) => datos.puestos_activos.includes(p);
+  const col = (titulo: string, puestos: string[], aseo = false): ColumnaUnica | null => {
+    const vivos = puestos.filter(activo);
+    return vivos.length || aseo ? { titulo, puestos: vivos, aseo } : null;
+  };
+  const grupo = (seccion: Seccion, titulo: string, cols: (ColumnaUnica | null)[]): GrupoUnico | null => {
+    const columnas = cols.filter((c): c is ColumnaUnica => !!c);
+    return columnas.length ? { seccion, titulo, columnas } : null;
+  };
+  const grupos = [
+    s.acomodadores ? grupo('acomodadores', 'Acomodadores y vigilancia', [
+      col('Acomodadores', ['acomodador_1', 'acomodador_2']),
+      col('Vigilancia', ['vigilancia_1', 'vigilancia_2']),
+    ]) : null,
+    s.microfono ? grupo('microfono', 'Micrófono y plataforma', [
+      col(activo('microfono_2') ? 'Micrófonos' : 'Micrófono', ['microfono_1', 'microfono_2']),
+      col('Plataforma', ['plataforma']),
+    ]) : null,
+    s.aseo_audio_video ? grupo('aseo_audio_video', 'Audio, video y aseo', [
+      col('Audio', ['audio']),
+      col('Video', ['video']),
+      col('Aseo', [], true),
+    ]) : null,
+  ].filter((g): g is GrupoUnico => !!g);
+  if (!grupos.length) return '';
+
+  const total = grupos.reduce((n, g) => n + g.columnas.length, 0);
+  let semana = '';
+  let par = true;
+  const filas = datos.reuniones.map((r) => {
+    const lunes = lunesDe(r.fecha);
+    const inicio = lunes !== semana;
+    if (inicio) { semana = lunes; par = !par; }
+    const clases = [inicio ? 'inicio-semana' : '', par ? 'semana-alterna' : '', r.sin_reunion ? 'sin-reunion' : '']
+      .filter(Boolean).join(' ');
+    const fecha = `<td class="c-fecha">${fechaCorta(r.fecha, r.dia_semana)}</td>`;
+    const cuerpo = r.sin_reunion
+      ? `<td colspan="${total}"><span class="sin-reunion-etq">Sin reunión</span>${r.motivo ? esc(r.motivo) : ''}</td>`
+      : grupos.flatMap((g) => g.columnas.map((c) =>
+        `<td>${c.aseo ? nombres(r.aseo ? r.aseo.split(' / ') : []) : nombres(c.puestos.map((p) => r.puestos[p]))}</td>`)).join('');
+    return `<tr${clases ? ` class="${clases}"` : ''}>${fecha}${cuerpo}</tr>`;
+  }).join('') || `<tr><td class="sin-filas" colspan="${total + 1}">Sin reuniones este mes.</td></tr>`;
+
+  return tablaUnica('t-puestos', 'Puestos de servicio', grupos, filas, { titulo: 'Reunión', ancho: '10%' });
+}
+
+interface SemanaFinUnica {
+  fecha: string;
+  fs?: VistaImprimibleOut['fin_semana'][number];
+  disc?: FilaDiscursoImpresion;
+}
+
+/** Fin de semana y discursos casados por semana (un discurso puede estar guardado otro día). */
+function semanasFin(fin: VistaImprimibleOut['fin_semana'], disc: FilaDiscursoImpresion[]): SemanaFinUnica[] {
+  const mapa = new Map<string, SemanaFinUnica>();
+  for (const f of fin) mapa.set(lunesDe(f.fecha), { fecha: f.fecha, fs: f });
+  for (const d of disc) {
+    const k = lunesDe(d.fecha);
+    const s = mapa.get(k);
+    if (s) s.disc = d; else mapa.set(k, { fecha: d.fecha, disc: d });
+  }
+  return [...mapa.values()].sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+function tablaFinSemanaUnica(datos: VistaImprimibleOut, s: SeccionesImpresion): string {
+  if (!s.fin_semana && !s.discursos) return '';
+  const grupos: { seccion: Seccion; titulo: string; columnas: { titulo: string; ancho?: string }[] }[] = [];
+  if (s.fin_semana) {
+    grupos.push({ seccion: 'fin_semana', titulo: 'Presidente y lector', columnas: [{ titulo: 'Presidente', ancho: '14%' }, { titulo: 'Lector', ancho: '14%' }] });
+  }
+  if (s.discursos) {
+    grupos.push({
+      seccion: 'discursos', titulo: 'Discurso público', columnas: [
+        { titulo: 'Tema' }, { titulo: 'Orador', ancho: '14%' }, { titulo: 'Congregación', ancho: '13%' }, { titulo: 'Hospitalidad', ancho: '11%' },
+      ],
+    });
+  }
+  const total = grupos.reduce((n, g) => n + g.columnas.length, 0);
+
+  const pintar = (semanas: SemanaFinUnica[]) => semanas.map((w, i) => {
+    const sin = w.fs?.sin_reunion || w.disc?.sin_reunion;
+    const motivo = w.fs?.motivo ?? w.disc?.motivo;
+    const clases = ['inicio-semana', i % 2 ? 'semana-alterna' : '', sin ? 'sin-reunion' : ''].filter(Boolean).join(' ');
+    const fecha = `<td class="c-fecha">${fechaCorta(w.fecha)}</td>`;
+    const cuerpo = sin
+      ? `<td colspan="${total}"><span class="sin-reunion-etq">Sin reunión</span>${motivo ? esc(motivo) : ''}</td>`
+      : [
+        ...(s.fin_semana ? [celda(w.fs?.presidente), celda(w.fs?.lector)] : []),
+        ...(s.discursos ? [celda(w.disc?.titulo), celda(w.disc?.orador), celda(w.disc?.congregacion), celda(w.disc?.hospitalidad)] : []),
+      ].map((c) => `<td>${c}</td>`).join('');
+    return `<tr class="${clases}">${fecha}${cuerpo}</tr>`;
+  }).join('');
+
+  const separador = (texto: string) => `<tr class="separador-mes"><td colspan="${total + 1}">${esc(texto)}</td></tr>`;
+  const sig = datos.mes_siguiente;
+  const actual = pintar(semanasFin(s.fin_semana ? datos.fin_semana : [], s.discursos ? datos.discursos : []));
+  let filas = actual;
+  if (sig) {
+    const siguiente = pintar(semanasFin(s.fin_semana ? sig.fin_semana : [], s.discursos ? sig.discursos : []));
+    filas = separador(nombreMes(datos.ano, datos.mes)) + (actual || `<tr><td class="sin-filas" colspan="${total + 1}">Sin reuniones de fin de semana.</td></tr>`)
+      + separador(nombreMes(sig.ano, sig.mes))
+      + (siguiente || `<tr><td class="sin-filas" colspan="${total + 1}">El programa de ${esc(nombreMes(sig.ano, sig.mes))} aún no está publicado.</td></tr>`);
+  } else if (!actual) {
+    filas = `<tr><td class="sin-filas" colspan="${total + 1}">Sin reuniones de fin de semana.</td></tr>`;
+  }
+  return tablaUnica('t-fin', 'Reunión del fin de semana', grupos, filas, { titulo: 'Fecha', ancho: '10%' });
+}
+
+function cssHojaUnica(e: EstiloImpresion): string {
+  return `
+    /* La tabla es neutra (color del título); solo el encabezado de cada grupo
+       de columnas lleva el color de su sección. */
+    .unica th[data-seccion] { background: var(--enc-fondo); color: var(--enc-texto); }
+    .unica th.th-fecha { background: var(--enc-fondo); color: var(--enc-texto); vertical-align: bottom; }
+    .unica th.th-grupo {
+      text-align: center;
+      font-size: ${Math.max(e.tam_encabezado + 0.5, 6)}pt;
+      letter-spacing: 0.1em;
+      border-bottom: 1px solid color-mix(in srgb, var(--enc-texto) 30%, transparent);
+    }
+    .unica thead tr + tr th { border-left: 1px solid color-mix(in srgb, var(--enc-texto) 18%, transparent); }
+    .unica thead tr:first-child th + th { border-left: 2px solid #fff; }
+    .unica td { vertical-align: middle; }
+    .unica td .linea { display: block; }
+    .unica td.c-fecha { white-space: nowrap; font-weight: 600; color: var(--acento); }
+    .unica td.c-fecha b { font-weight: 800; }
+    /* Sombreado por semana, no por fila: martes y sábado de la misma semana
+       se leen como un bloque. El filete grueso separa las semanas. */
+    .unica tbody tr:nth-child(even) td { background: none; }
+    .unica tbody tr.semana-alterna td { background: var(--alterna); }
+    .unica tbody tr.inicio-semana td { border-top: 1.5px solid var(--borde); }
+    .unica tbody tr:first-child td { border-top: 0; }
+    .unica tr.separador-mes td {
+      padding-top: calc(${e.padding_vertical}px + 2px);
+      font-size: ${e.tam_encabezado}pt;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--acento);
+      background: #fff;
+      border-top: 1.5px solid var(--borde);
+    }
+    .nota-pie {
+      margin-top: ${Math.max(e.espacio_secciones * 0.6, 8)}px;
+      padding: 8px 14px;
+      border: 1.5px dashed var(--borde);
+      border-radius: 8px;
+      text-align: center;
+      font-size: ${e.tam_celda + 1}pt;
+      font-weight: 700;
+      color: var(--titulo);
+      break-inside: avoid;
+    }
+  `;
+}
+
+function renderHojaUnica(datos: VistaImprimibleOut, estilo: EstiloImpresion, origen: string): string {
+  const s = estilo.secciones;
+  const sig = datos.mes_siguiente;
+  const meses = sig
+    ? (sig.ano === datos.ano
+      ? `Meses de ${MESES_ES[datos.mes - 1]} y ${MESES_ES[sig.mes - 1]} ${datos.ano}`
+      : `Meses de ${nombreMes(datos.ano, datos.mes)} y ${nombreMes(sig.ano, sig.mes)}`)
+    : `Mes de ${nombreMes(datos.ano, datos.mes)}`;
+  const subtitulo = [datos.nombre_congregacion, meses].filter(Boolean).map(esc).join(' &nbsp;·&nbsp; ');
+  const partes = [tablaPuestosUnica(datos, s), tablaFinSemanaUnica(datos, s)].filter(Boolean);
+  if (!partes.length) {
+    partes.push('<p class="sin-filas" style="margin-top:24px">No hay secciones seleccionadas.</p>');
+  }
+  const nota = estilo.nota_pie.trim();
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>${esc(`${estilo.titulo} · ${nombreMes(datos.ano, datos.mes)}`)}</title>
+<style>${css(estilo, origen)}${cssHojaUnica(estilo)}</style>
+</head>
+<body class="hoja-unica">
+  <main class="contenido">
+    <header><h1>${esc(estilo.titulo)}</h1><p>${subtitulo}</p></header>
+    ${partes.join('\n')}
+    ${nota ? `<p class="nota-pie">${esc(nota)}</p>` : ''}
+  </main>
 </body>
 </html>`;
 }

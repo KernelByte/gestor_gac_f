@@ -17,6 +17,7 @@ import {
   ClaveTabla,
   ESTILO_IMPRESION_DEFECTO,
   EstiloImpresion,
+  FormatoImpresion,
   OrientacionImpresion,
   PAPEL_MM,
   tintaSeccion,
@@ -105,6 +106,10 @@ const PX_POR_MM = 96 / 25.4;
               [title]="'Calculado con el papel y los márgenes elegidos'">
               <svg class="w-3.5 h-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
               {{ hojas() }} {{ hojas() === 1 ? 'hoja' : 'hojas' }} · {{ papelLabel() }}
+              @if (reduccion() < 1) {
+                <span class="text-violet-600 dark:text-violet-300" data-testid="log-estudio-reduccion"
+                      title="La hoja única se reduce sola para caber en una página">· al {{ reduccionPct() }} %</span>
+              }
             </span>
           }
 
@@ -232,6 +237,45 @@ const PX_POR_MM = 96 / 25.4;
 
             <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar overscroll-contain">
 
+              <!-- Formato: dos hojas por secciones o todo en una hoja. -->
+              <details class="grupo" open>
+                <summary>Formato</summary>
+                <div class="px-4 pb-4 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Formato de la hoja">
+                  @for (f of formatos; track f.id) {
+                    <button
+                      type="button"
+                      role="radio"
+                      [attr.aria-checked]="estilo().formato === f.id"
+                      [attr.data-testid]="'log-estudio-formato-' + f.id"
+                      (click)="cambiarFormato(f.id)"
+                      class="text-left rounded-xl border p-2.5 transition-all active:scale-[0.98]"
+                      [class]="estilo().formato === f.id
+                        ? 'border-violet-500 ring-2 ring-violet-500/20 bg-violet-50/50 dark:bg-violet-900/20'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'">
+                      <!-- Miniatura: dos hojas apiladas o una apaisada. -->
+                      <span class="flex items-end justify-center gap-1 h-9 mb-1.5" aria-hidden="true">
+                        @if (f.id === 'secciones') {
+                          @for (h of [1, 2]; track h) {
+                            <span class="w-6 h-8 rounded-[3px] bg-white ring-1 ring-slate-300 dark:ring-slate-600 flex flex-col gap-[3px] p-[3px]">
+                              <span class="h-[3px] rounded-full bg-violet-400/70"></span>
+                              <span class="h-[5px] rounded-[1px] bg-slate-200"></span>
+                              <span class="h-[5px] rounded-[1px] bg-slate-200"></span>
+                            </span>
+                          }
+                        } @else {
+                          <span class="w-12 h-8 rounded-[3px] bg-white ring-1 ring-slate-300 dark:ring-slate-600 grid grid-cols-4 gap-[2px] p-[3px] content-start">
+                            <span class="col-span-4 h-[3px] rounded-full bg-violet-400/70"></span>
+                            @for (c of [1, 2, 3, 4, 5, 6, 7, 8]; track c) { <span class="h-[4px] rounded-[1px] bg-slate-200"></span> }
+                          </span>
+                        }
+                      </span>
+                      <span class="block text-[0.75rem] font-bold text-slate-700 dark:text-slate-200">{{ f.label }}</span>
+                      <span class="block text-[0.65rem] leading-snug text-slate-400 dark:text-slate-500">{{ f.ayuda }}</span>
+                    </button>
+                  }
+                </div>
+              </details>
+
               <!-- Contenido -->
               <details class="grupo" open>
                 <summary>Contenido</summary>
@@ -250,7 +294,9 @@ const PX_POR_MM = 96 / 25.4;
                   }
                   <label class="fila-toggle mt-1 pt-2 border-t border-slate-100 dark:border-slate-800" [class.opacity-50]="!hayHoja2()">
                     <span class="min-w-0">
-                      <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">Añadir {{ mesSiguienteLabel() }} a la 2.ª hoja</span>
+                      <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        Añadir {{ mesSiguienteLabel() }} {{ estilo().formato === 'hoja_unica' ? 'al fin de semana' : 'a la 2.ª hoja' }}
+                      </span>
                       <span class="block text-[0.68rem] text-slate-400 dark:text-slate-500">Fin de semana y discursos, para que la hoja no quede vieja a fin de mes.</span>
                     </span>
                     <input
@@ -262,6 +308,19 @@ const PX_POR_MM = 96 / 25.4;
                       [checked]="estilo().incluir_mes_siguiente"
                       (change)="cambiar('incluir_mes_siguiente', $any($event.target).checked)" />
                   </label>
+                  @if (estilo().formato === 'hoja_unica') {
+                    <label class="block mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">Aviso al pie de la hoja</span>
+                      <span class="block mb-1 text-[0.68rem] text-slate-400 dark:text-slate-500">Déjalo vacío para no mostrar ningún aviso.</span>
+                      <textarea
+                        rows="2"
+                        maxlength="200"
+                        data-testid="log-estudio-nota-pie"
+                        [value]="estilo().nota_pie"
+                        (input)="cambiar('nota_pie', $any($event.target).value)"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-400"></textarea>
+                    </label>
+                  }
                 </div>
               </details>
 
@@ -659,6 +718,10 @@ export class LogisticaImpresionEstudioComponent implements OnInit, AfterViewInit
     { id: 'vertical', label: 'Vertical' },
     { id: 'horizontal', label: 'Horizontal' },
   ];
+  readonly formatos: { id: FormatoImpresion; label: string; ayuda: string }[] = [
+    { id: 'secciones', label: 'Por secciones', ayuda: 'Una tabla por sección, en dos hojas' },
+    { id: 'hoja_unica', label: 'Hoja única', ayuda: 'Todo el mes agrupado por semana' },
+  ];
   readonly vistasMovil = [
     { id: 'vista' as const, label: 'Vista previa' },
     { id: 'estilo' as const, label: 'Estilo' },
@@ -683,6 +746,9 @@ export class LogisticaImpresionEstudioComponent implements OnInit, AfterViewInit
   /** Dónde empieza cada hoja a partir de la 2.ª, en px desde el inicio del contenido. */
   private saltos = signal<number[]>([]);
   private anchoLienzo = signal(0);
+  /** Zoom aplicado a la hoja única para que quepa en una página (1 = sin reducir). */
+  reduccion = signal(1);
+  reduccionPct = computed(() => Math.round(this.reduccion() * 100));
 
   private subDatos?: Subscription;
   private temporizadorGuardado?: ReturnType<typeof setTimeout>;
@@ -907,13 +973,16 @@ export class LogisticaImpresionEstudioComponent implements OnInit, AfterViewInit
    */
   private medir(doc: Document): void {
     const body = doc.body;
+    if (body.getBoundingClientRect().height <= 0) return; // oculto (vista "Estilo" en móvil): se mide al volver
+    this.ajustarAUnaHoja(doc);
     const alto = Math.ceil(body.getBoundingClientRect().height);
-    if (alto <= 0) return; // oculto (vista "Estilo" en móvil): se mide al volver
     this.altoContenido.set(alto);
 
     const util = this.altoUtilPx();
     const inicio = body.getBoundingClientRect().top + this.margenPx();
-    const bloques = Array.from(body.querySelectorAll<HTMLElement>(':scope > header, :scope > .seccion'));
+    const bloques = Array.from(body.querySelectorAll<HTMLElement>(
+      ':scope > header, :scope > .seccion, :scope > .contenido > header, :scope > .contenido > .seccion, :scope > .contenido > .nota-pie',
+    ));
     const saltos: number[] = [];
     let hoja = 0;
     for (const b of bloques) {
@@ -944,6 +1013,34 @@ export class LogisticaImpresionEstudioComponent implements OnInit, AfterViewInit
     this.saltos.set(saltos);
   }
 
+  /**
+   * La hoja única debe salir en una sola página: si no cabe, se reduce con
+   * `zoom` lo justo. El zoom también reduce el ancho, así que se compensa
+   * para que la hoja siga ocupando todo el papel. Lo mismo vale al imprimir:
+   * el ancho útil del papel en pantalla y en @page es el mismo.
+   */
+  private ajustarAUnaHoja(doc: Document): void {
+    const cont = doc.querySelector<HTMLElement>('body.hoja-unica > .contenido');
+    if (!cont) {
+      this.reduccion.set(1);
+      return;
+    }
+    cont.style.zoom = '';
+    cont.style.width = '';
+    const r = cont.getBoundingClientRect();
+    const util = this.altoUtilPx();
+    if (r.height <= util || util <= 0) {
+      this.reduccion.set(1);
+      return;
+    }
+    // Un pelo por debajo del cociente exacto: el redondeo de cada fila no
+    // debe empujar la última línea a una 2.ª hoja.
+    const f = Math.max(0.4, Math.floor((util / r.height) * 100) / 100 - 0.01);
+    cont.style.zoom = String(f);
+    cont.style.width = `${r.width / f}px`;
+    this.reduccion.set(f);
+  }
+
   // ── Imprimir ───────────────────────────────────────────────
 
   async imprimir(): Promise<void> {
@@ -964,6 +1061,17 @@ export class LogisticaImpresionEstudioComponent implements OnInit, AfterViewInit
     this.programarGuardado();
     // Los discursos del mes siguiente vienen del servidor.
     if (clave === 'incluir_mes_siguiente' && antes !== valor) this.cargar();
+  }
+
+  /** La hoja única es apaisada, como el cuadro del tablero de anuncios. */
+  cambiarFormato(formato: FormatoImpresion): void {
+    if (this.estilo().formato === formato) return;
+    this.estilo.update((e) => ({
+      ...e,
+      formato,
+      orientacion: formato === 'hoja_unica' ? 'horizontal' : 'vertical',
+    }));
+    this.programarGuardado();
   }
 
   cambiarSeccion(clave: keyof SeccionesImpresion, valor: boolean): void {
