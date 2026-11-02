@@ -1,10 +1,10 @@
-import { Component, HostListener, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { TerritorioMapComponent } from '../components/territorio-map.component';
-import { EstadoSugerenciasIa, LadoLimite, TerritoriosService } from '../services/territorios.service';
+import { EstadoCalles, EstadoSugerenciasIa, LadoLimite, TerritoriosService } from '../services/territorios.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, UnidadCongregacion } from '../models/territorio.model';
 
@@ -41,6 +41,26 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
                 <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 Ver límites
               </button>
+              <!-- Calles de OpenStreetMap guardadas: solo ocupa lugar mientras baja o si el Administrador puede actualizarlas -->
+              @if (callesEstado(); as c) {
+                @if (c.estado === 'en_curso') {
+                  <span role="status" title="Bajando las calles del mapa. Puede seguir usando la pantalla."
+                    class="inline-flex items-center gap-2 h-11 px-4 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-medium text-gray-700 dark:text-slate-200 whitespace-nowrap">
+                    <span class="w-4 h-4 shrink-0 rounded-full border-2 border-current/30 border-t-current animate-spin" aria-hidden="true"></span>
+                    Calles {{ c.total ? c.procesadas + '/' + c.total : '…' }}
+                  </span>
+                } @else if (puedeActualizarCalles()) {
+                  <button type="button" (click)="actualizarCalles()" [disabled]="actualizandoCalles()" [attr.title]="tituloCalles(c)"
+                    class="btn-secondary focus-ring-green h-11 whitespace-nowrap disabled:opacity-60">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"></path></svg>
+                    {{ c.celdas_listas ? 'Actualizar calles' : 'Descargar calles' }}
+                    @if (!callesCompletas(c)) {
+                      <span class="w-2 h-2 rounded-full bg-amber-500" aria-hidden="true"></span>
+                      <span class="sr-only">Faltan calles por descargar</span>
+                    }
+                  </button>
+                }
+              }
             }
             @if (puedeEditar()) {
               @if (unidad()?.coordenada) {
@@ -69,6 +89,15 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
         <input #elegirArchivo type="file" accept=".kml,.kmz" class="hidden" (change)="alElegirArchivo($event)">
       </header>
 
+      @if (siguientePaso()) {
+        <div role="status" class="shrink-0 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3">
+          <svg class="w-5 h-5 shrink-0 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <p class="flex-1 min-w-[12rem] text-sm font-semibold text-emerald-900 dark:text-emerald-100">Mapa guardado. Siguiente paso: crear los barrios.</p>
+          <button type="button" (click)="irABarrios()" class="btn-primary-green focus-ring-green h-10 whitespace-nowrap">Ir a Barrios</button>
+          <button type="button" (click)="siguientePaso.set(false)" class="h-10 px-3 text-sm font-bold text-emerald-800 dark:text-emerald-300">Ahora no</button>
+        </div>
+      }
+
       @if (aviso()) {
         <div role="alert" class="shrink-0 flex items-start justify-between gap-3 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
           <p class="text-sm font-medium text-amber-900 dark:text-amber-200">{{ aviso() }}</p>
@@ -88,35 +117,36 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
         </div>
       }
 
-      <!-- Resumen por estado y filtro por barrio -->
-      <div class="flex flex-wrap items-center gap-2 shrink-0">
-        @if (hayTerritorios()) {
-          @for (e of estados; track e.clave) {
-            <div class="inline-flex items-center gap-2.5 h-9 pl-3 pr-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 shadow-sm">
-              <span class="w-3 h-3 rounded-[4px] border-2" [class]="e.punto"></span>
-              <span class="text-[13px] font-semibold text-slate-600 dark:text-slate-300">{{ e.label }}</span>
-              <span class="text-[13px] font-black text-slate-900 dark:text-white tabular-nums">{{ conteo()[e.clave] ?? 0 }}</span>
+      <!-- Resumen por estado y filtro por barrio, en una sola fila -->
+      @if (hayTerritorios() || sectores().length > 0) {
+        <div class="shrink-0 flex flex-wrap items-start gap-x-5 gap-y-2">
+          @if (hayTerritorios()) {
+            <ul class="flex flex-wrap items-center gap-x-4 gap-y-1 h-9 m-0 p-0 list-none" aria-label="Territorios por estado">
+              @for (e of estados; track e.clave) {
+                <li class="inline-flex items-center gap-2 text-[13px] font-semibold text-slate-600 dark:text-slate-300">
+                  <span class="w-3 h-3 rounded-[4px] border-2" [class]="e.punto" aria-hidden="true"></span>
+                  {{ e.label }}
+                  <span class="font-black text-slate-900 dark:text-white tabular-nums">{{ conteo()[e.clave] ?? 0 }}</span>
+                </li>
+              }
+            </ul>
+          }
+          @if (sectores().length > 0) {
+            <div class="flex-1 min-w-0 flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar por barrio o sector">
+              <button type="button" (click)="sectorSel.set(null)" [attr.aria-pressed]="sectorSel() === null"
+                class="h-9 px-3.5 rounded-full text-[13px] font-semibold border transition-[background-color,border-color,transform] duration-150 active:scale-[0.97] focus-ring-green"
+                [ngClass]="claseChip(sectorSel() === null)">Todos los barrios</button>
+              @for (s of sectores(); track s.id_sector) {
+                <button type="button" (click)="sectorSel.set(sectorSel() === s.id_sector ? null : s.id_sector)" [attr.aria-pressed]="sectorSel() === s.id_sector"
+                  class="h-9 px-3.5 rounded-full text-[13px] font-semibold border transition-[background-color,border-color,transform] duration-150 active:scale-[0.97] inline-flex items-center gap-2 focus-ring-green"
+                  [ngClass]="claseChip(sectorSel() === s.id_sector)">
+                  <span class="w-2.5 h-2.5 rounded-full" [style.background-color]="s.color || '#94a3b8'" aria-hidden="true"></span>{{ s.nombre }}
+                </button>
+              }
             </div>
           }
-        }
-        @if (sectores().length > 0) {
-          <div class="flex flex-wrap items-center gap-2 w-full" role="group" aria-label="Filtrar por barrio o sector">
-            <button type="button" (click)="sectorSel.set(null)" [attr.aria-pressed]="sectorSel() === null"
-              class="h-9 px-3.5 rounded-full text-[13px] font-semibold border transition-colors"
-              [ngClass]="sectorSel() === null ? 'bg-slate-200 text-slate-800 border-slate-400 dark:bg-slate-700 dark:text-slate-100' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'">Todos los barrios</button>
-            @for (s of sectores(); track s.id_sector) {
-              <button type="button" (click)="sectorSel.set(sectorSel() === s.id_sector ? null : s.id_sector)" [attr.aria-pressed]="sectorSel() === s.id_sector"
-                class="h-9 px-3.5 rounded-full text-[13px] font-semibold border transition-colors inline-flex items-center gap-2"
-                [ngClass]="sectorSel() === s.id_sector ? 'bg-slate-200 text-slate-800 border-slate-400 dark:bg-slate-700 dark:text-slate-100' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'">
-                <span class="w-2.5 h-2.5 rounded-full" [style.background-color]="s.color || '#94a3b8'"></span>{{ s.nombre }}
-              </button>
-            }
-          </div>
-        }
-        @if (hayTerritorios()) {
-          <span class="ml-auto hidden sm:inline text-xs font-medium text-slate-400">Pase el cursor por un territorio para ver su ficha · clic para abrirlo</span>
-        }
-      </div>
+        </div>
+      }
 
       <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-4">
         <!-- Map -->
@@ -128,6 +158,8 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
           } @else {
             <app-territorio-map
               [geojson]="geojsonFiltrado()"
+              [puntosGeojson]="puntos()"
+              [encuadrarCongregacion]="sectorSel() === null"
               [referenciasGeojson]="referencias()"
               [limiteEdicion]="limiteEnEdicion()"
               (limiteEditado)="limitePendiente.set($event)"
@@ -138,7 +170,7 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
               (featureClick)="onFeatureClick($event)"
             />
             @if (!unidad() && !hayTerritorios()) {
-              <div class="absolute left-1/2 -translate-x-1/2 bottom-6 z-[1000] w-[min(92%,28rem)] rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 shadow-xl p-4 text-center space-y-2">
+              <div class="absolute left-1/2 -translate-x-1/2 bottom-6 z-30 w-[min(92%,28rem)] rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 shadow-xl p-4 text-center space-y-2">
                 <p class="text-base font-bold text-slate-900 dark:text-white">Aún no se ve el territorio de la congregación</p>
                 <p class="text-sm text-slate-600 dark:text-slate-400">
                   Suba el archivo <strong>.kml</strong> que descarga del sitio de la organización y aquí aparecerá el límite completo.
@@ -278,7 +310,7 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
     :host { display: block; height: 100%; }
   `],
 })
-export class MapaGeneralPage implements OnInit {
+export class MapaGeneralPage implements OnInit, OnDestroy {
   private territoriosService = inject(TerritoriosService);
   private router = inject(Router);
   private authStore = inject(AuthStore);
@@ -308,6 +340,8 @@ export class MapaGeneralPage implements OnInit {
   centro = signal<{ lat: number; lng: number } | null>(null);
   loading = signal(true);
   aviso = signal<string | null>(null);
+  /** Tras guardar el .kml: indica el paso 2 (barrios) de la guía de Territorios. */
+  siguientePaso = signal(false);
   verFicha = signal(false);
   subiendo = signal(false);
   vistaPrevia = signal<UnidadCongregacion[] | null>(null);
@@ -317,6 +351,17 @@ export class MapaGeneralPage implements OnInit {
     { clave: 'sur', etiqueta: 'Sur' }, { clave: 'oeste', etiqueta: 'Oeste' },
   ];
   estadoIa = signal<EstadoSugerenciasIa | null>(null);
+  puntos = signal<GeoJSONFeatureCollection | null>(null);
+  callesEstado = signal<EstadoCalles | null>(null);
+  actualizandoCalles = signal(false);
+  private sondeoCalles: ReturnType<typeof setTimeout> | null = null;
+  /** Se vio la descarga en curso: al terminar, un fallo se avisa una vez y no en cada visita. */
+  private vigilandoCalles = false;
+  /** Bajar de nuevo todas las calles de la zona: solo Administrador y Gestor. */
+  puedeActualizarCalles = computed(() => {
+    this.authStore.user();
+    return this.authStore.isAdministrador() || this.authStore.isGestor();
+  });
   calculandoIa = signal(false);
   sugIa = signal<{
     actuales: Record<LadoLimite, string | null>; aviso?: string;
@@ -373,13 +418,16 @@ export class MapaGeneralPage implements OnInit {
       tarjetas: this.territoriosService.getTerritoriosGeoJSON(),
       unidades: this.territoriosService.getCongregacionLimite(),
       sectores: this.territoriosService.getSectores(),
+      puntos: this.territoriosService.getPuntosCongregacionGeoJSON().pipe(catchError(() => of(null))),
     }).subscribe({
-      next: ({ tarjetas, unidades, sectores }) => {
+      next: ({ tarjetas, unidades, sectores, puntos }) => {
         this.geojsonData.set(tarjetas);
+        this.puntos.set(puntos);
         this.unidades.set(unidades);
         this.sectores.set(sectores.sectores);
         this.loading.set(false);
         this.cargarEstadoIa();
+        this.cargarEstadoCalles();
       },
       error: () => {
         this.loading.set(false);
@@ -417,14 +465,73 @@ export class MapaGeneralPage implements OnInit {
         this.subiendo.set(false);
         this.unidades.set(r.unidades);
         this.cargarEstadoIa();
+        this.cargarEstadoCalles(); // al guardar el .kml el servidor empieza a bajar las calles
         this.descartarVistaPrevia();
         this.verFicha.set(true);
+        this.siguientePaso.set(true);
         // Esperar a que el mapa pinte el límite nuevo y llevarlo a la vista.
         setTimeout(() => this.mapa?.encuadrarReferencias());
       },
       error: (err) => {
         this.subiendo.set(false);
         this.aviso.set(err?.error?.detail ?? 'No se pudo guardar el territorio. Intente de nuevo.');
+      },
+    });
+  }
+
+  /** Estilo de un chip de barrio: el elegido se ve hundido y con borde más marcado. */
+  claseChip(activo: boolean): string {
+    return activo
+      ? 'bg-slate-200 text-slate-800 border-slate-400 dark:bg-slate-700 dark:text-slate-100'
+      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800';
+  }
+
+  callesCompletas(c: EstadoCalles): boolean {
+    return c.celdas_zona > 0 && c.celdas_listas === c.celdas_zona;
+  }
+
+  tituloCalles(c: EstadoCalles): string {
+    const base = `Calles guardadas: ${c.celdas_listas} de ${c.celdas_zona} zonas. `
+      + (this.callesCompletas(c)
+        ? 'Vuelva a bajarlas si se abrió o cambió una calle.'
+        : 'Lo que falte se baja al usarlo y puede tardar.');
+    return c.mensaje ? `${base} ${c.mensaje}` : base;
+  }
+
+  ngOnDestroy(): void {
+    if (this.sondeoCalles) clearTimeout(this.sondeoCalles);
+  }
+
+  /** Lee el estado de las calles y, mientras se descargan, lo vuelve a leer cada 3 s. */
+  private cargarEstadoCalles(): void {
+    if (this.sondeoCalles) { clearTimeout(this.sondeoCalles); this.sondeoCalles = null; }
+    if (!this.unidad() || !this.puedeEditar()) { this.callesEstado.set(null); return; }
+    this.territoriosService.estadoCalles().subscribe({
+      next: (e) => {
+        this.callesEstado.set(e);
+        if (e.estado === 'en_curso') {
+          this.vigilandoCalles = true;
+          this.sondeoCalles = setTimeout(() => this.cargarEstadoCalles(), 3000);
+        } else if (this.vigilandoCalles) {
+          this.vigilandoCalles = false;
+          if (e.mensaje) this.aviso.set(e.mensaje);
+        }
+      },
+      error: () => this.callesEstado.set(null),
+    });
+  }
+
+  actualizarCalles(): void {
+    this.actualizandoCalles.set(true);
+    this.territoriosService.actualizarCalles().subscribe({
+      next: (e) => {
+        this.actualizandoCalles.set(false);
+        this.callesEstado.set(e);
+        this.cargarEstadoCalles();
+      },
+      error: (err) => {
+        this.actualizandoCalles.set(false);
+        this.aviso.set(err?.error?.detail ?? 'No se pudieron actualizar las calles. Intente de nuevo.');
       },
     });
   }
@@ -569,6 +676,8 @@ export class MapaGeneralPage implements OnInit {
       this.router.navigate(['/territorios'], { queryParams: { selected: feature.id } });
     }
   }
+
+  irABarrios(): void { this.router.navigate(['/territorios/sectores']); }
 
   goBack(): void {
     if (this.editandoLimite() && this.limitePendiente() && !confirm('Tiene cambios sin guardar en el límite. ¿Salir sin guardarlos?')) return;

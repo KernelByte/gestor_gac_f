@@ -16,13 +16,45 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
   imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent, SelectPickerComponent],
   encapsulation: ViewEncapsulation.None,
   styles: [`
+    #registro-s13 .s13-solo-impresion { display: none; }
     @media print {
+      @page { size: A4 landscape; margin: 12mm 14mm; }
+      html, body { background: #fff !important; }
       body * { visibility: hidden !important; }
       #registro-s13, #registro-s13 * { visibility: visible !important; }
-      #registro-s13 { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; color: #0f172a !important; background: #fff !important; }
       .no-imprimir { display: none !important; }
-      #registro-s13 table { font-size: 10pt; }
-      #registro-s13 tr { break-inside: avoid; }
+      #registro-s13 {
+        position: absolute; left: 0; top: 0; width: 100%;
+        padding: 0 !important; margin: 0 !important;
+        border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+        background: #fff !important; color: #1e293b !important;
+        font-size: 9.5pt; line-height: 1.35;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      #registro-s13 .s13-solo-impresion { display: flex !important; }
+      #registro-s13 .s13-pantalla { display: none !important; }
+      #registro-s13 .overflow-x-auto { overflow: visible !important; }
+      #registro-s13 .s13-cab { align-items: flex-end; justify-content: space-between; gap: 12mm;
+        padding-bottom: 4mm; margin-bottom: 5mm; border-bottom: 1.5pt solid #047857; }
+      #registro-s13 .s13-marca { font-size: 8pt; font-weight: 800; letter-spacing: .14em; color: #047857 !important; }
+      #registro-s13 .s13-titulo { font-size: 16pt; font-weight: 800; color: #0f172a !important; margin: 1mm 0 0; letter-spacing: -.01em; }
+      #registro-s13 .s13-rango { text-align: right; font-size: 9pt; color: #475569 !important; }
+      #registro-s13 .s13-rango strong { display: block; font-size: 12pt; color: #0f172a !important; }
+      #registro-s13 table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9.5pt; }
+      #registro-s13 thead { display: table-header-group; }
+      #registro-s13 th { background: #f1f5f9 !important; color: #334155 !important; font-size: 8pt !important;
+        font-weight: 700 !important; letter-spacing: .06em; text-transform: uppercase;
+        padding: 2.2mm 3mm !important; border-bottom: 1pt solid #94a3b8 !important; }
+      #registro-s13 th span { color: #64748b !important; text-transform: none; letter-spacing: 0; }
+      #registro-s13 td { padding: 2.6mm 3mm !important; border-bottom: .6pt solid #e2e8f0 !important; }
+      #registro-s13 tr { break-inside: avoid; page-break-inside: avoid; }
+      #registro-s13 .s13-cod { font-size: 12pt; font-weight: 800; color: #0f172a !important; }
+      #registro-s13 .s13-mut { color: #64748b !important; }
+      #registro-s13 .s13-ult { font-weight: 700; color: #065f46 !important; font-size: 10.5pt; }
+      #registro-s13 .s13-nombre { font-weight: 700; color: #0f172a !important; }
+      #registro-s13 .s13-curso { color: #b45309 !important; font-weight: 700; }
+      #registro-s13 .s13-pie { display: flex !important; justify-content: space-between; margin-top: 5mm;
+        font-size: 8pt; color: #64748b !important; }
     }
   `],
   template: `
@@ -57,12 +89,24 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
         } @else if (error()) {
           <p class="text-sm text-red-600">No se pudo cargar el registro. Intenta de nuevo.</p>
         } @else if (data(); as d) {
-          <h2 class="text-base font-bold text-slate-900 dark:text-white mb-1">
-            Registro de asignación de territorio · Año de servicio {{ d.anio_servicio }}–{{ d.anio_servicio + 1 }}
-          </h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
-            Del {{ d.desde | date:'d MMM yyyy':'':'es' }} al {{ d.hasta | date:'d MMM yyyy':'':'es' }}
-          </p>
+          <div class="s13-solo-impresion s13-cab">
+            <div>
+              <div class="s13-marca">GAC · REGISTRO DE TERRITORIOS</div>
+              <h1 class="s13-titulo">Registro de asignación de territorio</h1>
+            </div>
+            <div class="s13-rango">
+              <strong>Año de servicio {{ d.anio_servicio }}–{{ d.anio_servicio + 1 }}</strong>
+              Del {{ d.desde | date:'d MMM yyyy':'':'es' }} al {{ d.hasta | date:'d MMM yyyy':'':'es' }}
+            </div>
+          </div>
+          <div class="s13-pantalla">
+            <h2 class="text-base font-bold text-slate-900 dark:text-white mb-1">
+              Registro de asignación de territorio · Año de servicio {{ d.anio_servicio }}–{{ d.anio_servicio + 1 }}
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              Del {{ d.desde | date:'d MMM yyyy':'':'es' }} al {{ d.hasta | date:'d MMM yyyy':'':'es' }}
+            </p>
+          </div>
 
           @if (d.territorios.length === 0) {
             <p class="text-sm text-slate-500">Aún no hay territorios registrados.</p>
@@ -71,10 +115,10 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
               <table class="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr class="border-b-2 border-slate-300 dark:border-slate-600">
-                    <th scope="col" class="py-2 pr-3 font-bold">Territorio</th>
-                    <th scope="col" class="py-2 pr-3 font-bold">Última vez completado antes de este año</th>
+                    <th scope="col" class="py-2 pr-3 font-bold" style="width:15%">Territorio</th>
+                    <th scope="col" class="py-2 pr-3 font-bold" style="width:19%">Última fecha en que se completó<span class="block text-xs font-normal text-slate-500 dark:text-slate-400">la más reciente de la tarjeta</span></th>
                     @for (n of columnas(); track n) {
-                      <th scope="col" class="py-2 pr-3 font-bold">Vuelta {{ n }}</th>
+                      <th scope="col" class="py-2 pr-3 font-bold">Asignado a <span class="font-normal text-slate-500 dark:text-slate-400">({{ n }})</span></th>
                     }
                   </tr>
                 </thead>
@@ -82,23 +126,24 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
                   @for (t of d.territorios; track t.id_territorio) {
                     <tr class="border-b border-slate-200 dark:border-slate-700 align-top">
                       <td class="py-2 pr-3">
-                        <p class="font-bold">{{ t.codigo }}</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ t.nombre }}</p>
+                        <p class="font-bold s13-cod">{{ t.codigo }}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 s13-mut">{{ t.nombre }}</p>
                       </td>
-                      <td class="py-2 pr-3">
-                        {{ t.completado_antes ? (t.completado_antes | date:'d/M/yy':'':'es') : '—' }}
+                      <td class="py-2 pr-3 s13-ult">
+                        {{ t.ultima_completada ? (t.ultima_completada | date:'d/M/yy':'':'es') : '—' }}
                       </td>
                       @for (n of columnas(); track n) {
                         <td class="py-2 pr-3">
                           @if (t.ciclos[n - 1]; as c) {
-                            <p>Inicio: {{ c.fecha_inicio | date:'d/M/yy':'':'es' }}</p>
-                            <p>
-                              @if (c.fecha_fin) { Terminó: {{ c.fecha_fin | date:'d/M/yy':'':'es' }} }
-                              @else { <span class="font-semibold text-amber-700 dark:text-amber-400">En curso</span> }
+                            <p class="font-semibold s13-nombre" [class.text-slate-400]="!c.asignado_a">{{ c.asignado_a || 'Sin capitán anotado' }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 s13-mut">
+                              {{ c.tipo === 'publicador' ? (c.parcial ? 'Publicador · parte de la tarjeta' : 'Publicador') : 'Salidas en grupo' }}@if (c.tipo === 'grupo' && c.capitanes.length > 1) { <span [title]="c.capitanes.join(', ')"> · {{ c.capitanes.length }} capitanes</span> }
                             </p>
-                            @if (c.asignado_a) {
-                              <p class="text-xs text-slate-500 dark:text-slate-400">Asignado a: {{ c.asignado_a }}</p>
-                            }
+                            <p class="mt-1"><span class="s13-mut">Se asignó:</span> {{ c.fecha_inicio | date:'d/M/yy':'':'es' }}</p>
+                            <p>
+                              @if (c.fecha_fin) { <span class="s13-mut">Se completó:</span> {{ c.fecha_fin | date:'d/M/yy':'':'es' }}@if (c.cierre_manual) { <span class="text-xs text-slate-500 dark:text-slate-400"> (cerrada a mano)</span> } }
+                              @else { <span class="font-semibold text-amber-700 dark:text-amber-400 s13-curso">{{ c.tipo === 'publicador' ? 'Aún la tiene' : 'En curso' }}</span> }
+                            </p>
                           } @else {
                             <span class="text-slate-400">—</span>
                           }
@@ -110,6 +155,10 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
               </table>
             </div>
           }
+          <div class="s13-solo-impresion s13-pie">
+            <span>Registro S-13 · generado con GAC</span>
+            <span>Impreso el {{ hoy | date:'d MMM yyyy':'':'es' }}</span>
+          </div>
         }
       </div>
     </div>
@@ -124,6 +173,7 @@ export class RegistroS13Page implements OnInit {
     return hoy.getMonth() >= 8 ? hoy.getFullYear() : hoy.getFullYear() - 1;
   }
 
+  hoy = new Date();
   anios = [0, 1, 2, 3].map(i => RegistroS13Page.anioActual() - i);
   opcionesAnio: PickerOption[] = this.anios.map(a => ({ value: a, label: `${a} – ${a + 1}`, hint: 'septiembre a agosto' }));
   anio = signal(RegistroS13Page.anioActual());

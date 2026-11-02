@@ -1474,3 +1474,9 @@
 .leaflet-marker-icon.marker-icon::before {
   content: ''; position: absolute; inset: -14px; border-radius: 50%;
 }
+
+/* El mapa guarda sus paneles y controles (z-index hasta 1000) en su propia capa: sin esto tapan el menú lateral y sus submenús. */
+.leaflet-container,
+.maplibregl-map {
+  isolation: isolate;
+}

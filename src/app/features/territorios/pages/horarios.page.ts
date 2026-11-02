@@ -1,18 +1,20 @@
-import { Component, signal, computed, effect, inject, OnInit, untracked } from '@angular/core';
+import { Component, ElementRef, ViewChild, signal, computed, effect, inject, OnInit, untracked } from '@angular/core';
 import { VacanteTraslado, VacantesTrasladoService, textoVacante, vacantesPor } from '../../../shared/vacantes-traslado';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { TerritoriosService } from '../services/territorios.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
-import { Territorio, ResumenTerritorio, textoDiasSinTrabajar } from '../models/territorio.model';
+import { Sector, PuntoSalidaOpcion, SugerenciaSalida } from '../models/territorio.model';
+import { codigosDe, textoManzanas } from '../utils/rangos-manzanas.util';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { nombreMostrado } from '../../../core/utils/nombre.util';
-import { SalidaEditorComponent, OpcionTerritorio } from '../components/salida-editor.component';
+import { SalidaEditorComponent } from '../components/salida-editor.component';
 import { SemanaTipoComponent } from '../components/semana-tipo.component';
 import { exportarElemento } from '../utils/territorio-export.util';
 import {
-  FilaSemanaTipo, GrupoOpcion, Periodo, PersonaRef, SalidaForm, SalidaProgramada, SalidasProgramaService,
+  FilaSemanaTipo, GrupoOpcion, ModoCrear, Periodo, PersonaRef, SalidaForm, SalidaProgramada, SalidasProgramaService,
   DIAS, aIso, horaLegible, moverPeriodo, rangoDe, tituloDia, tituloPeriodo,
 } from '../services/salidas-programa.service';
 
@@ -38,13 +40,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
       <app-page-header
         spacing="none"
         title="Programa de salidas"
-        subtitle="Qué días se predica, dónde se reúnen, quién saca el grupo y en qué territorio.">
-        @if (puedeEditar()) {
-          <button (click)="abrirSemanaTipo()" class="btn-secondary focus-ring-green whitespace-nowrap">
-            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Semana tipo
-          </button>
-        }
+        subtitle="Qué días se predica, dónde se reúnen, quién saca el grupo y en qué barrio.">
         <div class="relative">
           <button (click)="menuCompartir.set(!menuCompartir())" [disabled]="!salidas().length || exportando()"
             class="btn-secondary focus-ring-green whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
@@ -90,33 +86,53 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
           </button>
         }
 
-        @if (salidas().length) {
+        @if (sinCapitan()) {
           <div class="hidden lg:flex items-center gap-2" aria-label="Resumen del periodo">
-            <span class="resumen"><b class="tabular-nums">{{ salidas().length }}</b> {{ salidas().length === 1 ? 'salida' : 'salidas' }}</span>
-            @if (sinCapitan()) {
-              <span class="resumen resumen--aviso"><span class="punto bg-amber-500"></span><b class="tabular-nums">{{ sinCapitan() }}</b> sin capitán</span>
-            }
-            @if (sinTerritorio()) {
-              <span class="resumen"><span class="punto bg-slate-400"></span><b class="tabular-nums">{{ sinTerritorio() }}</b> sin territorio</span>
-            }
+            <span class="resumen resumen--aviso"><span class="punto bg-amber-500"></span><b class="tabular-nums">{{ sinCapitan() }}</b> sin capitán</span>
           </div>
         }
 
-        @if (puedeEditar()) {
+        @if (puedeEditar() && !sinCongregacion() && !loading()) {
           <div class="flex gap-2 ml-auto w-full sm:w-auto">
-            <button (click)="nuevaSalida()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors active:scale-[0.97]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Agregar salida
-            </button>
-            <button (click)="generar()" [disabled]="generando()"
-              class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-sm font-bold whitespace-nowrap text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 disabled:opacity-60 transition-[background-color,transform] active:scale-[0.97]">
-              @if (generando()) {
-                <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              } @else {
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="13" x2="12" y2="19"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
-              }
-              Generar {{ periodo() === 'mes' ? 'mes' : 'semana' }}
-            </button>
+            @if (estado() === 'sin-fijas') {
+              <button (click)="abrirSemanaTipo()" class="btn-primario flex-1 sm:flex-none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Configurar salidas fijas
+              </button>
+            } @else {
+              <button (click)="nuevaSalida()" class="btn-suave flex-1 sm:flex-none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar salida
+              </button>
+              <div class="relative">
+                <button (click)="menuPrograma.set(!menuPrograma())" class="btn-suave !px-3" aria-haspopup="menu" [attr.aria-expanded]="menuPrograma()" title="Más opciones del programa">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+                  <span class="sr-only">Más opciones</span>
+                </button>
+                @if (menuPrograma()) {
+                  <div class="fixed inset-0 z-40" (click)="menuPrograma.set(false)"></div>
+                  <div class="menu-pop absolute right-0 mt-2 z-50 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-1.5" role="menu" (keydown.escape)="menuPrograma.set(false)">
+                    @if (estado() === 'con-programa') {
+                      <button role="menuitem" (click)="menuPrograma.set(false); pedirRecrear()" class="opcion-menu">
+                        <span class="block text-sm font-bold text-slate-800 dark:text-slate-100">Volver a crear con las salidas fijas</span>
+                        <span class="block text-[12px] text-slate-500 dark:text-slate-400">Agregar las que falten o empezar de nuevo</span>
+                      </button>
+                    }
+                    <button role="menuitem" (click)="menuPrograma.set(false); abrirSemanaTipo()" class="opcion-menu">
+                      <span class="block text-sm font-bold text-slate-800 dark:text-slate-100">Cambiar las salidas fijas</span>
+                      <span class="block text-[12px] text-slate-500 dark:text-slate-400">Días, horas, lugares y capitanes que se repiten</span>
+                    </button>
+                    @if (estado() === 'con-programa') {
+                      <div class="my-1 border-t border-slate-100 dark:border-slate-700/60"></div>
+                      <button role="menuitem" (click)="menuPrograma.set(false); dialogoBorrar.set(true)" class="opcion-menu">
+                        <span class="block text-sm font-bold text-red-700 dark:text-red-400">Borrar {{ periodo() === 'mes' ? 'el programa del mes' : 'el programa de la semana' }}</span>
+                        <span class="block text-[12px] text-slate-500 dark:text-slate-400">Quita las {{ salidas().length }} salidas de {{ periodo() === 'mes' ? 'este mes' : 'esta semana' }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
           </div>
         }
       </div>
@@ -129,13 +145,11 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
         </div>
       }
 
-      @if (reemplazo(); as r) {
-        <div class="shrink-0 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 flex flex-wrap items-center gap-3" role="alert">
-          <p class="flex-1 min-w-[14rem] text-sm font-semibold text-amber-900 dark:text-amber-200">
-            {{ r }} ¿Las cambiamos por las de la semana tipo? Se perderán los cambios hechos a mano.
-          </p>
-          <button (click)="reemplazo.set(null)" class="h-9 px-3 rounded-lg text-sm font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40">No, dejarlas</button>
-          <button (click)="generar(true)" class="h-9 px-3 rounded-lg text-sm font-bold text-white bg-amber-600 hover:bg-amber-700">Sí, reemplazar</button>
+      @if (hecho(); as h) {
+        <div class="aviso-hecho shrink-0 flex items-start gap-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-xl px-4 py-3" role="status">
+          <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <p class="flex-1 text-sm font-semibold text-emerald-900 dark:text-emerald-200">{{ h }}</p>
+          <button (click)="hecho.set(null)" class="text-sm font-bold text-emerald-800 dark:text-emerald-300 px-1" title="Cerrar aviso">✕</button>
         </div>
       }
 
@@ -166,12 +180,47 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                   </li>
                 }
               </ol>
-              <button (click)="abrirSemanaTipo()" class="mt-6 h-11 px-5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-colors">Armar la semana tipo</button>
+              <button (click)="abrirSemanaTipo()" class="mt-6 h-11 px-5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-colors">Configurar salidas fijas</button>
             </div>
+          </div>
+        } @else if (estado() === 'vacio' && puedeEditar()) {
+          <div class="h-full overflow-y-auto flex items-start sm:items-center justify-center py-2">
+            <section class="vacio-card w-full max-w-xl bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-5 sm:p-7">
+              <p class="text-[12px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{{ titulo() }}</p>
+              <h2 class="mt-1 text-xl font-black text-slate-900 dark:text-white">{{ periodo() === 'mes' ? 'Este mes' : 'Esta semana' }} aún no tiene programa</h2>
+              <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                Se crearán <b class="text-slate-900 dark:text-white tabular-nums">{{ totalPrevio() }}</b> {{ totalPrevio() === 1 ? 'salida' : 'salidas' }} con sus salidas fijas{{ periodo() === 'mes' ? ' (cada semana del mes)' : '' }}. Después puede cambiar lo que quiera.
+              </p>
+              <ul class="mt-4 divide-y divide-slate-100 dark:divide-slate-700/60 rounded-xl border border-slate-100 dark:border-slate-700/60 overflow-hidden">
+                @for (d of vistaPrevia(); track d.dia) {
+                  <li class="flex gap-3 px-4 py-2.5">
+                    <span class="w-24 shrink-0 text-sm font-black text-slate-900 dark:text-white">{{ d.dia }}</span>
+                    <span class="min-w-0 flex-1 space-y-1">
+                      @for (f of d.filas; track $index) {
+                        <span class="block text-[13px] leading-snug text-slate-700 dark:text-slate-200">
+                          <b class="tabular-nums">{{ hora(f.hora_inicio) || 'Sin hora' }}</b> · {{ f.lugar || 'Sin lugar' }}
+                          <span class="text-slate-500 dark:text-slate-400"> · {{ f.capitanes.length ? nombresDe(f.capitanes) : 'Capitán: se turnan' }}</span>
+                        </span>
+                      }
+                    </span>
+                  </li>
+                }
+              </ul>
+              <div class="mt-5 flex flex-col-reverse sm:flex-row sm:items-center gap-2">
+                <button (click)="abrirSemanaTipo()" class="h-11 px-4 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cambiar las salidas fijas</button>
+                <button (click)="crear('nuevo')" [disabled]="generando()" class="btn-primario sm:ml-auto !h-12 !px-6">
+                  @if (generando()) { <span class="giro"></span> }
+                  {{ textoCrear() }}
+                </button>
+              </div>
+              @if (sinFijoCuantas()) {
+                <p class="mt-3 text-[12px] leading-snug text-slate-500 dark:text-slate-400">Las salidas sin capitán fijo reciben por turnos a uno de los habilitados como capitán. Revíselos después y cámbielos si hace falta.</p>
+              }
+            </section>
           </div>
         } @else if (periodo() === 'semana') {
           <!-- Semana: 7 columnas en escritorio, agenda en teléfono -->
-          <div class="h-full overflow-y-auto xl:overflow-hidden grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-3 xl:gap-4 content-start xl:content-stretch">
+          <div [class.entra]="recienCreado()" class="h-full overflow-y-auto xl:overflow-hidden grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-3 xl:gap-4 content-start xl:content-stretch">
             @for (d of semana(); track d.fecha) {
               <section class="dia" [class.dia--hoy]="d.fecha === hoyIso" [class.dia--pasado]="d.fecha < hoyIso"
                        [class.dia--vacio]="!d.salidas.length && d.fecha !== hoyIso">
@@ -210,6 +259,14 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                           <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
                           <span class="truncate">{{ s.codigo_territorio }}</span>
                         </span>
+                      }
+                      @if (s.nombre_barrio) {
+                        <span class="mt-1.5 block text-[12px] text-slate-500 dark:text-slate-400">Barrio {{ s.nombre_barrio }}</span>
+                      }
+                      @if (plan(s); as p) {
+                        <span class="mt-2 block rounded-lg px-2 py-1.5 text-[12px] leading-snug font-semibold"
+                              [class]="p.tipo === 'hecho' ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/25 dark:text-emerald-300' : p.tipo === 'toca' ? 'bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'"
+                              [title]="p.aviso ?? ''">{{ p.texto }}</span>
                       }
                     </button>
                   } @empty {
@@ -269,6 +326,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
                         <span class="text-[15px] font-black text-slate-900 dark:text-white tabular-nums">{{ hora(s.hora_inicio) }}</span>
                         <span class="text-[13px] font-bold text-slate-800 dark:text-slate-100"> · {{ s.lugar || 'Sin lugar' }}</span>
                         <span class="block mt-1 text-[13px] text-slate-600 dark:text-slate-300">{{ capitanes(s) || 'Sin capitán' }}@if (s.codigo_territorio) { · {{ s.codigo_territorio }} }</span>
+                        @if (plan(s); as p) { <span class="block mt-1 text-[12px] font-semibold text-slate-600 dark:text-slate-300">{{ p.texto }}</span> }
                       </button>
                     }
                   </div>
@@ -328,12 +386,55 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
         [capitanesIniciales]="e.salida?.capitanes ?? []"
         [publicadores]="personas()"
         [grupos]="gruposOpc()"
-        [territorios]="opcionesTerritorio()"
+        [barrios]="barrios()"
+        [puntosSalida]="puntosSalida()"
+        [capitanesHabilitados]="capitanesHabilitados()"
         [puedeEliminar]="!!e.salida"
         [guardando]="guardando()"
         (guardar)="guardar($event)"
         (eliminar)="eliminar()"
         (cancelar)="editando.set(null)" />
+    }
+
+    @if (dialogoRecrear()) {
+      <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4" (keydown.escape)="dialogoRecrear.set(false)">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="dialogoRecrear.set(false)"></div>
+        <div class="dialogo relative w-full sm:max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-5 sm:p-6"
+             role="dialog" aria-modal="true" aria-labelledby="recrear-titulo">
+          <h3 id="recrear-titulo" class="text-lg font-black text-slate-900 dark:text-white">Volver a crear {{ periodo() === 'mes' ? 'el mes' : 'la semana' }}</h3>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ titulo() }} ya tiene {{ salidas().length }} {{ salidas().length === 1 ? 'salida' : 'salidas' }}. ¿Qué desea hacer?</p>
+          <div class="mt-5 space-y-2">
+            <button #recomendado (click)="crear('faltantes')" [disabled]="generando()" class="opcion-dialogo opcion-dialogo--ok focus-ring-green">
+              <span class="block text-[15px] font-black">Agregar solo las que faltan</span>
+              <span class="block text-[13px] font-medium opacity-80">No se toca nada de lo que ya está ni lo cambiado a mano.</span>
+            </button>
+            <button (click)="crear('reemplazar')" [disabled]="generando()" class="opcion-dialogo opcion-dialogo--peligro focus-ring-green">
+              <span class="block text-[15px] font-black">Empezar de nuevo</span>
+              <span class="block text-[13px] font-medium opacity-80">Se borran las salidas de {{ periodo() === 'mes' ? 'este mes' : 'esta semana' }} y se crean otra vez. Se perderán los cambios hechos a mano; las que ya se registraron en Seguimiento se conservan.</span>
+            </button>
+          </div>
+          <button (click)="dialogoRecrear.set(false)" class="mt-3 w-full h-11 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+        </div>
+      </div>
+    }
+
+    @if (dialogoBorrar()) {
+      <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4" (keydown.escape)="dialogoBorrar.set(false)">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="dialogoBorrar.set(false)"></div>
+        <div class="dialogo relative w-full sm:max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-5 sm:p-6"
+             role="alertdialog" aria-modal="true" aria-labelledby="borrar-titulo">
+          <h3 id="borrar-titulo" class="text-lg font-black text-slate-900 dark:text-white">¿Borrar el programa {{ periodo() === 'mes' ? 'del mes' : 'de la semana' }}?</h3>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            Se borrarán las {{ salidas().length }} salidas {{ periodo() === 'mes' ? 'de ' : 'de la ' }}{{ tituloEnFrase() }}. Lo que ya registró en Seguimiento de predicación no se pierde. Después puede volver a crearlo con las salidas fijas.
+          </p>
+          <div class="mt-5 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+            <button #cancelarBorrar (click)="dialogoBorrar.set(false)" class="h-11 px-5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors focus-ring-green">Cancelar</button>
+            <button (click)="borrarPeriodo()" [disabled]="generando()" class="h-11 px-5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-[background-color,transform] active:scale-[0.97]">
+              {{ generando() ? 'Borrando…' : 'Sí, borrar' }}
+            </button>
+          </div>
+        </div>
+      </div>
     }
 
     @if (mostrarSemanaTipo()) {
@@ -342,6 +443,9 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
         [periodo]="periodo()"
         [publicadores]="personas()"
         [grupos]="gruposOpc()"
+        [barrios]="barrios()"
+        [puntosSalida]="puntosSalida()"
+        [capitanesHabilitados]="capitanesHabilitados()"
         (cerrar)="cerrarSemanaTipo($event)" />
     }
   `,
@@ -402,8 +506,58 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
     .celda-mas { opacity: 0; transition: opacity 120ms ease-out; }
     div:hover > div > .celda-mas, .celda-mas:focus-visible { opacity: 1; }
 
+    .btn-primario {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 18px;
+      border-radius: 12px; font-size: 14px; font-weight: 700; white-space: nowrap; color: #fff;
+      background: rgb(5 150 105); box-shadow: 0 4px 10px -2px rgb(5 150 105 / 0.3);
+      transition: background-color 150ms ease-out, transform 120ms ease-out;
+    }
+    .btn-primario:hover:enabled { background: rgb(4 120 87); }
+    .btn-primario:active:enabled { transform: scale(0.97); }
+    .btn-primario:disabled { opacity: 0.6; }
+    .btn-suave {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 44px; padding: 0 16px;
+      border-radius: 12px; font-size: 14px; font-weight: 700; white-space: nowrap; color: rgb(51 65 85);
+      background: #fff; border: 1px solid rgb(226 232 240);
+      transition: background-color 150ms ease-out, transform 120ms ease-out;
+    }
+    .btn-suave:hover { background: rgb(248 250 252); }
+    .btn-suave:active { transform: scale(0.97); }
+    :host-context(.dark) .btn-suave { color: rgb(226 232 240); background: rgb(30 41 59); border-color: rgb(51 65 85); }
+    :host-context(.dark) .btn-suave:hover { background: rgb(51 65 85); }
+    .btn-primario:focus-visible, .btn-suave:focus-visible, .opcion-menu:focus-visible { outline: 2px solid rgb(16 185 129); outline-offset: 2px; }
+    .giro { width: 16px; height: 16px; border-radius: 999px; border: 2px solid rgb(255 255 255 / 0.35); border-top-color: #fff; animation: girar 0.7s linear infinite; }
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    .opcion-menu { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; transition: background-color 120ms ease-out; }
+    .opcion-menu:hover { background: rgb(248 250 252); }
+    :host-context(.dark) .opcion-menu:hover { background: rgb(51 65 85 / 0.6); }
+
+    .opcion-dialogo { display: block; width: 100%; text-align: left; padding: 14px 16px; border-radius: 14px; border: 2px solid; transition: background-color 150ms ease-out, transform 120ms ease-out; }
+    .opcion-dialogo:active:enabled { transform: scale(0.98); }
+    .opcion-dialogo:disabled { opacity: 0.6; }
+    .opcion-dialogo--ok { border-color: rgb(16 185 129); background: rgb(236 253 245); color: rgb(6 78 59); }
+    .opcion-dialogo--ok:hover:enabled { background: rgb(209 250 229); }
+    .opcion-dialogo--peligro { border-color: rgb(254 202 202); background: #fff; color: rgb(153 27 27); }
+    .opcion-dialogo--peligro:hover:enabled { background: rgb(254 242 242); }
+    :host-context(.dark) .opcion-dialogo--ok { background: rgb(6 78 59 / 0.3); border-color: rgb(16 185 129 / 0.7); color: rgb(167 243 208); }
+    :host-context(.dark) .opcion-dialogo--peligro { background: transparent; border-color: rgb(127 29 29 / 0.8); color: rgb(252 165 165); }
+    :host-context(.dark) .opcion-dialogo--peligro:hover:enabled { background: rgb(127 29 29 / 0.25); }
+
+    /* Entradas cortas (ease-out); se omiten con «reducir movimiento» */
+    .menu-pop { animation: pop 140ms cubic-bezier(0.23, 1, 0.32, 1); transform-origin: top right; }
+    .dialogo { animation: subir 200ms cubic-bezier(0.23, 1, 0.32, 1); }
+    .vacio-card, .aviso-hecho { animation: subir 220ms cubic-bezier(0.23, 1, 0.32, 1); }
+    .entra .tarjeta { animation: subir 180ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+    @keyframes pop { from { opacity: 0; transform: scale(0.96); } }
+    @keyframes subir { from { opacity: 0; transform: translateY(6px); } }
+
     .scroll-fino { scrollbar-width: thin; scrollbar-color: rgb(203 213 225) transparent; }
-    @media (prefers-reduced-motion: reduce) { .tarjeta { transition: none; } .tarjeta:enabled:active { transform: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .tarjeta { transition: none; } .tarjeta:enabled:active { transform: none; }
+      .menu-pop, .dialogo, .vacio-card, .aviso-hecho, .entra .tarjeta, .giro { animation: none; }
+      .btn-primario:active:enabled, .btn-suave:active, .opcion-dialogo:active:enabled { transform: none; }
+    }
   `],
 })
 export class HorariosPage implements OnInit {
@@ -424,8 +578,8 @@ export class HorariosPage implements OnInit {
   readonly textoVacante = textoVacante;
   readonly hoyIso = aIso(new Date());
   readonly pasos = [
-    'Arme la semana tipo: los días, horas, lugares y capitanes que se repiten.',
-    'Genere la semana o el mes. A cada salida se le sugiere un territorio.',
+    'Configure las salidas fijas: los días, horas y lugares que se repiten. El capitán es opcional; si no lo pone, se turnan los habilitados.',
+    'Cree el programa de la semana o del mes con un botón. Cada salida mostrará qué manzanas le tocan, según el recorrido.',
     'Revise, cambie lo que haga falta y compártalo con la congregación.',
   ];
 
@@ -439,8 +593,11 @@ export class HorariosPage implements OnInit {
   semanaTipo = signal<FilaSemanaTipo[]>([]);
   gruposOpc = signal<GrupoOpcion[]>([]);
   personas = signal<PersonaRef[]>([]);
-  territorios = signal<Territorio[]>([]);
-  resumen = signal<Map<number, ResumenTerritorio>>(new Map());
+  capitanesHabilitados = signal<PersonaRef[]>([]);
+  barrios = signal<Sector[]>([]);
+  puntosSalida = signal<PuntoSalidaOpcion[]>([]);
+  /** Lo que le toca a cada salida aún sin registrar del periodo visible (clave = id_horario). */
+  sugerencias = signal<Record<string, SugerenciaSalida>>({});
 
   loading = signal(true);
   generando = signal(false);
@@ -449,7 +606,14 @@ export class HorariosPage implements OnInit {
   menuCompartir = signal(false);
   mostrarSemanaTipo = signal(false);
   error = signal<string | null>(null);
-  reemplazo = signal<string | null>(null);
+  menuPrograma = signal(false);
+  dialogoRecrear = signal(false);
+  dialogoBorrar = signal(false);
+  /** Aviso breve al terminar de crear el programa. */
+  hecho = signal<string | null>(null);
+  /** Anima la entrada de las salidas recién creadas. */
+  recienCreado = signal(false);
+  private quitarAviso?: ReturnType<typeof setTimeout>;
   editando = signal<{ salida: SalidaProgramada | null; form: SalidaForm } | null>(null);
 
   dias = computed<DiaPrograma[]>(() => {
@@ -460,18 +624,6 @@ export class HorariosPage implements OnInit {
     }
     return [...por.entries()].sort(([a], [b]) => a.localeCompare(b))
       .map(([fecha, salidas]) => ({ fecha, titulo: tituloDia(fecha), salidas }));
-  });
-
-  /** Para elegir territorio: nunca trabajados, luego los de más días sin salir. */
-  opcionesTerritorio = computed<OpcionTerritorio[]>(() => {
-    const r = this.resumen();
-    const peso = (id: number) => {
-      const d = r.get(id)?.dias_sin_trabajar;
-      return d === null || d === undefined ? Number.MAX_SAFE_INTEGER : d;
-    };
-    return [...this.territorios()]
-      .sort((a, b) => peso(b.id_territorio) - peso(a.id_territorio))
-      .map(t => ({ id_territorio: t.id_territorio, etiqueta: `${t.codigo} — ${t.nombre}`, detalle: this.etiquetaTrabajo(t.id_territorio) }));
   });
 
   /** La congregación de los datos que se ven (la da el backend). */
@@ -499,10 +651,9 @@ export class HorariosPage implements OnInit {
     });
     this.svc.semanaTipo().subscribe({ next: (l) => this.semanaTipo.set(l) });
     this.svc.grupos().subscribe({ next: (l) => this.gruposOpc.set(l) });
-    this.territoriosService.getTerritorios(0, 500).subscribe({ next: (l) => this.territorios.set(l) });
-    this.territoriosService.getResumen().subscribe({
-      next: (filas) => this.resumen.set(new Map(filas.map(f => [f.id_territorio, f]))),
-    });
+    this.svc.capitanes().subscribe({ next: (l) => this.capitanesHabilitados.set(l), error: () => this.capitanesHabilitados.set([]) });
+    this.territoriosService.getSectores().subscribe({ next: (r) => this.barrios.set(r.sectores), error: () => this.barrios.set([]) });
+    this.territoriosService.getPuntosSalida().subscribe({ next: (l) => this.puntosSalida.set(l), error: () => this.puntosSalida.set([]) });
     const congId = this.congregacionCtx.effectiveCongregacionId();
     const params: any = { limit: 1000 };
     if (congId) params.id_congregacion = congId;
@@ -514,18 +665,52 @@ export class HorariosPage implements OnInit {
     });
   }
 
+  /** Peticiones del periodo en curso: al cambiar de semana se cancelan, para que una respuesta atrasada no pise la nueva. */
+  private pedidas: Subscription[] = [];
+
   cargar(): void {
+    this.pedidas.forEach(p => p.unsubscribe());
     this.loading.set(true);
     const { desde, hasta } = this.rango();
-    this.svc.listar(aIso(desde), aIso(hasta)).subscribe({
+    const lista = this.svc.listar(aIso(desde), aIso(hasta)).subscribe({
       next: (l) => { this.salidas.set(l); this.loading.set(false); },
       error: (e) => { this.loading.set(false); this.mostrarError(e, 'No se pudo cargar el programa.'); },
     });
+    this.pedidas = [lista, this.cargarSugerencias()];
+  }
+
+  /** Lo que le toca a cada salida; es una ayuda: si falla, la agenda se ve igual, solo sin «Le toca…». */
+  private cargarSugerencias(): Subscription {
+    const { desde, hasta } = this.rango();
+    return this.territoriosService.getSugerencias(aIso(desde), aIso(hasta)).subscribe({
+      next: (r) => this.sugerencias.set(r),
+      error: () => this.sugerencias.set({}),
+    });
+  }
+
+  /**
+   * Una línea por salida: lo que ya se predicó, o lo que le toca, o que falta registrarla.
+   * Es informativo: no obliga a nada.
+   */
+  plan(s: SalidaProgramada): { tipo: 'hecho' | 'toca' | 'falta'; texto: string; aviso: string | null } | null {
+    const reg = s.registro;
+    if (reg?.registrada) {
+      if (!reg.numeros.length) return { tipo: 'hecho', texto: '✓ Registrada, sin manzanas marcadas', aviso: null };
+      return { tipo: 'hecho', texto: `✓ Predicaron ${textoManzanas(reg.numeros)}${reg.hasta ? ' · hasta la ' + reg.hasta : ''}`, aviso: null };
+    }
+    if (s.sin_salida) return { tipo: 'falta', texto: 'No se salió', aviso: null };
+    if (s.fecha_programada < this.hoyIso) return { tipo: 'falta', texto: 'Sin registrar lo que se predicó', aviso: null };
+    const g = this.sugerencias()[String(s.id_horario)];
+    if (!g || !g.manzanas.length) return null;
+    const donde = g.origen === 'general' ? '' : g.origen === 'barrio' ? ` · barrio ${s.nombre_barrio ?? ''}` : '';
+    const medias = g.manzanas.filter(m => m.a_medias).map(m => m.numero);
+    const terminar = medias.length ? ` · terminar la ${medias.join(', ')}, que quedó a medias` : '';
+    return { tipo: 'toca', texto: `Le toca: ${textoManzanas(g.manzanas.map(m => m.numero))} (${codigosDe(g.manzanas)})${donde}${terminar}`, aviso: g.aviso };
   }
 
   mover(paso: number): void {
     this.referencia.set(moverPeriodo(this.rango().desde, this.periodo(), paso));
-    this.reemplazo.set(null);
+    this.hecho.set(null);
     this.cargar();
   }
 
@@ -537,7 +722,6 @@ export class HorariosPage implements OnInit {
   readonly diasCortos = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   sinCapitan = computed(() => this.salidas().filter(s => !s.capitanes.length).length);
-  sinTerritorio = computed(() => this.salidas().filter(s => !s.id_territorio).length);
 
   private porFecha = computed(() => {
     const m = new Map<string, SalidaProgramada[]>();
@@ -598,35 +782,125 @@ export class HorariosPage implements OnInit {
   grupos(s: SalidaProgramada): string { return s.grupos.map(g => g.nombre).join(', '); }
   vacante(s: SalidaProgramada): VacanteTraslado | null { return this.vacantes().get(s.id_horario) ?? null; }
 
-  etiquetaTrabajo(id: number): string {
-    const f = this.resumen().get(id);
-    if (!f) return '';
-    const base = textoDiasSinTrabajar(f.dias_sin_trabajar);
-    const avance = f.en_curso ? ` · ${f.porcentaje} %` : '';
-    return base === 'Nunca trabajado' ? base : `última salida ${base}${avance}`;
-  }
-
   // ── Generar ───────────────────────────────────────────────────────────────
 
-  generar(reemplazar = false): void {
-    if (!this.semanaTipo().length) {
-      this.abrirSemanaTipo();
-      return;
+  /**
+   * Qué ve el encargado y cuál es la única acción principal:
+   * sin salidas fijas → configurarlas · periodo vacío → crear el programa · con programa → ajustarlo.
+   */
+  estado = computed<'sin-fijas' | 'vacio' | 'con-programa'>(() =>
+    this.salidas().length ? 'con-programa' : this.semanaTipo().length ? 'vacio' : 'sin-fijas');
+
+  textoCrear = computed(() => {
+    if (this.periodo() === 'semana') return 'Crear programa de la semana';
+    const mes = this.rango().desde.toLocaleDateString('es', { month: 'long' });
+    return `Crear programa de ${mes}`;
+  });
+
+  /** Las salidas fijas agrupadas por día, para mostrar qué se va a crear. */
+  vistaPrevia = computed(() => {
+    const por: FilaSemanaTipo[][] = [[], [], [], [], [], [], []];
+    for (const f of this.semanaTipo()) por[f.dia_semana - 1].push(f);
+    return por
+      .map((filas, i) => ({ dia: DIAS[i], filas: [...filas].sort((a, b) => (a.hora_inicio ?? '99').localeCompare(b.hora_inicio ?? '99')) }))
+      .filter(d => d.filas.length);
+  });
+
+  /** Cuántas salidas saldrán en el periodo visible (en el mes, cada día cuenta las veces que cae). */
+  totalPrevio = computed(() => {
+    const { desde, hasta } = this.rango();
+    const porDia = new Map<number, number>();
+    for (const f of this.semanaTipo()) porDia.set(f.dia_semana, (porDia.get(f.dia_semana) ?? 0) + 1);
+    let total = 0;
+    for (let d = new Date(desde); d <= hasta; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
+      total += porDia.get(((d.getDay() + 6) % 7) + 1) ?? 0;
     }
+    return total;
+  });
+
+  /** «semana del 23 de noviembre» / «noviembre de 2026», para meterlo en una frase. */
+  tituloEnFrase = computed(() => this.titulo().replace(/^./, c => c.toLowerCase()));
+
+  sinFijoCuantas = computed(() => this.semanaTipo().filter(f => !f.capitanes.length).length);
+
+  nombresDe(l: PersonaRef[]): string { return l.map(p => p.nombre).join(', '); }
+
+  pedirRecrear(): void { this.dialogoRecrear.set(true); }
+
+  /** Quita todas las salidas del periodo visible. */
+  borrarPeriodo(): void {
     const { desde, hasta } = this.rango();
     this.generando.set(true);
-    this.reemplazo.set(null);
-    this.svc.generar(aIso(desde), aIso(hasta), reemplazar).subscribe({
-      next: (l) => { this.salidas.set(l); this.generando.set(false); },
+    this.svc.borrarPeriodo(aIso(desde), aIso(hasta)).subscribe({
+      next: (r) => {
+        this.generando.set(false);
+        this.dialogoBorrar.set(false);
+        this.salidas.set([]);
+        this.sugerencias.set({});
+        this.hecho.set(r.borradas === 1 ? 'Se borró 1 salida.' : `Se borraron ${r.borradas} salidas.`);
+        clearTimeout(this.quitarAviso);
+        this.quitarAviso = setTimeout(() => this.hecho.set(null), 5000);
+      },
       error: (e) => {
         this.generando.set(false);
-        if (e?.status === 409) {
-          this.reemplazo.set(e.error?.detail?.mensaje ?? 'Este periodo ya tiene salidas.');
-          return;
-        }
-        this.mostrarError(e, 'No se pudo generar el programa.');
+        this.dialogoBorrar.set(false);
+        this.mostrarError(e, 'No se pudo borrar el programa.');
       },
     });
+  }
+
+  /** Al abrir el diálogo, el foco va a la opción recomendada (no borra nada). */
+  @ViewChild('cancelarBorrar') set cancelarBorrar(b: ElementRef<HTMLButtonElement> | undefined) {
+    if (b) setTimeout(() => b.nativeElement.focus());
+  }
+
+  @ViewChild('recomendado') set recomendado(b: ElementRef<HTMLButtonElement> | undefined) {
+    if (b) setTimeout(() => b.nativeElement.focus());
+  }
+
+  crear(modo: ModoCrear): void {
+    if (!this.semanaTipo().length) { this.abrirSemanaTipo(); return; }
+    const { desde, hasta } = this.rango();
+    const antes = new Set(this.salidas().map(s => s.id_horario));
+    this.generando.set(true);
+    this.svc.generar(aIso(desde), aIso(hasta), modo).subscribe({
+      next: (l) => {
+        this.generando.set(false);
+        this.dialogoRecrear.set(false);
+        this.salidas.set(l);
+        this.avisarCreadas(modo === 'reemplazar' ? l : l.filter(s => !antes.has(s.id_horario)), modo);
+        this.recienCreado.set(true);
+        setTimeout(() => this.recienCreado.set(false), 600);
+        this.cargarSugerencias();
+      },
+      error: (e) => {
+        this.generando.set(false);
+        if (e?.status === 409) { this.dialogoRecrear.set(true); this.cargar(); return; }
+        this.dialogoRecrear.set(false);
+        this.mostrarError(e, 'No se pudo crear el programa.');
+      },
+    });
+  }
+
+  /** «Se crearon 9 salidas. A 6 se les puso capitán por turnos…» */
+  private avisarCreadas(nuevas: SalidaProgramada[], modo: ModoCrear): void {
+    const n = nuevas.length;
+    let texto: string;
+    if (modo === 'faltantes' && !n) texto = 'No faltaba ninguna: el programa ya tenía todas las salidas fijas.';
+    else if (modo === 'faltantes') texto = n === 1 ? 'Se agregó 1 salida que faltaba.' : `Se agregaron ${n} salidas que faltaban.`;
+    else texto = n === 1 ? 'Se creó 1 salida.' : `Se crearon ${n} salidas.`;
+    // Salidas fijas sin capitán: el sistema puso a alguien por turnos.
+    const sinFijo = new Set(this.semanaTipo().filter(f => !f.capitanes.length).map(f => `${f.dia_semana}|${f.hora_inicio ?? ''}`));
+    const auto = nuevas.filter(s => {
+      const dia = ((new Date(s.fecha_programada + 'T12:00:00').getDay() + 6) % 7) + 1;
+      return s.capitanes.length && sinFijo.has(`${dia}|${s.hora_inicio ?? ''}`);
+    }).length;
+    if (auto) texto += auto === 1
+      ? ' A 1 se le puso capitán por turnos; revíselo y cámbielo si hace falta.'
+      : ` A ${auto} se les puso capitán por turnos; revíselos y cámbielos si hace falta.`;
+    this.hecho.set(texto);
+    clearTimeout(this.quitarAviso);
+    this.quitarAviso = setTimeout(() => this.hecho.set(null), auto ? 9000 : 5000);
   }
 
   // ── Editar una salida ─────────────────────────────────────────────────────
@@ -636,7 +910,7 @@ export class HorariosPage implements OnInit {
     const fecha = dia ?? (this.esActual() ? this.hoyIso : aIso(desde));
     this.editando.set({
       salida: null,
-      form: { fecha_programada: fecha, hora_inicio: null, lugar: null, notas: null, id_territorio: null, capitanes: [], grupos: [] },
+      form: { fecha_programada: fecha, hora_inicio: null, lugar: null, notas: null, id_territorio: null, id_sector: null, id_punto_salida: null, capitanes: [], grupos: [] },
     });
   }
 
@@ -646,7 +920,8 @@ export class HorariosPage implements OnInit {
       salida: s,
       form: {
         fecha_programada: s.fecha_programada, hora_inicio: s.hora_inicio ?? null, lugar: s.lugar ?? null, notas: s.notas ?? null,
-        id_territorio: s.id_territorio ?? null, capitanes: s.capitanes.map(c => c.id_publicador), grupos: s.grupos.map(g => g.id_grupo),
+        id_territorio: s.id_territorio ?? null, id_sector: s.id_sector ?? null, id_punto_salida: s.id_punto_salida ?? null,
+        capitanes: s.capitanes.map(c => c.id_publicador), grupos: s.grupos.map(g => g.id_grupo),
       },
     });
   }
@@ -666,7 +941,11 @@ export class HorariosPage implements OnInit {
     const s = this.editando()?.salida;
     if (!s) return;
     this.svc.eliminar(s.id_horario).subscribe({
-      next: () => { this.editando.set(null); this.salidas.update(l => l.filter(x => x.id_horario !== s.id_horario)); },
+      next: () => {
+        this.editando.set(null);
+        this.salidas.update(l => l.filter(x => x.id_horario !== s.id_horario));
+        this.cargarSugerencias();  // las manzanas que le tocaban pasan a las salidas siguientes
+      },
       error: (err) => this.mostrarError(err, 'No se pudo quitar la salida.'),
     });
   }

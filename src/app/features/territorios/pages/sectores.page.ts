@@ -40,7 +40,7 @@ interface TarjetaElegible {
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           </button>
           <div class="min-w-0">
-            <h1 class="font-display font-bold text-xl sm:text-2xl leading-tight text-gray-900 dark:text-slate-100">Barrios o sectores</h1>
+            <h1 class="font-display font-bold text-xl sm:text-2xl leading-tight text-gray-900 dark:text-slate-100">Barrios</h1>
             <p class="hidden lg:block text-sm text-slate-500 dark:text-slate-400 truncate">Divida el territorio en barrios, cada uno con su color. Después las tarjetas se agrupan dentro de ellos.</p>
           </div>
         </div>
@@ -160,6 +160,9 @@ interface TarjetaElegible {
               @if (sinSector() === 0) {
                 <svg class="w-5 h-5 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 <p class="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Todas las tarjetas ya tienen barrio.</p>
+                @if (todosDibujados()) {
+                  <button type="button" (click)="volver()" class="btn-primary-green focus-ring-green h-11 whitespace-nowrap">Siguiente: las tarjetas →</button>
+                }
               } @else {
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-bold text-slate-900 dark:text-white">{{ sinSector() }} {{ sinSector() === 1 ? 'tarjeta' : 'tarjetas' }} sin barrio</p>
@@ -207,7 +210,7 @@ interface TarjetaElegible {
         <aside class="lg:w-[24rem] shrink-0 flex flex-col min-h-0 max-h-[62dvh] lg:max-h-none border-t lg:border-t-0 lg:border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <header class="flex items-start justify-between gap-3 px-6 pt-6 pb-4">
             <div class="min-w-0">
-              <p class="text-xs font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400">Barrios o sectores</p>
+              <p class="text-xs font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400">Barrio</p>
               <h2 id="tituloBarrio" class="text-xl font-black text-slate-900 dark:text-white mt-0.5">{{ e.id_sector ? 'Editar barrio' : 'Nuevo barrio' }}</h2>
             </div>
             <button type="button" (click)="cerrarEditor()" aria-label="Cerrar sin guardar" title="Cerrar sin guardar"
@@ -445,6 +448,8 @@ export class SectoresPage implements OnInit {
   // Paso 2 y 3
   sectores = signal<Sector[]>([]);
   sinSector = signal(0);
+  /** Paso 2 de la guía terminado: todos los barrios tienen su zona dibujada. */
+  todosDibujados = computed(() => this.sectores().length > 0 && this.sectores().every(s => !!s.coordenada));
   tarjetas = signal<Territorio[]>([]);
   /** Editor de barrio abierto (nuevo o existente); el mapa y el panel comparten este objeto. */
   editor = signal<{

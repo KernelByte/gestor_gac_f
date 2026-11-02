@@ -28,6 +28,12 @@ function estiloBase(urlPmtiles: string, glyphs: string): any {
     },
   });
   const tipo = (...kinds: string[]) => ['in', ['get', 'kind'], ['literal', kinds]];
+  // Las capas de relleno de MapLibre no miran el tipo de figura: una línea (un río dibujado
+  // como eje) se cierra uniendo su último punto con el primero y se pinta por dentro. En
+  // Cali eso tapaba barrios enteros de azul. Por eso cada relleno se limita a polígonos.
+  const esArea = ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false];
+  const esLinea = ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false];
+  const area = (filtro?: any) => (filtro ? ['all', esArea, filtro] : esArea);
 
   return {
     version: 8,
@@ -41,26 +47,26 @@ function estiloBase(urlPmtiles: string, glyphs: string): any {
     },
     layers: [
       { id: 'fondo', type: 'background', paint: { 'background-color': '#f3efe7' } },
-      { id: 'tierra', type: 'fill', source: 'osm', 'source-layer': 'earth', paint: { 'fill-color': '#f3efe7' } },
-      { id: 'cobertura', type: 'fill', source: 'osm', 'source-layer': 'landcover', paint: { 'fill-color': '#dfe9cf' } },
+      { id: 'tierra', type: 'fill', source: 'osm', 'source-layer': 'earth', filter: area(), paint: { 'fill-color': '#f3efe7' } },
+      { id: 'cobertura', type: 'fill', source: 'osm', 'source-layer': 'landcover', filter: area(), paint: { 'fill-color': '#dfe9cf' } },
       {
         id: 'parque', type: 'fill', source: 'osm', 'source-layer': 'landuse',
-        filter: tipo('park', 'forest', 'nature_reserve', 'grass', 'garden', 'golf_course', 'wood', 'pitch'),
+        filter: area(tipo('park', 'forest', 'nature_reserve', 'grass', 'garden', 'golf_course', 'wood', 'pitch')),
         paint: { 'fill-color': '#cfe5b5' },
       },
       {
         id: 'uso-suelo', type: 'fill', source: 'osm', 'source-layer': 'landuse',
-        filter: tipo('residential', 'commercial', 'industrial', 'retail', 'school', 'hospital', 'university'),
+        filter: area(tipo('residential', 'commercial', 'industrial', 'retail', 'school', 'hospital', 'university')),
         paint: { 'fill-color': '#ece6da' },
       },
-      { id: 'agua', type: 'fill', source: 'osm', 'source-layer': 'water', paint: { 'fill-color': '#a9d3ef' } },
+      { id: 'agua', type: 'fill', source: 'osm', 'source-layer': 'water', filter: area(), paint: { 'fill-color': '#a9d3ef' } },
       {
         id: 'rio', type: 'line', source: 'osm', 'source-layer': 'water',
-        filter: ['==', ['geometry-type'], 'LineString'],
+        filter: esLinea,
         paint: { 'line-color': '#a9d3ef', 'line-width': 1.5 },
       },
       {
-        id: 'edificios', type: 'fill', source: 'osm', 'source-layer': 'buildings', minzoom: 14,
+        id: 'edificios', type: 'fill', source: 'osm', 'source-layer': 'buildings', minzoom: 14, filter: area(),
         paint: { 'fill-color': '#d8cfc4', 'fill-outline-color': '#b9ada0' },
       },
       via('via-sendero', tipo('path'), '#ffffff', [15, 0.5, 18, 2.5], 15),
@@ -89,22 +95,33 @@ function estiloBase(urlPmtiles: string, glyphs: string): any {
 }
 
 type FabricaCapa = (opciones: { style: any }) => Leaflet.Layer;
+let maplibreListo: Promise<typeof import('maplibre-gl')> | null = null;
 let preparado: Promise<FabricaCapa> | null = null;
 
 /** Carga MapLibre una sola vez y registra el protocolo pmtiles:// y el worker. */
-function preparar(): Promise<FabricaCapa> {
-  if (!preparado) {
-    preparado = (async () => {
-      const [maplibre, plugin, pmtiles] = await Promise.all([
-        import('maplibre-gl'),
-        import('@maplibre/maplibre-gl-leaflet'),
-        import('pmtiles'),
-      ]);
+export function cargarMaplibre(): Promise<typeof import('maplibre-gl')> {
+  if (!maplibreListo) {
+    maplibreListo = (async () => {
+      const [maplibre, pmtiles] = await Promise.all([import('maplibre-gl'), import('pmtiles')]);
       // El worker se copia a /maplibre (angular.json): el empaquetador lo mueve de sitio
       // y MapLibre no lo encuentra por su cuenta.
       maplibre.setWorkerUrl(`${location.origin}/maplibre/maplibre-gl-worker.mjs`);
       // Existe en tiempo de ejecución, pero los tipos de la versión 6 no lo declaran.
       (maplibre as any).addProtocol('pmtiles', new pmtiles.Protocol().tile);
+      return maplibre;
+    })().catch((e) => {
+      maplibreListo = null;
+      throw e;
+    });
+  }
+  return maplibreListo;
+}
+
+/** MapLibre dentro de Leaflet (la capa de fondo de los mapas de la app). */
+function preparar(): Promise<FabricaCapa> {
+  if (!preparado) {
+    preparado = (async () => {
+      const [, plugin] = await Promise.all([cargarMaplibre(), import('@maplibre/maplibre-gl-leaflet')]);
       return plugin.maplibreGL as unknown as FabricaCapa;
     })().catch((e) => {
       preparado = null;
@@ -169,7 +186,42 @@ export async function crearCapaBasePropia(): Promise<Leaflet.Layer | null> {
   const url = urlArchivo();
   if (!(await archivoDisponible(url))) return null;
   const maplibreGL = await preparar();
-  // Absoluta, pero sin pasar por URL(): codificaría las llaves de {fontstack} y {range}.
-  const glyphs = environment.mapaPropio.glyphsUrl.startsWith('/') ? location.origin + environment.mapaPropio.glyphsUrl : environment.mapaPropio.glyphsUrl;
-  return maplibreGL({ style: estiloBase(url, glyphs) });
+  return maplibreGL({ style: estiloBase(url, urlGlyphs()) });
+}
+
+/** Absoluta, pero sin pasar por URL(): codificaría las llaves de {fontstack} y {range}. */
+function urlGlyphs(): string {
+  return environment.mapaPropio.glyphsUrl.startsWith('/') ? location.origin + environment.mapaPropio.glyphsUrl : environment.mapaPropio.glyphsUrl;
+}
+
+/**
+ * Estilo para imprimir con MapLibre suelto (sin Leaflet): el mapa propio con nombres de calles si el
+ * archivo está; si no, las teselas de OpenStreetMap (permiten leer los píxeles para el PDF).
+ * `extra` son las capas que se dibujan encima del fondo (por ejemplo, el velo fuera del territorio).
+ */
+export async function estiloParaImprimir(extraFuentes: Record<string, any>, extraCapas: any[]): Promise<any> {
+  const url = urlArchivo();
+  const base = (await archivoDisponible(url))
+    ? estiloBase(url, urlGlyphs())
+    : {
+        version: 8,
+        sources: {
+          osm: {
+            type: 'raster', tileSize: 256, maxzoom: 19,
+            tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png', 'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            attribution: '© OpenStreetMap contributors',
+          },
+        },
+        layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+      };
+  // Para imprimir, los nombres de calle un poco más grandes y oscuros que en pantalla.
+  const capas = base.layers.map((c: any) => c.id === 'nombre-calle'
+    ? {
+        ...c, minzoom: 13,
+        // Más nombres y más juntos que en pantalla (las cuadras son cortas), sin cortarse en el borde.
+        layout: { ...c.layout, 'text-size': 13, 'symbol-spacing': 120, 'text-padding': 1, 'text-max-angle': 40, 'symbol-avoid-edges': true },
+        paint: { ...c.paint, 'text-color': '#1f2937', 'text-halo-color': '#ffffff', 'text-halo-width': 2.2 },
+      }
+    : c);
+  return { ...base, sources: { ...base.sources, ...extraFuentes }, layers: [...capas, ...extraCapas] };
 }

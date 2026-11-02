@@ -1,3 +1,4 @@
+import { avisoNumeroRepetido, NumeracionManzanas, siguienteLibre } from '../utils/numeracion-manzanas.util';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import {
   Component,
@@ -23,6 +24,7 @@ import { crearCapaBasePropia, callesDelMapa } from '../utils/mapa-base-propio';
 
 import { GeoJSONFeatureCollection, GeoJSONFeature, GeoJSONGeometry } from '../models/territorio.model';
 import { TerritoriosService } from '../services/territorios.service';
+import { firstValueFrom } from 'rxjs';
 
 export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
@@ -43,7 +45,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
       @if (enableDrawing) {
 
         <!-- ── TOP: pasos (junto a la barra de herramientas) · ubicación + buscador ── -->
-        <div class="absolute top-3 left-[60px] right-3 z-[1000] flex flex-wrap items-start justify-between gap-2 pointer-events-none">
+        <div class="absolute top-3 left-[60px] right-3 z-30 flex flex-wrap items-start justify-between gap-2 pointer-events-none">
 
           <!-- Pasos 1 · 2 · 3 -->
           @if (!soloLimite && !panelExterno) {
@@ -139,7 +141,18 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
         <!-- ── BOTTOM LEFT: Hint panel (mientras se revisan propuestas, el panel de revisión ocupa su lugar) ── -->
         @if (!propuestasActivas()) {
-        <div class="absolute bottom-3 left-3 z-[1000] flex flex-col items-start gap-2 max-w-[calc(100%-4.5rem)] sm:max-w-[min(calc(100%-11rem),36rem)]">
+        <div class="absolute bottom-3 left-3 z-30 flex flex-col items-start gap-2 max-w-[calc(100%-4.5rem)] sm:max-w-[min(calc(100%-11rem),36rem)]">
+          @if (leyendaAsignadas().length > 0) {
+            <!-- Quién tiene cada manzana: el mismo color que en el dibujo -->
+            <div class="gac-float rounded-xl px-3 py-2 space-y-1" role="list" aria-label="Manzanas asignadas">
+              @for (l of leyendaAsignadas(); track l.nombre + l.texto) {
+                <div class="flex items-center gap-2 text-[13px] text-slate-700 dark:text-slate-200" role="listitem">
+                  <span class="w-3.5 h-3.5 rounded-[4px] shrink-0 border" [style.background-color]="l.color" [style.border-color]="l.color" aria-hidden="true"></span>
+                  <span><span class="font-bold">{{ l.nombre }}</span> · {{ l.texto }}</span>
+                </div>
+              }
+            </div>
+          }
           @if (layerMode() === 'manzana' && !propuestasActivas() && !panelExterno) {
             <button
               (click)="detectarManzanas()"
@@ -176,7 +189,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
         <!-- ── Revisión de manzanas propuestas ── -->
         @if (propuestasActivas()) {
-          <div class="absolute bottom-2 left-2 z-[1050] w-[min(calc(100%-1rem),440px)] bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-amber-300 dark:border-amber-700/60 rounded-2xl shadow-xl p-4">
+          <div class="absolute bottom-2 left-2 z-35 w-[min(calc(100%-1rem),440px)] bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-amber-300 dark:border-amber-700/60 rounded-2xl shadow-xl p-4">
             <p class="text-sm font-black text-slate-800 dark:text-white">Se encontraron {{ propuestasTotal() }} manzanas</p>
             <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-snug">
               Compárelas con las cuadras reales. Toque una manzana para quitarla (o para incluirla otra vez).
@@ -193,7 +206,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
         }
 
         @if (aviso()) {
-          <div class="absolute top-16 left-1/2 -translate-x-1/2 z-[1060] w-[min(92%,460px)] flex items-start gap-2 bg-amber-50 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/60 rounded-xl px-3 py-2.5 shadow-lg">
+          <div class="absolute top-16 left-1/2 -translate-x-1/2 z-36 w-[min(92%,460px)] flex items-start gap-2 bg-amber-50 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/60 rounded-xl px-3 py-2.5 shadow-lg">
             <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             <p class="flex-1 text-sm font-semibold text-amber-800 dark:text-amber-200 leading-snug">{{ aviso() }}</p>
             <button (click)="aviso.set(null)" class="text-amber-700 dark:text-amber-300 text-sm font-bold px-1" title="Cerrar aviso">✕</button>
@@ -201,7 +214,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
         }
 
         <!-- ── BOTTOM RIGHT: Action buttons ── -->
-        <div class="absolute bottom-3 right-3 z-[1000] flex flex-col items-end gap-2">
+        <div class="absolute bottom-3 right-3 z-30 flex flex-col items-end gap-2">
           @if (!showClearConfirm()) {
             @if (drawingActive() && panelExterno) {
               <button
@@ -242,7 +255,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
         <!-- ── Panel externo: terminar de ajustar una figura ── -->
         @if (panelExterno && (editandoForma() || editMode())) {
-          <div class="absolute top-16 left-1/2 -translate-x-1/2 z-[1060] w-[min(94%,520px)] gac-float rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
+          <div class="absolute top-16 left-1/2 -translate-x-1/2 z-36 w-[min(94%,520px)] gac-float rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
             <p class="flex-1 min-w-[180px] text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">
               {{ editandoForma() && editTipo === 'punto' ? 'Arrastre el punto al lugar correcto.' : 'Arrastre las esquinas para corregir la forma.' }}
             </p>
@@ -259,7 +272,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
         <!-- ── Geolocation error toast ── -->
         @if (geolocateError()) {
-          <div class="absolute top-16 right-3 z-[1000] flex items-center gap-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 rounded-xl px-3 py-2 shadow-md">
+          <div class="absolute top-16 right-3 z-30 flex items-center gap-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 rounded-xl px-3 py-2 shadow-md">
             <svg class="w-3.5 h-3.5 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             <span class="text-xs font-semibold text-red-600 dark:text-red-400">{{ geolocateError() }}</span>
           </div>
@@ -267,7 +280,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
         <!-- ── Modo Punto: cursor hint ── -->
         @if ((panelExterno ? colocandoPunto() : layerMode() === 'punto') && !showPuntoPrompt()) {
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999] pointer-events-none">
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-29 pointer-events-none">
             <div class="flex items-center gap-2 bg-rose-600/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg">
               <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
               <span class="text-xs font-bold text-white">Clic en el mapa para colocar un punto</span>
@@ -277,7 +290,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
         <!-- ── Prompt: Número de manzana ── -->
         @if (showManzanaPrompt()) {
-          <div class="absolute inset-0 z-[1100] flex items-center justify-center">
+          <div class="absolute inset-0 z-40 flex items-center justify-center">
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-72 shadow-2xl overflow-hidden">
               <div class="p-4 border-b border-slate-100 dark:border-slate-700/50 bg-blue-50/50 dark:bg-blue-900/20">
                 <h4 class="text-sm font-black text-slate-800 dark:text-white">Número de manzana</h4>
@@ -288,17 +301,36 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
                   #manzanaInput
                   type="text"
                   [(ngModel)]="pendingManzanaNumero"
+                  [attr.aria-invalid]="!!avisoNumeroManzana()"
+                  [attr.aria-describedby]="avisoNumeroManzana() ? 'avisoNumeroManzana' : null"
                   placeholder="Ej: 1, 2, A, 10B..."
                   (keydown.enter)="confirmManzana()"
                   (keydown.escape)="cancelManzana()"
                   (focus)="$any($event.target).select()"
-                  class="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  class="w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm font-bold focus:outline-none focus:ring-2 transition-all"
+                  [class]="avisoNumeroManzana() ? 'border-red-400 focus:ring-red-500' : 'border-slate-300 dark:border-slate-600 focus:ring-blue-500'"
                   autofocus
                 />
+                @if (avisoNumeroManzana(); as aviso) {
+                  <div id="avisoNumeroManzana" class="mt-3 space-y-2" role="alert">
+                    <p class="text-xs font-semibold text-red-700 dark:text-red-300">{{ aviso }}</p>
+                    <p class="text-xs text-slate-600 dark:text-slate-300">Su dibujo no se pierde. Elija cómo seguir:</p>
+                    <button type="button" (click)="confirmManzana(true)"
+                            class="w-full text-left rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 transition-colors active:scale-[0.98]">
+                      <span class="block text-xs font-bold">Guardar y renumerar todo en orden</span>
+                      <span class="block text-xs font-normal opacity-90 mt-0.5">La manzana queda en su lugar y las demás se corren solas.</span>
+                    </button>
+                    <button type="button" (click)="usarNumeroSugerido()"
+                            class="w-full text-left rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-2.5 transition-colors active:scale-[0.98]">
+                      <span class="block text-xs font-bold text-slate-800 dark:text-slate-100">Usar el {{ numeroSugeridoManzana() }}</span>
+                      <span class="block text-xs font-normal text-slate-500 dark:text-slate-400 mt-0.5">Las demás no cambian.</span>
+                    </button>
+                  </div>
+                }
               </div>
               <div class="p-4 pt-0 flex gap-2">
                 <button (click)="cancelManzana()" class="flex-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
-                <button (click)="confirmManzana()" [disabled]="!pendingManzanaNumero" class="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors disabled:opacity-50">Guardar manzana</button>
+                <button (click)="confirmManzana()" [disabled]="!pendingManzanaNumero || !!avisoNumeroManzana()" class="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors disabled:opacity-50">Guardar manzana</button>
               </div>
             </div>
           </div>
@@ -306,7 +338,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
         <!-- ── Prompt: Datos del punto ── -->
         @if (showPuntoPrompt()) {
-          <div class="absolute inset-0 z-[1100] flex items-center justify-center">
+          <div class="absolute inset-0 z-40 flex items-center justify-center">
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-72 shadow-2xl overflow-hidden">
               <div class="p-4 border-b border-slate-100 dark:border-slate-700/50 bg-rose-50/50 dark:bg-rose-900/20">
                 <h4 class="text-sm font-black text-slate-800 dark:text-white">Nuevo punto</h4>
@@ -475,6 +507,12 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   @Input() geojson: GeoJSONFeatureCollection | null = null;
   @Input() manzanasGeojson: GeoJSONFeatureCollection | null = null;
   @Input() puntosGeojson: GeoJSONFeatureCollection | null = null;
+  /**
+   * Mapa general: encuadra el territorio completo de la congregación (su límite y
+   * las tarjetas), no solo las tarjetas. Desactivado, encuadra solo las tarjetas
+   * (p. ej. al filtrar por barrio).
+   */
+  @Input() encuadrarCongregacion = false;
   @Input() height = '300px';
   @Input() selectedId: number | null = null;
   @Input() interactive = true;
@@ -500,6 +538,12 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   /** Dónde abrir el mapa si el territorio aún no tiene límite (el salón). */
   @Input() centroInicial: { lat: number; lng: number } | null = null;
   /** Manzanas propuestas por la detección, pendientes de revisar. */
+  /** Territorio que se edita: para pedir al servidor calles y cuadras de su zona. */
+  @Input() idTerritorio: number | null = null;
+  /** Números ya usados en la congregación y el que sigue (secuencia continua entre tarjetas). */
+  @Input() numeracion: NumeracionManzanas | null = null;
+  /** Números que acabo de guardar y que `numeracion` aún no refleja (dibujo continuo). */
+  private recienGuardados: string[] = [];
   @Input() propuestasGeojson: GeoJSONFeatureCollection | null = null;
   @Input() detectando = false;
   @Input() guardandoPropuestas = false;
@@ -510,7 +554,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   @Output() limiteEditado = new EventEmitter<GeoJSONGeometry>();
   @Output() geometryChanged = new EventEmitter<GeoJSONFeatureCollection>();
   /** Emite { geojson: GeoJSON Polygon, numero: string } cuando se confirma una manzana dibujada */
-  @Output() manzanaDrawn = new EventEmitter<{ geojson: any; numero: string }>();
+  @Output() manzanaDrawn = new EventEmitter<{ geojson: any; numero: string; renumerarTodo?: boolean }>();
   /** Emite datos del punto cuando se confirma su creación */
   @Output() puntoPlaced = new EventEmitter<{ geojson: any; nombre: string; tipo: string; notas: string }>();
   /** Calles visibles (MultiLineString) con las que el padre pide las manzanas propuestas. */
@@ -533,9 +577,12 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   private limiteEdicionLayer: L.GeoJSON | null = null;
   private propuestasLayer: L.LayerGroup | null = null;
   /** Por propuesta: su polígono y su etiqueta, para renumerar al quitar o incluir. */
+  private numerosPropuestos: number[] = [];
   private propuestasCapas: { id: number; feature: any; poligono: L.GeoJSON; etiqueta: L.Marker }[] = [];
   /** La vista inicial (salón o territorios vecinos) se aplica una sola vez. */
   private vistaInicialAplicada = false;
+  /** Con `encuadrarCongregacion`: el límite llegó después de las tarjetas y ya se reencuadró. */
+  private congregacionEncuadrada = false;
   private ultimaFormaManzana: string | null = null;
   private tileProvider = 'osm';
   private tileLayer: L.Layer | null = null;
@@ -620,6 +667,19 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   private formaTemporal: L.Polygon | null = null;
   private puntoOriginal: L.LatLng | null = null;
 
+  // ── Límite por cuadras e imán a las calles ─────────────────────────────
+  eligiendoCuadras = signal(false);
+  cuadrasCargando = signal(false);
+  cuadrasElegidas = signal(0);
+  /** Se movió el mapa después de buscar: se ofrece «Buscar cuadras aquí». */
+  cuadrasDesactualizadas = signal(false);
+  private cuadrasLayer: L.LayerGroup | null = null;
+  private cuadrasCapas: { geometry: any; elegida: boolean; bloqueada: boolean; capa: L.GeoJSON }[] = [];
+  private cuadrasMoverHandler: (() => void) | null = null;
+  private imanLayer: L.LayerGroup | null = null;
+  private imanToken = 0;
+  private renumeracionPrevia: Map<number, string> | null = null;
+
   private territoriosService = inject(TerritoriosService);
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -633,6 +693,8 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    // El servidor ya devolvió la lista al día: los recién guardados ahora aparecen en ella.
+    if (changes['numeracion']) this.recienGuardados = [];
     if (changes['geojson'] && this.map) {
       this.renderGeoJSON();
     }
@@ -739,6 +801,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
   setLayerMode(mode: LayerMode): void {
     if (this.panelExterno && this.layerMode() !== mode) {
+      if (this.eligiendoCuadras()) this.cancelarCuadras();
       this.terminarEdicion(false);
       this.map?.pm?.disableDraw();
       this.seleccion.set(null);
@@ -896,6 +959,8 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
       this.map.on('pm:drawend', () => {
         this.drawingActive.set(false);
+        // Con el dibujo continuo de manzanas la herramienta se vuelve a abrir enseguida; el imán se queda.
+        setTimeout(() => { if (!this.drawingActive()) this.quitarImanCalles(); }, 0);
         this.puntosColocados.set(0);
         if (this.showManzanaPrompt()) return; // la ayuda la pone el aviso del número
         this.activeToolHint.set(this.layerMode() === 'manzana' ? this.hint('manzanas') : this.hint('limite'));
@@ -977,27 +1042,46 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
   // ── Manzana prompt ─────────────────────────────────────────────────────
 
-  confirmManzana(): void {
-    if (!this.pendingManzanaNumero?.trim() || !this.pendingManzanaLayerObj || !this.map) {
-      return;
-    }
+  /** `renumerarTodo`: guarda el dibujo aunque el número esté repetido y renumera toda la secuencia. */
+  confirmManzana(renumerarTodo = false): void {
+    if (!this.pendingManzanaNumero?.trim() || !this.pendingManzanaLayerObj || !this.map) return;
+    if (!renumerarTodo && this.avisoNumeroManzana()) return;
     const geojson = this.pendingManzanaLayerObj.toGeoJSON();
-    this.manzanaDrawn.emit({ geojson, numero: this.pendingManzanaNumero.trim() });
+    const numero = renumerarTodo ? this.numeroSugeridoManzana() : this.pendingManzanaNumero.trim();
+    // Con renumerar todo, los números cambian en el servidor: no hay recién guardado que recordar.
+    if (!renumerarTodo) this.recienGuardados.push(numero);
+    this.manzanaDrawn.emit({ geojson, numero, renumerarTodo });
     // Remove the temporary layer — parent will reload manzanasGeojson
     this.map.removeLayer(this.pendingManzanaLayerObj);
     this.pendingManzanaLayerObj = null;
     this.showManzanaPrompt.set(false);
     this.pendingManzanaNumero = '';
     // Dibujo continuo: la herramienta queda lista para la siguiente manzana (Esc para salir).
-    if (this.ultimaFormaManzana) this.map.pm.enableDraw(this.ultimaFormaManzana as any);
+    if (this.ultimaFormaManzana) { this.map.pm.enableDraw(this.ultimaFormaManzana as any); void this.activarImanCalles(); }
     this.activeToolHint.set('Manzana guardada. Dibuje la siguiente · Esc para terminar');
   }
 
-  /** El número que sigue al mayor ya usado (o al conteo, si los números no son enteros). */
+  /** El que sigue en la secuencia de la congregación (T01 1–4, T02 desde el 5…); nunca repite. */
+  numeroSugeridoManzana(): string {
+    if (this.numeracion) return String(siguienteLibre(this.numeracion, this.recienGuardados));
+    // Sin la lista del servidor: el siguiente al mayor de lo que se ve en el mapa.
+    const enteros = (this.manzanasGeojson?.features ?? [])
+      .map((f: any) => String(f.properties?.numero_manzana ?? '').trim())
+      .filter((n: string) => /^\d+$/.test(n)).map(Number);
+    return String((enteros.length ? Math.max(...enteros) : 0) + 1);
+  }
+
+  /** Aviso si el número escrito ya existe; dice dónde y cuál seguiría. */
+  avisoNumeroManzana(): string | null {
+    return avisoNumeroRepetido(this.pendingManzanaNumero ?? '', this.numeracion, this.idTerritorio, undefined, this.recienGuardados);
+  }
+
+  usarNumeroSugerido(): void {
+    this.pendingManzanaNumero = this.numeroSugeridoManzana();
+  }
+
   private sugerirNumeroManzana(): string {
-    const numeros = (this.manzanasGeojson?.features ?? []).map((f: any) => String(f.properties?.numero_manzana ?? '').trim());
-    const enteros = numeros.filter((n) => /^\d+$/.test(n)).map(Number);
-    return String(enteros.length ? Math.max(...enteros) + 1 : numeros.length + 1);
+    return this.numeroSugeridoManzana();
   }
 
   cancelManzana(): void {
@@ -1178,8 +1262,10 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   /** Empieza a marcar la zona: cada toque es una esquina, doble toque termina. */
   empezarDibujo(): void {
     if (!this.map?.pm) return;
+    if (this.eligiendoCuadras()) this.cancelarCuadras();
     this.map.pm.disableGlobalEditMode();
     this.map.pm.enableDraw('Polygon');
+    void this.activarImanCalles();
   }
 
   cancelarDibujo(): void {
@@ -1237,6 +1323,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     }
     this.manzanaCapas.clear();
     this.manzanaProps.clear();
+    this.prepararColoresAsignacion();
     if (this.formaTemporal) { this.map.removeLayer(this.formaTemporal); this.formaTemporal = null; }
     if (!this.manzanasGeojson?.features?.length) { this.sincronizarSeleccion(); return; }
 
@@ -1246,28 +1333,38 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       if (!feature.geometry) return;
       const props = feature.properties || {};
       const isPredicada = props.predicada === true;
+      const numeroPrevio = feature.id != null ? this.renumeracionPrevia?.get(Number(feature.id)) : undefined;
 
-      // When predicada: green. Otherwise: default slate.
-      const strokeColor = isPredicada ? '#16a34a' : '#475569';
-      const fillColor  = isPredicada ? '#bbf7d0' : '#f1f5f9';
-      const labelBg    = isPredicada ? '#16a34a' : '#475569';
+      // Predicada: verde. Asignada: el color de la persona. Si no, gris.
+      const colorAsig = this.colorAsignada(props);
+      const strokeColor = isPredicada ? '#16a34a' : colorAsig ?? '#475569';
+      const fillColor  = isPredicada ? '#bbf7d0' : colorAsig ? this.aclarar(colorAsig) : '#f1f5f9';
+      const labelBg    = numeroPrevio ? '#d97706' : isPredicada ? '#16a34a' : colorAsig ?? '#475569';
 
       // Polygon fill
       const poly = L.geoJSON(feature, {
         ...CAPA_AUXILIAR,
         style: {
           color: strokeColor,
-          weight: isPredicada ? 2.5 : 2,
+          weight: isPredicada || colorAsig ? 2.5 : 2,
           fillColor,
-          fillOpacity: isPredicada ? 0.55 : 0.40,
+          fillOpacity: isPredicada ? 0.55 : colorAsig ? 0.55 : 0.40,
           opacity: 0.9,
+          // Marcada por la IA: borde punteado hasta que alguien la revise.
+          dashArray: props.origen === 'ia' ? '6 5' : undefined,
         },
         onEachFeature: (_f: any, capa: any) => { capa._capaAuxiliar = true; },
       } as any);
+      // Al pasar el cursor: «Manzana 2 · Asignada a Gersain».
+      if (props.asignada_a) {
+        poly.bindTooltip(`Manzana ${props.numero_manzana ?? ''} · Asignada a ${props.asignada_a}`, { sticky: true, direction: 'top' });
+      }
       if (this.panelExterno && feature.id != null) {
         this.manzanaCapas.set(Number(feature.id), poly);
         this.manzanaProps.set(Number(feature.id), props);
         poly.on('click', (ev: L.LeafletMouseEvent) => {
+          // Poniendo un punto, la manzana es solo fondo: el clic sigue al mapa y ahí se coloca.
+          if (this.colocandoPunto()) return;
           L.DomEvent.stopPropagation(ev);
           if (this.drawingActive() || this.editandoForma() || this.propuestasActivas()) return;
           this.seleccionar('manzana', Number(feature.id));
@@ -1278,7 +1375,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       poly.addTo(this.manzanasLayer!);
 
       // Centroid label with number
-      const numero = props.numero_manzana;
+      const numero = numeroPrevio ?? props.numero_manzana;
       if (numero) {
         try {
           const centroid = this.getCentroid(feature.geometry);
@@ -1321,6 +1418,46 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       if (sel.tipo === 'manzana' || this.puntosLayer) { this.seleccion.set(null); this.borrando.set(false); }
     }
     this.aplicarSeleccion();
+  }
+
+  // ── Manzanas asignadas: un color por asignación ────────────────────────
+
+  /** Colores que no se confunden con lo predicado (verde) ni con lo elegido (azul). */
+  private static readonly COLORES_ASIGNACION = ['#7c3aed', '#ea580c', '#db2777', '#0891b2', '#a16207', '#4f46e5'];
+  private coloresAsignacion = new Map<number, string>();
+  /** Para la leyenda del mapa: quién tiene qué. Vacío si nada está asignado. */
+  leyendaAsignadas = signal<{ color: string; nombre: string; texto: string }[]>([]);
+
+  private prepararColoresAsignacion(): void {
+    this.coloresAsignacion.clear();
+    const porAsignacion = new Map<number, { nombre: string; completa: boolean; numeros: string[] }>();
+    for (const f of this.manzanasGeojson?.features ?? []) {
+      const p: any = (f as any).properties ?? {};
+      if (p.id_asignacion == null) continue;
+      const g = porAsignacion.get(p.id_asignacion) ?? { nombre: p.asignada_a as string, completa: !!p.asignacion_completa, numeros: [] as string[] };
+      g.numeros.push(String(p.numero_manzana ?? ''));
+      porAsignacion.set(p.id_asignacion, g);
+    }
+    const paleta = TerritorioMapComponent.COLORES_ASIGNACION;
+    const ids = [...porAsignacion.keys()].sort((a, b) => a - b);
+    ids.forEach((id, i) => this.coloresAsignacion.set(id, paleta[i % paleta.length]));
+    const lista = (n: string[]) => n.length <= 1 ? n.join('') : `${n.slice(0, -1).join(', ')} y ${n[n.length - 1]}`;
+    this.leyendaAsignadas.set(ids.map((id) => {
+      const g = porAsignacion.get(id)!;
+      const nums = [...g.numeros].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+      return { color: this.coloresAsignacion.get(id)!, nombre: g.nombre, texto: g.completa ? 'Toda la tarjeta' : `${nums.length === 1 ? 'Manzana' : 'Manzanas'} ${lista(nums)}` };
+    }));
+  }
+
+  private colorAsignada(props: any): string | null {
+    return props?.id_asignacion != null ? this.coloresAsignacion.get(props.id_asignacion) ?? null : null;
+  }
+
+  /** Mezcla el color con blanco para el relleno del polígono. */
+  private aclarar(hex: string): string {
+    const n = parseInt(hex.slice(1), 16);
+    const mezcla = (c: number) => Math.round(c + (255 - c) * 0.72);
+    return `rgb(${mezcla(n >> 16)}, ${mezcla((n >> 8) & 255)}, ${mezcla(n & 255)})`;
   }
 
   /** En los mapas de consulta, los números solo se ven con el mapa cerca (en el editor, siempre). */
@@ -1379,6 +1516,21 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     } as any).addTo(this.map);
     this.referenciasLayer.bringToBack();
     this.aplicarVistaInicial();
+    if (this.encuadrarCongregacion && this.geoLayer && !this.congregacionEncuadrada) {
+      const b = this.boundsParaEncuadrar();
+      if (b?.isValid()) { this.map.fitBounds(b, { padding: [30, 30] }); this.congregacionEncuadrada = true; }
+    }
+  }
+
+  /** Tarjetas y, con `encuadrarCongregacion`, también el límite de la congregación. */
+  private boundsParaEncuadrar(): L.LatLngBounds | null {
+    const bounds = this.geoLayer?.getBounds();
+    if (!this.encuadrarCongregacion) return bounds ?? null;
+    const todo = bounds?.isValid() ? L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast()) : L.latLngBounds([]);
+    this.referenciasLayer?.eachLayer((l: any) => {
+      if (l.feature?.properties?.limite) todo.extend(l.getBounds());
+    });
+    return todo;
   }
 
   private renderLimiteEdicion(): void {
@@ -1429,10 +1581,6 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   async detectarManzanas(): Promise<void> {
     if (!this.map) return;
     this.aviso.set(null);
-    if (this.tileProvider !== 'propio' || !(this.tileLayer as any)?.getMaplibreMap) {
-      this.aviso.set('La detección usa el mapa propio y no está disponible. El administrador puede descargarlo en Configuración → Admin → Ajustes generales → «Mapa propio de Colombia».');
-      return;
-    }
     const limite = this.capasDelLimite();
     if (!limite.length) {
       this.aviso.set('Primero dibuje el límite del territorio en "1 · Límite".');
@@ -1442,8 +1590,9 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     try {
       this.map.fitBounds(L.featureGroup(limite).getBounds(), { padding: [40, 40], animate: false });
       await new Promise((r) => setTimeout(r, 400)); // MapLibre sigue a Leaflet en el siguiente cuadro
-      const calles = await callesDelMapa(this.tileLayer);
-      if (!calles?.coordinates.length) {
+      const calles = await this.obtenerCalles();
+      if (!calles) return;
+      if (!calles.coordinates.length) {
         this.aviso.set('El mapa no tiene calles en esta zona. Dibuje las manzanas a mano.');
         return;
       }
@@ -1451,6 +1600,207 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     } finally {
       this.extrayendo.set(false);
     }
+  }
+
+  /**
+   * Calles de lo que se ve en pantalla. Con el mapa propio salen de las teselas
+   * del navegador; con OSM o Google (imágenes) se piden al servidor. Devuelve
+   * null y deja el aviso si no se pudieron traer.
+   *
+   * `completas`: las teselas cortan las calles en sus bordes y a veces les falta
+   * un tramo. Para la detección no importa (el límite cierra los huecos), pero
+   * para elegir cuadras sí, así que primero se piden al servidor y las teselas
+   * quedan de respaldo.
+   */
+  private async obtenerCalles(completas = false): Promise<{ type: 'MultiLineString'; coordinates: number[][][] } | null> {
+    if (!this.map) return null;
+    if (this.map.getZoom() < ZOOM_MINIMO_CALLES) {
+      this.aviso.set('Acerque más el mapa para buscar las calles.');
+      return null;
+    }
+    const conTeselas = this.tileProvider === 'propio' && !!(this.tileLayer as any)?.getMaplibreMap;
+    if (conTeselas && !completas) return callesDelMapa(this.tileLayer);
+    const delServidor = await this.callesDelServidor(!conTeselas);
+    return delServidor ?? (conTeselas ? callesDelMapa(this.tileLayer) : null);
+  }
+
+  private async callesDelServidor(avisarFallo: boolean): Promise<{ type: 'MultiLineString'; coordinates: number[][][] } | null> {
+    if (!this.map || this.idTerritorio == null) return null;
+    const b = this.map.getBounds();
+    try {
+      return await firstValueFrom(this.territoriosService.callesEnBbox(this.idTerritorio, {
+        s: b.getSouth(), w: b.getWest(), n: b.getNorth(), e: b.getEast(),
+      }));
+    } catch (err: any) {
+      if (avisarFallo) this.aviso.set(err?.error?.detail ?? 'No se pudieron traer las calles del mapa. Intente de nuevo.');
+      return null;
+    }
+  }
+
+  // ── Límite por cuadras ──────────────────────────────────────────────────
+
+  /** Muestra las cuadras de la zona visible para armar el límite tocándolas. */
+  async empezarCuadras(): Promise<void> {
+    if (!this.map) return;
+    this.map.pm?.disableDraw();
+    // Apagar la edición cuando ya está apagada igual emite el evento y marcaría el límite como cambiado.
+    if ((this.map.pm as any)?.globalEditModeEnabled?.()) this.map.pm.disableGlobalEditMode();
+    this.eligiendoCuadras.set(true);
+    if (!this.cuadrasMoverHandler) {
+      this.cuadrasMoverHandler = () => { if (this.cuadrasLayer) this.cuadrasDesactualizadas.set(true); };
+      this.map.on('moveend', this.cuadrasMoverHandler);
+    }
+    await this.buscarCuadrasAqui();
+  }
+
+  async buscarCuadrasAqui(): Promise<void> {
+    if (!this.map || this.idTerritorio == null) return;
+    this.aviso.set(null);
+    this.cuadrasCargando.set(true);
+    try {
+      const calles = await this.obtenerCalles(true);
+      if (!calles) return;
+      if (!calles.coordinates.length) {
+        this.aviso.set('El mapa no tiene calles en esta zona. Dibuje el límite a mano.');
+        return;
+      }
+      const fc = await firstValueFrom(this.territoriosService.cuadras(this.idTerritorio, calles));
+      // Se conservan las ya elegidas que vuelvan a salir (misma forma) al mover el mapa.
+      const antes = new Set(this.cuadrasElegidasGeojson().map((g) => JSON.stringify(g)));
+      this.renderCuadras(fc.features ?? [], antes);
+      if (!fc.features?.length) this.aviso.set('No se encontraron cuadras cerradas por calles en esta zona.');
+    } catch (err: any) {
+      this.aviso.set(err?.error?.detail ?? 'No se pudieron buscar las cuadras. Intente de nuevo.');
+    } finally {
+      this.cuadrasCargando.set(false);
+      this.cuadrasDesactualizadas.set(false);
+    }
+  }
+
+  private renderCuadras(features: any[], elegidasAntes: Set<string>): void {
+    if (!this.map) return;
+    if (this.cuadrasLayer) this.map.removeLayer(this.cuadrasLayer);
+    this.cuadrasLayer = L.layerGroup().addTo(this.map);
+    this.cuadrasCapas = [];
+    for (const f of features) {
+      const p = f.properties ?? {};
+      const bloqueada = !!(p.ocupada || p.fuera);
+      const item = { geometry: f.geometry, elegida: !bloqueada && (p.actual || elegidasAntes.has(JSON.stringify(f.geometry))), bloqueada, capa: null as any };
+      item.capa = L.geoJSON(f, {
+        pmIgnore: true,
+        snapIgnore: true,
+        style: this.estiloCuadra(item.elegida, bloqueada),
+        onEachFeature: (_f: any, capa: any) => { capa._capaAuxiliar = true; },
+      } as any).addTo(this.cuadrasLayer);
+      if (bloqueada) {
+        item.capa.bindTooltip(p.fuera ? 'Fuera del territorio de la congregación' : 'Ya pertenece a otra tarjeta', { sticky: true });
+      } else {
+        item.capa.on('click', (ev: L.LeafletMouseEvent) => {
+          L.DomEvent.stopPropagation(ev);
+          item.elegida = !item.elegida;
+          item.capa.setStyle(this.estiloCuadra(item.elegida, false));
+          this.contarCuadras();
+        });
+      }
+      this.cuadrasCapas.push(item);
+    }
+    this.contarCuadras();
+  }
+
+  private contarCuadras(): void {
+    this.cuadrasElegidas.set(this.cuadrasCapas.filter((c) => c.elegida).length);
+  }
+
+  private cuadrasElegidasGeojson(): any[] {
+    return this.cuadrasCapas.filter((c) => c.elegida).map((c) => c.geometry);
+  }
+
+  private estiloCuadra(elegida: boolean, bloqueada: boolean): L.PathOptions {
+    if (bloqueada) return { color: '#94a3b8', weight: 1, fillColor: '#cbd5e1', fillOpacity: 0.45, opacity: 0.8 };
+    return elegida
+      ? { color: '#047857', weight: 2, fillColor: '#10b981', fillOpacity: 0.45, opacity: 1 }
+      : { color: '#7c3aed', weight: 1.5, fillColor: '#ffffff', fillOpacity: 0.15, opacity: 0.9, dashArray: '4 4' };
+  }
+
+  /** Une las cuadras elegidas y las pone como el límite (queda sin guardar, se puede ajustar). */
+  async armarLimiteConCuadras(): Promise<void> {
+    if (!this.map || this.idTerritorio == null) return;
+    const poligonos = this.cuadrasElegidasGeojson();
+    if (!poligonos.length) return;
+    this.aviso.set(null);
+    this.cuadrasCargando.set(true);
+    try {
+      const geometria = await firstValueFrom(this.territoriosService.unirCuadras(this.idTerritorio, poligonos));
+      this.capasDelLimite().forEach((l) => this.map!.removeLayer(l));
+      if (this.geoLayer) this.map.removeLayer(this.geoLayer);
+      this.geoLayer = L.geoJSON({ type: 'Feature', geometry: geometria, properties: {} } as any, {
+        style: (feature: any) => this.getFeatureStyle(feature),
+      }).addTo(this.map);
+      this.geoLayer.eachLayer((layer: any) => {
+        layer.on?.('pm:edit', () => this.emitGeometryUpdate());
+        layer.on?.('pm:dragend', () => this.emitGeometryUpdate());
+      });
+      this.cancelarCuadras();
+      this.emitGeometryUpdate();
+      this.recalculateAreaFromAllLayers();
+      this.manzanasAlFrente();
+      this.activeToolHint.set('Límite armado. Revise el contorno y pulse «Guardar límite».');
+    } catch (err: any) {
+      this.aviso.set(err?.error?.detail ?? 'No se pudo armar el límite con esas cuadras.');
+    } finally {
+      this.cuadrasCargando.set(false);
+    }
+  }
+
+  cancelarCuadras(): void {
+    if (this.map && this.cuadrasLayer) this.map.removeLayer(this.cuadrasLayer);
+    if (this.map && this.cuadrasMoverHandler) this.map.off('moveend', this.cuadrasMoverHandler);
+    this.cuadrasMoverHandler = null;
+    this.cuadrasLayer = null;
+    this.cuadrasCapas = [];
+    this.cuadrasElegidas.set(0);
+    this.cuadrasDesactualizadas.set(false);
+    this.eligiendoCuadras.set(false);
+  }
+
+  // ── Imán a las calles ───────────────────────────────────────────────────
+
+  /**
+   * Mientras se dibuja a mano, las calles de la pantalla quedan como líneas
+   * casi invisibles a las que Geoman pega el lápiz (esquinas y ejes).
+   * No bloquea el dibujo: si las calles tardan, el imán llega después.
+   */
+  private async activarImanCalles(): Promise<void> {
+    if (!this.map || !this.panelExterno) return;
+    const token = ++this.imanToken;
+    const avisoPrevio = this.aviso();
+    const calles = await this.obtenerCalles();
+    // Un fallo del imán no debe dejar un aviso encima del dibujo.
+    if (this.aviso() !== avisoPrevio) this.aviso.set(avisoPrevio);
+    if (!calles?.coordinates.length || token !== this.imanToken || !this.drawingActive()) return;
+    this.quitarImanCalles(false);
+    this.imanLayer = L.layerGroup().addTo(this.map);
+    for (const linea of calles.coordinates) {
+      const capa: any = L.polyline(linea.map(([lng, lat]) => [lat, lng] as [number, number]), {
+        ...CAPA_AUXILIAR, interactive: false, color: '#7c3aed', weight: 1, opacity: 0.25,
+      } as any);
+      capa._capaAuxiliar = true;
+      capa.addTo(this.imanLayer);
+    }
+  }
+
+  private quitarImanCalles(invalidar = true): void {
+    if (invalidar) this.imanToken++;
+    if (this.map && this.imanLayer) this.map.removeLayer(this.imanLayer);
+    this.imanLayer = null;
+  }
+
+  // ── Renumeración (vista previa sobre el mapa) ──────────────────────────
+
+  /** Muestra en ámbar los números que quedarían; null vuelve a los actuales. */
+  mostrarRenumeracion(nuevos: Map<number, string> | null): void {
+    this.renumeracionPrevia = nuevos;
+    this.renderManzanasLayer();
   }
 
   private renderPropuestas(): void {
@@ -1482,6 +1832,11 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       }).addTo(this.propuestasLayer!);
       this.propuestasCapas.push({ id, feature, poligono, etiqueta });
     });
+    // Los números que el servidor propuso (los siguientes libres de la secuencia), de menor a mayor.
+    this.numerosPropuestos = features
+      .map((f: any) => parseInt(f.properties?.numero_manzana, 10))
+      .filter((n: number) => Number.isFinite(n))
+      .sort((a: number, b: number) => a - b);
     this.numerarPropuestas();
   }
 
@@ -1496,14 +1851,14 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
   /** Las incluidas se numeran seguidas desde el primer número propuesto; las quitadas llevan ✕. */
   private numerarPropuestas(): void {
     const excluidas = this.propuestasExcluidas();
-    const inicio = parseInt(this.propuestasCapas[0]?.feature.properties?.numero_manzana, 10) || 1;
-    let n = inicio;
+    // Las incluidas toman los números propuestos por el servidor en orden: siguen la secuencia y no repiten.
+    let i = 0;
     for (const p of this.propuestasCapas) {
       const fuera = excluidas.has(p.id);
+      const n = fuera ? null : String(this.numerosPropuestos[i++] ?? i);
       p.poligono.setStyle(this.estiloPropuesta(fuera));
-      p.etiqueta.setIcon(this.iconoEtiqueta(fuera ? '✕' : String(n), fuera ? '#94a3b8' : '#d97706'));
-      p.feature.properties = { ...p.feature.properties, numero_manzana: fuera ? null : String(n) };
-      if (!fuera) n++;
+      p.etiqueta.setIcon(this.iconoEtiqueta(fuera ? '✕' : n!, fuera ? '#94a3b8' : '#d97706'));
+      p.feature.properties = { ...p.feature.properties, numero_manzana: n };
     }
   }
 
@@ -1604,7 +1959,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         marker.bindPopup(`
           <div style="font-family:system-ui;min-width:120px">
             <strong style="font-size:13px;color:#1e293b">${props.nombre || ''}</strong>
-            <p style="margin:2px 0 0;color:#64748b;font-size:11px">${tipo}</p>
+            <p style="margin:2px 0 0;color:#64748b;font-size:11px">${tipo}${props.codigo ? ' · Tarjeta ' + props.codigo : ''}</p>
             ${props.notas ? `<p style="margin:4px 0 0;color:#64748b;font-size:11px">${props.notas}</p>` : ''}
           </div>
         `);
@@ -1932,9 +2287,10 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       this.recalculateAreaFromAllLayers();
     }
 
-    const bounds = this.geoLayer.getBounds();
-    if (bounds.isValid()) {
+    const bounds = this.boundsParaEncuadrar();
+    if (bounds?.isValid()) {
       this.map.fitBounds(bounds, { padding: [30, 30] });
+      if (this.encuadrarCongregacion && this.referenciasLayer) this.congregacionEncuadrada = true;
     }
     this.ajustarEtiquetasManzana();
     this.actualizarCodigos();
@@ -1985,10 +2341,12 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
   private estiloManzana(props: any, elegida: boolean): L.PathOptions {
     const predicada = props?.predicada === true;
+    const asig = this.colorAsignada(props);
     if (elegida) return { color: '#1d4ed8', weight: 4, fillColor: '#93c5fd', fillOpacity: 0.6, opacity: 1 };
     return {
-      color: predicada ? '#16a34a' : '#475569', weight: predicada ? 2.5 : 2,
-      fillColor: predicada ? '#bbf7d0' : '#f1f5f9', fillOpacity: predicada ? 0.55 : 0.4, opacity: 0.9,
+      color: predicada ? '#16a34a' : asig ?? '#475569', weight: predicada || asig ? 2.5 : 2,
+      fillColor: predicada ? '#bbf7d0' : asig ? this.aclarar(asig) : '#f1f5f9', fillOpacity: predicada || asig ? 0.55 : 0.4, opacity: 0.9,
+      dashArray: props?.origen === 'ia' ? '6 5' : undefined,
     };
   }
 
@@ -2113,6 +2471,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     if (this.layerMode() !== 'manzana') this.setLayerMode('manzana');
     this.quitarSeleccion();
     this.map.pm.enableDraw('Polygon');
+    void this.activarImanCalles();
   }
 
   cancelarDibujoActual(): void { this.map?.pm?.disableDraw(); }
@@ -2149,6 +2508,9 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
  * borra, pero el lápiz se pega a sus bordes para que los límites coincidan.
  */
 const CAPA_AUXILIAR = { pmIgnore: true, snapIgnore: false };
+
+/** Más lejos que esto la pantalla abarca demasiadas calles para buscar cuadras o hacer de imán. */
+const ZOOM_MINIMO_CALLES = 15;
 
 const Hint = {
   limite: 'Elija el lápiz (izquierda) y haga clic en cada esquina del territorio. Doble clic para terminar.',

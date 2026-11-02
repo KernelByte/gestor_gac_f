@@ -1,15 +1,6 @@
-// html2canvas y jspdf se cargan bajo demanda: exportar una tarjeta es una
+// html2canvas y jspdf se cargan bajo demanda: exportar una hoja es una
 // accion ocasional y entre las dos librerias suman cientos de kB que antes
 // entraban en el chunk de territorios para todo el que abria la pantalla.
-
-export function exportTerritorioCard(
-  elementId: string,
-  codigo: string,
-  format: 'pdf' | 'image' = 'pdf'
-): Promise<void> {
-  // Quien llama decide cómo avisar si falla (antes el error se perdía y el botón parecía muerto).
-  return exportarElemento(elementId, `Tarjeta_${codigo}`, format);
-}
 
 /**
  * Dibuja el elemento en un canvas. html2canvas es lo que ya se usaba, pero no entiende oklch() (la

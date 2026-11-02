@@ -4,6 +4,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ConNombre } from '../../../core/utils/nombre.util';
+import { SalidaProgramada } from './salidas-programa.service';
+import { NumeracionManzanas } from '../utils/numeracion-manzanas.util';
 import {
   Territorio,
   Manzana,
@@ -14,17 +16,75 @@ import {
   GeoJSONFeatureCollection,
   GeoJSONFeature,
   AsignacionTerritorio,
+  OcupacionManzanas,
   Punto,
   SalidaPredicacion,
   ProgresoTerritorio,
   ResumenTerritorio,
+  ProgresoConfiguracion,
   RegistroS13,
   CicloTerritorio,
   Sector,
   SectoresRespuesta,
   TarjetaSugerida,
   UnidadCongregacion,
+  RecorridoRespuesta,
+  CriterioRecorrido,
+  SugerenciaSalida,
+  HistorialRespuesta,
+  PuntoSalidaOpcion,
 } from '../models/territorio.model';
+
+export interface RenumeracionManzana {
+  id_manzana: number;
+  id_territorio: number;
+  codigo: string | null;
+  numero_anterior: string | null;
+  numero_manzana: string;
+}
+
+export interface EstadoCalles {
+  celdas_zona: number;
+  celdas_listas: number;
+  estado: 'en_curso' | 'listo' | 'error' | null;
+  procesadas: number;
+  total: number;
+  mensaje: string | null;
+  terminado: string | null;
+}
+
+export interface DibujoLoteFila {
+  id_territorio: number;
+  codigo: string | null;
+  manzanas: number;
+  origen: 'calles' | 'ia';
+  aviso: string | null;
+}
+
+export interface DibujoLote {
+  id_lote: number;
+  fase: 'calles' | 'ia';
+  estado: 'en_curso' | 'listo' | 'error';
+  total: number;
+  procesados: number;
+  usos_ia: number;
+  resultado: DibujoLoteFila[];
+  mensaje: string | null;
+  creado: string | null;
+  terminado: string | null;
+}
+
+export interface DibujoLoteResumen {
+  tarjetas: number;
+  con_limite: number;
+  sin_limite: number;
+  sin_limite_codigos: (string | null)[];
+  con_manzanas: number;
+  pendientes_ia: { id_territorio: number; codigo: string | null }[];
+  usos_ia_hoy: number;
+  max_ia_por_dia: number;
+  lote: DibujoLote | null;
+}
 
 /** Publicador tal como lo necesitan los selectores de capitán y asignación. */
 export interface PublicadorOpcion extends ConNombre {
@@ -159,6 +219,59 @@ export class TerritoriosService {
     return this.http.post<Manzana[]>(`${this.baseUrl}/${idTerritorio}/manzanas/lote`, { manzanas });
   }
 
+  /** Calles de OpenStreetMap del recuadro (cuando el fondo es una imagen y no trae las vías). */
+  callesEnBbox(idTerritorio: number, bbox: { s: number; w: number; n: number; e: number }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${idTerritorio}/manzanas/calles`, { bbox });
+  }
+
+  /** Cuadras cerradas por las calles, para armar el límite tocándolas. */
+  cuadras(idTerritorio: number, calles: any): Observable<GeoJSONFeatureCollection> {
+    return this.http.post<GeoJSONFeatureCollection>(`${this.baseUrl}/${idTerritorio}/manzanas/cuadras`, { calles });
+  }
+
+  /** Une las cuadras elegidas en el polígono del límite. No guarda nada. */
+  unirCuadras(idTerritorio: number, poligonos: any[]): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${idTerritorio}/manzanas/unir`, { poligonos });
+  }
+
+  /** Renumera la secuencia de TODA la congregación (T01 del 1 al N, T02 sigue…). Con guardar=false es solo la vista previa. */
+  renumerarManzanas(idTerritorio: number, guardar: boolean): Observable<RenumeracionManzana[]> {
+    return this.http.post<RenumeracionManzana[]>(`${this.baseUrl}/${idTerritorio}/manzanas/renumerar`, { guardar });
+  }
+
+  /** Lo mismo sin elegir tarjeta: para el aviso general de la página. */
+  renumerarSecuencia(guardar: boolean): Observable<RenumeracionManzana[]> {
+    return this.http.post<RenumeracionManzana[]>(`${this.baseUrl}/renumerar-manzanas`, { guardar }, { params: this.conCongregacion() });
+  }
+
+  /** Números ya usados en la congregación y el que sigue para esta tarjeta. */
+  getNumeracion(idTerritorio: number): Observable<NumeracionManzanas> {
+    return this.http.get<NumeracionManzanas>(`${this.baseUrl}/${idTerritorio}/manzanas/numeracion`);
+  }
+
+  // ── Calles de OpenStreetMap guardadas para la zona de la congregación ──
+  estadoCalles(): Observable<EstadoCalles> {
+    return this.http.get<EstadoCalles>(`${this.congregacionUrl}/calles/estado`, { params: this.conCongregacion() });
+  }
+  /** Vuelve a bajar las calles de toda la zona (solo Administrador y Gestor). */
+  actualizarCalles(): Observable<EstadoCalles> {
+    return this.http.post<EstadoCalles>(`${this.congregacionUrl}/calles/descargar`, {}, { params: this.conCongregacion() });
+  }
+
+  // ── Dibujado avanzado de manzanas (solo Administrador y Gestor) ───────
+  dibujoLoteResumen(): Observable<DibujoLoteResumen> {
+    return this.http.get<DibujoLoteResumen>(`${this.baseUrl}/dibujo-manzanas/resumen`, { params: this.conCongregacion() });
+  }
+  dibujoLoteEstado(): Observable<DibujoLote | null> {
+    return this.http.get<DibujoLote | null>(`${this.baseUrl}/dibujo-manzanas/estado`, { params: this.conCongregacion() });
+  }
+  iniciarDibujoCalles(): Observable<DibujoLote> {
+    return this.http.post<DibujoLote>(`${this.baseUrl}/dibujo-manzanas/calles`, {}, { params: this.conCongregacion() });
+  }
+  iniciarDibujoIA(confirmar: number): Observable<DibujoLote> {
+    return this.http.post<DibujoLote>(`${this.baseUrl}/dibujo-manzanas/ia`, { confirmar }, { params: this.conCongregacion() });
+  }
+
   // ── Viviendas ────────────────────────────────────────────────────────
   getViviendas(idManzana: number): Observable<Vivienda[]> {
     return this.http.get<Vivienda[]>(`${environment.apiUrl}/manzanas/${idManzana}/viviendas/`);
@@ -186,6 +299,11 @@ export class TerritoriosService {
 
   getViviendasTerritorio(idTerritorio: number): Observable<ViviendaDeTerritorio[]> {
     return this.http.get<ViviendaDeTerritorio[]>(`${this.baseUrl}/${idTerritorio}/viviendas`);
+  }
+
+  /** Avisos de la tarjeta (no visitar, cuidado, acceso especial, horario), lo más grave primero. */
+  getAvisos(idTerritorio: number): Observable<ViviendaDeTerritorio[]> {
+    return this.http.get<ViviendaDeTerritorio[]>(`${this.baseUrl}/${idTerritorio}/avisos`);
   }
 
   getNoVisitar(idTerritorio: number): Observable<ViviendaDeTerritorio[]> {
@@ -223,12 +341,21 @@ export class TerritoriosService {
     return this.http.get<AsignacionTerritorio | null>(`${this.baseUrl}/${idTerritorio}/asignaciones/activa`);
   }
 
-  createAsignacion(idTerritorio: number, data: { id_publicador: number; fecha_asignacion: string; notas?: string }): Observable<AsignacionTerritorio> {
+  getOcupacion(idTerritorio: number): Observable<OcupacionManzanas> {
+    return this.http.get<OcupacionManzanas>(`${this.baseUrl}/${idTerritorio}/asignaciones/ocupacion`);
+  }
+
+  createAsignacion(idTerritorio: number, data: { id_publicador: number; fecha_asignacion: string; notas?: string; ids_manzanas?: number[] }): Observable<AsignacionTerritorio> {
     return this.http.post<AsignacionTerritorio>(`${this.baseUrl}/${idTerritorio}/asignaciones/`, data);
   }
 
   devolverAsignacion(idTerritorio: number, idAsignacion: number, data: { fecha_devolucion: string; notas?: string }): Observable<AsignacionTerritorio> {
     return this.http.put<AsignacionTerritorio>(`${this.baseUrl}/${idTerritorio}/asignaciones/${idAsignacion}/devolver`, data);
+  }
+
+  /** Corrige una asignación vigente (persona, fecha, nota o manzanas). */
+  updateAsignacion(idTerritorio: number, idAsignacion: number, data: { id_publicador?: number; fecha_asignacion?: string; notas?: string; ids_manzanas?: number[] }): Observable<AsignacionTerritorio> {
+    return this.http.put<AsignacionTerritorio>(`${this.baseUrl}/${idTerritorio}/asignaciones/${idAsignacion}`, data);
   }
 
   deleteAsignacion(idTerritorio: number, idAsignacion: number): Observable<void> {
@@ -238,6 +365,11 @@ export class TerritoriosService {
   // ── Puntos ───────────────────────────────────────────────────────────
   getPuntos(idTerritorio: number): Observable<Punto[]> {
     return this.http.get<Punto[]>(`${this.baseUrl}/${idTerritorio}/puntos/`);
+  }
+
+  /** Puntos de salida y lugares de todas las tarjetas de la congregación (mapa general). */
+  getPuntosCongregacionGeoJSON(): Observable<GeoJSONFeatureCollection> {
+    return this.http.get<GeoJSONFeatureCollection>(`${this.baseUrl}/puntos/geojson`, { params: this.conCongregacion() });
   }
 
   getPuntosGeoJSON(idTerritorio: number): Observable<GeoJSONFeatureCollection> {
@@ -300,6 +432,10 @@ export class TerritoriosService {
     return this.http.get<ResumenTerritorio[]>(`${this.baseUrl}/resumen`, { params: this.conCongregacion() });
   }
 
+  getProgresoConfiguracion(): Observable<ProgresoConfiguracion> {
+    return this.http.get<ProgresoConfiguracion>(`${this.baseUrl}/progreso`, { params: this.conCongregacion() });
+  }
+
   getRegistroS13(anioServicio?: number): Observable<RegistroS13> {
     let params = new HttpParams();
     if (anioServicio) params = params.set('anio_servicio', String(anioServicio));
@@ -314,6 +450,61 @@ export class TerritoriosService {
 
   completarCiclo(idTerritorio: number): Observable<CicloTerritorio> {
     return this.http.post<CicloTerritorio>(`${this.baseUrl}/${idTerritorio}/ciclos/completar`, {});
+  }
+
+  // ── Recorrido (orden de predicación y marcar manzanas desde el mapa) ──
+  getRecorrido(): Observable<RecorridoRespuesta> {
+    return this.http.get<RecorridoRespuesta>(`${this.baseUrl}/recorrido`, { params: this.conCongregacion() });
+  }
+  guardarConfigRecorrido(cfg: { criterio: CriterioRecorrido; orden_barrios: number[]; id_manzana_inicio: number | null; manzanas_por_salida?: number }): Observable<RecorridoRespuesta> {
+    return this.http.put<RecorridoRespuesta>(`${this.baseUrl}/recorrido/config`, cfg, { params: this.conCongregacion() });
+  }
+  marcarRecorrido(cuerpo: { fecha: string; id_capitan: number | null; ids_manzanas: number[]; id_horario?: number | null; id_punto_salida?: number | null; parciales?: Array<{ id_manzana: number; nota: string | null }> }): Observable<RecorridoRespuesta> {
+    return this.http.post<RecorridoRespuesta>(`${this.baseUrl}/recorrido/marcar`, cuerpo, { params: this.conCongregacion() });
+  }
+  /** Lo que le toca a cada salida programada sin registrar entre dos fechas (clave = id_horario). */
+  getSugerencias(desde: string, hasta: string): Observable<Record<string, SugerenciaSalida>> {
+    return this.http.get<Record<string, SugerenciaSalida>>(`${this.baseUrl}/recorrido/sugerencias`, { params: this.conCongregacion(new HttpParams().set('desde', desde).set('hasta', hasta)) });
+  }
+  /** Salidas programadas que ya pasaron y nadie registró, con lo que les tocaba. */
+  getPorRegistrar(): Observable<Array<SalidaProgramada & { sugerencia: SugerenciaSalida }>> {
+    return this.http.get<Array<SalidaProgramada & { sugerencia: SugerenciaSalida }>>(`${this.baseUrl}/recorrido/por-registrar`, { params: this.conCongregacion() });
+  }
+  /** Lo ya registrado, de lo más reciente a lo más antiguo, con filtros. */
+  getHistorial(f: { desde?: string | null; hasta?: string | null; id_territorio?: number | null; id_capitan?: number | null; limite?: number }): Observable<HistorialRespuesta> {
+    let p = new HttpParams();
+    for (const [k, v] of Object.entries(f)) if (v !== null && v !== undefined && v !== '') p = p.set(k, String(v));
+    return this.http.get<HistorialRespuesta>(`${this.baseUrl}/recorrido/historial`, { params: this.conCongregacion(p) });
+  }
+  /** «No se salió» (valor=true) o deshacerlo: saca la salida de «Por registrar» sin borrarla del programa. */
+  marcarSinSalida(id_horario: number, valor = true): Observable<{ id_horario: number; sin_salida: boolean }> {
+    return this.http.post<{ id_horario: number; sin_salida: boolean }>(`${this.baseUrl}/recorrido/horarios/${id_horario}/sin-salida`, { valor }, { params: this.conCongregacion() });
+  }
+  getPuntosSalida(): Observable<PuntoSalidaOpcion[]> {
+    return this.http.get<PuntoSalidaOpcion[]>(`${this.baseUrl}/recorrido/puntos-salida`, { params: this.conCongregacion() });
+  }
+  desmarcarRecorrido(ids_manzanas: number[]): Observable<RecorridoRespuesta> {
+    return this.http.post<RecorridoRespuesta>(`${this.baseUrl}/recorrido/desmarcar`, { ids_manzanas }, { params: this.conCongregacion() });
+  }
+
+  /** Corrige una manzana ya marcada: predicada ↔ a medias. */
+  cambiarEstadoRecorrido(id_manzana: number, estado: 'predicada' | 'parcial', nota: string | null = null): Observable<RecorridoRespuesta> {
+    return this.http.post<RecorridoRespuesta>(`${this.baseUrl}/recorrido/cambiar-estado`, { id_manzana, estado, nota }, { params: this.conCongregacion() });
+  }
+
+  /** Historial de vueltas de una tarjeta. */
+  vueltasRecorrido(id_territorio: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/recorrido/vueltas/${id_territorio}`, { params: this.conCongregacion() });
+  }
+
+  /** Lo predicado en una vuelta pasada (solo para mirar en el mapa). */
+  vueltaPasadaRecorrido(id_territorio: number, id_ciclo: number): Observable<{ features: any[]; ciclo: any }> {
+    return this.http.get<{ features: any[]; ciclo: any }>(`${this.baseUrl}/recorrido/vueltas/${id_territorio}/${id_ciclo}`, { params: this.conCongregacion() });
+  }
+
+  /** Empieza otra vuelta en esas tarjetas (vacío: en todas). */
+  nuevaVueltaRecorrido(ids_territorios: number[]): Observable<RecorridoRespuesta> {
+    return this.http.post<RecorridoRespuesta>(`${this.baseUrl}/recorrido/nueva-vuelta`, { ids_territorios }, { params: this.conCongregacion() });
   }
 
   // ── Publicadores (selectores de capitán y asignación) ────────────────

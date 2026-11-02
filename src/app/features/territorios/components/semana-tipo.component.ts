@@ -1,12 +1,13 @@
 import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SalidaEditorComponent } from './salida-editor.component';
+import { PuntoSalidaOpcion } from '../models/territorio.model';
 import {
   DIAS, FilaSemanaTipo, GrupoOpcion, Periodo, PersonaRef, SalidaForm, SalidasProgramaService, horaLegible,
 } from '../services/salidas-programa.service';
 
 /**
- * La semana tipo: las salidas que se repiten cada semana. Se arma una vez y con
+ * Las salidas fijas (semana tipo): las que se repiten cada semana. Se arman una vez y con
  * ella se genera la semana o el mes. Aquí también se elige cómo trabaja la
  * congregación (por semana o por mes), que es una preferencia permanente.
  */
@@ -25,8 +26,8 @@ import {
               <svg class="text-emerald-600 dark:text-emerald-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
             </div>
             <div class="min-w-0">
-              <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">Semana tipo</h3>
-              <p class="text-[13px] text-slate-500 dark:text-slate-400">Las salidas que se repiten cada semana. Se usan para generar el programa.</p>
+              <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">Salidas fijas</h3>
+              <p class="text-[13px] text-slate-500 dark:text-slate-400">Las salidas que se repiten cada semana. Con ellas se crea el programa.</p>
             </div>
           </div>
           <button (click)="cerrar.emit(false)" title="Cerrar" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors shrink-0">
@@ -37,7 +38,7 @@ import {
         <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-5">
           <!-- Cómo trabaja la congregación -->
           <section class="rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
-            <p class="text-sm font-bold text-slate-800 dark:text-slate-100">¿Cómo arma el programa su congregación?</p>
+            <p class="text-sm font-bold text-slate-800 dark:text-slate-100">¿Cada cuánto crea y comparte el programa?</p>
             <div class="mt-3 grid grid-cols-2 gap-2">
               @for (op of opcionesPeriodo; track op.id) {
                 <button type="button" (click)="periodoSel.set(op.id)"
@@ -67,7 +68,7 @@ import {
                     <span class="min-w-0 flex-1">
                       <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ f.lugar || 'Sin lugar' }}</span>
                       <span class="block text-[13px] text-slate-500 dark:text-slate-400 truncate">
-                        {{ nombres(f.capitanes) || 'Sin capitán' }}@if (f.grupos.length) { · {{ gruposTexto(f) }} }@if (!f.sugerir_territorio) { · sin territorio }
+                        {{ nombres(f.capitanes) || 'Capitán: se turnan' }}@if (f.grupos.length) { · {{ gruposTexto(f) }} }@if (f.nombre_barrio) { · Barrio {{ f.nombre_barrio }} }
                       </span>
                     </span>
                   </button>
@@ -86,7 +87,7 @@ import {
           <button (click)="cerrar.emit(false)" class="h-11 px-4 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
           <button (click)="guardarTodo()" [disabled]="guardando()"
             class="h-11 px-5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-[background-color,transform] active:scale-[0.97]">
-            {{ guardando() ? 'Guardando…' : 'Guardar semana tipo' }}
+            {{ guardando() ? 'Guardando…' : 'Guardar salidas fijas' }}
           </button>
         </footer>
       </div>
@@ -96,11 +97,14 @@ import {
       <app-salida-editor
         modo="plantilla"
         [titulo]="e.fila ? 'Editar salida' : 'Nueva salida'"
-        subtitulo="De la semana tipo"
+        subtitulo="De las salidas fijas"
         [inicial]="e.form"
         [capitanesIniciales]="e.fila?.capitanes ?? []"
         [publicadores]="publicadores"
         [grupos]="grupos"
+        [barrios]="barrios"
+        [puntosSalida]="puntosSalida"
+        [capitanesHabilitados]="capitanesHabilitados"
         [puedeEliminar]="!!e.fila"
         (guardar)="aplicar($event)"
         (eliminar)="quitar()"
@@ -115,14 +119,17 @@ export class SemanaTipoComponent implements OnInit {
   @Input() periodo: Periodo = 'semana';
   @Input() publicadores: PersonaRef[] = [];
   @Input() grupos: GrupoOpcion[] = [];
+  @Input() capitanesHabilitados: PersonaRef[] = [];
+  @Input() barrios: Array<{ id_sector: number; nombre: string }> = [];
+  @Input() puntosSalida: PuntoSalidaOpcion[] = [];
   /** true si se guardó. */
   @Output() cerrar = new EventEmitter<boolean>();
 
   readonly dias = DIAS;
   readonly hora = horaLegible;
   readonly opcionesPeriodo: { id: Periodo; titulo: string; detalle: string }[] = [
-    { id: 'semana', titulo: 'Por semana', detalle: 'Se genera y se comparte cada semana.' },
-    { id: 'mes', titulo: 'Por mes', detalle: 'Se genera y se comparte el mes completo.' },
+    { id: 'semana', titulo: 'Por semana', detalle: 'Se crea y se comparte cada semana.' },
+    { id: 'mes', titulo: 'Por mes', detalle: 'Se crea y se comparte el mes completo.' },
   ];
 
   filas = signal<FilaSemanaTipo[]>([]);
@@ -149,7 +156,7 @@ export class SemanaTipoComponent implements OnInit {
   nueva(dia: number): void {
     this.editando.set({
       fila: null,
-      form: { dia_semana: dia, hora_inicio: null, lugar: null, notas: null, sugerir_territorio: true, capitanes: [], grupos: [] },
+      form: { dia_semana: dia, hora_inicio: null, lugar: null, notas: null, id_sector: null, id_punto_salida: null, capitanes: [], grupos: [] },
     });
   }
 
@@ -158,7 +165,8 @@ export class SemanaTipoComponent implements OnInit {
       fila: f,
       form: {
         dia_semana: f.dia_semana, hora_inicio: f.hora_inicio ?? null, lugar: f.lugar ?? null, notas: f.notas ?? null,
-        sugerir_territorio: f.sugerir_territorio, capitanes: f.capitanes.map(c => c.id_publicador), grupos: f.grupos.map(g => g.id_grupo),
+        id_sector: f.id_sector ?? null, id_punto_salida: f.id_punto_salida ?? null,
+        capitanes: f.capitanes.map(c => c.id_publicador), grupos: f.grupos.map(g => g.id_grupo),
       },
     });
   }
@@ -171,9 +179,12 @@ export class SemanaTipoComponent implements OnInit {
     const fila: FilaSemanaTipo = {
       dia_semana: form.dia_semana!,
       hora_inicio: form.hora_inicio,
-      lugar: form.lugar,
+      lugar: form.lugar ?? this.puntosSalida.find(p => p.id_punto === form.id_punto_salida)?.nombre ?? null,
       notas: form.notas,
-      sugerir_territorio: form.sugerir_territorio ?? true,
+      id_sector: form.id_sector ?? null,
+      nombre_barrio: this.barrios.find(b => b.id_sector === form.id_sector)?.nombre ?? null,
+      id_punto_salida: form.id_punto_salida ?? null,
+      nombre_punto_salida: this.puntosSalida.find(p => p.id_punto === form.id_punto_salida)?.nombre ?? null,
       capitanes: form.capitanes.map(id => porId.get(id) ?? e.fila?.capitanes.find(c => c.id_publicador === id) ?? { id_publicador: id, nombre: '' }),
       grupos: form.grupos.map(id => ({ id_grupo: id, nombre: grupoPorId.get(id)?.nombre ?? '' })),
     };
@@ -192,7 +203,8 @@ export class SemanaTipoComponent implements OnInit {
     this.error.set(null);
     const payload: SalidaForm[] = this.filas().map(f => ({
       dia_semana: f.dia_semana, hora_inicio: f.hora_inicio ?? null, lugar: f.lugar ?? null, notas: f.notas ?? null,
-      sugerir_territorio: f.sugerir_territorio, capitanes: f.capitanes.map(c => c.id_publicador), grupos: f.grupos.map(g => g.id_grupo),
+      id_sector: f.id_sector ?? null, id_punto_salida: f.id_punto_salida ?? null,
+      capitanes: f.capitanes.map(c => c.id_publicador), grupos: f.grupos.map(g => g.id_grupo),
     }));
     this.svc.guardarSemanaTipo(payload).subscribe({
       next: () => {

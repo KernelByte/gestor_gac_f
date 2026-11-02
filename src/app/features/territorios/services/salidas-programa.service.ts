@@ -18,8 +18,27 @@ export interface SalidaProgramada {
   id_territorio?: number | null;
   codigo_territorio?: string | null;
   nombre_territorio?: string | null;
+  id_punto_salida?: number | null;
+  nombre_punto_salida?: string | null;
+  /** Barrio donde se predica (opcional): de él salen las manzanas que se sugieren. */
+  id_sector?: number | null;
+  nombre_barrio?: string | null;
+  /** «No se salió»: la salida pasó y no se predicó; ya no cuenta como pendiente de registrar. */
+  sin_salida?: boolean;
+  /** Sin barrio pero con punto de salida: el barrio de ese punto, para proponerlo. */
+  id_sector_sugerido?: number | null;
+  /** Lo que se predicó en esta salida (Seguimiento). */
+  registro?: RegistroSalida | null;
   capitanes: PersonaRef[];
   grupos: GrupoRef[];
+}
+
+export interface RegistroSalida {
+  registrada: boolean;
+  numeros: string[];
+  manzanas: Array<{ id_manzana: number; numero: string; codigo: string }>;
+  /** Hasta dónde llegaron, p. ej. «38 (T09)». */
+  hasta: string | null;
 }
 
 /** Una fila de la semana tipo (1 = lunes). */
@@ -29,7 +48,10 @@ export interface FilaSemanaTipo {
   hora_inicio?: string | null;
   lugar?: string | null;
   notas?: string | null;
-  sugerir_territorio: boolean;
+  id_sector?: number | null;
+  nombre_barrio?: string | null;
+  id_punto_salida?: number | null;
+  nombre_punto_salida?: string | null;
   capitanes: PersonaRef[];
   grupos: GrupoRef[];
 }
@@ -42,11 +64,13 @@ export interface SalidaForm {
   lugar: string | null;
   notas: string | null;
   id_territorio?: number | null;
-  sugerir_territorio?: boolean;
+  id_sector?: number | null;
+  id_punto_salida?: number | null;
   capitanes: number[];
   grupos: number[];
 }
 
+export type ModoCrear = 'nuevo' | 'faltantes' | 'reemplazar';
 export type Periodo = 'semana' | 'mes';
 
 /** Programa de salidas: qué días se predica, dónde, quién saca el grupo y en qué territorio. */
@@ -79,6 +103,11 @@ export class SalidasProgramaService {
     return this.http.delete<void>(`${this.url}/${id}`);
   }
 
+  /** Borra todas las salidas del periodo. */
+  borrarPeriodo(desde: string, hasta: string): Observable<{ borradas: number }> {
+    return this.http.post<{ borradas: number }>(`${this.url}/borrar-periodo`, { desde, hasta }, { params: this.params() });
+  }
+
   semanaTipo(): Observable<FilaSemanaTipo[]> {
     return this.http.get<FilaSemanaTipo[]>(`${this.url}/plantilla`, { params: this.params() });
   }
@@ -87,8 +116,17 @@ export class SalidasProgramaService {
     return this.http.put<FilaSemanaTipo[]>(`${this.url}/plantilla`, filas, { params: this.params() });
   }
 
-  generar(desde: string, hasta: string, reemplazar = false): Observable<SalidaProgramada[]> {
-    return this.http.post<SalidaProgramada[]>(`${this.url}/generar`, { desde, hasta, reemplazar }, { params: this.params() });
+  /**
+   * Crea el programa del periodo con las salidas fijas.
+   * nuevo: 409 si ya hay salidas · faltantes: agrega solo las que faltan · reemplazar: empieza de nuevo.
+   */
+  generar(desde: string, hasta: string, modo: ModoCrear = 'nuevo'): Observable<SalidaProgramada[]> {
+    return this.http.post<SalidaProgramada[]>(`${this.url}/generar`, { desde, hasta, modo }, { params: this.params() });
+  }
+
+  /** Quienes tienen el permiso «Cap. Predicación» (Reuniones → Configuración). */
+  capitanes(): Observable<PersonaRef[]> {
+    return this.http.get<PersonaRef[]>(`${this.url}/capitanes`, { params: this.params() });
   }
 
   grupos(): Observable<GrupoOpcion[]> {

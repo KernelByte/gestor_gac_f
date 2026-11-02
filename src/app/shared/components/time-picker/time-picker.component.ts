@@ -2,7 +2,7 @@ import { Component, Input, OnDestroy, signal, computed, forwardRef, ElementRef, 
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-type ColorScheme = 'orange' | 'violet' | 'blue';
+type ColorScheme = 'orange' | 'violet' | 'blue' | 'emerald';
 type Meridiem = 'a. m.' | 'p. m.';
 
 /**
@@ -24,6 +24,7 @@ type Meridiem = 'a. m.' | 'p. m.';
     <div class="tp-root"
          [class.tp-violet]="colorScheme === 'violet'"
          [class.tp-blue]="colorScheme === 'blue'"
+         [class.tp-emerald]="colorScheme === 'emerald'"
          [class.tp-open-above]="openAbove()"
          [class.tp-align-right]="alignRight()"
          [class.tp-closing]="closing()">
@@ -324,6 +325,25 @@ type Meridiem = 'a. m.' | 'p. m.';
     .tp-blue .tp-footer-now { color: #165cfc; }
     .tp-blue .tp-footer-now:hover { color: #0d47d0; background: rgba(22,92,252,0.07); }
     :host-context(.dark) .tp-blue .tp-footer-now { color: #6091fb; }
+    /* ── Emerald (Territorios) ──────────────────────────── */
+    .tp-emerald:focus-within .tp-trigger:not(:disabled) {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.2);
+    }
+    :host-context(.dark) .tp-emerald:focus-within .tp-trigger:not(:disabled) {
+      border-color: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,0.2);
+    }
+    .tp-emerald .tp-trigger-icon { color: #10b981; }
+    .tp-emerald .tp-trigger:not(:disabled):hover .tp-trigger-icon { color: #059669; }
+    :host-context(.dark) .tp-emerald .tp-trigger-icon { color: #34d399; }
+    .tp-emerald .tp-columns::before { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.25); }
+    :host-context(.dark) .tp-emerald .tp-columns::before { background: rgba(52,211,153,0.07); border-color: rgba(52,211,153,0.25); }
+    .tp-emerald .tp-opt:hover:not(.tp-opt--on) { background: rgba(16,185,129,0.09); color: #047857; }
+    :host-context(.dark) .tp-emerald .tp-opt:hover:not(.tp-opt--on) { background: rgba(52,211,153,0.12); color: #6ee7b7; }
+    .tp-emerald .tp-opt--on { background: #059669; box-shadow: 0 2px 8px rgba(5,150,105,0.35); }
+    .tp-emerald .tp-footer-now { color: #059669; }
+    .tp-emerald .tp-footer-now:hover { color: #047857; background: rgba(16,185,129,0.08); }
+    :host-context(.dark) .tp-emerald .tp-footer-now { color: #34d399; }
   `],
 })
 export class TimePickerComponent implements ControlValueAccessor, OnDestroy {
