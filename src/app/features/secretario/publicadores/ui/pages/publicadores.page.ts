@@ -376,7 +376,7 @@ export class PublicadoresListComponent implements OnInit {
       let telefono = (inv.telefono ?? '').replace(/\D/g, '');
       if (telefono.length === 10 && !telefono.startsWith('57')) telefono = '57' + telefono;
 
-      window.open(whatsappUrl(inv.mensaje_whatsapp, telefono || null), '_blank');
+      window.open(whatsappUrl(inv.mensaje_whatsapp, telefono || null), '_blank', 'noopener,noreferrer');
       this.accesoApp.marcarEnviada(inv.id_invitacion, 'whatsapp').subscribe({ error: () => {} });
 
       if (inv.codigo_pin !== pub.codigo_pin) {

@@ -2,6 +2,7 @@ import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges,
   OnDestroy, Output, SimpleChanges, ViewChild, inject, signal,
 } from '@angular/core';
+import { escapeHtml } from '../../../shared/escape-html';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 import { TerritoriosService } from '../../territorios/services/territorios.service';
@@ -390,7 +391,7 @@ export class ExhibidorMapComponent implements AfterViewInit, OnChanges, OnDestro
         icon: iconoCirculo(seleccionada ? COLOR_UBICACION_SEL : COLOR_UBICACION, ICONO_EXHIBIDOR),
         zIndexOffset: seleccionada ? 500 : 0,
       })
-        .bindTooltip(u.nombre, { direction: 'top', offset: [0, -14] })
+        .bindTooltip(escapeHtml(u.nombre), { direction: 'top', offset: [0, -14] })
         .on('click', () => this.ubicacionClick.emit(u.id_ubicacion_exhibidor));
       this.capaMarcadores.addLayer(marker);
 
@@ -411,7 +412,7 @@ export class ExhibidorMapComponent implements AfterViewInit, OnChanges, OnDestro
       bounds.push(pos);
       this.capaMarcadores.addLayer(
         L.marker(pos, { icon: iconoCirculo(COLOR_SACADA, ICONO_SACADA) })
-          .bindTooltip(`Sacada: ${p.nombre}`, { direction: 'top', offset: [0, -14] }),
+          .bindTooltip(`Sacada: ${escapeHtml(p.nombre)}`, { direction: 'top', offset: [0, -14] }),
       );
     }
 

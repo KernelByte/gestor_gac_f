@@ -29,8 +29,9 @@ export class DosPasosService {
     return this.http.get<EstadoDosPasos>(`${API}/estado`);
   }
 
-  iniciar() {
-    return this.http.post<InicioDosPasos>(`${API}/iniciar`, {});
+  /** Pide la contraseña actual: un token robado no debe bastar para registrar un factor. */
+  iniciar(password: string) {
+    return this.http.post<InicioDosPasos>(`${API}/iniciar`, { password });
   }
 
   /** Activa y devuelve los códigos de recuperación. Trae una sesión nueva (sin `mfa_pendiente`). */

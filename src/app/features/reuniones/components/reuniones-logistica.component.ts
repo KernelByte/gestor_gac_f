@@ -2322,7 +2322,7 @@ export class ReunionesLogisticaComponent implements OnInit {
   /** Sin teléfono fijo: abre el selector de contacto de WhatsApp — esto es
    *  difusión a la congregación, no un mensaje 1 a 1. */
   enviarWhatsapp(): void {
-    window.open(whatsappUrl(this.whatsappMensaje()), '_blank');
+    window.open(whatsappUrl(this.whatsappMensaje()), '_blank', 'noopener,noreferrer');
     this.cerrarWhatsapp();
   }
 

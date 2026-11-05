@@ -4526,7 +4526,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   abrirChatPapeleta(): void {
     const prev = this.papeletaPreview();
     if (!prev) return;
-    window.open(whatsappUrl(prev.mensaje, prev.telefono), '_blank');
+    window.open(whatsappUrl(prev.mensaje, prev.telefono), '_blank', 'noopener,noreferrer');
     this.cerrarPapeletaPreview();
   }
 

@@ -35,7 +35,12 @@ import { DosPasosService } from '../../../core/auth/dos-pasos.service';
         Instala <b>Google Authenticator</b> o <b>Microsoft Authenticator</b> (son gratuitas). Genera el número de 6 cifras
         que te pediremos cada vez que entres.
       </p>
-      <button type="button" (click)="empezar()" [disabled]="cargando()" class="btn-principal">
+      <div class="mb-5">
+        <label for="password-activar" class="etiqueta">Escribe tu contraseña para continuar</label>
+        <input id="password-activar" #p type="password" [value]="password()" (input)="password.set(p.value)"
+          (keydown.enter)="empezar()" autocomplete="current-password" class="campo campo-texto">
+      </div>
+      <button type="button" (click)="empezar()" [disabled]="cargando() || !password()" class="btn-principal">
         {{ cargando() ? 'Preparando…' : 'Ya la tengo, empezar' }}
       </button>
     </div>
@@ -126,6 +131,8 @@ import { DosPasosService } from '../../../core/auth/dos-pasos.service';
       transition: border-color .15s, box-shadow .15s; }
     .campo:focus { outline: none; border-color: #6d28d9; box-shadow: 0 0 0 3px rgb(109 40 217 / .2); }
     :host-context(.dark) .campo { border-color: rgb(71 85 105); background: rgb(30 41 59); color: #fff; }
+    .campo-texto { text-align: left; font-family: inherit; font-size: 1rem; letter-spacing: normal; }
+    .mb-5 { margin-bottom: 1.25rem; }
 
     .aviso { margin-bottom: 1rem; padding: .75rem 1rem; border-radius: .75rem; font-size: .9375rem; line-height: 1.5;
       background: rgb(245 158 11 / .12); color: #92400e; }
@@ -170,14 +177,19 @@ export class ActivarDosPasosComponent {
   qr = signal<SafeHtml>('');
   secreto = signal('');
   codigo = signal('');
+  password = signal('');
   codigos = signal<string[]>([]);
 
   async empezar() {
+    if (!this.password()) return;
     this.cargando.set(true); this.error.set(null);
     try {
-      const r = await lastValueFrom(this.svc.iniciar());
+      const r = await lastValueFrom(this.svc.iniciar(this.password()));
+      this.password.set('');
       // SVG generado por el propio backend (reportlab), no por el usuario.
-      this.qr.set(this.sanitizer.bypassSecurityTrustHtml(r.qr_svg));
+      const qrOk = typeof r.qr_svg === 'string' && /^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(r.qr_svg)
+        && !/<script|<foreignObject|\son\w+\s*=|javascript:/i.test(r.qr_svg);
+      this.qr.set(this.sanitizer.bypassSecurityTrustHtml(qrOk ? r.qr_svg : ''));
       this.secreto.set(r.secreto);
       this.paso.set(2);
     } catch (e: any) {

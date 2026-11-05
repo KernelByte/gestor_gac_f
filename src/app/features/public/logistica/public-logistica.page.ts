@@ -645,7 +645,7 @@ export class PublicLogisticaPage implements OnInit {
       .subscribe({
         next: ({ mensaje }) => {
           this.enviando.set(null);
-          window.open(whatsappUrl(mensaje), '_blank');
+          window.open(whatsappUrl(mensaje), '_blank', 'noopener,noreferrer');
         },
         error: () => {
           this.enviando.set(null);

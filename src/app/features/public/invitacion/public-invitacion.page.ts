@@ -594,6 +594,8 @@ export class PublicInvitacionPage implements OnInit {
   abrirApp(): void {
     const deepLink = this.data()?.deep_link;
     if (!deepLink) return;
+    // Nunca navegar a esquemas ejecutables si el enlace llegara alterado.
+    if (/^\s*(javascript|data|vbscript|file|blob):/i.test(deepLink)) return;
 
     if (this.plataforma() === 'android') {
       // intent:// con browser_fallback_url: Chrome abre la app si está y, si

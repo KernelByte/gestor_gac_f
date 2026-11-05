@@ -681,7 +681,7 @@ export class InformesMainPage implements OnInit {
 
         if (res.telefono && res.telefono.trim() !== '') {
           // Abrir WhatsApp en nueva pestaña
-          window.open(whatsappUrl(res.mensaje_wa, res.telefono), '_blank');
+          window.open(whatsappUrl(res.mensaje_wa, res.telefono), '_blank', 'noopener,noreferrer');
           this.showToast('Enlace generado', 'success', 'Se ha abierto WhatsApp para enviar el mensaje.');
 
           // Actualizar contador visualmente
@@ -773,7 +773,11 @@ export class InformesMainPage implements OnInit {
       /\/monthly-reports\/\d+\/\d+\//,
       `/monthly-reports/${this.selectedAno}/${this.selectedMes}/`
     );
-    window.open(finalUrl, '_blank');
+    // Solo http(s): evita esquemas como javascript: si la URL llegara alterada.
+    let permitido = false;
+    try { permitido = /^https?:$/.test(new URL(finalUrl).protocol); } catch { permitido = false; }
+    if (!permitido) return;
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
   }
 
   imprimirSucursal() {

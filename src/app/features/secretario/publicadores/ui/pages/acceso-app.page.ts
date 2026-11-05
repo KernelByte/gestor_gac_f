@@ -397,7 +397,7 @@ export class AccesoAppComponent implements OnInit {
 
   abrirWhatsapp(p: PendienteWhatsapp): void {
     const inv = p.invitacion;
-    window.open(whatsappUrl(inv.mensaje_whatsapp, this.telefonoInternacional(inv.telefono)), '_blank');
+    window.open(whatsappUrl(inv.mensaje_whatsapp, this.telefonoInternacional(inv.telefono)), '_blank', 'noopener,noreferrer');
     this.colaWhatsapp.update((cola) =>
       cola.map((c) => (c.invitacion.id_invitacion === inv.id_invitacion ? { ...c, enviado: true } : c)),
     );
@@ -422,7 +422,12 @@ export class AccesoAppComponent implements OnInit {
 
   // ── Modal de invitación ─────────────────────────────────────────────────
 
-  qrSeguro(svg: string): SafeHtml { return this.sanitizer.bypassSecurityTrustHtml(svg); }
+  qrSeguro(svg: string): SafeHtml {
+    // El QR lo genera el backend; aun así, no se confía si trae script, manejadores o foreignObject.
+    const valido = typeof svg === 'string' && /^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(svg)
+      && !/<script|<foreignObject|\son\w+\s*=|javascript:/i.test(svg);
+    return this.sanitizer.bypassSecurityTrustHtml(valido ? svg : '');
+  }
 
   cerrarInvitacion(): void { this.invitacionAbierta.set(null); }
 
@@ -439,7 +444,7 @@ export class AccesoAppComponent implements OnInit {
   whatsappDesdeModal(): void {
     const inv = this.invitacionAbierta();
     if (!inv) return;
-    window.open(whatsappUrl(inv.mensaje_whatsapp, this.telefonoInternacional(inv.telefono)), '_blank');
+    window.open(whatsappUrl(inv.mensaje_whatsapp, this.telefonoInternacional(inv.telefono)), '_blank', 'noopener,noreferrer');
     this.api.marcarEnviada(inv.id_invitacion, 'whatsapp').subscribe({ error: () => {} });
   }
 

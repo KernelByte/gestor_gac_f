@@ -4741,7 +4741,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   enviarWhatsapp(): void {
     const w = this.whatsappPendiente();
     if (!w) return;
-    window.open(whatsappUrl(w.mensaje, w.telefono), '_blank');
+    window.open(whatsappUrl(w.mensaje, w.telefono), '_blank', 'noopener,noreferrer');
     this.cerrarWhatsapp();
   }
 
@@ -5343,7 +5343,8 @@ export class ReunionesDiscursosComponent implements OnInit {
   /** Para el botón "Ver bosquejo": para la propagación (la fila es clicable) y abre en pestaña nueva. */
   abrirBosquejo(event: Event, url: string): void {
     event.stopPropagation();
-    window.open(url, '_blank', 'noopener');
+    if (!/^https?:\/\//i.test(url)) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   /** 3145678902 → "314 567 8902": un celular de 10 dígitos se lee y dicta mejor en grupos. */
