@@ -57,8 +57,12 @@ export interface Tarea {
   id_congregacion: number;
   titulo: string;
   descripcion?: string | null;
+  /** El primero de `asignados` (lo que leen los clientes antiguos). */
   asignado_a?: number | null;
   asignado_a_nombre?: string | null;
+  /** Todas las personas asignadas, en orden. Cualquiera puede completarla. */
+  asignados_ids?: number[];
+  asignados?: UsuarioAsignable[];
   prioridad: 'baja' | 'media' | 'alta';
   estado: 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
   fecha_limite?: string | null;
@@ -88,6 +92,7 @@ export interface TareaCreate {
   titulo: string;
   descripcion?: string | null;
   asignado_a?: number | null;
+  asignados_ids?: number[];
   prioridad: Tarea['prioridad'];
   fecha_limite?: string | null;
   subtareas?: string[];

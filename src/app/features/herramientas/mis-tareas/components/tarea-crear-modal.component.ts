@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
+import { ChipListComponent, ChipItem } from '../../../../shared/components/chip-list/chip-list.component';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { ActaService } from '../../../secretario-tools/services/acta.service';
@@ -17,7 +18,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
 @Component({
   standalone: true,
   selector: 'app-tarea-crear-modal',
-  imports: [CommonModule, FormsModule, ModalComponent, SelectPickerComponent, DatePickerComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, SelectPickerComponent, DatePickerComponent, ChipListComponent],
   template: `
     <app-modal [open]="open" (openChange)="cerrar($event)" title="Nueva tarea" size="lg" [hasFooter]="true">
       <form class="flex flex-col gap-5" (submit)="$event.preventDefault(); crear()" novalidate>
@@ -36,12 +37,13 @@ import { AuthStore } from '../../../../core/auth/auth.store';
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
           <div>
             <span class="etiqueta" id="lbl-para">Para</span>
-            <app-select-picker name="asignado" [options]="opcionesAsignables()" [(ngModel)]="asignadoA"
+            <app-chip-list class="mb-2" [items]="chipsAsignados()" ariaLabel="Personas asignadas" (remove)="quitarAsignado(+$event)"/>
+            <app-select-picker [options]="opcionesAsignables()" [resetOnSelect]="true" (picked)="anadirAsignado($any($event))"
                                [clearable]="false" [searchable]="true" colorScheme="rose"
-                               [placeholder]="cargandoAsignables() ? 'Cargando personas…' : 'Elegir persona'"
+                               [placeholder]="cargandoAsignables() ? 'Cargando personas…' : (asignados().length ? 'Añadir otra persona' : 'Elegir persona')"
                                ariaLabel="Para quién es la tarea"/>
             <p class="ayuda">
-              {{ asignadoA !== miId ? 'Le llegará un aviso. Tú la verás en "Creadas por mí".' : 'Solo tú la verás.' }}
+              {{ textoAyuda() }}
               <span class="block mt-0.5">¿Falta alguien? Necesita acceso a Mis Tareas (Usuarios → Permisos).</span>
             </p>
           </div>
@@ -113,7 +115,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
       <ng-container slot="footer">
         <button type="button" class="btn-sec flex-1 sm:flex-none" (click)="cerrar(false)">Cancelar</button>
         <button type="button" class="btn-primario flex-1 sm:flex-none" [disabled]="guardando()" (click)="crear()">
-          {{ guardando() ? 'Creando…' : (asignadoA !== miId ? 'Crear y asignar' : 'Crear tarea') }}
+          {{ guardando() ? 'Creando…' : (hayOtros() ? 'Crear y asignar' : 'Crear tarea') }}
         </button>
       </ng-container>
     </app-modal>
@@ -218,7 +220,8 @@ export class TareaCrearModalComponent implements OnChanges {
 
   titulo = '';
   descripcion = '';
-  asignadoA: number | null = null;
+  /** Personas asignadas, en orden. Si cualquiera la completa, queda completada para todos. */
+  asignados = signal<number[]>([]);
   prioridad: Tarea['prioridad'] = 'media';
   fechaLimite: string | null = null;
   nuevoPaso = '';
@@ -235,14 +238,39 @@ export class TareaCrearModalComponent implements OnChanges {
     return id != null ? Number(id) : null;
   }
 
+  /** Quienes aún no están en la lista (los elegidos se ven como fichas). */
   opcionesAsignables = computed<PickerOption[]>(() => {
     const yo = this.miId;
+    const ya = new Set(this.asignados());
     const lista = this.asignables();
     const opciones: PickerOption[] = [];
-    if (yo != null) opciones.push({ value: yo, label: 'Yo', hint: lista.find(u => u.id_usuario === yo)?.nombre });
-    for (const u of lista) if (u.id_usuario !== yo) opciones.push({ value: u.id_usuario, label: u.nombre });
+    if (yo != null && !ya.has(yo)) opciones.push({ value: yo, label: 'Yo', hint: lista.find(u => u.id_usuario === yo)?.nombre });
+    for (const u of lista) if (u.id_usuario !== yo && !ya.has(u.id_usuario)) opciones.push({ value: u.id_usuario, label: u.nombre });
     return opciones;
   });
+
+  hayOtros = computed(() => this.asignados().some(id => id !== this.miId));
+
+  textoAyuda = computed(() => {
+    const otros = this.asignados().filter(id => id !== this.miId).length;
+    if (!this.asignados().length) return 'Sin nadie elegido, la tarea será para ti.';
+    if (!otros) return 'Solo tú la verás.';
+    return (otros === 1 ? 'Le llegará un aviso.' : 'A cada uno le llegará un aviso. Cuando uno la complete, queda completada para todos.')
+      + ' Tú la verás en "Creadas por mí".';
+  });
+
+  chipsAsignados = computed<ChipItem[]>(() => this.asignados().map(id => ({ id, label: this.nombreDe(id) })));
+
+  nombreDe(id: number): string {
+    if (id === this.miId) return 'Yo';
+    return this.asignables().find(u => u.id_usuario === id)?.nombre ?? 'Cargando…';
+  }
+
+  anadirAsignado(id: number | null) {
+    if (id != null && !this.asignados().includes(id)) this.asignados.update(l => [...l, id]);
+  }
+
+  quitarAsignado(id: number) { this.asignados.update(l => l.filter(x => x !== id)); }
 
   enDias(n: number): string {
     const d = new Date();
@@ -257,7 +285,7 @@ export class TareaCrearModalComponent implements OnChanges {
   private reiniciar() {
     this.titulo = '';
     this.descripcion = '';
-    this.asignadoA = this.miId;
+    this.asignados.set(this.miId != null ? [this.miId] : []);
     this.prioridad = 'media';
     this.fechaLimite = this.fechaInicial;
     this.nuevoPaso = '';
@@ -305,7 +333,7 @@ export class TareaCrearModalComponent implements OnChanges {
     this.svc.crearTareaGlobal({
       titulo: this.titulo.trim(),
       descripcion: this.descripcion.trim() || null,
-      asignado_a: this.asignadoA,
+      asignados_ids: this.asignados(),
       prioridad: this.prioridad,
       fecha_limite: this.fechaLimite || null,
       subtareas: this.pasos(),
@@ -313,8 +341,10 @@ export class TareaCrearModalComponent implements OnChanges {
       next: (t) => {
         this.guardando.set(false);
         // Si es para uno mismo, verla aparecer en la lista ya confirma; el aviso solo aporta al asignar.
-        if (t.asignado_a != null && t.asignado_a !== this.miId) {
-          this.toast.success('Tarea asignada', `Le avisamos a ${t.asignado_a_nombre}.`);
+        const otros = (t.asignados ?? []).filter(a => a.id_usuario !== this.miId).map(a => a.nombre);
+        if (otros.length) {
+          const quienes = otros.length === 1 ? otros[0] : otros.slice(0, -1).join(', ') + ' y ' + otros[otros.length - 1];
+          this.toast.success('Tarea asignada', `Le avisamos a ${quienes}.`);
         }
         this.creada.emit(t);
         this.openChange.emit(false);

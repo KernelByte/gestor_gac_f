@@ -340,6 +340,10 @@ export class SelectPickerComponent implements ControlValueAccessor, AfterViewIni
    *  publicador nuevo"). Sin este input el estado vacío es solo el texto. */
   @Input() emptyActionLabel: string | null = null;
   @Output() emptyAction = new EventEmitter<void>();
+  /** Modo "añadir a una lista": al elegir emite `picked` y el campo vuelve a
+   *  quedar vacío, listo para otra opción. No se usa con ngModel. */
+  @Input() resetOnSelect = false;
+  @Output() picked = new EventEmitter<unknown>();
 
   @ViewChild('trigger') triggerRef?: ElementRef<HTMLButtonElement>;
   @ViewChild('popup') popupRef?: ElementRef<HTMLElement>;
@@ -502,8 +506,12 @@ export class SelectPickerComponent implements ControlValueAccessor, AfterViewIni
   }
 
   select(opt: PickerOption | null) {
-    this.value.set(opt ? opt.value : null);
-    this.onChange(this.value());
+    if (this.resetOnSelect) {
+      if (opt) this.picked.emit(opt.value);
+    } else {
+      this.value.set(opt ? opt.value : null);
+      this.onChange(this.value());
+    }
     this.close();
     this.triggerRef?.nativeElement.focus();
   }

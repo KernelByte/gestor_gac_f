@@ -527,7 +527,7 @@ export class MisTareasPage implements OnInit {
     const yo = this.miId;
     const v = this.vista();
     const lista = this.tareas();
-    if (v === 'asignadas') return lista.filter(t => t.asignado_a === yo);
+    if (v === 'asignadas') return lista.filter(t => this.asignadaA(t, yo));
     if (v === 'creadas') return lista.filter(t => t.creado_por === yo);
     return lista;
   });
@@ -642,13 +642,25 @@ export class MisTareasPage implements OnInit {
     this.prioridad.set('todas');
   }
 
+  /** Si `id` está entre los asignados (puede haber varios; `asignado_a` es el primero). */
+  private asignadaA(t: Tarea, id: number | null): boolean {
+    if (id == null) return false;
+    return t.asignado_a === id || !!t.asignados_ids?.includes(id);
+  }
+
   /** "Para X" si la delegué; "De X" si me la asignó otra persona. Nada si es mía para mí. */
   relacion(t: Tarea): { tipo: 'para' | 'de' | 'sin'; texto: string } | null {
     const yo = this.miId;
-    if (t.creado_por === yo && t.asignado_a !== yo) {
-      return t.asignado_a_nombre ? { tipo: 'para', texto: `Para ${t.asignado_a_nombre}` } : { tipo: 'sin', texto: 'Sin asignar' };
+    if (t.creado_por === yo) {
+      const lista = t.asignados?.length ? t.asignados
+        : t.asignado_a ? [{ id_usuario: t.asignado_a, nombre: t.asignado_a_nombre ?? 'Asignado' }] : [];
+      const otros = lista.filter(a => a.id_usuario !== yo).map(a => a.nombre);
+      if (!lista.length) return { tipo: 'sin', texto: 'Sin asignar' };
+      if (!otros.length) return null;
+      const nombres = otros.length === 1 ? otros[0] : otros.slice(0, -1).join(', ') + ' y ' + otros[otros.length - 1];
+      return { tipo: 'para', texto: `Para ${nombres}${otros.length < lista.length ? ' y para ti' : ''}` };
     }
-    if (t.asignado_a === yo && t.creado_por !== yo && t.creado_por_nombre) {
+    if (this.asignadaA(t, yo) && t.creado_por_nombre) {
       return { tipo: 'de', texto: `De ${t.creado_por_nombre}` };
     }
     return null;
@@ -722,7 +734,7 @@ export class MisTareasPage implements OnInit {
     // Que se vea la recién creada aunque un filtro la ocultara.
     this.limpiarFiltros();
     this.filtro.set('abiertas');
-    if (this.vista() === 'asignadas' && t.asignado_a !== this.miId) this.vista.set('creadas');
+    if (this.vista() === 'asignadas' && !this.asignadaA(t, this.miId)) this.vista.set('creadas');
   }
 
   onTareaActualizada(updated: Tarea) {

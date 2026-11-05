@@ -445,7 +445,9 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
                           {{ vencida(t) ? 'Venció' : 'Vence' }} <time [attr.datetime]="t.fecha_limite">{{ fechaCorta(t.fecha_limite) }}</time>
                         </span>
                       }
-                      @if (t.asignado_a_nombre) {
+                      @if (t.asignados?.length) {
+                        <span>{{ nombresAsignados(t) }}</span>
+                      } @else if (t.asignado_a_nombre) {
                         <span>{{ t.asignado_a_nombre }}</span>
                       }
                     </p>
@@ -1743,6 +1745,11 @@ export class ActaEditorPage implements OnInit, OnDestroy {
 
   tipoLabel(t: TipoReunion): string {
     return TIPO_LABEL[t] ?? 'Reunión';
+  }
+
+  nombresAsignados(t: Tarea): string {
+    const n = (t.asignados ?? []).map(a => a.nombre);
+    return n.length <= 1 ? (n[0] ?? '') : n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1];
   }
 
   prioridadLabel(p: Tarea['prioridad']): string {

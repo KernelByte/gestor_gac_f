@@ -8,6 +8,7 @@ import { AuthStore } from '../../../../core/auth/auth.store';
 import { SelectPickerComponent, PickerOption } from '../../../../shared/components/select-picker/select-picker.component';
 import { DatePickerComponent } from '../../../../shared/components/date-picker/date-picker.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ChipListComponent, ChipItem } from '../../../../shared/components/chip-list/chip-list.component';
 
 type Guardado = 'idle' | 'guardando' | 'guardado' | 'error';
 
@@ -17,13 +18,14 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
 /**
  * Detalle de una tarea. Cada campo se guarda al cambiarlo (sin modo "Editar").
  * Quién puede qué lo decide el backend; aquí solo se refleja:
- *  - creador: todo (título, descripción, asignado, fecha, prioridad, pasos, borrar).
- *  - asignado: estado y marcar pasos.
+ *  - creador: todo (título, descripción, asignados, fecha, prioridad, pasos, borrar).
+ *  - asignados (puede haber varios): estado y marcar pasos. Si uno la completa,
+ *    queda completada para todos.
  */
 @Component({
   selector: 'app-tarea-detail-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, SelectPickerComponent, DatePickerComponent, ConfirmDialogComponent],
+  imports: [CommonModule, FormsModule, SelectPickerComponent, DatePickerComponent, ConfirmDialogComponent, ChipListComponent],
   template: `
   <div class="panel" [class.panel--drawer]="modoDrawer">
 
@@ -102,15 +104,20 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
             </dd>
           </div>
 
-          <div class="prop">
+          <div class="prop prop--arriba">
             <dt>Asignada a</dt>
-            <dd>
+            <dd class="asignados">
               @if (puedeEditar()) {
-                <app-select-picker [options]="opcionesAsignado()" [ngModel]="t.asignado_a ?? null" (ngModelChange)="cambiarAsignado($event)"
-                  [clearable]="true" [searchable]="true" placeholder="Sin asignar" colorScheme="rose" ariaLabel="Asignada a"
+                <app-chip-list [items]="chipsAsignados()" [disabled]="guardado() === 'guardando'"
+                  ariaLabel="Personas asignadas" (remove)="quitarAsignado(+$event)"/>
+                <!-- Desactivado mientras se guarda: cada cambio manda la lista entera y dos en vuelo podían pisarse. -->
+                <app-select-picker [options]="opcionesAsignado()" [resetOnSelect]="true" (picked)="anadirAsignado($any($event))"
+                  [disabled]="guardado() === 'guardando'" [clearable]="false" [searchable]="true" colorScheme="rose"
+                  [placeholder]="asignadosDe(t).length ? 'Añadir otra persona' : 'Sin asignar'"
+                  [ariaLabel]="asignadosDe(t).length ? 'Añadir otra persona' : 'Asignada a'"
                   (click)="cargarAsignables()"/>
               } @else {
-                <span class="valor">{{ t.asignado_a === miId ? 'Ti' : (t.asignado_a_nombre || 'Sin asignar') }}</span>
+                <span class="valor" [class.valor--vacio]="!asignadosDe(t).length">{{ nombresAsignados(t) }}</span>
               }
             </dd>
           </div>
@@ -233,7 +240,7 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
 
       <app-confirm-dialog [open]="confirmandoEliminar()" (openChange)="confirmandoEliminar.set($event)"
         title="¿Eliminar esta tarea?"
-        [message]="'Se borrará «' + t.titulo + '» con sus pasos.' + (t.asignado_a && t.asignado_a !== miId ? ' ' + (t.asignado_a_nombre || 'La persona asignada') + ' dejará de verla.' : '') + ' No se puede deshacer.'"
+        [message]="mensajeEliminar(t)"
         confirmLabel="Eliminar tarea" severity="danger" (confirmed)="eliminar()"/>
     }
   </div>
@@ -292,6 +299,12 @@ const ROLES_ACTAS = ['administrador', 'secretario', 'anciano'];
     @media (max-width: 380px) { .prop { grid-template-columns: 1fr; gap: 4px; padding: 6px 0; } }
     .valor { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
     .valor--vacio { color: rgb(156 163 175); font-weight: 500; }
+
+    /* Asignados: una ficha por persona y el selector para añadir otra */
+    .prop--arriba { align-items: start; }
+    .prop--arriba dt { padding-top: 12px; }
+    .asignados { display: flex; flex-direction: column; gap: 8px; }
+    .asignados app-chip-list { padding-top: 4px; }
 
     .segmentos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; border-radius: 10px; background: rgb(243 244 246); }
     :host-context(.dark) .segmentos { background: rgb(30 41 59); }
@@ -447,7 +460,7 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
     const t = this.tarea();
     if (!t) return false;
     const yo = this.miId;
-    if (t.creado_por === yo || (t.creado_por == null && t.asignado_a === yo)) return true;
+    if (t.creado_por === yo || (t.creado_por == null && this.asignadosDe(t).some(a => a.id_usuario === yo))) return true;
     const rol = (this.store.user()?.rol ?? '').toLowerCase();
     return t.origen_tipo === 'acta_reunion' && ROLES_ACTAS.includes(rol);
   });
@@ -463,19 +476,42 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
     return base;
   });
 
+  /** Quienes aún no están asignados (los que ya lo están se ven como fichas). */
   opcionesAsignado = computed<PickerOption[]>(() => {
     const yo = this.miId;
     const t = this.tarea();
+    const ya = new Set(t ? this.asignadosDe(t).map(a => a.id_usuario) : []);
     const lista = this.usuarios();
     const ops: PickerOption[] = [];
-    if (yo != null) ops.push({ value: yo, label: 'Yo', hint: lista.find(u => u.id_usuario === yo)?.nombre });
-    for (const u of lista) if (u.id_usuario !== yo) ops.push({ value: u.id_usuario, label: u.nombre });
-    // Mientras carga la lista, que el asignado actual se vea con su nombre.
-    if (t?.asignado_a && !ops.some(o => o.value === t.asignado_a)) {
-      ops.push({ value: t.asignado_a, label: t.asignado_a_nombre ?? 'Asignado' });
-    }
+    if (yo != null && !ya.has(yo)) ops.push({ value: yo, label: 'Yo', hint: lista.find(u => u.id_usuario === yo)?.nombre });
+    for (const u of lista) if (u.id_usuario !== yo && !ya.has(u.id_usuario)) ops.push({ value: u.id_usuario, label: u.nombre });
     return ops;
   });
+
+  chipsAsignados = computed<ChipItem[]>(() => {
+    const t = this.tarea();
+    return t ? this.asignadosDe(t).map(a => ({ id: a.id_usuario, label: a.id_usuario === this.miId ? 'Yo' : a.nombre })) : [];
+  });
+
+  /** Asignados de la tarea; las respuestas sin la lista (caché antigua) traen solo `asignado_a`. */
+  asignadosDe(t: Tarea): UsuarioAsignable[] {
+    if (t.asignados?.length) return t.asignados;
+    return t.asignado_a ? [{ id_usuario: t.asignado_a, nombre: t.asignado_a_nombre ?? 'Asignado' }] : [];
+  }
+
+  nombresAsignados(t: Tarea): string {
+    const lista = this.asignadosDe(t).map(a => a.id_usuario === this.miId ? 'Ti' : a.nombre);
+    if (!lista.length) return 'Sin asignar';
+    return lista.length === 1 ? lista[0] : lista.slice(0, -1).join(', ') + ' y ' + lista[lista.length - 1];
+  }
+
+  mensajeEliminar(t: Tarea): string {
+    const otros = this.asignadosDe(t).filter(a => a.id_usuario !== this.miId).map(a => a.nombre);
+    const aviso = !otros.length ? ''
+      : otros.length === 1 ? ` ${otros[0]} dejará de verla.`
+      : ` ${otros.slice(0, -1).join(', ')} y ${otros[otros.length - 1]} dejarán de verla.`;
+    return `Se borrará «${t.titulo}» con sus pasos.${aviso} No se puede deshacer.`;
+  }
 
   ngOnInit() { this.cargar(); }
 
@@ -530,11 +566,12 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
     if (estado === 'guardado') this.guardadoTimer = setTimeout(() => this.guardado.set('idle'), 1800);
   }
 
-  guardarCampo(patch: Partial<Tarea>) {
+  /** `local` se pinta al instante pero no se envía (p. ej. los nombres de los asignados). */
+  guardarCampo(patch: Partial<Tarea>, local: Partial<Tarea> = {}) {
     const t = this.tarea();
     if (!t) return;
     const previo = t;
-    this.tarea.set({ ...t, ...patch });
+    this.tarea.set({ ...t, ...patch, ...local });
     this.marcarGuardado('guardando');
     this.svc.updateTarea(t.id_tarea, patch).subscribe({
       next: (u) => { this.aplicar(u); this.marcarGuardado('guardado'); },
@@ -561,11 +598,26 @@ export class TareaDetailPanelComponent implements OnInit, OnChanges {
     if (nuevo !== (t.descripcion ?? '')) this.guardarCampo({ descripcion: nuevo || null });
   }
 
-  cambiarAsignado(id: number | null) {
+  anadirAsignado(id: number | null) {
     const t = this.tarea();
-    if (!t || (t.asignado_a ?? null) === id) return;
+    if (!t || id == null) return;
+    const actuales = this.asignadosDe(t);
+    if (actuales.some(a => a.id_usuario === id)) return;
     const u = this.usuarios().find(x => x.id_usuario === id);
-    this.guardarCampo({ asignado_a: id, asignado_a_nombre: u?.nombre ?? null } as Partial<Tarea>);
+    this.fijarAsignados([...actuales, { id_usuario: id, nombre: u?.nombre ?? 'Asignado' }]);
+  }
+
+  quitarAsignado(id: number) {
+    const t = this.tarea();
+    if (!t) return;
+    this.fijarAsignados(this.asignadosDe(t).filter(a => a.id_usuario !== id));
+  }
+
+  private fijarAsignados(lista: UsuarioAsignable[]) {
+    this.guardarCampo(
+      { asignados_ids: lista.map(a => a.id_usuario) },
+      { asignados: lista, asignado_a: lista[0]?.id_usuario ?? null, asignado_a_nombre: lista[0]?.nombre ?? null },
+    );
   }
 
   cambiarEstado(estado: Tarea['estado']) {
