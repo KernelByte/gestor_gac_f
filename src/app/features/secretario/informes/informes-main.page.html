@@ -176,7 +176,7 @@
       <!-- Tab 2: Historial -->
       <div [ngClass]="activeTab() === 'historial' ? 'flex-1 min-h-0 h-full flex flex-col' : 'hidden'">
          @if (canViewHistorial()) {
-            <app-informes-historial [selectedAno]="selectedAno ? +selectedAno : 0"
+            <app-informes-historial [selectedAno]="anoServicioHistorial"
                [congregacionId]="congregacionContext.effectiveCongregacionId() ?? 0" [grupos]="grupos()"
                [canEdit]="canEditHistorial()" [canExport]="canViewHistorial()"
                [canExportResumenGrupo]="canExportResumenGrupo()"

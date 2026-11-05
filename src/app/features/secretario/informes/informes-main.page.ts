@@ -496,6 +496,16 @@ export class InformesMainPage implements OnInit {
     return base + parseInt(this.selectedMes);
   }
 
+  /**
+   * Año de servicio (Sep→Ago) al que pertenece el periodo seleccionado.
+   * selectedAno es el año calendario del mes: octubre 2026 cae en el año de servicio 2027.
+   */
+  get anoServicioHistorial(): number {
+    if (!this.selectedAno) return 0;
+    const ano = parseInt(this.selectedAno);
+    return parseInt(this.selectedMes ?? '0') >= 9 ? ano + 1 : ano;
+  }
+
   handleInformeChange(event: { pub: InformeConPublicador, field: string, value: any }) {
     if (!this.canEditInformes()) return;
     const { pub, field, value } = event;
