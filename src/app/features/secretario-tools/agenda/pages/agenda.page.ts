@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ElementRef, HostListener, OnInit, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, catchError, forkJoin, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
 import { CongregacionContextService } from '../../../../core/congregacion-context/congregacion-context.service';
@@ -18,6 +18,8 @@ interface Celda {
   otroMes: boolean;
   esHoy: boolean;
   eventos: EventoAgenda[];
+  /** Nombre del festivo si el día lo es. */
+  festivo?: string;
 }
 
 interface Grupo {
@@ -30,6 +32,11 @@ interface Grupo {
 /** Para hoy, o ya empezado y sin terminar (la visita del SC en curso): lo pendiente que no está atrasado ni es futuro. */
 function esDeHoy(e: EventoAgenda, hoy: string): boolean {
   return e.estado !== 'vencido' && !!e.fecha && e.fecha <= hoy;
+}
+
+const CLAVE_AVISO_TAREAS = 'agenda_aviso_tareas_cerrado';
+function leerAvisoTareasCerrado(): boolean {
+  try { return localStorage.getItem(CLAVE_AVISO_TAREAS) === '1'; } catch { return false; }
 }
 
 /** Semanas completas (lunes a domingo) que cubren un mes: de la que contiene el día 1 a la que contiene el último. */
@@ -122,6 +129,14 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
 
     </header>
 
+    @if (!conTareas && !avisoTareasCerrado()) {
+      <div class="aviso aviso--info" role="status">
+        <p class="flex-1 min-w-0"><strong class="font-semibold">Sus tareas no aparecen en esta agenda.</strong>
+          <span> Para verlas y crearlas aquí, pida al administrador el permiso «Ver Mis Tareas».</span></p>
+        <button type="button" class="btn-sec shrink-0" (click)="cerrarAvisoTareas()">Entendido</button>
+      </div>
+    }
+
     @if (errorCarga()) {
       <div class="aviso" role="alert">
         <p class="flex-1 min-w-0"><strong class="font-semibold">No se pudo cargar la agenda.</strong>
@@ -153,9 +168,10 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
                   <button type="button" class="celda" (click)="seleccionar(c.fecha)" (keydown)="teclaCelda($event, c)"
                           [attr.data-fecha]="c.fecha" [attr.tabindex]="fechaTab() === c.fecha ? 0 : -1"
                           [attr.aria-describedby]="fechaTab() === c.fecha ? 'ayuda-calendario' : null"
-                          [class.celda--otro]="c.otroMes" [class.celda--sel]="diaSeleccionado() === c.fecha"
+                          [class.celda--otro]="c.otroMes" [class.celda--sel]="diaSeleccionado() === c.fecha" [class.celda--festivo]="!!c.festivo"
                           [attr.aria-label]="etiquetaDia(c)" [attr.aria-pressed]="diaSeleccionado() === c.fecha">
                     <span class="celda-num" [class.celda-num--hoy]="c.esHoy">{{ c.dia }}</span>
+                    @if (c.festivo) { <span class="marca-festivo" [title]="c.festivo">Festivo</span> }
                     <span class="flex flex-col gap-1 min-w-0">
                       @for (e of c.eventos | slice:0:visibles(c.eventos.length); track e.id) {
                         <span class="pildora" [ngClass]="claseEvento(e)" [title]="e.titulo">
@@ -217,7 +233,8 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
           @for (d of diasCortos; track d) { <span class="mini-cab" aria-hidden="true">{{ d.charAt(0) }}</span> }
           @for (c of semanas().flat(); track c.fecha) {
             <button type="button" class="mini-dia" [class.mini-dia--otro]="c.otroMes" [class.mini-dia--hoy]="c.esHoy"
-                    [class.mini-dia--sel]="diaSeleccionado() === c.fecha" [attr.aria-label]="etiquetaDia(c)" (click)="seleccionar(c.fecha)">
+                    [class.mini-dia--sel]="diaSeleccionado() === c.fecha" [class.mini-dia--festivo]="!!c.festivo"
+                    [attr.aria-label]="etiquetaDia(c)" (click)="seleccionar(c.fecha)">
               <span>{{ c.dia }}</span>
               <span class="mini-puntos" aria-hidden="true">
                 @for (e of c.eventos | slice:0:3; track e.id) { <span class="chip-dot" [ngClass]="estilo(e.tipo).dot"></span> }
@@ -225,6 +242,9 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
             </button>
           }
         </div>
+        @if (hayFestivosMes()) {
+          <p class="leyenda-festivo"><span class="leyenda-festivo-muestra" aria-hidden="true"></span> Los días en amarillo son festivos.</p>
+        }
         @if (!cargando() && !diasConEventos().length) {
           <p class="px-4 pb-5 text-[15px] text-slate-600 dark:text-slate-300">No hay nada este mes.</p>
         }
@@ -324,6 +344,9 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
         <h2 class="font-display font-extrabold text-lg leading-tight text-slate-900 dark:text-slate-50 first-letter:uppercase">{{ larga(d.fecha) }}</h2>
         <span class="text-[13px] font-semibold text-violet-700 dark:text-violet-300">{{ relativo(d.fecha) }}</span>
       </div>
+      @if (d.festivo) {
+        <p class="aviso-festivo"><span class="marca-festivo marca-festivo--fija">Festivo</span> {{ d.festivo }}</p>
+      }
       @if (!d.eventos.length) {
         <p class="text-sm text-slate-600 dark:text-slate-300 mb-1">No hay nada para este día.</p>
       }
@@ -348,6 +371,7 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
           <p class="fila-titulo">{{ e.titulo }}</p>
           <p class="fila-meta">
             @if (e.estado === 'vencido') { <span class="font-semibold text-red-700 dark:text-red-400">Atrasado · </span> }
+            @if (e.en_progreso && e.estado !== 'hecho') { <span class="font-semibold text-sky-700 dark:text-sky-300">En progreso · </span> }
             {{ estilo(e.tipo).label }}
             @if (compacta && e.fecha) { · {{ relativo(e.fecha) }} }
             @if (e.fecha_fin) { · hasta el {{ larga(e.fecha_fin) }} }
@@ -497,6 +521,8 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
       font-size: 14px; color: rgb(153 27 27); background: rgb(254 242 242); border: 1px solid rgb(252 165 165);
     }
     :host-context(.dark) .aviso { color: rgb(254 202 202); background: rgb(69 10 10 / 0.5); border-color: rgb(153 27 27); }
+    .aviso--info { color: rgb(30 58 138); background: rgb(239 246 255); border-color: rgb(191 219 254); }
+    :host-context(.dark) .aviso--info { color: rgb(191 219 254); background: rgb(23 37 84 / 0.5); border-color: rgb(30 64 175); }
 
     /* ── Calendario ── */
     .celda {
@@ -508,6 +534,21 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
     .semanas > div:last-child .celda { border-bottom: 0; }
     .celda:hover { background: rgb(245 243 255 / 0.6); }
     .celda:focus-visible { outline: 2px solid rgb(139 92 246); outline-offset: -2px; z-index: 1; }
+    .celda--festivo { background: rgb(254 243 199 / 0.65); }
+    .celda--festivo:hover { background: rgb(253 230 138 / 0.6); }
+    .marca-festivo {
+      position: absolute; top: 6px; right: 6px; padding: 1px 6px; border-radius: 6px; border: 1px solid rgb(252 211 77);
+      background: rgb(254 243 199); color: rgb(120 53 15); font-size: 12px; font-weight: 700; line-height: 1.3; pointer-events: none;
+    }
+    .marca-festivo--fija { position: static; display: inline-block; pointer-events: auto; }
+    .aviso-festivo { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 14px; font-weight: 600; color: rgb(120 53 15); }
+    .leyenda-festivo { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0 16px 8px; font-size: 13px; color: rgb(71 85 105); }
+    .leyenda-festivo-muestra { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgb(252 211 77); background: rgb(254 243 199); }
+    :host-context(.dark) .aviso-festivo { color: rgb(253 230 138); }
+    :host-context(.dark) .leyenda-festivo { color: rgb(203 213 225); }
+    :host-context(.dark) .marca-festivo, :host-context(.dark) .leyenda-festivo-muestra { background: rgb(120 53 15 / 0.45); border-color: rgb(180 83 9); color: rgb(253 230 138); }
+    :host-context(.dark) .celda--festivo { background: rgb(120 53 15 / 0.22); }
+    :host-context(.dark) .celda--festivo:hover { background: rgb(120 53 15 / 0.32); }
     .celda--otro { background: rgb(248 250 252); }
     .celda--otro .celda-num { color: rgb(148 163 184); }
     .celda--sel, .celda--sel:hover { background: rgb(237 233 254 / 0.7); box-shadow: inset 0 0 0 2px rgb(139 92 246); }
@@ -636,10 +677,12 @@ const MEDIA_ANCHA = '(min-width: 1280px)';
     .mini-dia:active { transform: scale(0.94); }
     .mini-dia--otro { color: rgb(148 163 184); }
     .mini-dia--hoy > span:first-child { background: var(--color-brand-purple, #6d28d9); color: #fff; border-radius: 8px; padding: 0 7px; }
+    .mini-dia--festivo { background: rgb(254 243 199 / 0.8); }
     .mini-dia--sel { background: rgb(237 233 254); box-shadow: inset 0 0 0 2px rgb(139 92 246); }
     .mini-puntos { display: flex; gap: 3px; height: 8px; }
     :host-context(.dark) .mini-dia { color: rgb(241 245 249); }
     :host-context(.dark) .mini-dia--otro { color: rgb(71 85 105); }
+    :host-context(.dark) .mini-dia--festivo { background: rgb(120 53 15 / 0.3); }
     :host-context(.dark) .mini-dia--sel { background: rgb(76 29 149 / 0.3); }
 
     /* Pantallas táctiles: todo lo que se pulsa mide al menos 44 px. */
@@ -670,6 +713,12 @@ export class AgendaPage implements OnInit {
 
   /** Las tareas (y crearlas) solo si tiene acceso al módulo de Tareas, igual que el menú "Mis Tareas". */
   readonly conTareas = this.auth.hasPermission('tareas.ver');
+  /** Aviso de que falta el permiso de Tareas: se cierra una vez por navegador. */
+  avisoTareasCerrado = signal(leerAvisoTareasCerrado());
+  cerrarAvisoTareas() {
+    this.avisoTareasCerrado.set(true);
+    try { localStorage.setItem(CLAVE_AVISO_TAREAS, '1'); } catch { /* sin almacenamiento: vuelve a salir */ }
+  }
   readonly tipos: TipoEvento[] = (['tarea', 'recordatorio', 'informes', 'visita', 'bautismo', 'transferencia'] as TipoEvento[])
     .filter(t => t !== 'tarea' || this.conTareas);
   readonly diasCortos = DIAS_CORTOS;
@@ -719,6 +768,10 @@ export class AgendaPage implements OnInit {
   private rango = computed(() => rangoDelMes(this.anio(), this.mes()));
   private rangoVista = computed(() => rangoDelMes(this.anioVista(), this.mesVista()));
 
+  /** Festivos del mes visible por fecha (YYYY-MM-DD → nombre). */
+  private festivos = signal<Map<string, string>>(new Map());
+  hayFestivosMes = computed(() => this.semanas().some(s => s.some(c => c.festivo && !c.otroMes)));
+
   private visiblesEventos = computed(() => this.eventos().filter(e => !this.ocultos().has(e.tipo)));
 
   /** Cuántos hay de cada tipo en el mes visible (para los chips). */
@@ -736,6 +789,7 @@ export class AgendaPage implements OnInit {
   semanas = computed<Celda[][]>(() => {
     const { desde, hasta } = this.rangoVista();
     const hoy = hoyIso();
+    const festivos = this.festivos();
     const porDia = new Map<string, EventoAgenda[]>();
     for (const e of this.visiblesEventos()) {
       if (!e.fecha) continue;
@@ -750,7 +804,7 @@ export class AgendaPage implements OnInit {
       const semana: Celda[] = [];
       for (let i = 0; i < 7; i++, f = sumarDias(f, 1)) {
         const d = desdeIso(f);
-        semana.push({ fecha: f, dia: d.getDate(), otroMes: d.getMonth() + 1 !== this.mesVista(), esHoy: f === hoy, eventos: porDia.get(f) ?? [] });
+        semana.push({ fecha: f, dia: d.getDate(), otroMes: d.getMonth() + 1 !== this.mesVista(), esHoy: f === hoy, eventos: porDia.get(f) ?? [], festivo: festivos.get(f) });
       }
       semanas.push(semana);
     }
@@ -1013,10 +1067,15 @@ export class AgendaPage implements OnInit {
     const anio = this.anio(), mes = this.mes();
     this.cargando.set(true);
     this.pideMes?.unsubscribe();
-    this.pideMes = this.svc.eventos(desde, hasta).subscribe({
-      next: ev => {
+    // Si los festivos fallan, la agenda sigue funcionando sin ellos.
+    this.pideMes = forkJoin({
+      ev: this.svc.eventos(desde, hasta),
+      festivos: this.svc.festivos(desde, hasta).pipe(catchError(() => of([]))),
+    }).subscribe({
+      next: ({ ev, festivos }) => {
         // Datos y mes visible cambian juntos: nunca se ve un mes nuevo con los eventos del anterior.
         this.eventos.set(ev);
+        this.festivos.set(new Map(festivos.map(f => [f.fecha, f.nombre])));
         this.anioVista.set(anio);
         this.mesVista.set(mes);
         this.errorMes.set(false);
@@ -1088,10 +1147,13 @@ export class AgendaPage implements OnInit {
 
   marcar(e: EventoAgenda) {
     const hecho = e.estado !== 'hecho';
-    // Los automáticos (DPA) se marcan por clave; los recordatorios, por su id y fecha.
-    const peticion = e.clave_hecho
-      ? this.svc.marcarHechoAuto(e.clave_hecho, hecho)
-      : e.origen_id && e.fecha ? this.svc.marcarHecho(e.origen_id, e.fecha, hecho) : null;
+    // Las tareas cambian su estado en Mis Tareas; los automáticos (DPA) se marcan por clave;
+    // los recordatorios, por su id y fecha.
+    const peticion = e.tipo === 'tarea' && e.origen_id
+      ? this.svc.estadoTarea(e.origen_id, hecho ? 'completada' : 'pendiente')
+      : e.clave_hecho
+        ? this.svc.marcarHechoAuto(e.clave_hecho, hecho)
+        : e.origen_id && e.fecha ? this.svc.marcarHecho(e.origen_id, e.fecha, hecho) : null;
     if (!peticion) return;
     this.marcando.set(e.id);
     peticion.subscribe({
@@ -1125,8 +1187,9 @@ export class AgendaPage implements OnInit {
 
   etiquetaDia(c: Celda): string {
     const n = c.eventos.length;
-    if (!n) return `${fechaLarga(c.fecha)}: nada pendiente`;
+    const fest = c.festivo ? `Festivo, ${c.festivo}. ` : '';
+    if (!n) return `${fechaLarga(c.fecha)}: ${fest}nada pendiente`;
     const nombres = c.eventos.slice(0, 3).map(e => e.titulo_corto || e.titulo).join('; ');
-    return `${fechaLarga(c.fecha)}: ${n === 1 ? '1 cosa' : n + ' cosas'}. ${nombres}${n > 3 ? ` y ${n - 3} más` : ''}`;
+    return `${fechaLarga(c.fecha)}: ${fest}${n === 1 ? '1 cosa' : n + ' cosas'}. ${nombres}${n > 3 ? ` y ${n - 3} más` : ''}`;
   }
 }

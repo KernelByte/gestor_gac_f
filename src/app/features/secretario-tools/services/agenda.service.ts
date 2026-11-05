@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
-import { EventoAgenda, Recordatorio, RecordatorioForm, Sugerencia } from '../models/agenda.model';
+import { EventoAgenda, Festivo, Recordatorio, RecordatorioForm, Sugerencia } from '../models/agenda.model';
 
 @Injectable({ providedIn: 'root' })
 export class AgendaService {
@@ -19,6 +19,29 @@ export class AgendaService {
 
   eventos(desde: string, hasta: string): Observable<EventoAgenda[]> {
     return this.http.get<EventoAgenda[]>(`${this.url}/eventos`, { params: this.cong({ desde, hasta }) });
+  }
+
+  /** Festivos de Colombia entre dos fechas (no dependen de la congregación). */
+  festivos(desde: string, hasta: string): Observable<Festivo[]> {
+    return this.http.get<Festivo[]>(`${this.url}/festivos`, { params: { desde, hasta } });
+  }
+
+  /** Administrador: carga los festivos de ley de un año (los ya cargados no se tocan). */
+  generarFestivos(anio: number): Observable<Festivo[]> {
+    return this.http.post<Festivo[]>(`${this.url}/festivos/generar`, { anio });
+  }
+
+  crearFestivo(fecha: string, nombre: string): Observable<Festivo> {
+    return this.http.post<Festivo>(`${this.url}/festivos`, { fecha, nombre });
+  }
+
+  eliminarFestivo(fecha: string): Observable<void> {
+    return this.http.delete<void>(`${this.url}/festivos/${fecha}`);
+  }
+
+  /** Tareas: «Ya lo hice» la completa; «Desmarcar» la reabre. */
+  estadoTarea(idTarea: number, estado: 'pendiente' | 'completada'): Observable<unknown> {
+    return this.http.patch(`${environment.apiUrl}/tareas/${idTarea}/estado`, { estado });
   }
 
   proximos(): Observable<EventoAgenda[]> {

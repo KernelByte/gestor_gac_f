@@ -439,6 +439,11 @@
          <app-api-config class="flex-1 min-h-0"></app-api-config>
       </div>
 
+      <!-- TAB: Festivos de Colombia que se marcan en la Agenda del secretario -->
+      <div *ngIf="activeTab() === 'festivos'" class="flex flex-col flex-1 min-h-0">
+         <app-festivos class="flex-1 min-h-0"></app-festivos>
+      </div>
+
    </div>
 
    <!-- MODAL CONFIRMAR ELIMINAR CONGREGACIÓN -->

@@ -11,6 +11,7 @@ export interface EventoAgenda {
   fecha: string | null;      // YYYY-MM-DD; null = sin fecha
   fecha_fin: string | null;
   estado: EstadoEvento;
+  en_progreso: boolean;      // tareas ya empezadas (siguen pendientes)
   origen_id: number | null;
   enlace: string | null;     // URL externa
   ruta: string | null;       // ruta del portal
@@ -18,6 +19,12 @@ export interface EventoAgenda {
   avisar: boolean;
   clave_hecho: string | null; // eventos automáticos que se marcan por clave (ej. bautismo:123)
   dias_aviso: number;
+}
+
+/** Día festivo de Colombia (global). */
+export interface Festivo {
+  fecha: string;   // YYYY-MM-DD
+  nombre: string;
 }
 
 export interface Recordatorio {
