@@ -42,6 +42,7 @@ import {
 @Component({
    standalone: true,
    selector: 'app-territorios-page',
+   host: { class: 'tema-territorios' },
    imports: [CommonModule, FormsModule, TerritorioMapComponent, EditorPanelComponent, DibujoLoteDialogComponent, PageHeaderComponent, SelectPickerComponent, GuiaConfiguracionComponent, RenumerarManzanasDialogComponent],
    animations: [
       trigger('slideOver', [
@@ -945,12 +946,12 @@ import {
           <div class="p-5 space-y-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Código</label>
-              <input type="text" [(ngModel)]="newTerritorio.codigo" placeholder="T-01" class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all">
+              <input type="text" [(ngModel)]="newTerritorio.codigo" placeholder="T-01" class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all">
               @if (intentoCrear() && !newTerritorio.codigo) { <p class="mt-1.5 text-xs font-semibold text-red-600 dark:text-red-400" role="alert">Escriba el código de la tarjeta.</p> }
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nombre <span class="font-normal normal-case text-slate-500 dark:text-slate-400">(opcional)</span></label>
-              <input type="text" [(ngModel)]="newTerritorio.nombre" placeholder="Una referencia, si la quiere" class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all">
+              <input type="text" [(ngModel)]="newTerritorio.nombre" placeholder="Una referencia, si la quiere" class="placeholder:font-normal placeholder:text-slate-400/60 dark:placeholder:text-slate-500/70 w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all">
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Estado Inicial</label>
@@ -974,7 +975,7 @@ import {
           
           <div class="p-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20 flex justify-end gap-3">
             <button (click)="closeCreateModal()" class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all">Cancelar</button>
-            <button (click)="saveNewTerritorio()" [disabled]="saving()" class="px-5 py-2.5 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-purple-600/20 flex items-center gap-2">
+            <button (click)="saveNewTerritorio()" [disabled]="saving()" class="px-5 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-green-600/20 flex items-center gap-2">
               @if (saving()) {
                 <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               }
@@ -1125,8 +1126,8 @@ import {
 
         <div class="px-3 sm:px-5 h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shrink-0 bg-white dark:bg-slate-800">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-              <svg class="text-[#6D28D9] dark:text-purple-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+            <div class="w-9 h-9 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+              <svg class="text-green-700 dark:text-green-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
             </div>
             <h3 class="text-base font-black text-slate-900 dark:text-white truncate">
               Editor cartográfico

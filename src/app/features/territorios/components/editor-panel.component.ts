@@ -37,7 +37,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
       <!-- ═════ 1 · Límite ═════ -->
       <section>
         <button (click)="m.setLayerMode('territorio')" type="button" class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors" [attr.aria-expanded]="m.layerMode() === 'territorio'">
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0" [class]="m.layerMode() === 'territorio' ? 'bg-purple-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">1</span>
+          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0" [class]="m.layerMode() === 'territorio' ? 'bg-green-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">1</span>
           <span class="flex-1 text-base font-extrabold text-slate-900 dark:text-white">Límite del territorio</span>
           @if (m.tieneLimite()) { <span class="text-emerald-600 dark:text-emerald-400 text-sm font-bold">✓ Listo</span> }
         </button>
@@ -64,7 +64,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
               <button (click)="m.buscarCuadrasAqui()" type="button" [disabled]="m.cuadrasCargando()" class="btn-sec w-full">Buscar cuadras aquí</button>
             }
             <button (click)="m.armarLimiteConCuadras()" type="button" [disabled]="m.cuadrasCargando() || m.cuadrasElegidas() === 0"
-                    class="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-700 text-white text-base font-bold transition-colors active:scale-[0.98]">Listo, armar el límite</button>
+                    class="w-full h-12 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-700 text-white text-base font-bold transition-colors active:scale-[0.98]">Listo, armar el límite</button>
             <button (click)="m.cancelarCuadras()" type="button" class="btn-sec w-full">Cancelar</button>
           } @else if (!m.tieneLimite()) {
             @if (m.drawingActive()) {
@@ -77,15 +77,15 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
               <p class="text-base font-bold text-slate-800 dark:text-slate-100">¿Cómo quiere marcar el límite?</p>
 
               <button (click)="m.empezarCuadras()" type="button"
-                      class="w-full text-left rounded-xl border-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 p-4 transition-colors active:scale-[0.99] focus:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/30">
+                      class="w-full text-left rounded-xl border-2 border-green-500 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 p-4 transition-colors active:scale-[0.99] focus:outline-none focus-visible:ring-4 focus-visible:ring-green-500/30">
                 <span class="flex items-center gap-3">
-                  <span class="w-10 h-10 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0" aria-hidden="true">
+                  <span class="w-10 h-10 rounded-lg bg-green-600 text-white flex items-center justify-center shrink-0" aria-hidden="true">
                     <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M15 17.5l2 2 3.5-4"></path></svg>
                   </span>
                   <span class="flex-1 min-w-0">
                     <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span class="text-base font-extrabold text-slate-900 dark:text-white">Tocar las cuadras</span>
-                      <span class="px-2 py-0.5 rounded-md bg-purple-600 text-white text-xs font-bold">Recomendado</span>
+                      <span class="px-2 py-0.5 rounded-md bg-green-600 text-white text-xs font-bold">Recomendado</span>
                     </span>
                   </span>
                 </span>
@@ -94,7 +94,7 @@ const CLAVE_PLEGADO = 'gac.editorTerritorio.panelPlegado';
               </button>
 
               <button (click)="m.empezarDibujo()" type="button"
-                      class="w-full text-left rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 p-4 transition-colors active:scale-[0.99] focus:outline-none focus-visible:ring-4 focus-visible:ring-purple-500/30">
+                      class="w-full text-left rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 p-4 transition-colors active:scale-[0.99] focus:outline-none focus-visible:ring-4 focus-visible:ring-green-500/30">
                 <span class="flex items-center gap-3">
                   <span class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0" aria-hidden="true">
                     <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>

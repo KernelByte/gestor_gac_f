@@ -23,6 +23,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
 
 @Component({
   selector: 'app-seguimiento-predicacion',
+  host: { class: 'tema-territorios' },
   standalone: true,
   imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent, SelectPickerComponent, RecorridoMapaComponent, HistorialPredicacionComponent],
   template: `

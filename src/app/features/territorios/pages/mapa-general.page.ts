@@ -11,6 +11,7 @@ import { GeoJSONFeature, GeoJSONFeatureCollection, GeoJSONGeometry, Sector, Unid
 @Component({
   standalone: true,
   selector: 'app-mapa-general-page',
+  host: { class: 'tema-territorios' },
   imports: [CommonModule, FormsModule, DatePipe, TerritorioMapComponent],
   template: `
     <div class="flex flex-col h-full overflow-hidden gap-3">

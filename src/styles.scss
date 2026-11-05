@@ -1480,3 +1480,24 @@
 .maplibregl-map {
   isolation: isolate;
 }
+
+/* Módulo Territorios: dos verdes que entonan.
+   - `green`   = bosque: acciones (botones, focos, insignias de acción). Más profundo.
+   - `emerald` = estados y progreso (guía, disponible, predicada, mapa). Más claro.
+   El `green` de Tailwind (matiz 149, croma 0.19) chocaba con `emerald` (matiz 163,
+   croma 0.15). Este bosque usa matiz 154 y la saturación de `emerald`, así se ven
+   de la misma familia. El 600 da 5:1 con texto blanco (AA). */
+.tema-territorios {
+  --color-green-50:  oklch(97.6% 0.018 154);
+  --color-green-100: oklch(94.6% 0.042 154);
+  --color-green-200: oklch(89.4% 0.075 154);
+  --color-green-300: oklch(81.5% 0.108 154);
+  --color-green-400: oklch(71.5% 0.132 154);
+  --color-green-500: oklch(61.5% 0.138 154);
+  --color-green-600: oklch(52.5% 0.125 154);
+  --color-green-700: oklch(45.5% 0.11 154);
+  --color-green-800: oklch(38.5% 0.09 154);
+  --color-green-900: oklch(32.5% 0.072 154);
+  --color-green-950: oklch(22.5% 0.048 154);
+  --shadow-green: 0 8px 24px -8px oklch(52.5% 0.125 154 / 0.35), 0 2px 6px -2px oklch(52.5% 0.125 154 / 0.15);
+}

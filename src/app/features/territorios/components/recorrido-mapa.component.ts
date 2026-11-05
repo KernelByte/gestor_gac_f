@@ -1,6 +1,7 @@
 import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild, computed, effect, inject, signal, untracked,
 } from '@angular/core';
+import { escapeHtml } from '../../../shared/escape-html';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
@@ -1075,7 +1076,7 @@ export class RecorridoMapaComponent implements AfterViewInit, OnDestroy {
       interactive: false,
       onEachFeature: (f, layer) => {
         const codigo = (f.properties as any)?.codigo;
-        if (codigo) (layer as L.Polygon).bindTooltip(String(codigo), { permanent: true, direction: 'center', className: 'rec-cod' });
+        if (codigo) (layer as L.Polygon).bindTooltip(escapeHtml(codigo), { permanent: true, direction: 'center', className: 'rec-cod' });
       },
     }).addTo(this.map);
     this.capaTarjetas.bringToBack();
@@ -1087,8 +1088,8 @@ export class RecorridoMapaComponent implements AfterViewInit, OnDestroy {
     const esInicio = this.datos()?.config.inicio?.id_manzana === p.id_manzana;
     let e: L.PathOptions = { color: '#64748b', weight: 1.5, fillColor: '#ffffff', fillOpacity: 0.55, dashArray: undefined };
     if (p.estado_tarjeta) return { ...e, color: '#94a3b8', fillColor: '#cbd5e1', fillOpacity: 0.7, weight: 1.5, dashArray: '2 4' };
-    if (p.predicada) e = { ...e, color: '#15803d', fillColor: '#22c55e', fillOpacity: 0.6 };
-    else if (p.parcial) e = { ...e, color: '#15803d', fillColor: '#22c55e', fillOpacity: 0.22, weight: p.siguiente === 1 ? 4 : 3, dashArray: '6 4' };
+    if (p.predicada) e = { ...e, color: '#047857', fillColor: '#10b981', fillOpacity: 0.6 };
+    else if (p.parcial) e = { ...e, color: '#047857', fillColor: '#10b981', fillOpacity: 0.22, weight: p.siguiente === 1 ? 4 : 3, dashArray: '6 4' };
     else if (p.siguiente) e = { ...e, color: '#b45309', fillColor: '#f59e0b', fillOpacity: 0.6, weight: p.siguiente === 1 ? 4 : 2.5 };
     if (p.asignada_a && !p.predicada) e = { ...e, dashArray: '4 3' };
     if (esInicio) e = { ...e, color: '#6d28d9', weight: Math.max(e.weight ?? 0, 4) };
@@ -1113,7 +1114,7 @@ export class RecorridoMapaComponent implements AfterViewInit, OnDestroy {
       const p = f.properties;
       const capa = L.geoJSON(f as any, { style: () => this.estiloDe(p) });
       const poligono = capa.getLayers()[0] as L.Path;
-      poligono.bindTooltip(p.numero, { permanent: true, direction: 'center', className: 'rec-num' });
+      poligono.bindTooltip(escapeHtml(p.numero), { permanent: true, direction: 'center', className: 'rec-num' });
       poligono.on('click', () => this.alTocar(p));
       grupo.addLayer(poligono);
       this.capasPorManzana.set(p.id_manzana, poligono);

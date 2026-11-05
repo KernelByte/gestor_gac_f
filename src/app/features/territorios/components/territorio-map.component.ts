@@ -1,4 +1,5 @@
 import { avisoNumeroRepetido, NumeracionManzanas, siguienteLibre } from '../utils/numeracion-manzanas.util';
+import { escapeHtml } from '../../../shared/escape-html';
 import { PickerOption, SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import {
   Component,
@@ -90,7 +91,7 @@ export type LayerMode = 'territorio' | 'manzana' | 'punto';
 
           <!-- Geocoder -->
           <div class="relative w-[min(16rem,calc(100vw-9rem))]">
-            <div class="gac-float h-10 flex items-center rounded-xl overflow-hidden transition-[border-radius] focus-within:ring-2 focus-within:ring-purple-500/40" [class.rounded-b-none]="geocodeResults().length > 0">
+            <div class="gac-float h-10 flex items-center rounded-xl overflow-hidden transition-[border-radius] focus-within:ring-2 focus-within:ring-green-500/40" [class.rounded-b-none]="geocodeResults().length > 0">
               <svg class="w-4 h-4 text-slate-400 ml-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               <input
                 type="text"
@@ -1337,9 +1338,9 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
       // Predicada: verde. Asignada: el color de la persona. Si no, gris.
       const colorAsig = this.colorAsignada(props);
-      const strokeColor = isPredicada ? '#16a34a' : colorAsig ?? '#475569';
-      const fillColor  = isPredicada ? '#bbf7d0' : colorAsig ? this.aclarar(colorAsig) : '#f1f5f9';
-      const labelBg    = numeroPrevio ? '#d97706' : isPredicada ? '#16a34a' : colorAsig ?? '#475569';
+      const strokeColor = isPredicada ? '#059669' : colorAsig ?? '#475569';
+      const fillColor  = isPredicada ? '#a7f3d0' : colorAsig ? this.aclarar(colorAsig) : '#f1f5f9';
+      const labelBg    = numeroPrevio ? '#d97706' : isPredicada ? '#059669' : colorAsig ?? '#475569';
 
       // Polygon fill
       const poly = L.geoJSON(feature, {
@@ -1357,7 +1358,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       } as any);
       // Al pasar el cursor: «Manzana 2 · Asignada a Gersain».
       if (props.asignada_a) {
-        poly.bindTooltip(`Manzana ${props.numero_manzana ?? ''} · Asignada a ${props.asignada_a}`, { sticky: true, direction: 'top' });
+        poly.bindTooltip(`Manzana ${escapeHtml(props.numero_manzana)} · Asignada a ${escapeHtml(props.asignada_a)}`, { sticky: true, direction: 'top' });
       }
       if (this.panelExterno && feature.id != null) {
         this.manzanaCapas.set(Number(feature.id), poly);
@@ -1396,7 +1397,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
                 font-family:system-ui,sans-serif;
                 border:1.5px solid rgba(255,255,255,0.55);
                 line-height:1.4;
-              ">${numero}${checkmark}</div>`,
+              ">${escapeHtml(numero)}${checkmark}</div>`,
               className: '',
               iconSize: [0, 0],
               iconAnchor: [0, 0],
@@ -1478,7 +1479,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     if (!this.map || this.layerMode() !== 'manzana' || this.drawingActive() || this.propuestasActivas()) return;
     const caja = document.createElement('div');
     caja.style.cssText = 'font-family:system-ui;min-width:150px';
-    caja.innerHTML = `<p style="margin:0 0 8px;font-weight:800;font-size:14px;color:#1e293b">Manzana ${numero ?? ''}</p>`;
+    caja.innerHTML = `<p style="margin:0 0 8px;font-weight:800;font-size:14px;color:#1e293b">Manzana ${escapeHtml(numero)}</p>`;
     const borrar = document.createElement('button');
     borrar.textContent = 'Borrar manzana';
     borrar.style.cssText = 'width:100%;padding:8px;border-radius:10px;background:#dc2626;color:#fff;font-weight:700;font-size:13px;border:0;cursor:pointer';
@@ -1510,7 +1511,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       onEachFeature: (f: any, capa: any) => {
         capa._capaAuxiliar = true;
         if (f.properties?.codigo) {
-          capa.bindTooltip(String(f.properties.codigo), { permanent: true, direction: 'center', className: 'gac-ref-label' });
+          capa.bindTooltip(escapeHtml(f.properties.codigo), { permanent: true, direction: 'center', className: 'gac-ref-label' });
         }
       },
     } as any).addTo(this.map);
@@ -1875,7 +1876,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
   private iconoEtiqueta(texto: string, fondo: string): L.DivIcon {
     return L.divIcon({
-      html: `<div style="display:inline-block;transform:translate(-50%,-50%);background:${fondo};color:#fff;font:700 12px system-ui,sans-serif;padding:3px 8px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);border:1.5px solid rgba(255,255,255,.6)">${texto}</div>`,
+      html: `<div style="display:inline-block;transform:translate(-50%,-50%);background:${fondo};color:#fff;font:700 12px system-ui,sans-serif;padding:3px 8px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);border:1.5px solid rgba(255,255,255,.6)">${escapeHtml(texto)}</div>`,
       className: '',
       iconSize: [0, 0],
       iconAnchor: [0, 0],
@@ -1940,7 +1941,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
             text-overflow:ellipsis;
             box-shadow:0 1px 3px rgba(0,0,0,0.2);
             font-family:system-ui;
-          ">${props.nombre || tipo}</div>
+          ">${escapeHtml(props.nombre || tipo)}</div>
         </div>`,
         className: '',
         iconSize: [28, 48],
@@ -1958,9 +1959,9 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
       } else if (props.nombre || props.notas) {
         marker.bindPopup(`
           <div style="font-family:system-ui;min-width:120px">
-            <strong style="font-size:13px;color:#1e293b">${props.nombre || ''}</strong>
-            <p style="margin:2px 0 0;color:#64748b;font-size:11px">${tipo}${props.codigo ? ' · Tarjeta ' + props.codigo : ''}</p>
-            ${props.notas ? `<p style="margin:4px 0 0;color:#64748b;font-size:11px">${props.notas}</p>` : ''}
+            <strong style="font-size:13px;color:#1e293b">${escapeHtml(props.nombre)}</strong>
+            <p style="margin:2px 0 0;color:#64748b;font-size:11px">${escapeHtml(tipo)}${props.codigo ? ' · Tarjeta ' + escapeHtml(props.codigo) : ''}</p>
+            ${props.notas ? `<p style="margin:4px 0 0;color:#64748b;font-size:11px">${escapeHtml(props.notas)}</p>` : ''}
           </div>
         `);
       }
@@ -2233,7 +2234,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
 
         if (this.showPopups && feature.properties) {
           const p = feature.properties;
-          const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+          const esc = escapeHtml;
           const estado = p.estado_territorio || 'Sin estado';
           const tono = estado === 'Disponible' ? 'ok' : estado === 'Asignado' ? 'asig' : 'pausa';
           // El clic navega al territorio, así que la ficha va al pasar el cursor, no en un popup.
@@ -2260,7 +2261,7 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
         this.codigoLabels.push({
           bounds: layer.getBounds(),
           tooltip: L.tooltip({ permanent: true, direction: 'center', className: 'gac-terr-code', interactive: false })
-            .setContent(String(codigo)).setLatLng(centro),
+            .setContent(escapeHtml(codigo)).setLatLng(centro),
           visible: false,
         });
       });
@@ -2344,8 +2345,8 @@ export class TerritorioMapComponent implements AfterViewInit, OnChanges, OnDestr
     const asig = this.colorAsignada(props);
     if (elegida) return { color: '#1d4ed8', weight: 4, fillColor: '#93c5fd', fillOpacity: 0.6, opacity: 1 };
     return {
-      color: predicada ? '#16a34a' : asig ?? '#475569', weight: predicada || asig ? 2.5 : 2,
-      fillColor: predicada ? '#bbf7d0' : asig ? this.aclarar(asig) : '#f1f5f9', fillOpacity: predicada || asig ? 0.55 : 0.4, opacity: 0.9,
+      color: predicada ? '#059669' : asig ?? '#475569', weight: predicada || asig ? 2.5 : 2,
+      fillColor: predicada ? '#a7f3d0' : asig ? this.aclarar(asig) : '#f1f5f9', fillOpacity: predicada || asig ? 0.55 : 0.4, opacity: 0.9,
       dashArray: props?.origen === 'ia' ? '6 5' : undefined,
     };
   }

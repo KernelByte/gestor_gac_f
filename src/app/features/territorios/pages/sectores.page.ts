@@ -29,6 +29,7 @@ interface TarjetaElegible {
 @Component({
   standalone: true,
   selector: 'app-sectores-page',
+  host: { class: 'tema-territorios' },
   imports: [CommonModule, FormsModule, TerritorioMapComponent],
   template: `
     <div class="flex flex-col h-full min-h-0 gap-3">

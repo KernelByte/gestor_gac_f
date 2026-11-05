@@ -13,6 +13,7 @@ import { PickerOption, SelectPickerComponent } from '../../../shared/components/
 @Component({
   standalone: true,
   selector: 'app-registro-s13-page',
+  host: { class: 'tema-territorios' },
   imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent, SelectPickerComponent],
   encapsulation: ViewEncapsulation.None,
   styles: [`

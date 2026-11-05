@@ -34,6 +34,7 @@ interface DiaPrograma { fecha: string; titulo: string; salidas: SalidaProgramada
 @Component({
   standalone: true,
   selector: 'app-horarios-page',
+  host: { class: 'tema-territorios' },
   imports: [CommonModule, PageHeaderComponent, SalidaEditorComponent, SemanaTipoComponent],
   template: `
     <div class="flex flex-col h-full min-h-0 gap-4">
