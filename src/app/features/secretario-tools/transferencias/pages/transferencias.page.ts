@@ -218,10 +218,6 @@ interface PublicadorLite {
                 </textarea>
                 <p class="field-help">Mientras más detalles, mejor saldrá la carta.</p>
               </div>
-              <div class="field-group" style="--field-i:1">
-                <label class="form-label" for="wiz-motivo">Motivo del cambio <span class="text-slate-400 font-normal">(opcional)</span></label>
-                <input id="wiz-motivo" class="form-control" [(ngModel)]="form.motivo" placeholder="Ej. Cambio de casa, trabajo, matrimonio…" />
-              </div>
             </div>
 
           </div>
@@ -360,8 +356,6 @@ interface PublicadorLite {
                           <span class="font-semibold text-slate-900 dark:text-slate-100 truncate text-sm leading-tight">{{ etiquetaTransferencia(t) }}</span>
                           <span class="text-[0.7rem] text-slate-400 dark:text-slate-500 truncate mt-0.5 leading-none">
                             <span *ngIf="t.es_familiar">{{ t.miembros.length || 1 }} miembros</span>
-                            <span *ngIf="!t.es_familiar && t.motivo">{{ t.motivo }}</span>
-                            <span *ngIf="!t.es_familiar && !t.motivo" class="italic">Sin motivo registrado</span>
                           </span>
                         </div>
                       </div>
@@ -538,11 +532,19 @@ interface PublicadorLite {
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 Notas
                 <span *ngIf="!seleccionada()?.notas_para_carta && activeTab() !== 'notas'" class="tab-dot tab-dot--warn" aria-hidden="true"></span>
+                <svg *ngIf="seleccionada()?.notas_para_carta" class="tab-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+                <span *ngIf="seleccionada()?.notas_para_carta" class="sr-only">(hecho)</span>
               </button>
               <button (click)="activeTab.set('carta')" [class]="activeTab() === 'carta' ? 'tab-item-active bg-violet-600 text-white shadow-sm' : 'tab-item text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'" class="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-1 text-sm font-bold rounded-lg transition-all cursor-pointer relative" role="tab" [attr.aria-selected]="activeTab() === 'carta'">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 3v6h6"/></svg>
                 Carta
                 <span *ngIf="!seleccionada()?.carta_redactada && activeTab() !== 'carta'" class="tab-dot tab-dot--warn" aria-hidden="true"></span>
+                <svg *ngIf="seleccionada()?.carta_redactada" class="tab-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+                <span *ngIf="seleccionada()?.carta_redactada" class="sr-only">(hecho)</span>
+              </button>
+              <button *ngIf="!t.procesada_en" (click)="activeTab.set('completar')" [class]="activeTab() === 'completar' ? 'tab-item-active bg-violet-600 text-white shadow-sm' : 'tab-item text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'" class="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-1 text-sm font-bold rounded-lg transition-all cursor-pointer relative" role="tab" [attr.aria-selected]="activeTab() === 'completar'">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Completar
               </button>
             </nav>
 
@@ -693,10 +695,6 @@ interface PublicadorLite {
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="field-group" style="margin:0">
-                      <label class="form-label" for="det-motivo">Motivo</label>
-                      <input id="det-motivo" class="form-control" [(ngModel)]="t.motivo" [disabled]="!!t.procesada_en" placeholder="Cambio de casa, trabajo…" />
-                    </div>
-                    <div class="field-group" style="margin:0">
                       <label class="form-label" for="det-fecha">Fecha</label>
                       <input id="det-fecha" class="form-control" type="date" [(ngModel)]="t.fecha_transferencia" [disabled]="!!t.procesada_en" />
                     </div>
@@ -705,160 +703,6 @@ interface PublicadorLite {
                     <span *ngIf="guardandoTodo()" class="spinner spinner-xs"></span>
                     {{ guardandoTodo() ? 'Guardando…' : 'Guardar cambios' }}
                   </button>
-                </div>
-              </section>
-
-              <!-- ── Último paso: completar (trasladar o eliminar) ── -->
-              <section *ngIf="!t.procesada_en" id="seccion-completar" class="completar info-completar" aria-labelledby="completar-titulo">
-                <p class="completar__eyebrow">Último paso</p>
-                <h3 id="completar-titulo" class="completar__titulo">Completar la transferencia</h3>
-                <p class="completar__desc">
-                  Hazlo cuando {{ t.es_familiar ? 'la familia' : 'la persona' }} ya se haya mudado: saldrá de la lista de publicadores de esta congregación.
-                  Sus informes de los meses que estuvo aquí siguen contando aquí.
-                </p>
-
-                <button *ngIf="!mostrarCompletar()" type="button" class="btn-completar" (click)="abrirCompletar()">
-                  Empezar
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </button>
-
-                <div *ngIf="mostrarCompletar()" class="flex flex-col gap-5 mt-1 animate-scale-in">
-                  <fieldset class="flex flex-col gap-2.5">
-                    <legend class="completar__pregunta">¿La congregación a la que se muda usa GAC?</legend>
-                    <label class="opcion" [class.opcion--activa]="completarAccion() === 'trasladar'">
-                      <input type="radio" name="accion-completar" class="opcion__input" value="trasladar"
-                             [checked]="completarAccion() === 'trasladar'" (change)="elegirAccion('trasladar')" />
-                      <span class="opcion__radio" aria-hidden="true"></span>
-                      <span class="opcion__cuerpo">
-                        <span class="opcion__titulo">Sí, usa GAC: trasladar</span>
-                        <span class="opcion__desc">Pasa a esa congregación con sus informes, su tarjeta y su historial.</span>
-                      </span>
-                    </label>
-                    <label class="opcion opcion--peligro" [class.opcion--activa]="completarAccion() === 'eliminar'">
-                      <input type="radio" name="accion-completar" class="opcion__input" value="eliminar"
-                             [checked]="completarAccion() === 'eliminar'" (change)="elegirAccion('eliminar')" />
-                      <span class="opcion__radio" aria-hidden="true"></span>
-                      <span class="opcion__cuerpo">
-                        <span class="opcion__titulo">No usa GAC: eliminar de GAC</span>
-                        <span class="opcion__desc">Se borran sus datos de GAC. Antes descarga el paquete para enviárselo a esa congregación.</span>
-                      </span>
-                    </label>
-                  </fieldset>
-
-                  <!-- Trasladar -->
-                  <div *ngIf="completarAccion() === 'trasladar'" class="flex flex-col gap-5 animate-scale-in">
-                    <div *ngIf="!t.carta_redactada" class="consent-alert" role="note">
-                      <svg class="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                      <div class="flex flex-col gap-2.5 min-w-0">
-                        <p class="text-xs leading-normal"><strong>Falta la carta de presentación.</strong> La otra congregación la recibe por GAC, así que debe estar lista antes de trasladar.</p>
-                        <button type="button" class="btn-buscar self-start" (click)="activeTab.set(t.notas_para_carta ? 'carta' : 'notas')">Ir a la carta</button>
-                      </div>
-                    </div>
-                    <p *ngIf="t.carta_redactada" class="field-help" style="margin:0">La carta de presentación también le llegará a esa congregación por GAC.</p>
-
-                    <div class="sub-paso">
-                      <span class="sub-paso__num" aria-hidden="true">1</span>
-                      <div class="flex-1 min-w-0 flex flex-col gap-2">
-                        <label class="sub-paso__titulo" for="numero-cong-destino">Congregación a la que se muda</label>
-                        <div class="combo">
-                          <input id="numero-cong-destino" class="form-control" type="search" autocomplete="off"
-                                 placeholder="Escribe su nombre o su número"
-                                 role="combobox" aria-autocomplete="list" aria-controls="cong-resultados"
-                                 [attr.aria-expanded]="mostrarResultados()" aria-describedby="numero-estado"
-                                 [ngModel]="numeroCongDestino()" (ngModelChange)="onNumeroChange($event)"
-                                 (keydown.enter)="elegirPrimeraCongregacion($event)" />
-                          <ul *ngIf="mostrarResultados()" id="cong-resultados" class="combo__lista" role="listbox" aria-label="Congregaciones encontradas">
-                            <li *ngFor="let c of resultadosCong()" role="option">
-                              <button type="button" class="combo__opcion" (click)="elegirCongregacion(c)">
-                                <span class="combo__nombre">{{ c.nombre_congregacion }}</span>
-                                <span class="combo__numero">N.º {{ c.numero_congregacion }}</span>
-                              </button>
-                            </li>
-                          </ul>
-                        </div>
-                        <div id="numero-estado" aria-live="polite">
-                          <p *ngIf="verificandoDestino()" class="destino-estado">
-                            <span class="spinner spinner-xs"></span> Buscando…
-                          </p>
-                          <p *ngIf="destinoVerificado() as d" class="destino-estado"
-                             [class.destino-estado--ok]="!d.es_la_misma" [class.destino-estado--error]="d.es_la_misma">
-                            <svg *ngIf="!d.es_la_misma" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                            {{ d.es_la_misma ? 'Ese número es de esta misma congregación.' : d.nombre_congregacion + ' · N.º ' + d.numero_congregacion }}
-                          </p>
-                          <p *ngIf="errorDestino()" class="destino-estado destino-estado--error">{{ errorDestino() }}</p>
-                          <p *ngIf="sinResultados()" class="field-help" style="margin:0">
-                            No encontramos ninguna congregación con eso en GAC. Revisa el nombre o el número, o si no usa GAC elige "eliminar de GAC".
-                          </p>
-                          <p *ngIf="!verificandoDestino() && !destinoVerificado() && !errorDestino() && !sinResultados() && !mostrarResultados()" class="field-help" style="margin:0">
-                            Escribe al menos 2 letras o números y elige la congregación de la lista.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="sub-paso">
-                      <span class="sub-paso__num" aria-hidden="true">2</span>
-                      <div class="flex-1 min-w-0 flex flex-col gap-3">
-                        <p class="sub-paso__titulo">Privilegios que conserva</p>
-                        <p *ngIf="cargandoImpacto()" class="destino-estado"><span class="spinner spinner-xs"></span> Revisando sus privilegios…</p>
-                        <div *ngFor="let mi of impacto()" class="flex flex-col gap-1">
-                          <p *ngIf="impacto().length > 1" class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ mi.nombre_completo }}</p>
-                          <fieldset *ngIf="mi.privilegios.length" class="flex flex-col">
-                            <legend class="sr-only">Privilegios de {{ mi.nombre_completo }}</legend>
-                            <label *ngFor="let pr of mi.privilegios" class="privilegio">
-                              <input type="checkbox" class="privilegio__check"
-                                     [checked]="privilegiosConservar().has(pr.id_publicador_privilegio)"
-                                     (change)="togglePrivilegio(pr.id_publicador_privilegio)" />
-                              <span class="flex-1 text-sm text-slate-700 dark:text-slate-200">{{ pr.nombre_privilegio }}</span>
-                              <span class="text-xs text-slate-500 dark:text-slate-400">desde {{ pr.fecha_inicio | date:'MMM yyyy' }}</span>
-                            </label>
-                          </fieldset>
-                          <p *ngIf="!mi.privilegios.length" class="text-sm text-slate-500 dark:text-slate-400">No tiene privilegios vigentes.</p>
-                        </div>
-                        <p *ngIf="tienePrivilegios()" class="field-help" style="margin:0">Los que desmarques terminan hoy. La nueva congregación podrá volver a darlos.</p>
-                      </div>
-                    </div>
-
-                    <div *ngIf="lineasImpactoTodas().length" class="sub-paso">
-                      <span class="sub-paso__num" aria-hidden="true">3</span>
-                      <div class="flex-1 min-w-0 flex flex-col gap-2">
-                        <p class="sub-paso__titulo">Lo que pasará en esta congregación</p>
-                        <ul class="flex flex-col gap-1.5">
-                          <li *ngFor="let l of lineasImpactoTodas()" class="impacto-linea">{{ l }}</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Eliminar -->
-                  <div *ngIf="completarAccion() === 'eliminar'" class="flex flex-col gap-4 animate-scale-in">
-                    <div *ngIf="!t.archivo_zip" class="consent-alert" role="note">
-                      <svg class="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                      <div class="flex flex-col gap-2.5 min-w-0">
-                        <p class="text-xs leading-normal"><strong>Aún no has descargado el paquete.</strong> Después de eliminar ya no se podrá generar la tarjeta.</p>
-                        <button *ngIf="t.carta_redactada" type="button" class="btn-buscar self-start" (click)="generarPaquete()" [disabled]="generando()">
-                          {{ generando() ? 'Descargando…' : 'Descargar el paquete ahora' }}
-                        </button>
-                        <button *ngIf="!t.carta_redactada" type="button" class="btn-buscar self-start" (click)="activeTab.set('carta')">Primero revisa la carta</button>
-                      </div>
-                    </div>
-                    <label class="confirmacion">
-                      <input type="checkbox" class="privilegio__check" [checked]="confirmaEliminar()" (change)="confirmaEliminar.set(!confirmaEliminar())" />
-                      <span class="text-xs text-slate-700 dark:text-slate-200">
-                        Entiendo que {{ etiquetaTransferencia(t) }} se {{ t.es_familiar ? 'borrarán' : 'borrará' }} de GAC junto con su acceso a la app, y que no se puede deshacer.
-                      </span>
-                    </label>
-                  </div>
-
-                  <div *ngIf="completarAccion()" class="completar__acciones">
-                    <button type="button" class="btn-wizard-back" (click)="cancelarCompletar()" [disabled]="completando()">Cancelar</button>
-                    <button type="button" class="btn-confirmar" [class.btn-confirmar--peligro]="completarAccion() === 'eliminar'"
-                            [disabled]="!completarValido() || completando()" (click)="ejecutarCompletar()">
-                      <span *ngIf="completando()" class="wizard-create-spinner"></span>
-                      {{ textoConfirmar(t) }}
-                    </button>
-                  </div>
-                  <button *ngIf="!completarAccion()" type="button" class="btn-wizard-back self-start" (click)="cancelarCompletar()">Cancelar</button>
                 </div>
               </section>
 
@@ -1020,42 +864,225 @@ interface PublicadorLite {
             </div>
 
             <!-- Tab 3: Carta -->
-            <div *ngIf="!esIngreso(t) && activeTab() === 'carta'" class="flex flex-col gap-4 animate-scale-in">
-              <div class="field-group">
-                <div class="flex justify-between items-center w-full mb-1">
-                  <label class="form-label mb-0">Carta redactada</label>
-                  <button *ngIf="t.carta_redactada" (click)="copiarCarta(t.carta_redactada!)" class="text-[10px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 flex items-center gap-1 bg-violet-50 dark:bg-violet-950/40 px-2 py-1 rounded-md border border-violet-100 dark:border-violet-900/20 transition cursor-pointer">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <div *ngIf="!esIngreso(t) && activeTab() === 'carta'" class="flex flex-col gap-5 animate-scale-in">
+              <div class="field-group" style="margin:0">
+                <div class="flex justify-between items-center gap-3 w-full mb-1.5">
+                  <label class="form-label mb-0" for="det-carta">Carta de presentación</label>
+                  <button *ngIf="t.carta_redactada" type="button" (click)="copiarCarta(t.carta_redactada!)" class="btn-carta-copiar">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     Copiar texto
                   </button>
                 </div>
-                <textarea rows="9" class="form-control font-mono text-[11px] leading-relaxed select-all" [(ngModel)]="t.carta_redactada" [disabled]="soloLectura(t)"
-                          placeholder="Aquí aparecerá la carta. Créala desde la pestaña Notas; después puedes editarla libremente."></textarea>
+                <textarea id="det-carta" rows="10" class="form-control carta-texto" [(ngModel)]="t.carta_redactada" [disabled]="soloLectura(t)"
+                          placeholder="Aquí aparecerá la carta. Créala desde la pestaña Notas; después puedes cambiar el texto."></textarea>
+                <div class="carta-herramientas">
+                  <p class="field-help" style="margin:0">Puedes cambiar el texto. Se guarda también al descargar el paquete.</p>
+                  <div class="flex gap-2 shrink-0">
+                    <button type="button" class="btn-buscar" (click)="previsualizarCarta()" [disabled]="!t.carta_redactada || cargandoPreview()">
+                      {{ cargandoPreview() ? 'Abriendo…' : 'Ver en PDF' }}
+                    </button>
+                    <button *ngIf="!soloLectura(t)" type="button" class="btn-buscar" (click)="guardarTodo()" [disabled]="guardandoTodo()">
+                      {{ guardandoTodo() ? 'Guardando…' : 'Guardar' }}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="flex gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <button (click)="guardarTodo()" [disabled]="guardandoTodo() || soloLectura(t)" class="btn-secondary px-3 py-2 text-xs h-9 min-h-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                  <span *ngIf="!guardandoTodo()" class="flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-                    Guardar
-                  </span>
-                  <span *ngIf="guardandoTodo()" class="flex items-center gap-1.5"><span class="spinner spinner-xs text-slate-700 dark:text-slate-200"></span>…</span>
-                </button>
-                <button (click)="previsualizarCarta()" [disabled]="!t.carta_redactada || cargandoPreview()" class="btn-secondary px-3 py-2 text-xs h-9 min-h-0 cursor-pointer">
-                  <span *ngIf="!cargandoPreview()" class="flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    Vista previa
-                  </span>
-                  <span *ngIf="cargandoPreview()" class="flex items-center gap-1.5"><span class="spinner spinner-xs text-slate-700 dark:text-slate-200"></span>…</span>
-                </button>
-                <button (click)="generarPaquete()" [disabled]="!t.carta_redactada || generando() || soloLectura(t)" class="btn-primary-violet flex-1 font-bold shadow-md text-xs h-9 min-h-0 justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        [title]="soloLectura(t) ? 'La transferencia ya fue completada.' : ''">
-                  <span *ngIf="!generando()" class="flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-purple-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Descargar ZIP
-                  </span>
-                  <span *ngIf="generando()" class="flex items-center gap-1.5"><span class="spinner spinner-xs text-white"></span> Generando…</span>
-                </button>
-              </div>
+
+              <!-- ── Qué sigue: siempre deja claro el próximo paso ── -->
+              <section *ngIf="t.carta_redactada && !soloLectura(t)" class="siguiente" aria-labelledby="siguiente-titulo" aria-live="polite">
+                <!-- Paso 3: descargar -->
+                <ng-container *ngIf="!t.archivo_zip">
+                  <p class="completar__eyebrow">{{ t.procesada_en ? 'Falta enviarla' : 'Paso 3 de 4' }}</p>
+                  <h3 id="siguiente-titulo" class="completar__titulo">Descarga el paquete</h3>
+                  <p class="completar__desc">
+                    Trae esta carta y la tarjeta de registro. Envíalo al secretario de {{ t.congregacion_destino || 'la otra congregación' }}{{ t.correo_congregacion_destino ? ' (' + t.correo_congregacion_destino + ')' : '' }}.
+                  </p>
+                  <button type="button" class="btn-completar" (click)="generarPaquete()" [disabled]="generando()">
+                    <span *ngIf="generando()" class="spinner spinner-xs text-white"></span>
+                    <svg *ngIf="!generando()" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    {{ generando() ? 'Preparando el paquete…' : 'Descargar el paquete' }}
+                  </button>
+                </ng-container>
+
+                <!-- Paquete listo: paso 4 o, si ya se trasladó, nada más -->
+                <ng-container *ngIf="t.archivo_zip">
+                  <div class="siguiente__hecho">
+                    <span class="siguiente__check" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+                    </span>
+                    <span class="flex-1 min-w-0">Paquete descargado</span>
+                    <button type="button" class="siguiente__otra" (click)="generarPaquete()" [disabled]="generando()">
+                      {{ generando() ? 'Descargando…' : 'Descargar otra vez' }}
+                    </button>
+                  </div>
+                  <ng-container *ngIf="!t.procesada_en">
+                    <p class="completar__eyebrow">Paso 4 de 4 · Último</p>
+                    <h3 id="siguiente-titulo" class="completar__titulo">Completa la transferencia</h3>
+                    <p class="completar__desc">
+                      Cuando {{ t.es_familiar ? 'la familia ya se haya mudado' : 'ya se haya mudado' }}, sácal{{ t.es_familiar ? 'os' : 'o' }} de la lista de publicadores de esta congregación. Si aún no se muda, puedes volver después.
+                    </p>
+                    <button type="button" class="btn-completar" (click)="irACompletar()">
+                      Ir a completar
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </ng-container>
+                  <p *ngIf="t.procesada_en" id="siguiente-titulo" class="completar__desc" style="margin-bottom:0">
+                    La transferencia ya está completada. No tienes que hacer nada más.
+                  </p>
+                </ng-container>
+              </section>
+            </div>
+
+            <!-- Tab 4: Completar -->
+            <div *ngIf="!esIngreso(t) && !t.procesada_en && activeTab() === 'completar'" class="flex flex-col gap-4 animate-scale-in">
+              <!-- ── Paso 4: completar (trasladar o eliminar) ── -->
+              <section *ngIf="!t.procesada_en" id="seccion-completar" class="completar" aria-labelledby="completar-titulo">
+                <p class="completar__eyebrow">Paso 4 de 4 · Último</p>
+                <h3 id="completar-titulo" class="completar__titulo">Completar la transferencia</h3>
+                <p class="completar__desc">
+                  Hazlo cuando {{ t.es_familiar ? 'la familia' : 'la persona' }} ya se haya mudado: saldrá de la lista de publicadores de esta congregación.
+                  Sus informes de los meses que estuvo aquí siguen contando aquí.
+                </p>
+
+                <div class="flex flex-col gap-5 mt-1">
+                  <fieldset class="flex flex-col gap-2.5">
+                    <legend class="completar__pregunta">¿La congregación a la que se muda usa GAC?</legend>
+                    <label class="opcion" [class.opcion--activa]="completarAccion() === 'trasladar'">
+                      <input type="radio" name="accion-completar" class="opcion__input" value="trasladar"
+                             [checked]="completarAccion() === 'trasladar'" (change)="elegirAccion('trasladar')" />
+                      <span class="opcion__radio" aria-hidden="true"></span>
+                      <span class="opcion__cuerpo">
+                        <span class="opcion__titulo">Sí, usa GAC: trasladar</span>
+                        <span class="opcion__desc">Pasa a esa congregación con sus informes, su tarjeta y su historial.</span>
+                      </span>
+                    </label>
+                    <label class="opcion opcion--peligro" [class.opcion--activa]="completarAccion() === 'eliminar'">
+                      <input type="radio" name="accion-completar" class="opcion__input" value="eliminar"
+                             [checked]="completarAccion() === 'eliminar'" (change)="elegirAccion('eliminar')" />
+                      <span class="opcion__radio" aria-hidden="true"></span>
+                      <span class="opcion__cuerpo">
+                        <span class="opcion__titulo">No usa GAC: eliminar de GAC</span>
+                        <span class="opcion__desc">Se borran sus datos de GAC. Antes descarga el paquete para enviárselo a esa congregación.</span>
+                      </span>
+                    </label>
+                  </fieldset>
+
+                  <!-- Trasladar -->
+                  <div *ngIf="completarAccion() === 'trasladar'" class="flex flex-col gap-5 animate-scale-in">
+                    <div *ngIf="!t.carta_redactada" class="consent-alert" role="note">
+                      <svg class="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      <div class="flex flex-col gap-2.5 min-w-0">
+                        <p class="text-xs leading-normal"><strong>Falta la carta de presentación.</strong> La otra congregación la recibe por GAC, así que debe estar lista antes de trasladar.</p>
+                        <button type="button" class="btn-buscar self-start" (click)="activeTab.set(t.notas_para_carta ? 'carta' : 'notas')">Ir a la carta</button>
+                      </div>
+                    </div>
+                    <p *ngIf="t.carta_redactada" class="field-help" style="margin:0">La carta de presentación también le llegará a esa congregación por GAC.</p>
+
+                    <div class="sub-paso">
+                      <span class="sub-paso__num" aria-hidden="true">1</span>
+                      <div class="flex-1 min-w-0 flex flex-col gap-2">
+                        <label class="sub-paso__titulo" for="numero-cong-destino">Congregación a la que se muda</label>
+                        <div class="combo">
+                          <input id="numero-cong-destino" class="form-control" type="search" autocomplete="off"
+                                 placeholder="Escribe su nombre o su número"
+                                 role="combobox" aria-autocomplete="list" aria-controls="cong-resultados"
+                                 [attr.aria-expanded]="mostrarResultados()" aria-describedby="numero-estado"
+                                 [ngModel]="numeroCongDestino()" (ngModelChange)="onNumeroChange($event)"
+                                 (keydown.enter)="elegirPrimeraCongregacion($event)" />
+                          <ul *ngIf="mostrarResultados()" id="cong-resultados" class="combo__lista" role="listbox" aria-label="Congregaciones encontradas">
+                            <li *ngFor="let c of resultadosCong()" role="option">
+                              <button type="button" class="combo__opcion" (click)="elegirCongregacion(c)">
+                                <span class="combo__nombre">{{ c.nombre_congregacion }}</span>
+                                <span class="combo__numero">{{ c.numero_congregacion ? 'N.º ' + c.numero_congregacion : 'Sin número' }}</span>
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                        <div id="numero-estado" aria-live="polite">
+                          <p *ngIf="verificandoDestino()" class="destino-estado">
+                            <span class="spinner spinner-xs"></span> Buscando…
+                          </p>
+                          <p *ngIf="destinoVerificado() as d" class="destino-estado"
+                             [class.destino-estado--ok]="!d.es_la_misma" [class.destino-estado--error]="d.es_la_misma">
+                            <svg *ngIf="!d.es_la_misma" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            {{ d.es_la_misma ? 'Ese número es de esta misma congregación.' : d.nombre_congregacion + (d.numero_congregacion ? ' · N.º ' + d.numero_congregacion : '') }}
+                          </p>
+                          <p *ngIf="errorDestino()" class="destino-estado destino-estado--error">{{ errorDestino() }}</p>
+                          <p *ngIf="sinResultados()" class="field-help" style="margin:0">
+                            No encontramos ninguna congregación con eso en GAC. Revisa el nombre o el número, o si no usa GAC elige "eliminar de GAC".
+                          </p>
+                          <p *ngIf="!verificandoDestino() && !destinoVerificado() && !errorDestino() && !sinResultados() && !mostrarResultados()" class="field-help" style="margin:0">
+                            Escribe al menos 2 letras o números y elige la congregación de la lista.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sub-paso">
+                      <span class="sub-paso__num" aria-hidden="true">2</span>
+                      <div class="flex-1 min-w-0 flex flex-col gap-3">
+                        <p class="sub-paso__titulo">Privilegios que conserva</p>
+                        <p *ngIf="cargandoImpacto()" class="destino-estado"><span class="spinner spinner-xs"></span> Revisando sus privilegios…</p>
+                        <div *ngFor="let mi of impacto()" class="flex flex-col gap-1">
+                          <p *ngIf="impacto().length > 1" class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ mi.nombre_completo }}</p>
+                          <fieldset *ngIf="mi.privilegios.length" class="flex flex-col">
+                            <legend class="sr-only">Privilegios de {{ mi.nombre_completo }}</legend>
+                            <label *ngFor="let pr of mi.privilegios" class="privilegio">
+                              <input type="checkbox" class="privilegio__check"
+                                     [checked]="privilegiosConservar().has(pr.id_publicador_privilegio)"
+                                     (change)="togglePrivilegio(pr.id_publicador_privilegio)" />
+                              <span class="flex-1 text-sm text-slate-700 dark:text-slate-200">{{ pr.nombre_privilegio }}</span>
+                              <span class="text-xs text-slate-500 dark:text-slate-400">desde {{ pr.fecha_inicio | date:'MMM yyyy' }}</span>
+                            </label>
+                          </fieldset>
+                          <p *ngIf="!mi.privilegios.length" class="text-sm text-slate-500 dark:text-slate-400">No tiene privilegios vigentes.</p>
+                        </div>
+                        <p *ngIf="tienePrivilegios()" class="field-help" style="margin:0">Los que desmarques terminan hoy. La nueva congregación podrá volver a darlos.</p>
+                      </div>
+                    </div>
+
+                    <div *ngIf="lineasImpactoTodas().length" class="sub-paso">
+                      <span class="sub-paso__num" aria-hidden="true">3</span>
+                      <div class="flex-1 min-w-0 flex flex-col gap-2">
+                        <p class="sub-paso__titulo">Lo que pasará en esta congregación</p>
+                        <ul class="flex flex-col gap-1.5">
+                          <li *ngFor="let l of lineasImpactoTodas()" class="impacto-linea">{{ l }}</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Eliminar -->
+                  <div *ngIf="completarAccion() === 'eliminar'" class="flex flex-col gap-4 animate-scale-in">
+                    <div *ngIf="!t.archivo_zip" class="consent-alert" role="note">
+                      <svg class="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      <div class="flex flex-col gap-2.5 min-w-0">
+                        <p class="text-xs leading-normal"><strong>Aún no has descargado el paquete.</strong> Después de eliminar ya no se podrá generar la tarjeta.</p>
+                        <button *ngIf="t.carta_redactada" type="button" class="btn-buscar self-start" (click)="generarPaquete()" [disabled]="generando()">
+                          {{ generando() ? 'Descargando…' : 'Descargar el paquete ahora' }}
+                        </button>
+                        <button *ngIf="!t.carta_redactada" type="button" class="btn-buscar self-start" (click)="activeTab.set('carta')">Primero revisa la carta</button>
+                      </div>
+                    </div>
+                    <label class="confirmacion">
+                      <input type="checkbox" class="privilegio__check" [checked]="confirmaEliminar()" (change)="confirmaEliminar.set(!confirmaEliminar())" />
+                      <span class="text-xs text-slate-700 dark:text-slate-200">
+                        Entiendo que {{ etiquetaTransferencia(t) }} se {{ t.es_familiar ? 'borrarán' : 'borrará' }} de GAC junto con su acceso a la app, y que no se puede deshacer.
+                      </span>
+                    </label>
+                  </div>
+
+                  <div *ngIf="completarAccion()" class="completar__acciones">
+                    <button type="button" class="btn-wizard-back" (click)="cancelarCompletar()" [disabled]="completando()">Cambiar de opción</button>
+                    <button type="button" class="btn-confirmar" [class.btn-confirmar--peligro]="completarAccion() === 'eliminar'"
+                            [disabled]="!completarValido() || completando()" (click)="ejecutarCompletar()">
+                      <span *ngIf="completando()" class="wizard-create-spinner"></span>
+                      {{ textoConfirmar(t) }}
+                    </button>
+                  </div>
+                </div>
+              </section>
+
             </div>
 
             </div><!-- /tab content scroll wrapper -->
@@ -1441,6 +1468,11 @@ interface PublicadorLite {
     /* ── Tab dots ── */
     .tab-dot { position: absolute; top: 0.3rem; right: 0.3rem; width: 6px; height: 6px; border-radius: 50%; }
     .tab-dot--warn { background: #f59e0b; }
+    @media (max-width: 459px) { .tab-nav > button > svg:not(.tab-check) { display: none; } }
+    .tab-check { width: 0.875rem; height: 0.875rem; color: #059669; }
+    .tab-item-active .tab-check { color: #fff; }
+    :host-context(.dark) .tab-check { color: #34d399; }
+    :host-context(.dark) .tab-item-active .tab-check { color: #fff; }
 
     /* ── Btn hero ── */
     .btn-hero {
@@ -1893,21 +1925,19 @@ interface PublicadorLite {
         display: grid; align-content: start;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
         column-gap: 2.5rem;
-        /* El sobrante de la tarjeta alta de la derecha lo absorbe "datos", no "pasos" */
-        grid-template-rows: auto auto 1fr auto;
         grid-template-areas:
           "alertas alertas"
-          "pasos   completar"
-          "datos   completar"
+          "pasos   datos"
           "borrar  borrar";
       }
       .info-alertas  { grid-area: alertas; }
-      .info-pasos    { grid-area: pasos; }
+      .info-pasos    { grid-area: pasos; align-self: start; }
       .info-datos    { grid-area: datos; border-bottom: none; }
       .info-completar{ grid-area: completar; align-self: start; margin-top: 1.25rem; }
       .info-borrar   { grid-area: borrar; }
-      /* Solo lectura: sin "Completar", los datos ocupan todo el ancho */
-      .detail-info-tab:not(:has(.info-completar)) { grid-template-areas: "alertas alertas" "datos datos" "borrar borrar"; }
+      /* Ya completada: sin pasos; a la derecha va "agregar un familiar" si aplica */
+      .detail-info-tab:not(:has(.info-pasos)) { grid-template-areas: "alertas alertas" "datos completar" "borrar borrar"; }
+      .detail-info-tab:not(:has(.info-pasos)):not(:has(.info-completar)) { grid-template-areas: "alertas alertas" "datos datos" "borrar borrar"; }
     }
 
     /* ── Guía de pasos ─────────────────────────────────────────── */
@@ -1988,6 +2018,41 @@ interface PublicadorLite {
     .completar__acciones { display: flex; gap: 0.75rem; padding-top: 0.25rem; }
     .completar__acciones > button { flex: 1; }
     @media (min-width: 640px) { .completar__acciones { justify-content: flex-end; } .completar__acciones > button { flex: none; } }
+
+    /* ── Carta: texto legible y "qué sigue" ─────────────────────── */
+    .carta-texto { font-size: 0.875rem; line-height: 1.65; min-height: 14rem; }
+    .carta-herramientas { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin-top: 0.625rem; }
+    .btn-carta-copiar {
+      display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2rem; padding: 0 0.625rem; border-radius: 0.5rem; cursor: pointer;
+      font-size: 0.75rem; font-weight: 600; color: #6d28d9; background: #f5f3ff; border: 1px solid #ede9fe;
+      transition: background-color 150ms ease, transform 160ms cubic-bezier(0.23,1,0.32,1);
+    }
+    .btn-carta-copiar:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .btn-carta-copiar:hover { background: #ede9fe; } }
+    :host-context(.dark) .btn-carta-copiar { color: #c4b5fd; background: rgba(124,58,237,0.15); border-color: rgba(124,58,237,0.25); }
+    .siguiente { padding: 1.25rem; border-radius: 1rem; border: 1px solid #ddd6fe; background: #faf8ff; }
+    :host-context(.dark) .siguiente { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.06); }
+    @media (max-width: 639px) { .siguiente { padding: 1rem; } .siguiente__otra, .btn-carta-copiar { min-height: 2.75rem; } }
+    .siguiente__hecho {
+      display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap;
+      padding-bottom: 0.875rem; margin-bottom: 0.875rem; border-bottom: 1px solid #ede9fe;
+      font-size: 0.875rem; font-weight: 600; color: #047857;
+    }
+    :host-context(.dark) .siguiente__hecho { color: #34d399; border-color: rgba(124,58,237,0.2); }
+    .siguiente__hecho:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: 0; }
+    .siguiente__check {
+      width: 1.5rem; height: 1.5rem; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; background: #059669; color: #fff;
+    }
+    .siguiente__check svg { width: 0.75rem; height: 0.75rem; }
+    :host-context(.dark) .siguiente__check { background: #10b981; color: #052e16; }
+    .siguiente__otra {
+      min-height: 2.25rem; padding: 0 0.625rem; border-radius: 0.5rem; border: 0; background: transparent; cursor: pointer;
+      font-size: 0.8125rem; font-weight: 600; color: #6d28d9; text-decoration: underline; text-underline-offset: 3px;
+    }
+    .siguiente__otra:disabled { opacity: 0.5; cursor: not-allowed; }
+    :host-context(.dark) .siguiente__otra { color: #c4b5fd; }
+    .btn-completar:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .btn-completar {
       display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
@@ -2092,7 +2157,7 @@ interface PublicadorLite {
     .btn-confirmar:active:not(:disabled) { transform: scale(0.97); }
     .btn-confirmar:disabled { opacity: 0.45; cursor: not-allowed; }
     .btn-confirmar:focus-visible, .btn-completar:focus-visible, .paso__accion:focus-visible,
-    .btn-buscar:focus-visible, .btn-guardar-datos:focus-visible, .btn-borrar-registro:focus-visible {
+    .btn-buscar:focus-visible, .btn-guardar-datos:focus-visible, .btn-carta-copiar:focus-visible, .siguiente__otra:focus-visible, .btn-borrar-registro:focus-visible {
       outline: 2px solid #7c3aed; outline-offset: 2px;
     }
 
@@ -2151,7 +2216,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   seleccionada        = signal<Transferencia | null>(null);
   confirmandoEliminar = signal(false);
   mobileView          = signal<'lista' | 'detalle'>('lista');
-  activeTab           = signal<'info' | 'notas' | 'carta'>('info');
+  activeTab           = signal<'info' | 'notas' | 'carta' | 'completar'>('info');
 
   // ── Estados de operación ─────────────────────────────────────
   redactando     = signal(false);
@@ -2184,7 +2249,6 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   pubSearch           = signal('');
 
   // ── Completar transferencia (trasladar / eliminar) ───────────
-  mostrarCompletar    = signal(false);
   completarAccion     = signal<'trasladar' | 'eliminar' | null>(null);
   numeroCongDestino   = signal('');
   completando         = signal(false);
@@ -2219,7 +2283,6 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     etiqueta_familia:           string;
     congregacion_destino:       string;
     correo_congregacion_destino: string;
-    motivo:                     string;
     notas_para_carta:           string;
   } = this._resetForm();
 
@@ -2230,7 +2293,6 @@ export class TransferenciasPage implements OnInit, OnDestroy {
       etiqueta_familia:           '',
       congregacion_destino:       '',
       correo_congregacion_destino: '',
-      motivo:                     '',
       notas_para_carta:           '',
     };
   }
@@ -2401,7 +2463,6 @@ export class TransferenciasPage implements OnInit, OnDestroy {
       congregacion_destino:       this.form.congregacion_destino,
       correo_congregacion_destino: this.form.correo_congregacion_destino || undefined,
       etiqueta_familia:           this.form.etiqueta_familia || undefined,
-      motivo:                     this.form.motivo || undefined,
       fecha_transferencia:        new Date().toISOString().slice(0, 10),
       notas_para_carta:           this.form.notas_para_carta,
     }).subscribe({
@@ -2484,7 +2545,6 @@ export class TransferenciasPage implements OnInit, OnDestroy {
       carta_redactada:             t.carta_redactada,
       congregacion_destino:        t.congregacion_destino,
       correo_congregacion_destino: t.correo_congregacion_destino,
-      motivo:                      t.motivo,
       fecha_transferencia:         t.fecha_transferencia,
       estado:                      t.estado,
     }).subscribe({
@@ -2588,7 +2648,6 @@ export class TransferenciasPage implements OnInit, OnDestroy {
       notas_para_carta: t.notas_para_carta,
       carta_redactada:  t.carta_redactada,
       congregacion_destino: t.congregacion_destino,
-      motivo:  t.motivo,
       estado:  t.estado,
     }).subscribe({
       next: (updated) => {
@@ -2689,14 +2748,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   }
 
   // ── Completar transferencia (trasladar / eliminar) ───────────
-  /** Sin opción preseleccionada: trasladar o eliminar es una decisión consciente. */
-  abrirCompletar() {
-    this.cancelarCompletar();
-    this.mostrarCompletar.set(true);
-  }
-
   cancelarCompletar() {
-    this.mostrarCompletar.set(false);
     this.completarAccion.set(null);
     this.numeroCongDestino.set('');
     this.impacto.set([]);
@@ -2715,13 +2767,9 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     if (accion === 'trasladar' && !this.impacto().length && !this.cargandoImpacto()) this.cargarImpacto();
   }
 
-  /** Desde la guía de pasos: abre el bloque de completar y lo trae a la vista. */
+  /** Desde la guía de pasos o la carta: va al paso 4. Sin opción preseleccionada: trasladar o eliminar es una decisión consciente. */
   irACompletar() {
-    if (!this.mostrarCompletar()) this.abrirCompletar();
-    setTimeout(() => {
-      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      document.getElementById('seccion-completar')?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-    });
+    this.activeTab.set('completar');
   }
 
   /** Primer paso sin hacer: 1 notas, 2 carta, 3 paquete, 4 completar. */
@@ -2884,7 +2932,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     const body: CompletarTransferenciaRequest = accion === 'trasladar'
       ? {
           accion,
-          numero_congregacion: this.destinoVerificado()?.numero_congregacion || this.numeroCongDestino().trim(),
+          id_congregacion_destino: this.destinoVerificado()?.id_congregacion,
           privilegios_conservar: [...this.privilegiosConservar()],
         }
       : { accion, opcion_usuario: 'eliminar_con_usuario' };
@@ -2897,6 +2945,8 @@ export class TransferenciasPage implements OnInit, OnDestroy {
         this.publicadores.update(ps => ps.filter(p => !idsMovidos.includes(p.id_publicador)));
         this.completando.set(false);
         this.cancelarCompletar();
+        // La pestaña Completar desaparece: Info muestra el resultado.
+        this.activeTab.set('info');
         this.toast('success', updated.accion_realizada === 'trasladado'
           ? `Publicador trasladado a ${updated.congregacion_destino || 'la congregación destino'}.`
           : 'Publicador eliminado del sistema. El registro se conserva como historial.');

@@ -39,6 +39,8 @@ export interface Transferencia {
 export interface CompletarTransferenciaRequest {
   accion:               AccionTransferencia;
   numero_congregacion?: string | null;
+  /** Congregación elegida de la lista (puede no tener número). */
+  id_congregacion_destino?: number | null;
   opcion_usuario?:      OpcionUsuarioBorrado;
   /** Trasladar: privilegios (id_publicador_privilegio) que conserva en la destino. */
   privilegios_conservar?: number[];
@@ -76,6 +78,7 @@ export interface ImpactoTraslado {
 export interface CongregacionBuscada {
   id_congregacion:     number;
   nombre_congregacion: string;
+  /** Vacío si la congregación aún no tiene número cargado. */
   numero_congregacion: string;
 }
 
