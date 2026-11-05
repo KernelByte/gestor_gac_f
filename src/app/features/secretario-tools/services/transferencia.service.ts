@@ -45,6 +45,11 @@ export class TransferenciaService {
     return this.http.get<ImpactoTraslado>(`${this.url}/${id}/impacto`, { params });
   }
 
+  /** Lista entera de quiénes van (solo mientras no se completa); el primero es la cabeza. */
+  actualizarMiembros(id: number, id_publicadores: number[]): Observable<Transferencia> {
+    return this.http.put<Transferencia>(`${this.url}/${id}/miembros`, { id_publicadores });
+  }
+
   agregarMiembros(id: number, data: AgregarMiembrosRequest): Observable<Transferencia> {
     return this.http.post<Transferencia>(`${this.url}/${id}/agregar-miembros`, data);
   }

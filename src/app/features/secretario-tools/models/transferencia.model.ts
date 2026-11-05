@@ -22,6 +22,9 @@ export interface Transferencia {
   fecha_transferencia?:        string | null;
   notas_para_carta?:           string | null;
   carta_redactada?:            string | null;
+  /** Se manda una nota corta en lugar de la carta (la carta se conserva). */
+  sin_carta?:                  boolean;
+  nota_destino?:               string | null;
   archivo_carta?:              string | null;
   archivo_zip?:                string | null;
   estado:                      EstadoTransferencia;
@@ -109,5 +112,7 @@ export interface TransferenciaUpdate {
   fecha_transferencia?:         string | null;
   notas_para_carta?:            string | null;
   carta_redactada?:             string | null;
+  sin_carta?:                   boolean;
+  nota_destino?:                string | null;
   estado?:                      EstadoTransferencia;
 }

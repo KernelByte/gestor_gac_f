@@ -372,10 +372,10 @@ interface PublicadorLite {
                       </span>
                     </td>
                     <td class="px-4 py-3.5">
-                      <span class="carta-badge" [class.carta-badge--done]="t.carta_redactada" [class.carta-badge--pending]="!t.carta_redactada">
-                        <svg *ngIf="t.carta_redactada"  class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                        <svg *ngIf="!t.carta_redactada" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 21l5.096-.813 12.39-12.39-4.283-4.283-12.39 12.39z"/></svg>
-                        {{ t.carta_redactada ? 'Lista' : 'Pendiente' }}
+                      <span class="carta-badge" [class.carta-badge--done]="presentacionLista(t)" [class.carta-badge--pending]="!presentacionLista(t)">
+                        <svg *ngIf="presentacionLista(t)"  class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                        <svg *ngIf="!presentacionLista(t)" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 21l5.096-.813 12.39-12.39-4.283-4.283-12.39 12.39z"/></svg>
+                        {{ presentacionLista(t) ? (t.sin_carta ? 'Nota' : 'Lista') : 'Pendiente' }}
                       </span>
                     </td>
                     <td class="px-4 py-3.5 text-right">
@@ -537,10 +537,10 @@ interface PublicadorLite {
               </button>
               <button (click)="activeTab.set('carta')" [class]="activeTab() === 'carta' ? 'tab-item-active bg-violet-600 text-white shadow-sm' : 'tab-item text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'" class="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-1 text-sm font-bold rounded-lg transition-all cursor-pointer relative" role="tab" [attr.aria-selected]="activeTab() === 'carta'">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 3v6h6"/></svg>
-                Carta
-                <span *ngIf="!seleccionada()?.carta_redactada && activeTab() !== 'carta'" class="tab-dot tab-dot--warn" aria-hidden="true"></span>
-                <svg *ngIf="seleccionada()?.carta_redactada" class="tab-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
-                <span *ngIf="seleccionada()?.carta_redactada" class="sr-only">(hecho)</span>
+                {{ seleccionada()?.sin_carta ? 'Nota' : 'Carta' }}
+                <span *ngIf="!presentacionLista(seleccionada()) && activeTab() !== 'carta'" class="tab-dot tab-dot--warn" aria-hidden="true"></span>
+                <svg *ngIf="presentacionLista(seleccionada())" class="tab-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+                <span *ngIf="presentacionLista(seleccionada())" class="sr-only">(hecho)</span>
               </button>
               <button *ngIf="!t.procesada_en" (click)="activeTab.set('completar')" [class]="activeTab() === 'completar' ? 'tab-item-active bg-violet-600 text-white shadow-sm' : 'tab-item text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800'" class="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-1 text-sm font-bold rounded-lg transition-all cursor-pointer relative" role="tab" [attr.aria-selected]="activeTab() === 'completar'">
                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -571,7 +571,21 @@ interface PublicadorLite {
                 </ul>
               </section>
 
-              <section class="detail-section" aria-labelledby="ing-carta">
+              <section *ngIf="t.sin_carta" class="detail-section" aria-labelledby="ing-nota">
+                <h3 id="ing-nota" class="detail-section__label">Nota de {{ t.congregacion_origen_nombre || 'la otra congregación' }}</h3>
+                <p *ngIf="!t.nota_destino" class="text-sm text-slate-500 dark:text-slate-400">Esta transferencia no trae nota.</p>
+                <ng-container *ngIf="t.nota_destino">
+                  <p class="text-sm leading-relaxed text-slate-700 dark:text-slate-200 whitespace-pre-line mb-3">{{ t.nota_destino }}</p>
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" class="btn-buscar" (click)="verCartaRecibida()" [disabled]="cargandoPreview()">
+                      {{ cargandoPreview() ? 'Abriendo…' : 'Ver nota en PDF' }}
+                    </button>
+                    <button type="button" class="btn-buscar" (click)="copiarCarta(t.nota_destino!)">Copiar texto</button>
+                  </div>
+                </ng-container>
+              </section>
+
+              <section *ngIf="!t.sin_carta" class="detail-section" aria-labelledby="ing-carta">
                 <h3 id="ing-carta" class="detail-section__label">Carta de presentación</h3>
                 <p *ngIf="!t.carta_redactada" class="text-sm text-slate-500 dark:text-slate-400">Esta transferencia no trae carta.</p>
                 <ng-container *ngIf="t.carta_redactada">
@@ -620,11 +634,11 @@ interface PublicadorLite {
                 <div class="flex flex-col gap-2 min-w-0">
                   <div>
                     <p class="text-xs font-bold leading-tight mb-0.5">Falta el paquete con toda la familia</p>
-                    <p class="text-xs leading-snug">Revisa que la carta mencione a {{ nombresMiembros(t) }} y vuelve a descargar el paquete para enviarlo.</p>
+                    <p class="text-xs leading-snug">Revisa que {{ t.sin_carta ? 'la nota' : 'la carta' }} mencione a {{ nombresMiembros(t) }} y vuelve a descargar el paquete para enviarlo.</p>
                   </div>
                   <div class="flex flex-wrap gap-2">
-                    <button type="button" class="btn-buscar" (click)="activeTab.set('notas')">Rehacer la carta</button>
-                    <button type="button" class="btn-buscar" (click)="generarPaquete()" [disabled]="!t.carta_redactada || generando()">
+                    <button type="button" class="btn-buscar" (click)="activeTab.set(t.sin_carta ? 'carta' : 'notas')">{{ t.sin_carta ? 'Revisar la nota' : 'Rehacer la carta' }}</button>
+                    <button type="button" class="btn-buscar" (click)="generarPaquete()" [disabled]="!presentacionLista(t) || generando()">
                       {{ generando() ? 'Descargando…' : 'Descargar el paquete' }}
                     </button>
                   </div>
@@ -644,12 +658,12 @@ interface PublicadorLite {
                     <span class="paso__titulo">Escribir notas sobre {{ t.es_familiar ? 'la familia' : 'la persona' }}<span class="sr-only">{{ t.notas_para_carta ? ' (hecho)' : '' }}</span></span>
                     <button type="button" class="paso__accion" (click)="activeTab.set('notas')">{{ t.notas_para_carta ? 'Ver' : 'Escribir' }}</button>
                   </li>
-                  <li class="paso" [class.paso--hecho]="!!t.carta_redactada" [class.paso--actual]="pasoActual(t) === 2">
+                  <li class="paso" [class.paso--hecho]="presentacionLista(t)" [class.paso--actual]="pasoActual(t) === 2">
                     <span class="paso__marca" aria-hidden="true">
-                      <svg *ngIf="t.carta_redactada" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
-                      <span *ngIf="!t.carta_redactada">2</span>
+                      <svg *ngIf="presentacionLista(t)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+                      <span *ngIf="!presentacionLista(t)">2</span>
                     </span>
-                    <span class="paso__titulo">Revisar la carta de presentación<span class="sr-only">{{ t.carta_redactada ? ' (hecho)' : '' }}</span></span>
+                    <span class="paso__titulo">{{ t.sin_carta ? 'Escribir la nota para la otra congregación' : 'Revisar la carta de presentación' }}<span class="sr-only">{{ presentacionLista(t) ? ' (hecho)' : '' }}</span></span>
                     <button type="button" class="paso__accion" (click)="activeTab.set('carta')">Revisar</button>
                   </li>
                   <li class="paso" [class.paso--hecho]="!!t.archivo_zip" [class.paso--actual]="pasoActual(t) === 3">
@@ -657,9 +671,9 @@ interface PublicadorLite {
                       <svg *ngIf="t.archivo_zip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
                       <span *ngIf="!t.archivo_zip">3</span>
                     </span>
-                    <span class="paso__titulo">Descargar el paquete (carta y tarjeta)<span class="sr-only">{{ t.archivo_zip ? ' (hecho)' : '' }}</span></span>
-                    <button type="button" class="paso__accion" (click)="generarPaquete()" [disabled]="!t.carta_redactada || generando()"
-                            [title]="!t.carta_redactada ? 'Primero revisa la carta' : ''">
+                    <span class="paso__titulo">Descargar el paquete ({{ t.sin_carta ? 'nota' : 'carta' }} y tarjeta)<span class="sr-only">{{ t.archivo_zip ? ' (hecho)' : '' }}</span></span>
+                    <button type="button" class="paso__accion" (click)="generarPaquete()" [disabled]="!presentacionLista(t) || generando()"
+                            [title]="!presentacionLista(t) ? (t.sin_carta ? 'Primero escribe la nota' : 'Primero revisa la carta') : ''">
                       {{ generando() ? 'Descargando…' : (t.archivo_zip ? 'Otra vez' : 'Descargar') }}
                     </button>
                   </li>
@@ -675,7 +689,7 @@ interface PublicadorLite {
               <section class="detail-section info-datos" aria-labelledby="datos-titulo">
                 <h3 id="datos-titulo" class="detail-section__label">Datos</h3>
                 <div class="flex flex-col gap-4">
-                  <div *ngIf="t.es_familiar && t.miembros && t.miembros.length > 0">
+                  <div *ngIf="t.procesada_en && t.es_familiar && t.miembros && t.miembros.length > 0">
                     <p class="form-label">Miembros de la familia</p>
                     <ul class="flex flex-col gap-1.5">
                       <li *ngFor="let m of t.miembros" class="detail-member-row">
@@ -684,6 +698,47 @@ interface PublicadorLite {
                         <span *ngIf="m.falta_consentimiento" class="pub-item-badge shrink-0">Sin consentimiento</span>
                       </li>
                     </ul>
+                  </div>
+
+                  <!-- Borrador: se puede agregar o quitar gente -->
+                  <div *ngIf="!t.procesada_en" class="flex flex-col gap-2">
+                    <p class="form-label" style="margin:0">{{ (t.miembros?.length || 0) > 1 ? 'Personas que se mudan' : 'Persona que se muda' }}</p>
+                    <ul class="flex flex-col gap-1.5">
+                      <li *ngFor="let m of t.miembros" class="detail-member-row">
+                        <span class="pub-item-avatar shrink-0">{{ inicialesDeNombre(m.nombre_completo) }}</span>
+                        <span class="text-sm font-semibold text-slate-800 dark:text-slate-200 flex-1 min-w-0 break-words leading-snug">{{ m.nombre_completo }}</span>
+                        <span *ngIf="m.falta_consentimiento" class="pub-item-badge shrink-0">Sin consentimiento</span>
+                        <button *ngIf="(t.miembros?.length || 0) > 1 && m.id_publicador != null" type="button" class="persona-row__quitar"
+                                (click)="quitarDeTransferencia(m.id_publicador!)" [disabled]="guardandoMiembros()"
+                                [attr.aria-label]="'Quitar a ' + m.nombre_completo + ' de esta transferencia'">Quitar</button>
+                      </li>
+                    </ul>
+                    <p *ngIf="(t.miembros?.length || 0) === 1" class="field-help" style="margin:0">
+                      Para cambiar a esta persona, primero agrega a la otra y luego quita a esta.
+                    </p>
+
+                    <button *ngIf="!mostrarEditarMiembros() && (t.miembros?.length || 0) < maxMiembros" type="button"
+                            class="btn-buscar self-start" (click)="abrirEditarMiembros()">
+                      + Agregar a alguien más
+                    </button>
+                    <div *ngIf="mostrarEditarMiembros()" class="flex flex-col gap-2 animate-scale-in">
+                      <label class="sr-only" for="miembros-buscar">Buscar a quién agregar</label>
+                      <input id="miembros-buscar" class="form-control" type="search" autocomplete="off"
+                             placeholder="Escribe su nombre" aria-describedby="miembros-ayuda"
+                             [ngModel]="miembrosBusqueda()" (ngModelChange)="miembrosBusqueda.set($event)" />
+                      <ul class="flex flex-col gap-1" role="list">
+                        <li *ngFor="let p of candidatosMiembro(t)">
+                          <button type="button" class="candidato" (click)="agregarATransferencia(p.id_publicador)" [disabled]="guardandoMiembros()">
+                            <span class="pub-item-avatar shrink-0">{{ inicialesPub(p) }}</span>
+                            <span class="flex-1 min-w-0 break-words text-left leading-snug">{{ nombreMostrado(p) }}</span>
+                            <span class="candidato__accion">Agregar</span>
+                          </button>
+                        </li>
+                      </ul>
+                      <p *ngIf="ayudaMiembro(t) as ayuda" id="miembros-ayuda" class="field-help" style="margin:0">{{ ayuda }}</p>
+                      <button type="button" class="btn-wizard-back self-start" (click)="cerrarEditarMiembros()">Listo</button>
+                    </div>
+                    <p *ngIf="guardandoMiembros()" class="destino-estado"><span class="spinner spinner-xs"></span> Guardando…</p>
                   </div>
                   <div class="field-group" style="margin:0">
                     <label class="form-label" for="det-destino">Congregación a la que se muda <span class="text-red-500">*</span></label>
@@ -865,7 +920,40 @@ interface PublicadorLite {
 
             <!-- Tab 3: Carta -->
             <div *ngIf="!esIngreso(t) && activeTab() === 'carta'" class="flex flex-col gap-5 animate-scale-in">
-              <div class="field-group" style="margin:0">
+              <fieldset class="flex flex-col gap-2.5" [disabled]="soloLectura(t) || cambiandoPresentacion()">
+                <legend class="completar__pregunta">¿Qué le envías a la otra congregación?</legend>
+                <label class="opcion" [class.opcion--activa]="!t.sin_carta">
+                  <input type="radio" name="presentacion" class="opcion__input" [checked]="!t.sin_carta" (change)="elegirPresentacion(false)" />
+                  <span class="opcion__radio" aria-hidden="true"></span>
+                  <span class="opcion__cuerpo">
+                    <span class="opcion__titulo">Carta de presentación</span>
+                    <span class="opcion__desc">La carta formal, con las firmas de los ancianos.</span>
+                  </span>
+                </label>
+                <label class="opcion" [class.opcion--activa]="t.sin_carta">
+                  <input type="radio" name="presentacion" class="opcion__input" [checked]="t.sin_carta" (change)="elegirPresentacion(true)" />
+                  <span class="opcion__radio" aria-hidden="true"></span>
+                  <span class="opcion__cuerpo">
+                    <span class="opcion__titulo">Solo una nota</span>
+                    <span class="opcion__desc">Un mensaje corto, sin carta. {{ t.carta_redactada ? 'La carta que ya escribiste se guarda por si cambias de idea.' : '' }}</span>
+                  </span>
+                </label>
+              </fieldset>
+
+              <div *ngIf="t.sin_carta" class="field-group" style="margin:0">
+                <label class="form-label" for="det-nota">Nota para {{ t.congregacion_destino || 'la otra congregación' }}</label>
+                <textarea id="det-nota" rows="6" class="form-control carta-texto" [(ngModel)]="t.nota_destino" [disabled]="soloLectura(t)"
+                          aria-describedby="det-nota-ayuda"
+                          placeholder="Ej. Les escribimos para avisarles que el hermano se muda a su congregación. Pronto les enviaremos más detalles."></textarea>
+                <div class="carta-herramientas">
+                  <p id="det-nota-ayuda" class="field-help" style="margin:0">La otra congregación verá esta nota. Se guarda también al descargar el paquete.</p>
+                  <button *ngIf="!soloLectura(t)" type="button" class="btn-buscar shrink-0" (click)="guardarTodo()" [disabled]="guardandoTodo()">
+                    {{ guardandoTodo() ? 'Guardando…' : 'Guardar' }}
+                  </button>
+                </div>
+              </div>
+
+              <div *ngIf="!t.sin_carta" class="field-group" style="margin:0">
                 <div class="flex justify-between items-center gap-3 w-full mb-1.5">
                   <label class="form-label mb-0" for="det-carta">Carta de presentación</label>
                   <button *ngIf="t.carta_redactada" type="button" (click)="copiarCarta(t.carta_redactada!)" class="btn-carta-copiar">
@@ -889,13 +977,13 @@ interface PublicadorLite {
               </div>
 
               <!-- ── Qué sigue: siempre deja claro el próximo paso ── -->
-              <section *ngIf="t.carta_redactada && !soloLectura(t)" class="siguiente" aria-labelledby="siguiente-titulo" aria-live="polite">
+              <section *ngIf="presentacionLista(t) && !soloLectura(t)" class="siguiente" aria-labelledby="siguiente-titulo" aria-live="polite">
                 <!-- Paso 3: descargar -->
                 <ng-container *ngIf="!t.archivo_zip">
                   <p class="completar__eyebrow">{{ t.procesada_en ? 'Falta enviarla' : 'Paso 3 de 4' }}</p>
                   <h3 id="siguiente-titulo" class="completar__titulo">Descarga el paquete</h3>
                   <p class="completar__desc">
-                    Trae esta carta y la tarjeta de registro. Envíalo al secretario de {{ t.congregacion_destino || 'la otra congregación' }}{{ t.correo_congregacion_destino ? ' (' + t.correo_congregacion_destino + ')' : '' }}.
+                    Trae esta {{ t.sin_carta ? 'nota' : 'carta' }} y la tarjeta de registro. Envíalo al secretario de {{ t.congregacion_destino || 'la otra congregación' }}{{ t.correo_congregacion_destino ? ' (' + t.correo_congregacion_destino + ')' : '' }}.
                   </p>
                   <button type="button" class="btn-completar" (click)="generarPaquete()" [disabled]="generando()">
                     <span *ngIf="generando()" class="spinner spinner-xs text-white"></span>
@@ -969,14 +1057,14 @@ interface PublicadorLite {
 
                   <!-- Trasladar -->
                   <div *ngIf="completarAccion() === 'trasladar'" class="flex flex-col gap-5 animate-scale-in">
-                    <div *ngIf="!t.carta_redactada" class="consent-alert" role="note">
+                    <div *ngIf="!presentacionLista(t)" class="consent-alert" role="note">
                       <svg class="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                       <div class="flex flex-col gap-2.5 min-w-0">
-                        <p class="text-xs leading-normal"><strong>Falta la carta de presentación.</strong> La otra congregación la recibe por GAC, así que debe estar lista antes de trasladar.</p>
-                        <button type="button" class="btn-buscar self-start" (click)="activeTab.set(t.notas_para_carta ? 'carta' : 'notas')">Ir a la carta</button>
+                        <p class="text-xs leading-normal"><strong>{{ t.sin_carta ? 'Falta la nota.' : 'Falta la carta de presentación.' }}</strong> La otra congregación la recibe por GAC, así que debe estar lista antes de trasladar.</p>
+                        <button type="button" class="btn-buscar self-start" (click)="activeTab.set(t.sin_carta || t.notas_para_carta ? 'carta' : 'notas')">{{ t.sin_carta ? 'Ir a la nota' : 'Ir a la carta' }}</button>
                       </div>
                     </div>
-                    <p *ngIf="t.carta_redactada" class="field-help" style="margin:0">La carta de presentación también le llegará a esa congregación por GAC.</p>
+                    <p *ngIf="presentacionLista(t)" class="field-help" style="margin:0">{{ t.sin_carta ? 'La nota' : 'La carta de presentación' }} también le llegará a esa congregación por GAC.</p>
 
                     <div class="sub-paso">
                       <span class="sub-paso__num" aria-hidden="true">1</span>
@@ -1058,10 +1146,10 @@ interface PublicadorLite {
                       <svg class="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                       <div class="flex flex-col gap-2.5 min-w-0">
                         <p class="text-xs leading-normal"><strong>Aún no has descargado el paquete.</strong> Después de eliminar ya no se podrá generar la tarjeta.</p>
-                        <button *ngIf="t.carta_redactada" type="button" class="btn-buscar self-start" (click)="generarPaquete()" [disabled]="generando()">
+                        <button *ngIf="presentacionLista(t)" type="button" class="btn-buscar self-start" (click)="generarPaquete()" [disabled]="generando()">
                           {{ generando() ? 'Descargando…' : 'Descargar el paquete ahora' }}
                         </button>
-                        <button *ngIf="!t.carta_redactada" type="button" class="btn-buscar self-start" (click)="activeTab.set('carta')">Primero revisa la carta</button>
+                        <button *ngIf="!presentacionLista(t)" type="button" class="btn-buscar self-start" (click)="activeTab.set('carta')">{{ t.sin_carta ? 'Primero escribe la nota' : 'Primero revisa la carta' }}</button>
                       </div>
                     </div>
                     <label class="confirmacion">
@@ -2223,6 +2311,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   generando      = signal(false);
   guardandoNotas = signal(false);
   guardandoTodo  = signal(false);
+  cambiandoPresentacion = signal(false);
   armando        = signal(false);
   mejoraDisponible = signal(false);
   ayudaMejora    = signal(false);
@@ -2268,6 +2357,11 @@ export class TransferenciasPage implements OnInit, OnDestroy {
   agregarIds          = signal<number[]>([]);
   agregarBusqueda     = signal('');
   agregando           = signal(false);
+
+  // ── Agregar / quitar personas (transferencia aún sin completar) ──
+  mostrarEditarMiembros = signal(false);
+  miembrosBusqueda      = signal('');
+  guardandoMiembros     = signal(false);
 
   // ── Filtro lista ─────────────────────────────────────────────
   filtro = signal<'todos' | 'borrador' | 'finalizada' | 'recibidas'>('todos');
@@ -2502,6 +2596,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     this.confirmandoEliminar.set(false);
     this.cancelarCompletar();
     this.cancelarAgregar();
+    this.cerrarEditarMiembros();
     this.errorMejora.set(null);
     this.cartaAnterior.set(null);
     this.ayudaMejora.set(false);
@@ -2514,6 +2609,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     this.confirmandoEliminar.set(false);
     this.cancelarCompletar();
     this.cancelarAgregar();
+    this.cerrarEditarMiembros();
     this.mobileView.set('lista');
   }
 
@@ -2543,6 +2639,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     this.svc.update(t.id_transferencia, {
       notas_para_carta:            t.notas_para_carta,
       carta_redactada:             t.carta_redactada,
+      nota_destino:                t.nota_destino ?? null,
       congregacion_destino:        t.congregacion_destino,
       correo_congregacion_destino: t.correo_congregacion_destino,
       fecha_transferencia:         t.fecha_transferencia,
@@ -2647,6 +2744,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     this.svc.update(t.id_transferencia, {
       notas_para_carta: t.notas_para_carta,
       carta_redactada:  t.carta_redactada,
+      nota_destino:     t.nota_destino ?? null,
       congregacion_destino: t.congregacion_destino,
       estado:  t.estado,
     }).subscribe({
@@ -2772,10 +2870,36 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     this.activeTab.set('completar');
   }
 
-  /** Primer paso sin hacer: 1 notas, 2 carta, 3 paquete, 4 completar. */
+  /** ¿Está lo que se le manda a la otra congregación? La carta, o la nota si se eligió nota. */
+  presentacionLista(t: Transferencia | null | undefined): boolean {
+    if (!t) return false;
+    return !!(t.sin_carta ? t.nota_destino : t.carta_redactada)?.trim();
+  }
+
+  /** Carta formal o solo una nota. Se guarda al momento; la carta no se borra. */
+  elegirPresentacion(sinCarta: boolean) {
+    const t = this.seleccionada();
+    if (!t || !!t.sin_carta === sinCarta || this.cambiandoPresentacion()) return;
+    this.cambiandoPresentacion.set(true);
+    this.svc.update(t.id_transferencia, { sin_carta: sinCarta }).subscribe({
+      next: (updated) => {
+        // Conserva lo escrito sin guardar en los textos.
+        this.seleccionada.set({ ...updated, carta_redactada: t.carta_redactada, nota_destino: t.nota_destino, notas_para_carta: t.notas_para_carta });
+        this.items.update(arr => arr.map(x => x.id_transferencia === updated.id_transferencia ? updated : x));
+        this.cambiandoPresentacion.set(false);
+        if (sinCarta) setTimeout(() => document.getElementById('det-nota')?.focus());
+      },
+      error: (e) => {
+        this.cambiandoPresentacion.set(false);
+        this.toast('error', e?.error?.detail || 'No se pudo cambiar');
+      },
+    });
+  }
+
+  /** Primer paso sin hacer: 1 notas, 2 carta (o nota), 3 paquete, 4 completar. */
   pasoActual(t: Transferencia): number {
     if (!t.notas_para_carta) return 1;
-    if (!t.carta_redactada) return 2;
+    if (!this.presentacionLista(t)) return 2;
     if (!t.archivo_zip) return 3;
     return 4;
   }
@@ -2919,7 +3043,7 @@ export class TransferenciasPage implements OnInit, OnDestroy {
     const a = this.completarAccion();
     if (a === 'trasladar') {
       const d = this.destinoVerificado();
-      return !!d && !d.es_la_misma && !this.cargandoImpacto() && !!this.seleccionada()?.carta_redactada;
+      return !!d && !d.es_la_misma && !this.cargandoImpacto() && this.presentacionLista(this.seleccionada());
     }
     return a === 'eliminar' && this.confirmaEliminar();
   }
@@ -3081,6 +3205,88 @@ export class TransferenciasPage implements OnInit, OnDestroy {
       error: (e) => {
         this.agregando.set(false);
         this.toast('error', e?.error?.detail || 'No se pudo agregar a la transferencia');
+      },
+    });
+  }
+
+  // ── Agregar / quitar personas mientras no se completa ───────
+  abrirEditarMiembros() {
+    this.miembrosBusqueda.set('');
+    this.mostrarEditarMiembros.set(true);
+    setTimeout(() => document.getElementById('miembros-buscar')?.focus());
+  }
+
+  cerrarEditarMiembros() {
+    this.mostrarEditarMiembros.set(false);
+    this.miembrosBusqueda.set('');
+  }
+
+  /** Mismo criterio que al sumar a un familiar: primero los del mismo apellido. */
+  candidatosMiembro(t: Transferencia): PublicadorLite[] {
+    const fuera = new Set((t.miembros || []).map(m => m.id_publicador).filter((x): x is number => x != null));
+    const apellidos = new Set(
+      (t.miembros || []).map(m => (m.nombre_completo || '').trim().split(/\s+/).pop()?.toLowerCase()).filter(Boolean)
+    );
+    const q = this.miembrosBusqueda().toLowerCase().trim();
+    const mismoApellido = (p: PublicadorLite) =>
+      apellidos.has((p.primer_apellido || '').toLowerCase()) || apellidos.has((p.segundo_apellido || '').toLowerCase());
+    const libres = this.publicadores().filter(p => !fuera.has(p.id_publicador));
+    if (!q) return libres.filter(mismoApellido).slice(0, 4);
+    return libres
+      .filter(p => (nombreMostrado(p) + ' ' + nombreLegal(p)).toLowerCase().includes(q))
+      .sort((a, b) => Number(mismoApellido(b)) - Number(mismoApellido(a)))
+      .slice(0, 5);
+  }
+
+  ayudaMiembro(t: Transferencia): string {
+    const hay = this.candidatosMiembro(t).length > 0;
+    if (this.miembrosBusqueda().trim()) return hay ? '' : 'Nadie con ese nombre en esta congregación.';
+    return hay ? 'Tienen el mismo apellido. Si no es ninguno, escribe su nombre.' : 'Escribe el nombre de la persona.';
+  }
+
+  agregarATransferencia(id: number) {
+    const t = this.seleccionada();
+    if (!t) return;
+    const ids = (t.miembros || []).map(m => m.id_publicador).filter((x): x is number => x != null);
+    if (ids.includes(id) || ids.length >= this.maxMiembros) return;
+    this.guardarMiembros([...ids, id], `${this.nombrePublicador(id)} se agregó a la transferencia.`);
+  }
+
+  quitarDeTransferencia(id: number) {
+    const t = this.seleccionada();
+    if (!t) return;
+    const ids = (t.miembros || []).map(m => m.id_publicador).filter((x): x is number => x != null);
+    if (ids.length <= 1) return;
+    const nombre = t.miembros.find(m => m.id_publicador === id)?.nombre_completo || 'La persona';
+    this.guardarMiembros(ids.filter(x => x !== id), `${nombre} ya no está en la transferencia.`);
+  }
+
+  private guardarMiembros(ids: number[], mensaje: string) {
+    const t = this.seleccionada();
+    if (!t || this.guardandoMiembros()) return;
+    this.guardandoMiembros.set(true);
+    this.svc.actualizarMiembros(t.id_transferencia, ids).subscribe({
+      next: (updated) => {
+        // Conserva lo que se esté escribiendo en los demás campos sin guardar.
+        this.seleccionada.set({
+          ...updated,
+          congregacion_destino: t.congregacion_destino,
+          correo_congregacion_destino: t.correo_congregacion_destino,
+          fecha_transferencia: t.fecha_transferencia,
+          notas_para_carta: t.notas_para_carta,
+          carta_redactada: t.carta_redactada,
+          nota_destino: t.nota_destino,
+        });
+        this.items.update(arr => arr.map(x => x.id_transferencia === updated.id_transferencia ? updated : x));
+        this.guardandoMiembros.set(false);
+        this.miembrosBusqueda.set('');
+        const aviso = this.presentacionLista(updated)
+          ? ` Revisa ${updated.sin_carta ? 'la nota' : 'la carta'} y vuelve a descargar el paquete.` : '';
+        this.toast('success', mensaje + aviso);
+      },
+      error: (e) => {
+        this.guardandoMiembros.set(false);
+        this.toast('error', e?.error?.detail || 'No se pudo cambiar quiénes van en la transferencia');
       },
     });
   }
