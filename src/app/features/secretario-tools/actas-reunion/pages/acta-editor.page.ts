@@ -11,6 +11,19 @@ import { DatePickerComponent } from '../../../../shared/components/date-picker/d
 import { LucideAngularModule } from '../../../../shared/icons';
 
 type MobileTab = 'notas' | 'acta' | 'tareas';
+type CampoTexto = 'notas' | 'acta';
+
+/** ![descripción](imagen:12) — la misma marca que lee la exportación a PDF y Word. */
+const MARCA_IMAGEN = /!\[([^\]\n]*)\]\(imagen:(\d+)\)/g;
+const BLOQUE_IMAGEN = /^!\[[^\]\n]*\]\(imagen:\d+\)$/;
+
+/** Palabras que no ayudan a reconocer de qué punto del acta habla un párrafo de las notas. */
+const PALABRAS_VACIAS = new Set([
+  'para', 'como', 'sobre', 'esta', 'este', 'estos', 'estas', 'entre', 'pero', 'porque', 'donde',
+  'cuando', 'tambien', 'todo', 'todos', 'toda', 'todas', 'desde', 'hasta', 'segun', 'ellos', 'ellas',
+  'nuestro', 'nuestra', 'mismo', 'cada', 'tiene', 'tienen', 'hace', 'hacer', 'puede', 'pueden',
+  'debemos', 'hermano', 'hermanos', 'hablo', 'hablamos', 'hablando', 'luego', 'otro', 'otra', 'mas',
+]);
 type Capa = 'eliminar' | 'regenerar' | 'tarea' | 'acciones' | 'estado';
 
 const TIPO_LABEL: Record<TipoReunion, string> = {
@@ -39,6 +52,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
   styleUrls: ['../../../reportes/shared/reportes-tokens.scss'],
   template: `
   <div class="editor" [class.modo-escritura]="isMobileMode() && (notasFocused() || actaFocused())">
+  <input #archivoImagen type="file" accept="image/*" multiple hidden (change)="alElegirArchivos($event)" />
 
   @if (acta(); as a) {
 
@@ -178,6 +192,8 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
 
       <!-- ── Notas ── -->
       <section id="panel-notas" class="panel panel-notas"
+               [class.soltando]="soltandoEn() === 'notas'"
+               (dragover)="alArrastrar($event, 'notas')" (dragleave)="soltandoEn.set(null)" (drop)="alSoltar($event, 'notas')"
                [class.tab-hidden]="isMobileMode() && activeTab() !== 'notas'"
                [attr.role]="isMobileMode() ? 'tabpanel' : 'region'"
                [attr.aria-labelledby]="isMobileMode() ? 'pestana-notas' : 'titulo-notas'">
@@ -189,6 +205,14 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
             </p>
           </div>
           @if (!isReadonly()) {
+            <button type="button" class="ctrl ctrl-sm" (click)="elegirImagen('notas')" [disabled]="!!subiendoImagen()"
+                    title="Añadir una foto o captura. También puedes pegarla o arrastrarla aquí.">
+              @if (subiendoImagen() === 'notas') {
+                <span class="spinner" aria-hidden="true"></span>Subiendo…
+              } @else {
+                <lucide-icon name="image-plus" [size]="14" aria-hidden="true"></lucide-icon>Imagen
+              }
+            </button>
             <button type="button" class="btn-primario btn-generar" (click)="redactarIA()"
                     [disabled]="redactando() || !a.notas_originales || rateLimitSecondsLeft() > 0"
                     [title]="tituloGenerar(a)" aria-describedby="notas-ayuda"
@@ -210,14 +234,42 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
                   [(ngModel)]="a.notas_originales"
                   (ngModelChange)="markDirty()"
                   (focus)="notasFocused.set(true)"
-                  (blur)="notasFocused.set(false)"
+                  (blur)="notasFocused.set(false); recordarCursor('notas')"
+                  (paste)="alPegar($event, 'notas')"
                   [readonly]="isReadonly()"
                   spellcheck="true"
                   placeholder="Puntos tratados, acuerdos, responsables…&#10;&#10;- Punto 1:&#10;- Acuerdo:&#10;- Responsable:"></textarea>
+        @if (imagenesNotas().length) {
+          <ul class="miniaturas" aria-label="Imágenes de las notas">
+            @for (im of imagenesNotas(); track im.id; let i = $index) {
+              <li class="miniatura">
+                @if (imagenUrls()[im.id]; as src) {
+                  <a [href]="src" target="_blank" rel="noopener" [title]="im.alt || 'Ver imagen ' + (i + 1)">
+                    <img [src]="src" [alt]="im.alt || 'Imagen ' + (i + 1)" />
+                  </a>
+                } @else if (imagenUrls()[im.id] === '') {
+                  <span class="miniatura-falla" title="No se pudo cargar la imagen">
+                    <lucide-icon name="alert-circle" [size]="16" aria-hidden="true"></lucide-icon>
+                  </span>
+                } @else {
+                  <span class="spinner" aria-hidden="true"></span>
+                }
+                @if (!isReadonly()) {
+                  <button type="button" class="miniatura-quitar" (click)="quitarImagen('notas', im.id)"
+                          [attr.aria-label]="'Quitar la imagen ' + (i + 1) + ' de las notas y del acta'" title="Quitar de las notas y del acta">
+                    <lucide-icon name="x" [size]="12" aria-hidden="true"></lucide-icon>
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
       </section>
 
       <!-- ── Acta redactada ── -->
       <section id="panel-acta" class="panel panel-acta"
+               [class.soltando]="soltandoEn() === 'acta'"
+               (dragover)="alArrastrar($event, 'acta')" (dragleave)="soltandoEn.set(null)" (drop)="alSoltar($event, 'acta')"
                [class.tab-hidden]="isMobileMode() && activeTab() !== 'acta'"
                [attr.role]="isMobileMode() ? 'tabpanel' : 'region'"
                [attr.aria-labelledby]="isMobileMode() ? 'pestana-acta' : 'titulo-acta'">
@@ -226,6 +278,17 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
             <h2 id="titulo-acta" class="panel-titulo">Acta</h2>
             <p class="panel-sub">Documento formal · es lo que se exporta</p>
           </div>
+          @if (!isReadonly() && !redactando()) {
+            <button type="button" class="ctrl ctrl-sm" (mousedown)="$event.preventDefault()"
+                    (click)="elegirImagen('acta')" [disabled]="!!subiendoImagen()"
+                    title="Añadir una foto o captura al acta. También puedes pegarla o arrastrarla aquí.">
+              @if (subiendoImagen() === 'acta') {
+                <span class="spinner" aria-hidden="true"></span>Subiendo…
+              } @else {
+                <lucide-icon name="image-plus" [size]="14" aria-hidden="true"></lucide-icon>Imagen
+              }
+            </button>
+          }
           @if (!isReadonly() && !redactando() && (a.contenido_redactado || actaFocused())) {
             <!-- mousedown sin foco: si el textarea perdiera el foco antes del click,
                  el botón ya mostraría "Editar" y volvería a abrir la edición. -->
@@ -271,7 +334,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
             </div>
           } @else if (!actaFocused()) {
             <article class="prosa" [class.editable]="!isReadonly()"
-                     (click)="!isReadonly() && focusActa()"
+                     (click)="!isReadonly() && focusActa(); ultimoCampoActa()"
                      [innerHTML]="actaHtml()"></article>
           }
           <textarea #actaTextarea id="acta-texto"
@@ -283,6 +346,7 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
                     [(ngModel)]="a.contenido_redactado"
                     (ngModelChange)="markDirty()"
                     (blur)="onActaBlur()"
+                    (paste)="alPegar($event, 'acta')"
                     [readonly]="isReadonly()"
                     spellcheck="true"
                     placeholder="Escribe el acta aquí…"></textarea>
@@ -428,6 +492,17 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
           <button type="button" class="ctrl barra-accion" (mousedown)="$event.preventDefault()" (click)="redactarIA()"
                   [disabled]="redactando() || !a.notas_originales || rateLimitSecondsLeft() > 0">
             <lucide-icon name="sparkles" [size]="15" aria-hidden="true"></lucide-icon>Generar acta
+          </button>
+        }
+        @if (!isReadonly()) {
+          <button type="button" class="ctrl ctrl-icono barra-accion" (mousedown)="$event.preventDefault()"
+                  (click)="elegirImagen(notasFocused() ? 'notas' : 'acta')" [disabled]="!!subiendoImagen()"
+                  aria-label="Añadir imagen" title="Añadir imagen">
+            @if (subiendoImagen()) {
+              <span class="spinner" aria-hidden="true"></span>
+            } @else {
+              <lucide-icon name="image-plus" [size]="16" aria-hidden="true"></lucide-icon>
+            }
           </button>
         }
         <button type="button" class="btn-primario" (click)="blurActiveTextarea()">Listo</button>
@@ -1029,6 +1104,50 @@ const PRIORIDAD_LABEL: Record<Tarea['prioridad'], string> = { baja: 'Baja', medi
     .prosa ::ng-deep ul li::marker { color: var(--acento); }
     .prosa ::ng-deep ol li::marker { color: var(--txt-2); font-variant-numeric: tabular-nums; }
     .prosa ::ng-deep hr { margin: 1.5rem 0; border: 0; border-top: 1px solid var(--linea); }
+    .prosa ::ng-deep figure.acta-img { margin: 1rem 0 1.25rem; }
+    .prosa ::ng-deep figure.acta-img img {
+      display: block; max-width: 100%; max-height: 28rem; height: auto; margin-inline: auto;
+      border: 1px solid var(--linea); border-radius: 0.5rem;
+    }
+    .prosa ::ng-deep figure.acta-img figcaption {
+      margin-top: 0.375rem; text-align: center;
+      font-size: 0.8125rem; font-style: italic; color: var(--txt-2);
+    }
+    .prosa ::ng-deep .acta-img-estado {
+      margin: 1rem 0; padding: 1.25rem; text-align: center;
+      border: 1px dashed var(--linea); border-radius: 0.5rem;
+      font-size: 0.8125rem; color: var(--txt-2);
+    }
+
+    /* Imágenes de las notas: el texto solo lleva la marca; aquí se ven. */
+    .miniaturas {
+      display: flex; gap: 0.5rem; flex-shrink: 0;
+      margin: 0; padding: 0.625rem 0.75rem; list-style: none;
+      border-top: 1px solid var(--linea-suave);
+      overflow-x: auto; scrollbar-width: thin;
+    }
+    .miniatura {
+      position: relative; flex-shrink: 0;
+      display: grid; place-items: center;
+      width: 4.5rem; height: 4.5rem;
+      border: 1px solid var(--linea); border-radius: 0.5rem;
+      background: var(--superficie-alt); overflow: hidden;
+    }
+    .miniatura a, .miniatura img { display: block; width: 100%; height: 100%; }
+    .miniatura img { object-fit: cover; }
+    .miniatura-falla { color: var(--txt-3); }
+    .miniatura-quitar {
+      position: absolute; top: 0.25rem; right: 0.25rem;
+      display: grid; place-items: center;
+      width: 1.5rem; height: 1.5rem; border: 0; border-radius: 50%;
+      background: color-mix(in oklch, var(--txt-1) 72%, transparent); color: var(--superficie);
+      cursor: pointer;
+    }
+    @media (pointer: coarse) {
+      .miniatura { width: 5.5rem; height: 5.5rem; }
+      .miniatura-quitar { width: 2rem; height: 2rem; }
+    }
+    .panel.soltando { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento); }
 
     .generando { padding: 1.25rem 1.5rem; }
     .generando-titulo {
@@ -1418,6 +1537,7 @@ export class ActaEditorPage implements OnInit, OnDestroy {
   @ViewChild('actaTextarea')  actaTextareaRef!:  ElementRef<HTMLTextAreaElement>;
   @ViewChild('notasTextarea') notasTextareaRef!: ElementRef<HTMLTextAreaElement>;
   @ViewChild('estadoWrap')    estadoWrapRef?:    ElementRef<HTMLElement>;
+  @ViewChild('archivoImagen') archivoImagenRef?: ElementRef<HTMLInputElement>;
 
   acta = signal<Acta | null>(null);
   cargaError = signal(false);
@@ -1450,7 +1570,21 @@ export class ActaEditorPage implements OnInit, OnDestroy {
   estadoOpen = signal(false);
   actaFocused = signal(false);
   notasFocused = signal(false);
-  actaHtml = computed<SafeHtml>(() => this.markdownToHtml(this.acta()?.contenido_redactado ?? ''));
+  /** id → blob: URL; '' si no se pudo cargar. Sin entrada = cargando. */
+  imagenUrls = signal<Record<number, string>>({});
+  subiendoImagen = signal<CampoTexto | null>(null);
+  soltandoEn = signal<CampoTexto | null>(null);
+  private imagenesPedidas = new Set<number>();
+  private destinoImagen: { campo: CampoTexto; pos: number | null } = { campo: 'notas', pos: null };
+  /** Última posición del cursor de cada texto al perder el foco (null = nunca se tocó: va al final). */
+  private cursor: Record<CampoTexto, number | null> = { notas: null, acta: null };
+  private ultimoCampo: CampoTexto = 'acta';
+
+  actaHtml = computed<SafeHtml>(() => this.markdownToHtml(this.acta()?.contenido_redactado ?? '', this.imagenUrls()));
+  imagenesNotas = computed(() =>
+    [...(this.acta()?.notas_originales ?? '').matchAll(MARCA_IMAGEN)]
+      .map(m => ({ id: Number(m[2]), alt: m[1].trim() }))
+      .filter((im, i, arr) => arr.findIndex(x => x.id === im.id) === i));
 
   resumenTareas = computed(() => {
     const ts = this.tareas();
@@ -1509,6 +1643,14 @@ export class ActaEditorPage implements OnInit, OnDestroy {
         }
       });
     });
+
+    // Las imágenes no viajan con el acta: se piden una vez por id, con la sesión del HttpClient.
+    effect(() => {
+      const a = this.acta();
+      if (!a) return;
+      const ids = [...`${a.notas_originales ?? ''}\n${a.contenido_redactado ?? ''}`.matchAll(MARCA_IMAGEN)].map(m => Number(m[2]));
+      untracked(() => ids.forEach(id => this.cargarImagen(a.id_acta, id)));
+    });
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -1523,6 +1665,22 @@ export class ActaEditorPage implements OnInit, OnDestroy {
       else if (this.agregandoTarea() && this.isMobileMode()) this.cerrarFormularioTarea();
       else if (this.estadoOpen()) this.estadoOpen.set(false);
     }
+  }
+
+  /** Pegar una imagen sin estar escribiendo (p. ej. con el acta en vista previa). */
+  @HostListener('document:paste', ['$event'])
+  onDocPaste(e: ClipboardEvent) {
+    if (e.defaultPrevented || this.isReadonly() || !this.acta()) return;
+    const t = e.target as HTMLElement | null;
+    if (t?.closest('input, textarea, [contenteditable="true"]')) return;  // ahí manda su propio (paste)
+    const archivos = Array.from(e.clipboardData?.files ?? []).filter(f => f.type.startsWith('image/'));
+    if (!archivos.length) return;
+    e.preventDefault();
+    // En móvil, la pestaña abierta; en escritorio, el último texto donde se escribió.
+    const campo: CampoTexto = this.isMobileMode()
+      ? (this.activeTab() === 'acta' ? 'acta' : 'notas')
+      : this.ultimoCampo;
+    this.subirImagenes(archivos, campo, this.cursor[campo]);
   }
 
   @HostListener('document:click', ['$event'])
@@ -1555,6 +1713,7 @@ export class ActaEditorPage implements OnInit, OnDestroy {
     if (this.toastTimer) clearTimeout(this.toastTimer);
     if (this.rateLimitTimer) clearInterval(this.rateLimitTimer);
     this.resizeObserver?.disconnect();
+    Object.values(this.imagenUrls()).forEach(u => u && URL.revokeObjectURL(u));
   }
 
   cargar() {
@@ -1779,10 +1938,209 @@ export class ActaEditorPage implements OnInit, OnDestroy {
 
   onActaBlur() {
     this.actaFocused.set(false);
+    this.recordarCursor('acta');
+    // ngModel cambia el objeto por dentro: sin un set la vista previa seguiría con el texto de antes.
+    this.acta.update(x => x ? { ...x } : x);
   }
 
-  markdownToHtml(text: string): SafeHtml {
+  // ── Imágenes ─────────────────────────────────────────────────────────
+
+  private textarea(campo: CampoTexto): HTMLTextAreaElement | undefined {
+    return (campo === 'notas' ? this.notasTextareaRef : this.actaTextareaRef)?.nativeElement;
+  }
+
+  ultimoCampoActa() { this.ultimoCampo = 'acta'; }
+
+  recordarCursor(campo: CampoTexto) {
+    const ta = this.textarea(campo);
+    if (ta) this.cursor[campo] = ta.selectionStart;
+    this.ultimoCampo = campo;
+  }
+
+  /** Dónde va la imagen: en el cursor si se está escribiendo; si no, donde se dejó, o al final. */
+  private posicionPara(campo: CampoTexto): number | null {
+    const ta = this.textarea(campo);
+    return ta && document.activeElement === ta ? ta.selectionStart : this.cursor[campo];
+  }
+
+  elegirImagen(campo: CampoTexto) {
+    if (this.isReadonly() || this.subiendoImagen()) return;
+    this.destinoImagen = { campo, pos: this.posicionPara(campo) };
+    this.archivoImagenRef?.nativeElement.click();
+  }
+
+  alElegirArchivos(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const archivos = Array.from(input.files ?? []);
+    input.value = '';  // permite volver a elegir el mismo archivo
+    this.subirImagenes(archivos, this.destinoImagen.campo, this.destinoImagen.pos);
+  }
+
+  alPegar(e: ClipboardEvent, campo: CampoTexto) {
+    const archivos = Array.from(e.clipboardData?.files ?? []).filter(f => f.type.startsWith('image/'));
+    if (!archivos.length || this.isReadonly()) return;
+    e.preventDefault();
+    this.subirImagenes(archivos, campo, (e.target as HTMLTextAreaElement).selectionStart);
+  }
+
+  alArrastrar(e: DragEvent, campo: CampoTexto) {
+    if (this.isReadonly() || !e.dataTransfer?.types.includes('Files')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    this.soltandoEn.set(campo);
+  }
+
+  alSoltar(e: DragEvent, campo: CampoTexto) {
+    this.soltandoEn.set(null);
+    const archivos = Array.from(e.dataTransfer?.files ?? []).filter(f => f.type.startsWith('image/'));
+    if (!archivos.length || this.isReadonly()) return;
+    e.preventDefault();
+    this.subirImagenes(archivos, campo, this.posicionPara(campo));
+  }
+
+  private subirImagenes(archivos: File[], campo: CampoTexto, pos: number | null) {
+    const a = this.acta();
+    const [archivo, ...resto] = archivos;
+    if (!a || !archivo) return;
+    if (!archivo.type.startsWith('image/')) {
+      this.showToast('Ese archivo no es una imagen. Usa una foto JPG, PNG o WEBP.', 'error');
+      this.subirImagenes(resto, campo, pos);
+      return;
+    }
+    this.subiendoImagen.set(campo);
+    this.svc.subirImagen(a.id_acta, archivo).subscribe({
+      next: (img) => {
+        // La imagen local ya se ve; la del servidor es la misma, enderezada y reducida.
+        this.imagenesPedidas.add(img.id_imagen);
+        this.imagenUrls.update(m => ({ ...m, [img.id_imagen]: URL.createObjectURL(archivo) }));
+        const marca = `![](imagen:${img.id_imagen})`;
+        const fin = this.insertarMarca(campo, marca, pos);
+        // Con el acta ya redactada, la imagen de las notas entra también en el punto equivalente del acta.
+        let enActa: boolean | null = null;
+        const actual = this.acta();
+        if (campo === 'notas' && actual?.contenido_redactado?.trim()) {
+          const destino = this.posicionEnActa(actual.notas_originales ?? '', fin - marca.length, actual.contenido_redactado);
+          this.insertarMarca('acta', marca, destino.pos);
+          enActa = destino.exacto;
+        }
+        if (resto.length) {
+          this.subirImagenes(resto, campo, fin);
+        } else {
+          this.subiendoImagen.set(null);
+          this.showToast(
+            enActa === true ? 'Imagen añadida a las notas y en el mismo punto del acta.'
+              : enActa === false ? 'Imagen añadida a las notas. En el acta no encontré ese punto y la puse al final; puedes moverla con Editar.'
+              : 'Imagen añadida. Para ponerle un pie de foto, escríbelo entre los corchetes: ![Pie de foto](imagen:…)',
+            'success');
+        }
+      },
+      error: (err) => {
+        this.subiendoImagen.set(null);
+        this.showToast(err?.error?.detail || 'No se pudo subir la imagen. Intenta de nuevo.', 'error');
+      },
+    });
+  }
+
+  /**
+   * Punto del acta que equivale a `pos` en las notas: justo después del párrafo del acta que más
+   * palabras comparte con el párrafo de las notas que precede a la imagen (y, con menos peso, el
+   * anterior a ese). Sin un parecido claro, al final del acta.
+   */
+  private posicionEnActa(notas: string, pos: number, acta: string): { pos: number; exacto: boolean } {
+    const previos = notas.slice(0, pos).replace(MARCA_IMAGEN, ' ')
+      .split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+    if (!previos.length) return { pos: 0, exacto: true };  // la imagen abre las notas
+    const peso = new Map<string, number>();
+    this.palabras(previos[previos.length - 2] ?? '').forEach(w => peso.set(w, 1));
+    this.palabras(previos[previos.length - 1]).forEach(w => peso.set(w, 3));
+
+    let mejor: number | null = null;
+    let puntos = 0;
+    const sep = /\n{2,}/g;
+    let ini = 0;
+    for (;;) {
+      const m = sep.exec(acta);
+      const fin = m ? m.index : acta.length;
+      const bloque = acta.slice(ini, fin).trim();
+      if (bloque && !BLOQUE_IMAGEN.test(bloque)) {
+        let p = 0;
+        this.palabras(bloque).forEach(w => p += peso.get(w) ?? 0);
+        if (p > puntos) { puntos = p; mejor = fin; }
+      }
+      if (!m) break;
+      ini = m.index + m[0].length;
+    }
+    if (mejor === null || puntos < 4) return { pos: acta.length, exacto: false };
+    // Varias imágenes seguidas en las notas quedan en el mismo orden en el acta.
+    let p = mejor;
+    for (let sig = /^\s*!\[[^\]\n]*\]\(imagen:\d+\)/.exec(acta.slice(p)); sig; sig = /^\s*!\[[^\]\n]*\]\(imagen:\d+\)/.exec(acta.slice(p))) {
+      p += sig[0].length;
+    }
+    return { pos: p, exacto: true };
+  }
+
+  private palabras(t: string): Set<string> {
+    return new Set(t.replace(MARCA_IMAGEN, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .split(/[^a-z0-9]+/).filter(w => w.length >= 4 && !PALABRAS_VACIAS.has(w)));
+  }
+
+  /** Mete la marca en su propio párrafo y devuelve la posición justo después de ella. */
+  private insertarMarca(campo: CampoTexto, marca: string, pos: number | null): number {
+    const a = this.acta();
+    if (!a) return 0;
+    const texto = (campo === 'notas' ? a.notas_originales : a.contenido_redactado) ?? '';
+    const p = pos === null ? texto.length : Math.min(pos, texto.length);
+    const antes = texto.slice(0, p).replace(/[ \t]+$/, '');
+    const despues = texto.slice(p).replace(/^[ \t]+/, '');
+    const sep = (lado: string, inicio: boolean) => {
+      if (!lado) return '';
+      const saltos = (inicio ? lado.match(/\n*$/) : lado.match(/^\n*/))![0].length;
+      return '\n'.repeat(Math.max(0, 2 - saltos));
+    };
+    const previo = antes + sep(antes, true) + marca;
+    const nuevo = previo + sep(despues, false) + despues;
+    this.acta.set(campo === 'notas' ? { ...a, notas_originales: nuevo } : { ...a, contenido_redactado: nuevo });
+    this.cursor[campo] = previo.length;
+    this.markDirty();
+    return previo.length;
+  }
+
+  quitarImagen(campo: CampoTexto, id: number) {
+    const a = this.acta();
+    if (!a || this.isReadonly()) return;
+    const quitar = (t: string | null | undefined) => (t ?? '')
+      .replace(new RegExp(`[ \\t]*!\\[[^\\]\\n]*\\]\\(imagen:${id}\\)[ \\t]*`, 'g'), '')
+      .replace(/\n{3,}/g, '\n\n');
+    // Lo que entra desde las notas sale también del acta: van juntas.
+    this.acta.set(campo === 'notas'
+      ? { ...a, notas_originales: quitar(a.notas_originales), contenido_redactado: a.contenido_redactado == null ? a.contenido_redactado : quitar(a.contenido_redactado) }
+      : { ...a, contenido_redactado: quitar(a.contenido_redactado) });
+    this.markDirty();
+  }
+
+  private cargarImagen(idActa: number, id: number) {
+    if (this.imagenesPedidas.has(id)) return;
+    this.imagenesPedidas.add(id);
+    this.svc.imagen(idActa, id).subscribe({
+      next: (blob) => this.imagenUrls.update(m => ({ ...m, [id]: URL.createObjectURL(blob) })),
+      error: () => this.imagenUrls.update(m => ({ ...m, [id]: '' })),
+    });
+  }
+
+  markdownToHtml(text: string, urls: Record<number, string> = {}): SafeHtml {
     if (!text) return this.sanitizer.bypassSecurityTrustHtml('');
+    const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    // Cada imagen sale como bloque propio; un marcador la protege del resto de reglas.
+    const figuras: string[] = [];
+    text = text.replace(MARCA_IMAGEN, (_m, alt: string, id: string) => {
+      const src = urls[Number(id)];
+      const pie = alt.trim();
+      figuras.push(
+        src ? `<figure class="acta-img"><img src="${src}" alt="${esc(pie)}">${pie ? `<figcaption>${esc(pie)}</figcaption>` : ''}</figure>`
+          : src === '' ? '<p class="acta-img-estado">No se pudo cargar esta imagen.</p>'
+          : '<p class="acta-img-estado">Cargando imagen…</p>');
+      return `\n\n\u0000${figuras.length - 1}\u0000\n\n`;
+    });
     let html = text
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
@@ -1803,6 +2161,8 @@ export class ActaEditorPage implements OnInit, OnDestroy {
     html = html.split(/\n{2,}/).map(block => {
       const t = block.trim();
       if (!t) return '';
+      const fig = /^\u0000(\d+)\u0000$/.exec(t);
+      if (fig) return figuras[Number(fig[1])];
       if (/^<(h[1-3]|ul|ol|hr)/.test(t)) return t;
       return `<p>${t.replace(/\n/g, '<br>')}</p>`;
     }).join('\n');

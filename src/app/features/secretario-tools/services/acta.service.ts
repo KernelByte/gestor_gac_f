@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { Acta, ActaCreate, ActaUpdate, RedactarIARequest, RedactarIAResponse, RolTarea, Subtarea, Tarea, TareaCreate, UsuarioAsignable } from '../models/acta.model';
+import { Acta, ActaCreate, ActaImagen, ActaUpdate, RedactarIARequest, RedactarIAResponse, RolTarea, Subtarea, Tarea, TareaCreate, UsuarioAsignable } from '../models/acta.model';
 
 @Injectable({ providedIn: 'root' })
 export class ActaService {
@@ -36,6 +36,18 @@ export class ActaService {
 
   exportar(id: number, formato: 'pdf' | 'docx'): Observable<Blob> {
     return this.http.get(`${this.url}/${id}/export`, { params: { formato }, responseType: 'blob' });
+  }
+
+  /** Sube una foto o captura; el texto la cita después con ![descripción](imagen:ID). */
+  subirImagen(idActa: number, archivo: File): Observable<ActaImagen> {
+    const fd = new FormData();
+    fd.append('archivo', archivo, archivo.name || 'imagen');
+    return this.http.post<ActaImagen>(`${this.url}/${idActa}/imagenes`, fd);
+  }
+
+  /** Por HttpClient (no un <img src>) para que viaje la sesión como en el resto de la API. */
+  imagen(idActa: number, idImagen: number): Observable<Blob> {
+    return this.http.get(`${this.url}/${idActa}/imagenes/${idImagen}`, { responseType: 'blob' });
   }
 
   // Tareas

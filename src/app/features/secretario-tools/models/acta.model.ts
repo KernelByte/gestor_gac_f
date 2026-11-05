@@ -24,6 +24,15 @@ export interface ActaCreate {
   estado?: EstadoActa;
 }
 
+export interface ActaImagen {
+  id_imagen: number;
+  id_acta: number;
+  mime: string;
+  nombre: string | null;
+  ancho: number | null;
+  alto: number | null;
+}
+
 export interface ActaUpdate {
   tipo_reunion?: TipoReunion;
   titulo?: string;

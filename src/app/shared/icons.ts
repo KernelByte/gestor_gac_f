@@ -16,7 +16,7 @@ import {
   Folder, FolderOpen, FolderPlus, Inbox, Mail, Phone, Eye, EyeOff,
   // utilidad
   Copy, Download, Upload, ExternalLink, Link as LinkIcon, Lock, Unlock, HelpCircle, Star,
-  Sparkles, Clock,
+  Sparkles, Clock, ImagePlus,
 } from 'lucide-angular';
 
 export const APP_ICONS = {
@@ -31,7 +31,7 @@ export const APP_ICONS = {
   Folder, FolderOpen, FolderPlus, Inbox, Mail, Phone, Eye, EyeOff,
   // utilidad
   Copy, Download, Upload, ExternalLink, Link: LinkIcon, Lock, Unlock, HelpCircle, Star,
-  Sparkles, Clock,
+  Sparkles, Clock, ImagePlus,
 };
 
 /** Para usar en app.config.ts:  importProvidersFrom(LucideAngularModule.pick(APP_ICONS)) */
