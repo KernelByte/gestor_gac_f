@@ -7,8 +7,7 @@
 } from '@angular/core';
 import { CommonModule, NgStyle } from '@angular/common';
 import { Subscription, catchError, forkJoin, map, of, switchMap } from 'rxjs';
-import { ReunionesService } from '../services/reuniones.service';
-import { AsistenciaService, CongregacionConfig } from '../services/asistencia.service';
+import { ProximaReunion, ReunionesService } from '../services/reuniones.service';
 import { LogisticaService } from '../services/logistica.service';
 import { DiscursosService } from '../services/discursos.service';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -83,16 +82,6 @@ interface LogisticaData {
 // ─────────────────────────────────────────────
 // Constantes
 // ─────────────────────────────────────────────
-
-const DIA_MAP: Record<string, number> = {
-  domingo: 0, sunday: 0,
-  lunes: 1, monday: 1,
-  martes: 2, tuesday: 2,
-  'miércoles': 3, miercoles: 3, wednesday: 3,
-  jueves: 4, thursday: 4,
-  viernes: 5, friday: 5,
-  'sábado': 6, sabado: 6, saturday: 6,
-};
 
 const DAYS_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MONTHS_ES = [
@@ -1584,7 +1573,6 @@ const SECCION_LABELS: Record<string, string> = {
 })
 export class ReunionesResumenComponent {
   private reunionesService = inject(ReunionesService);
-  private asistenciaService = inject(AsistenciaService);
   private logisticaService = inject(LogisticaService);
   private discursosService = inject(DiscursosService);
   private authStore = inject(AuthStore);
@@ -1979,11 +1967,11 @@ export class ReunionesResumenComponent {
     }
 
     this.carga?.unsubscribe();
-    this.carga = this.asistenciaService
-      .getCongregacionConfigById(idCong)
+    this.carga = this.reunionesService
+      .getProximasReuniones(idCong, REUNIONES_ADELANTE)
       .pipe(
-        switchMap(config => {
-          const lista = this.computeUpcomingMeetings(config);
+        switchMap(proximas => {
+          const lista = this.aProximaReunion(proximas);
           if (!lista.length) {
             this.noPublicado.set(true);
             return of(CARGA_VACIA);
@@ -2110,44 +2098,26 @@ export class ReunionesResumenComponent {
    * Las próximas reuniones de la congregación, de la más cercana a la más
    * lejana, mezclando entre semana y fin de semana. La primera es la que toca.
    */
-  private computeUpcomingMeetings(config: CongregacionConfig): NextMeetingInfo[] {
-    const now = new Date();
-    const today = now.getDay();
-    const candidates: NextMeetingInfo[] = [];
-
-    const pairs: ['entre_semana' | 'fin_semana', string, string | null, string | null][] = [
-      ['entre_semana', 'Reunión Entre Semana', config.dia_reunion_entre_semana, config.hora_reunion_entre_semana],
-      ['fin_semana', 'Reunión Fin de Semana', config.dia_reunion_fin_semana, config.hora_reunion_fin_semana],
-    ];
-
-    for (const [tipo, tipoLabel, dia, hora] of pairs) {
-      if (!dia) continue;
-      const diaKey = dia.toLowerCase().trim();
-      let targetDay = DIA_MAP[diaKey] ?? parseInt(diaKey, 10);
-      if (isNaN(targetDay)) continue;
-
-      // El día de la reunión sigue siendo "hoy" hasta que termina el día: la
-      // siguiente solo aparece a partir del día siguiente.
-      const daysUntil = (targetDay - today + 7) % 7;
-
-      for (let semana = 0; semana < REUNIONES_ADELANTE; semana++) {
-        const dias = daysUntil + 7 * semana;
-        const fecha = new Date(now);
-        fecha.setDate(now.getDate() + dias);
-        fecha.setHours(0, 0, 0, 0);
-
-        candidates.push({
-          tipo, tipoLabel, fecha,
-          hora: hora ?? '',
-          dateLabel: this.computeDateLabel(dias),
-          dateFormatted: this.formatDateSpanish(fecha),
-        });
-      }
-    }
-
-    // El orden es estable: si ambas caen el mismo día, queda primero la de entre semana.
-    candidates.sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
-    return candidates.slice(0, REUNIONES_ADELANTE);
+  /**
+   * Las próximas reuniones las calcula el servidor con el horario que rige en
+   * cada fecha (rotación anual de salones compartidos): la semana del cambio
+   * ya sale con el día nuevo. Aquí solo se les pone la etiqueta.
+   */
+  private aProximaReunion(proximas: ProximaReunion[]): NextMeetingInfo[] {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    return proximas.map(p => {
+      const fecha = new Date(p.fecha + 'T00:00:00');
+      const dias = Math.round((fecha.getTime() - hoy.getTime()) / 86_400_000);
+      return {
+        tipo: p.tipo,
+        tipoLabel: p.tipo === 'entre_semana' ? 'Reunión Entre Semana' : 'Reunión Fin de Semana',
+        fecha,
+        hora: p.hora ?? '',
+        dateLabel: this.computeDateLabel(dias),
+        dateFormatted: this.formatDateSpanish(fecha),
+      };
+    });
   }
 
   private computeDateLabel(d: number): string {

@@ -1,6 +1,7 @@
 import { Component, Directive, ElementRef, Input, OnChanges, OnDestroy, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { AvisoCambioHorarioComponent } from '../configuracion/aviso-cambio-horario.component';
 import { AuthStore } from '../../core/auth/auth.store';
 import { CongregacionContextService } from '../../core/congregacion-context/congregacion-context.service';
 import { RouterModule } from '@angular/router';
@@ -57,7 +58,7 @@ export class CountUpDirective implements OnChanges, OnDestroy {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterModule, NgxEchartsDirective, CountUpDirective],
+  imports: [CommonModule, RouterModule, NgxEchartsDirective, CountUpDirective, AvisoCambioHorarioComponent],
   animations: [
     trigger('staggerIn', [
       transition(':enter', [
@@ -103,6 +104,11 @@ export class CountUpDirective implements OnChanges, OnDestroy {
         </div>
       </div>
     </header>
+
+    <!-- 1.5 En diciembre y enero: ¿cambia el horario de reuniones con el año? -->
+    @if (puedeEditarConfiguracion()) {
+      <app-aviso-cambio-horario />
+    }
 
     <!-- Bloque «el mes y qué hacer»: métricas, visita y accesos van juntos (gap corto);
          el aire grande queda entre bloques (encabezado · este bloque · tendencias). -->
@@ -692,6 +698,8 @@ export class HomePage implements OnInit {
   /** Asistencia: el backend la abre a roles privilegiados o a reuniones.ver / reuniones.asistencia. */
   puedeVerAsistencia = signal(false);
   canViewReuniones = signal(false);
+  /** Quien puede editar la configuración ve el aviso de cambio de horario de fin de año. */
+  puedeEditarConfiguracion = signal(false);
   canManageVisitaSC = signal(false);
 
   /* /animate: "Loading states: show skeleton... don't just jump from 0 to
@@ -729,6 +737,9 @@ export class HomePage implements OnInit {
        this.store.hasPermission('reuniones.ver') || this.store.hasPermission('reuniones.asistencia')
      );
      this.canViewReuniones.set(this.store.hasPermission('reuniones.ver'));
+     this.puedeEditarConfiguracion.set(
+       algunRol(['Coordinador', 'Secretario']) || this.store.hasPermission('configuracion.editar')
+     );
      this.canManageVisitaSC.set(algunRol(['Administrador', 'Secretario']));
 
      const congregacionId = this.congregacionContext.effectiveCongregacionId();

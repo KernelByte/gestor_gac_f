@@ -30,7 +30,6 @@ import {
 import { catchError, switchMap, tap } from 'rxjs/operators';
 import { ReunionesService, PublicadorBusqueda } from '../services/reuniones.service';
 import { ConflictosService } from '../services/conflictos.service';
-import { AsistenciaService } from '../services/asistencia.service';
 import { DiscursosService } from '../services/discursos.service';
 import { CongregacionContextService } from '../../../core/congregacion-context/congregacion-context.service';
 import { AuthStore } from '../../../core/auth/auth.store';
@@ -1432,7 +1431,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             <button
               data-testid="btn-generar-programa"
               (click)="onModalSubmit()"
-              [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0 || diaReunionSinConfigurar() || modalForm().dia_reunion === null || (tipoReunionActivo() === 'entre_semana' && plantillaSeleccionada?.mes_inicio == null)"
+              [disabled]="loadingPlantillas() || plantillas().length === 0 || modalForm().id_plantilla === 0 || diaReunionSinConfigurar() || cargandoFechas() || fechasPreview().length === 0 || (tipoReunionActivo() === 'entre_semana' && plantillaSeleccionada?.mes_inicio == null)"
               class="px-4 h-9 rounded-xl bg-[#6D28D9] hover:bg-[#5b21b6] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-white transition-all active:scale-95">
               Generar Programa
             </button>
@@ -2247,7 +2246,6 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 export class ReunionesProgramacionComponent implements OnInit {
 
   private reunionesSvc = inject(ReunionesService);
-  private asistenciaSvc = inject(AsistenciaService);
   private discursosSvc = inject(DiscursosService);
   private conflictosSvc = inject(ConflictosService);
   congregacionCtx = inject(CongregacionContextService);
@@ -2596,15 +2594,53 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   // ── Modal ──────────────────────────────────────────────────────
   showModal = signal(false);
-  diaReunionSinConfigurar = signal(false);
   modalForm = signal<GenerarMesForm>({
     mes:      new Date().getMonth() + 1,
     ano:      new Date().getFullYear(),
     mes_fin:  new Date().getMonth() + 1,
     ano_fin:  new Date().getFullYear(),
     id_plantilla: 0,
-    dia_reunion:  null,
   });
+  /**
+   * Fechas que se van a crear. Las calcula el servidor (horario con vigencia).
+   * Van atadas a la combinación tipo·guía·mes con la que se pidieron: si el
+   * formulario cambia, valen [] y el botón queda desactivado hasta que llegan
+   * las nuevas. Sin esto, cambiar de guía y pulsar Generar al instante creaba
+   * el mes con las fechas de la guía anterior.
+   */
+  private fechasCargadas = signal<{ clave: string; fechas: string[]; sinDia: boolean } | null>(null);
+  private claveFechas = computed(() => {
+    const f = this.modalForm();
+    return `${this.tipoReunionActivo()}|${f.id_plantilla}|${f.ano}-${f.mes}|${f.ano_fin}-${f.mes_fin}`;
+  });
+  private fechasActuales = computed(() => {
+    const c = this.fechasCargadas();
+    return c && c.clave === this.claveFechas() ? c : null;
+  });
+  fechasPreview = computed(() => this.fechasActuales()?.fechas ?? []);
+  cargandoFechas = computed(() => this.fechasActuales() === null);
+  diaReunionSinConfigurar = computed(() => this.fechasActuales()?.sinDia ?? false);
+
+  /** Con el modal abierto, cada cambio de guía o mes vuelve a pedir las fechas. */
+  private readonly fechasAlCambiar = effect(() => {
+    const clave = this.claveFechas();
+    const form = this.modalForm();
+    if (!this.showModal() || !form.id_plantilla) return;
+    untracked(() => this.cargarFechasAGenerar(form, clave));
+  });
+
+  private cargarFechasAGenerar(form: GenerarMesForm, clave: string): void {
+    const idCong = this.congregacionCtx.effectiveCongregacionId();
+    if (!idCong) return;
+    this.reunionesSvc.getFechasAGenerar({
+      id_congregacion: idCong, tipo_reunion: this.tipoReunionActivo(), id_plantilla: form.id_plantilla,
+      ano: form.ano, mes: form.mes, ano_fin: form.ano_fin, mes_fin: form.mes_fin,
+    }).subscribe({
+      next: (r) => this.fechasCargadas.set({ clave, fechas: r.fechas, sinDia: r.sin_dia }),
+      error: () => this.fechasCargadas.set({ clave, fechas: [], sinDia: false }),
+    });
+  }
+
 
   // ── UI ─────────────────────────────────────────────────────────
   /** Posición en pantalla del panel de candidatos, calculada desde la
@@ -2965,12 +3001,6 @@ export class ReunionesProgramacionComponent implements OnInit {
 
   canPublicar = computed(() => this.estado() === 'borrador' && this.semanas().length > 0);
   canBorrarBorrador = computed(() => this.estado() === 'borrador' && this.semanas().length > 0);
-  fechasPreview = computed(() => {
-    const { mes, ano, mes_fin, ano_fin, dia_reunion, id_plantilla } = this.modalForm();
-    if (dia_reunion === null) return [];
-    const plantilla = this.plantillas().find(p => p.id_plantilla === id_plantilla);
-    return this.fechasAGenerar(plantilla, mes, ano, mes_fin, ano_fin, dia_reunion);
-  });
 
   seccionesActuales = computed(() => {
     const semana = this.currentSemana();
@@ -3369,26 +3399,9 @@ export class ReunionesProgramacionComponent implements OnInit {
     }
     this.showModal.set(true);
     this.loadingPlantillas.set(true);
-    // Sin acceso a la configuración (403: quien programa no siempre tiene
-    // 'configuracion.ver') no se sabe el día, pero tampoco está "sin
-    // configurar": ese aviso solo se muestra si la configuración se leyó.
-    let configSinAcceso = false;
-    const sinAcceso = () => { configSinAcceso = true; return of(null); };
-    const configReq = this.congregacionCtx.isAdmin()
-      ? this.asistenciaSvc.getCongregacionConfigById(idCong).pipe(catchError(sinAcceso))
-      : this.asistenciaSvc.getCongregacionConfig().pipe(catchError(sinAcceso));
-
-    forkJoin({
-      plantillas: this.reunionesSvc.getPlantillas(this.tipoReunionActivo(), idCong),
-      config: configReq,
-    }).subscribe({
-      next: ({ plantillas, config }) => {
-        const configKey = this.tipoReunionActivo() === 'entre_semana' ? 'dia_reunion_entre_semana' : 'dia_reunion_fin_semana';
-        const diaRaw = config?.[configKey as keyof typeof config] as string | null ?? null;
-        const diaReunion = this.diaReunionToNumber(diaRaw);
-        this.diaReunionSinConfigurar.set(diaReunion === null && !configSinAcceso);
+    this.reunionesSvc.getPlantillas(this.tipoReunionActivo(), idCong).subscribe({
+      next: (plantillas) => {
         this.plantillas.set(plantillas);
-        this.modalForm.update((f) => ({ ...f, dia_reunion: diaReunion }));
         if (plantillas.length > 0) {
           // Sin selección previa, se abre en la guía más reciente: es la
           // misma que ahora aparece arriba en el desplegable.
@@ -3416,7 +3429,7 @@ export class ReunionesProgramacionComponent implements OnInit {
       }
     }
     // El selector del modal solo pide un mes y un año: mes_fin/ano_fin
-    // se mantienen espejados para reutilizar calcFechasRango sin cambiar su firma.
+    // se mantienen espejados (el servidor recibe el rango completo).
     if (field === 'mes') {
       this.modalForm.update((f) => ({ ...f, mes: value, mes_fin: value }));
       return;
@@ -3452,31 +3465,14 @@ export class ReunionesProgramacionComponent implements OnInit {
     }));
   }
 
-  private diaReunionToNumber(dia: string | null): number | null {
-    if (!dia) return null;
-    const norm = dia.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const map: Record<string, number> = {
-      lunes: 1,
-      martes: 2,
-      miercoles: 3,
-      jueves: 4,
-      viernes: 5,
-      sabado: 6,
-      domingo: 7,
-    };
-    return map[norm] ?? null;
-  }
-
   onModalSubmit(): void {
     const form = this.modalForm();
     const idCong = this.congregacionCtx.effectiveCongregacionId();
     if (!idCong || form.id_plantilla === 0) return;
     // Sin día de reunión configurado no se genera: evita hornear fechas con un día falso
-    if (this.diaReunionSinConfigurar() || form.dia_reunion === null) return;
+    if (this.diaReunionSinConfigurar() || this.cargandoFechas()) return;
 
-    const fechas = this.fechasAGenerar(
-      this.plantillaSeleccionada, form.mes, form.ano, form.mes_fin, form.ano_fin, form.dia_reunion,
-    );
+    const fechas = this.fechasPreview();
     if (fechas.length === 0) return;
 
     const createPayload: ProgramaMensualCreateRequest = {
@@ -5051,79 +5047,6 @@ export class ReunionesProgramacionComponent implements OnInit {
    * Las plantillas comodín no tienen semanas propias: para ellas sigue
    * valiendo el rango de meses que elija el usuario.
    */
-  private fechasAGenerar(
-    plantilla: PlantillaOption | undefined,
-    mes: number, ano: number,
-    mesFin: number, anoFin: number,
-    diaSemana: number
-  ): string[] {
-    // La guía de fin de semana (mes_inicio null) es UNA sola para todos los
-    // meses, y `semanas_lunes` solo trae los lunes de las semanas que YA
-    // tienen tema de La Atalaya importado — no las que faltan. Usarla para
-    // decidir las fechas a generar dejaba sin nada un mes sin tema cargado
-    // todavía (ej. mayo, si el PDF de mayo aún no se subió): "0 semanas a
-    // crear" y el botón sin producir nada.
-    //
-    // El tema no hace falta para generar: es un dato que se cuelga después,
-    // al leer el programa (ver SECCION_TEMA_ATALAYA/_aplicar_temas_atalaya en
-    // el backend). Lo único que de verdad decide qué fechas crear es el
-    // calendario — todos los sábados o domingos del mes elegido, según el día
-    // que tenga configurado la congregación — igual que la plantilla comodín.
-    // Si luego se importa el PDF de ese mes, el tema aparece solo la próxima
-    // vez que se abra el programa, sin tener que regenerarlo.
-    const esGuiaGlobal = plantilla?.mes_inicio == null;
-    if (esGuiaGlobal) {
-      return this.calcFechasRango(ano, mes, anoFin, mesFin, diaSemana);
-    }
-
-    const lunes = plantilla?.semanas_lunes ?? [];
-    if (lunes.length === 0) {
-      return this.calcFechasRango(ano, mes, anoFin, mesFin, diaSemana);
-    }
-    // La guía de entre semana SÍ tiene mes_inicio/mes_fin propios (dos meses
-    // fijos por guía) y su última semana puede caer, para la fecha de
-    // reunión, en el mes siguiente al que el título anuncia — es la guía
-    // entera y se genera completa, sin recortar esa semana por el calendario
-    // (ver guia-semanas-iso-vs-mes).
-    return lunes.map((l) => {
-      const d = new Date(l + 'T00:00:00');
-      d.setDate(d.getDate() + (diaSemana - 1));
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${dd}`;
-    });
-  }
-
-  private calcFechasRango(
-    anoInicio: number, mesInicio: number,
-    anoFin: number,   mesFin: number,
-    diaSemana: number
-  ): string[] {
-    const fechas: string[] = [];
-    const primerDia = new Date(anoInicio, mesInicio - 1, 1);
-    const isoDay = primerDia.getDay() === 0 ? 7 : primerDia.getDay();
-    let offset = diaSemana - isoDay;
-    if (offset < 0) offset += 7;
-    let current = new Date(anoInicio, mesInicio - 1, 1 + offset);
-    // límite: primer día del mes siguiente al mes de fin
-    const limite = new Date(anoFin, mesFin, 1);
-    while (true) {
-      // Límite estricto por mes calendario de la fecha de reunión.
-      if (current >= limite) break;
-      const y = current.getFullYear();
-      const m = String(current.getMonth() + 1).padStart(2, '0');
-      const d = String(current.getDate()).padStart(2, '0');
-      fechas.push(`${y}-${m}-${d}`);
-      current = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 7);
-    }
-    return fechas;
-  }
-
-  private calcFechas(ano: number, mes: number, diaSemana: number): string[] {
-    return this.calcFechasRango(ano, mes, ano, mes, diaSemana);
-  }
-
   /**
    * (año ISO, semana ISO) de una fecha — la clave con la que el backend guarda
    * los borradores en Redis (ssr.iso_key en Python).

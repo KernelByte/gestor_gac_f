@@ -48,6 +48,20 @@ export interface PublicadorBusqueda {
   ausencia_motivo?: string | null;
 }
 
+/** Fechas que crearía «Generar programación», calculadas en el servidor. */
+/** Una de las próximas reuniones, con el día y la hora que rigen en su fecha. */
+export interface ProximaReunion {
+  tipo: 'entre_semana' | 'fin_semana';
+  fecha: string;
+  hora: string | null;
+}
+
+export interface FechasAGenerar {
+  fechas: string[];
+  /** La congregación no tiene día configurado para ese tipo de reunión. */
+  sin_dia: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReunionesService {
   private http = inject(HttpClient);
@@ -123,6 +137,26 @@ export class ReunionesService {
   eliminarSemanaSinReunion(idSemana: number, idCong: number): Observable<{ ok: boolean }> {
     const params = new HttpParams().set('id_congregacion', idCong);
     return this.http.delete<{ ok: boolean }>(`${this.base}/configuracion/semanas-sin-reunion/${idSemana}`, { params });
+  }
+
+  /**
+   * Fechas que crea «Generar programación». Las calcula el servidor con el
+   * horario que rige en cada semana (rotación anual de salones compartidos):
+   * la regla vive en un solo sitio (horario_vigente.py).
+   */
+  /** Próximas reuniones según el horario con vigencia (lo calcula el servidor). */
+  getProximasReuniones(idCong: number, cantidad: number): Observable<ProximaReunion[]> {
+    const params = new HttpParams().set('id_congregacion', idCong).set('cantidad', cantidad);
+    return this.http.get<ProximaReunion[]>(`${this.base}/proximas-reuniones`, { params });
+  }
+
+  getFechasAGenerar(q: {
+    id_congregacion: number; tipo_reunion: string; id_plantilla: number;
+    ano: number; mes: number; ano_fin: number; mes_fin: number;
+  }): Observable<FechasAGenerar> {
+    let params = new HttpParams();
+    for (const [k, v] of Object.entries(q)) params = params.set(k, v);
+    return this.http.get<FechasAGenerar>(`${this.base}/programas/fechas-a-generar`, { params });
   }
 
   // ──────────────────────────────────────────────────

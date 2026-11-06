@@ -4,10 +4,13 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from '../../core/auth/auth.store';
 import { UbicacionSalonMapComponent, UbicacionSalon } from './ubicacion-salon-map.component';
+import { CambioHorarioComponent } from './cambio-horario.component';
+import { camposHorarioCambiados } from './horarios-reunion.service';
 import { ImportPublicadoresModalComponent } from '../../shared/components/import-publicadores/import-publicadores-modal.component';
 import { FormatoNombreService } from '../../core/utils/formato-nombre.service';
 import {
@@ -69,7 +72,7 @@ const CLS = {
 @Component({
    selector: 'app-configuracion',
    standalone: true,
-   imports: [CommonModule, FormsModule, ImportPublicadoresModalComponent, UbicacionSalonMapComponent],
+   imports: [CommonModule, FormsModule, ImportPublicadoresModalComponent, UbicacionSalonMapComponent, CambioHorarioComponent],
    templateUrl: './configuracion.page.html',
    styles: [`
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; }
@@ -146,6 +149,9 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
 
    private http = inject(HttpClient);
    private auth = inject(AuthStore);
+
+   /** Viene del aviso de Inicio ("¿Cambia su horario en enero?"): abrir el formulario. */
+   readonly abrirCambioHorario = inject(ActivatedRoute).snapshot.queryParamMap.has('cambio-horario');
    private API_URL = `${environment.apiUrl}/configuracion/`;
    private PERIODOS_URL = `${environment.apiUrl}/periodos/?limit=24`;
 
@@ -381,10 +387,7 @@ export class ConfiguracionPage implements OnInit, AfterViewInit, OnDestroy {
          usa_zoom:                   this.config.usa_zoom ? 1 : 0,
          id_periodo_informes_activo: this.config.id_periodo_informes_activo,
          periodo_informes_automatico: this.config.periodo_informes_automatico,
-         dia_reunion_entre_semana:   this.config.dia_reunion_entre_semana  || null,
-         hora_reunion_entre_semana:  this.config.hora_reunion_entre_semana || null,
-         dia_reunion_fin_semana:     this.config.dia_reunion_fin_semana    || null,
-         hora_reunion_fin_semana:    this.config.hora_reunion_fin_semana   || null,
+         ...camposHorarioCambiados(this.config, this.originalConfig),
          correo_congregacion:        this.config.correo_congregacion       || null,
          numero_congregacion:        this.config.numero_congregacion       || null,
          enlace_zoom:                this.config.enlace_zoom?.trim()       || null,

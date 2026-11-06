@@ -13,6 +13,8 @@ import { SystemConfigComponent } from './components/system-config.component';
 import { ApiConfigComponent } from './components/api-config.component';
 import { SeguridadComponent } from './components/seguridad.component';
 import { FestivosComponent } from './components/festivos.component';
+import { CambioHorarioComponent } from '../cambio-horario.component';
+import { camposHorarioCambiados } from '../horarios-reunion.service';
 import { ImportPublicadoresModalComponent } from '../../../shared/components/import-publicadores/import-publicadores-modal.component';
 
 /**
@@ -100,7 +102,7 @@ interface SolicitudAcceso {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ApiConfigComponent, SeguridadComponent, FestivosComponent, ImportPublicadoresModalComponent],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ApiConfigComponent, SeguridadComponent, FestivosComponent, ImportPublicadoresModalComponent, CambioHorarioComponent],
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -354,6 +356,18 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
       }
    }
 
+   /** Un cambio de horario que empieza hoy cambia el día/hora del formulario: se recarga. */
+   recargarTrasCambioHorario() {
+      const id = this.editingCongregation()?.id_congregacion;
+      if (!id) return;
+      this.http.get<CongregacionAdmin[]>(`${this.API_URL}/congregaciones`).subscribe({
+         next: (data) => {
+            this.congregaciones.set(data);
+            this.editCongregation(id);
+         },
+      });
+   }
+
    // ===== Import Modal Methods =====
    openImportModal() {
       this.selectedImportCongregacionId.set(null);
@@ -522,10 +536,7 @@ export class AdminConfigPage implements OnInit, AfterViewInit {
          codigo_seguridad: data.codigo_seguridad,
          tiene_sala_b: data.tiene_sala_b ? 1 : 0,
          usa_zoom: data.usa_zoom ? 1 : 0,
-         dia_reunion_entre_semana: data.dia_reunion_entre_semana || null,
-         hora_reunion_entre_semana: data.hora_reunion_entre_semana || null,
-         dia_reunion_fin_semana: data.dia_reunion_fin_semana || null,
-         hora_reunion_fin_semana: data.hora_reunion_fin_semana || null
+         ...camposHorarioCambiados(data, this.editingCongregation()),
       };
 
       let req;

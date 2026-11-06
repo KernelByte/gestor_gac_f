@@ -1,4 +1,5 @@
-﻿import {
+﻿import { RevisionHorariosContactoComponent } from './revision-horarios-contacto.component';
+import {
   Component, signal, computed, inject, OnInit, effect, untracked, HostListener, type Signal,
   afterNextRender, Injector,
 } from '@angular/core';
@@ -71,7 +72,7 @@ type ItemEntrante =
 @Component({
   selector: 'app-reuniones-discursos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePickerComponent, TimePickerComponent, MonthPickerComponent, SelectPickerComponent, UbicacionPickerComponent, DiscursoCatalogoInputComponent, CanticoCatalogoInputComponent, CongregacionContactoInputComponent, OradorCatalogoInputComponent, HistorialDiscursosComponent, Hora12Pipe],
+  imports: [CommonModule, FormsModule, DatePickerComponent, TimePickerComponent, MonthPickerComponent, SelectPickerComponent, UbicacionPickerComponent, DiscursoCatalogoInputComponent, CanticoCatalogoInputComponent, CongregacionContactoInputComponent, OradorCatalogoInputComponent, HistorialDiscursosComponent, Hora12Pipe, RevisionHorariosContactoComponent],
   template: `
     <div class="flex flex-col md:h-full gap-0">
 
@@ -403,6 +404,10 @@ type ItemEntrante =
                   </button>
                 }
               </div>
+
+              <!-- Diciembre/enero: confirmar el horario de las congregaciones que visitan (rotación de enero). -->
+              <app-revision-horarios-contacto class="block shrink-0 px-3 sm:px-4 pt-3 empty:hidden"
+                [idCong]="idCong" [puedeEditar]="hasEditPermission()" (editar)="abrirEdicionContacto($event)" />
 
               <!-- Teléfono + llamar + WhatsApp: idéntico para discursantes y
                    contactos, así que vive una sola vez. La llamada es enlace
@@ -3455,7 +3460,7 @@ export class ReunionesDiscursosComponent implements OnInit {
   /** true cuando la ubicación del modal viene del autorelleno por congregación. */
   readonly ubicacionAutorellenada = signal(false);
 
-  private get idCong(): number | null {
+  protected get idCong(): number | null {
     return this.congCtx.effectiveCongregacionId();
   }
 
@@ -4983,6 +4988,12 @@ export class ReunionesDiscursosComponent implements OnInit {
       : null;
     this.ubicacionContactoCache.set(c.id_congregacion_contacto, u);
     return u;
+  }
+
+  /** Desde el aviso de revisión de horarios: abrir la edición de esa congregación. */
+  abrirEdicionContacto(id: number): void {
+    const c = this.congregacionesContacto().find(x => x.id_congregacion_contacto === id);
+    if (c) this.abrirModalCongregacionContacto(c);
   }
 
   abrirModalCongregacionContacto(c?: CongregacionContacto): void {

@@ -45,6 +45,23 @@ import {
   HistorialOcurrenciaEntrante,
 } from '../models/discursos.models';
 
+/** Congregación de contacto cuyo horario falta confirmar en la rotación de enero. */
+export interface ContactoPorRevisar {
+  id_congregacion_contacto: number;
+  nombre: string;
+  ciudad: string | null;
+  dia_reunion_fin_semana: string | null;
+  hora_reunion_fin_semana: string | null;
+  /** Salidas de oradores ya programadas hacia ella. */
+  salidas_proximas: number;
+}
+
+export interface RevisionHorariosContacto {
+  ano: number;
+  atrasado: boolean;
+  pendientes: ContactoPorRevisar[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class DiscursosService {
   private http = inject(HttpClient);
@@ -231,6 +248,16 @@ export class DiscursosService {
   }
 
   // ── Directorio de congregaciones de contacto ──────────────────────────────
+
+  /** En diciembre/enero: congregaciones cuyo horario falta confirmar (null si ninguna). */
+  getRevisionHorariosContacto(idCong: number | null): Observable<RevisionHorariosContacto | null> {
+    return this.http.get<RevisionHorariosContacto | null>(`${this.base}/congregaciones-contacto/revision-horarios`, { params: this.congParams(idCong) });
+  }
+
+  /** «Su horario sigue igual»: las indicadas, o todas las pendientes sin `ids`. */
+  horarioContactoSigueIgual(idCong: number | null, ids?: number[]): Observable<RevisionHorariosContacto | null> {
+    return this.http.post<RevisionHorariosContacto | null>(`${this.base}/congregaciones-contacto/horario-sigue-igual`, { ids: ids ?? null }, { params: this.congParams(idCong) });
+  }
 
   getCongregacionesContacto(idCong: number | null): Observable<CongregacionContacto[]> {
     return this.http.get<CongregacionContacto[]>(`${this.base}/congregaciones-contacto`, { params: this.congParams(idCong) });

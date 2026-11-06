@@ -688,6 +688,12 @@
 
             </form>
 
+            <!-- Cambio de horario desde una fecha (rotación anual en salones compartidos) -->
+            <div *ngIf="editingCongregation()" class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700">
+               <app-cambio-horario [idCongregacion]="editingCongregation()!.id_congregacion" [canEdit]="true"
+                  (horarioActualCambio)="recargarTrasCambioHorario()" />
+            </div>
+
             <!-- URLs Configurables Section (Only visible when editing an existing congregation) -->
             <div *ngIf="editingCongregation()" class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700">
                <div class="flex items-center justify-between mb-4">

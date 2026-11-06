@@ -159,6 +159,12 @@
                      </div>
                   </div>
 
+                  <!-- Cambio de horario desde una fecha (rotación anual en salones compartidos) -->
+                  <div class="px-5 sm:px-8 py-6">
+                     <p [class]="cls.ayuda" class="mb-4">Cambiar el día o la hora arriba vale desde hoy.</p>
+                     <app-cambio-horario [canEdit]="canEdit()" [abrirAlCargar]="abrirCambioHorario" (horarioActualCambio)="loadConfig()" />
+                  </div>
+
                   <!-- Sala B -->
                   <label class="px-5 sm:px-8 py-5 flex items-center justify-between gap-5 select-none"
                          [ngClass]="canEdit() ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors duration-150' : ''">
