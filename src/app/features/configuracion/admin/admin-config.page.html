@@ -436,6 +436,11 @@
          <app-festivos class="flex-1 min-h-0"></app-festivos>
       </div>
 
+      <!-- TAB: Catálogo del sistema de diseño (mismo contenido que /design-system) -->
+      <div *ngIf="activeTab() === 'diseno'" class="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 animate-fadeIn">
+         <app-design-system></app-design-system>
+      </div>
+
    </div>
 
    <!-- MODAL CONFIRMAR ELIMINAR CONGREGACIÓN -->

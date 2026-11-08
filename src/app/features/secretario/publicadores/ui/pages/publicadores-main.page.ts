@@ -73,7 +73,7 @@ export type PublicadoresTab = 'listado' | 'grupos' | 'contactos' | 'acceso';
     :host { display: block; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .animate-fadeIn { animation: fadeIn 0.2s ease forwards; }
+    .animate-fadeIn { animation: fadeIn 0.2s ease backwards; }
     @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }

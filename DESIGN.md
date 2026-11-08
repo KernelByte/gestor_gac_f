@@ -200,6 +200,7 @@ Un solo diseño: **canal hundido** (pista con borde y sombra interior) y la pest
 - **Sin `title`/tooltip** en las pestañas: ya muestran su texto.
 - **El ancho de la barra no cambia al cambiar de pestaña.** Si la barra se pinta en varios sitios (por ejemplo, en una columna lateral en una pestaña y en la cabecera en otra), los contenedores deben tener el mismo ancho.
 - Con muchas pestañas en móvil, la pista desplaza en horizontal; no encojas el texto.
+- **Pestañas en la misma fila que una barra de herramientas** (Reuniones: pestañas + bandeja del mes): la pista no cede nunca (`shrink-0 max-w-full`). Pon `barraAdaptable` (`shared/directives/barra-adaptable.directive.ts`) en la fila y `data-bandeja` en la barra. Cuando falta ancho, primero se ocultan los `.barra-cede-1` (datos de apoyo que también estén en un `title`), luego los `.barra-cede-2` (rótulos de botones con icono y `aria-label`). Si ni así cabe, la barra baja a su propia línea bajo las pestañas. La acción principal y el estado no llevan esas clases: siempre muestran su texto.
 - Prohibido: pestañas subrayadas, pills sueltas `bg-brand-purple shadow-md`, colores por pestaña.
 
 ---
@@ -260,6 +261,7 @@ Un solo diseño: **canal hundido** (pista con borde y sombra interior) y la pest
 </app-modal>
 ```
 
+- Velo: por defecto suave (2 px, el fondo se sigue leyendo). `velo="enfocado"` lo oscurece y desenfoca fuerte; úsalo en fichas de consulta abiertas sobre listas densas (vista rápida del publicador), no en formularios.
 - `app-modal` ya trae velo, foco atrapado, Esc (cierra solo el de arriba), foco devuelto y z-index por token. `[controlled]="true"` si el padre debe poder rechazar el cierre («cambios sin guardar»); `[closeOnBackdrop]="false"` en formularios largos.
 - `app-confirm-dialog` asíncrono: en `(confirmed)` pon `busy` a `true` **en el mismo tick**, y limpia el estado con `(openChange)="$event || estado.set(null)"`.
 - Prohibido: `fixed inset-0` a mano, z-index sueltos (usa `--z-*`), `confirm()`/`alert()` nativos, sistemas de toast propios. Y no abuses del modal: si cabe en la pantalla, no lo pongas en un modal.

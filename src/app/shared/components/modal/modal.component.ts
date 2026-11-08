@@ -40,12 +40,14 @@ const abiertos: ModalComponent[] = [];
       role="dialog"
       aria-modal="true"
       [attr.aria-labelledby]="title ? tituloId : null"
+      [attr.data-testid]="testId"
     >
       <!-- Velo: único para toda la app. El desenfoque es leve (2 px): aísla el
            primer plano sin volver ilegible lo de atrás. -->
       <div
-        class="absolute inset-0 backdrop-blur-[2px] animate-fadeIn"
-        style="background: var(--velo)"
+        class="absolute inset-0 animate-fadeIn"
+        [ngClass]="velo === 'enfocado' ? 'backdrop-blur-md backdrop-saturate-50' : 'backdrop-blur-[2px]'"
+        [style.background]="velo === 'enfocado' ? 'var(--velo-enfocado)' : 'var(--velo)'"
         (click)="dismissible && closeOnBackdrop && close()"
       ></div>
 
@@ -148,7 +150,15 @@ export class ModalComponent implements AfterViewChecked, OnDestroy {
    */
   @Input() controlled: boolean = false;
   @Input() hasFooter: boolean = false;
+  /** `data-testid` del diálogo entero (cuerpo y pie). En el host no sirve: el panel es fixed y el host no tiene caja. */
+  @Input() testId: string | null = null;
   @Input() padding: boolean = true;
+  /**
+   * `suave` (por defecto): el fondo se sigue leyendo. `enfocado`: fondo
+   * desenfocado y más oscuro, para fichas de consulta donde lo de atrás
+   * (p. ej. una tabla llena de datos parecidos) distrae o confunde.
+   */
+  @Input() velo: 'suave' | 'enfocado' = 'suave';
 
   @Output() openChange = new EventEmitter<boolean>();
   @Output() closed = new EventEmitter<void>();

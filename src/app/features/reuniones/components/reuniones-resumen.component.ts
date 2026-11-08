@@ -326,7 +326,10 @@ const SECCION_LABELS: Record<string, string> = {
         </div>
       </div>
 
-      <div *ngIf="misAsignaciones().length > 0" class="banner-mis-partes">
+      <div *ngIf="misAsignaciones().length > 0" class="banner-mis-partes banner-clicable"
+           role="button" tabindex="0"
+           title="Ir a mi parte en el programa"
+           (click)="irAMiParte()" (keydown.enter)="irAMiParte()" (keydown.space)="irAMiParte(); $event.preventDefault()">
         <div class="banner-icon-wrap" aria-hidden="true">
           <svg class="banner-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -343,6 +346,7 @@ const SECCION_LABELS: Record<string, string> = {
               {{ a.label }}
             </li>
           </ul>
+          <span class="banner-ir">Toca para ir a tu parte ↓</span>
         </div>
       </div>
 
@@ -515,7 +519,8 @@ const SECCION_LABELS: Record<string, string> = {
             <ul class="logistica-grid">
               <li *ngFor="let row of grupo.items"
                   class="logistica-item"
-                  [class.logistica-item-mia]="row.esMia">
+                  [class.logistica-item-mia]="row.esMia"
+                  [attr.data-mi-parte]="row.esMia ? 'true' : null">
                 <span class="logistica-item-label">{{ row.label }}</span>
                 <span class="logistica-item-value" [class.sin-asignar]="!row.valor">
                   <span [class.asignado-mio]="row.esMia">{{ row.valor || 'Sin asignar' }}</span>
@@ -1092,6 +1097,49 @@ const SECCION_LABELS: Record<string, string> = {
     }
     :host-context(.dark) .banner-title { color: #c4b5fd; }
     @media (min-width: 640px) { .banner-title { font-size: 1.0625rem; } }
+    .banner-clicable { cursor: pointer; }
+    .banner-clicable:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
+    .banner-ir { display: inline-block; margin-top: 6px; font-size: 0.75rem; font-weight: 600; color: #6d28d9; }
+    :host-context(.dark) .banner-ir { color: #c4b5fd; }
+    .parte-card, .logistica-item-mia { scroll-margin-top: 96px; }
+    /* Llegada a «mi parte»: un aro del color del módulo se dibuja y se
+       desvanece, y un destello recorre la fila una sola vez. Solo opacity y
+       transform; empieza cuando el desplazamiento ya casi ha llegado. */
+    .parte-card, .logistica-item-mia { position: relative; }
+    .parte-card.llegada, .logistica-item-mia.llegada { overflow: clip; }
+    .parte-card.llegada::before, .logistica-item-mia.llegada::before,
+    .parte-card.llegada::after, .logistica-item-mia.llegada::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+    }
+    .parte-card.llegada::after, .logistica-item-mia.llegada::after {
+      box-shadow: inset 0 0 0 1.5px rgba(124, 58, 237, 0.5), inset 0 0 28px rgba(124, 58, 237, 0.10);
+      animation: llegada-aro 1500ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+    .parte-card.llegada::before, .logistica-item-mia.llegada::before {
+      background: linear-gradient(100deg, transparent 0%, rgba(167, 139, 250, 0.22) 50%, transparent 100%);
+      width: 55%; transform: translateX(-110%);
+      animation: llegada-destello 900ms cubic-bezier(0.77, 0, 0.175, 1) 80ms both;
+    }
+    .parte-card.llegada .badge-tu { animation: llegada-tu 420ms cubic-bezier(0.23, 1, 0.32, 1) 120ms both; }
+    @keyframes llegada-aro {
+      0%   { opacity: 0; transform: scale(0.985); }
+      22%  { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1); }
+    }
+    @keyframes llegada-destello {
+      from { transform: translateX(-110%); }
+      to   { transform: translateX(200%); }
+    }
+    @keyframes llegada-tu {
+      0%   { opacity: 0.4; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .parte-card.llegada::before, .logistica-item-mia.llegada::before { display: none; }
+      .parte-card.llegada::after, .logistica-item-mia.llegada::after { animation-name: llegada-fundido; }
+      .parte-card.llegada .badge-tu { animation: none; }
+      @keyframes llegada-fundido { 0%, 100% { opacity: 0; } 30% { opacity: 1; } }
+    }
     .banner-partes-list {
       display: flex; flex-wrap: wrap; gap: 5px;
       list-style: none; margin: 0; padding: 0;
@@ -1617,6 +1665,7 @@ export class ReunionesResumenComponent {
   logisticaNoPublicada = signal(false);
   discursoInvitado = signal<DiscursoEntranteOut | null>(null);
   private scrollDone = false;
+  private miParteIdx = 0;
 
   // ─── Computed ───
   // El conductor del Estudio de La Atalaya se escondía aquí porque el tema
@@ -1808,18 +1857,39 @@ export class ReunionesResumenComponent {
     });
 
     effect(() => {
-      const partes = this.misPartes();
+      const hay = this.misAsignaciones().length > 0;
       const isLoading = this.loading();
-      if (partes.length > 0 && !isLoading && !this.scrollDone) {
-        setTimeout(() => {
-          const el = document.querySelector('[data-mi-parte="true"]');
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            this.scrollDone = true;
-          }
-        }, 700);
+      if (hay && !isLoading && !this.scrollDone) {
+        // El DOM tarda en pintarse tras la carga: se reintenta hasta que aparezca.
+        this.irAMiParte(true);
       }
     });
+  }
+
+  /** Lleva la vista a la parte (o puesto) del usuario y la resalta un momento. */
+  irAMiParte(automatico = false, intento = 0): void {
+    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-mi-parte="true"]'));
+    if (!els.length) {
+      if (automatico && intento < 20) setTimeout(() => this.irAMiParte(true, intento + 1), 150);
+      return;
+    }
+    // Pulsaciones seguidas recorren sus partes una tras otra.
+    let el = els[0];
+    if (!automatico) {
+      this.miParteIdx = (this.miParteIdx + 1) % els.length;
+      el = els[this.miParteIdx];
+    } else {
+      this.scrollDone = true;
+      this.miParteIdx = 0;
+    }
+    const reducir = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: reducir ? 'auto' : 'smooth', block: 'center' });
+    // El resalte arranca cuando el desplazamiento está por llegar.
+    el.classList.remove('llegada');
+    setTimeout(() => {
+      el.classList.add('llegada');
+      setTimeout(() => el.classList.remove('llegada'), 1700);
+    }, reducir ? 0 : 350);
   }
 
   // ─── Template helpers ────────────────────

@@ -12,6 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { SelectPickerComponent } from '../../../shared/components/select-picker/select-picker.component';
 import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../../shared/components';
+import { BarraAdaptableDirective } from '../../../shared/directives/barra-adaptable.directive';
 import { LogisticaService } from '../services/logistica.service';
 import { LogisticaImpresionEstudioComponent } from './logistica-impresion-estudio.component';
 import { ConflictosService } from '../services/conflictos.service';
@@ -96,7 +97,7 @@ function normalizarTexto(s: string): string {
   selector: 'app-reuniones-logistica',
   host: { class: 'tema-reuniones' },
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SelectPickerComponent, LogisticaImpresionEstudioComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SelectPickerComponent, LogisticaImpresionEstudioComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent, BarraAdaptableDirective],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -111,7 +112,11 @@ function normalizarTexto(s: string): string {
            cede espacio es el título, que se recorta. Partir la fila dejaba las
            acciones solas en una segunda banda igual de vacía que la que se
            acaba de aprovechar. -->
-      <div class="shrink-0 flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-2 pb-3 min-w-0">
+      <!-- barraAdaptable: cuando no cabe todo, cede la bandeja por niveles
+           (primero la cobertura, luego el rótulo de Volver) y nunca la píldora de pestañas, que antes se recortaba. Si
+           ni así cabe, la bandeja baja entera a su propia línea. Publicar,
+           Descartar y el estado conservan siempre el texto. -->
+      <div barraAdaptable class="shrink-0 flex flex-wrap items-center gap-x-3 gap-y-2 pb-3 min-w-0">
 
         <ng-content select="[cabecera]"></ng-content>
 
@@ -131,7 +136,7 @@ function normalizarTexto(s: string): string {
                El color se reserva para lo que importa: violeta cuando algo
                está abierto, ámbar sólo si hay carga desigual, rojo sólo al
                pasar sobre "Borrar". El resto vive en gris hasta que se toca. -->
-          <div class="flex flex-wrap items-center gap-0.5 min-w-0 w-full md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+          <div data-bandeja class="flex flex-wrap items-center gap-0.5 min-w-0 w-full md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
 
             <!-- Selector de mes: el propio título es el control.
                  Antes la lista de meses ocupaba una columna fija de unos
@@ -230,7 +235,8 @@ function normalizarTexto(s: string): string {
                    punto de cada fila en la lista de meses. -->
               <span
                 class="shrink-0 flex items-center gap-1 pl-1.5 pr-2 py-0.5 rounded-full text-xs font-bold"
-                [class]="estadoBadgeClass()">
+                [class]="estadoBadgeClass()"
+                [attr.title]="coberturaLabel() || null">
                 @switch (estadoMes()) {
                   @case ('publicado') {
                     <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -247,39 +253,15 @@ function normalizarTexto(s: string): string {
                 }
                 {{ estadoLabel() }}
               </span>
-              <!-- Cobertura — el dato que dice si el mes está listo -->
+              <!-- Cobertura — el dato que dice si el mes está listo. Es lo
+                   primero que cede cuando falta ancho: sigue en el title del
+                   estado y, sin cubrir, en el contador rojo de Publicar. -->
               @if (coberturaLabel()) {
-                <span class="hidden md:inline shrink-0 text-xs text-slate-500 dark:text-slate-500 data-num">
+                <span class="barra-cede-1 hidden md:inline shrink-0 text-xs text-slate-500 dark:text-slate-500 data-num">
                   {{ coberturaLabel() }}
                 </span>
               }
             </div>
-
-          <!-- Balance de carga: se abre en un panel propio, al lado de la
-               tabla en pantallas anchas y como hoja en las estrechas. Antes
-               era un desplegable encima de la tabla y abrirlo le robaba
-               media pantalla de alto, que es justo donde se trabaja. El
-               boton ya adelanta lo unico accionable -cuantos van cargados
-               de mas- para que abrirlo sea opcional. -->
-          @if (puedeVerBalance() && balanceCarga().length > 0) {
-            <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
-            <button
-              type="button"
-              data-testid="log-btn-balance"
-              (click)="alternarPanelBalance()"
-              [attr.aria-expanded]="panelBalanceAbierto()"
-              [title]="balanceResumen()"
-              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold transition-colors"
-              [class]="panelBalanceAbierto()
-                ? 'bg-violet-50 dark:bg-violet-900/30 text-brand-purple dark:text-violet-300'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'">
-              <svg class="w-3.5 h-3.5 shrink-0 text-amber-500/80 dark:text-amber-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12.5" y="8" width="3" height="10" rx="1"/><rect x="18" y="14" width="3" height="4" rx="1"/></svg>
-              Carga
-              @if (balanceConteos().alta > 0) {
-                <span class="px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs font-bold data-num">{{ balanceConteos().alta }}</span>
-              }
-            </button>
-          }
 
           <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
 
@@ -287,8 +269,11 @@ function normalizarTexto(s: string): string {
                con rótulo -icono + texto, h-8, rounded-xl- que usan Volver y
                Borrar en Entre semana/Fin de semana: es el mismo par de
                acciones sobre el mismo estado (mes con cambios sin publicar),
-               así que se ven igual en las tres pantallas. El resto de
-               acciones del mes siguen en icono. -->
+               así que se ven igual en las tres pantallas. Todo lo demás
+               -Carga, Imprimir, Compartir, Vista, Eliminar- vive en el "…",
+               igual que en Entre semana: antes eran botones sueltos que
+               alargaban la bandeja hasta recortar las pestañas o empujarla a
+               otra fila. -->
           <div class="flex items-center gap-0.5 min-w-0 overflow-x-auto simple-scrollbar md:overflow-visible">
             <!-- Acción primaria: publicar. Una sola cada vez. -->
             @if (puedePublicar()) {
@@ -329,28 +314,10 @@ function normalizarTexto(s: string): string {
               </button>
             }
 
-            <!-- Imprimir: a la vista, no dentro del menú. Es lo que más se
-                 hace con un mes ya publicado y abre el estudio de impresión
-                 (vista previa real + estilo guardado por congregación). -->
-            <button
-              type="button"
-              data-testid="log-btn-imprimir"
-              (click)="abrirEstudioImpresion()"
-              [disabled]="!puedeImprimir()"
-              [title]="motivoNoImprimir() || 'Imprimir o guardar como PDF'"
-              [attr.aria-label]="motivoNoImprimir() ? 'Imprimir. ' + motivoNoImprimir() : 'Imprimir'"
-              class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-brand-purple dark:hover:text-violet-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-600 transition-colors active:scale-[0.97]">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
-              Imprimir
-            </button>
-
-            <!-- PDF, Compartir y Eliminar viven detrás de un menú: las tres
-                 son sobre el mes ya cerrado -exportarlo, difundirlo o
-                 borrarlo-, no sobre editarlo, así que se agrupan aparte de
-                 Publicar/Descartar en vez de competir por la misma fila.
-                 Sin condición de visibilidad: el PDF (ítem del menú) ya
-                 estaba siempre presente antes, sólo que a veces deshabilitado
-                 mientras el mes no tenía publicación. -->
+            <!-- Sin condición de visibilidad: Imprimir siempre está, aunque a
+                 veces deshabilitado mientras el mes no tiene publicación. Si
+                 hay personas con carga de más, el "…" lo adelanta con un
+                 contador ámbar para que el aviso no quede escondido. -->
               <div class="relative shrink-0" data-acciones-menu>
                 <button
                   type="button"
@@ -359,16 +326,21 @@ function normalizarTexto(s: string): string {
                   [attr.aria-expanded]="menuAccionesAbierto()"
                   aria-haspopup="menu"
                   title="Más acciones sobre este mes"
-                  aria-label="Más acciones sobre este mes"
-                  class="flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 rounded-xl transition-all active:scale-95"
+                  [attr.aria-label]="cargaAltaVisible()
+                    ? 'Más acciones sobre este mes. ' + balanceConteos().alta + ' con carga alta'
+                    : 'Más acciones sobre este mes'"
+                  class="relative flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 rounded-xl transition-all active:scale-95"
                   [class]="menuAccionesAbierto()
                     ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
                     : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                  @if (cargaAltaVisible()) {
+                    <span class="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 flex items-center justify-center rounded-full bg-amber-400 text-amber-950 text-xs font-bold data-num ring-2 ring-white dark:ring-slate-900" aria-hidden="true">{{ balanceConteos().alta }}</span>
+                  }
                 </button>
 
                 @if (menuAccionesAbierto()) {
-                  <div role="menu" class="absolute z-40 top-[calc(100%+4px)] right-0 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden p-1.5 flex flex-col gap-0.5">
+                  <div role="menu" class="absolute z-40 top-[calc(100%+4px)] right-0 w-72 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden p-1.5 flex flex-col gap-0.5">
                     <!-- Vista: cuánto se mira del mes. Vivía como su propio
                          desplegable en la barra; ahora entra aquí para
                          dejarle sitio a Publicar/Descartar cuando la barra
@@ -391,13 +363,37 @@ function normalizarTexto(s: string): string {
                     </div>
                     <span class="h-px bg-slate-100 dark:bg-slate-800 mx-1 my-0.5" aria-hidden="true"></span>
 
+                    <!-- Carga de trabajo: abre el panel de balance (al lado de la
+                         tabla en pantallas anchas, como hoja en las estrechas).
+                         Adelanta cuántos van cargados de más para que abrirlo
+                         sea opcional. -->
+                    @if (puedeVerBalance() && balanceCarga().length > 0) {
+                      <button
+                        type="button"
+                        role="menuitem"
+                        data-testid="log-btn-balance"
+                        (click)="menuAccionesAbierto.set(false); alternarPanelBalance()"
+                        class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-brand-purple dark:hover:text-violet-400 transition-colors">
+                        <svg class="w-4 h-4 shrink-0 mt-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12.5" y="8" width="3" height="10" rx="1"/><rect x="18" y="14" width="3" height="4" rx="1"/></svg>
+                        <span class="min-w-0 flex-1">
+                          <span class="flex items-center gap-1.5 text-xs font-bold leading-tight">
+                            {{ panelBalanceAbierto() ? 'Ocultar la carga de trabajo' : 'Ver la carga de trabajo' }}
+                            @if (balanceConteos().alta > 0) {
+                              <span class="px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs font-bold data-num">{{ balanceConteos().alta }}</span>
+                            }
+                          </span>
+                          <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">{{ balanceResumen() }}</span>
+                        </span>
+                      </button>
+                    }
+
                     <!-- Imprimir o guardar como PDF — abre el estudio.
                          Necesita el mes publicado: la hoja se reparte a la
                          congregación y debe ser la versión que ella ve. -->
                     <button
                       type="button"
                       role="menuitem"
-                      data-testid="log-menu-imprimir"
+                      data-testid="log-btn-imprimir"
                       (click)="menuAccionesAbierto.set(false); abrirEstudioImpresion()"
                       [disabled]="!puedeImprimir()"
                       class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-brand-purple dark:hover:text-violet-400 transition-colors disabled:opacity-40">
@@ -463,7 +459,7 @@ function normalizarTexto(s: string): string {
             aria-label="Volver al listado de programaciones"
             class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
             <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-            Volver
+            <span class="barra-cede-2">Volver</span>
           </button>
         </div>
         }
@@ -1195,8 +1191,8 @@ function normalizarTexto(s: string): string {
 
     <!-- ===== MODAL GENERAR MES ===== -->
     @if (modalGenerarAbierto()) {
-      <app-modal [open]="true" size="sm" title="Generar programación" [hasFooter]="true" (closed)="cerrarModal()">
-        <div data-testid="log-modal-generar" class="flex flex-col gap-5">
+      <app-modal [open]="true" size="sm" title="Generar programación" [hasFooter]="true" testId="log-modal-generar" (closed)="cerrarModal()">
+        <div class="flex flex-col gap-5">
           <!-- Cómo se arma la programación de esta congregación. Vive detrás de
                un botón y no en este modal porque no es una decisión de este mes:
                se configura una vez y vale para todos los meses siguientes. -->
@@ -1226,7 +1222,7 @@ function normalizarTexto(s: string): string {
                   <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="mesModalDropdownAbierto()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 @if (mesModalDropdownAbierto()) {
-                  <div class="mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-1.5">
+                  <div class="relative z-[60] mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-1.5">
                     @for (m of mesesOpcionesDesc; track m.value) {
                       <button type="button" data-testid="log-opcion-mes" [attr.data-mes]="m.value"
                         (click)="modalMes = m.value; mesModalDropdownAbierto.set(false)"
@@ -2648,6 +2644,11 @@ export class ReunionesLogisticaComponent implements OnInit {
   }
 
   puedeVerBalance = computed(() => this.authStore.hasPermission('reuniones.carga_trabajo'));
+
+  /** Contador ámbar sobre el "…": Carga vive dentro del menú y el aviso de
+   *  personas con carga de más no puede quedar escondido. */
+  cargaAltaVisible = computed(() =>
+    this.puedeVerBalance() && this.balanceCarga().length > 0 && this.balanceConteos().alta > 0);
 
   /** Enlace al reporte multi-mes: sólo si además puede abrir esa pantalla. */
   puedeVerReporteCarga = computed(() => this.authStore.hasPermission('reportes.logistica'));

@@ -16,7 +16,7 @@ import {
   Folder, FolderOpen, FolderPlus, Inbox, Mail, Phone, MessageCircle, Eye, EyeOff,
   // utilidad
   Copy, Download, Upload, ExternalLink, Link as LinkIcon, Lock, Unlock, HelpCircle, Star,
-  Sparkles, Clock, ImagePlus,
+  Sparkles, Clock, ImagePlus, Smartphone,
   // reuniones de ancianos
   Send, Lightbulb, ArrowUp, ArrowDown, Save, BookOpen, BellOff,
 } from 'lucide-angular';
@@ -33,7 +33,7 @@ export const APP_ICONS = {
   Folder, FolderOpen, FolderPlus, Inbox, Mail, Phone, MessageCircle, Eye, EyeOff,
   // utilidad
   Copy, Download, Upload, ExternalLink, Link: LinkIcon, Lock, Unlock, HelpCircle, Star,
-  Sparkles, Clock, ImagePlus,
+  Sparkles, Clock, ImagePlus, Smartphone,
   // reuniones de ancianos
   Send, Lightbulb, ArrowUp, ArrowDown, Save, BookOpen, BellOff,
 };

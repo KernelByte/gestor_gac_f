@@ -15,6 +15,7 @@ import { TimePickerComponent } from '../../../shared/components/time-picker/time
 import { MonthPickerComponent } from '../../../shared/components/month-picker/month-picker.component';
 import { SelectPickerComponent, PickerOption } from '../../../shared/components/select-picker/select-picker.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { BarraAdaptableDirective } from '../../../shared/directives/barra-adaptable.directive';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { whatsappUrl } from '../../../shared/whatsapp';
 import { UbicacionPickerComponent } from './ubicacion-picker.component';
@@ -74,7 +75,7 @@ type ItemEntrante =
 @Component({
   selector: 'app-reuniones-discursos',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePickerComponent, TimePickerComponent, MonthPickerComponent, SelectPickerComponent, UbicacionPickerComponent, DiscursoCatalogoInputComponent, CanticoCatalogoInputComponent, CongregacionContactoInputComponent, OradorCatalogoInputComponent, HistorialDiscursosComponent, Hora12Pipe, RevisionHorariosContactoComponent, ModalComponent, ConfirmDialogComponent],
+  imports: [CommonModule, FormsModule, DatePickerComponent, TimePickerComponent, MonthPickerComponent, SelectPickerComponent, UbicacionPickerComponent, DiscursoCatalogoInputComponent, CanticoCatalogoInputComponent, CongregacionContactoInputComponent, OradorCatalogoInputComponent, HistorialDiscursosComponent, Hora12Pipe, RevisionHorariosContactoComponent, ModalComponent, ConfirmDialogComponent, BarraAdaptableDirective],
   template: `
     <div class="tema-reuniones flex flex-col md:h-full gap-0">
 
@@ -84,7 +85,7 @@ type ItemEntrante =
            todo el ancho vacío y repetía lo que la píldora encendida ya dice.
            Los controles sólo aparecen con un mes abierto; sin él, la lista
            vive centrada en la tarjeta del panel. -->
-      <div class="shrink-0 flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-2 pb-3 min-w-0">
+      <div barraAdaptable class="shrink-0 flex flex-wrap items-center gap-x-3 gap-y-2 pb-3 min-w-0">
 
         <ng-content select="[cabecera]"></ng-content>
 
@@ -97,7 +98,7 @@ type ItemEntrante =
              Programación" bajaron a la barra de pestañas del panel, junto a
              las otras tres pantallas. -->
         @if (mesDatos() && estado() !== 'loading') {
-          <div class="order-last md:order-none w-full md:w-auto md:ml-auto flex items-center min-w-0 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+          <div data-bandeja class="order-last md:order-none w-full md:w-auto md:ml-auto flex items-center min-w-0 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
             <div class="relative flex-1 md:flex-none min-w-0" data-mes-menu>
               <button
                 type="button"
@@ -1953,8 +1954,8 @@ type ItemEntrante =
 
     <!-- ===== MODAL GENERAR MES ===== -->
     @if (modalGenerarVisible()) {
-      <app-modal [open]="true" size="sm" title="Generar Mes — Discursos Públicos" [hasFooter]="true" (closed)="cerrarModalGenerar()">
-        <div data-testid="disc-modal-generar" class="flex flex-col gap-5">
+      <app-modal [open]="true" size="sm" title="Generar Mes — Discursos Públicos" [hasFooter]="true" testId="disc-modal-generar" (closed)="cerrarModalGenerar()">
+        <div class="flex flex-col gap-5">
 
           <!-- Período: mes (desplegable propio, coherente con el resto del aplicativo) + año (numérico) -->
           <div class="flex gap-3">
@@ -2001,8 +2002,8 @@ type ItemEntrante =
 
     <!-- ===== MODAL RECORDATORIO A LOS ORADORES SALIENTES ===== -->
     @if (modalRecordatorioVisible()) {
-      <app-modal [open]="true" size="sm" title="Recordatorio a los oradores" [hasFooter]="true" (closed)="modalRecordatorioVisible.set(false)">
-        <div data-testid="disc-modal-recordatorio" class="flex flex-col gap-5">
+      <app-modal [open]="true" size="sm" title="Recordatorio a los oradores" [hasFooter]="true" testId="disc-modal-recordatorio" (closed)="modalRecordatorioVisible.set(false)">
+        <div class="flex flex-col gap-5">
           <p class="text-xs text-slate-500 dark:text-slate-400">
             La app móvil le avisa al orador antes de su discurso. Sólo le llega a quien entra
             a la app (con correo o con PIN) y tiene las notificaciones activadas en su teléfono.

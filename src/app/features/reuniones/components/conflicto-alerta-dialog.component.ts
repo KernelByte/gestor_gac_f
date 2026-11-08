@@ -31,8 +31,8 @@ const TIPO_COLOR: Record<string, string> = {
   imports: [CommonModule, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal [open]="true" size="md" [padding]="false" [hasFooter]="true" [closeOnBackdrop]="true" (closed)="onAction(false)">
-      <div data-testid="dialogo-conflicto">
+    <app-modal [open]="true" size="md" [padding]="false" [hasFooter]="true" [closeOnBackdrop]="true" testId="dialogo-conflicto" (closed)="onAction(false)">
+      <div>
 
         <!-- Cabecera -->
         <div class="conflicto-header">

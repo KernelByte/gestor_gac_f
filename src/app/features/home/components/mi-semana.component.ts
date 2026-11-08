@@ -31,10 +31,19 @@ interface FilaSemana { clave: string; fecha: string; t1: string; t2: string; mia
             <p class="rotulo">{{ hayMias() ? 'Lo que te toca' : 'Lo que viene' }}</p>
             <ul class="filas">
               @for (f of visibles(); track f.clave; let i = $index) {
-                <li class="fila" [style.--i]="i">
+                <li [style.--i]="i" [style.display]="'contents'">
+                 @if (f.mia) {
+                  <a class="fila" routerLink="/reuniones/resumen" [style.--i]="i">
                   <span class="fecha" [class.mia]="f.mia"><b>{{ diaNum(f.fecha) }}</b><span>{{ mes(f.fecha) }}</span></span>
                   <span class="txt"><span class="t1">{{ f.t1 }}</span><span class="t2">{{ f.t2 }}</span></span>
-                  @if (f.mia) { <span class="chip chip-info">Tú</span> }
+                  <span class="chip chip-info">Tú</span>
+                  </a>
+                 } @else {
+                  <div class="fila" [style.--i]="i">
+                  <span class="fecha" [class.mia]="f.mia"><b>{{ diaNum(f.fecha) }}</b><span>{{ mes(f.fecha) }}</span></span>
+                  <span class="txt"><span class="t1">{{ f.t1 }}</span><span class="t2">{{ f.t2 }}</span></span>
+                  </div>
+                 }
                 </li>
               }
             </ul>

@@ -1,4 +1,4 @@
-﻿import { Component, signal, computed, inject, OnInit, effect, untracked, HostListener } from '@angular/core';
+﻿import { Component, signal, computed, inject, OnInit, effect, untracked, HostListener, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -16,7 +16,7 @@ import { SelectPickerComponent, PickerOption } from '../../../shared/components/
 import { CatalogoDiscursosComponent } from './catalogo-discursos.component';
 import { CatalogoCanticosComponent } from './catalogo-canticos.component';
 import { ReportePrivilegiosDialogComponent } from './reporte-privilegios-dialog.component';
-import { inicialesDe, nombreLegal, nombreMostrado } from '../../../core/utils/nombre.util';
+import { nombreLegal, nombreMostrado } from '../../../core/utils/nombre.util';
 import {
   MWBImportPreviewResponse,
   MWBImportConfirmRequest,
@@ -37,12 +37,35 @@ import {
   AlcanceSemana,
 } from '../models/reuniones.models';
 
+/** Columna de la matriz con el texto del tooltip ya resuelto. */
+interface ColumnaVista {
+  key: string;
+  label: string;
+  tooltip: string;
+  restriccion: boolean;
+}
+
+/** Una fila de la matriz lista para pintar (ver `filasMatriz`). */
+interface FilaMatriz {
+  pub: PublicadorMatrizItem;
+  id: number;
+  nombre: string;
+  privs: { nombre: string; label: string; clase: string }[];
+  /** En el orden de `columnasVista`. */
+  celdas: boolean[];
+  oratoria: number;
+  oratoriaSucia: boolean;
+  sinGuardar: boolean;
+  resumen: string;
+}
+
 @Component({
   selector: 'app-reuniones-configuracion-plantillas',
   standalone: true,
   imports: [CommonModule, FormsModule, DatePickerComponent, SelectPickerComponent, CatalogoDiscursosComponent, CatalogoCanticosComponent, ReportePrivilegiosDialogComponent, ModalComponent, ConfirmDialogComponent],
   template: `
     <div class="cfg-root tema-reuniones flex flex-col gap-5 h-full">
+    <h1 class="sr-only">Configuración de reuniones</h1>
 
        <!-- ===== TAB PILLS + FILTROS (misma línea) ===== -->
        <div class="shrink-0 flex flex-wrap items-center gap-2 sm:gap-3 w-full">
@@ -102,7 +125,7 @@ import {
            <!-- Filtros (solo para tab privilegios) — van ANTES del botón Guardar -->
            @if (activeTab() === 'privilegios') {
                <!-- Search -->
-               <div class="relative w-full sm:w-[180px]">
+               <div class="relative grow basis-[55%] max-sm:order-1 sm:grow-0 sm:basis-auto sm:w-[180px]">
                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                        <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                    </div>
@@ -110,14 +133,15 @@ import {
                      [ngModel]="searchQuery()"
                      (ngModelChange)="searchQuery.set($event); currentPage.set(1)"
                      placeholder="Buscar publicador..."
-                     class="priv-search w-full h-9 pl-9 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm">
+                     class="priv-search w-full h-9 max-sm:h-11 pl-9 pr-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm">
                </div>
                <!-- Filter Icons sexo -->
-               <div class="flex items-center gap-1">
+               <div class="flex items-center gap-1 max-sm:order-3">
                    <button
                      (click)="setFiltroSexo('solo_hombres')"
                      title="Solo Hermanos"
-                     class="h-9 px-2.5 flex items-center gap-1.5 rounded-lg transition-[background-color,border-color,color,transform] duration-150 ease-out border active:scale-[0.97]"
+                     aria-label="Ver solo hermanos" [attr.aria-pressed]="filtroSexo() === 'solo_hombres'"
+                     class="h-9 max-sm:h-11 max-sm:min-w-11 justify-center px-2.5 flex items-center gap-1.5 rounded-lg transition-[background-color,border-color,color,transform] duration-150 ease-out border active:scale-[0.97]"
                      [class]="filtroSexo() === 'solo_hombres'
                        ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-300 hover:text-blue-500'">
@@ -127,7 +151,8 @@ import {
                    <button
                      (click)="setFiltroSexo('solo_mujeres')"
                      title="Solo Hermanas"
-                     class="h-9 px-2.5 flex items-center gap-1.5 rounded-lg transition-[background-color,border-color,color,transform] duration-150 ease-out border active:scale-[0.97]"
+                     aria-label="Ver solo hermanas" [attr.aria-pressed]="filtroSexo() === 'solo_mujeres'"
+                     class="h-9 max-sm:h-11 max-sm:min-w-11 justify-center px-2.5 flex items-center gap-1.5 rounded-lg transition-[background-color,border-color,color,transform] duration-150 ease-out border active:scale-[0.97]"
                      [class]="filtroSexo() === 'solo_mujeres'
                        ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-rose-300 hover:text-rose-500'">
@@ -136,16 +161,16 @@ import {
                    </button>
                </div>
                <!-- Permission dropdown custom -->
-               <div class="relative shrink-0 permiso-dropdown-root">
+               <div class="relative shrink-0 permiso-dropdown-root max-sm:order-3">
                  <!-- Trigger -->
                  <button
                    (click)="permisoDropdownOpen.set(!permisoDropdownOpen())"
-                   class="h-9 pl-3 pr-2.5 flex items-center gap-2 rounded-lg text-xs font-bold border transition-all whitespace-nowrap"
+                   class="h-9 max-sm:h-11 pl-3 pr-2.5 flex items-center gap-2 rounded-lg text-xs font-bold border transition-all whitespace-nowrap"
                    [class]="filtroPermiso()
                      ? 'border-brand-purple bg-brand-purple/10 dark:bg-brand-purple/20 text-brand-purple dark:text-purple-300 ring-2 ring-brand-purple/20'
                      : 'bg-white dark:bg-[#1a1b26] border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'">
                    <svg class="w-3.5 h-3.5 shrink-0 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                   <span>{{ filtroPermiso() ? getColLabel(filtroPermiso()!) : 'Con permiso...' }}</span>
+                   <span>{{ filtroPermiso() ? getColLabel(filtroPermiso()!) : 'Filtrar por permiso' }}</span>
                    <svg class="w-3 h-3 shrink-0 opacity-50 transition-transform" [class.rotate-180]="permisoDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                  </button>
                  <!-- Panel -->
@@ -191,7 +216,7 @@ import {
                <!-- Clear button -->
                @if (hasMatrizActiveFilters()) {
                  <button (click)="clearMatrizFilters()"
-                         class="h-9 px-2.5 flex items-center gap-1 rounded-lg text-xs font-bold text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-all border border-transparent whitespace-nowrap">
+                         class="max-sm:order-3 h-9 max-sm:h-11 px-2.5 flex items-center gap-1 rounded-lg text-xs font-bold text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-all border border-transparent whitespace-nowrap">
                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                    Limpiar
                  </button>
@@ -202,9 +227,10 @@ import {
                <!-- Reporte imprimible de la matriz -->
                <button
                  (click)="abrirReporte()"
+                 aria-label="Reporte imprimible de permisos"
                  [disabled]="matrizLoading() || !publicadores().length"
                  title="Generar el reporte imprimible de permisos"
-                 class="h-9 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1b26] text-slate-600 dark:text-slate-300 hover:border-brand-purple hover:text-brand-purple dark:hover:text-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-[border-color,color,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap">
+                 class="max-sm:order-3 h-9 max-sm:h-11 max-sm:min-w-11 justify-center px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-brand-purple hover:text-brand-purple dark:hover:text-purple-300 disabled:opacity-40 disabled:cursor-not-allowed transition-[border-color,color,transform] duration-150 ease-out active:scale-[0.97] whitespace-nowrap">
                  <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
                  <span class="hidden sm:inline">Reporte</span>
                </button>
@@ -216,7 +242,7 @@ import {
                *ngIf="hasEditPermission()"
                (click)="guardarMatriz()"
                [disabled]="!matrizHasPending() || matrizSaving()"
-               class="btn-primary btn-sm">
+               class="btn-primary btn-sm max-sm:!h-11 max-sm:order-2">
                @if (matrizSaving()) {
                  <span class="spinner-xs"></span>
                } @else {
@@ -1218,216 +1244,161 @@ import {
              <!-- Data Table / Cards -->
              <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
 
-                 <!-- ── VISTA MÓVIL: acordeón (< md) ── -->
-                  <div class="flex md:hidden flex-col overflow-y-auto simple-scrollbar flex-1 min-h-0 gap-y-2 p-2">
-                    @for (pub of paginatedPublicadores(); track pub.id_publicador) {
-                      <div class="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-700"
-                           [class.bg-amber-50/40]="isDirty(pub.id_publicador)"
-                           [class.dark:bg-amber-900/10]="isDirty(pub.id_publicador)">
-                       <!-- Fila colapsada — siempre visible, toque para expandir -->
-                       <div class="px-3 py-3 flex items-center gap-3 cursor-pointer select-none active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors duration-100"
-                            (click)="toggleCard(pub.id_publicador)">
-                          <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm shadow-sm ring-1 ring-white border border-white/50"
-                               [ngClass]="getAvatarClass(pub)">
-                            {{ inicialesDe(pub) }}
-                          </div>
-                         <div class="flex-1 min-w-0">
-                           <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight break-words">
-                             {{ nombreMostrado(pub) }}
-                           </p>
-                           <div class="flex flex-wrap gap-1 mt-0.5">
-                             @if (pub.privilegios.length > 0) {
-                               @for (priv of pub.privilegios; track priv) {
-                                 <span class="text-xs font-bold px-1.5 py-0.5 rounded-md leading-none" [class]="privilegioBadgeClass(priv)">{{ privilegioLabel(priv) }}</span>
-                               }
-                             } @else {
-                               <span class="text-xs text-slate-400 dark:text-slate-500 font-semibold">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
+                 @if (!esEscritorio()) {
+                 <!-- ── VISTA MÓVIL: lista desplegable (< md) ──
+                      Filas planas (sin tarjeta dentro de tarjeta). La fila
+                      cerrada ya dice cuántos permisos tiene cada uno; al
+                      abrirla, cada permiso es una casilla grande de 44 px.
+                      Solo se monta una de las dos vistas (esEscritorio):
+                      tener ambas en el DOM duplicaba el trabajo de cada
+                      ciclo de detección de cambios. -->
+                 <ul class="flex flex-col overflow-y-auto simple-scrollbar flex-1 min-h-0 divide-y divide-slate-100 dark:divide-slate-800">
+                   @for (fila of filasMatriz(); track fila.id) {
+                     <li [class.priv-m-dirty]="fila.sinGuardar">
+                       <button type="button"
+                               class="priv-m-head w-full min-h-14 px-4 py-2.5 flex items-center gap-3 text-left"
+                               [attr.aria-expanded]="isExpanded(fila.id)"
+                               (click)="toggleCard(fila.id)">
+                         <span class="flex-1 min-w-0">
+                           <span class="flex items-center gap-1.5 min-w-0">
+                             <span class="text-sm font-semibold text-slate-800 dark:text-white truncate">{{ fila.nombre }}</span>
+                             @for (p of fila.privs; track p.nombre) {
+                               <span class="shrink-0 text-xs font-bold px-1.5 py-0.5 rounded-md leading-none" [class]="p.clase">{{ p.label }}</span>
                              }
-                           </div>
-                         </div>
-                         <!-- Indicador de cambios pendientes -->
-                         @if (isDirty(pub.id_publicador)) {
-                           <div class="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse"></div>
+                           </span>
+                           <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ fila.resumen }}</span>
+                         </span>
+                         @if (fila.sinGuardar) {
+                           <span class="shrink-0 text-xs font-bold text-amber-700 dark:text-amber-400">Sin guardar</span>
                          }
-                         <!-- Flecha -->
                          <svg class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ease-out"
-                              [class.rotate-180]="isExpanded(pub.id_publicador)"
-                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                              [class.rotate-180]="isExpanded(fila.id)"
+                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                            <polyline points="6 9 12 15 18 9"/>
                          </svg>
-                       </div>
+                       </button>
 
-                       <!-- Panel expandido -->
-                       @if (isExpanded(pub.id_publicador)) {
-                         <div class="px-3 pb-3 animate-fadeIn">
-                           <!-- Permisos regulares -->
-                           <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 mb-3">
-                             @for (col of regularColumnas(); track col.key) {
-                               <label class="flex items-center gap-2 cursor-pointer" [class.opacity-50]="!hasEditPermission()"
-                                      [title]="permisoTooltip(col.key)">
+                       @if (isExpanded(fila.id)) {
+                         <div class="px-4 pb-4 flex flex-col gap-3 animate-fadeIn">
+                           <div class="grid grid-cols-2 gap-2">
+                             @for (col of regularColumnas(); track col.key; let j = $index) {
+                               <label class="priv-chip" [class.is-on]="fila.celdas[j]" [class.is-locked]="!hasEditPermission()"
+                                      [title]="col.nombre_largo || col.label">
                                  <input type="checkbox"
-                                        [checked]="getPermiso(pub, col.key)"
-                                        (change)="togglePermiso(pub, col.key)"
+                                        [checked]="fila.celdas[j]"
+                                        (change)="togglePermiso(fila.pub, col.key)"
                                         [disabled]="!hasEditPermission()"
                                         class="priv-check shrink-0">
-                                 <span class="text-xs font-semibold leading-snug text-slate-600 dark:text-slate-500">
-                                   {{ col.label }}
-                                 </span>
+                                 <span class="text-xs font-semibold leading-snug">{{ col.label }}</span>
                                </label>
                              }
                            </div>
-                           <!-- Restricciones (fondo ámbar) -->
                            @if (restriccionColumnas().length > 0) {
-                             <div class="rounded-lg bg-amber-50/60 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-700/30 px-3 py-2.5 mb-3">
-                               <p class="text-xs font-bold text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-2">Restricciones</p>
-                               <div class="grid grid-cols-1 gap-y-2">
-                                 @for (col of restriccionColumnas(); track col.key) {
-                                   <label class="flex items-center gap-2 cursor-pointer" [class.opacity-50]="!hasEditPermission()"
-                                          [title]="permisoTooltip(col.key)">
-                                     <input type="checkbox"
-                                            [checked]="getPermiso(pub, col.key)"
-                                            (change)="togglePermiso(pub, col.key)"
-                                            [disabled]="!hasEditPermission()"
-                                            class="priv-check shrink-0">
-                                     <span class="text-xs font-semibold leading-snug text-amber-700 dark:text-amber-400">
-                                       {{ col.label }}
-                                     </span>
-                                   </label>
-                                 }
-                               </div>
+                             <div class="flex flex-col gap-2">
+                               <p class="text-xs font-bold text-amber-700 dark:text-amber-400">Restricciones</p>
+                               @for (col of restriccionColumnas(); track col.key; let j = $index) {
+                                 <label class="priv-chip is-restrict" [class.is-on]="fila.celdas[regularColumnas().length + j]" [class.is-locked]="!hasEditPermission()">
+                                   <input type="checkbox"
+                                          [checked]="fila.celdas[regularColumnas().length + j]"
+                                          (change)="togglePermiso(fila.pub, col.key)"
+                                          [disabled]="!hasEditPermission()"
+                                          class="priv-check shrink-0">
+                                   <span class="text-xs font-semibold leading-snug">{{ col.nombre_largo || col.label }}</span>
+                                 </label>
+                               }
                              </div>
                            }
-                           <!-- Oratoria -->
-                           <div class="flex items-center gap-3 pt-1">
-                             <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">Oratoria</span>
-                             <select [ngModel]="getOratoria(pub)"
-                                     (ngModelChange)="setOratoria(pub, $event)"
-                                     [attr.data-level]="getOratoria(pub)"
+                           <label class="flex items-center justify-between gap-3">
+                             <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Nivel de oratoria</span>
+                             <select (change)="setOratoria(fila.pub, $any($event.target).value)"
+                                     [attr.data-level]="fila.oratoria"
                                      [disabled]="!hasEditPermission()"
-                                     class="priv-select flex-1 max-w-[180px]"
-                                     [class.ring-2]="isOratoriaDirty(pub.id_publicador)"
-                                     [class.ring-amber-300]="isOratoriaDirty(pub.id_publicador)">
-                               <option [value]="1">Principiante</option>
-                               <option [value]="2">Básico</option>
-                               <option [value]="3">Intermedio</option>
-                               <option [value]="4">Avanzado</option>
-                               <option [value]="5">Experto</option>
+                                     class="priv-select priv-select-m"
+                                     [class.ring-2]="fila.oratoriaSucia"
+                                     [class.ring-amber-300]="fila.oratoriaSucia">
+                               @for (n of nivelesOratoria; track n.valor) {
+                                 <option [value]="n.valor" [selected]="n.valor === fila.oratoria">{{ n.label }}</option>
+                               }
                              </select>
-                           </div>
+                           </label>
                          </div>
                        }
-                     </div>
+                     </li>
                    }
-                 </div>
+                 </ul>
+                 } @else {
 
-                 <!-- ── VISTA ESCRITORIO: tabla (≥ md) ── -->
-                 <div class="priv-scroll hidden md:flex flex-1 min-h-0 overflow-x-auto overflow-y-auto simple-scrollbar">
-                     <table class="priv-table w-full min-w-max text-left border-collapse">
+                 <!-- ── VISTA ESCRITORIO: tabla (≥ md) ──
+                      Cabeceras en vertical a 12 px: cada columna mide 40 px
+                      sin importar lo largo del nombre, y caben todas sin
+                      encoger el texto. Toda la celda es pulsable.
+                      Cada celda lee fila.celdas[j] (precalculado en
+                      filasMatriz): sin funciones en la plantilla, que con
+                      ~800 celdas costaban ~100 ms por clic. -->
+                 <div class="priv-scroll flex flex-1 min-h-0 overflow-auto simple-scrollbar">
+                     <table class="priv-table w-full min-w-max text-left border-collapse" aria-label="Permisos de reunión por publicador">
                           <thead class="priv-thead sticky top-0 z-30">
                            <tr>
-                              <th class="priv-th-publisher is-sticky px-2 py-1.5 sticky left-0 z-40 min-w-[170px] text-left">
-                                <span class="text-xs font-bold text-white uppercase tracking-[0.14em]">Publicador</span>
+                              <th scope="col" class="priv-th-publisher sticky left-0 z-40 px-4 py-2.5 text-left align-bottom">
+                                <span class="block text-xs font-bold text-white">Publicador</span>
+                                <span class="block text-xs font-medium text-white/75 mt-0.5">Pulse un permiso para filtrar</span>
                               </th>
-                              @for (col of regularColumnas(); track col.key) {
-                                <th class="priv-th px-0.5 py-1.5 text-center min-w-[40px] border-l border-white/[0.07] cursor-pointer select-none transition-colors hover:bg-white/10"
-                                    [class.bg-amber-400]="filtroPermiso() === col.key"
-                                    [class.!text-slate-900]="filtroPermiso() === col.key"
-                                    [title]="'Filtrar por ' + col.label + (filtroPermiso() === col.key ? ' (activo — clic para quitar)' : '')"
-                                    (click)="setFiltroPermiso(filtroPermiso() === col.key ? null : col.key)">
-                                  <span class="text-xs font-bold uppercase tracking-[0.02em] leading-tight whitespace-normal block"
-                                        [class]="filtroPermiso() === col.key ? 'text-slate-900' : 'text-white'">
-                                    {{ col.label }}
-                                    @if (filtroPermiso() === col.key) {
-                                      <span class="block text-xs mt-0.5 opacity-80">✓ filtrado</span>
-                                    }
-                                  </span>
+                              @for (col of columnasVista(); track col.key) {
+                                <th scope="col" class="priv-th align-bottom p-0" [class.is-restrict]="col.restriccion">
+                                  <button type="button" class="priv-th-btn"
+                                          [class.is-filtro]="filtroPermiso() === col.key"
+                                          [attr.aria-pressed]="filtroPermiso() === col.key"
+                                          [title]="col.tooltip + (filtroPermiso() === col.key ? ' · filtrado (pulse para quitar)' : ' · pulse para ver solo a quien lo tiene')"
+                                          (click)="setFiltroPermiso(filtroPermiso() === col.key ? null : col.key)">
+                                    <span class="priv-vlabel">{{ col.label }}</span>
+                                  </button>
                                 </th>
                               }
-                              @for (col of restriccionColumnas(); track col.key) {
-                                <th class="priv-th priv-restrict-header px-0.5 py-1.5 text-center min-w-[46px] border-l border-amber-400/[0.18] cursor-pointer select-none transition-colors hover:bg-amber-400/10"
-                                    [class.bg-amber-400]="filtroPermiso() === col.key"
-                                    [title]="'Filtrar por ' + col.label + (filtroPermiso() === col.key ? ' (activo — clic para quitar)' : '')"
-                                    (click)="setFiltroPermiso(filtroPermiso() === col.key ? null : col.key)">
-                                  <div class="inline-flex items-center gap-0.5 justify-center">
-                                    <svg class="w-2 h-2 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                         [class]="filtroPermiso() === col.key ? 'text-slate-900' : 'text-amber-300'">
-                                      <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-                                    </svg>
-                                    <span class="text-xs font-bold uppercase tracking-[0.02em] leading-tight whitespace-normal"
-                                          [class]="filtroPermiso() === col.key ? 'text-slate-900' : 'text-amber-200'">
-                                      {{ col.label }}
-                                      @if (filtroPermiso() === col.key) {
-                                        <span class="block text-xs mt-0.5 opacity-80">✓ filtrado</span>
-                                      }
-                                    </span>
-                                  </div>
-                                </th>
-                              }
-                              <th class="priv-th priv-th-oratoria px-0.5 py-1.5 text-center min-w-[80px] border-l border-white/[0.07]">
-                                <span class="text-xs font-bold text-white uppercase tracking-[0.02em] leading-tight whitespace-normal block">Oratoria</span>
+                              <th scope="col" class="priv-th-oratoria min-w-[124px] px-3 py-2.5 text-left align-bottom">
+                                <span class="text-xs font-bold text-white">Oratoria</span>
                               </th>
                            </tr>
                          </thead>
                          <tbody>
-                              @for (pub of paginatedPublicadores(); track pub.id_publicador; let idx = $index) {
-                                 <tr class="priv-row group border-b border-slate-200 dark:border-slate-800/60 hover:bg-purple-50/40 dark:hover:bg-purple-900/10"
-                                    [class.is-dirty]="isDirty(pub.id_publicador)"
-                                    [ngClass]="isDirty(pub.id_publicador)
-                                      ? 'bg-amber-50/40 dark:bg-amber-900/10'
-                                      : (idx % 2 === 1 ? 'bg-slate-50/40 dark:bg-slate-800/20' : '')">
-                                     <td class="px-2.5 py-1.5 sticky left-0 bg-white dark:bg-slate-900 z-10 group-hover:bg-purple-50/40 dark:group-hover:bg-purple-900/10 transition-colors border-r border-slate-100 dark:border-slate-800/60">
-                                        <div class="flex items-center gap-1.5">
-                                             <div class="priv-avatar w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-semibold text-xs shadow-sm ring-1 ring-white border border-white/50"
-                                                  [ngClass]="getAvatarClass(pub)">
-                                               {{ inicialesDe(pub) }}
-                                             </div>
-                                            <div class="min-w-0">
-                                                <div class="priv-name text-xs font-bold text-slate-800 dark:text-white leading-tight tracking-tight break-words max-w-[150px]" [title]="nombreMostrado(pub)">
-                                          {{ nombreMostrado(pub) }}
+                              @for (fila of filasMatriz(); track fila.id; let idx = $index) {
+                                 <tr class="priv-row group border-b border-slate-100 dark:border-slate-800/60"
+                                    [class.is-dirty]="fila.sinGuardar"
+                                    [class.is-alt]="idx % 2 === 1">
+                                    <th scope="row" class="priv-td-name sticky left-0 z-10 px-4 py-1 text-left font-normal border-r border-slate-100 dark:border-slate-800/60">
+                                      <div class="flex items-center gap-1.5 min-w-0">
+                                        <span class="priv-name truncate text-sm font-semibold text-slate-800 dark:text-white" [title]="fila.nombre">{{ fila.nombre }}</span>
+                                        @for (p of fila.privs; track p.nombre) {
+                                          <span class="shrink-0 text-xs font-bold px-1.5 py-0.5 rounded-md leading-none"
+                                                [title]="p.nombre"
+                                                [class]="p.clase">{{ p.label }}</span>
+                                        }
                                       </div>
-                                      <div class="flex flex-wrap gap-0.5 mt-0.5">
-                                          @if (pub.privilegios.length > 0) {
-                                            @for (priv of pub.privilegios; track priv) {
-                                              <div class="text-xs font-bold px-1 py-0.5 inline-block rounded-md leading-none"
-                                                   [title]="priv"
-                                                   [class]="privilegioBadgeClass(priv)">
-                                                {{ privilegioLabel(priv) }}
-                                              </div>
-                                            }
-                                          } @else {
-                                            <span class="text-xs text-slate-400 dark:text-slate-500 font-semibold tracking-wide">{{ isHermano(pub) ? 'Hermano' : 'Hermana' }}</span>
-                                          }
-                                      </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                     <td *ngFor="let col of columnas()"
-                                         class="priv-cell px-0.5 py-1.5 text-center border-l"
-                                         [class]="col.key.startsWith('no_')
-                                          ? 'border-amber-200/40 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-900/10'
-                                          : 'border-slate-100/70 dark:border-slate-800/40'">
-                                          <label class="inline-flex items-center justify-center cursor-pointer p-0.5" [title]="permisoTooltip(col.key)">
-                                            <input type="checkbox"
-                                              [checked]="getPermiso(pub, col.key)"
-                                              (change)="togglePermiso(pub, col.key)"
-                                              [disabled]="!hasEditPermission()"
-                                              class="priv-check">
-                                          </label>
-                                    </td>
-                                     <td class="px-1 py-1.5 text-center border-l border-slate-100/70 dark:border-slate-800/40">
+                                    </th>
+                                    @for (col of columnasVista(); track col.key; let j = $index) {
+                                      @let desc = col.tooltip + ' · ' + fila.nombre;
+                                      <td class="priv-cell p-0 border-l" [class.is-restrict]="col.restriccion">
+                                        <label class="priv-hit" [title]="desc">
+                                          <input type="checkbox"
+                                            [checked]="fila.celdas[j]"
+                                            (change)="togglePermiso(fila.pub, col.key)"
+                                            [disabled]="!hasEditPermission()"
+                                            [attr.aria-label]="desc"
+                                            class="priv-check">
+                                        </label>
+                                      </td>
+                                    }
+                                    <td class="px-2 py-1 border-l border-slate-100 dark:border-slate-800/40">
                                       <select
-                                        [ngModel]="getOratoria(pub)"
-                                        (ngModelChange)="setOratoria(pub, $event)"
-                                        [attr.data-level]="getOratoria(pub)"
+                                        (change)="setOratoria(fila.pub, $any($event.target).value)"
+                                        [attr.data-level]="fila.oratoria"
                                         [disabled]="!hasEditPermission()"
-                                        class="priv-select w-20"
-                                        [class.ring-2]="isOratoriaDirty(pub.id_publicador)"
-                                        [class.ring-amber-300]="isOratoriaDirty(pub.id_publicador)">
-                                        <option [value]="1">Principiante</option>
-                                        <option [value]="2">Básico</option>
-                                        <option [value]="3">Intermedio</option>
-                                        <option [value]="4">Avanzado</option>
-                                        <option [value]="5">Experto</option>
+                                        [attr.aria-label]="'Nivel de oratoria: ' + fila.nombre"
+                                        class="priv-select priv-select-d"
+                                        [class.ring-2]="fila.oratoriaSucia"
+                                        [class.ring-amber-300]="fila.oratoriaSucia">
+                                        @for (n of nivelesOratoria; track n.valor) {
+                                          <option [value]="n.valor" [selected]="n.valor === fila.oratoria">{{ n.label }}</option>
+                                        }
                                       </select>
                                     </td>
                                </tr>
@@ -1435,39 +1406,42 @@ import {
                          </tbody>
                      </table>
                   </div>
+                  }
 
                   <!-- Pagination -->
                   <div class="priv-pagination shrink-0 px-4 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-                    <span class="text-xs text-slate-400 dark:text-slate-500 font-medium tabular-nums">
+                    <span class="text-xs text-slate-600 dark:text-slate-400 font-medium tabular-nums" aria-live="polite">
                       {{ (currentPage() - 1) * pageSize() + 1 }}–{{ Math.min(currentPage() * pageSize(), filteredPublicadores().length) }}
-                      <span class="text-slate-300 dark:text-slate-600">de</span>
+                      <span class="text-slate-500 dark:text-slate-500">de</span>
                       {{ filteredPublicadores().length }}
                     </span>
-                    <div class="flex items-center gap-0.5">
-                        <button (click)="prevPage()"
+                    <nav class="flex items-center gap-0.5" aria-label="Páginas de publicadores">
+                        <button (click)="prevPage()" aria-label="Página anterior"
                                 [disabled]="currentPage() === 1"
-                                class="priv-page-btn w-7 h-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-25 disabled:cursor-not-allowed text-slate-400 dark:text-slate-500 flex items-center justify-center">
+                                class="priv-page-btn w-11 h-11 md:w-10 md:h-10 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-600 dark:text-slate-400 flex items-center justify-center">
                           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
                         </button>
                         @for (item of getPagesArray(); track $index) {
                           @if (item === null) {
-                            <span class="w-7 h-7 flex items-center justify-center text-xs text-slate-300 dark:text-slate-600 select-none">···</span>
+                            <span class="w-7 h-7 flex items-center justify-center text-xs text-slate-500 select-none" aria-hidden="true">···</span>
                           } @else {
                             <button (click)="setPage(item)"
-                                    class="priv-page-btn w-7 h-7 rounded-lg text-xs font-bold"
+                                    class="priv-page-btn w-11 h-11 md:w-10 md:h-10 rounded-lg text-xs font-bold"
+                                    [attr.aria-current]="currentPage() === item ? 'page' : null"
+                                    [attr.aria-label]="'Página ' + item"
                                     [class]="currentPage() === item
                                       ? 'bg-brand-purple text-white shadow-sm'
-                                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200'">
+                                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200'">
                               {{ item }}
                             </button>
                           }
                         }
-                        <button (click)="nextPage()"
+                        <button (click)="nextPage()" aria-label="Página siguiente"
                                 [disabled]="currentPage() === totalPages()"
-                                class="priv-page-btn w-7 h-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-25 disabled:cursor-not-allowed text-slate-400 dark:text-slate-500 flex items-center justify-center">
-                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg>
+                                class="priv-page-btn w-11 h-11 md:w-10 md:h-10 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-600 dark:text-slate-400 flex items-center justify-center">
+                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg>
                         </button>
-                    </div>
+                    </nav>
                   </div>
               </div>
             }
@@ -1658,66 +1632,131 @@ import {
        }
      }
 
-     /* Header */
+     /* Cabecera */
      .priv-thead {
-       background: var(--color-brand-purple) !important;
+       background: var(--color-brand-purple);
        box-shadow: 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px -4px rgba(109,40,217,0.3);
+       --hl: 255 255 255 / 0.16;
      }
-     .priv-thead th { background: transparent !important; }
-
-     /* Sticky publisher column */
+     .priv-thead th { background: transparent; }
      .priv-thead .priv-th-publisher {
-       background: var(--color-brand-purple) !important;
-       z-index: 40 !important;
+       background: var(--color-brand-purple);
+       width: 100%;               /* se queda con el ancho sobrante */
+       min-width: 240px;
        box-shadow: inset -1px 0 0 rgba(255,255,255,0.12);
      }
+     .priv-thead .priv-th { width: 40px; height: 1px; border-left: 1px solid rgba(255,255,255,0.08); }
+     .priv-thead .priv-th.is-restrict { background: rgba(146, 64, 14, 0.55); }
 
-     /* Regular column headers — hover */
-     .priv-thead .priv-th {
-       transition: background-color 150ms cubic-bezier(0.23, 1, 0.32, 1);
-       border-bottom: 1px solid rgba(255,255,255,0.12);
+     /* Botón de la cabecera: ocupa toda la celda (height:1px en el th + 100%
+        aquí) y el texto va en vertical, leído de abajo arriba. */
+     .priv-th-btn {
+       width: 40px; height: 100%;
+       display: flex; align-items: flex-end; justify-content: center;
+       padding: 10px 0 8px;
+       color: #fff;
+       cursor: pointer;
+       transition: background-color 150ms var(--ease-out-strong);
      }
+     .priv-th.is-restrict .priv-th-btn { color: #fde68a; }
+     .priv-th-btn.is-filtro { background: #fbbf24; color: #0f172a; }
+     .priv-th-btn:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
      @media (hover: hover) and (pointer: fine) {
-       .priv-thead .priv-th:hover {
-         background: rgba(255,255,255,0.08) !important;
+       .priv-th-btn:not(.is-filtro):hover { background: rgba(255,255,255,0.12); }
+     }
+     .priv-vlabel {
+       writing-mode: vertical-rl;
+       transform: rotate(180deg);
+       max-height: 92px;          /* los nombres largos pasan a 2 líneas */
+       font-size: 12px;
+       font-weight: 600;
+       line-height: 1.15;
+       text-align: left;
+     }
+
+     /* Filas */
+     .priv-table tbody { --hl: 109 40 217 / 0.07; }
+     :host-context(.dark) .priv-table tbody { --hl: 167 139 250 / 0.10; }
+     .priv-row { transition: background-color 160ms var(--ease-out-strong); }
+     .priv-row.is-alt { background: rgba(248,250,252,0.6); }
+     :host-context(.dark) .priv-row.is-alt { background: rgba(30,41,59,0.25); }
+     .priv-row.is-dirty { background: rgba(255,251,235,0.8); }
+     :host-context(.dark) .priv-row.is-dirty { background: rgba(120,53,15,0.12); }
+     .priv-td-name { background: #fff; max-width: 0; }   /* el ancho lo fija la cabecera; así trunca */
+     :host-context(.dark) .priv-td-name { background: #0f172a; }
+     .priv-row.is-dirty .priv-td-name { box-shadow: inset 3px 0 0 #f59e0b; }
+
+     /* Cruz de lectura: fila y columna bajo el puntero se tiñen, para no
+        perderse entre 16 columnas iguales. */
+     @media (hover: hover) and (pointer: fine) {
+       .priv-row:hover > *,
+     .priv-table:has(td:nth-child(2):hover) :is(td, th):nth-child(2),
+     .priv-table:has(td:nth-child(3):hover) :is(td, th):nth-child(3),
+     .priv-table:has(td:nth-child(4):hover) :is(td, th):nth-child(4),
+     .priv-table:has(td:nth-child(5):hover) :is(td, th):nth-child(5),
+     .priv-table:has(td:nth-child(6):hover) :is(td, th):nth-child(6),
+     .priv-table:has(td:nth-child(7):hover) :is(td, th):nth-child(7),
+     .priv-table:has(td:nth-child(8):hover) :is(td, th):nth-child(8),
+     .priv-table:has(td:nth-child(9):hover) :is(td, th):nth-child(9),
+     .priv-table:has(td:nth-child(10):hover) :is(td, th):nth-child(10),
+     .priv-table:has(td:nth-child(11):hover) :is(td, th):nth-child(11),
+     .priv-table:has(td:nth-child(12):hover) :is(td, th):nth-child(12),
+     .priv-table:has(td:nth-child(13):hover) :is(td, th):nth-child(13),
+     .priv-table:has(td:nth-child(14):hover) :is(td, th):nth-child(14),
+     .priv-table:has(td:nth-child(15):hover) :is(td, th):nth-child(15),
+     .priv-table:has(td:nth-child(16):hover) :is(td, th):nth-child(16),
+     .priv-table:has(td:nth-child(17):hover) :is(td, th):nth-child(17),
+     .priv-table:has(td:nth-child(18):hover) :is(td, th):nth-child(18),
+     .priv-table:has(td:nth-child(19):hover) :is(td, th):nth-child(19),
+     .priv-table:has(td:nth-child(20):hover) :is(td, th):nth-child(20) {
+         box-shadow: inset 0 0 0 100vmax rgb(var(--hl));
+       }
+       .priv-row.is-dirty:hover .priv-td-name {
+         box-shadow: inset 3px 0 0 #f59e0b, inset 0 0 0 100vmax rgb(var(--hl));
        }
      }
 
-     /* Restriction column */
-     .priv-thead .priv-restrict-header {
-       background: rgba(146, 64, 14, 0.5) !important;
-       border-bottom: 1px solid rgba(251,191,36,0.3) !important;
+     /* Celdas: toda la celda marca la casilla (40 × 36 px de objetivo). */
+     td.priv-cell { border-color: rgba(241,245,249,0.9); transition: background-color 200ms ease; }
+     :host-context(.dark) td.priv-cell { border-color: rgba(30,41,59,0.6); }
+     td.priv-cell.is-restrict { background: rgba(255,251,235,0.6); border-color: rgba(253,230,138,0.5); }
+     :host-context(.dark) td.priv-cell.is-restrict { background: rgba(120,53,15,0.10); border-color: rgba(120,53,15,0.3); }
+     td.priv-cell:has(.priv-check:checked) { background: rgba(109,40,217,0.08); }
+     :host-context(.dark) td.priv-cell:has(.priv-check:checked) { background: rgba(167,139,250,0.14); }
+     .priv-hit {
+       display: flex; align-items: center; justify-content: center;
+       width: 40px; height: 36px;
+       cursor: pointer;
      }
-     @media (hover: hover) and (pointer: fine) {
-       .priv-thead .priv-restrict-header:hover {
-         background: rgba(146, 64, 14, 0.68) !important;
-       }
-     }
+     .priv-hit:has(.priv-check:disabled) { cursor: not-allowed; }
 
-     /* Row with hover accent bar */
-     .priv-row { position: relative; transition: background-color 160ms var(--ease-out-strong); }
-      .priv-row > td:first-child::before {
-        content: '';
-        position: absolute;
-        left: 0; top: 3px; bottom: 3px;
-        width: 3px;
-        border-radius: 0 3px 3px 0;
-        background: var(--color-brand-purple);
-        transform: scaleY(0);
-        transform-origin: center;
-        transition: transform 220ms var(--ease-out-strong);
-      }
-     .priv-row:hover > td:first-child::before { transform: scaleY(1); }
-     .priv-row.is-dirty > td:first-child::before { background: #f59e0b; transform: scaleY(1); }
+     /* Selector de oratoria a 12 px (la receta global usa 10 px) */
+     .priv-select.priv-select-d { width: 104px; height: 30px; font-size: 12px; }
+     .priv-select.priv-select-m { min-width: 150px; height: 44px; font-size: 14px; border-radius: 12px; padding-left: 12px; }
 
-     /* Cell tint when checkbox is checked — guides the eye */
-     td.priv-cell { transition: background-color 200ms ease; }
-     td.priv-cell:has(.priv-check:checked) {
-       background: linear-gradient(180deg, rgba(109,40,217,0.05), rgba(109,40,217,0.10));
+     /* Móvil */
+     .priv-m-dirty { background: rgba(255,251,235,0.8); }
+     :host-context(.dark) .priv-m-dirty { background: rgba(120,53,15,0.12); }
+     .priv-m-head { transition: background-color 120ms ease; }
+     .priv-m-head:active { background: rgba(241,245,249,0.9); }
+     :host-context(.dark) .priv-m-head:active { background: rgba(30,41,59,0.6); }
+     .priv-chip {
+       display: flex; align-items: center; gap: 10px;
+       min-height: 44px; padding: 8px 12px;
+       border-radius: 12px;
+       border: 1px solid #e2e8f0;
+       color: #475569;
+       cursor: pointer;
+       transition: background-color 160ms var(--ease-out-strong), border-color 160ms var(--ease-out-strong), color 160ms ease;
      }
-     :host-context(.dark) td.priv-cell:has(.priv-check:checked) {
-       background: linear-gradient(180deg, rgba(167,139,250,0.10), rgba(167,139,250,0.18));
-     }
+     .priv-chip:active { transform: scale(0.98); }
+     .priv-chip.is-on { background: rgba(109,40,217,0.07); border-color: rgba(109,40,217,0.35); color: #4c1d95; }
+     .priv-chip.is-restrict { border-color: #fde68a; background: rgba(255,251,235,0.6); color: #92400e; }
+     .priv-chip.is-restrict.is-on { background: #fef3c7; border-color: #f59e0b; }
+     .priv-chip.is-locked { opacity: 0.6; cursor: not-allowed; }
+     :host-context(.dark) .priv-chip { border-color: #334155; color: #cbd5e1; }
+     :host-context(.dark) .priv-chip.is-on { background: rgba(167,139,250,0.14); border-color: rgba(167,139,250,0.45); color: #ede9fe; }
+     :host-context(.dark) .priv-chip.is-restrict { border-color: rgba(180,83,9,0.45); background: rgba(120,53,15,0.12); color: #fcd34d; }
 
      /* Custom checkbox */
      .priv-check {
@@ -1736,6 +1775,7 @@ import {
                     box-shadow 180ms var(--ease-out-strong);
       }
       :host-context(.dark) .priv-check { background: #0f172a; border-color: #475569; }
+      :host-context(.dark) .priv-check:checked { background: #7c3aed; border-color: #8b5cf6; }
       @media (hover: hover) and (pointer: fine) {
         .priv-check:hover:not(:disabled) {
           border-color: var(--color-brand-purple);
@@ -1910,46 +1950,10 @@ import {
      /* El scroll de la matriz no arrastra la página al llegar al borde */
      .priv-scroll { overscroll-behavior: contain; }
 
-     /* Nivel de oratoria legible completo ("Intermedio", "Principiante") en
-        vez de truncado: hay sitio de sobra en cualquier portátil. */
-     @media (min-width: 1200px) {
-       .priv-table .priv-select {
-         width: 96px;
-         font-size: 12px;
-         padding-right: 16px !important;
-       }
-     }
-
-     /* MacBook Pro 14" (1512 CSS px) — con el sidebar abierto quedan ~1148 px
-        útiles y la matriz se salía 117 px: se compactan cabeceras, columna de
-        publicador y selector de oratoria para que entre completa sin scroll
-        horizontal. Por encima de 1600 px (MBP 16" = 1728) ya cabía sola. */
-     @media (min-width: 1200px) and (max-width: 1600px) {
-       .priv-table thead th:not(.priv-th-publisher) span {
-         font-size: 8px;
-         letter-spacing: 0;
-         overflow-wrap: break-word;
-       }
-       .priv-table thead th.priv-th { max-width: 76px; }
-       .priv-table thead th.priv-restrict-header { min-width: 0; max-width: 62px; }
-       .priv-table thead th.priv-th-publisher { min-width: 140px; }
-       .priv-table .priv-name { max-width: 104px; }
-       .priv-table .priv-select {
-         width: 84px;
-         font-size: 12px;
-         padding-left: 5px;
-         padding-right: 14px !important;
-         background-position: right 3px center;
-       }
-     }
-
-     /* Alturas de portátil (14" ≈ 860 px, 16" ≈ 990 px de viewport): densidad
-        más alta para ver ~19–23 filas sin sacrificar legibilidad. */
+     /* Alturas de portátil (14" ≈ 860 px de viewport): filas algo más bajas. */
      @media (min-width: 1024px) and (max-height: 1000px) {
        .cfg-root { gap: 0.75rem; }
-       .priv-table tbody td { padding-top: 3px; padding-bottom: 3px; }
-       .priv-table .priv-avatar { width: 26px; height: 26px; }
-       .priv-table .priv-name { font-size: 11.5px; }
+       .priv-hit { height: 32px; }
      }
 
      /* Degradado que indica que la tabla continúa bajo la barra de paginación */
@@ -2128,8 +2132,7 @@ import {
      }
 
      @media (prefers-reduced-motion: reduce) {
-       .priv-stat, .priv-row, .priv-check, .priv-select, .priv-avatar, .priv-page-btn,
-       .priv-row > td:first-child::before,
+       .priv-stat, .priv-row, .priv-check, .priv-select, .priv-chip, .priv-page-btn,
        .algo-profile-card, .algo-stepper-btn,
        .aus-row, .aus-row::before, .aus-del, .aus-submit, .aus-search, .aus-avatar,
        .aus-clear, .aus-error, .aus-dot { transition: none !important; animation: none !important; }
@@ -2139,7 +2142,6 @@ import {
 export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   /** Expuestos a la plantilla: las funciones sueltas no son accesibles desde el HTML. */
   readonly nombreMostrado = nombreMostrado;
-  readonly inicialesDe = inicialesDe;
 
 
   private reunionesSvc = inject(ReunionesService);
@@ -2343,13 +2345,68 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   grupos = signal<GrupoMatrizOption[]>([]);
   regularColumnas = computed(() => this.columnas().filter(c => !c.key.startsWith('no_')));
   restriccionColumnas = computed(() => this.columnas().filter(c => c.key.startsWith('no_')));
+  /** Columnas en el orden único de cabecera y celdas (regulares y luego
+   *  restricciones). Antes la cabecera seguía ese orden y las filas el del
+   *  backend, así que la casilla bajo «Resp. Sala B» marcaba la restricción.
+   *  Lleva el texto del tooltip y la marca de restricción ya resueltos para
+   *  que la plantilla no los calcule en cada celda y en cada ciclo. */
+  columnasVista = computed<ColumnaVista[]>(() =>
+    [...this.regularColumnas(), ...this.restriccionColumnas()].map(c => ({
+      key: c.key,
+      label: c.label,
+      tooltip: c.nombre_largo || c.label || c.key.replace(/_/g, ' '),
+      restriccion: c.key.startsWith('no_'),
+    })),
+  );
 
-  /** El nombre largo lo manda el backend junto con la columna: era el mismo
-   *  mapa copiado a mano en los dos lados. */
-  permisoTooltip(key: string): string {
-    const col = this.columnas().find(c => c.key === key);
-    return col?.nombre_largo || col?.label || key.replace(/_/g, ' ');
-  }
+  readonly nivelesOratoria = [
+    { valor: 1, label: 'Principiante' },
+    { valor: 2, label: 'Básico' },
+    { valor: 3, label: 'Intermedio' },
+    { valor: 4, label: 'Avanzado' },
+    { valor: 5, label: 'Experto' },
+  ];
+
+  /** Las filas de la página, listas para pintar. La plantilla solo lee
+   *  propiedades: con ~800 casillas, llamar a getPermiso/nombreMostrado/find
+   *  desde la plantilla costaba ~100 ms por clic (el componente no es
+   *  OnPush, así que se reevaluaba todo en cada evento).
+   *
+   *  Se recalcula cuando cambia `publicadores` (toda edición hace
+   *  `publicadores.update`), la página, el filtro o las columnas. El estado
+   *  sin guardar vive en mapas no reactivos; por eso cualquier código que
+   *  los toque debe terminar actualizando `publicadores`. */
+  filasMatriz = computed<FilaMatriz[]>(() => {
+    const cols = this.columnasVista();
+    return this.paginatedPublicadores().map(pub => {
+      const celdas = cols.map(c => this.getPermiso(pub, c.key));
+      const permisos = celdas.filter((on, i) => on && !cols[i].restriccion).length;
+      const oratoria = this.getOratoria(pub);
+      const partes = [permisos === 0 ? 'Sin permisos' : permisos === 1 ? '1 permiso' : `${permisos} permisos`];
+      partes.push('Oratoria: ' + (this.nivelesOratoria.find(n => n.valor === oratoria)?.label ?? '—'));
+      if (celdas.some((on, i) => on && cols[i].restriccion)) partes.push('con restricción');
+      return {
+        pub,
+        id: pub.id_publicador,
+        nombre: nombreMostrado(pub),
+        // «Publicador» es la base de todos: como insignia solo añade ruido.
+        privs: pub.privilegios
+          .filter(p => p !== 'Publicador')
+          .map(p => ({ nombre: p, label: this.privilegioLabel(p), clase: this.privilegioBadgeClass(p) })),
+        celdas,
+        oratoria,
+        oratoriaSucia: this.isOratoriaDirty(pub.id_publicador),
+        sinGuardar: this.isDirty(pub.id_publicador),
+        resumen: partes.join(' · '),
+      };
+    });
+  });
+
+  /** Solo se monta una vista de la matriz: la tabla (≥ md) o la lista móvil.
+   *  Tenerlas ambas en el DOM y ocultar una con CSS duplicaba el coste de
+   *  cada ciclo de detección de cambios. */
+  esEscritorio = signal(typeof matchMedia !== 'function' || matchMedia('(min-width: 768px)').matches);
+
   matrizLoading = signal(false);
   matrizSaving = signal(false);
   matrizErrorMsg = signal<string | null>(null);
@@ -2505,6 +2562,12 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
   );
 
   constructor() {
+    if (typeof matchMedia === 'function') {
+      const mq = matchMedia('(min-width: 768px)');
+      const alCambiar = (e: MediaQueryListEvent) => this.esEscritorio.set(e.matches);
+      mq.addEventListener('change', alCambiar);
+      inject(DestroyRef).onDestroy(() => mq.removeEventListener('change', alCambiar));
+    }
     // La pestaña activa y la congregación deciden qué se carga. Los loaders
     // corren en untracked: así el efecto solo depende de esas dos señales.
     effect(() => {
@@ -3750,10 +3813,6 @@ export class ReunionesConfiguracionPlantillasComponent implements OnInit {
     return this.filteredPublicadores().filter(p =>
       p.privilegios.includes('Precursor Regular') || p.privilegios.includes('Precursor Especial')
     ).length;
-  }
-
-  getAvatarClass(pub: PublicadorMatrizItem): string {
-    return getInitialAvatarStyle(nombreMostrado(pub));
   }
 
   privilegioLabel(priv: string): string {

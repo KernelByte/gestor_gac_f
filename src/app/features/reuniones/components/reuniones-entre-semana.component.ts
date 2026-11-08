@@ -57,12 +57,13 @@ import { whatsappUrl } from '../../../shared/whatsapp';
 import { hoyIso } from '../../../core/utils/fecha.util';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../../shared/components';
+import { BarraAdaptableDirective } from '../../../shared/directives/barra-adaptable.directive';
 
 @Component({
   selector: 'app-reuniones-programacion',
   host: { class: 'tema-reuniones' },
   standalone: true,
-  imports: [ModalComponent, ConfirmDialogComponent, AvisoComponent, CommonModule, FormsModule, RouterLink, ReunionesLogisticaComponent, ReunionesDiscursosComponent, ReunionesAjustesDialogComponent, RevisionPublicacionDialogComponent, SeguimientoReunionesComponent, SeguimientoAsignacionPanelComponent],
+  imports: [ModalComponent, ConfirmDialogComponent, AvisoComponent, BarraAdaptableDirective, CommonModule, FormsModule, RouterLink, ReunionesLogisticaComponent, ReunionesDiscursosComponent, ReunionesAjustesDialogComponent, RevisionPublicacionDialogComponent, SeguimientoReunionesComponent, SeguimientoAsignacionPanelComponent],
   template: `
     <div class="flex flex-col h-full gap-0">
 
@@ -77,13 +78,13 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
         <!-- Con una sola pestaña visible no hay nada entre lo que elegir y
              la píldora sobra. -->
         @if (showTipoTabs()) {
-          <!-- Se ciñe a su contenido: comparte fila con los controles del mes
-               y cada pixel de más es ancho que le falta al detalle. -->
+          <!-- Se ciñe a su contenido y NO cede nunca: comparte fila con la
+               bandeja del mes y, cuando falta ancho, la que se compacta es la
+               bandeja (barraAdaptable), no la píldora. Mide lo mismo en las
+               cuatro pantallas para que no salte al cambiar de pestaña. En
+               móvil, si no cabe, desplaza en horizontal (.tab-nav). -->
           <div class="tab-nav shrink-0" role="tablist" aria-label="Tipo de reunión">
             @if (canViewEntreSemana()) {
-              <!-- Sólo la activa lleva rótulo: con el título fuera, es la
-                   píldora encendida la que dice en qué pantalla estás; las
-                   demás se quedan en icono para no gastar ancho. -->
               <button type="button" role="tab"
                 (click)="onTipoChange('entre_semana')"
                 aria-label="Entre semana"
@@ -110,7 +111,7 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
                 [attr.aria-selected]="tipoReunionActivo() === 'logistica'"
                 class="tab-item">
                 <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                <span>Logistica</span>
+                <span>Logística</span>
               </button>
             }
             @if (canViewDiscursos()) {
@@ -200,7 +201,7 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
       @if (tipoReunionActivo() === 'logistica') {
         @defer (on immediate) {
           <app-reuniones-logistica class="flex-1 min-h-0 block overflow-hidden">
-            <div cabecera class="flex items-center gap-3 min-w-0 shrink">
+            <div cabecera class="flex items-center gap-3 shrink-0 max-w-full">
               <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
             </div>
             <div accion-derecha class="shrink-0">
@@ -208,7 +209,16 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
             </div>
           </app-reuniones-logistica>
         } @placeholder {
-          <div class="flex-1 min-h-0" aria-busy="true"></div>
+          <div class="flex-1 min-h-0 flex flex-col gap-3 p-2" aria-busy="true">
+            <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
+          </div>
+        } @error {
+          <div class="flex-1 min-h-0 flex flex-col gap-3 p-2">
+            <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
+            <app-aviso tone="danger" title="No se pudo cargar esta pestaña">
+              Revisa tu conexión y recarga la página. Si la aplicación se acaba de actualizar, recargar también lo arregla.
+            </app-aviso>
+          </div>
         }
       }
 
@@ -216,7 +226,7 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
       @if (tipoReunionActivo() === 'discursos') {
         @defer (on immediate) {
           <app-reuniones-discursos class="flex-1 md:min-h-0 block md:overflow-hidden">
-            <div cabecera class="flex items-center gap-3 min-w-0 shrink">
+            <div cabecera class="flex items-center gap-3 shrink-0 max-w-full">
               <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
             </div>
             <div accion-derecha class="shrink-0">
@@ -224,7 +234,16 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
             </div>
           </app-reuniones-discursos>
         } @placeholder {
-          <div class="flex-1 md:min-h-0" aria-busy="true"></div>
+          <div class="flex-1 md:min-h-0 flex flex-col gap-3 p-2" aria-busy="true">
+            <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
+          </div>
+        } @error {
+          <div class="flex-1 md:min-h-0 flex flex-col gap-3 p-2">
+            <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
+            <app-aviso tone="danger" title="No se pudo cargar esta pestaña">
+              Revisa tu conexión y recarga la página. Si la aplicación se acaba de actualizar, recargar también lo arregla.
+            </app-aviso>
+          </div>
         }
       }
 
@@ -257,7 +276,7 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
            ancho vacío y repetía lo que la píldora encendida ya dice. Los
            controles sólo aparecen con un mes abierto; sin él, la lista de meses
            vive centrada en la tarjeta del panel. -->
-      <div class="shrink-0 flex flex-wrap md:flex-nowrap items-center gap-x-2 gap-y-2 pb-3 min-w-0">
+      <div barraAdaptable class="shrink-0 flex flex-wrap items-center gap-x-2 gap-y-2 pb-3 min-w-0">
 
         <ng-container [ngTemplateOutlet]="cabeceraPestanas"></ng-container>
 
@@ -271,7 +290,7 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
           <!-- Una sola superficie con su fondo y su borde, como una barra de
                herramientas real; los filetes finos marcan dónde empieza cada
                grupo sin gastar una etiqueta. -->
-          <div class="flex flex-wrap items-center gap-0.5 min-w-0 w-full md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+          <div data-bandeja class="flex flex-wrap items-center gap-0.5 min-w-0 w-full md:w-auto md:ml-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm p-1">
 
             <!-- Selector de mes: el propio título es el control. Desplegado
                  desde aquí, la lista ocupa ancho sólo mientras se usa. -->
@@ -389,153 +408,150 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
 
             <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
 
-            <!-- Descargar/eliminar el mes ya abierto sin tener que reabrir el
-                 desplegable y buscar su fila: son las dos acciones que más se
-                 usan sobre el periodo activo y antes sólo vivían ahí dentro.
-                 Mismo botón icono-solo que usa Logística (rounded-xl, gris
-                 neutro, tinte de color sólo al pasar por encima) para que las
-                 acciones de mes se vean igual en todas las pestañas. -->
-            @if (periodoActivoCompleto(); as mesActivo) {
-              <!-- El PDF y las papeletas reparten lo asignado a estudiantes y
-                   conductores: solo tienen sentido sobre algo ya publicado. Un
-                   borrador se sigue reasignando, así que enseñarlo aquí sería
-                   repartir nombres que pueden cambiar antes de publicar. -->
-              @if (estado() === 'publicado') {
+            <!-- Todo lo que se hace sobre el mes abierto vive en un solo menú
+                 "…": PDF, papeletas S-89, Seguimiento y lo que borra. Antes
+                 eran cuatro iconos sueltos que no se distinguían sin pasar el
+                 ratón y alargaban la bandeja hasta empujarla a otra fila. En el
+                 menú cada acción lleva su nombre y una línea que dice qué hace;
+                 lo que borra va al final, separado, igual que en Logística. -->
+            @if (hayAccionesMes()) {
+              <div class="relative shrink-0" data-acciones-menu>
                 <button
-                  (click)="descargarPdf(mesActivo, $event)"
-                  [disabled]="descargandoPdf()"
-                  title="Descargar PDF de {{ mesActivo.label }}"
-                  aria-label="Descargar PDF de {{ mesActivo.label }}"
-                  class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/25 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
+                  type="button"
+                  data-testid="btn-acciones-mes"
+                  (click)="menuAccionesAbierto.set(!menuAccionesAbierto())"
+                  [attr.aria-expanded]="menuAccionesAbierto()"
+                  aria-haspopup="menu"
+                  [title]="periodoActivoCompleto() ? 'Más acciones sobre ' + periodoActivoCompleto()!.label : 'Más acciones'"
+                  [attr.aria-label]="periodoActivoCompleto() ? 'Más acciones sobre ' + periodoActivoCompleto()!.label : 'Más acciones'"
+                  class="flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 rounded-xl transition-all active:scale-95"
+                  [class]="menuAccionesAbierto()
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
                 </button>
 
-                <!-- Papeletas S-89-S: solo entre semana, es lo que se reparte a
-                     los estudiantes de Seamos Mejores Maestros y Lectura de la
-                     Biblia, 4 por hoja para cortar. Para mandarle a uno solo su
-                     asignación por WhatsApp está el ícono junto a cada nombre
-                     asignado en la lista, que envía solo esa papeleta. -->
-                @if (tipoReunionActivo() === 'entre_semana') {
-                  <button
-                    type="button"
-                    data-testid="btn-papeletas-s89"
-                    (click)="descargarPapeletasBoton(mesActivo, $event)"
-                    [disabled]="descargandoPapeletas()"
-                    title="Formulario S-89-S de {{ mesActivo.label }} (4 por hoja)"
-                    aria-label="Formulario S-89-S de {{ mesActivo.label }} (4 por hoja)"
-                    class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-900/25 hover:text-brand-purple dark:hover:text-violet-400 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M8 13h8M8 17h8"/></svg>
-                  </button>
-                }
-              }
-            }
-
-            <!-- Seguimiento: cuántas veces le ha tocado a cada uno el mismo
-                 papel, con el tiempo, la asistencia y las observaciones de
-                 cada vez. Fuera del bloque de "publicado" y del mes activo a
-                 propósito: mira un rango de meses, no el que esté abierto, así
-                 que tiene sentido incluso con la pantalla vacía.
-                 Detrás de 'reuniones.seguimiento', un permiso propio y no el
-                 de programar: quien programa la reunión no necesariamente da
-                 seguimiento a las partes (y viceversa), así que se reparten
-                 por separado en la ficha del usuario. Solo entre semana. -->
-            @if (hasSeguimientoPermission()) {
-              <button
-                type="button"
-                data-testid="btn-seguimiento"
-                (click)="seguimientoAbierto.set(true)"
-                title="Seguimiento: historial, tiempos y puntos de consejo"
-                aria-label="Seguimiento: historial, tiempos y puntos de consejo"
-                class="flex items-center justify-center w-8 h-8 shrink-0 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/25 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-95">
-                <!-- Cronómetro: es lo que distingue esta pantalla de un informe
-                     más, y lo que la gente viene a buscar aquí. -->
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5l2.5 1.5M9.5 2h5M12 6V2"/></svg>
-              </button>
-            }
-
-            @if (periodoActivoCompleto(); as mesActivo) {
-              <!-- El menú de borrado, en cambio, no depende de si ya se
-                   publicó: un borrador se puede querer descartar o eliminar
-                   igual que algo publicado, y antes no había forma de hacerlo
-                   sin publicarlo primero. -->
-              <!-- Lo que borra vive detrás de un menú, no suelto en la barra.
-                   Antes había dos papeleras pegadas -"quitar Sala B" y
-                   "eliminar el mes"- que son cosas muy distintas y se veían
-                   idénticas: el mismo icono al lado del mismo icono, sin
-                   forma de saber cuál era cuál hasta pasar el ratón. Aquí
-                   cada acción lleva su nombre escrito, y hace falta un clic
-                   deliberado para llegar a algo irreversible. El PDF se
-                   queda fuera porque no destruye nada. -->
-              @if (accionesDestructivasMes() && hasEditPermission()) {
-                <div class="relative shrink-0" data-acciones-menu>
-                  <button
-                    type="button"
-                    data-testid="btn-acciones-mes"
-                    (click)="menuAccionesAbierto.set(!menuAccionesAbierto())"
-                    [attr.aria-expanded]="menuAccionesAbierto()"
-                    aria-haspopup="menu"
-                    title="Más acciones sobre {{ mesActivo.label }}"
-                    aria-label="Más acciones sobre {{ mesActivo.label }}"
-                    class="flex items-center justify-center w-8 h-8 rounded-xl transition-all active:scale-95"
-                    [class]="menuAccionesAbierto()
-                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
-                  </button>
-
-                  @if (menuAccionesAbierto()) {
-                    <div role="menu" class="absolute z-40 top-[calc(100%+4px)] right-0 w-60 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden p-1.5 flex flex-col gap-0.5">
-                      @if (tipoReunionActivo() === 'entre_semana' && mesTieneSalaB()) {
+                @if (menuAccionesAbierto()) {
+                  <div role="menu" class="absolute z-40 top-[calc(100%+4px)] right-0 w-72 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden p-1.5 flex flex-col gap-0.5">
+                    @if (periodoActivoCompleto(); as mesActivo) {
+                      <!-- El PDF y las papeletas reparten lo asignado a
+                           estudiantes y conductores: solo sobre algo ya
+                           publicado. Un borrador se sigue reasignando y
+                           repartirlo sería dar nombres que pueden cambiar. -->
+                      @if (estado() === 'publicado') {
                         <button
                           type="button"
                           role="menuitem"
-                          data-testid="btn-eliminar-sala-b"
-                          (click)="menuAccionesAbierto.set(false); eliminarSalaBDelMes($event)"
-                          [disabled]="borrandoSalaB()"
-                          class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-40">
-                          @if (borrandoSalaB()) {
-                            <div class="spinner-sm text-red-500 shrink-0 mt-px"></div>
-                          } @else {
-                            <!-- Dos salas, no una papelera: lo que se quita es
-                                 el segundo salón, no el mes. -->
-                            <svg class="w-4 h-4 shrink-0 mt-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/><line x1="15.5" y1="9" x2="19.5" y2="15"/><line x1="19.5" y1="9" x2="15.5" y2="15"/></svg>
-                          }
+                          data-testid="btn-pdf-mes"
+                          (click)="menuAccionesAbierto.set(false); descargarPdf(mesActivo, $event)"
+                          [disabled]="descargandoPdf()"
+                          class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-brand-purple dark:hover:text-violet-400 transition-colors disabled:opacity-40">
+                          <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
                           <span class="min-w-0 flex-1">
-                            <span class="block text-xs font-bold leading-tight">Quitar la Sala B</span>
-                            <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Sólo el segundo salón. La Sala Principal se queda.</span>
+                            <span class="block text-xs font-bold leading-tight">Descargar el programa en PDF</span>
+                            <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">{{ mesActivo.label }}, listo para imprimir.</span>
                           </span>
                         </button>
-                      }
 
-                      @if (tipoReunionActivo() === 'entre_semana' && mesTieneSalaB() && periodoEliminable(mesActivo)) {
-                        <span class="h-px bg-slate-100 dark:bg-slate-800 mx-1 my-0.5" aria-hidden="true"></span>
-                      }
-
-                      @if (periodoEliminable(mesActivo)) {
-                        <button
-                          type="button"
-                          role="menuitem"
-                          data-testid="btn-eliminar-mes-activo"
-                          (click)="menuAccionesAbierto.set(false); eliminarPeriodo(mesActivo, $event)"
-                          class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                          <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                          <span class="min-w-0 flex-1">
-                            <span class="block text-xs font-bold leading-tight">Eliminar {{ mesActivo.label }}</span>
-                            <!-- Decir que se va TAMBIÉN la semana del mes
-                                 siguiente: es la que sorprende, y es justo la
-                                 que antes se perdía sin poder recuperarla. -->
-                            <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">
-                              {{ mesActivo.tipo === 'guia'
-                                 ? 'La guía entera, con todas sus semanas y asignaciones.'
-                                 : 'El mes entero, con todas sus asignaciones.' }}
+                        <!-- Papeletas S-89-S: solo entre semana, para los
+                             estudiantes de Seamos Mejores Maestros y Lectura
+                             de la Biblia. Para mandarle a uno solo la suya por
+                             WhatsApp está el ícono junto a cada nombre. -->
+                        @if (tipoReunionActivo() === 'entre_semana') {
+                          <button
+                            type="button"
+                            role="menuitem"
+                            data-testid="btn-papeletas-s89"
+                            (click)="menuAccionesAbierto.set(false); descargarPapeletasBoton(mesActivo, $event)"
+                            [disabled]="descargandoPapeletas()"
+                            class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-brand-purple dark:hover:text-violet-400 transition-colors disabled:opacity-40">
+                            <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M8 13h8M8 17h8"/></svg>
+                            <span class="min-w-0 flex-1">
+                              <span class="block text-xs font-bold leading-tight">Papeletas de asignación (S-89-S)</span>
+                              <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Para los estudiantes, 4 por hoja para recortar.</span>
                             </span>
-                          </span>
-                        </button>
+                          </button>
+                        }
                       }
-                    </div>
-                  }
-                </div>
-              }
+                    }
+
+                    <!-- Seguimiento mira un rango de meses, no el abierto, y va
+                         detrás de su propio permiso ('reuniones.seguimiento'):
+                         quien programa no necesariamente da seguimiento. -->
+                    @if (hasSeguimientoPermission()) {
+                      <button
+                        type="button"
+                        role="menuitem"
+                        data-testid="btn-seguimiento"
+                        (click)="menuAccionesAbierto.set(false); seguimientoAbierto.set(true)"
+                        class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-brand-purple dark:hover:text-violet-400 transition-colors">
+                        <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5l2.5 1.5M9.5 2h5M12 6V2"/></svg>
+                        <span class="min-w-0 flex-1">
+                          <span class="block text-xs font-bold leading-tight">Seguimiento</span>
+                          <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Historial, tiempos y puntos de consejo de cada uno.</span>
+                        </span>
+                      </button>
+                    }
+
+                    <!-- Lo que borra, al final y separado: hace falta un clic
+                         deliberado para llegar a algo irreversible. -->
+                    @if (periodoActivoCompleto(); as mesActivo) {
+                      @if (accionesDestructivasMes() && hasEditPermission()) {
+                        @if (hayAccionesNoDestructivasMes()) {
+                          <span class="h-px bg-slate-100 dark:bg-slate-800 mx-1 my-0.5" aria-hidden="true"></span>
+                        }
+                        @if (tipoReunionActivo() === 'entre_semana' && mesTieneSalaB()) {
+                          <button
+                            type="button"
+                            role="menuitem"
+                            data-testid="btn-eliminar-sala-b"
+                            (click)="menuAccionesAbierto.set(false); eliminarSalaBDelMes($event)"
+                            [disabled]="borrandoSalaB()"
+                            class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-40">
+                            @if (borrandoSalaB()) {
+                              <div class="spinner-sm text-red-500 shrink-0 mt-px"></div>
+                            } @else {
+                              <!-- Dos salas, no una papelera: lo que se quita es
+                                   el segundo salón, no el mes. -->
+                              <svg class="w-4 h-4 shrink-0 mt-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/><line x1="15.5" y1="9" x2="19.5" y2="15"/><line x1="19.5" y1="9" x2="15.5" y2="15"/></svg>
+                            }
+                            <span class="min-w-0 flex-1">
+                              <span class="block text-xs font-bold leading-tight">Quitar la Sala B</span>
+                              <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">Sólo el segundo salón. La Sala Principal se queda.</span>
+                            </span>
+                          </button>
+                        }
+
+                        @if (tipoReunionActivo() === 'entre_semana' && mesTieneSalaB() && periodoEliminable(mesActivo)) {
+                          <span class="h-px bg-slate-100 dark:bg-slate-800 mx-1 my-0.5" aria-hidden="true"></span>
+                        }
+
+                        @if (periodoEliminable(mesActivo)) {
+                          <button
+                            type="button"
+                            role="menuitem"
+                            data-testid="btn-eliminar-mes-activo"
+                            (click)="menuAccionesAbierto.set(false); eliminarPeriodo(mesActivo, $event)"
+                            class="w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                            <svg class="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <span class="min-w-0 flex-1">
+                              <span class="block text-xs font-bold leading-tight">Eliminar {{ mesActivo.label }}</span>
+                              <!-- Decir que se va TAMBIÉN la semana del mes
+                                   siguiente: es la que sorprende, y es justo la
+                                   que antes se perdía sin poder recuperarla. -->
+                              <span class="block text-xs text-slate-400 dark:text-slate-500 leading-snug mt-0.5">
+                                {{ mesActivo.tipo === 'guia'
+                                   ? 'La guía entera, con todas sus semanas y asignaciones.'
+                                   : 'El mes entero, con todas sus asignaciones.' }}
+                              </span>
+                            </span>
+                          </button>
+                        }
+                      }
+                    }
+                  </div>
+                }
+              </div>
               <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 shrink-0 mx-0.5" aria-hidden="true"></span>
             }
 
@@ -550,8 +566,10 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
                 title="Volver a la lista"
                 aria-label="Volver a la lista"
                 class="shrink-0 flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-[0.97]">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                Volver
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                <!-- Con poco ancho queda la flecha sola (aria-label y title
+                     siguen diciendo a dónde va); Publicar y Borrar no ceden. -->
+                <span class="barra-cede-2">Volver</span>
               </button>
             }
             @if (estado() === 'borrador' && hasEditPermission()) {
@@ -1244,8 +1262,8 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
 
     <!-- ===== MODAL GENERAR MES ===== -->
     @if (showModal()) {
-      <app-modal [open]="true" size="sm" title="Generar Programa del Mes" [hasFooter]="true" (closed)="showModal.set(false)">
-        <div data-testid="modal-generar-mes" class="flex flex-col gap-5">
+      <app-modal [open]="true" size="sm" title="Generar Programa del Mes" [hasFooter]="true" testId="modal-generar-mes" (closed)="showModal.set(false)">
+        <div class="flex flex-col gap-5">
 
           @if (diaReunionSinConfigurar()) {
             <app-aviso data-testid="aviso-dia-sin-configurar" tone="warning" title="Día de reunión no configurado">
@@ -1287,7 +1305,7 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
                   <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="showPlantillaDropdown()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 @if (showPlantillaDropdown()) {
-                  <div class="mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-1.5">
+                  <div class="relative z-[60] mt-1.5 w-full max-h-64 overflow-y-auto simple-scrollbar bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-1.5">
                     @for (p of plantillasOrdenadas(); track p.id_plantilla) {
                       <button
                         type="button"
@@ -1325,7 +1343,7 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
                   <svg class="w-3.5 h-3.5 shrink-0 text-slate-400 transition-transform duration-150" [class.rotate-180]="showMesAnoDropdown()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 @if (showMesAnoDropdown()) {
-                  <div class="mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                  <div class="relative z-[60] mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                     <div class="p-1.5 border-b border-slate-100 dark:border-slate-700">
                       <input
                         type="text"
@@ -1512,6 +1530,8 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
           (resolved)="onRevisionPublicacionAction($event)"
           (irASemana)="onIrASemanaDesdeRevision($event)">
         </app-revision-publicacion-dialog>
+      } @error {
+        <app-aviso class="block shrink-0 mb-3" tone="danger">No se pudo abrir la revisión previa. Recarga la página e inténtalo de nuevo.</app-aviso>
       }
     }
 
@@ -1524,6 +1544,8 @@ import { ModalComponent, ConfirmDialogComponent, AvisoComponent } from '../../..
           (cambiado)="onSeguimientoCambiadoDesdeModal()"
           (cerrar)="cerrarSeguimiento()">
         </app-seguimiento-reuniones>
+      } @error {
+        <app-aviso class="block shrink-0 mb-3" tone="danger">No se pudo abrir el seguimiento. Recarga la página e inténtalo de nuevo.</app-aviso>
       }
     }
 
@@ -2369,7 +2391,7 @@ export class ReunionesProgramacionComponent implements OnInit {
   // usan, igual que en Logística.
   menuMesesAbierto = signal(false);
 
-  /** Menú "…" con lo que borra: se abre sobre el mes que está a la vista. */
+  /** Menú "…" con las acciones del mes a la vista (descargas, Seguimiento y lo que borra). */
   menuAccionesAbierto = signal(false);
 
   /** Si hay al menos una acción destructiva disponible para el mes abierto.
@@ -2380,6 +2402,14 @@ export class ReunionesProgramacionComponent implements OnInit {
     const puedeQuitarSalaB = this.tipoReunionActivo() === 'entre_semana' && this.mesTieneSalaB();
     return puedeQuitarSalaB || this.periodoEliminable(mes);
   });
+
+  /** PDF, papeletas o Seguimiento: lo del menú "…" que no borra nada. */
+  hayAccionesNoDestructivasMes = computed(() =>
+    (!!this.periodoActivoCompleto() && this.estado() === 'publicado') || this.hasSeguimientoPermission());
+
+  /** Si el menú "…" tendría algo dentro. Vacío no se pinta. */
+  hayAccionesMes = computed(() =>
+    this.hayAccionesNoDestructivasMes() || (this.accionesDestructivasMes() && this.hasEditPermission()));
 
   /** La fila del historial que corresponde a lo que está abierto. */
   periodoActivoCompleto = computed<PeriodoNav | undefined>(() => {

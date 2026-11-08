@@ -591,7 +591,7 @@
              <!-- 2. Desktop Table View (Visible md+) -->
              <div class="hidden md:block">
                 <table class="w-full min-w-max text-left border-collapse">
-                   <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-900/95 backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-700">
+                   <thead class="sticky top-0 z-10 bg-slate-50/90 dark:bg-[#1d283d] backdrop-blur-md shadow-sm ring-1 ring-slate-200 dark:ring-slate-700">
                       <!-- Sort chips strip (visible solo cuando hay ordenamientos activos) -->
                       <tr *ngIf="sortOrder().length > 0" class="border-b border-brand-orange/10 bg-orange-50/60 dark:bg-orange-900/10">
                         <td [attr.colspan]="totalVisibleColCount()" class="px-4 py-2">
@@ -883,7 +883,7 @@
         </div>
 
         <!-- Pagination Footer -->
-        <div class="shrink-0 z-20 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 md:rounded-b-2xl transition-all duration-300 shadow-[0_-1px_2px_rgba(0,0,0,0.02)] dark:shadow-none">
+        <div class="shrink-0 z-20 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1d283d] md:rounded-b-2xl transition-all duration-300 shadow-[0_-1px_2px_rgba(0,0,0,0.02)] dark:shadow-none">
 
           <!-- Mobile Pagination: icon buttons + counter — compact for small screens.
                El FAB flota por encima de esta barra (no al lado), así que no
@@ -1977,255 +1977,223 @@
     </app-modal>
 
       <!-- ═══════════════════════════════════════════════════════════════ -->
-      <!-- QUICK VIEW MODAL                                              -->
+      <!-- VISTA RÁPIDA DEL PUBLICADOR                                     -->
+      <!-- Lectura en tres niveles: franja de resumen (quién es y en qué   -->
+      <!-- estado está) → bloques con fondo propio (datos agrupados por    -->
+      <!-- tema, etiqueta a la izquierda y valor a la derecha) → acciones. -->
       <!-- ═══════════════════════════════════════════════════════════════ -->
-      @if (viewingPublicador()) {
-        <app-modal [open]="true" size="2xl" [title]="getFullName(viewingPublicador()!)" [hasFooter]="true"
+      @if (viewingPublicador(); as p) {
+        <app-modal [open]="true" size="2xl" velo="enfocado" [title]="getFullName(p)" [hasFooter]="true"
                    (closed)="closeQuickView()">
-          <div class="flex items-center gap-3 mb-4">
-              <!-- Avatar -->
-              <div class="relative shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow-sm"
-                [ngClass]="getAvatarStyle(getFullName(viewingPublicador()!))">
-                {{ getInitials(viewingPublicador()) }}
-              </div>
-
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                  <!-- Estado -->
-                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold border"
-                    [ngClass]="{
-                      'bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-400/20': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Activo'),
-                      'bg-red-500/10 dark:bg-red-400/10 text-red-700 dark:text-red-400 border-red-500/20 dark:border-red-400/20': getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Inactivo'),
-                      'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/[0.08]': !getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Activo') && !getEstadoNombre(viewingPublicador()!.id_estado_publicador).includes('Inactivo')
-                    }">
-                    <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getEstadoDotClass(viewingPublicador()!.id_estado_publicador)"></span>
-                    {{ getEstadoNombre(viewingPublicador()!.id_estado_publicador) }}
-                  </span>
-                  <!-- Sexo -->
-                  <span *ngIf="viewingPublicador()!.sexo" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-orange-500/10 dark:bg-orange-400/10 text-orange-700 dark:text-orange-400 border border-orange-500/20 dark:border-orange-400/20">
-                    <svg *ngIf="viewingPublicador()!.sexo === 'M'" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><line x1="19" y1="5" x2="14.14" y2="9.86"/><polyline points="15 5 19 5 19 9"/></svg>
-                    <svg *ngIf="viewingPublicador()!.sexo !== 'M'" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><line x1="12" y1="13" x2="12" y2="21"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
-                    {{ viewingPublicador()!.sexo === 'M' ? 'Masculino' : 'Femenino' }}
-                  </span>
-                </div>
-              </div>
+          <!-- Recorrer la lista sin cerrar la ficha (también con ← →) -->
+          @if (quickViewIndex() >= 0) {
+            <div slot="header-actions" class="flex items-center gap-1 shrink-0 -my-1">
+              <button type="button" class="btn-icon-sm" (click)="quickViewStep(-1)" [disabled]="quickViewIndex() === 0"
+                      aria-label="Publicador anterior" title="Anterior (←)">
+                <lucide-icon name="chevron-left"></lucide-icon>
+              </button>
+              <span class="caption tabular-nums whitespace-nowrap px-1" aria-live="polite">
+                {{ quickViewIndex() + 1 }} de {{ filteredList().length }}
+              </span>
+              <button type="button" class="btn-icon-sm" (click)="quickViewStep(1)" [disabled]="quickViewIndex() === filteredList().length - 1"
+                      aria-label="Publicador siguiente" title="Siguiente (→)">
+                <lucide-icon name="chevron-right"></lucide-icon>
+              </button>
             </div>
+          }
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+          <!-- @for con un solo elemento: al cambiar de publicador se vuelve a
+               pintar y los bloques repiten su entrada, señal clara del cambio. -->
+          @for (id of [p.id_publicador]; track id) {
+          <div class="qv flex flex-col gap-4">
 
-              <!-- Sección: Datos básicos -->
-              <section>
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  <span class="w-0.5 h-3 rounded-full bg-brand-orange shrink-0"></span>
-                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.12em]">Datos básicos</p>
-                </div>
-                <div class="grid grid-cols-1 gap-1.5">
-                  <!-- Teléfono -->
-                  <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.035] border border-slate-200/70 dark:border-white/[0.07]">
-                    <div class="w-6 h-6 rounded-md bg-orange-500/10 dark:bg-orange-400/10 flex items-center justify-center shrink-0">
-                      <svg class="w-3 h-3 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-none">Teléfono</p>
-                      <p class="text-[13px] font-semibold text-slate-800 dark:text-slate-100 truncate mt-1 leading-none tabular-nums">{{ viewingPublicador()!.telefono || '—' }}</p>
-                    </div>
-                  </div>
-                  <!-- Dirección -->
-                  <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.035] border border-slate-200/70 dark:border-white/[0.07]">
-                    <div class="w-6 h-6 rounded-md bg-orange-500/10 dark:bg-orange-400/10 flex items-center justify-center shrink-0">
-                      <svg class="w-3 h-3 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                      <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-none">Dirección</p>
-                      <p class="text-[13px] font-semibold text-slate-800 dark:text-slate-100 truncate mt-1 leading-none">{{ viewingPublicador()!.direccion || '—' }}<span *ngIf="viewingPublicador()!.barrio" class="ml-1.5 font-medium text-slate-400 dark:text-slate-500">· {{ viewingPublicador()!.barrio }}</span></p>
-                    </div>
-                  </div>
-                  <!-- Nacimiento -->
-                  <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.035] border border-slate-200/70 dark:border-white/[0.07]">
-                    <div class="w-6 h-6 rounded-md bg-orange-500/10 dark:bg-orange-400/10 flex items-center justify-center shrink-0">
-                      <svg class="w-3 h-3 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-none">Nacimiento</p>
-                      <p class="text-[13px] font-semibold text-slate-800 dark:text-slate-100 mt-1 leading-none tabular-nums whitespace-nowrap">{{ viewingPublicador()!.fecha_nacimiento ? formatDateExport(viewingPublicador()!.fecha_nacimiento!) : '—' }}<span *ngIf="getYearsSince(viewingPublicador()!.fecha_nacimiento) !== null" class="ml-1.5 font-medium text-orange-500 dark:text-orange-400 normal-case">· {{ getYearsSince(viewingPublicador()!.fecha_nacimiento) }} años</span></p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <!-- Sección: Servicio -->
-              <section>
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  <span class="w-0.5 h-3 rounded-full bg-brand-orange shrink-0"></span>
-                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.12em]">Servicio</p>
-                </div>
-                <div class="grid grid-cols-1 gap-1.5">
-                  <!-- Grupo -->
-                  <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.035] border border-slate-200/70 dark:border-white/[0.07]">
-                    <div class="w-6 h-6 rounded-md bg-orange-500/10 dark:bg-orange-400/10 flex items-center justify-center shrink-0">
-                      <svg class="w-3 h-3 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-none">Grupo</p>
-                      <p class="text-[13px] font-semibold text-slate-800 dark:text-slate-100 truncate mt-1 leading-none">{{ getGrupoNombre(viewingPublicador()!.id_grupo_publicador) }}</p>
-                    </div>
-                  </div>
-                  <!-- Inicio Informe -->
-                  <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors duration-150"
-                    [ngClass]="viewingPublicador()!.fecha_inicio_efectivo
-                      ? 'bg-emerald-50 dark:bg-emerald-400/[0.06] border-emerald-200/80 dark:border-emerald-400/20'
-                      : 'bg-slate-50 dark:bg-white/[0.035] border-slate-200/70 dark:border-white/[0.07]'">
-                    <div class="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-                      [ngClass]="viewingPublicador()!.fecha_inicio_efectivo ? 'bg-emerald-500/15 dark:bg-emerald-400/15' : 'bg-slate-200/70 dark:bg-white/[0.07]'">
-                      <svg class="w-3 h-3" [ngClass]="viewingPublicador()!.fecha_inicio_efectivo ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-xs font-semibold uppercase tracking-wider leading-none" [ngClass]="viewingPublicador()!.fecha_inicio_efectivo ? 'text-emerald-600/90 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500'">Inicio informe</p>
-                      <p class="text-[13px] font-semibold mt-1 leading-none tabular-nums whitespace-nowrap" [ngClass]="viewingPublicador()!.fecha_inicio_efectivo ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'">{{ viewingPublicador()!.fecha_inicio_efectivo ? formatDateExport(viewingPublicador()!.fecha_inicio_efectivo!) : '—' }}<span *ngIf="viewingPublicador()!.fecha_inicio_efectivo" class="ml-1.5 font-medium text-emerald-500/80 dark:text-emerald-400/70 normal-case" [ngSwitch]="viewingPublicador()!.origen_fecha_inicio_informe">
-                        <ng-container *ngSwitchCase="'manual'">· fijado a mano</ng-container>
-                        <ng-container *ngSwitchCase="'informe'">· 1ra participación</ng-container>
-                        <ng-container *ngSwitchCase="'alta'">· desde su alta</ng-container>
-                      </span></p>
-                    </div>
-                  </div>
-                  <!-- Bautismo -->
-                  <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.035] border border-slate-200/70 dark:border-white/[0.07]">
-                    <div class="w-6 h-6 rounded-md bg-orange-500/10 dark:bg-orange-400/10 flex items-center justify-center shrink-0">
-                      <svg class="w-3 h-3 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-none">Bautismo</p>
-                      <p class="text-[13px] font-semibold text-slate-800 dark:text-slate-100 mt-1 leading-none tabular-nums whitespace-nowrap">{{ viewingPublicador()!.fecha_bautismo ? formatDateExport(viewingPublicador()!.fecha_bautismo!) : '—' }}<span *ngIf="getYearsSince(viewingPublicador()!.fecha_bautismo) !== null" class="ml-1.5 font-medium text-orange-500 dark:text-orange-400 normal-case">· {{ getYearsSince(viewingPublicador()!.fecha_bautismo) }} años</span></p>
-                    </div>
-                  </div>
-                  <!-- Inactividad -->
-                  <div *ngIf="viewingPublicador()!.fecha_inactividad" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-400/[0.06] border border-rose-200/80 dark:border-rose-400/20">
-                    <div class="w-6 h-6 rounded-md bg-rose-500/15 dark:bg-rose-400/15 flex items-center justify-center shrink-0">
-                      <svg class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-xs font-semibold text-rose-500 dark:text-rose-400 uppercase tracking-wider leading-none">Inactividad</p>
-                      <p class="text-[13px] font-semibold text-rose-700 dark:text-rose-400 mt-1 leading-none tabular-nums whitespace-nowrap">{{ formatDateExport(viewingPublicador()!.fecha_inactividad!) }}</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <!-- Sección: Privilegios -->
-              <section class="md:col-span-2" *ngIf="quickViewPrivilegios().length > 0">
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  <span class="w-0.5 h-3 rounded-full bg-brand-orange shrink-0"></span>
-                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.12em]">Privilegios</p>
-                </div>
-                <div class="flex flex-wrap gap-1.5">
-                  <span *ngFor="let pp of quickViewPrivilegios()"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-orange-500/10 dark:bg-orange-400/10 text-orange-700 dark:text-orange-300 border border-orange-500/20 dark:border-orange-400/20">
-                    <svg class="w-3 h-3 text-orange-500 dark:text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    {{ getPrivilegioNombre(pp.id_privilegio) }}
+            <!-- Resumen: identidad, estado y privilegios de un vistazo -->
+            <section class="qv-bloque flex items-center gap-4 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div class="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center font-display font-bold text-lg"
+                   [ngClass]="getAvatarStyle(getFullName(p))" aria-hidden="true">
+                {{ getInitials(p) }}
+              </div>
+              <div class="min-w-0 flex-1 flex flex-col gap-2">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span [ngClass]="getEstadoNombre(p.id_estado_publicador).includes('Inactivo') ? 'badge-inactive'
+                                   : getEstadoNombre(p.id_estado_publicador).includes('Activo') ? 'badge-active' : 'badge-neutral'">
+                    <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getEstadoDotClass(p.id_estado_publicador)"></span>
+                    {{ getEstadoNombre(p.id_estado_publicador) }}
                   </span>
+                  @for (pp of quickViewPrivilegios(); track pp.id_privilegio) {
+                    <span class="badge qv-privilegio">
+                      <lucide-icon name="star" [size]="12"></lucide-icon>
+                      {{ getPrivilegioNombre(pp.id_privilegio) }}
+                    </span>
+                  }
                 </div>
+                <p class="text-sm text-slate-600 dark:text-slate-400">
+                  {{ p.sexo === 'M' ? 'Hombre' : p.sexo ? 'Mujer' : 'Sexo sin indicar' }}
+                  @if (getYearsSince(p.fecha_nacimiento) !== null) { · {{ getYearsSince(p.fecha_nacimiento) }} {{ getYearsSince(p.fecha_nacimiento) === 1 ? 'año' : 'años' }} }
+                  · {{ getGrupoNombre(p.id_grupo_publicador) }}
+                </p>
+              </div>
+            </section>
+
+            <!-- Aviso de inactividad: lo primero que hay que saber si aplica -->
+            @if (p.fecha_inactividad) {
+              <app-aviso tone="danger" [dense]="true">
+                Inactivo desde el {{ formatDateExport(p.fecha_inactividad) }}.
+              </app-aviso>
+            }
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <!-- Datos personales -->
+              <section class="qv-bloque card-section !p-0" aria-labelledby="qv-personales">
+                <h3 id="qv-personales" class="qv-titulo"><lucide-icon name="user" [size]="16"></lucide-icon>Datos personales</h3>
+                <dl class="qv-lista">
+                  <div class="qv-fila">
+                    <dt>Teléfono</dt>
+                    <dd>
+                      @if (p.telefono) {
+                        <a [href]="'tel:' + p.telefono" class="qv-enlace tabular-nums">{{ p.telefono }}</a>
+                      } @else { <span class="qv-vacio">Sin teléfono</span> }
+                    </dd>
+                  </div>
+                  <div class="qv-fila">
+                    <dt>Dirección</dt>
+                    <dd>
+                      @if (p.direccion) {
+                        {{ p.direccion }}
+                        @if (p.barrio) { <span class="qv-nota">{{ p.barrio }}</span> }
+                      } @else { <span class="qv-vacio">Sin dirección</span> }
+                    </dd>
+                  </div>
+                  <div class="qv-fila">
+                    <dt>Nacimiento</dt>
+                    <dd>
+                      @if (p.fecha_nacimiento) {
+                        <span class="tabular-nums">{{ formatDateExport(p.fecha_nacimiento) }}</span>
+                        @if (getYearsSince(p.fecha_nacimiento) !== null) { <span class="qv-nota">{{ getYearsSince(p.fecha_nacimiento) }} {{ getYearsSince(p.fecha_nacimiento) === 1 ? 'año' : 'años' }}</span> }
+                      } @else { <span class="qv-vacio">Sin fecha</span> }
+                    </dd>
+                  </div>
+                </dl>
               </section>
 
-              <!-- Sección: Contactos de Emergencia -->
-              <section class="md:col-span-2" *ngIf="quickViewContactos().length > 0">
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  <span class="w-0.5 h-3 rounded-full bg-brand-orange shrink-0"></span>
-                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.12em]">Contactos de emergencia</p>
-                </div>
-                <div class="flex flex-wrap gap-1.5">
-                  <div *ngFor="let c of quickViewContactos()"
-                    class="flex items-start gap-2 px-2.5 py-1.5 rounded-lg border flex-1 min-w-[240px]"
-                    [ngClass]="c.es_principal
-                      ? 'bg-orange-50 dark:bg-orange-400/[0.06] border-orange-200/80 dark:border-orange-400/20'
-                      : 'bg-slate-50 dark:bg-white/[0.035] border-slate-200/70 dark:border-white/[0.07]'">
-                    <div class="w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5"
-                      [ngClass]="c.es_principal ? 'bg-orange-500/15 dark:bg-orange-400/15' : 'bg-slate-200/70 dark:bg-white/[0.07]'">
-                      <svg class="w-3 h-3" [ngClass]="c.es_principal ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400 dark:text-slate-500'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                      <p class="flex items-center gap-1.5 text-[13px] font-semibold text-slate-800 dark:text-slate-100 truncate leading-none">
-                        {{ c.nombre }}
-                        <span *ngIf="c.es_principal" class="shrink-0 px-1.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-orange-500/15 dark:bg-orange-400/15 text-orange-700 dark:text-orange-400">Principal</span>
-                        <span *ngIf="c.solo_urgencias" class="shrink-0 px-1.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-rose-500/10 dark:bg-rose-400/10 text-rose-600 dark:text-rose-400">Solo urgencias</span>
-                      </p>
-                      <p class="text-xs font-medium text-slate-400 dark:text-slate-500 truncate mt-1 leading-none">{{ c.parentesco || 'Sin parentesco' }}</p>
-                      <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate mt-1 leading-none tabular-nums">{{ c.telefono || '—' }}</p>
-                      <p *ngIf="c.direccion" class="text-xs font-medium text-slate-400 dark:text-slate-500 truncate mt-1 leading-none">{{ c.direccion }}</p>
-                    </div>
+              <!-- En la congregación -->
+              <section class="qv-bloque card-section !p-0" aria-labelledby="qv-congregacion">
+                <h3 id="qv-congregacion" class="qv-titulo"><lucide-icon name="users" [size]="16"></lucide-icon>En la congregación</h3>
+                <dl class="qv-lista">
+                  <div class="qv-fila">
+                    <dt>Grupo</dt>
+                    <dd>{{ getGrupoNombre(p.id_grupo_publicador) }}</dd>
                   </div>
-                </div>
+                  <div class="qv-fila">
+                    <dt>Bautismo</dt>
+                    <dd>
+                      @if (p.fecha_bautismo) {
+                        <span class="tabular-nums">{{ formatDateExport(p.fecha_bautismo) }}</span>
+                        @if (getYearsSince(p.fecha_bautismo) !== null) { <span class="qv-nota">{{ getYearsSince(p.fecha_bautismo) === 0 ? 'Este año' : 'Hace ' + getYearsSince(p.fecha_bautismo) + (getYearsSince(p.fecha_bautismo) === 1 ? ' año' : ' años') }}</span> }
+                      } @else { <span class="qv-vacio">No bautizado</span> }
+                    </dd>
+                  </div>
+                  <div class="qv-fila">
+                    <dt>Informa desde</dt>
+                    <dd>
+                      @if (p.fecha_inicio_efectivo) {
+                        <span class="tabular-nums">{{ formatDateExport(p.fecha_inicio_efectivo) }}</span>
+                        @switch (p.origen_fecha_inicio_informe) {
+                          @case ('manual') { <span class="qv-nota">Fecha puesta a mano</span> }
+                          @case ('informe') { <span class="qv-nota">Según su primer informe</span> }
+                          @case ('alta') { <span class="qv-nota">Desde que se registró</span> }
+                        }
+                      } @else { <span class="qv-vacio">Aún no informa</span> }
+                    </dd>
+                  </div>
+                </dl>
               </section>
 
-              <!-- Sección: Consentimiento -->
-              <section>
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  <span class="w-0.5 h-3 rounded-full bg-brand-orange shrink-0"></span>
-                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.12em]">Consentimiento de datos</p>
-                </div>
-                <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border"
-                  [ngClass]="viewingPublicador()!.consentimiento_datos
-                    ? 'bg-emerald-50 dark:bg-emerald-400/[0.06] border-emerald-200/80 dark:border-emerald-400/20'
-                    : 'bg-slate-50 dark:bg-white/[0.035] border-slate-200/70 dark:border-white/[0.07]'">
-                  <div class="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-                    [ngClass]="viewingPublicador()!.consentimiento_datos ? 'bg-emerald-500/15 dark:bg-emerald-400/15' : 'bg-slate-200/70 dark:bg-white/[0.07]'">
-                    <svg class="w-3 h-3" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <ng-container *ngIf="viewingPublicador()!.consentimiento_datos"><polyline points="20 6 9 17 4 12"/></ng-container>
-                      <ng-container *ngIf="!viewingPublicador()!.consentimiento_datos"><path d="M18 6L6 18M6 6l12 12"/></ng-container>
-                    </svg>
-                  </div>
-                  <p class="flex-1 min-w-0 text-[13px] font-semibold truncate" [ngClass]="viewingPublicador()!.consentimiento_datos ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">
-                    {{ viewingPublicador()!.consentimiento_datos ? 'Ha dado consentimiento' : 'Sin consentimiento' }}
-                  </p>
-                  <!-- Ver PDF -->
-                  <button *ngIf="viewingPublicador()!.archivo_consentimiento" type="button"
-                    (click)="viewConsentimientoPdfFromQuickView()"
-                    class="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md text-xs font-semibold bg-white dark:bg-white/[0.07] border border-emerald-200 dark:border-emerald-400/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-400/10 transition-colors duration-150 active:scale-95 shrink-0">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    Ver PDF
-                  </button>
-                </div>
+              <!-- Contactos de emergencia -->
+              <section class="qv-bloque card-section !p-0 md:col-span-2" aria-labelledby="qv-emergencia">
+                <h3 id="qv-emergencia" class="qv-titulo"><lucide-icon name="phone" [size]="16"></lucide-icon>Contactos de emergencia</h3>
+                @if (quickViewContactos().length) {
+                  <ul class="qv-lista">
+                    @for (c of quickViewContactos(); track $index) {
+                      <li class="qv-fila items-center">
+                        <div class="min-w-0">
+                          <p class="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            {{ c.nombre }}
+                            @if (c.es_principal) { <span class="badge qv-privilegio">Principal</span> }
+                            @if (c.solo_urgencias) { <span class="badge-warning">Solo urgencias</span> }
+                          </p>
+                          <p class="caption mt-0.5">{{ (c.parentesco && c.parentesco.trim() !== '-') ? c.parentesco : 'Parentesco sin indicar' }}@if (c.direccion) { · {{ c.direccion }} }</p>
+                        </div>
+                        @if (c.telefono) {
+                          <a [href]="'tel:' + c.telefono" class="qv-enlace tabular-nums text-sm font-semibold shrink-0">{{ c.telefono }}</a>
+                        } @else { <span class="qv-vacio text-sm shrink-0">Sin teléfono</span> }
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="px-4 pb-4 text-sm text-slate-600 dark:text-slate-400">No tiene contactos de emergencia. Puede añadirlos en «Editar publicador».</p>
+                }
               </section>
 
-              <!-- Sección: Acceso App Móvil -->
-              <section *ngIf="viewingPublicador()!.codigo_pin">
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  <span class="w-0.5 h-3 rounded-full bg-brand-orange shrink-0"></span>
-                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.12em]">Acceso app móvil</p>
-                </div>
-                <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border"
-                  [ngClass]="viewingPublicador()!.permite_login_simple
-                    ? 'bg-orange-50 dark:bg-orange-400/[0.06] border-orange-200/80 dark:border-orange-400/20'
-                    : 'bg-slate-50 dark:bg-white/[0.035] border-slate-200/70 dark:border-white/[0.07]'">
-                  <div class="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-                    [ngClass]="viewingPublicador()!.permite_login_simple ? 'bg-orange-500/15 dark:bg-orange-400/15' : 'bg-slate-200/70 dark:bg-white/[0.07]'">
-                    <svg class="w-3 h-3" [ngClass]="viewingPublicador()!.permite_login_simple ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400 dark:text-slate-500'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-xs font-semibold uppercase tracking-wider leading-none" [ngClass]="viewingPublicador()!.permite_login_simple ? 'text-orange-600/90 dark:text-orange-400' : 'text-slate-400 dark:text-slate-500'">Código PIN</p>
-                    <p class="font-mono text-base font-black tracking-widest mt-1 leading-none" [ngClass]="viewingPublicador()!.permite_login_simple ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500 line-through'">{{ viewingPublicador()!.codigo_pin }}</p>
-                  </div>
-                  <span class="shrink-0 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider"
-                    [ngClass]="viewingPublicador()!.permite_login_simple
-                      ? 'bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400'
-                      : 'bg-slate-200/70 dark:bg-white/[0.07] text-slate-500 dark:text-slate-400'">
-                    {{ viewingPublicador()!.permite_login_simple ? 'Habilitado' : 'Deshabilitado' }}
+              <!-- Consentimiento de datos -->
+              <section class="qv-bloque card-section !p-0" aria-labelledby="qv-consentimiento">
+                <h3 id="qv-consentimiento" class="qv-titulo"><lucide-icon name="file-text" [size]="16"></lucide-icon>Consentimiento de datos</h3>
+                <div class="flex items-center gap-3 px-4 pb-4">
+                  <span class="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+                        [ngClass]="p.consentimiento_datos ? 'bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'"
+                        aria-hidden="true">
+                    <lucide-icon [name]="p.consentimiento_datos ? 'check' : 'alert-triangle'" [size]="18"></lucide-icon>
                   </span>
-                  <!-- Copiar PIN -->
-                  <button type="button" (click)="copyPin(viewingPublicador()!.codigo_pin)" title="Copiar PIN"
-                    class="inline-flex items-center justify-center w-8 h-8 rounded-md text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-400/10 transition-colors duration-150 shrink-0">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                  </button>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ p.consentimiento_datos ? 'Lo ha firmado' : 'Falta firmarlo' }}</p>
+                    <p class="caption">{{ p.consentimiento_datos ? (p.archivo_consentimiento ? 'El documento está guardado' : 'No se subió el documento') : 'Pídale que lo firme' }}</p>
+                  </div>
+                  @if (p.archivo_consentimiento) {
+                    <button type="button" class="btn-secondary btn-sm shrink-0" (click)="viewConsentimientoPdfFromQuickView()">
+                      <lucide-icon name="eye" [size]="16"></lucide-icon>
+                      Ver documento
+                    </button>
+                  }
+                </div>
+              </section>
+
+              <!-- Acceso a la app móvil -->
+              <section class="qv-bloque card-section !p-0" aria-labelledby="qv-app">
+                <h3 id="qv-app" class="qv-titulo"><lucide-icon name="smartphone" [size]="16"></lucide-icon>Acceso a la app</h3>
+                <div class="flex items-center gap-3 px-4 pb-4">
+                  @if (p.codigo_pin) {
+                    <div class="min-w-0 flex-1">
+                      <p class="caption">Código PIN</p>
+                      <p class="data-num text-lg font-semibold tracking-[0.18em]"
+                         [class.line-through]="!p.permite_login_simple">{{ p.codigo_pin }}</p>
+                    </div>
+                    <span [ngClass]="p.permite_login_simple ? 'badge-active' : 'badge-neutral'">
+                      {{ p.permite_login_simple ? 'Puede entrar' : 'Bloqueado' }}
+                    </span>
+                    <button type="button" class="btn-icon-sm shrink-0" (click)="copyPin(p.codigo_pin)"
+                            aria-label="Copiar PIN" title="Copiar PIN">
+                      <lucide-icon name="copy"></lucide-icon>
+                    </button>
+                  } @else {
+                    <p class="text-sm text-slate-600 dark:text-slate-400">No tiene PIN. Puede darle acceso desde la pestaña «Acceso app».</p>
+                  }
                 </div>
               </section>
 
             </div>
+          </div>
+
+          }
 
           <ng-container slot="footer">
             <button type="button" (click)="closeQuickView()" class="btn-ghost">Cerrar</button>
-            <button type="button" *ngIf="canEditPublicadores()" (click)="editFromQuickView()" class="btn-primary">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Editar publicador
-            </button>
+            @if (canEditPublicadores()) {
+              <button type="button" (click)="editFromQuickView()" class="btn-primary">
+                <lucide-icon name="square-pen" [size]="16"></lucide-icon>
+                Editar publicador
+              </button>
+            }
           </ng-container>
         </app-modal>
       }

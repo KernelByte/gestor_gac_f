@@ -1,5 +1,6 @@
-import { Component, inject, OnInit, signal, computed, effect, untracked } from '@angular/core';
+import { Component, HostListener, inject, OnInit, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { LucideAngularModule } from 'lucide-angular';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PublicadoresFacade } from '../../application/publicadores.facade';
 import { ImpactoEliminacion, Publicador } from '../../domain/models/publicador';
@@ -77,7 +78,7 @@ interface TableColumn {
 @Component({
   standalone: true,
   selector: 'app-publicadores-list',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePickerComponent, NuevoPublicadorWizardComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, LucideAngularModule, DatePickerComponent, NuevoPublicadorWizardComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
   templateUrl: './publicadores.page.html',
   styleUrl: './publicadores.page.scss',
 })
@@ -970,6 +971,35 @@ export class PublicadoresListComponent implements OnInit {
     this.loadQuickViewContactos(p.id_publicador);
   }
 
+  /** Posición del publicador abierto dentro de la lista visible (filtros y orden de la tabla). */
+  quickViewIndex = computed(() => {
+    const p = this.viewingPublicador();
+    return p ? this.filteredList().findIndex(x => x.id_publicador === p.id_publicador) : -1;
+  });
+
+  /** Pasa al publicador anterior (-1) o siguiente (+1) sin cerrar la ficha. */
+  quickViewStep(delta: -1 | 1) {
+    const lista = this.filteredList();
+    const i = this.quickViewIndex();
+    const destino = lista[i + delta];
+    if (i < 0 || !destino) return;
+    this.openQuickView(destino);
+    // La tabla sigue a la ficha: al cerrar, el publicador queda a la vista.
+    this.currentPage.set(Math.floor((i + delta) / this.pageSize) + 1);
+  }
+
+  /** ← → recorren la lista mientras la ficha está abierta (no dentro de campos ni con otro modal encima). */
+  @HostListener('document:keydown', ['$event'])
+  onQuickViewKey(e: KeyboardEvent) {
+    if (!this.viewingPublicador() || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const t = e.target as HTMLElement | null;
+    if (t?.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (document.querySelectorAll('app-modal [role="dialog"]').length > 1) return;
+    e.preventDefault();
+    this.quickViewStep(e.key === 'ArrowLeft' ? -1 : 1);
+  }
+
   closeQuickView() {
     this.viewingPublicador.set(null);
     this.quickViewContactos.set([]);
@@ -977,14 +1007,17 @@ export class PublicadoresListComponent implements OnInit {
   }
 
   async loadQuickViewContactos(idPublicador: number) {
+    this.quickViewContactos.set([]);
     try {
       const res = await lastValueFrom(this.http.get<ContactoEmergencia[]>('/api/contactos-emergencia/', {
         params: { id_publicador: idPublicador }
       }));
+      // Al recorrer con ← → puede llegar tarde la respuesta del anterior.
+      if (this.viewingPublicador()?.id_publicador !== idPublicador) return;
       this.quickViewContactos.set(res || []);
     } catch (e) {
       console.error('Error loading contactos emergencia (quick view)', e);
-      this.quickViewContactos.set([]);
+      if (this.viewingPublicador()?.id_publicador === idPublicador) this.quickViewContactos.set([]);
     }
   }
 
@@ -1373,6 +1406,7 @@ export class PublicadoresListComponent implements OnInit {
     this.quickViewPrivilegios.set([]);
     this.privilegiosService.getPublicadorPrivilegios(id).subscribe({
       next: (data) => {
+        if (this.viewingPublicador()?.id_publicador !== id) return;
         const latest = new Map<number, PublicadorPrivilegio>();
         data.forEach(pp => {
           const existing = latest.get(pp.id_privilegio);

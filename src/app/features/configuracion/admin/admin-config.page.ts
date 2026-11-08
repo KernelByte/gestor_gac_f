@@ -13,6 +13,7 @@ import { SystemConfigComponent } from './components/system-config.component';
 import { ApiConfigComponent } from './components/api-config.component';
 import { SeguridadComponent } from './components/seguridad.component';
 import { FestivosComponent } from './components/festivos.component';
+import { DesignSystemPage } from '../../design-system/design-system.page';
 import { CambioHorarioComponent } from '../cambio-horario.component';
 import { camposHorarioCambiados } from '../horarios-reunion.service';
 import { ModalComponent, ConfirmDialogComponent, AvisoComponent, ToastService, ConfirmService } from '../../../shared/components';
@@ -25,7 +26,7 @@ import { ImportPublicadoresModalComponent } from '../../../shared/components/imp
  */
 export const ADMIN_TABS = [
    'congregaciones', 'auditoria', 'solicitudes', 'ai',
-   'base-datos', 'sistema', 'apis', 'festivos', 'seguridad',
+   'base-datos', 'sistema', 'apis', 'festivos', 'diseno', 'seguridad',
 ] as const;
 
 export type AdminTab = typeof ADMIN_TABS[number];
@@ -40,6 +41,7 @@ const ADMIN_TAB_META: Record<AdminTab, { label: string; paths: string[]; danger?
    sistema: { label: 'Sistema', paths: ['M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z'] },
    apis: { label: 'APIs', paths: ['M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244'] },
    festivos: { label: 'Festivos', paths: ['M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'] },
+   diseno: { label: 'Sistema de diseño', paths: ['M3 3h18v18H3z', 'M3 9h18', 'M9 21V9'] },
    seguridad: { label: 'Seguridad', paths: ['M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'], danger: true },
 };
 
@@ -103,7 +105,7 @@ interface SolicitudAcceso {
 @Component({
    selector: 'app-admin-config',
    standalone: true,
-   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ApiConfigComponent, SeguridadComponent, FestivosComponent, ImportPublicadoresModalComponent, CambioHorarioComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
+   imports: [CommonModule, FormsModule, ReactiveFormsModule, AIConfigComponent, DbBackupComponent, SystemConfigComponent, ApiConfigComponent, SeguridadComponent, FestivosComponent, DesignSystemPage, ImportPublicadoresModalComponent, CambioHorarioComponent, ModalComponent, ConfirmDialogComponent, AvisoComponent],
    templateUrl: './admin-config.page.html',
    styles: [`
      .scrollbar-hide::-webkit-scrollbar { display: none; }

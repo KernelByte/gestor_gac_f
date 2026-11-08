@@ -108,7 +108,7 @@
   --shadow-blue:        0 8px 24px -8px rgba(22, 92, 252, 0.35),  0 2px 6px -2px rgba(22, 92, 252, 0.15);
 
   --animate-blob: blob 8s ease-in-out infinite;
-  --animate-fadeIn: fadeIn 0.2s ease-out forwards;
+  --animate-fadeIn: fadeIn 0.2s ease-out backwards;
   --animate-shine: shine 1.5s infinite;
   --animate-stagger-in: staggerIn 0.4s var(--ease-out-strong) forwards;
 
@@ -186,6 +186,9 @@
 
     /* Velo bajo modales, hojas y cajones: oscuro en ambos temas. */
     --velo: oklch(22% 0.02 295 / 0.45);
+    /* Velo «enfocado» (app-modal velo="enfocado"): más opaco y con desenfoque
+       fuerte, para fichas de consulta abiertas sobre listas densas. */
+    --velo-enfocado: oklch(22% 0.02 295 / 0.6);
   }
 
   /* Rescalado fluido para pantallas de alta resolución */
@@ -216,6 +219,7 @@
     --accent-focus: #a78bfa;
     --accent-ring:  color-mix(in oklab, var(--color-brand-purple) 35%, transparent);
     --velo: oklch(8% 0.02 265 / 0.62);
+    --velo-enfocado: oklch(8% 0.02 265 / 0.75);
   }
 
   /* Override Chrome Autofill Background */
@@ -1088,8 +1092,11 @@
   }
 }
 
+/* backwards, no forwards: un transform que se queda aplicado al terminar
+   convierte al elemento en el contenedor de todo position:fixed interior,
+   y los modales y su velo quedaban encerrados en el área de contenido. */
 .animate-fadeIn {
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.2s ease-out backwards;
 }
 
 /* Shine effect */
@@ -1697,3 +1704,22 @@
   --dash-hover: rgb(30 41 59 / 0.7);         --dash-borde: rgb(51 65 85);
 }
 
+
+/* ═══════════════════════════════════════════════════════ */
+/* Barra adaptable (shared/directives/barra-adaptable)      */
+/* ═══════════════════════════════════════════════════════ */
+/* Fuera de @layer a propósito: tiene que ganarle a utilidades como md:inline. */
+/* Lo que cede primero: datos de apoyo que también están en un title. */
+.barra-adaptable:is([data-compacto="1"], [data-compacto="2"]) .barra-cede-1 { display: none; }
+/* Lo siguiente: rótulos de botones con icono y aria-label. */
+.barra-adaptable[data-compacto="2"] .barra-cede-2 { display: none; }
+/* Si ni compactada cabe junto a las pestañas, la bandeja baja a su propia
+   línea alineada bajo ellas: arriba queda la navegación (pestañas … engranaje)
+   y debajo la barra del mes, en vez de una bandeja suelta a la derecha. */
+.barra-adaptable[data-envuelta] [data-bandeja] { order: 99; margin-left: 0; }
+/* Solo durante la medición síncrona (nunca se pinta): cada pieza a su ancho
+   natural, sin encoger ni envolver, para que scrollWidth diga cuánto ocupa. */
+.barra-adaptable[data-midiendo] { flex-wrap: nowrap !important; }
+.barra-adaptable[data-midiendo] > *,
+.barra-adaptable[data-midiendo] [data-bandeja] > * { flex-shrink: 0 !important; }
+.barra-adaptable[data-midiendo] [data-bandeja] { flex-wrap: nowrap !important; width: auto !important; }

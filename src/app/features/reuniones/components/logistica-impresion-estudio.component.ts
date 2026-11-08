@@ -232,7 +232,11 @@ const PX_POR_MM = 96 / 25.4;
             class="panel w-full lg:w-[380px] shrink-0 flex flex-col border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 lg:flex"
             [class.hidden]="vistaMovil() !== 'estilo'">
 
-            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar overscroll-contain">
+            <!-- Inerte hasta que llega el estilo guardado: un cambio hecho antes
+                 se perdía (la respuesta del servidor lo sobrescribía) y ni
+                 siquiera se programaba su guardado. -->
+            <div class="flex-1 min-h-0 overflow-y-auto simple-scrollbar overscroll-contain"
+                 [attr.inert]="estiloCargado() ? null : ''" [attr.aria-busy]="!estiloCargado()">
 
               <!-- Formato: dos hojas por secciones o todo en una hoja. -->
               <details class="grupo" open>
@@ -718,7 +722,7 @@ export class LogisticaImpresionEstudioComponent implements OnInit, AfterViewInit
 
   estilo = signal<EstiloImpresion>(structuredClone(ESTILO_IMPRESION_DEFECTO));
   porDefecto = signal(true);
-  private estiloCargado = signal(false);
+  protected estiloCargado = signal(false);
   guardado = signal<EstadoGuardado>('inactivo');
   confirmandoReset = signal(false);
 

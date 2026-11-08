@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import {
   ChangeDetectionStrategy, Component, ElementRef, OnInit, computed, effect, inject, signal, viewChild,
 } from '@angular/core';
@@ -32,7 +33,7 @@ import { VistaGeneralComponent } from './components/vista-general.component';
   imports: [
     AvisoCambioHorarioComponent, MiSemanaComponent, SemanaTimelineComponent, PanelComponent,
     VistaSecretarioComponent, VistaCoordinadorComponent, VistaSuperintendenteComponent, VistaGeneralComponent,
-    MedirDirective,
+    MedirDirective, RouterLink,
   ],
   providers: [MiSemanaStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,7 +57,11 @@ import { VistaGeneralComponent } from './components/vista-general.component';
                     }
                   </svg>
                 </i>
-                <span class="fh-t">{{ f.texto.split(' · ')[0] }}</span>
+                @if (f.tono === 'reunion' || f.tono === 'asignacion') {
+                  <a class="fh-t fh-a" routerLink="/reuniones/resumen" [attr.aria-label]="f.texto + ': ver el detalle'">{{ f.texto.split(' · ')[0] }}</a>
+                } @else {
+                  <span class="fh-t">{{ f.texto.split(' · ')[0] }}</span>
+                }
                 @if (f.texto.includes(' · ')) { <span class="fh-d">{{ f.texto.split(' · ')[1] }}</span> }
               </li>
             }
@@ -141,6 +146,11 @@ import { VistaGeneralComponent } from './components/vista-general.component';
       animation: fh-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i) * 80ms + 200ms); }
     .fh i { display: grid; place-items: center; width: 1.375rem; height: 1.375rem; border-radius: 0.4375rem; flex-shrink: 0;
       background: rgb(255 255 255 / 0.18); color: white; }
+    .fh { position: relative; }
+    .fh-a { color: inherit; text-decoration: none; }
+    .fh-a::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+    .fh:has(.fh-a):hover { background: rgb(255 255 255 / 0.22); }
+    .fh-a:focus-visible::after { outline: 2px solid white; outline-offset: 1px; }
     .fh i svg { width: 0.8125rem; height: 0.8125rem; }
     .fh-d { padding-left: 0.5rem; border-left: 1px solid rgb(255 255 255 / 0.28); font-weight: 500; font-variant-numeric: tabular-nums;
       color: rgb(237 233 254); }

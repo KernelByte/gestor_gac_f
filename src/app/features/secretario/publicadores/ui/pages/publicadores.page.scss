@@ -67,3 +67,72 @@
         .animate-fadeIn, .animate-fadeInUp, .animate-slideInRight { animation: none; opacity: 1; transform: none; }
         tbody tr { animation: none !important; opacity: 1; }
     }
+
+    /* ── Vista rápida del publicador ──────────────────────────────────────
+       Bloques con fondo propio (.card-section) y, dentro, filas de etiqueta
+       a la izquierda y valor a la derecha: se lee de arriba abajo sin buscar. */
+    .qv-titulo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 1rem 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .qv-titulo lucide-icon { color: var(--accent); flex-shrink: 0; }
+    .qv-lista { padding: 0 1rem 0.5rem; }
+    .qv-fila {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      padding: 0.625rem 0;
+      border-top: 1px solid #e2e8f0;
+    }
+    .qv-fila:first-child { border-top: 0; }
+    .qv-fila dt { flex-shrink: 0; font-size: 0.875rem; color: #475569; }
+    .qv-fila dd {
+      min-width: 0;
+      text-align: right;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #0f172a;
+      overflow-wrap: anywhere;
+    }
+    /* Dato secundario debajo del valor (edad, barrio, de dónde sale la fecha) */
+    .qv-nota { display: block; margin-top: 0.125rem; font-size: 0.75rem; font-weight: 500; color: #475569; }
+    .qv-vacio { font-weight: 500; color: #64748b; }
+    .qv-enlace { color: inherit; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: color 150ms, text-decoration-color 150ms; }
+    .qv-enlace:hover { color: var(--accent); text-decoration-color: currentColor; }
+    .qv-enlace:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: 2px; border-radius: 4px; }
+    /* Privilegio / contacto principal: insignia tonal con el acento del módulo */
+    .qv-privilegio {
+      background-color: color-mix(in oklab, var(--accent) 12%, transparent);
+      border-color: color-mix(in oklab, var(--accent) 30%, transparent);
+      color: color-mix(in oklab, var(--accent) 75%, #000);
+    }
+    :host-context(.dark) .qv-titulo,
+    :host-context(.dark) .qv-fila dd { color: #f1f5f9; }
+    :host-context(.dark) .qv-fila { border-top-color: #1e293b; }
+    :host-context(.dark) .qv-fila:first-child { border-top: 0; }
+    :host-context(.dark) .qv-fila dt,
+    :host-context(.dark) .qv-nota { color: #94a3b8; }
+    :host-context(.dark) .qv-vacio { color: #64748b; }
+    :host-context(.dark) .qv-privilegio { color: color-mix(in oklab, var(--accent) 70%, #fff); }
+
+    /* Entrada escalonada de los bloques (solo transform/opacity) */
+    .qv-bloque { animation: qvIn 0.26s var(--ease-out-strong) both; }
+    .qv > .qv-bloque { animation-delay: 40ms; }
+    .qv .grid > .qv-bloque:nth-child(1) { animation-delay: 80ms; }
+    .qv .grid > .qv-bloque:nth-child(2) { animation-delay: 110ms; }
+    .qv .grid > .qv-bloque:nth-child(3) { animation-delay: 140ms; }
+    .qv .grid > .qv-bloque:nth-child(4) { animation-delay: 170ms; }
+    .qv .grid > .qv-bloque:nth-child(5) { animation-delay: 200ms; }
+    @keyframes qvIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .qv-bloque { animation: none; }
+    }
